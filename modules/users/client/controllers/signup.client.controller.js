@@ -1,12 +1,27 @@
 import rulesModalTemplateUrl from '@/modules/users/client/views/authentication/rules-modal.client.view.html';
 
-angular
-  .module('users')
-  .controller('SignupController', SignupController);
+angular.module('users').controller('SignupController', SignupController);
 
 /* @ngInject */
-function SignupController($rootScope, $http, $q, $state, $stateParams, $location, $uibModal, $analytics, $window, Authentication, UserMembershipsService, messageCenterService, TribeService, TribesService, InvitationService, SettingsFactory, locker) {
-
+function SignupController(
+  $rootScope,
+  $http,
+  $q,
+  $state,
+  $stateParams,
+  $location,
+  $uibModal,
+  $analytics,
+  $window,
+  Authentication,
+  UserMembershipsService,
+  messageCenterService,
+  TribeService,
+  TribesService,
+  InvitationService,
+  SettingsFactory,
+  locker,
+) {
   // If user is already signed in then redirect to search page
   if (Authentication.user) {
     $state.go('search.map');
@@ -42,17 +57,15 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
   // Initialize controller
   activate();
 
-
   /**
    * Initalize controller
    */
   function activate() {
     // If invitation code was passed to the page (via URL), validate it
-    validateInvitationCode()
-      .finally(function () {
-        // Initialise waitinglist
-        initWaitingList();
-      });
+    validateInvitationCode().finally(function() {
+      // Initialise waitinglist
+      initWaitingList();
+    });
 
     // Get list of suggested tribes
     initSuggstedTribes();
@@ -64,7 +77,6 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
    * @returns {String} error text
    */
   function getUsernameValidationError(usernameModel) {
-
     if (!usernameModel || !usernameModel.$dirty || usernameModel.$valid) {
       return '';
     }
@@ -76,11 +88,15 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
     }
 
     if (err.maxlength) {
-      return 'Too long, maximum length is ' + vm.usernameMaxlength + ' characters.';
+      return (
+        'Too long, maximum length is ' + vm.usernameMaxlength + ' characters.'
+      );
     }
 
     if (err.minlength) {
-      return 'Too short, minumum length is ' + vm.usernameMinlength + ' characters.';
+      return (
+        'Too short, minumum length is ' + vm.usernameMinlength + ' characters.'
+      );
     }
 
     if (err.pattern) {
@@ -104,18 +120,15 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
       // Fetch information about referred tribe
       TribeService.get({
         tribeSlug: $stateParams.tribe,
-      })
-        .then(function (tribe) {
+      }).then(function(tribe) {
+        // Got it
+        if (tribe._id) {
+          vm.tribe = tribe;
+        }
 
-          // Got it
-          if (tribe._id) {
-            vm.tribe = tribe;
-          }
-
-          // Fetch suggested tribes list without this tribe
-          getSuggestedTribes(tribe._id || null);
-
-        });
+        // Fetch suggested tribes list without this tribe
+        getSuggestedTribes(tribe._id || null);
+      });
     } else {
       // Fetch suggested tribes list
       getSuggestedTribes();
@@ -128,26 +141,32 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
    * @param withoutTribeId {String} Tribe id to take away from array
    */
   function getSuggestedTribes(withoutTribeId) {
-    TribesService.query({
-      limit: 20,
-    },
-    function (tribes) {
-      const suggestedTribes = [];
+    TribesService.query(
+      {
+        limit: 20,
+      },
+      function(tribes) {
+        const suggestedTribes = [];
 
-      // Make sure to remove referred tribe from suggested tribes so that we won't have dublicates
-      // We'll always show 2 or 3 of these at the frontend depending on if referred tribe is shown.
-      if (withoutTribeId) {
-        angular.forEach(tribes, function (suggestedTribe) {
-          if (suggestedTribe._id !== withoutTribeId) {
-            // eslint-disable-next-line angular/controller-as-vm
-            this.push(suggestedTribe);
-          }
-        }, suggestedTribes);
-        vm.suggestedTribes = suggestedTribes;
-      } else {
-        vm.suggestedTribes = tribes;
-      }
-    });
+        // Make sure to remove referred tribe from suggested tribes so that we won't have dublicates
+        // We'll always show 2 or 3 of these at the frontend depending on if referred tribe is shown.
+        if (withoutTribeId) {
+          angular.forEach(
+            tribes,
+            function(suggestedTribe) {
+              if (suggestedTribe._id !== withoutTribeId) {
+                // eslint-disable-next-line angular/controller-as-vm
+                this.push(suggestedTribe);
+              }
+            },
+            suggestedTribes,
+          );
+          vm.suggestedTribes = suggestedTribes;
+        } else {
+          vm.suggestedTribes = tribes;
+        }
+      },
+    );
   }
 
   /**
@@ -156,34 +175,39 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
   function submitSignup() {
     vm.isLoading = true;
 
-    $http
-      .post('/api/auth/signup', vm.credentials)
-      .then(
-        function (newUser) { // On success function
+    $http.post('/api/auth/signup', vm.credentials).then(
+      function(newUser) {
+        // On success function
 
-          // If there is referred tribe, add user to that next up
-          if (vm.tribe && vm.tribe._id) {
-            UserMembershipsService.post({
+        // If there is referred tribe, add user to that next up
+        if (vm.tribe && vm.tribe._id) {
+          UserMembershipsService.post(
+            {
               tribeId: vm.tribe._id,
             },
-            function (data) {
+            function(data) {
               updateUser(data.user || newUser.data);
               vm.isLoading = false;
               vm.step = 2;
-            });
-          } else {
-            // No tribe to join, just continue
-            updateUser(newUser.data);
-            vm.isLoading = false;
-            vm.step = 2;
-          }
-        },
-        function (error) { // On error function
+            },
+          );
+        } else {
+          // No tribe to join, just continue
+          updateUser(newUser.data);
           vm.isLoading = false;
-          const errorMessage = error.data && error.data.message ? error.data.message : 'Something went wrong while signing you up. Try again!';
-          messageCenterService.add('danger', errorMessage);
-        },
-      );
+          vm.step = 2;
+        }
+      },
+      function(error) {
+        // On error function
+        vm.isLoading = false;
+        const errorMessage =
+          error.data && error.data.message
+            ? error.data.message
+            : 'Something went wrong while signing you up. Try again!';
+        messageCenterService.add('danger', errorMessage);
+      },
+    );
   }
 
   /**
@@ -191,47 +215,52 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
    * Invite code has to be present at `vm.invitationCode`
    */
   function validateInvitationCode() {
-    return $q(function (resolve, reject) {
+    return $q(function(resolve, reject) {
       vm.invitationCodeError = false;
 
       if (vm.invitationCode) {
         // Validate code
         InvitationService.post({
           invitecode: vm.invitationCode,
-        }).$promise.then(function (data) {
+        }).$promise.then(
+          function(data) {
+            // UI
+            vm.invitationCodeValid = data.valid;
+            vm.invitationCodeError = !data.valid;
 
-          // UI
-          vm.invitationCodeValid = data.valid;
-          vm.invitationCodeError = !data.valid;
+            // Resolve promise
+            resolve();
 
-          // Resolve promise
-          resolve();
+            // Analytics
+            if (data.valid) {
+              $analytics.eventTrack('invitationCode.valid', {
+                category: 'invitation',
+                label: 'Valid invitation code entered',
+              });
+            } else {
+              $analytics.eventTrack('invitationCode.invalid', {
+                category: 'invitation',
+                label: 'Invalid invitation code entered',
+              });
+            }
+          },
+          function() {
+            vm.invitationCodeValid = false;
+            vm.invitationCodeError = true;
 
-          // Analytics
-          if (data.valid) {
-            $analytics.eventTrack('invitationCode.valid', {
+            // Reject promise
+            reject();
+
+            messageCenterService.add(
+              'danger',
+              'Something went wrong, try again.',
+            );
+            $analytics.eventTrack('invitationCode.failed', {
               category: 'invitation',
-              label: 'Valid invitation code entered',
+              label: 'Failed to validate invitation code',
             });
-          } else {
-            $analytics.eventTrack('invitationCode.invalid', {
-              category: 'invitation',
-              label: 'Invalid invitation code entered',
-            });
-          }
-        }, function () {
-          vm.invitationCodeValid = false;
-          vm.invitationCodeError = true;
-
-          // Reject promise
-          reject();
-
-          messageCenterService.add('danger', 'Something went wrong, try again.');
-          $analytics.eventTrack('invitationCode.failed', {
-            category: 'invitation',
-            label: 'Failed to validate invitation code',
-          });
-        });
+          },
+        );
       } else {
         // No invite code available, just resolve promise
         resolve();
@@ -244,13 +273,14 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
    * @link https://maitreapp.co
    */
   function initWaitingList() {
-
     // Don't proceed if no invitations enabled,
     // or no Maitre id available
     // or if valid invite code was already given
-    if (!appSettings.invitationsEnabled ||
-        !appSettings.maitreId ||
-        vm.invitationCodeValid) {
+    if (
+      !appSettings.invitationsEnabled ||
+      !appSettings.maitreId ||
+      vm.invitationCodeValid
+    ) {
       return;
     }
 
@@ -267,7 +297,7 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
           category: 'waitinglist',
           label: 'Waiting list invitation code enabled',
         });
-      // If previously stored `mwr` is available in locker...
+        // If previously stored `mwr` is available in locker...
       } else if (locker.get(mwrLockerKey)) {
         // ...put it back to the URL
         // This route has `reloadOnSearch:false` configured so it won't
@@ -310,18 +340,16 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
     // Initialize Maitre app by appending script to the page
     // Expects an element with `data-maitre` be present in DOM
     // https://api.jquery.com/jQuery.getScript/
-    jQuery.getScript('https://maitreapp.co/widget.js')
-      .fail(function () {
-        // If loading the script fails, hide waiting list feature
-        vm.isWaitingListEnabled = false;
+    jQuery.getScript('https://maitreapp.co/widget.js').fail(function() {
+      // If loading the script fails, hide waiting list feature
+      vm.isWaitingListEnabled = false;
 
-        // Send event to analytics
-        $analytics.eventTrack('waitinglist.failed', {
-          category: 'waitinglist',
-          label: 'Waiting list script failed to load.',
-        });
+      // Send event to analytics
+      $analytics.eventTrack('waitinglist.failed', {
+        category: 'waitinglist',
+        label: 'Waiting list script failed to load.',
       });
-
+    });
   }
 
   /**
@@ -354,5 +382,4 @@ function SignupController($rootScope, $http, $q, $state, $stateParams, $location
       label: 'Open rules from signup form',
     });
   }
-
 }

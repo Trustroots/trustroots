@@ -3,8 +3,12 @@ angular
   .controller('ProfileEditTribesController', ProfileEditTribesController);
 
 /* @ngInject */
-function ProfileEditTribesController($scope, Users, Authentication, messageCenterService) {
-
+function ProfileEditTribesController(
+  $scope,
+  Users,
+  Authentication,
+  messageCenterService,
+) {
   // ViewModel
   const vm = this;
 
@@ -20,16 +24,26 @@ function ProfileEditTribesController($scope, Users, Authentication, messageCente
    */
   function updateUserProfile(isValid) {
     if (isValid) {
-      vm.user.$update(function (response) {
-        Authentication.user = response;
-        $scope.$emit('userUpdated');
-        messageCenterService.add('success', 'Profile updated.');
-      }, function (response) {
-        messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!', { timeout: 10000 });
-      });
+      vm.user.$update(
+        function(response) {
+          Authentication.user = response;
+          $scope.$emit('userUpdated');
+          messageCenterService.add('success', 'Profile updated.');
+        },
+        function(response) {
+          messageCenterService.add(
+            'danger',
+            response.data.message || 'Something went wrong. Please try again!',
+            { timeout: 10000 },
+          );
+        },
+      );
     } else {
-      messageCenterService.add('danger', 'Please fix errors from your profile and try again.', { timeout: 10000 });
+      messageCenterService.add(
+        'danger',
+        'Please fix errors from your profile and try again.',
+        { timeout: 10000 },
+      );
     }
   }
-
 }

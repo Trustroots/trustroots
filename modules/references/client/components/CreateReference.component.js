@@ -6,12 +6,16 @@ import * as references from '../api/references.api';
 import Navigation from './create-reference/Navigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
-import { ReferenceToSelfInfo, LoadingInfo, DuplicateInfo, SubmittedInfo } from './create-reference/Info';
+import {
+  ReferenceToSelfInfo,
+  LoadingInfo,
+  DuplicateInfo,
+  SubmittedInfo,
+} from './create-reference/Info';
 
 const api = { references };
 
 export class CreateReference extends React.Component {
-
   constructor(props) {
     super(props);
     this.state = {
@@ -40,7 +44,10 @@ export class CreateReference extends React.Component {
   }
 
   async componentDidMount() {
-    const reference = await api.references.read({ userFrom: this.props.userFrom._id, userTo: this.props.userTo._id });
+    const reference = await api.references.read({
+      userFrom: this.props.userFrom._id,
+      userTo: this.props.userTo._id,
+    });
 
     this.setState(() => {
       const newState = { isLoading: false };
@@ -76,13 +83,22 @@ export class CreateReference extends React.Component {
     this.setState(() => ({ isSubmitting: true }));
 
     // get data from state
-    const { met, hostedThem, hostedMe, recommend, report, reportMessage } = this.state;
+    const {
+      met,
+      hostedThem,
+      hostedMe,
+      recommend,
+      report,
+      reportMessage,
+    } = this.state;
     const reference = { met, hostedThem, hostedMe, recommend };
 
     // save the reference
     const [savedReference] = await Promise.all([
       api.references.create({ ...reference, userTo: this.props.userTo._id }),
-      recommend === 'no' && report ? api.references.report(this.props.userTo, reportMessage) : null,
+      recommend === 'no' && report
+        ? api.references.report(this.props.userTo, reportMessage)
+        : null,
     ]);
 
     this.setState(() => ({
@@ -94,8 +110,16 @@ export class CreateReference extends React.Component {
 
   render() {
     const { t } = this.props;
-    const { hostedMe, hostedThem, met, recommend, report, reportMessage } = this.state;
-    const primaryInteraction = (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
+    const {
+      hostedMe,
+      hostedThem,
+      met,
+      recommend,
+      report,
+      reportMessage,
+    } = this.state;
+    const primaryInteraction =
+      (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
 
     const tabs = [
       <Interaction
@@ -115,18 +139,26 @@ export class CreateReference extends React.Component {
       />,
     ];
 
-    const tabDone = (recommend) ? 1 : (hostedMe || hostedThem || met) ? 0 : -1;
+    const tabDone = recommend ? 1 : hostedMe || hostedThem || met ? 0 : -1;
 
     if (this.state.isSelf) return <ReferenceToSelfInfo />;
 
     if (this.state.isLoading) return <LoadingInfo />;
 
-    if (this.state.isDuplicate) return <DuplicateInfo userTo={this.props.userTo} />;
+    if (this.state.isDuplicate)
+      return <DuplicateInfo userTo={this.props.userTo} />;
 
     if (this.state.isSubmitted) {
       const isReported = recommend === 'no' && report;
       const isPublic = this.state.isPublic;
-      return <SubmittedInfo isReported={isReported} isPublic={isPublic} userFrom={this.props.userFrom} userTo={this.props.userTo} />;
+      return (
+        <SubmittedInfo
+          isReported={isReported}
+          isPublic={isPublic}
+          userFrom={this.props.userFrom}
+          userTo={this.props.userTo}
+        />
+      );
     }
 
     return (
@@ -137,16 +169,12 @@ export class CreateReference extends React.Component {
           onSelect={() => {}}
           id="create-reference-tabs"
         >
-          <Tab
-            eventKey={0}
-            title={t('How do you know them')}
-            disabled
-          >{tabs[0]}</Tab>
-          <Tab
-            eventKey={1}
-            title={t('Recommendation')}
-            disabled
-          >{tabs[1]}</Tab>
+          <Tab eventKey={0} title={t('How do you know them')} disabled>
+            {tabs[0]}
+          </Tab>
+          <Tab eventKey={1} title={t('Recommendation')} disabled>
+            {tabs[1]}
+          </Tab>
         </Tabs>
         {/* <!-- Navigation for big screens -->*/}
         <Navigation

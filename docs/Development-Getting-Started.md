@@ -5,6 +5,7 @@
 Technical conversations often happen either on our GitHub repository or at [#tech](https://trustroots.slack.com/messages/C0A3Q15SS) channel at volunteer chat. [#log](https://trustroots.slack.com/messages/C08SG9CSK) channel is great for following the work happening on GitHub.
 
 Source code:
+
 - [Website source code](https://github.com/trustroots/trustroots)
 - [Mobile app source code](https://github.com/trustroots/trustroots-expo-mobile)
 
@@ -69,11 +70,12 @@ Make sure to familiarise yourself with our [pull request workflow](Pull-Request-
 
 ## How to write code
 
-* Tests, tests, tests! It's important to have unit tests cover especially for backend APIs because we are many people writing code and changing code in one place might break it at another. Lots of our client side code lacks tests and while these aren't always necessarily as useful as backend tests, writing some tests would be great, too. Add tests especially if you've fixed a bug in APIs.
-* Write [JSDoc](http://usejsdoc.org/) comment blocks, please, or add them when you see them missing.
-* Check your code for [Accessibility](Accessibility.md).
+- Tests, tests, tests! It's important to have unit tests cover especially for backend APIs because we are many people writing code and changing code in one place might break it at another. Lots of our client side code lacks tests and while these aren't always necessarily as useful as backend tests, writing some tests would be great, too. Add tests especially if you've fixed a bug in APIs.
+- Write [JSDoc](http://usejsdoc.org/) comment blocks, please, or add them when you see them missing.
+- Check your code for [Accessibility](Accessibility.md).
 
 ## Coding conventions
+
 - Project has [`.editorconfig`](https://github.com/Trustroots/trustroots/blob/master/.editorconfig) file — [download extension for your editor](http://editorconfig.org/#download).
 - Configure Eslint integration for your editor
 

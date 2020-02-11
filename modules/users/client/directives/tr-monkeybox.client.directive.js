@@ -3,9 +3,7 @@ import templateUrl from '@/modules/users/client/views/directives/tr-monkeybox.cl
 /**
  * Monkeybox directive to show a simple profile info box
  */
-angular
-  .module('users')
-  .directive('trMonkeybox', trMonkeyboxDirective);
+angular.module('users').directive('trMonkeybox', trMonkeyboxDirective);
 
 /* @ngInject */
 function trMonkeyboxDirective() {
@@ -16,10 +14,12 @@ function trMonkeyboxDirective() {
     scope: {
       profile: '=',
     },
-    controller: ['$scope', 'Languages', function ($scope, Languages) {
-
-      $scope.languageNames = Languages.get('object');
-
-    }],
+    controller: [
+      '$scope',
+      'Languages',
+      function($scope, Languages) {
+        $scope.languageNames = Languages.get('object');
+      },
+    ],
   };
 }

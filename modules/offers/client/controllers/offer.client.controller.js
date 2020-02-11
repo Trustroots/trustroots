@@ -1,10 +1,7 @@
-angular
-  .module('offers')
-  .controller('OfferController', OfferController);
+angular.module('offers').controller('OfferController', OfferController);
 
 /* @ngInject */
 function OfferController($timeout, MapLayersFactory) {
-
   // ViewModel
   const vm = this;
   vm.invalidateMapSize = invalidateMapSize;
@@ -14,8 +11,8 @@ function OfferController($timeout, MapLayersFactory) {
    * @param {Object} leafletData - Service for Leaflet
    */
   function invalidateMapSize(leafletData) {
-    $timeout(function () {
-      leafletData.getMap().then(function (map) {
+    $timeout(function() {
+      leafletData.getMap().then(function(map) {
         // @link http://leafletjs.com/reference-1.2.0.html#map-invalidatesize
         map.invalidateSize(false);
       });
@@ -43,5 +40,4 @@ function OfferController($timeout, MapLayersFactory) {
       },
     },
   };
-
 }

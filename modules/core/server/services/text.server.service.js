@@ -29,10 +29,10 @@ exports.sanitizeOptions = {
     'blockquote',
   ],
   allowedAttributes: {
-    'a': ['href'],
+    a: ['href'],
     // Used for messages text
     // at `modules/messages/client/controllers/thread.client.controller.js`
-    'p': ['data-hosting'],
+    p: ['data-hosting'],
   },
   // If we would allow class attributes, you can limit which classes are allowed:
   // allowedClasses: {
@@ -40,14 +40,17 @@ exports.sanitizeOptions = {
   // },
   // Convert these tags to unify html
   transformTags: {
-    'strong': 'b',
-    'em': 'i',
+    strong: 'b',
+    em: 'i',
   },
-  exclusiveFilter: function (frame) {
+  exclusiveFilter: function(frame) {
     // Don't allow empty <a> tags, such as:
     // - `<a href="http://trustroots.org"></a>`
     // - `<a>http://trustroots.org</a>`
-    if (frame.tag === 'a' && (!frame.text.trim() || !_.has(frame, 'attribs.href'))) {
+    if (
+      frame.tag === 'a' &&
+      (!frame.text.trim() || !_.has(frame, 'attribs.href'))
+    ) {
       return true;
     }
 
@@ -72,7 +75,6 @@ exports.sanitizeOptions = {
   },
 };
 
-
 /**
  * - Sanitize html
  * - Fix glitches coming in sometimes from wysiwyg editors
@@ -83,8 +85,7 @@ exports.sanitizeOptions = {
  * @param {String} content - String to be sanitized
  * @returns {String}
  */
-exports.html = function (content) {
-
+exports.html = function(content) {
   // @link https://lodash.com/docs/4.17.4#toString
   content = _.toString(content);
 
@@ -95,7 +96,10 @@ exports.html = function (content) {
 
   // Replace "&nbsp;", "<p><br></p>" and trim
   // This will catch most of the actually empty strings
-  content = content.replace(/&nbsp;/g, ' ').replace(/<p><br><\/p>/g, ' ').trim();
+  content = content
+    .replace(/&nbsp;/g, ' ')
+    .replace(/<p><br><\/p>/g, ' ')
+    .trim();
 
   if (!content || exports.isEmpty(content)) {
     // If content is actually empty without html (e.g. `<p><br></p>`)
@@ -147,7 +151,6 @@ exports.html = function (content) {
   return content;
 };
 
-
 /**
  * Check if string has content even when html and whitespace is stripped away
  *
@@ -156,10 +159,9 @@ exports.html = function (content) {
  * @param {String} value - String to be evaluated
  * @return {Boolean} `true` when empty, `false` when it has content.
  */
-exports.isEmpty = function (value) {
+exports.isEmpty = function(value) {
   return _.isEmpty(exports.plainText(value));
 };
-
 
 /**
  * Strip all HTML tags and html entities out of a text
@@ -169,8 +171,7 @@ exports.isEmpty = function (value) {
  * @param {Boolean} cleanWhitespace
  * @returns {String}
  */
-exports.plainText = function (content, cleanWhitespace) {
-
+exports.plainText = function(content, cleanWhitespace) {
   // Force string
   // @link https://lodash.com/docs/4.17.4#toString
   content = _.toString(content);

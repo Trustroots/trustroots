@@ -4,7 +4,7 @@ const path = require('path');
 const config = require(path.resolve('./config/config'));
 const log = require(path.resolve('./config/lib/logger'));
 
-module.exports = function (job, done) {
+module.exports = function(job, done) {
   const smtpTransport = nodemailer.createTransport(config.mailer.options);
 
   // Get job id from Agenda job attributes
@@ -14,7 +14,7 @@ module.exports = function (job, done) {
   // Log that we're sending an email
   log('debug', 'Starting `send email` job #wGcxmQ', { jobId: jobId });
 
-  smtpTransport.sendMail(job.attrs.data, function (err) {
+  smtpTransport.sendMail(job.attrs.data, function(err) {
     smtpTransport.close(); // close the connection pool
 
     if (err) {

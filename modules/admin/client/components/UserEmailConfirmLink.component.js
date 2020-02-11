@@ -12,21 +12,28 @@ export default function UserEmailConfirmLink({ user }) {
 
   return (
     <>
-      { isSignup ? (
-        <label htmlFor="user-email-reset-link">Link to confirm email {user.emailTemporary} during signup</label>
+      {isSignup ? (
+        <label htmlFor="user-email-reset-link">
+          Link to confirm email {user.emailTemporary} during signup
+        </label>
       ) : (
-        <label htmlFor="user-email-reset-link">Link to confirm email change {user.email} → {user.emailTemporary}</label>
-      ) }
+        <label htmlFor="user-email-reset-link">
+          Link to confirm email change {user.email} → {user.emailTemporary}
+        </label>
+      )}
       <input
         className="form-control"
         id="user-email-reset-link"
         readOnly="readonly"
         type="text"
-        value={`https://www.trustroots.org/confirm-email/${user.emailToken}${isSignup ? '?signup=true' : ''}`}
+        value={`https://www.trustroots.org/confirm-email/${user.emailToken}${
+          isSignup ? '?signup=true' : ''
+        }`}
       />
       <p className="help-block">
         <span className="text-danger">
-          Make sure to send this link <em>only</em> to email <b>{user.emailTemporary}</b> and nowhere else!
+          Make sure to send this link <em>only</em> to email{' '}
+          <b>{user.emailTemporary}</b> and nowhere else!
         </span>
       </p>
     </>

@@ -1,4 +1,4 @@
-export const plainText = (html) => {
+export const plainText = html => {
   if (!html || typeof html !== 'string' || typeof document === 'undefined') {
     return '';
   }
@@ -7,6 +7,6 @@ export const plainText = (html) => {
   return div.textContent || div.innerText || '';
 };
 
-export const plainTextLength = (html) => {
+export const plainTextLength = html => {
   return plainText(html).trim().length;
 };

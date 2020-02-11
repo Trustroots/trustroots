@@ -3,8 +3,11 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import Board from '@/modules/core/client/components/Board';
 
-export default function TribesHeader({ isLoggedIn, onDisplayPhoto, onHidePhoto }) {
-
+export default function TribesHeader({
+  isLoggedIn,
+  onDisplayPhoto,
+  onHidePhoto,
+}) {
   const { t } = useTranslation('tribes');
 
   return (
@@ -17,18 +20,23 @@ export default function TribesHeader({ isLoggedIn, onDisplayPhoto, onHidePhoto }
       <div className="container">
         <div className="row">
           <div className="col-xs-12 text-center">
-            <br /><br />
+            <br />
+            <br />
             <h2>{t('Discover Tribes')}</h2>
             <br />
             <p className="lead">
-              {t('Joining Tribes helps you find likeminded Trustroots members.')}
+              {t(
+                'Joining Tribes helps you find likeminded Trustroots members.',
+              )}
             </p>
-            {!isLoggedIn && <div>
-              <hr className="hr-white hr-xs"/>
-              <a href="/signup" className="btn btn-action btn-default">
-                {t('Sign up with Trustroots')}
-              </a>
-            </div>}
+            {!isLoggedIn && (
+              <div>
+                <hr className="hr-white hr-xs" />
+                <a href="/signup" className="btn btn-action btn-default">
+                  {t('Sign up with Trustroots')}
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>

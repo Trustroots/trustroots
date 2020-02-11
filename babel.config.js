@@ -4,11 +4,14 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 
 module.exports = {
   presets: [
-    ['@babel/preset-env', {
-      corejs: 2,
-      modules: 'commonjs',
-      useBuiltIns: 'usage',
-    }],
+    [
+      '@babel/preset-env',
+      {
+        corejs: 2,
+        modules: 'commonjs',
+        useBuiltIns: 'usage',
+      },
+    ],
     ['@babel/preset-react'],
   ],
   plugins: compact([

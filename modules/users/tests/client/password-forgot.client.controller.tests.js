@@ -3,7 +3,7 @@ import '@/modules/search/client/search.client.module';
 import AppConfig from '@/modules/core/client/app/config';
 
 // Authentication controller Spec
-describe('ForgotPasswordController', function () {
+describe('ForgotPasswordController', function() {
   // Initialize global variables
   let $scope;
   let $httpBackend;
@@ -14,8 +14,15 @@ describe('ForgotPasswordController', function () {
   // Load the main application module
   beforeEach(angular.mock.module(AppConfig.appModuleName));
 
-  describe('Logged out user', function () {
-    beforeEach(inject(function ($controller, $rootScope, _$window_, _$httpBackend_, _$location_, _Authentication_) {
+  describe('Logged out user', function() {
+    beforeEach(inject(function(
+      $controller,
+      $rootScope,
+      _$window_,
+      _$httpBackend_,
+      _$location_,
+      _Authentication_,
+    ) {
       // Set a new global $scope
       $scope = $rootScope.$new();
 
@@ -33,24 +40,28 @@ describe('ForgotPasswordController', function () {
       });
     }));
 
-    it('should not redirect to home', function () {
+    it('should not redirect to home', function() {
       expect($location.path).not.toHaveBeenCalledWith('/');
     });
 
-    describe('askForPasswordReset', function () {
+    describe('askForPasswordReset', function() {
       const credentials = {
         username: 'test',
         password: 'test',
       };
-      beforeEach(function () {
+      beforeEach(function() {
         // Test expected GET request
-        $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
+        $httpBackend
+          .when(
+            'GET',
+            '/modules/users/views/password/reset-password-success.client.view.html',
+          )
+          .respond(200, '');
         $scope.vm.credentials = credentials;
         Authentication.user = null;
       });
 
-      it('should clear $scope.vm.success and $scope.vm.error', function () {
-
+      it('should clear $scope.vm.success and $scope.vm.error', function() {
         $scope.vm.success = 'test';
         $scope.vm.error = 'test';
         $scope.vm.askForPasswordReset();
@@ -59,38 +70,49 @@ describe('ForgotPasswordController', function () {
         expect($scope.vm.error).toBeNull();
       });
 
-      describe('POST error', function () {
+      describe('POST error', function() {
         const errorMessage = 'No account with that username has been found';
-        beforeEach(function () {
-
+        beforeEach(function() {
           // Test expected GET request
-          $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
-          $httpBackend.when('POST', '/api/auth/forgot', credentials).respond(400, {
-            'message': errorMessage,
-          });
+          $httpBackend
+            .when(
+              'GET',
+              '/modules/users/views/password/reset-password-success.client.view.html',
+            )
+            .respond(200, '');
+          $httpBackend
+            .when('POST', '/api/auth/forgot', credentials)
+            .respond(400, {
+              message: errorMessage,
+            });
 
           Authentication.user = null;
           $scope.vm.askForPasswordReset();
           $httpBackend.flush();
         });
 
-        it('should not clear form', function () {
+        it('should not clear form', function() {
           expect($scope.vm.credentials).not.toBeNull();
         });
 
-        it('should set error to response message', function () {
+        it('should set error to response message', function() {
           expect($scope.vm.error).toBe(errorMessage);
         });
       });
 
-      describe('POST success', function () {
-        const successMessage = 'An email has been sent to the provided email with further instructions.';
-        beforeEach(function () {
-
+      describe('POST success', function() {
+        const successMessage =
+          'An email has been sent to the provided email with further instructions.';
+        beforeEach(function() {
           // Test expected requests
-          $httpBackend.when('GET', '/modules/users/views/password/reset-password-success.client.view.html').respond(200, '');
+          $httpBackend
+            .when(
+              'GET',
+              '/modules/users/views/password/reset-password-success.client.view.html',
+            )
+            .respond(200, '');
           $httpBackend.when('POST', '/api/auth/forgot', credentials).respond({
-            'message': successMessage,
+            message: successMessage,
           });
 
           Authentication.user = null;
@@ -98,15 +120,14 @@ describe('ForgotPasswordController', function () {
           $httpBackend.flush();
         });
 
-        it('should clear form', function () {
+        it('should clear form', function() {
           expect($scope.vm.credentials).toBeNull();
         });
 
-        it('should set success to response message', function () {
+        it('should set success to response message', function() {
           expect($scope.vm.success).toBe(successMessage);
         });
       });
     });
-
   });
 });

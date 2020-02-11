@@ -57,8 +57,10 @@ function generateClientUser(overrides = {}) {
 function generateUsers(count, { public: pub, locale } = {}, type = 'server') {
   return range(count).map(() => {
     switch (type) {
-      case 'server': return generateServerUser({ public: pub, locale });
-      case 'client': return generateClientUser();
+      case 'server':
+        return generateServerUser({ public: pub, locale });
+      case 'client':
+        return generateClientUser();
     }
   });
 }
@@ -72,7 +74,7 @@ function generateUsers(count, { public: pub, locale } = {}, type = 'server') {
  * @param {object} referenceData[][2] - object of property: value to override default reference properties
  */
 function generateReferences(users, referenceData) {
-  return referenceData.map(function (data) {
+  return referenceData.map(function(data) {
     const defaultReference = {
       userFrom: users[data[0]]._id,
       userTo: users[data[1]]._id,

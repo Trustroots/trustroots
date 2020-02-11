@@ -1,9 +1,7 @@
 /**
  * Print out credits for photos used at the page by tr-boards directive
  */
-angular
-  .module('core')
-  .directive('trBoardCredits', trBoardCreditsDirective);
+angular.module('core').directive('trBoardCredits', trBoardCreditsDirective);
 
 /* @ngInject */
 function trBoardCreditsDirective() {

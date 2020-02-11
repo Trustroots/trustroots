@@ -1,20 +1,14 @@
 /**
  * Service for handing filters
  */
-angular
-  .module('core')
-  .factory('FiltersService', FiltersService);
+angular.module('core').factory('FiltersService', FiltersService);
 
 /* @ngInject */
 function FiltersService($log, Authentication, locker) {
-
   // Default structure for filters object
   const defaultFilters = {
     tribes: [],
-    types: [
-      'host',
-      'meet',
-    ],
+    types: ['host', 'meet'],
     languages: [],
     seen: {
       months: 24,
@@ -22,11 +16,15 @@ function FiltersService($log, Authentication, locker) {
   };
 
   // Make cache id unique for this user
-  const cachePrefix = (Authentication.user) ? 'search.filters.' + Authentication.user._id : 'search.filters';
+  const cachePrefix = Authentication.user
+    ? 'search.filters.' + Authentication.user._id
+    : 'search.filters';
 
   // Look up for filters from cache.
   // Returns `defaultFilters` if nothing is found.
-  let filters = locker.supported() ? locker.get(cachePrefix, defaultFilters) : defaultFilters;
+  let filters = locker.supported()
+    ? locker.get(cachePrefix, defaultFilters)
+    : defaultFilters;
 
   // If cached filters were found, their structure might've been incomplete
   // `angular.extend` extends `filters` by copying own enumerable
@@ -71,5 +69,4 @@ function FiltersService($log, Authentication, locker) {
       locker.put(cachePrefix, filters);
     }
   }
-
 }

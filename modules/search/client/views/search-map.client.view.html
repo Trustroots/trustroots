@@ -1,37 +1,51 @@
-<div class="search-message search-message-solid"
-     ng-if="app.user && !app.user.public"
-     role="alertdialog"
-     aria-labelledby="activate-profile-message">
+<div
+  class="search-message search-message-solid"
+  ng-if="app.user && !app.user.public"
+  role="alertdialog"
+  aria-labelledby="activate-profile-message"
+>
   <div role="document" tabindex="0">
-    <h4 id="activate-profile-message">Sorry, you need to first activate your profile before you can browse others.</h4>
-    <p class="lead">If you didn't receive the confirmation message, check your spam folder or resend it via <a ui-sref="profile-edit.account">email settings</a>.</p>
+    <h4 id="activate-profile-message">
+      Sorry, you need to first activate your profile before you can browse
+      others.
+    </h4>
+    <p class="lead">
+      If you didn't receive the confirmation message, check your spam folder or
+      resend it via <a ui-sref="profile-edit.account">email settings</a>.
+    </p>
   </div>
 </div>
 
-<div class="search-message"
-     ng-show="searchMap.mapCenter.zoom <= searchMap.mapMinimumZoom && app.user.public"
-     role="alert"
-     aria-live="assertive"
-     aria-labelledby="map-zoom-message">
+<div
+  class="search-message"
+  ng-show="searchMap.mapCenter.zoom <= searchMap.mapMinimumZoom && app.user.public"
+  role="alert"
+  aria-live="assertive"
+  aria-labelledby="map-zoom-message"
+>
   <h4 id="map-zoom-message">Zoom in closer to see everyone</h4>
 </div>
 
 <div class="search-map-active-area-demo"></div>
 
-<div class="search-map-container"
-     ng-if="searchMap.mapCenter"
-     ng-class="{
+<div
+  class="search-map-container"
+  ng-if="searchMap.mapCenter"
+  ng-class="{
        'is-sidebar-open': search.isSidebarOpen,
        'leaflet-layerstyle-satellite': searchMap.mapLayerstyle === 'satellite'
-     }">
-  <leaflet id="search-map-canvas"
-           lf-center="searchMap.mapCenter"
-           markers="searchMap.mapMarkers"
-           layers="searchMap.mapLayers"
-           bounds="searchMap.mapBounds"
-           paths="searchMap.mapPaths"
-           defaults="searchMap.mapDefaults"
-           event-broadcast="searchMap.mapEvents"
-           tabindex="0"
-           aria-label="Map"></leaflet>
+     }"
+>
+  <leaflet
+    id="search-map-canvas"
+    lf-center="searchMap.mapCenter"
+    markers="searchMap.mapMarkers"
+    layers="searchMap.mapLayers"
+    bounds="searchMap.mapBounds"
+    paths="searchMap.mapPaths"
+    defaults="searchMap.mapDefaults"
+    event-broadcast="searchMap.mapEvents"
+    tabindex="0"
+    aria-label="Map"
+  ></leaflet>
 </div>

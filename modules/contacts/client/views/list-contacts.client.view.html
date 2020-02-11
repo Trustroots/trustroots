@@ -1,77 +1,105 @@
 <div ng-controller="ContactsListController as ContactsList">
-
-  <div class="content-wait"
-       role="alertdialog"
-       aria-busy="true"
-       aria-live="assertive"
-       ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved">
+  <div
+    class="content-wait"
+    role="alertdialog"
+    aria-busy="true"
+    aria-live="assertive"
+    ng-if="!ContactsList.contacts || !ContactsList.contacts.$resolved"
+  >
     <small>Wait a moment...</small>
   </div>
 
   <!-- Contact list -->
-  <div class="contacts-list" ng-if="ContactsList.contacts.$resolved && ContactsList.contacts.length > 0">
+  <div
+    class="contacts-list"
+    ng-if="ContactsList.contacts.$resolved && ContactsList.contacts.length > 0"
+  >
+    <div class="row">
+      <div
+        class="col-xs-12"
+        ng-class="{'col-sm-8': ContactsList.contacts.length >= 6, 'text-center': ContactsList.contacts.length < 6}"
+      >
+        <h4 class="text-muted">
+          <!-- Confirmed contacts -->
+          <span
+            ng-if="(ContactsList.contacts | filter:{ confirmed: true }).length === 1"
+          >
+            One contact
+          </span>
+          <span
+            ng-if="(ContactsList.contacts | filter:{ confirmed: true }).length > 1"
+          >
+            {{ (ContactsList.contacts | filter:{ confirmed: true }).length }}
+            contacts
+          </span>
 
-  <div class="row">
-    <div class="col-xs-12" ng-class="{'col-sm-8': ContactsList.contacts.length >= 6, 'text-center': ContactsList.contacts.length < 6}">
-      <h4 class="text-muted">
-
-        <!-- Confirmed contacts -->
-        <span ng-if="(ContactsList.contacts | filter:{ confirmed: true }).length === 1">
-          One contact
-        </span>
-        <span ng-if="(ContactsList.contacts | filter:{ confirmed: true }).length > 1">
-          {{ (ContactsList.contacts | filter:{ confirmed: true }).length }} contacts
-        </span>
-
-        <!-- Pending contacts -->
-        <small ng-if="(ContactsList.contacts | filter:{ confirmed: false }).length > 0">
-          (additional {{ (ContactsList.contacts | filter:{ confirmed: false }).length }} pending)
-        </small>
-
-      </h4>
-    </div>
-    <div class="col-xs-12 col-sm-4 text-right" ng-if="ContactsList.contacts.length >= 6">
-      <div class="form-group">
-        <label for="contacts-search" class="sr-only">Search contacts</label>
-        <input id="contacts-search" type="text" class="form-control" ng-model="ContactsList.searchText" placeholder="Search contacts...">
+          <!-- Pending contacts -->
+          <small
+            ng-if="(ContactsList.contacts | filter:{ confirmed: false }).length > 0"
+          >
+            (additional {{ (ContactsList.contacts | filter:{ confirmed: false
+            }).length }} pending)
+          </small>
+        </h4>
+      </div>
+      <div
+        class="col-xs-12 col-sm-4 text-right"
+        ng-if="ContactsList.contacts.length >= 6"
+      >
+        <div class="form-group">
+          <label for="contacts-search" class="sr-only">Search contacts</label>
+          <input
+            id="contacts-search"
+            type="text"
+            class="form-control"
+            ng-model="ContactsList.searchText"
+            placeholder="Search contacts..."
+          />
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Produce two rows, one for confirmed contacts and another for un-confirmed contacts -->
-  <div class="row" ng-repeat="isConfirmed in [false, true]" ng-if="(ContactsList.contacts | filter:{confirmed:isConfirmed}).length">
-    <div class="col-xs-12 col-sm-6"
-         ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id"
-         ng-if="contact.confirmed === isConfirmed">
-      <contact
-        class="contacts-contact panel panel-default"
-        contact="::contact"
-        avatarSize="128"
-        selfId="app.user._id"
-        onContactRemoved="ContactsList.broadcastRemoveContact"
-      ></contact>
+    <!-- Produce two rows, one for confirmed contacts and another for un-confirmed contacts -->
+    <div
+      class="row"
+      ng-repeat="isConfirmed in [false, true]"
+      ng-if="(ContactsList.contacts | filter:{confirmed:isConfirmed}).length"
+    >
+      <div
+        class="col-xs-12 col-sm-6"
+        ng-repeat="contact in ContactsList.contacts | filter:ContactsList.searchText track by contact._id"
+        ng-if="contact.confirmed === isConfirmed"
+      >
+        <contact
+          class="contacts-contact panel panel-default"
+          contact="::contact"
+          avatarSize="128"
+          selfId="app.user._id"
+          onContactRemoved="ContactsList.broadcastRemoveContact"
+        ></contact>
+      </div>
     </div>
-  </div>
 
-  <p class="text-center" ng-if="::profileCtrl.profile._id === app.user._id">
-    <br/><br/>
-    <a ui-sref="search-users" class="btn btn-link">
-      Find more people
-    </a>
-  </p>
-
+    <p class="text-center" ng-if="::profileCtrl.profile._id === app.user._id">
+      <br /><br />
+      <a ui-sref="search-users" class="btn btn-link">
+        Find more people
+      </a>
+    </p>
   </div>
   <!-- /Contact list -->
 
   <!-- No contacts -->
-  <div class="row content-empty" ng-if="ContactsList.contacts.$resolved && !ContactsList.contacts.length">
-      <i class="icon-3x icon-users"></i>
-      <h4>No contacts yet.</h4>
-      <p ng-if="::profileCtrl.profile._id === app.user._id">
-        <br/>
-        <a ui-sref="search-users" class="btn btn-link">Find people</a>
-      </p>
+  <div
+    class="row content-empty"
+    ng-if="ContactsList.contacts.$resolved && !ContactsList.contacts.length"
+  >
+    <i class="icon-3x icon-users"></i>
+    <h4>No contacts yet.</h4>
+    <p ng-if="::profileCtrl.profile._id === app.user._id">
+      <br />
+      <a ui-sref="search-users" class="btn btn-link">Find people</a>
+    </p>
   </div>
   <!-- /No contacts -->
-
 </div>

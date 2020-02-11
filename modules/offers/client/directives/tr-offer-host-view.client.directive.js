@@ -1,8 +1,6 @@
 import templateUrl from '@/modules/offers/client/views/directives/tr-offer-host-view.client.view.html';
 
-angular
-  .module('offers')
-  .directive('trOfferHostView', trOfferHostViewDirective);
+angular.module('offers').directive('trOfferHostView', trOfferHostViewDirective);
 
 /* @ngInject */
 function trOfferHostViewDirective() {
@@ -21,8 +19,11 @@ function trOfferHostViewDirective() {
   return directive;
 
   /* @ngInject */
-  function trOfferHostViewDirectiveController($scope, $window, OffersByService) {
-
+  function trOfferHostViewDirectiveController(
+    $scope,
+    $window,
+    OffersByService,
+  ) {
     // ViewModel
     const vm = this;
 
@@ -34,14 +35,15 @@ function trOfferHostViewDirective() {
     vm.isUserPublic = false;
     vm.hostingDropdown = false;
     vm.hostingStatusLabel = hostingStatusLabel;
-    vm.isMobile = $window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || $window.isNativeMobileApp;
+    vm.isMobile =
+      $window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 ||
+      $window.isNativeMobileApp;
     activate();
 
     /**
      * Initialize controller
      */
     function activate() {
-
       if (!$scope.profile) {
         vm.isLoading = false;
         return;
@@ -52,29 +54,34 @@ function trOfferHostViewDirective() {
        * @todo: move to route resolve
        * @note: profileCtrl is a reference to parent "ControllerAs" (see users module)
        */
-      $scope.profile.$promise.then(function (profile) {
+      $scope.profile.$promise.then(function(profile) {
         if (profile && profile._id) {
-
           vm.profile = profile;
-          vm.isOwnOffer = ($scope.authUser && $scope.authUser._id && $scope.authUser._id === profile._id);
-          vm.isUserPublic = ($scope.authUser && $scope.authUser.public);
+          vm.isOwnOffer =
+            $scope.authUser &&
+            $scope.authUser._id &&
+            $scope.authUser._id === profile._id;
+          vm.isUserPublic = $scope.authUser && $scope.authUser.public;
 
-          OffersByService.query({
-            userId: String(profile._id),
-            types: 'host',
-          }, function (offers) {
+          OffersByService.query(
+            {
+              userId: String(profile._id),
+              types: 'host',
+            },
+            function(offers) {
+              if (!offers || !offers.length) {
+                vm.isLoading = false;
+                return;
+              }
 
-            if (!offers || !offers.length) {
+              vm.offer = offers[0];
               vm.isLoading = false;
-              return;
-            }
-
-            vm.offer = offers[0];
-            vm.isLoading = false;
-          }, function () {
-            // No offer(s) found
-            vm.isLoading = false;
-          });
+            },
+            function() {
+              // No offer(s) found
+              vm.isLoading = false;
+            },
+          );
         }
       });
     }
@@ -92,7 +99,5 @@ function trOfferHostViewDirective() {
           return 'Cannot host currently';
       }
     }
-
   }
-
 }

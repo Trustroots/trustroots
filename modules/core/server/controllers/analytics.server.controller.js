@@ -49,8 +49,14 @@ const log = require(path.resolve('./config/lib/logger'));
  * @link http://nodejs.org/api/url.html#url_url_format_urlobj
  *
  */
-exports.appendUTMParams = function (trackUrl, utmParams) {
-  if (!trackUrl || !utmParams || !utmParams.source || !utmParams.medium || !utmParams.campaign) {
+exports.appendUTMParams = function(trackUrl, utmParams) {
+  if (
+    !trackUrl ||
+    !utmParams ||
+    !utmParams.source ||
+    !utmParams.medium ||
+    !utmParams.campaign
+  ) {
     log('error', 'utmTrackify() missing one of the required variables.', {
       trackUrl: trackUrl,
       utmParamsSource: utmParams.source,

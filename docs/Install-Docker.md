@@ -6,11 +6,10 @@ Development with Docker might be little bit slower than running Mongo+NodeJS+NPM
 
 _Note that we are not keeping too close an eye on the Docker setup so things might break unexpectedly. Feel free to help us maintain the docker setup!_
 
-
 ## Prerequisites
 
-* Install [Docker](https://www.docker.com/get-started) on your system.
-* Make sure you have [`git`](http://git-scm.com/) installed on your system (`git --version`, preinstalled on MacOS)
+- Install [Docker](https://www.docker.com/get-started) on your system.
+- Make sure you have [`git`](http://git-scm.com/) installed on your system (`git --version`, preinstalled on MacOS)
 
 ## Install
 
@@ -24,6 +23,7 @@ cd trustroots
 ##### 2. Create a config file
 
 This will do:
+
 ```bash
 cp config/env/local.docker.js config/env/local.js
 ```
@@ -42,10 +42,9 @@ This will take a while. Good news is you just have to sit back and let it do its
 
 You can now access these from your browser:
 
-* Node app directly: [`http://localhost:3000`](http://localhost:3000)
-* Node app via Nginx proxy: [`http://localhost:3080`](http://localhost:3080)
-* Maildev: [`http://localhost:1080`](http://localhost:1080)
-
+- Node app directly: [`http://localhost:3000`](http://localhost:3000)
+- Node app via Nginx proxy: [`http://localhost:3080`](http://localhost:3080)
+- Maildev: [`http://localhost:1080`](http://localhost:1080)
 
 ### Running & development
 
@@ -68,6 +67,7 @@ npm run test:server
 ```
 
 Becomes:
+
 ```bash
 docker-compose run trustroots npm run test:server
 ```

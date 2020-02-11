@@ -1,28 +1,49 @@
-  <div class="modal-content">
-    <div class="modal-header">
-      <button type="button" class="close" aria-hidden="true" ng-click="removeContactModal.cancelContactRemoval()" ng-if="!removeContactModal.isLoading">&times;</button>
-      <h4 class="modal-title">{{ ::removeContactModal.labelTitle }}</h4>
-    </div>
-
-    <div class="modal-body">
-
-      <p>
-        {{ ::removeContactModal.labelTime }}
-        {{ ::removeContactModal.contact.created | date:'mediumDate' }}
-      </p>
-
-    </div><!-- /.modal-body -->
-
-    <div class="modal-footer">
-      <button class="btn btn-link" ng-click="removeContactModal.cancelContactRemoval()" ng-disabled="removeContactModal.isLoading">Cancel</button>
-      <button class="btn btn-primary" ng-click="removeContactModal.removeContact();" ng-disabled="removeContactModal.isLoading">
-        <span ng-if="!removeContactModal.isLoading">{{ ::removeContactModal.labelConfirm }}</span>
-        <span ng-if="removeContactModal.isLoading"
-              role="alertdialog"
-              aria-busy="true"
-              aria-live="assertive">
-          Wait a moment...
-        </span>
-      </button>
-    </div>
+<div class="modal-content">
+  <div class="modal-header">
+    <button
+      type="button"
+      class="close"
+      aria-hidden="true"
+      ng-click="removeContactModal.cancelContactRemoval()"
+      ng-if="!removeContactModal.isLoading"
+    >
+      &times;
+    </button>
+    <h4 class="modal-title">{{ ::removeContactModal.labelTitle }}</h4>
   </div>
+
+  <div class="modal-body">
+    <p>
+      {{ ::removeContactModal.labelTime }} {{
+      ::removeContactModal.contact.created | date:'mediumDate' }}
+    </p>
+  </div>
+  <!-- /.modal-body -->
+
+  <div class="modal-footer">
+    <button
+      class="btn btn-link"
+      ng-click="removeContactModal.cancelContactRemoval()"
+      ng-disabled="removeContactModal.isLoading"
+    >
+      Cancel
+    </button>
+    <button
+      class="btn btn-primary"
+      ng-click="removeContactModal.removeContact();"
+      ng-disabled="removeContactModal.isLoading"
+    >
+      <span ng-if="!removeContactModal.isLoading"
+        >{{ ::removeContactModal.labelConfirm }}</span
+      >
+      <span
+        ng-if="removeContactModal.isLoading"
+        role="alertdialog"
+        aria-busy="true"
+        aria-live="assertive"
+      >
+        Wait a moment...
+      </span>
+    </button>
+  </div>
+</div>

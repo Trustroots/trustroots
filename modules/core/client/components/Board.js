@@ -9,7 +9,9 @@ import { selectPhoto } from '../services/photos.service';
  * @returns {string} the provided name or randomly picked name from array
  */
 function selectName(names) {
-  return Array.isArray(names) ? names[Math.floor(Math.random() * names.length)] : names;
+  return Array.isArray(names)
+    ? names[Math.floor(Math.random() * names.length)]
+    : names;
 }
 
 /**
@@ -20,8 +22,14 @@ function selectName(names) {
  * @TODO implement primary, inset, error and maybe other attributes, which are currently board classes
  *  and which could become attributes <Board primary inset error names="bokeh" />
  */
-export default function Board({ names='bokeh', children, onDisplayPhoto=() => {}, onHidePhoto=() => {}, className, ...rest }) {
-
+export default function Board({
+  names = 'bokeh',
+  children,
+  onDisplayPhoto = () => {},
+  onHidePhoto = () => {},
+  className,
+  ...rest
+}) {
   const [photo, setPhoto] = useState(null);
 
   useEffect(() => {

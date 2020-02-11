@@ -5,7 +5,10 @@ import '@testing-library/jest-dom/extend-expect';
 import '@/config/client/i18n';
 import Inbox from '@/modules/messages/client/components/Inbox.component';
 import * as api from '@/modules/messages/client/api/messages.api';
-import { generateClientUser, generateThreads } from '@/testutils/client/data.client.testutil';
+import {
+  generateClientUser,
+  generateThreads,
+} from '@/testutils/client/data.client.testutil';
 import { eventTrack } from '@/modules/core/client/services/angular-compat';
 
 jest.mock('@/modules/messages/client/api/messages.api');
@@ -19,17 +22,18 @@ const threads = generateThreads(10);
 const moreThreads = generateThreads(7);
 
 describe('<Inbox>', () => {
-
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByRole } = render(<Inbox user={me}/>);
-    expect(await findByRole('alert')).toHaveTextContent('No conversations yet.');
+    const { findByRole } = render(<Inbox user={me} />);
+    expect(await findByRole('alert')).toHaveTextContent(
+      'No conversations yet.',
+    );
     expect(api.fetchThreads).toHaveBeenCalled();
   });
 
   it('shows a list of threads with excerpts', async () => {
     api.fetchThreads.mockResolvedValue({ threads });
-    const { findAllByRole } = render(<Inbox user={me}/>);
+    const { findAllByRole } = render(<Inbox user={me} />);
     const items = await findAllByRole('listitem');
     expect(items.length).toBe(threads.length);
     threads.forEach((thread, i) => {
@@ -40,7 +44,7 @@ describe('<Inbox>', () => {
   it('shows that I have replied if the last message is from me', async () => {
     const threads = generateThreads(1, { userFrom: me });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me}/>);
+    const { container, findByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
     const icon = container.querySelector('.icon-reply');
     expect(icon).toBeInTheDocument();
@@ -50,7 +54,7 @@ describe('<Inbox>', () => {
   it('does not show that I have replied if the last message is from them', async () => {
     const threads = generateThreads(1, { userTo: me });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me}/>);
+    const { container, findByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
     const icon = container.querySelector('.icon-reply');
     expect(icon).not.toBeInTheDocument();
@@ -58,17 +62,19 @@ describe('<Inbox>', () => {
 
   it('shows a read more button if there are more results', async () => {
     api.fetchThreads.mockResolvedValue({ threads, nextParams: { foo: 'bar' } });
-    const { findByRole } = render(<Inbox user={me}/>);
+    const { findByRole } = render(<Inbox user={me} />);
     expect(await findByRole('button')).toHaveTextContent('More messages');
   });
 
   it('will load the next page on clicking the button', async () => {
-    api.fetchThreads.mockImplementation(({ page }) => Promise.resolve(
-      page === 2 ?
-        { threads: moreThreads } :
-        { threads, nextParams: { page: 2 } },
-    ));
-    const { findByText, queryAllByRole } = render(<Inbox user={me}/>);
+    api.fetchThreads.mockImplementation(({ page }) =>
+      Promise.resolve(
+        page === 2
+          ? { threads: moreThreads }
+          : { threads, nextParams: { page: 2 } },
+      ),
+    );
+    const { findByText, queryAllByRole } = render(<Inbox user={me} />);
     const more = await findByText('More messages');
 
     // Not sure why I had to wrap this in act()
@@ -88,13 +94,9 @@ describe('<Inbox>', () => {
     const items = queryAllByRole('listitem');
     expect(items.length).toBe(threads.length + moreThreads.length);
 
-    expect(eventTrack).toHaveBeenCalledWith(
-      'inbox-pagination',
-      {
-        category: 'messages.inbox',
-        label: 'Inbox page 2',
-      },
-    );
+    expect(eventTrack).toHaveBeenCalledWith('inbox-pagination', {
+      category: 'messages.inbox',
+      label: 'Inbox page 2',
+    });
   });
-
 });

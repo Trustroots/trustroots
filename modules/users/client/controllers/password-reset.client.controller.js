@@ -3,8 +3,13 @@ angular
   .controller('ResetPasswordController', ResetPasswordController);
 
 /* @ngInject */
-function ResetPasswordController($rootScope, $stateParams, $http, $state, Authentication) {
-
+function ResetPasswordController(
+  $rootScope,
+  $stateParams,
+  $http,
+  $state,
+  Authentication,
+) {
   // ViewModel
   const vm = this;
 
@@ -19,10 +24,12 @@ function ResetPasswordController($rootScope, $stateParams, $http, $state, Authen
     vm.error = null;
     vm.isLoading = true;
 
-    $http.post('/api/auth/reset/' + $stateParams.token, vm.passwordDetails)
+    $http
+      .post('/api/auth/reset/' + $stateParams.token, vm.passwordDetails)
       .then(
-        function (response) { // On success function
-        // Clear form
+        function(response) {
+          // On success function
+          // Clear form
           vm.passwordDetails = null;
 
           // Attach user profile
@@ -34,7 +41,8 @@ function ResetPasswordController($rootScope, $stateParams, $http, $state, Authen
           // And redirect to the success page
           $state.go('reset-success');
         },
-        function (response) { // On error function
+        function(response) {
+          // On error function
           vm.error = response.data.message;
           vm.isLoading = false;
         },

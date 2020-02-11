@@ -16,10 +16,8 @@ let message;
 /**
  * Unit tests
  */
-describe('Message Model Unit Tests:', function () {
-
-  beforeEach(function (done) {
-
+describe('Message Model Unit Tests:', function() {
+  beforeEach(function(done) {
     userFrom = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -40,10 +38,10 @@ describe('Message Model Unit Tests:', function () {
     });
 
     // Create users
-    userFrom.save(function () {
-      userTo.save(function () {
+    userFrom.save(function() {
+      userTo.save(function() {
         // Check id for userTo
-        User.findOne({ 'username': userTo.username }, function (err, userTo) {
+        User.findOne({ username: userTo.username }, function(err, userTo) {
           // Create message & continue
           message = new Message({
             content: 'Message content',
@@ -53,40 +51,38 @@ describe('Message Model Unit Tests:', function () {
           return done();
         });
       });
-
     });
   });
 
-  describe('Method Save', function () {
-    it('should be able to save without problems', function (done) {
-      message.save(function (err) {
+  describe('Method Save', function() {
+    it('should be able to save without problems', function(done) {
+      message.save(function(err) {
         should.not.exist(err);
         return done();
       });
     });
 
-    it('should be able to show an error when try to send without content', function (done) {
+    it('should be able to show an error when try to send without content', function(done) {
       message.userTo = '';
 
-      message.save(function (err) {
+      message.save(function(err) {
         should.exist(err);
         return done();
       });
     });
 
-    it('should be able to show an error when try to send without receiver', function (done) {
+    it('should be able to show an error when try to send without receiver', function(done) {
       message.content = '';
 
-      message.save(function (err) {
+      message.save(function(err) {
         should.exist(err);
         return done();
       });
     });
-
   });
 
-  afterEach(function (done) {
-    Message.deleteMany().exec(function () {
+  afterEach(function(done) {
+    Message.deleteMany().exec(function() {
       User.deleteMany().exec(done);
     });
   });

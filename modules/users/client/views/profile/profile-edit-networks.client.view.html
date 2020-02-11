@@ -1,216 +1,272 @@
-<form name="userForm" ng-submit="profileEditNetworks.updateUserProfile(userForm.$valid)" autocomplete="off">
-
-<div class="panel panel-default">
-  <div class="panel-heading">
-    Elsewhere
-  </div>
-  <div class="panel-body">
-
-    <div ng-if="!profileEditNetworks.isConnectedSocialAccount('facebook') ||
-                !profileEditNetworks.isConnectedSocialAccount('twitter') ||
-                !profileEditNetworks.isConnectedSocialAccount('github')">
-      <h4>Connect to</h4>
-      <ul class="list-unstyled social-profiles">
-        <li class="social-profile social-profile-connect"
-            ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
-            ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)">
-          <i class="icon-lg icon-{{::providerName}} social-profile-icon"></i>
-          <a class="btn btn-default text-capitalize social-profile-handle"
-             target="_top"
-             ng-href="/api/auth/{{::providerName}}"
-             ng-data-aria-label="Connect your profile to {{::providerName}}">
-            {{::providerName}}
-          </a>
-        </li>
-      </ul>
-      <br><br>
+<form
+  name="userForm"
+  ng-submit="profileEditNetworks.updateUserProfile(userForm.$valid)"
+  autocomplete="off"
+>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      Elsewhere
     </div>
+    <div class="panel-body">
+      <div
+        ng-if="!profileEditNetworks.isConnectedSocialAccount('facebook') ||
+                !profileEditNetworks.isConnectedSocialAccount('twitter') ||
+                !profileEditNetworks.isConnectedSocialAccount('github')"
+      >
+        <h4>Connect to</h4>
+        <ul class="list-unstyled social-profiles">
+          <li
+            class="social-profile social-profile-connect"
+            ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
+            ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)"
+          >
+            <i class="icon-lg icon-{{::providerName}} social-profile-icon"></i>
+            <a
+              class="btn btn-default text-capitalize social-profile-handle"
+              target="_top"
+              ng-href="/api/auth/{{::providerName}}"
+              ng-data-aria-label="Connect your profile to {{::providerName}}"
+            >
+              {{::providerName}}
+            </a>
+          </li>
+        </ul>
+        <br /><br />
+      </div>
 
-    <div ng-if="profileEditNetworks.hasConnectedAdditionalSocialAccounts()">
-      <h4>Connected to networks</h4>
-      <ul class="list-unstyled social-profiles">
-        <li class="social-profile social-profile-connect"
+      <div ng-if="profileEditNetworks.hasConnectedAdditionalSocialAccounts()">
+        <h4>Connected to networks</h4>
+        <ul class="list-unstyled social-profiles">
+          <li
+            class="social-profile social-profile-connect"
             ng-repeat="(providerName, providerData) in profileEditNetworks.user.additionalProvidersData track by providerName"
             ng-class="{
               'bg-danger social-profile-active': profileEditNetworks.removingSocialAccount === providerName
-            }">
-          <i class="icon-fw icon-lg icon-{{::providerName}} social-profile-icon"></i>
+            }"
+          >
+            <i
+              class="icon-fw icon-lg icon-{{::providerName}} social-profile-icon"
+            ></i>
 
-          <!-- Connection name -->
-          <button class="btn btn-default text-capitalize social-profile-handle"
-                  type="button"
-                  ng-click="profileEditNetworks.removingSocialAccount = providerName"
-                  ng-if="profileEditNetworks.removingSocialAccount !== providerName"
-                  ng-data-aria-label="Disconnect your profile from {{::providerName}}">
-            {{::providerName}}
-            (disconnect)
-          </button>
-
-          <!-- Confirm disconnecting -->
-          <span class="text-danger"
-                ng-if="profileEditNetworks.removingSocialAccount === providerName">
-            Disconnect from <span class="text-capitalize" ng-bind="::providerName"></span>?<br>
-            <button class="btn btn-danger"
-                    type="button"
-                    ng-click="profileEditNetworks.removeUserSocialAccount(providerName)">
-              Yes, disconnect
+            <!-- Connection name -->
+            <button
+              class="btn btn-default text-capitalize social-profile-handle"
+              type="button"
+              ng-click="profileEditNetworks.removingSocialAccount = providerName"
+              ng-if="profileEditNetworks.removingSocialAccount !== providerName"
+              ng-data-aria-label="Disconnect your profile from {{::providerName}}"
+            >
+              {{::providerName}} (disconnect)
             </button>
-            <button class="btn btn-link"
-                    type="button"
-                    ng-click="profileEditNetworks.removingSocialAccount = false">
-              Cancel
-            </button>
-          </span>
 
-        </li>
-      </ul>
-      <br><br>
-    </div>
+            <!-- Confirm disconnecting -->
+            <span
+              class="text-danger"
+              ng-if="profileEditNetworks.removingSocialAccount === providerName"
+            >
+              Disconnect from
+              <span class="text-capitalize" ng-bind="::providerName"></span
+              >?<br />
+              <button
+                class="btn btn-danger"
+                type="button"
+                ng-click="profileEditNetworks.removeUserSocialAccount(providerName)"
+              >
+                Yes, disconnect
+              </button>
+              <button
+                class="btn btn-link"
+                type="button"
+                ng-click="profileEditNetworks.removingSocialAccount = false"
+              >
+                Cancel
+              </button>
+            </span>
+          </li>
+        </ul>
+        <br /><br />
+      </div>
 
-    <div class="extsites">
-      <h4>Other hospitality networks</h4>
-      <!--
+      <div class="extsites">
+        <h4>Other hospitality networks</h4>
+        <!--
       Note:
         - links here have `rel="noopener"` because;
           https://mathiasbynens.github.io/rel-noopener/
         - CS link has `rel="noreferrer"` because;
           https://github.com/Trustroots/trustroots/issues/464
       -->
-      <div class="form-group">
-        <div class="input-group">
-          <div class="input-group-addon">
-            <a tabindex="0"
-               class="icon-help cursor-help tr-help"
-               popover-placement="bottom-left"
-               popover-trigger="'mouseenter'"
-               uib-popover-template="'bwGuidePopover.html'"></a>
-            <script type="text/ng-template" id="bwGuidePopover.html">
-              <div>
-                Go to your BeWelcome profile and copy the username from the address bar.
-                <br><br>
-                <img class="img-responsive clearfix" src="/img/guide-bw.png" alt="" width="319" height="32" aria-hidden="true">
-              </div>
-            </script>
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">
+              <a
+                tabindex="0"
+                class="icon-help cursor-help tr-help"
+                popover-placement="bottom-left"
+                popover-trigger="'mouseenter'"
+                uib-popover-template="'bwGuidePopover.html'"
+              ></a>
+              <script type="text/ng-template" id="bwGuidePopover.html">
+                <div>
+                  Go to your BeWelcome profile and copy the username from the address bar.
+                  <br><br>
+                  <img class="img-responsive clearfix" src="/img/guide-bw.png" alt="" width="319" height="32" aria-hidden="true">
+                </div>
+              </script>
+            </div>
+            <label class="input-group-addon" for="extSitesBW">
+              <span class="hidden-xs">bewelcome.org/members/</span>
+              <span class="visible-xs-inline">BeWelcome:</span>
+            </label>
+            <input
+              id="extSitesBW"
+              type="text"
+              class="form-control"
+              ng-model="profileEditNetworks.user.extSitesBW"
+              ng-change="profileEdit.unsavedModifications=true"
+              placeholder="your-username"
+              aria-label="BeWelcome username"
+            />
+            <span
+              class="input-group-btn"
+              ng-if="profileEditNetworks.user.extSitesBW.length"
+            >
+              <a
+                ng-href="https://www.bewelcome.org/members/{{ profileEditNetworks.user.extSitesBW }}"
+                target="_blank"
+                class="btn btn-primary"
+                role="button"
+                rel="noopener"
+              >
+                <small>Test</small>
+              </a>
+            </span>
           </div>
-          <label class="input-group-addon" for="extSitesBW">
-            <span class="hidden-xs">bewelcome.org/members/</span>
-            <span class="visible-xs-inline">BeWelcome:</span>
-          </label>
-          <input id="extSitesBW"
-                 type="text"
-                 class="form-control"
-                 ng-model="profileEditNetworks.user.extSitesBW"
-                 ng-change="profileEdit.unsavedModifications=true"
-                 placeholder="your-username"
-                 aria-label="BeWelcome username">
-          <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesBW.length">
-            <a ng-href="https://www.bewelcome.org/members/{{ profileEditNetworks.user.extSitesBW }}"
-               target="_blank" class="btn btn-primary"
-               role="button"
-               rel="noopener">
-              <small>Test</small>
-            </a>
-          </span>
+        </div>
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">
+              <a
+                tabindex="0"
+                class="icon-help cursor-help tr-help"
+                popover-placement="bottom-left"
+                popover-trigger="'mouseenter'"
+                uib-popover-template="'csGuidePopover.html'"
+              ></a>
+              <script type="text/ng-template" id="csGuidePopover.html">
+                <div>
+                  Go to your "account and settings" page and copy your username.
+                  <br><br>
+                  <img class="img-responsive clearfix" src="/img/guide-cs.png" alt="" width="525" height="107" aria-hidden="true">
+                </div>
+              </script>
+            </div>
+            <label class="input-group-addon" for="extSitesCS">
+              <span class="hidden-xs">couchsurfing.com/people/</span>
+              <span class="visible-xs-inline">Couchsurfing:</span>
+            </label>
+            <input
+              id="extSitesCS"
+              type="text"
+              class="form-control"
+              ng-model="profileEditNetworks.user.extSitesCS"
+              ng-change="profileEdit.unsavedModifications=true"
+              placeholder="your-username"
+              aria-label="Couchsurfing username"
+            />
+            <span
+              class="input-group-btn"
+              ng-if="profileEditNetworks.user.extSitesCS.length"
+            >
+              <a
+                ng-href="https://www.couchsurfing.com/people/{{ profileEditNetworks.user.extSitesCS }}"
+                target="_blank"
+                class="btn btn-primary"
+                role="button"
+                rel="noreferrer noopener"
+              >
+                <small>Test</small>
+              </a>
+            </span>
+          </div>
+        </div>
+        <div
+          class="form-group"
+          ng-class="{'has-warning': profileEditNetworks.user.extSitesWS && !profileEditNetworks.isWarmshowersId()}"
+        >
+          <div class="input-group">
+            <div class="input-group-addon">
+              <a
+                tabindex="0"
+                class="icon-help cursor-help tr-help"
+                popover-placement="bottom-left"
+                popover-trigger="'mouseenter'"
+                uib-popover-template="'wsGuidePopover.html'"
+              ></a>
+              <script type="text/ng-template" id="wsGuidePopover.html">
+                <div>
+                  Edit your Warmshowers profile and copy your numeric user id from the address bar.
+                  <br><br>
+                  <img class="img-responsive clearfix" src="/img/guide-ws.png" alt="" width="319" height="32" aria-hidden="true">
+                </div>
+              </script>
+            </div>
+            <label class="input-group-addon" for="extSitesWS">
+              <span class="hidden-xs">warmshowers.org/user/</span>
+              <span class="visible-xs-inline">Warmshowers:</span>
+            </label>
+            <input
+              id="extSitesWS"
+              type="text"
+              class="form-control"
+              ng-model="profileEditNetworks.user.extSitesWS"
+              ng-change="profileEdit.unsavedModifications=true"
+              placeholder="your-user-id"
+              aria-label="Warmshowers user id"
+            />
+            <span
+              class="input-group-btn"
+              ng-if="profileEditNetworks.user.extSitesWS.length"
+            >
+              <a
+                ng-href="https://www.warmshowers.org/{{ !profileEditNetworks.isWarmshowersId() ? 'users' : 'user' }}/{{ profileEditNetworks.user.extSitesWS }}"
+                target="_blank"
+                class="btn btn-primary"
+                role="button"
+                rel="noopener"
+              >
+                <small>Test</small>
+              </a>
+            </span>
+          </div>
+          <p
+            class="help-block text-warning"
+            ng-if="profileEditNetworks.user.extSitesWS && !profileEditNetworks.isWarmshowersId()"
+          >
+            This should be your <strong>numeric user id</strong>, not username.
+          </p>
         </div>
       </div>
-      <div class="form-group">
-        <div class="input-group">
-          <div class="input-group-addon">
-            <a tabindex="0"
-               class="icon-help cursor-help tr-help"
-               popover-placement="bottom-left"
-               popover-trigger="'mouseenter'"
-               uib-popover-template="'csGuidePopover.html'"></a>
-            <script type="text/ng-template" id="csGuidePopover.html">
-              <div>
-                Go to your "account and settings" page and copy your username.
-                <br><br>
-                <img class="img-responsive clearfix" src="/img/guide-cs.png" alt="" width="525" height="107" aria-hidden="true">
-              </div>
-            </script>
-          </div>
-          <label class="input-group-addon" for="extSitesCS">
-            <span class="hidden-xs">couchsurfing.com/people/</span>
-            <span class="visible-xs-inline">Couchsurfing:</span>
-          </label>
-          <input id="extSitesCS"
-                 type="text"
-                 class="form-control"
-                 ng-model="profileEditNetworks.user.extSitesCS"
-                 ng-change="profileEdit.unsavedModifications=true"
-                 placeholder="your-username"
-                 aria-label="Couchsurfing username">
-          <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesCS.length">
-            <a ng-href="https://www.couchsurfing.com/people/{{ profileEditNetworks.user.extSitesCS }}"
-               target="_blank"
-               class="btn btn-primary"
-               role="button"
-               rel="noreferrer noopener">
-              <small>Test</small>
-            </a>
-          </span>
-        </div>
-      </div>
-      <div class="form-group" ng-class="{'has-warning': profileEditNetworks.user.extSitesWS && !profileEditNetworks.isWarmshowersId()}">
-        <div class="input-group">
-          <div class="input-group-addon">
-            <a tabindex="0"
-               class="icon-help cursor-help tr-help"
-               popover-placement="bottom-left"
-               popover-trigger="'mouseenter'"
-               uib-popover-template="'wsGuidePopover.html'"></a>
-            <script type="text/ng-template" id="wsGuidePopover.html">
-              <div>
-                Edit your Warmshowers profile and copy your numeric user id from the address bar.
-                <br><br>
-                <img class="img-responsive clearfix" src="/img/guide-ws.png" alt="" width="319" height="32" aria-hidden="true">
-              </div>
-            </script>
-          </div>
-          <label class="input-group-addon" for="extSitesWS">
-            <span class="hidden-xs">warmshowers.org/user/</span>
-            <span class="visible-xs-inline">Warmshowers:</span>
-          </label>
-          <input id="extSitesWS"
-                 type="text"
-                 class="form-control"
-                 ng-model="profileEditNetworks.user.extSitesWS"
-                 ng-change="profileEdit.unsavedModifications=true"
-                 placeholder="your-user-id"
-                 aria-label="Warmshowers user id">
-          <span class="input-group-btn" ng-if="profileEditNetworks.user.extSitesWS.length">
-            <a ng-href="https://www.warmshowers.org/{{ !profileEditNetworks.isWarmshowersId() ? 'users' : 'user' }}/{{ profileEditNetworks.user.extSitesWS }}"
-               target="_blank"
-               class="btn btn-primary"
-               role="button"
-               rel="noopener">
-              <small>Test</small>
-            </a>
-          </span>
-        </div>
-        <p class="help-block text-warning" ng-if="profileEditNetworks.user.extSitesWS && !profileEditNetworks.isWarmshowersId()">
-          This should be your <strong>numeric user id</strong>, not username.
-        </p>
-      </div>
+
+      <p>
+        <button
+          type="submit"
+          class="btn btn-lg btn-primary profile-editor-save"
+          ng-disabled="!profileEdit.unsavedModifications"
+        >
+          Save
+        </button>
+      </p>
     </div>
-
-    <p>
-      <button type="submit"
-              class="btn btn-lg btn-primary profile-editor-save"
-              ng-disabled="!profileEdit.unsavedModifications">
-        Save
-      </button>
-    </p>
-
+    <div class="panel-footer">
+      <small class="text-muted">
+        Connecting your profile to these networks is absolutely
+        <strong>optional</strong>.<br />
+        If you do, other members in Trustroots will be able to see a link to
+        your other profile and some basic info about you and content you like
+        there. In future you will be able to use e.g. your contact list here in
+        Trustroots. We will never send any of your profile data to them.
+      </small>
+    </div>
   </div>
-  <div class="panel-footer">
-    <small class="text-muted">
-      Connecting your profile to these networks is absolutely <strong>optional</strong>.<br>
-      If you do, other members in Trustroots will be able to see a link to your other profile and some basic info about you and content you like there.
-      In future you will be able to use e.g. your contact list here in Trustroots.
-      We will never send any of your profile data to them.
-    </small>
-  </div>
-</div>
-
 </form>

@@ -4,7 +4,12 @@ import ContactPresentational from './ContactPresentational';
 import RemoveContact from './RemoveContactContainer';
 
 export default function Contact({
-  className, contact, avatarSize, selfId, hideMeta, onContactRemoved=() => {},
+  className,
+  contact,
+  avatarSize,
+  selfId,
+  hideMeta,
+  onContactRemoved = () => {},
 }) {
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
@@ -15,23 +20,25 @@ export default function Contact({
     onContactRemoved();
   }
 
-  return (<>
-    <RemoveContact
-      contact={contact}
-      show={showRemoveModal}
-      onCancel={() => setShowRemoveModal(false)}
-      onSuccess={handleRemoveContact}
-      selfId={selfId}
-    />
-    <ContactPresentational
-      className={className}
-      contact={contact}
-      avatarSize={avatarSize}
-      hideMeta={hideMeta}
-      situation={situation}
-      onClickRemove={() => setShowRemoveModal(true)}
-    />
-  </>);
+  return (
+    <>
+      <RemoveContact
+        contact={contact}
+        show={showRemoveModal}
+        onCancel={() => setShowRemoveModal(false)}
+        onSuccess={handleRemoveContact}
+        selfId={selfId}
+      />
+      <ContactPresentational
+        className={className}
+        contact={contact}
+        avatarSize={avatarSize}
+        hideMeta={hideMeta}
+        situation={situation}
+        onClickRemove={() => setShowRemoveModal(true)}
+      />
+    </>
+  );
 }
 
 Contact.propTypes = {
@@ -46,7 +53,13 @@ Contact.propTypes = {
 };
 
 function getSituation(contact, selfId) {
-  return (contact.confirmed === false && contact.userFrom === selfId && 'unconfirmedFromMe')
-    || (contact.confirmed === false && contact.userTo === selfId && 'unconfirmedToMe')
-    || 'confirmed';
+  return (
+    (contact.confirmed === false &&
+      contact.userFrom === selfId &&
+      'unconfirmedFromMe') ||
+    (contact.confirmed === false &&
+      contact.userTo === selfId &&
+      'unconfirmedToMe') ||
+    'confirmed'
+  );
 }

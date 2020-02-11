@@ -1,10 +1,7 @@
-angular
-  .module('core')
-  .factory('Languages', LanguagesFactory);
+angular.module('core').factory('Languages', LanguagesFactory);
 
 /* @ngInject */
 function LanguagesFactory($window) {
-
   const service = {
     get: get,
   };
@@ -15,9 +12,13 @@ function LanguagesFactory($window) {
     if (type === 'array') {
       const langsArr = [];
 
-      angular.forEach($window.languages, function (value, key) {
-        this.push({ key: key, name: value });
-      }, langsArr);
+      angular.forEach(
+        $window.languages,
+        function(value, key) {
+          this.push({ key: key, name: value });
+        },
+        langsArr,
+      );
 
       return langsArr;
     }
@@ -25,5 +26,4 @@ function LanguagesFactory($window) {
     // type === 'object':
     return $window.languages;
   }
-
 }

@@ -47,5 +47,4 @@ module.exports = {
   },
 
   // See config/env/local.sample.js for how to configure mapbox layers, sending emails via Gmail etc
-
 };

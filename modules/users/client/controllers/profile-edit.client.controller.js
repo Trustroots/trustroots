@@ -4,7 +4,6 @@ angular
 
 /* @ngInject */
 function ProfileEditController($scope, $confirm, $state) {
-
   // ViewModel
   const vm = this;
 
@@ -12,12 +11,12 @@ function ProfileEditController($scope, $confirm, $state) {
   vm.unsavedModifications = false;
 
   // Clear modifications
-  $scope.$on('userUpdated', function () {
+  $scope.$on('userUpdated', function() {
     vm.unsavedModifications = false;
   });
 
   // React when state changes and there are unsaved modifications
-  $scope.$on('$stateChangeStart', function (event, toState, toParams) {
+  $scope.$on('$stateChangeStart', function(event, toState, toParams) {
     if (vm.unsavedModifications) {
       // Cancel original $state transition
       // transitionTo() promise will be rejected with
@@ -27,16 +26,16 @@ function ProfileEditController($scope, $confirm, $state) {
       // Ask for confirmation
       $confirm({
         title: 'Are you sure?',
-        text: 'Your changes would be lost. Return and press "Save" to keep the changes, or press "Continue" to discard them.',
+        text:
+          'Your changes would be lost. Return and press "Save" to keep the changes, or press "Continue" to discard them.',
         ok: 'Continue',
         cancel: 'Cancel',
       })
-      // If user pressed "continue", create another state go
-        .then(function () {
+        // If user pressed "continue", create another state go
+        .then(function() {
           vm.unsavedModifications = false;
           $state.go(toState.name, toParams);
         });
     }
   });
-
 }

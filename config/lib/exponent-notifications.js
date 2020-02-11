@@ -9,7 +9,6 @@ const expo = new Expo();
 
 // send push notification (returns Promise)
 exports.sendToDevice = function sendToDevice(tokens, notification) {
-
   // The Expo push notification service accepts batches of notifications so
   // that we don't need to send 1000 requests to send 1000 notifications.
   // This array is a batch of notifications to reduce the number of requests
@@ -18,8 +17,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
   const notifications = [];
 
   // iterate over tokens
-  tokens.forEach(function (token) {
-
+  tokens.forEach(function(token) {
     if (!token || !Expo.isExpoPushToken(token)) {
       log('error', 'Invalid or missing Expo push notification token #mg9hwf', {
         token: token,
@@ -61,9 +59,9 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
       priority: 'high',
 
       /**
-      * The title to display in the notification. On iOS this is displayed only
-      * on Apple Watch.
-      */
+       * The title to display in the notification. On iOS this is displayed only
+       * on Apple Watch.
+       */
       title: notification.title || notification.body || '',
 
       /**
@@ -95,7 +93,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
 
   const promises = [];
 
-  chunks.forEach(function (chunk) {
+  chunks.forEach(function(chunk) {
     promises.push(expo.sendPushNotificationsAsync(chunk));
   });
 

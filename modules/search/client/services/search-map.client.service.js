@@ -1,19 +1,18 @@
 /**
  * Service for handing filters
  */
-angular
-  .module('core')
-  .factory('SearchMapService', SearchMapService);
+angular.module('core').factory('SearchMapService', SearchMapService);
 
 /* @ngInject */
 function SearchMapService($q, $log, Authentication, LocationService, locker) {
-
   // Default location for all TR maps
   // Returns `{lat: Float, lng: Float, zoom: 6}`
   const defaultLocation = LocationService.getDefaultLocation(6);
 
   // Make cache id unique for this user
-  const cachePrefix = Authentication.user ? 'search.mapCenter.' + Authentication.user._id : 'search.mapCenter';
+  const cachePrefix = Authentication.user
+    ? 'search.mapCenter.' + Authentication.user._id
+    : 'search.mapCenter';
 
   const service = {
     getMapCenter: getMapCenter,
@@ -26,8 +25,7 @@ function SearchMapService($q, $log, Authentication, LocationService, locker) {
    * Return map location from cache or fallback to default location
    */
   function getMapCenter() {
-    return $q(function (resolve) {
-
+    return $q(function(resolve) {
       // Is local/sessionStorage supported? This might fail in browser's incognito mode
       if (locker.supported()) {
         // Get location from cache, return `false` if it doesn't exist in locker
@@ -35,15 +33,17 @@ function SearchMapService($q, $log, Authentication, LocationService, locker) {
 
         // Validate cached location or fall back to default
         // If it's older than two days, we won't use it.
-        if (cachedLocation &&
-           cachedLocation.lat &&
-           cachedLocation.lng &&
-           cachedLocation.zoom &&
-           isFinite(cachedLocation.lat) &&
-           isFinite(cachedLocation.lng) &&
-           isFinite(cachedLocation.zoom) &&
-           cachedLocation.date &&
-           moment().diff(moment(cachedLocation.date), 'days') < 2) {
+        if (
+          cachedLocation &&
+          cachedLocation.lat &&
+          cachedLocation.lng &&
+          cachedLocation.zoom &&
+          isFinite(cachedLocation.lat) &&
+          isFinite(cachedLocation.lng) &&
+          isFinite(cachedLocation.zoom) &&
+          cachedLocation.date &&
+          moment().diff(moment(cachedLocation.date), 'days') < 2
+        ) {
           resolve(cachedLocation);
         } else {
           // No cached location found, it was invalid or it was outdated
@@ -59,7 +59,6 @@ function SearchMapService($q, $log, Authentication, LocationService, locker) {
         // When local/sessionStorage is not supported, use default location:
         resolve(defaultLocation);
       }
-
     });
   }
 
@@ -68,9 +67,11 @@ function SearchMapService($q, $log, Authentication, LocationService, locker) {
    */
   function cacheMapCenter(location) {
     // Validate location
-    if (angular.isUndefined(location.lat) ||
-        angular.isUndefined(location.lng) ||
-        angular.isUndefined(location.zoom)) {
+    if (
+      angular.isUndefined(location.lat) ||
+      angular.isUndefined(location.lng) ||
+      angular.isUndefined(location.zoom)
+    ) {
       $log.warn('Cannot cache location: missing coordinates or zoom.');
       return;
     }
@@ -78,12 +79,11 @@ function SearchMapService($q, $log, Authentication, LocationService, locker) {
     // Store in cache
     if (locker.supported()) {
       locker.put(cachePrefix, {
-        'lat': location.lat,
-        'lng': location.lng,
-        'zoom': location.zoom,
-        'date': new Date(),
+        lat: location.lat,
+        lng: location.lng,
+        zoom: location.zoom,
+        date: new Date(),
       });
     }
   }
-
 }

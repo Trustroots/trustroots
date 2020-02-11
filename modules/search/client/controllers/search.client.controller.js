@@ -1,16 +1,30 @@
-angular
-  .module('search')
-  .controller('SearchController', SearchController);
+angular.module('search').controller('SearchController', SearchController);
 
 /* @ngInject */
-function SearchController($scope, $window, $analytics, $stateParams, $timeout, offer, tribe, Authentication, FiltersService, messageCenterService, LocationService) {
+function SearchController(
+  $scope,
+  $window,
+  $analytics,
+  $stateParams,
+  $timeout,
+  offer,
+  tribe,
+  Authentication,
+  FiltersService,
+  messageCenterService,
+  LocationService,
+) {
   // ViewModel
   const vm = this;
 
   // Exposed to the view
   // Sidebar visible: registered users on bigger screens
   // Sidebar hidden: on small screens and un-registered users
-  vm.isSidebarOpen = ($stateParams.offer && offer) || (Authentication.user && Authentication.user.public && $window.innerWidth >= 768);
+  vm.isSidebarOpen =
+    ($stateParams.offer && offer) ||
+    (Authentication.user &&
+      Authentication.user.public &&
+      $window.innerWidth >= 768);
   vm.screenWidth = $window.innerWidth;
   vm.offer = offer || false;
   vm.filters = FiltersService.get();
@@ -33,7 +47,9 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
   // coming from Hitchwiki/Nomadwiki/Trashwiki work
   // @link https://github.com/Hitchwiki/hitchwiki/issues/61
   // @link https://github.com/Trustroots/trustroots/issues/113
-  vm.searchQuery = ($stateParams.location) ? $stateParams.location.replace('_', ' ', 'g').replace('+', ' ', 'g') : '';
+  vm.searchQuery = $stateParams.location
+    ? $stateParams.location.replace('_', ' ', 'g').replace('+', ' ', 'g')
+    : '';
 
   activate();
 
@@ -47,8 +63,12 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
       FiltersService.set('tribes', [tribe._id]);
     }
 
-    if (angular.isDefined(vm.searchQuery) && angular.isString(vm.searchQuery) && vm.searchQuery) {
-      LocationService.suggestions(vm.searchQuery).then(function (suggestions) {
+    if (
+      angular.isDefined(vm.searchQuery) &&
+      angular.isString(vm.searchQuery) &&
+      vm.searchQuery
+    ) {
+      LocationService.suggestions(vm.searchQuery).then(function(suggestions) {
         if (suggestions.length) {
           const bounds = LocationService.getBounds(suggestions[0]);
           onPlaceSearch(bounds, 'bounds');
@@ -58,7 +78,10 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
     }
 
     // Watch for changes at types filters
-    $scope.$watchCollection('search.filters.types', function (newTypesFilters, oldTypesFilters) {
+    $scope.$watchCollection('search.filters.types', function(
+      newTypesFilters,
+      oldTypesFilters,
+    ) {
       if (!angular.equals(newTypesFilters, oldTypesFilters)) {
         // Save new value to cache
         FiltersService.set('types', newTypesFilters);
@@ -67,7 +90,10 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
     });
 
     // Watch for changes at tribes filters
-    $scope.$watchCollection('search.filters.tribes', function (newTribeFilters, oldTribeFilters) {
+    $scope.$watchCollection('search.filters.tribes', function(
+      newTribeFilters,
+      oldTribeFilters,
+    ) {
       if (!angular.equals(newTribeFilters, oldTribeFilters)) {
         // Save new value to cache
         FiltersService.set('tribes', newTribeFilters);
@@ -76,16 +102,16 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
     });
 
     // `SearchMap` controller sends these signals down to this controller
-    $scope.$on('search.loadingOffer', function () {
+    $scope.$on('search.loadingOffer', function() {
       vm.offer = false;
       vm.loadingOffer = true;
     });
-    $scope.$on('search.previewOffer', function (event, offer) {
+    $scope.$on('search.previewOffer', function(event, offer) {
       vm.offer = offer;
       vm.loadingOffer = false;
       openSidebar('results');
     });
-    $scope.$on('search.closeOffer', function () {
+    $scope.$on('search.closeOffer', function() {
       vm.offer = false;
       vm.loadingOffer = false;
     });
@@ -93,13 +119,15 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
     // Initializing either location search or offer
     if ($stateParams.offer && !vm.offer) {
       // Offer not found or other error
-      messageCenterService.add('danger', 'Sorry, we did not find what you are looking for.');
+      messageCenterService.add(
+        'danger',
+        'Sorry, we did not find what you are looking for.',
+      );
       $analytics.eventTrack('offer-not-found', {
         category: 'search.map',
         label: 'Offer not found',
       });
     }
-
   }
 
   /**
@@ -108,7 +136,7 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
   function onLanguageFiltersChange() {
     // `vm.filters.languages` is still out of sync at this point,
     // but in next cycle after `$timeout` we have updated version.
-    $timeout(function () {
+    $timeout(function() {
       // Save new value to cache
       FiltersService.set('languages', vm.filters.languages || []);
 
@@ -124,7 +152,7 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
 
     // `vm.filters.seen` is still out of sync at this point,
     // but in next cycle after `$timeout` we have updated version.
-    $timeout(function () {
+    $timeout(function() {
       // Save new value to cache
       FiltersService.set('seen', vm.filters.seen);
 
@@ -155,7 +183,7 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
 
     closeSidebar();
 
-    $timeout(function () {
+    $timeout(function() {
       // Focus to search input
       angular.element('#search-query').focus();
     });
@@ -211,6 +239,4 @@ function SearchController($scope, $window, $analytics, $stateParams, $timeout, o
       vm.sidebarTab = activeTab;
     }
   }
-
-
 }

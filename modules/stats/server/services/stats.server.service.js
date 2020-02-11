@@ -76,14 +76,13 @@ const stathatService = require('./stathat.server.service.js');
  */
 
 /**
-  * Record a simple "count" stat
-  * @param {string} name - stat name
-  * @param {number} [count] - stat value, default 1
-  * @param {Date} [time]
-  * @param {statCallback} callback - last argument (2nd, 3rd or 4th)
+ * Record a simple "count" stat
+ * @param {string} name - stat name
+ * @param {number} [count] - stat value, default 1
+ * @param {Date} [time]
+ * @param {statCallback} callback - last argument (2nd, 3rd or 4th)
  */
 function count(name, count, time, callback) {
-
   // make the count optional and callback as the last argument
   if (arguments.length === 2 && _.isFunction(count)) {
     callback = count;
@@ -98,7 +97,7 @@ function count(name, count, time, callback) {
 
   // set the defaults
   count = count || 1;
-  callback = callback || function () {};
+  callback = callback || function() {};
 
   const statObject = {
     namespace: name,
@@ -107,20 +106,21 @@ function count(name, count, time, callback) {
     },
   };
 
-  if (time) { statObject.time = time; }
+  if (time) {
+    statObject.time = time;
+  }
 
   stat(statObject, callback);
 }
 
 /**
-  * Record a simple "value" stat
-  * @param {string} name - stat name
-  * @param {number} value - stat value
-  * @param {Date} [time]
-  * @param {statCallback} callback - last argument (3rd or 4th)
+ * Record a simple "value" stat
+ * @param {string} name - stat name
+ * @param {number} value - stat value
+ * @param {Date} [time]
+ * @param {statCallback} callback - last argument (3rd or 4th)
  */
 function value(name, value, time, callback) {
-
   // make the time optional
   if (arguments.length === 3 && _.isFunction(time)) {
     callback = time;
@@ -128,7 +128,7 @@ function value(name, value, time, callback) {
   }
 
   // set default callback
-  callback = callback || function () {};
+  callback = callback || function() {};
 
   // construct and send the stat
   const statObject = {
@@ -157,10 +157,12 @@ function validateStat(stat) {
   }
 
   // We must have at least one of `counts` or `values`, or both
-  const isCountsAndValuesMissing = _.isUndefined(stat.counts) && _.isUndefined(stat.values);
+  const isCountsAndValuesMissing =
+    _.isUndefined(stat.counts) && _.isUndefined(stat.values);
   // @TODO check that they are plain objects or undefined with _.isPlainObject()
   // counts or values have to contain at least 1 property
-  const isCountsAndValuesEmpty = _.keys(stat.counts).length + _.keys(stat.values).length === 0;
+  const isCountsAndValuesEmpty =
+    _.keys(stat.counts).length + _.keys(stat.values).length === 0;
   if (isCountsAndValuesMissing || isCountsAndValuesEmpty) {
     // error
     throw new Error('The stat should contain counts or values');
@@ -187,7 +189,9 @@ function validateStat(stat) {
   }
 
   if (!areKeysUnique(stat.counts, stat.values, stat.meta, stat.tags)) {
-    throw new Error('Every key of stat counts, values, meta and tags must be unique');
+    throw new Error(
+      'Every key of stat counts, values, meta and tags must be unique',
+    );
   }
 
   // Every value in 'counts' and 'values' should be a number
@@ -281,35 +285,41 @@ function stat(stat, callback) {
   // errors after all have finished or errored.
   //
   function influxServiceStatWrap(stat, done) {
-    influxService.stat(stat, function (e) {
+    influxService.stat(stat, function(e) {
       if (e) influxErr = e;
       return done();
     });
   }
 
   function stathatServiceStatWrap(stat, done) {
-    stathatService.stat(stat, function (e) {
+    stathatService.stat(stat, function(e) {
       if (e) stathatErr = e;
       return done();
     });
   }
 
-  async.applyEach([stathatServiceStatWrap, influxServiceStatWrap], stat, function (e) {
-    if (e) return callback(e); // this should not happen
+  async.applyEach(
+    [stathatServiceStatWrap, influxServiceStatWrap],
+    stat,
+    function(e) {
+      if (e) return callback(e); // this should not happen
 
-    if (influxErr || stathatErr) {
-      const finalErr = new Error('Writing to Influx or Stathat service failed.');
+      if (influxErr || stathatErr) {
+        const finalErr = new Error(
+          'Writing to Influx or Stathat service failed.',
+        );
 
-      finalErr.errors = {
-        influx: influxErr,
-        stathat: stathatErr,
-      };
+        finalErr.errors = {
+          influx: influxErr,
+          stathat: stathatErr,
+        };
 
-      return callback(finalErr);
-    }
+        return callback(finalErr);
+      }
 
-    return callback();
-  });
+      return callback();
+    },
+  );
 }
 
 // Public exports

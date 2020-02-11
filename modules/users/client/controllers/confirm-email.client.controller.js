@@ -15,8 +15,13 @@ function getEmailFromToken(token) {
 }
 
 /* @ngInject */
-function ConfirmEmailController($rootScope, $http, $state, $stateParams, Authentication) {
-
+function ConfirmEmailController(
+  $rootScope,
+  $http,
+  $state,
+  $stateParams,
+  Authentication,
+) {
   // ViewModel
   const vm = this;
 
@@ -35,27 +40,26 @@ function ConfirmEmailController($rootScope, $http, $state, $stateParams, Authent
     vm.isLoading = true;
     vm.success = vm.error = null;
 
-    $http.post('/api/auth/confirm-email/' + $stateParams.token)
-      .then(
-        function (response) { // On success function
+    $http.post('/api/auth/confirm-email/' + $stateParams.token).then(
+      function(response) {
+        // On success function
 
-          // Attach user profile
-          Authentication.user = response.data.user;
-          $rootScope.$broadcast('userUpdated');
+        // Attach user profile
+        Authentication.user = response.data.user;
+        $rootScope.$broadcast('userUpdated');
 
-          if (response.data.profileMadePublic) {
-            // If successful and this was user's first confirm, welcome them to the community
-            $state.go('welcome');
-          } else {
+        if (response.data.profileMadePublic) {
+          // If successful and this was user's first confirm, welcome them to the community
+          $state.go('welcome');
+        } else {
           // If succesfull and wasn't first time, say yay!
-            vm.success = true;
-          }
-
-        },
-        function () { // On error function
-          vm.error = true;
-        },
-      );
+          vm.success = true;
+        }
+      },
+      function() {
+        // On error function
+        vm.error = true;
+      },
+    );
   }
-
 }

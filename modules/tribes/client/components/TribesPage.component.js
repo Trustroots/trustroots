@@ -7,7 +7,12 @@ import TribesJoinTrustroots from './TribesJoinTrustroots';
 
 import * as api from '../api/tribes.api';
 
-export default function TribesPage({ user, onDisplayPhoto, onHidePhoto, onMembershipUpdated }) {
+export default function TribesPage({
+  user,
+  onDisplayPhoto,
+  onHidePhoto,
+  onMembershipUpdated,
+}) {
   const [tribes, setTribes] = useState([]);
 
   const handleMembershipUpdated = data => {
@@ -20,7 +25,9 @@ export default function TribesPage({ user, onDisplayPhoto, onHidePhoto, onMember
      * @TODO extract the mapReplace method to be reusable
      * https://github.com/Trustroots/trustroots/pull/1145#discussion_r368321566
      */
-    setTribes(tribes => tribes.map(tribe => tribe._id === data.tribe._id ? data.tribe : tribe));
+    setTribes(tribes =>
+      tribes.map(tribe => (tribe._id === data.tribe._id ? data.tribe : tribe)),
+    );
 
     onMembershipUpdated(data);
   };
@@ -34,26 +41,29 @@ export default function TribesPage({ user, onDisplayPhoto, onHidePhoto, onMember
     fetchData();
   }, []);
 
-  return (<>
-    <TribesHeader isLoggedIn={!!user} onDisplayPhoto={onDisplayPhoto} onHidePhoto={onHidePhoto} />
+  return (
+    <>
+      <TribesHeader
+        isLoggedIn={!!user}
+        onDisplayPhoto={onDisplayPhoto}
+        onHidePhoto={onHidePhoto}
+      />
 
-    <section className="container container-spacer">
-      <div className="row">
-        <div className="col-xs-12">
-
-          <TribesList
-            tribes={tribes}
-            user={user}
-            onMembershipUpdated={handleMembershipUpdated}
-          />
-
+      <section className="container container-spacer">
+        <div className="row">
+          <div className="col-xs-12">
+            <TribesList
+              tribes={tribes}
+              user={user}
+              onMembershipUpdated={handleMembershipUpdated}
+            />
+          </div>
         </div>
-      </div>
 
-      {!user && <TribesJoinTrustroots />}
-
-    </section>
-  </>);
+        {!user && <TribesJoinTrustroots />}
+      </section>
+    </>
+  );
 }
 
 TribesPage.propTypes = {

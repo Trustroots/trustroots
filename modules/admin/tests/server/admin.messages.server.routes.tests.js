@@ -20,8 +20,7 @@ let userRegular1Id;
 let userRegular2Id;
 
 describe('Admin Message CRUD tests', () => {
-
-  before((done) => {
+  before(done => {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -113,9 +112,10 @@ describe('Admin Message CRUD tests', () => {
   });
 
   describe('Read messages between two users', () => {
-    it('non-authenticated users should not be allowed to read messages', (done) => {
-      agent.post('/api/admin/messages')
-        .send({ 'user1': userRegular1Id, 'user2': userRegular2Id })
+    it('non-authenticated users should not be allowed to read messages', done => {
+      agent
+        .post('/api/admin/messages')
+        .send({ user1: userRegular1Id, user2: userRegular2Id })
         .expect(403)
         .end((err, res) => {
           res.body.message.should.equal('Forbidden.');
@@ -123,17 +123,19 @@ describe('Admin Message CRUD tests', () => {
         });
     });
 
-    it('non-admin users should not be allowed to read messages', (done) => {
-      agent.post('/api/auth/signin')
+    it('non-admin users should not be allowed to read messages', done => {
+      agent
+        .post('/api/auth/signin')
         .send(credentialsRegular)
         .expect(200)
-        .end((signinErr) => {
+        .end(signinErr => {
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/admin/messages')
-            .send({ 'user1': userRegular1Id, 'user2': userRegular2Id })
+          agent
+            .post('/api/admin/messages')
+            .send({ user1: userRegular1Id, user2: userRegular2Id })
             .expect(403)
             .end((err, res) => {
               res.body.message.should.equal('Forbidden.');
@@ -142,17 +144,19 @@ describe('Admin Message CRUD tests', () => {
         });
     });
 
-    it('admin users should be allowed to read messages', (done) => {
-      agent.post('/api/auth/signin')
+    it('admin users should be allowed to read messages', done => {
+      agent
+        .post('/api/auth/signin')
         .send(credentialsAdmin)
         .expect(200)
-        .end((signinErr) => {
+        .end(signinErr => {
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/admin/messages')
-            .send({ 'user1': userRegular1Id, 'user2': userRegular2Id })
+          agent
+            .post('/api/admin/messages')
+            .send({ user1: userRegular1Id, user2: userRegular2Id })
             .expect(200)
             .end((err, res) => {
               res.body.length.should.equal(2);
@@ -162,10 +166,9 @@ describe('Admin Message CRUD tests', () => {
             });
         });
     });
-
   });
 
-  afterEach((done) => {
+  afterEach(done => {
     User.deleteMany().exec(() => {
       Message.deleteMany().exec(done);
     });

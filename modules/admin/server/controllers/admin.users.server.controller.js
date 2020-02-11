@@ -3,7 +3,9 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const errorService = require(path.resolve(
+  './modules/core/server/services/error.server.service',
+));
 const escapeStringRegexp = require('escape-string-regexp');
 const mongoose = require('mongoose');
 const log = require(path.resolve('./config/lib/logger'));
@@ -56,7 +58,7 @@ function obfuscateTokens(user) {
     ['additionalProvidersData', 'github', 'refreshToken'],
     ['additionalProvidersData', 'twitter', 'token'],
     ['additionalProvidersData', 'twitter', 'tokenSecret'],
-  ].forEach((path) => {
+  ].forEach(path => {
     if (_.has(_user, path)) {
       _.set(_user, path, '(Hidden from admins.)');
     }
@@ -74,19 +76,23 @@ exports.searchUsers = (req, res) => {
   // Validate the query string
   if (!search || search.length < SEARCH_STRING_LIMIT) {
     return res.status(400).send({
-      message: `Query string at least ${ SEARCH_STRING_LIMIT } characters long required.`,
+      message: `Query string at least ${SEARCH_STRING_LIMIT} characters long required.`,
     });
   }
 
-  const regexpSearch = new RegExp('.*' + escapeStringRegexp(search) + '.*', 'i');
+  const regexpSearch = new RegExp(
+    '.*' + escapeStringRegexp(search) + '.*',
+    'i',
+  );
 
-  User
-    .find({ $or: [
-      { 'displayName': regexpSearch },
-      { 'email': regexpSearch },
-      { 'emailTemporary': regexpSearch },
-      { 'username': regexpSearch },
-    ] })
+  User.find({
+    $or: [
+      { displayName: regexpSearch },
+      { email: regexpSearch },
+      { emailTemporary: regexpSearch },
+      { username: regexpSearch },
+    ],
+  })
     .select(USER_LIST_FIELDS)
     .sort('username displayName')
     .limit(SEARCH_USERS_LIMIT)
@@ -110,16 +116,18 @@ exports.listUsersByRole = (req, res) => {
   const role = _.get(req, ['body', 'role']);
 
   // Allowed roles to query
-  if (!role || !['shadowban', 'suspended', 'admin', 'moderator'].includes(role)) {
+  if (
+    !role ||
+    !['shadowban', 'suspended', 'admin', 'moderator'].includes(role)
+  ) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
   }
 
-  User
-    .find({
-      roles: { $in: [role] },
-    })
+  User.find({
+    roles: { $in: [role] },
+  })
     .select(USER_LIST_FIELDS)
     .sort('username displayName')
     .exec((err, users) => {
@@ -157,8 +165,7 @@ exports.getUser = async (req, res) => {
   }
 
   try {
-    const user = await User
-      .findById(userId)
+    const user = await User.findById(userId)
       // Avoid pulling in sensitive fields from Mongoose
       .select('-password -salt')
       .populate({
@@ -173,43 +180,38 @@ exports.getUser = async (req, res) => {
       });
     }
 
-    const messageFromCount = await Message
-      .find({ 'userFrom': userId })
-      .count();
+    const messageFromCount = await Message.find({ userFrom: userId }).count();
 
-    const messageToCount = await Message
-      .find({ 'userTo': userId })
-      .count();
+    const messageToCount = await Message.find({ userTo: userId }).count();
 
-    const threadCount = await Thread
-      .find({ $or: [
-        { 'userFrom': userId },
-        { 'userTo': userId },
-      ] })
-      .count();
+    const threadCount = await Thread.find({
+      $or: [{ userFrom: userId }, { userTo: userId }],
+    }).count();
 
     // @TODO these could be compiled using aggregate grouping
-    const threadReferencesSentNo = await ReferenceThread
-      .find({ 'userFrom': userId, 'reference': 'no' })
-      .count();
+    const threadReferencesSentNo = await ReferenceThread.find({
+      userFrom: userId,
+      reference: 'no',
+    }).count();
 
-    const threadReferencesReceivedNo = await ReferenceThread
-      .find({ 'userTo': userId, 'reference': 'no' })
-      .count();
+    const threadReferencesReceivedNo = await ReferenceThread.find({
+      userTo: userId,
+      reference: 'no',
+    }).count();
 
-    const threadReferencesReceivedYes = await ReferenceThread
-      .find({ 'userFrom': userId, 'reference': 'yes' })
-      .count();
+    const threadReferencesReceivedYes = await ReferenceThread.find({
+      userFrom: userId,
+      reference: 'yes',
+    }).count();
 
-    const threadReferencesSentYes = await ReferenceThread
-      .find({ 'userto': userId, 'reference': 'yes' })
-      .count();
+    const threadReferencesSentYes = await ReferenceThread.find({
+      userto: userId,
+      reference: 'yes',
+    }).count();
 
-    const contacts = await Contact
-      .find({ $or: [
-        { 'userFrom': userId },
-        { 'userTo': userId },
-      ] })
+    const contacts = await Contact.find({
+      $or: [{ userFrom: userId }, { userTo: userId }],
+    })
       .populate({
         path: 'userFrom',
         select: 'username displayName',
@@ -266,9 +268,8 @@ exports.changeRole = async (req, res) => {
   }
 
   // If switching role to 'suspended', change also these settings straight up
-  const additionalChanges = role === 'suspended'
-    ? { $set: { newsletter: false, public: false } }
-    : {};
+  const additionalChanges =
+    role === 'suspended' ? { $set: { newsletter: false, public: false } } : {};
 
   try {
     const user = await User.updateOne(

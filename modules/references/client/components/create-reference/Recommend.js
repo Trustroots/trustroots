@@ -5,8 +5,16 @@ import '@/config/client/i18n';
 import { withTranslation } from 'react-i18next';
 import Report from './Report';
 
-const Recommend = withTranslation('reference')(function ({ t, primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
-
+const Recommend = withTranslation('reference')(function({
+  t,
+  primaryInteraction,
+  recommend,
+  report,
+  reportMessage,
+  onChangeRecommend,
+  onChangeReport,
+  onChangeReportMessage,
+}) {
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),
     hostedThem: t('Would you recommend others to host them?'),
@@ -26,7 +34,8 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
           name="recommend"
           onChange={onChangeRecommend}
           value={recommend}
-          aria-labelledby="would-you-recommend-them-question">
+          aria-labelledby="would-you-recommend-them-question"
+        >
           <ToggleButton
             className="btn btn-lg"
             aria-checked={recommend === 'yes'}
@@ -51,7 +60,7 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
             bsStyle="default"
             bsSize="large"
           >
-            {t('I don\'t know')}
+            {t("I don't know")}
           </ToggleButton>
         </ToggleButtonGroup>
         {recommend === 'no' && (

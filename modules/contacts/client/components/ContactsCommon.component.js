@@ -27,9 +27,13 @@ export class ContactsCommon extends React.Component {
     return (
       <div className="panel panel-default">
         {/* convert ng-pluralize with NamespacesConsumer */}
-        <div className="panel-heading">{t('{{count}} contacts in common', { count: this.state.contacts.length })}</div>
+        <div className="panel-heading">
+          {t('{{count}} contacts in common', {
+            count: this.state.contacts.length,
+          })}
+        </div>
         <div className="panel-body">
-          {this.state.contacts.map((contact) =>
+          {this.state.contacts.map(contact => (
             <Contact
               key={contact._id}
               contact={contact}
@@ -37,8 +41,8 @@ export class ContactsCommon extends React.Component {
               hideMeta={true}
               avatarSize={64}
               selfId={this.props.profileId}
-            />,
-          )}
+            />
+          ))}
         </div>
       </div>
     );
