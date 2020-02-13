@@ -9,7 +9,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
   const [content, setContent] = useState(() => getDraft() || '');
 
-  function send(event){
+  function send(event) {
     event.preventDefault();
     event.stopPropagation();
     const value = content.replace(/<br><\/p>$/, '</p>'); // remove the last <br>
@@ -71,15 +71,16 @@ export default function ThreadReply({ onSend, cacheKey }) {
       </div>
       <div className="col-xs-2 col-sm-12">
         <small className="text-muted hidden-xs">
-          Highlight text to add links or change its appearance.
-          Ctrl+Enter to send.
+          Highlight text to add links or change its appearance. Ctrl+Enter to
+          send.
         </small>
         <button
           id="messageReplySubmit"
           className="btn btn-md btn-primary message-reply-btn"
           type="submit"
         >
-          <i className="icon-send"/><span className="hidden-xs"> Send</span>
+          <i className="icon-send" />
+          <span className="hidden-xs"> Send</span>
         </button>
       </div>
     </form>

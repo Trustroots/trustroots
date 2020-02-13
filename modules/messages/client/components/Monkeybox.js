@@ -9,8 +9,13 @@ function TribesInCommon({ user, otherUser }) {
 
   useEffect(() => {
     // otherUser will have a filled out tribe details, my user won't...
-    const byId = keyBy(otherUser.member.map(membership => membership.tribe), tribe => tribe._id);
-    const tribesInCommon = user.memberIds.filter(id => byId[id]).map(id => byId[id]);
+    const byId = keyBy(
+      otherUser.member.map(membership => membership.tribe),
+      tribe => tribe._id,
+    );
+    const tribesInCommon = user.memberIds
+      .filter(id => byId[id])
+      .map(id => byId[id]);
     setTribesInCommon(tribesInCommon);
   }, [user, otherUser]);
 
@@ -23,10 +28,7 @@ function TribesInCommon({ user, otherUser }) {
         <ul className="list-inline">
           {tribesInCommon.map(tribe => (
             <li key={tribe._id}>
-              <a
-                className="tribe-link"
-                href={`/tribes/${tribe.slug}`}
-              >
+              <a className="tribe-link" href={`/tribes/${tribe.slug}`}>
                 {tribe.label}
               </a>
             </li>
@@ -46,17 +48,21 @@ export default function Monkeybox({ user, otherUser }) {
   return (
     <div className="monkeybox panel panel-default">
       <div className="panel-body">
-        <Avatar user={user} size={64}/>
+        <Avatar user={user} size={64} />
         <h3>
           <a>{user.displayName}</a>
         </h3>
         <TribesInCommon user={user} otherUser={otherUser} />
-        {user.languages.length > 0 && <div className="monkeybox-section">
-          <h4>Languages</h4>
-          <ul className="list-unstyled">
-            {user.languages.map(language => <li key={language.code}>{language.code}</li>)}
-          </ul>
-        </div>}
+        {user.languages.length > 0 && (
+          <div className="monkeybox-section">
+            <h4>Languages</h4>
+            <ul className="list-unstyled">
+              {user.languages.map(language => (
+                <li key={language.code}>{language.code}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </div>
   );

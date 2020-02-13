@@ -5,11 +5,17 @@ import debounce from 'lodash/debounce';
 
 const debounceWait = 20;
 
-export default function InfiniteMessages({ component: Component, onFetchMore, children }) {
+export default function InfiniteMessages({
+  component: Component,
+  onFetchMore,
+  children,
+}) {
   const [initialScroll, setInitialScroll] = useState(true);
   const [scrollHeight, setScrollHeight] = useState(null);
   const [scrollFromBottom, setScrollFromBottom] = useState(null);
-  const [lastChildKey, setLastChildKey] = useState(() => last(React.Children.toArray(children))?.key);
+  const [lastChildKey, setLastChildKey] = useState(
+    () => last(React.Children.toArray(children))?.key,
+  );
 
   const ref = React.createRef();
 
@@ -36,7 +42,10 @@ export default function InfiniteMessages({ component: Component, onFetchMore, ch
       setInitialScroll(false);
       setScrollHeight(ref.current.scrollHeight);
       scrollToEnd();
-    } else if (scrollHeight !== null && scrollHeight !== ref.current.scrollHeight) {
+    } else if (
+      scrollHeight !== null &&
+      scrollHeight !== ref.current.scrollHeight
+    ) {
       // the height as changed, we must have added a message
 
       const newScrollHeight = ref.current.scrollHeight;

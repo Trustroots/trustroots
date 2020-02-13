@@ -26,9 +26,9 @@ const FlexGrow = styled.div`
 function YouHaveNotBeenTalkingYet() {
   return (
     <div className="content-empty">
-      <i className="icon-3x icon-messages-alt"/>
+      <i className="icon-3x icon-messages-alt" />
       <h4>You haven&apos;t been talking yet.</h4>
-      <Flashcard/>
+      <Flashcard />
     </div>
   );
 }
@@ -36,24 +36,37 @@ function YouHaveNotBeenTalkingYet() {
 function YourProfileSeemsQuiteEmpty() {
   return (
     <div className="content-empty">
-      <i className="icon-3x icon-messages-alt"/>
+      <i className="icon-3x icon-messages-alt" />
       <p className="lead">
-        Your profile seems quite empty.<br/>
-        Please write longer profile description before sending messages.<br/>
+        Your profile seems quite empty.
+        <br />
+        Please write longer profile description before sending messages.
+        <br />
         <a href="/profile/edit">Edit your profile</a>
       </p>
     </div>
   );
 }
 
-export default function ThreadMessages({ user, otherUser, messages, profileMinimumLength, onFetchMore }) {
+export default function ThreadMessages({
+  user,
+  otherUser,
+  messages,
+  profileMinimumLength,
+  onFetchMore,
+}) {
   if (messages.length === 0) {
-    const hasEmptyProfile = plainTextLength(user.description) < profileMinimumLength;
+    const hasEmptyProfile =
+      plainTextLength(user.description) < profileMinimumLength;
     return (
       <>
-        <FlexGrow/>
-        {hasEmptyProfile ? <YourProfileSeemsQuiteEmpty/> : <YouHaveNotBeenTalkingYet/>}
-        <FlexGrow/>
+        <FlexGrow />
+        {hasEmptyProfile ? (
+          <YourProfileSeemsQuiteEmpty />
+        ) : (
+          <YouHaveNotBeenTalkingYet />
+        )}
+        <FlexGrow />
       </>
     );
   } else {
@@ -65,27 +78,21 @@ export default function ThreadMessages({ user, otherUser, messages, profileMinim
             <div className="message-recipient panel panel-default">
               <a className="panel-body" href={`/profile/${user.username}`}>
                 <Avatar user={otherUser} size={32} link={false} />
-                <h4>
-                  { otherUser.displayName }
-                </h4>
-                <small className="text-muted">
-                  @{ otherUser.username }
-                </small>
+                <h4>{otherUser.displayName}</h4>
+                <small className="text-muted">@{otherUser.username}</small>
               </a>
             </div>
           </div>
         )}
         <div className="message">
           <div className="divider divider-first text-muted">
-            <small>Conversation started {moment(messages[0].created).format('LL')}</small>
+            <small>
+              Conversation started {moment(messages[0].created).format('LL')}
+            </small>
           </div>
         </div>
         {messages.map(message => (
-          <ThreadMessage
-            key={message._id}
-            message={message}
-            user={user}
-          />
+          <ThreadMessage key={message._id} message={message} user={user} />
         ))}
       </InfiniteMessages>
     );

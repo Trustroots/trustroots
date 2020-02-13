@@ -3,7 +3,10 @@ import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 
-import { $broadcast, getRouteParams } from '@/modules/core/client/services/angular-compat';
+import {
+  $broadcast,
+  getRouteParams,
+} from '@/modules/core/client/services/angular-compat';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
@@ -64,7 +67,7 @@ export default function Thread({ user, profileMinimumLength }) {
   if (!user.public) {
     return (
       <section className="container-spacer">
-        <Activate/>
+        <Activate />
       </section>
     );
   }
@@ -75,7 +78,9 @@ export default function Thread({ user, profileMinimumLength }) {
   const [messages, setMessages] = useState([]);
   const cacheKey = `messages.thread.${user._id}-${getRouteParams().username}`;
 
-  const userHasReplied = Boolean(messages.find(message => message.userFrom._id === user._id));
+  const userHasReplied = Boolean(
+    messages.find(message => message.userFrom._id === user._id),
+  );
   const showQuickReply = !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
@@ -126,7 +131,9 @@ export default function Thread({ user, profileMinimumLength }) {
         .filter(message => !message.fake); // @TODO remove this later
       if (unreadMessages.length > 0) {
         await api.messages.markRead(unreadMessages.map(message => message._id));
-        setMessages(messages => messages.map(message => ({ ...message, read: true })));
+        setMessages(messages =>
+          messages.map(message => ({ ...message, read: true })),
+        );
         $broadcast('syncUnreadMessagesCount');
       }
     }
@@ -158,15 +165,23 @@ export default function Thread({ user, profileMinimumLength }) {
                 profileMinimumLength={profileMinimumLength}
                 onFetchMore={fetchMoreData}
               />
-              {showQuickReply && <QuickReply onSend={content => sendMessage(content)} onFocus={focus}/>}
-              <ThreadReply cacheKey={cacheKey} onSend={content => sendMessage(content)}/>
+              {showQuickReply && (
+                <QuickReply
+                  onSend={content => sendMessage(content)}
+                  onFocus={focus}
+                />
+              )}
+              <ThreadReply
+                cacheKey={cacheKey}
+                onSend={content => sendMessage(content)}
+              />
             </ThreadContainer>
           )}
         </div>
         {otherUser && !isExtraSmall && (
           <div className="col-sm-3 text-center">
-            <Monkeybox user={user} otherUser={otherUser}/>
-            <ReportMemberLink username={otherUser.username}/>
+            <Monkeybox user={user} otherUser={otherUser} />
+            <ReportMemberLink username={otherUser.username} />
           </div>
         )}
       </div>

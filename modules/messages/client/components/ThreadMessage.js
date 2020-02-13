@@ -80,7 +80,7 @@ export default function ThreadMessage({ message, user }) {
             </a>
           )}
           —
-          <TimeAgo date={new Date(message.created)}/>
+          <TimeAgo date={new Date(message.created)} />
         </div>
         <div className="panel panel-default">
           <Avatar user={message.userFrom} size={24} />
@@ -91,7 +91,7 @@ export default function ThreadMessage({ message, user }) {
         </div>
       </div>
       <div className="message-author">
-        <Avatar user={message.userFrom} size={32}/>
+        <Avatar user={message.userFrom} size={32} />
       </div>
     </MessageContainer>
   );

@@ -8,7 +8,7 @@ const replies = [
   },
   {
     host: false,
-    content: 'Sorry I can\'t host',
+    content: "Sorry I can't host",
   },
   {
     write: true,
@@ -20,7 +20,9 @@ export default function QuickReply({ onSend, onFocus }) {
   return (
     <div className="btn-toolbar" id="message-quick-reply">
       {replies.map(({ write, host, content }) => {
-        const className = write ? 'btn-offer-meet' : `btn-offer-hosting-${host ? 'yes' : 'no'}`;
+        const className = write
+          ? 'btn-offer-meet'
+          : `btn-offer-hosting-${host ? 'yes' : 'no'}`;
 
         function onClick() {
           if (write) {
