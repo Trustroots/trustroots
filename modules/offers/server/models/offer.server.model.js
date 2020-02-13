@@ -4,7 +4,9 @@
 const _ = require('lodash');
 const path = require('path');
 const mongoose = require('mongoose');
-const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const textService = require(path.resolve(
+  './modules/core/server/services/text.server.service',
+));
 const Schema = mongoose.Schema;
 
 /**
@@ -16,7 +18,8 @@ const Schema = mongoose.Schema;
 function fuzzyOffset(minimum, maximum) {
   // Please note that Math.random() is not cryptographically secure.
   // For this purpose it's probably ok, but can be improved i.e. with node crypto module.
-  if (maximum < minimum) throw new Error('maximum must be greater than minimum');
+  if (maximum < minimum)
+    throw new Error('maximum must be greater than minimum');
   const difference = maximum - minimum;
   const randomDistance = Math.floor(difference * Math.random() + minimum); // Distance will be from interval [minimum, maximum)
   const randomDirection = 2 * Math.PI * Math.random(); // Random direction is from interval [0, 2*PI) radians
@@ -33,7 +36,6 @@ function fuzzyOffset(minimum, maximum) {
  * @link http://gis.stackexchange.com/a/2980
  */
 function getFuzzyLocation(location) {
-
   // Offsets in meters, random between 100-200 meters to random direction
   const offset = fuzzyOffset(100, 200);
   const dn = offset[0];
@@ -48,11 +50,11 @@ function getFuzzyLocation(location) {
 
   // Coordinate offsets in radians
   const dLat = dn / Radius;
-  const dLng = de / (Radius * Math.cos(Math.PI * lat / 180));
+  const dLng = de / (Radius * Math.cos((Math.PI * lat) / 180));
 
   // OffsetPosition, decimal degrees
-  const latO = lat + dLat * 180 / Math.PI;
-  const lngO = lng + dLng * 180 / Math.PI;
+  const latO = lat + (dLat * 180) / Math.PI;
+  const lngO = lng + (dLng * 180) / Math.PI;
 
   return [latO, lngO];
 }
@@ -63,8 +65,7 @@ function getFuzzyLocation(location) {
  * @param {Array} coordinates - Expects location coordinates in an array: [lat, lon]
  * @returns {Boolean} true on success, false on failure.
  */
-const validateLocation = function (coordinates) {
-
+const validateLocation = function(coordinates) {
   if (!_.isArray(coordinates) || coordinates.length !== 2) {
     return false;
   }
@@ -88,7 +89,7 @@ const validateLocation = function (coordinates) {
  * When `location` is modified, set also `locationFuzzy`
  * Keeps `location` unaltered.
  */
-const setLocation = function (value) {
+const setLocation = function(value) {
   this.locationFuzzy = getFuzzyLocation(value);
   return value;
 };

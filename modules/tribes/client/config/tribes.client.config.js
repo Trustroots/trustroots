@@ -1,36 +1,32 @@
-import listTemplateUrl from '@/modules/tribes/client/views/tribes-list.client.view.html';
 import showTemplateUrl from '@/modules/tribes/client/views/tribe.client.view.html';
 
-angular
-  .module('tribes')
-  .config(TribesRoutes);
+angular.module('tribes').config(TribesRoutes);
 
 /* @ngInject */
 function TribesRoutes($stateProvider) {
-
-  $stateProvider.
-    state('tribes', {
+  $stateProvider
+    .state('tribes', {
       url: '/tribes',
       abstract: true,
       template: '<ui-view/>',
-    }).
-    state('tribes.list', {
+    })
+    .state('tribes.list', {
       url: '',
-      templateUrl: listTemplateUrl,
+      template: `
+        <tribes-page
+          user="app.user"
+          onDisplayPhoto="tribesList.addPhotoCredits"
+          onHidePhoto="tribesList.removePhotoCredits"
+          onMembershipUpdated="tribesList.broadcastUpdatedUser"
+        ></tribes-page>
+      `,
       controller: 'TribesListController',
       controllerAs: 'tribesList',
-      resolve: {
-        // A string value resolves to a service
-        TribesService: 'TribesService',
-        tribes: function (TribesService) {
-          return TribesService.query();
-        },
-      },
       data: {
         pageTitle: 'Tribes',
       },
-    }).
-    state('tribes.tribe', {
+    })
+    .state('tribes.tribe', {
       url: '/:tribe',
       footerHidden: true,
       templateUrl: showTemplateUrl,
@@ -39,7 +35,7 @@ function TribesRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         TribeService: 'TribeService',
-        tribe: function (TribeService, $stateParams) {
+        tribe: function(TribeService, $stateParams) {
           return TribeService.get({
             tribeSlug: $stateParams.tribe,
           });
@@ -49,5 +45,4 @@ function TribesRoutes($stateProvider) {
         pageTitle: 'Tribe',
       },
     });
-
 }

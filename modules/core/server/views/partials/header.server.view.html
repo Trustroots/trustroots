@@ -1,15 +1,23 @@
-<header id="tr-header"
-        role="banner"
-        class="navbar navbar-default navbar-fixed-top hidden-print"
-        ng-hide="app.isHeaderHidden">
-
-  <a class="btn btn-default sr-only sr-only-focusable sr-helper" href="#tr-main">
+<header
+  id="tr-header"
+  role="banner"
+  class="navbar navbar-default navbar-fixed-top hidden-print"
+  ng-hide="app.isHeaderHidden"
+>
+  <a
+    class="btn btn-default sr-only sr-only-focusable sr-helper"
+    href="#tr-main"
+  >
     Skip to main content
   </a>
 
   <!-- Header for non-authenticated users -->
   <div class="container" ng-if="!app.user">
-    <nav class="header-welcome text-center" aria-label="Page navigation" role="navigation">
+    <nav
+      class="header-welcome text-center"
+      aria-label="Page navigation"
+      role="navigation"
+    >
       <!-- a span for centering the main header content -->
       <span class="flex-side"></span>
       <span class="header-welcome-text hidden-xs">New to Trustroots?</span>
@@ -19,38 +27,59 @@
       <a ui-sref="signin" class="btn btn-lg btn-inverse">
         Login
       </a>
-      <a ui-sref="home"
-         class="btn btn-link header-more-text"
-         ng-if="!app.isHomePage"
-         aria-label="Read more about Trustroots">
+      <a
+        ui-sref="home"
+        class="btn btn-link header-more-text"
+        ng-if="!app.isHomePage"
+        aria-label="Read more about Trustroots"
+      >
         Read more
       </a>
 
-      <language-switch class="flex-side language-switch" aria-label="Localization" ng-if="app.appSettings.i18nEnabled"></language-switch>
+      <language-switch
+        class="flex-side language-switch"
+        aria-label="Localization"
+        ng-if="app.appSettings.i18nEnabled"
+      ></language-switch>
     </nav>
   </div>
   <!-- /Header for non-authenticated users -->
 
   <!-- Header for authenticated users -->
   <div class="container" ng-if="app.user" role="navigation">
-
     <div class="navbar-header">
-      <a ng-click="app.goHome()"
-         class="navbar-brand hidden-xs"
-         aria-hidden="true">
-        <img class="hidden-xs hidden-sm" src="/img/logo/horizontal-white.svg" alt="Trustroots" width="177" height="31" />
-        <img class="hidden-md hidden-lg" src="/img/tree-white.svg" alt="Trustroots" width="31" height="31" />
+      <a
+        ng-click="app.goHome()"
+        class="navbar-brand hidden-xs"
+        aria-hidden="true"
+      >
+        <img
+          class="hidden-xs hidden-sm"
+          src="/img/logo/horizontal-white.svg"
+          alt="Trustroots"
+          width="177"
+          height="31"
+        />
+        <img
+          class="hidden-md hidden-lg"
+          src="/img/tree-white.svg"
+          alt="Trustroots"
+          width="31"
+          height="31"
+        />
       </a>
     </div>
 
     <ul class="nav navbar-nav hidden-xs">
       <li class="hidden-xs dropdown" uib-dropdown>
-        <a class="dropdown-toggle cursor-pointer"
-           uib-dropdown-toggle
-           tabindex="0"
-           role="button"
-           aria-haspopup="true"
-           aria-expanded="false">
+        <a
+          class="dropdown-toggle cursor-pointer"
+          uib-dropdown-toggle
+          tabindex="0"
+          role="button"
+          aria-haspopup="true"
+          aria-expanded="false"
+        >
           Support
         </a>
         <ul class="dropdown-menu" aria-label="submenu">
@@ -103,13 +132,21 @@
         </a>
       </li>
       <li class="dropdown dropdown-user hidden-xs" uib-dropdown>
-        <a class="dropdown-toggle cursor-pointer"
-           role="button"
-           uib-dropdown-toggle
-           aria-label="My profile"
-           tabindex="0"
-           aria-haspopup="true">
-          <div tr-avatar data-user="app.user" link="false" size="24" role="presentation"></div>
+        <a
+          class="dropdown-toggle cursor-pointer"
+          role="button"
+          uib-dropdown-toggle
+          aria-label="My profile"
+          tabindex="0"
+          aria-haspopup="true"
+        >
+          <div
+            tr-avatar
+            data-user="app.user"
+            link="false"
+            size="24"
+            role="presentation"
+          ></div>
           <span class="visible-xs-inline" aria-hidden="true">
             <i class="icon-user icon-fw icon-lg"></i>
             {% raw %}{{ app.user.displayName }}{% endraw %}
@@ -148,46 +185,84 @@
             </a>
           </li>
           <li>
-            <a ng-click="app.signout($event)" href="/api/auth/signout" target="_top">
+            <a
+              ng-click="app.signout($event)"
+              href="/api/auth/signout"
+              target="_top"
+            >
               Sign out
             </a>
           </li>
           <li role="presentation" class="divider"></li>
-          <li class="small text-muted dropdown-meta text-center font-brand-regular">
+          <li
+            class="small text-muted dropdown-meta text-center font-brand-regular"
+          >
             <ul class="list-inline">
               <li><a class="text-muted" ui-sref="home">About</a></li>
-              <li><a class="text-muted" ui-sref="volunteering">Volunteering</a></li>
+              <li>
+                <a class="text-muted" ui-sref="volunteering">Volunteering</a>
+              </li>
               <li><a class="text-muted" ui-sref="donate">Donate</a></li>
-              <li><a class="text-muted" href="https://ideas.trustroots.org/">Blog</a></li>
-              <li><a class="text-muted" href="https://shop.trustroots.org/">Shop</a></li>
+              <li>
+                <a class="text-muted" href="https://ideas.trustroots.org/"
+                  >Blog</a
+                >
+              </li>
+              <li>
+                <a class="text-muted" href="https://shop.trustroots.org/"
+                  >Shop</a
+                >
+              </li>
               <li><a class="text-muted" ui-sref="media">Media</a></li>
-              <li><a class="text-muted" ui-sref="foundation" aria-label="Trustroots Foundation">Foundation</a></li>
-              <li><a class="text-muted" ui-sref="privacy" aria-label="Privacy Policy">Privacy</a></li>
+              <li>
+                <a
+                  class="text-muted"
+                  ui-sref="foundation"
+                  aria-label="Trustroots Foundation"
+                  >Foundation</a
+                >
+              </li>
+              <li>
+                <a
+                  class="text-muted"
+                  ui-sref="privacy"
+                  aria-label="Privacy Policy"
+                  >Privacy</a
+                >
+              </li>
               <li><a class="text-muted" ui-sref="rules">Rules</a></li>
             </ul>
           </li>
           <li role="presentation" class="divider"></li>
-          <li class="small text-muted dropdown-meta text-center font-brand-regular">
+          <li
+            class="small text-muted dropdown-meta text-center font-brand-regular"
+          >
             <ul class="list-inline">
               <!-- Social media links -->
               <li>
-                <a href="https://www.facebook.com/trustroots.org"
-                   class="text-muted"
-                   aria-label="Trustroots at Facebook">
+                <a
+                  href="https://www.facebook.com/trustroots.org"
+                  class="text-muted"
+                  aria-label="Trustroots at Facebook"
+                >
                   Facebook
                 </a>
               </li>
               <li>
-                <a href="https://twitter.com/trustroots"
-                   class="text-muted"
-                   aria-label="Trustroots at Twitter">
+                <a
+                  href="https://twitter.com/trustroots"
+                  class="text-muted"
+                  aria-label="Trustroots at Twitter"
+                >
                   Twitter
                 </a>
               </li>
               <li>
-                <a href="https://www.instagram.com/trustroots_org/"
-                   class="text-muted"
-                   aria-label="Trustroots at Instagram">
+                <a
+                  href="https://www.instagram.com/trustroots_org/"
+                  class="text-muted"
+                  aria-label="Trustroots at Instagram"
+                >
                   Instagram
                 </a>
               </li>
@@ -201,8 +276,6 @@
         </a>
       </li>
     </ul>
-
   </div>
   <!-- /Header for authenticated users -->
-
 </header>

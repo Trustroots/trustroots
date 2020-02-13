@@ -24,26 +24,24 @@
  *
  * See formats: https://docs.angularjs.org/api/ng/filter/date
  */
-angular
-  .module('core')
-  .directive('trTime', trTimeDirective);
+angular.module('core').directive('trTime', trTimeDirective);
 
 /* @ngInject */
 function trTimeDirective($log, $rootScope, $parse, locker) {
   return {
     restrict: 'A',
     replace: false,
-    template: '<time ng-click="toggleMode($event)" aria-label="Change time presentation">' +
-                '<span ng-if="timeModeAgo" am-time-ago="::sourceTime" uib-tooltip="{{ ::sourceTime | date:trTimeFormat }}" tooltip-placement="{{ ::tooltipPlacement }}"></span>' +
-                '<span ng-if="!timeModeAgo">{{ ::sourceTime | date:trTimeFormat }}</span>' +
-              '</time>',
+    template:
+      '<time ng-click="toggleMode($event)" aria-label="Change time presentation">' +
+      '<span ng-if="timeModeAgo" am-time-ago="::sourceTime" uib-tooltip="{{ ::sourceTime | date:trTimeFormat }}" tooltip-placement="{{ ::tooltipPlacement }}"></span>' +
+      '<span ng-if="!timeModeAgo">{{ ::sourceTime | date:trTimeFormat }}</span>' +
+      '</time>',
     scope: {
       trTime: '@',
       trTimeTooltipPlacement: '@',
       trTimeFormat: '=?', // `?` makes it optional
     },
-    link: function (scope, element, attrs) {
-
+    link: function(scope, element, attrs) {
       if (!scope.trTime) {
         $log.warn('No time passed for tr-time directive.');
         return;
@@ -61,7 +59,9 @@ function trTimeDirective($log, $rootScope, $parse, locker) {
       scope.sourceTime = $parse(attrs.trTime)(scope.$parent);
 
       // Get setting from cache, use default (true) if it doesn't exist
-      scope.timeModeAgo = (locker.supported()) ? Boolean(locker.get('timeAgo', true)) : true;
+      scope.timeModeAgo = locker.supported()
+        ? Boolean(locker.get('timeAgo', true))
+        : true;
 
       // Sync mode if other directive changes time mode
       scope.$on('timeModeAgoChanged', timeModeAgoChanged);
@@ -73,7 +73,7 @@ function trTimeDirective($log, $rootScope, $parse, locker) {
 
       // Toggle viewing time between 'ago' and time format.
       // Saves setting to localStorage if it's available
-      scope.toggleMode = function ($event) {
+      scope.toggleMode = function($event) {
         $event.preventDefault();
         $event.stopPropagation();
 
@@ -87,7 +87,6 @@ function trTimeDirective($log, $rootScope, $parse, locker) {
         // Tell other directives to update their mode as well
         $rootScope.$broadcast('timeModeAgoChanged', scope.timeModeAgo);
       };
-
     },
   };
 }

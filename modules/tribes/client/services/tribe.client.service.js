@@ -1,18 +1,19 @@
-angular
-  .module('tribes')
-  .factory('TribeService', TribeService);
+angular.module('tribes').factory('TribeService', TribeService);
 
 /* @ngInject */
 function TribeService($resource, $q, $log) {
-
   // `$resource` to communicate with tribes REST API
-  const Tribe = $resource('/api/tribes/:tribeSlug', {
-    tribeSlug: '@slug',
-  }, {
-    get: {
-      method: 'GET',
+  const Tribe = $resource(
+    '/api/tribes/:tribeSlug',
+    {
+      tribeSlug: '@slug',
     },
-  });
+    {
+      get: {
+        method: 'GET',
+      },
+    },
+  );
 
   let cachedTribe;
 
@@ -51,8 +52,12 @@ function TribeService($resource, $q, $log) {
    * Automatically clears cache after retreiving object from cache
    */
   function get(options) {
-    return $q(function (resolve, reject) {
-      if (angular.isUndefined(options) || angular.isUndefined(options.tribeSlug) || !angular.isString(options.tribeSlug)) {
+    return $q(function(resolve, reject) {
+      if (
+        angular.isUndefined(options) ||
+        angular.isUndefined(options.tribeSlug) ||
+        !angular.isString(options.tribeSlug)
+      ) {
         $log.error('Missing tribeSlug');
         reject();
       } else if (cachedTribe && cachedTribe.slug === options.tribeSlug) {
@@ -63,15 +68,14 @@ function TribeService($resource, $q, $log) {
         // Not found from cache, return $resource
         Tribe.get({
           tribeSlug: options.tribeSlug,
-        }).$promise
-          .then(function (tribe) {
+        })
+          .$promise.then(function(tribe) {
             resolve(tribe);
           })
-          .catch(function () {
+          .catch(function() {
             reject();
           });
       }
     });
   }
-
 }

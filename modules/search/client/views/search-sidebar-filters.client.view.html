@@ -1,5 +1,4 @@
 <section class="search-sidebar-section search-sidebar-filters">
-
   <!-- Offer type filter -->
   <div role="group" aria-label="Hosts or meetups?">
     <h4>Hosts or meetups?</h4>
@@ -7,7 +6,7 @@
   </div>
   <!-- /Offer type filter -->
 
-  <hr class="hr-gray hr-tight">
+  <hr class="hr-gray hr-tight" />
 
   <!-- Tribes type filter -->
   <div role="group" aria-label="Filter by tribes">
@@ -16,10 +15,12 @@
         <h4>Tribes</h4>
       </div>
       <div class="col-xs-6 text-right">
-        <button type="button"
-             class="btn btn-default search-sidebar-filters-clear"
-             ng-click="search.filters.tribes = [];"
-             ng-disabled="!search.filters.tribes.length">
+        <button
+          type="button"
+          class="btn btn-default search-sidebar-filters-clear"
+          ng-click="search.filters.tribes = [];"
+          ng-disabled="!search.filters.tribes.length"
+        >
           Clear tribes
         </button>
       </div>
@@ -30,33 +31,38 @@
   </div>
   <!-- Tribes type filter -->
 
-  <hr class="hr-gray hr-tight">
+  <hr class="hr-gray hr-tight" />
 
   <!-- Online recently filter (aka "seen") -->
   <p>
     <label tr-switch>
-      <input type="checkbox"
-             ng-model="search.onlineInPast6Months"
-             ng-change="search.onSeenFilterChange()">
+      <input
+        type="checkbox"
+        ng-model="search.onlineInPast6Months"
+        ng-change="search.onSeenFilterChange()"
+      />
       Online in the past 6 months
     </label>
   </p>
   <!-- /Online recently filter (aka "seen") -->
 
-  <hr class="hr-gray hr-tight">
+  <hr class="hr-gray hr-tight" />
 
   <!-- Language filter -->
   <h4 id="filter-languages">Spoken languages</h4>
-  <div tr-languages="search.filters.languages"
-       ng-change="search.onLanguageFiltersChange()"
-       aria-labelledby="filter-languages"></div>
+  <div
+    tr-languages="search.filters.languages"
+    ng-change="search.onLanguageFiltersChange()"
+    aria-labelledby="filter-languages"
+  ></div>
   <!-- /Language filter -->
 
   <!-- Sidebar closing toggle for small screens -->
-  <button type="button"
-          class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
-          ng-click="search.toggleSidebar()">
+  <button
+    type="button"
+    class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+    ng-click="search.toggleSidebar()"
+  >
     Back to map
   </button>
-
 </section>

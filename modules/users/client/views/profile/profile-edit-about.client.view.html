@@ -1,30 +1,57 @@
-<form name="userForm" ng-submit="profileEditAbout.updateUserProfile(userForm.$valid)" autocomplete="off" tr-confirm-exit>
-
+<form
+  name="userForm"
+  ng-submit="profileEditAbout.updateUserProfile(userForm.$valid)"
+  autocomplete="off"
+  tr-confirm-exit
+>
   <!-- Describe yourself -->
   <div class="panel panel-default">
     <label for="description" class="panel-heading">Describe Yourself</label>
     <div class="panel-body">
       <div class="form-group">
-        <div id="description"
-             class="profile-edit-description"
-             aria-describedby="descriptionHelp"
-             ng-model="profileEditAbout.user.description"
-             ng-change="profileEdit.unsavedModifications=true"
-             tr-editor
-             tr-editor-options="::app.editorOptions"
-             data-placeholder="Type in your description…"></div>
+        <div
+          id="description"
+          class="profile-edit-description"
+          aria-describedby="descriptionHelp"
+          ng-model="profileEditAbout.user.description"
+          ng-change="profileEdit.unsavedModifications=true"
+          tr-editor
+          tr-editor-options="::app.editorOptions"
+          data-placeholder="Type in your description…"
+        ></div>
         <p class="help-block">
-          Help other people get to know you by telling them about your life and the things you like.
+          Help other people get to know you by telling them about your life and
+          the things you like.
         </p>
-        <p class="help-block" ng-if="(profileEditAbout.user.description|plainTextLength) < (3 * app.appSettings.profileMinimumLength)">
-          Interesting and full profile will help you to meet more like minded people and to find hosts easier.
+        <p
+          class="help-block"
+          ng-if="(profileEditAbout.user.description|plainTextLength) < (3 * app.appSettings.profileMinimumLength)"
+        >
+          Interesting and full profile will help you to meet more like minded
+          people and to find hosts easier.
         </p>
-        <p class="help-block" ng-if="(profileEditAbout.user.description|plainTextLength) > 0 && (profileEditAbout.user.description|plainTextLength) < app.appSettings.profileMinimumLength">
-          <strong class="text-danger pull-left">Write longer description in order to send messages to other members.</strong>
-          <uib-progressbar class="profile-edit-description-progress pull-left" max="app.appSettings.profileMinimumLength" value="(profileEditAbout.user.description|plainTextLength)"></uib-progressbar>
+        <p
+          class="help-block"
+          ng-if="(profileEditAbout.user.description|plainTextLength) > 0 && (profileEditAbout.user.description|plainTextLength) < app.appSettings.profileMinimumLength"
+        >
+          <strong class="text-danger pull-left"
+            >Write longer description in order to send messages to other
+            members.</strong
+          >
+          <uib-progressbar
+            class="profile-edit-description-progress pull-left"
+            max="app.appSettings.profileMinimumLength"
+            value="(profileEditAbout.user.description|plainTextLength)"
+          ></uib-progressbar>
         </p>
-        <p class="help-block" ng-if="(profileEditAbout.user.description|plainTextLength) === 0">
-          <strong class="text-danger pull-left">Fill out description in order to send messages to other members.</strong>
+        <p
+          class="help-block"
+          ng-if="(profileEditAbout.user.description|plainTextLength) === 0"
+        >
+          <strong class="text-danger pull-left"
+            >Fill out description in order to send messages to other
+            members.</strong
+          >
         </p>
       </div>
     </div>
@@ -37,8 +64,14 @@
   <!-- /Describe yourself -->
 
   <p>
-    <button type="submit" class="btn btn-lg btn-primary profile-editor-save" ng-disabled="!profileEdit.unsavedModifications">Save</button>
-    <br><br>
+    <button
+      type="submit"
+      class="btn btn-lg btn-primary profile-editor-save"
+      ng-disabled="!profileEdit.unsavedModifications"
+    >
+      Save
+    </button>
+    <br /><br />
   </p>
 
   <!-- Basics -->
@@ -46,98 +79,157 @@
     <div class="panel-heading">Basics</div>
     <div class="panel-body">
       <div class="form-horizontal">
+        <div class="form-group">
+          <label for="firstname" class="col-sm-3 text-right control-label"
+            >First name</label
+          >
+          <div class="col-sm-9 col-md-7 col-lg-6">
+            <input
+              type="text"
+              class="form-control"
+              id="firstname"
+              ng-model="profileEditAbout.user.firstName"
+              ng-change="profileEdit.unsavedModifications=true"
+            />
+          </div>
+        </div>
 
-              <div class="form-group">
-                <label for="firstname" class="col-sm-3 text-right control-label">First name</label>
-                <div class="col-sm-9 col-md-7 col-lg-6">
-                  <input type="text" class="form-control" id="firstname" ng-model="profileEditAbout.user.firstName" ng-change="profileEdit.unsavedModifications=true">
-                </div>
+        <div class="form-group">
+          <label for="lastname" class="col-sm-3 text-right control-label"
+            >Last name</label
+          >
+          <div class="col-sm-9 col-md-7 col-lg-6">
+            <input
+              type="text"
+              class="form-control"
+              id="lastname"
+              ng-model="profileEditAbout.user.lastName"
+              ng-change="profileEdit.unsavedModifications=true"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="tagline" class="col-sm-3 text-right control-label"
+            >Short tagline</label
+          >
+          <div class="col-sm-9 col-md-7 col-lg-6">
+            <input
+              type="text"
+              class="form-control"
+              data-placeholder="lorem"
+              id="tagline"
+              ng-model="profileEditAbout.user.tagline"
+              ng-change="profileEdit.unsavedModifications=true"
+            />
+            <p class="help-block">
+              What is your mission or life motto?
+            </p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="gender" class="col-sm-3 text-right control-label"
+            >I Am</label
+          >
+          <div class="col-sm-9 col-md-7 col-lg-6">
+            <select
+              class="form-control"
+              id="gender"
+              ng-model="profileEditAbout.user.gender"
+              ng-change="profileEdit.unsavedModifications=true"
+            >
+              <option ng-selected="profileEditAbout.user.gender === ''" value=""
+                >I'd rather not tell</option
+              >
+              <option
+                ng-selected="profileEditAbout.user.gender === 'female'"
+                value="female"
+                >Female</option
+              >
+              <option
+                ng-selected="profileEditAbout.user.gender === 'male'"
+                value="male"
+                >Male</option
+              >
+              <option
+                ng-selected="profileEditAbout.user.gender === 'non-binary'"
+                value="non-binary"
+                >Non-binary</option
+              >
+              <option
+                ng-selected="profileEditAbout.user.gender === 'other'"
+                value="other"
+                >Other</option
+              >
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="col-sm-3 text-right control-label">Birthdate</label>
+          <div class="col-sm-9">
+            <div
+              tr-date-select
+              template-url="tr-birthdate-select.html"
+              ng-model="profileEditAbout.user.birthdate"
+              ng-change="profileEdit.unsavedModifications=true"
+            ></div>
+            <script type="text/ng-template" id="tr-birthdate-select.html">
+              <div class="form-inline">
+
+                <label class="sr-only" for="birthdate-month">Month</label>
+                <select class="form-control"
+                        id="birthdate-month"
+                        ng-model="val.month"
+                        ng-options="m.value as m.name for m in months">
+                  <option value="">Month</option>
+                </select>
+
+                <label class="sr-only" for="birthdate-date">Date</label>
+                <select class="form-control"
+                        id="birthdate-date"
+                        ng-model="val.date"
+                        ng-options="d for d in dates track by d">
+                  <option value="">Day</option>
+                </select>
+
+                <label class="sr-only" for="birthdate-year">Year</label>
+                <select class="form-control"
+                        id="birthdate-year"
+                        ng-model="val.year"
+                        ng-options="y for y in ::years">
+                  <option value="">Year</option>
+                </select>
+
               </div>
+            </script>
+          </div>
+        </div>
 
-              <div class="form-group">
-                <label for="lastname" class="col-sm-3 text-right control-label">Last name</label>
-                <div class="col-sm-9 col-md-7 col-lg-6">
-                  <input type="text" class="form-control" id="lastname" ng-model="profileEditAbout.user.lastName" ng-change="profileEdit.unsavedModifications=true">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="tagline" class="col-sm-3 text-right control-label">Short tagline</label>
-                <div class="col-sm-9 col-md-7 col-lg-6">
-                  <input type="text" class="form-control" data-placeholder="lorem" id="tagline" ng-model="profileEditAbout.user.tagline" ng-change="profileEdit.unsavedModifications=true">
-                  <p class="help-block">
-                    What is your mission or life motto?
-                  </p>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="gender" class="col-sm-3 text-right control-label">I Am</label>
-                <div class="col-sm-9 col-md-7 col-lg-6">
-                  <select class="form-control" id="gender" ng-model="profileEditAbout.user.gender" ng-change="profileEdit.unsavedModifications=true">
-                    <option ng-selected="profileEditAbout.user.gender === ''" value="">I'd rather not tell</option>
-                    <option ng-selected="profileEditAbout.user.gender === 'female'" value="female">Female</option>
-                    <option ng-selected="profileEditAbout.user.gender === 'male'" value="male">Male</option>
-                    <option ng-selected="profileEditAbout.user.gender === 'non-binary'" value="non-binary">Non-binary</option>
-                    <option ng-selected="profileEditAbout.user.gender === 'other'" value="other">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="col-sm-3 text-right control-label">Birthdate</label>
-                <div class="col-sm-9">
-                  <div tr-date-select template-url="tr-birthdate-select.html" ng-model="profileEditAbout.user.birthdate" ng-change="profileEdit.unsavedModifications=true"></div>
-                  <script type="text/ng-template" id="tr-birthdate-select.html">
-                    <div class="form-inline">
-
-                      <label class="sr-only" for="birthdate-month">Month</label>
-                      <select class="form-control"
-                              id="birthdate-month"
-                              ng-model="val.month"
-                              ng-options="m.value as m.name for m in months">
-                        <option value="">Month</option>
-                      </select>
-
-                      <label class="sr-only" for="birthdate-date">Date</label>
-                      <select class="form-control"
-                              id="birthdate-date"
-                              ng-model="val.date"
-                              ng-options="d for d in dates track by d">
-                        <option value="">Day</option>
-                      </select>
-
-                      <label class="sr-only" for="birthdate-year">Year</label>
-                      <select class="form-control"
-                              id="birthdate-year"
-                              ng-model="val.year"
-                              ng-options="y for y in ::years">
-                        <option value="">Year</option>
-                      </select>
-
-                    </div>
-                  </script>
-
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="col-sm-3 text-right control-label" id="label-languages">Languages</label>
-                <div class="col-sm-9 col-md-7 col-lg-6">
-                  <div tr-languages="profileEditAbout.user.languages"
-                       ng-change="profileEdit.unsavedModifications = true"
-                       aria-labelledby="label-languages"></div>
-                  <p class="help-block">Add languages you speak.</p>
-                </div>
-              </div>
-
+        <div class="form-group">
+          <label class="col-sm-3 text-right control-label" id="label-languages"
+            >Languages</label
+          >
+          <div class="col-sm-9 col-md-7 col-lg-6">
+            <div
+              tr-languages="profileEditAbout.user.languages"
+              ng-change="profileEdit.unsavedModifications = true"
+              aria-labelledby="label-languages"
+            ></div>
+            <p class="help-block">Add languages you speak.</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
   <!-- /Basics -->
 
-  <button type="submit"
-          class="btn btn-lg btn-primary profile-editor-save"
-          ng-disabled="!profileEdit.unsavedModifications">Save</button>
-
+  <button
+    type="submit"
+    class="btn btn-lg btn-primary profile-editor-save"
+    ng-disabled="!profileEdit.unsavedModifications"
+  >
+    Save
+  </button>
 </form>

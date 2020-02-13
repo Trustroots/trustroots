@@ -4,12 +4,11 @@ const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const express = require(path.resolve('./config/lib/express'));
 const should = require('should');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 
 /**
  * Globals
  */
-let app;
-let agent;
 let credentialsAdmin;
 let credentialsRegular;
 let userAdmin;
@@ -17,14 +16,9 @@ let userRegular;
 let userRegularId;
 
 describe('Admin User CRUD tests', () => {
-
-  before((done) => {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
-
-    done();
-  });
+  // Get application
+  const app = express.init(mongoose.connection);
+  const agent = request.agent(app);
 
   beforeEach(async () => {
     try {
@@ -81,296 +75,269 @@ describe('Admin User CRUD tests', () => {
     }
   });
 
-  describe('Search users', () => {
-    it('non-authenticated users should not be allowed to search', (done) => {
-      agent.post('/api/admin/users')
-        .send({ 'search': 'Name' })
-        .expect(403)
-        .end((err, res) => {
-          res.body.message.should.equal('Forbidden.');
-          return done(err);
-        });
+  afterEach(utils.clearDatabase);
+
+  describe('As non-authenticated user...', () => {
+    it('Non-authenticated users should not be allowed to search users', async () => {
+      await agent
+        .post('/api/admin/users')
+        .send({ search: 'Name' })
+        .expect(403);
     });
 
-    it('non-admin users should not be allowed to search', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsRegular)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/users')
-            .send({ 'search': 'Name' })
-            .expect(403)
-            .end((err, res) => {
-              res.body.message.should.equal('Forbidden.');
-              return done(err);
-            });
-        });
+    it('Non-authenticated users should not be allowed to list users by role', async () => {
+      await agent
+        .post('/api/admin/users/by-role')
+        .send({ role: 'admin' })
+        .expect(403);
     });
 
-    it('admin users should be allowed to search and get correct results', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/users')
-            .send({ 'search': 'Name' })
-            .expect(200)
-            .end((err, res) => {
-              res.body.length.should.equal(2);
-
-              res.body[0].username.should.equal('user-admin');
-              res.body[1].username.should.equal('user-regular');
-
-              res.body.forEach((user) => {
-                // These should have been removed
-                should.not.exist(user.password);
-                should.not.exist(user.salt);
-                // These should have been obfuscated
-                user.removeProfileToken.should.equal('(Hidden from admins.)');
-                user.resetPasswordToken.should.equal('(Hidden from admins.)');
-              });
-
-              return done(err);
-            });
-        });
-    });
-
-    it('should find by username', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/users')
-            .send({ 'search': 'user-regular' })
-            .expect(200)
-            .end((err, res) => {
-              res.body.length.should.equal(1);
-              res.body[0].username.should.equal('user-regular');
-              return done(err);
-            });
-        });
-    });
-
-    it('should find by email', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/users')
-            .send({ 'search': 'regular@example.com' })
-            .expect(200)
-            .end((err, res) => {
-              res.body.length.should.equal(1);
-              res.body[0].email.should.equal('regular@example.com');
-              return done(err);
-            });
-        });
-    });
-  });
-
-  describe('Get user by ID', () => {
-    it('non-authenticated users should not be allowed to query', (done) => {
-      agent.post('/api/admin/user')
+    it('Mon-authenticated users should not be allowed to get user by ID', async () => {
+      await agent
+        .post('/api/admin/user')
         .send({ id: userRegularId })
-        .expect(403)
-        .end((err, res) => {
-          res.body.message.should.equal('Forbidden.');
-          return done(err);
-        });
+        .expect(403);
     });
 
-    it('non-admin users should not be allowed to query', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsRegular)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/user')
-            .send({ id: userRegularId })
-            .expect(403)
-            .end((err, res) => {
-              res.body.message.should.equal('Forbidden.');
-              return done(err);
-            });
-        });
+    it('Non-authenticated users should not be allowed to change user roles', async () => {
+      await agent
+        .post('/api/admin/user/change-role')
+        .send({ id: userRegularId, role: 'suspended' })
+        .expect(403);
     });
 
-    it('admin users should be allowed to query and get correct result', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/user')
-            .send({ id: userRegularId })
-            .expect(200)
-            .end((err, res) => {
-              const profile = res.body.profile;
-
-              profile.username.should.equal('user-regular');
-              profile.emailToken.should.equal('test-token');
-              // These should have been removed
-              should.not.exist(profile.password);
-              should.not.exist(profile.salt);
-              // These should have been obfuscated
-              profile.removeProfileToken.should.equal('(Hidden from admins.)');
-              profile.resetPasswordToken.should.equal('(Hidden from admins.)');
-              return done(err);
-            });
-        });
-    });
-
-    it('missing id should return no users', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/user')
-            .send({ id: '' })
-            .expect(400)
-            .end((err, res) => {
-              res.body.message.should.equal('Cannot interpret id.');
-              return done(err);
-            });
-        });
-    });
-
-    it('invalid id should return no users', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
-
-          agent.post('/api/admin/user')
-            .send({ id: '123' })
-            .expect(400)
-            .end((err, res) => {
-              res.body.message.should.equal('Cannot interpret id.');
-              return done(err);
-            });
-        });
+    it('Non-authenticated users should not be allowed to change user roles', async () => {
+      await agent
+        .post('/api/admin/user/change-role')
+        .send({ id: userRegularId, role: 'suspended' })
+        .expect(403);
     });
   });
 
-  describe('Suspend user', () => {
-    it('non-authenticated users should not be allowed to suspend users', (done) => {
-      agent.post('/api/admin/user/suspend')
-        .send({ id: userRegularId })
-        .expect(403)
-        .end((err, res) => {
-          res.body.message.should.equal('Forbidden.');
-          done(err);
-        });
+  describe('As authenticated user...', () => {
+    afterEach(async () => {
+      await utils.signOut(agent);
     });
 
-    it('non-admin users should not be allowed to suspend users', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsRegular)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
+    describe('Search users', () => {
+      it('non-admin users should not be allowed to search', async () => {
+        await utils.signIn(credentialsRegular, agent);
 
-          agent.post('/api/admin/user/suspend')
-            .send({ id: userRegularId })
-            .expect(403)
-            .end((err, res) => {
-              res.body.message.should.equal('Forbidden.');
-              done(err);
-            });
+        await agent
+          .post('/api/admin/users')
+          .send({ search: 'Name' })
+          .expect(403);
+      });
+
+      it('admin users should be allowed to search and get correct results', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({ search: 'Name' })
+          .expect(200);
+
+        should(body.length).equal(2);
+
+        should(body[0].username).equal('user-admin');
+        should(body[1].username).equal('user-regular');
+
+        body.forEach(user => {
+          // These should have been removed
+          should.not.exist(user.password);
+          should.not.exist(user.salt);
+          // These should have been obfuscated
+          should(user.removeProfileToken).equal('(Hidden from admins.)');
+          should(user.resetPasswordToken).equal('(Hidden from admins.)');
         });
+      });
+
+      it('should find by username', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({ search: 'user-regular' })
+          .expect(200);
+
+        should(body.length).equal(1);
+        should(body[0].username).equal('user-regular');
+      });
+
+      it('should find by email', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({ search: 'regular@example.com' })
+          .expect(200);
+
+        should(body.length).equal(1);
+        should(body[0].email).equal('regular@example.com');
+      });
     });
 
-    it('admin users should be allowed suspend users', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
+    describe('List users by role', () => {
+      it('non-admin users should not be allowed to list users by role', async () => {
+        await utils.signIn(credentialsRegular, agent);
 
-          agent.post('/api/admin/user/suspend')
-            .send({ id: userRegularId })
-            .expect(200)
-            .end((err, res) => {
-              res.body.message.should.equal('Suspended.');
-              done(err);
-            });
-        });
+        await agent
+          .post('/api/admin/users/by-role')
+          .send({ role: 'admin' })
+          .expect(403);
+      });
+
+      it('admin users should be allowed to list users by role and get correct results', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users/by-role')
+          .send({ role: 'admin' })
+          .expect(200);
+
+        should(body.length).equal(1);
+
+        const user = body[0];
+
+        should(user.username).equal('user-admin');
+
+        // These should have been removed
+        should.not.exist(user.password);
+        should.not.exist(user.salt);
+
+        // These should have been obfuscated
+        should(user.removeProfileToken).equal('(Hidden from admins.)');
+        should(user.resetPasswordToken).equal('(Hidden from admins.)');
+      });
+
+      it('listing users by invalid role should not be possible', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        await agent
+          .post('/api/admin/users/by-role')
+          .send({ role: 'fake' })
+          .expect(400);
+      });
     });
 
-    it('missing id should not suspend users', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
+    describe('Get user by ID', () => {
+      it('non-admin users should not be allowed to query', async () => {
+        await utils.signIn(credentialsRegular, agent);
 
-          agent.post('/api/admin/user/suspend')
-            .send({ id: '' })
-            .expect(400)
-            .end((err, res) => {
-              res.body.message.should.equal('Cannot interpret id.');
-              done(err);
-            });
-        });
+        await agent
+          .post('/api/admin/user')
+          .send({ id: userRegularId })
+          .expect(403);
+      });
+
+      it('admin users should be allowed to query and get correct result', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user')
+          .send({ id: userRegularId })
+          .expect(200);
+
+        should(body.profile.username).equal('user-regular');
+        should(body.profile.emailToken).equal('test-token');
+
+        // These should have been removed
+        should.not.exist(body.profile.password);
+        should.not.exist(body.profile.salt);
+
+        // These should have been obfuscated
+        should(body.profile.removeProfileToken).equal('(Hidden from admins.)');
+        should(body.profile.resetPasswordToken).equal('(Hidden from admins.)');
+      });
+
+      it('missing id should return no users', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user')
+          .send({ id: '' })
+          .expect(400);
+
+        should(body.message).equal('Cannot interpret id.');
+      });
+
+      it('invalid id should return no users', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user')
+          .send({ id: '123' })
+          .expect(400);
+
+        should(body.message).equal('Cannot interpret id.');
+      });
     });
 
-    it('invalid id should not suspend users', (done) => {
-      agent.post('/api/auth/signin')
-        .send(credentialsAdmin)
-        .expect(200)
-        .end((signinErr) => {
-          if (signinErr) {
-            return done(signinErr);
-          }
+    describe('Changing user roles', () => {
+      it('non-admin users should not be allowed to change user roles', async () => {
+        await utils.signIn(credentialsRegular, agent);
 
-          agent.post('/api/admin/user/suspend')
-            .send({ id: '123' })
-            .expect(400)
-            .end((err, res) => {
-              res.body.message.should.equal('Cannot interpret id.');
-              done(err);
-            });
+        await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'suspended' })
+          .expect(403);
+      });
+
+      // Allowed roles
+      ['moderator', 'shadowban', 'suspended'].map(role => {
+        it(`admin users should be allowed change user role to ${role}`, async () => {
+          await utils.signIn(credentialsAdmin, agent);
+
+          await agent
+            .post('/api/admin/user/change-role')
+            .send({ id: userRegularId, role })
+            .expect(200);
         });
+      });
+
+      it('missing id should not change user role', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: '', role: 'suspended' })
+          .expect(400);
+
+        should(body.message).equal('Cannot interpret id.');
+      });
+
+      it('invalid role should not be change user roles', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'fake' })
+          .expect(400);
+
+        should(body.message).equal('Invalid role.');
+      });
+
+      it('cannot change user role to admin', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'admin' })
+          .expect(400);
+
+        should(body.message).equal('Invalid role.');
+      });
+
+      it('invalid id should not change user roles', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: '123', role: 'suspended' })
+          .expect(400);
+
+        should(body.message).equal('Cannot interpret id.');
+      });
     });
   });
-
-  afterEach((done) => {
-    User.deleteMany().exec(done);
-  });
-
 });

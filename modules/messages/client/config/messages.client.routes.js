@@ -1,32 +1,30 @@
 import messageThreadTemplateUrl from '@/modules/messages/client/views/thread.client.view.html';
 
-angular
-  .module('messages')
-  .config(MessagesRoutes);
+angular.module('messages').config(MessagesRoutes);
 
 /* @ngInject */
 function MessagesRoutes($stateProvider) {
-
   // Messages state routing
-  $stateProvider.
-    state('inbox', {
+  $stateProvider
+    .state('inbox', {
       url: '/messages',
       template: '<inbox user="app.user"></inbox>',
       requiresAuth: true,
       data: {
         pageTitle: 'Messages',
       },
-    }).
-    state('messageThread', {
+    })
+    .state('messageThread', {
       url: '/messages/:username',
-      template: '<thread user="app.user" profileMinimumLength="app.appSettings.profileMinimumLength"></thread>',
+      template:
+        '<thread user="app.user" profileMinimumLength="app.appSettings.profileMinimumLength"></thread>',
       requiresAuth: true,
       footerHidden: true,
       data: {
         pageTitle: 'Messages',
       },
-    }).
-    state('messageThread2', {
+    })
+    .state('messageThread2', {
       url: '/messages2/:username',
       templateUrl: messageThreadTemplateUrl,
       controller: 'MessagesThreadController',
@@ -38,10 +36,10 @@ function MessagesRoutes($stateProvider) {
         UserProfilesService: 'UserProfilesService',
         SettingsService: 'SettingsService',
 
-        userTo: function (UserProfilesService, $stateParams) {
+        userTo: function(UserProfilesService, $stateParams) {
           return UserProfilesService.get({ username: $stateParams.username });
         },
-        appSettings: function (SettingsService) {
+        appSettings: function(SettingsService) {
           return SettingsService.get();
         },
       },

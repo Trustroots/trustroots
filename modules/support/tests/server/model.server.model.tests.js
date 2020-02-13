@@ -16,10 +16,8 @@ let support;
 /**
  * Unit tests
  */
-describe('Support request Model Unit Tests:', function () {
-
-  beforeEach(function (done) {
-
+describe('Support request Model Unit Tests:', function() {
+  beforeEach(function(done) {
     user = new User({
       firstName: 'Joe',
       lastName: 'Doe',
@@ -34,23 +32,23 @@ describe('Support request Model Unit Tests:', function () {
       email: 'joedoe@test.com',
       username: 'joedoe',
       message: 'Testing.',
-      userAgent: 'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
+      userAgent:
+        'Mozilla/5.0 (X11; Linux x86_64; rv:10.0) Gecko/20100101 Firefox/10.0',
       reportMember: 'baduser',
     };
 
     support = new SupportRequest(_support);
 
     // Create user
-    user.save(function (err, userRes) {
+    user.save(function(err, userRes) {
       support.user = userRes._id;
       return done();
     });
   });
 
-  describe('Method Save', function () {
-    it('should be able to save without problems', function (done) {
-
-      support.save(function (err, supportRes) {
+  describe('Method Save', function() {
+    it('should be able to save without problems', function(done) {
+      support.save(function(err, supportRes) {
         should.not.exist(err);
         supportRes.email.should.equal(_support.email);
         supportRes.username.should.equal(_support.username);
@@ -62,32 +60,32 @@ describe('Support request Model Unit Tests:', function () {
       });
     });
 
-    it('should be able to save without problems without user id', function (done) {
+    it('should be able to save without problems without user id', function(done) {
       const supportWithoutUser = new SupportRequest(_support);
 
-      supportWithoutUser.save(function (err, supportRes) {
+      supportWithoutUser.save(function(err, supportRes) {
         should.not.exist(err);
         should.not.exist(supportRes.user);
         return done();
       });
     });
 
-    it('should not be able to save without message', function (done) {
+    it('should not be able to save without message', function(done) {
       delete _support.message;
       const supportWithoutMessage = new SupportRequest(_support);
 
-      supportWithoutMessage.save(function (err) {
+      supportWithoutMessage.save(function(err) {
         should.exist(err);
         return done();
       });
     });
 
-    it('should be able to save without problems without any other fields than message', function (done) {
+    it('should be able to save without problems without any other fields than message', function(done) {
       const supportOnlyMessage = new SupportRequest({
         message: _support.message,
       });
 
-      supportOnlyMessage.save(function (err, supportRes) {
+      supportOnlyMessage.save(function(err, supportRes) {
         should.not.exist(err);
         should.exist(supportRes.sent);
         supportRes.message.should.equal(_support.message);
@@ -99,11 +97,10 @@ describe('Support request Model Unit Tests:', function () {
         return done();
       });
     });
-
   });
 
-  afterEach(function (done) {
-    SupportRequest.deleteMany().exec(function () {
+  afterEach(function(done) {
+    SupportRequest.deleteMany().exec(function() {
       User.deleteMany().exec(done);
     });
   });

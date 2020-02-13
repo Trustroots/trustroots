@@ -1,36 +1,37 @@
 <section class="offers-list" ng-if="app.user.public">
-
   <div class="row">
     <div class="col-xs-12 col-sm-10">
       <h3>Your meetups</h3>
     </div>
     <div class="col-xs-12 col-sm-2 text-right">
-      <a ui-sref="offer.meet.add"
-         class="btn btn-lg btn-primary"
-         aria-label="Add new meet offer">
+      <a
+        ui-sref="offer.meet.add"
+        class="btn btn-lg btn-primary"
+        aria-label="Add new meet offer"
+      >
         Add new
       </a>
     </div>
   </div>
 
-  <hr class="hr-gray hr-tight">
+  <hr class="hr-gray hr-tight" />
 
   <!-- No meetings -->
   <div class="content-empty" ng-if="!offerListMeet.offers.length">
     <div class="icon-users icon-3x text-muted"></div>
-    <br>
+    <br />
     <p class="lead text-center">
-      Travelling? Organising an event? <br>
+      Travelling? Organising an event? <br />
       Just making a dinner and would like to invite people over?
-      <br>
-      <br>
+      <br />
+      <br />
     </p>
     <p>
       <a ui-sref="offer.meet.add" class="btn btn-action btn-inverse-primary">
         Add it to map!
       </a>
-      <br>
-      <br>
+      <br />
+      <br />
     </p>
     <p class="lead text-center">
       Meetups stay visible on map at most one month.
@@ -38,82 +39,94 @@
   </div>
 
   <!-- List of meetings -->
-  <div class="panel panel-default"
-       ng-repeat="offer in offerListMeet.offers | orderBy:'-validUntil' track by offer._id"
-       ng-attr-id="offer-{{::offer._id}}">
+  <div
+    class="panel panel-default"
+    ng-repeat="offer in offerListMeet.offers | orderBy:'-validUntil' track by offer._id"
+    ng-attr-id="offer-{{::offer._id}}"
+  >
     <div class="panel-body">
-
       <!-- The map (React component) -->
       <offer-location offer="offer"></offer-location>
 
-      <br><br>
+      <br /><br />
 
       <!-- No descriptions -->
       <div ng-if="!offer.description" class="text-center text-muted">
         <em>No description!</em>
-        <br><br>
-        <a ui-sref="offer.meet.edit({ offerId: offer._id })"
-           class="btn btn-primary">
+        <br /><br />
+        <a
+          ui-sref="offer.meet.edit({ offerId: offer._id })"
+          class="btn btn-primary"
+        >
           Write description
         </a>
       </div>
 
       <!-- Short descriptions -->
-      <div ng-if="offer.description && offer.description.length < 2000"
-           ng-bind-html="offer.description | trustedHtml"></div>
+      <div
+        ng-if="offer.description && offer.description.length < 2000"
+        ng-bind-html="offer.description | trustedHtml"
+      ></div>
 
       <!-- Long descriptions -->
       <div ng-if="offer.description && offer.description.length >= 2000">
-        <div class="panel-more-wrap"
-             ng-hide="offerDescriptionToggle">
-          <div ng-bind-html="offer.description | limitTo:2000 | trustedHtml"
-               class="panel-more-excerpt"
-               ng-click="offerDescriptionToggle=true"></div>
-          <div class="panel-more-fade"
-               ng-click="offerDescriptionToggle=true">
+        <div class="panel-more-wrap" ng-hide="offerDescriptionToggle">
+          <div
+            ng-bind-html="offer.description | limitTo:2000 | trustedHtml"
+            class="panel-more-excerpt"
+            ng-click="offerDescriptionToggle=true"
+          ></div>
+          <div class="panel-more-fade" ng-click="offerDescriptionToggle=true">
             Show more...
           </div>
         </div>
-        <div ng-bind-html="offer.description | trustedHtml"
-             ng-show="offerDescriptionToggle"></div>
+        <div
+          ng-bind-html="offer.description | trustedHtml"
+          ng-show="offerDescriptionToggle"
+        ></div>
       </div>
 
-      <br><br>
+      <br /><br />
 
       <!-- Actions-->
       <div class="text-center">
-        <a ui-sref="search.map({offer: offer._id})"
-           class="btn btn-inverse-primary">
+        <a
+          ui-sref="search.map({offer: offer._id})"
+          class="btn btn-inverse-primary"
+        >
           <span class="hidden-xs">See on big map</span>
           <span class="visible-xs-inline">Big Map</span>
         </a>
         &nbsp;
-        <a ui-sref="offer.meet.edit({ offerId: offer._id })"
-           class="btn btn-inverse-primary"
-           aria-label="Modify this meet offer">
+        <a
+          ui-sref="offer.meet.edit({ offerId: offer._id })"
+          class="btn btn-inverse-primary"
+          aria-label="Modify this meet offer"
+        >
           Modify
         </a>
         &nbsp;
-        <button role="button"
-           ng-disabled="offerListMeet.isLoading"
-           ng-click="offerListMeet.remove(offer)"
-           class="btn btn-inverse-primary"
-           aria-label="Remove this meet offer">
+        <button
+          role="button"
+          ng-disabled="offerListMeet.isLoading"
+          ng-click="offerListMeet.remove(offer)"
+          class="btn btn-inverse-primary"
+          aria-label="Remove this meet offer"
+        >
           Remove
         </button>
       </div>
-
     </div>
     <div class="panel-footer text-muted text-center">
-      Will be hidden <span tr-time="offer.validUntil" tr-time-format="'mediumDate'"></span>
+      Will be hidden
+      <span tr-time="offer.validUntil" tr-time-format="'mediumDate'"></span>
     </div>
   </div>
 
-  <p class="text-center" ng-if="offerListMeet.offers.length">
-    <br>
+  <div class="text-center" ng-if="offerListMeet.offers.length">
+    <br />
     <a ui-sref="offer.meet.add" class="btn btn-lg btn-primary">
       Add new meetup
     </a>
   </div>
-
 </section>

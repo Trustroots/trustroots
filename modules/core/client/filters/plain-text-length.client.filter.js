@@ -15,9 +15,7 @@
  * @link https://docs.angularjs.org/api/ng/filter/filter
  * @link http://stackoverflow.com/a/17315483/1984644
  */
-angular
-  .module('core')
-  .filter('plainTextLength', plainTextLengthFilter);
+angular.module('core').filter('plainTextLength', plainTextLengthFilter);
 
 function plainTextLengthFilter() {
   return plainTextLength;
@@ -25,5 +23,10 @@ function plainTextLengthFilter() {
 
 // Allow it to be used via direct import too
 export default function plainTextLength(string) {
-  return string && angular.isString(string) ? String(string).replace(/&nbsp;/g, ' ').replace(/<[^>]+>/gm, '').trim().length : 0;
+  return string && angular.isString(string)
+    ? String(string)
+        .replace(/&nbsp;/g, ' ')
+        .replace(/<[^>]+>/gm, '')
+        .trim().length
+    : 0;
 }

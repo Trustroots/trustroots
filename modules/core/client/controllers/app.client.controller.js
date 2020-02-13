@@ -4,9 +4,7 @@ import '@/modules/messages/client/messages.client.module';
 /**
  * Application wide view controller
  */
-angular
-  .module('core')
-  .controller('AppController', AppController);
+angular.module('core').controller('AppController', AppController);
 
 /* @ngInject */
 function AppController(
@@ -23,8 +21,8 @@ function AppController(
   locker,
   PollMessagesCount,
   push,
-  trNativeAppBridge) {
-
+  trNativeAppBridge,
+) {
   // ViewModel
   const vm = this;
 
@@ -75,53 +73,144 @@ function AppController(
       // List of element attributes to remove during
       // paste when `cleanPastedHTML` is `true`
       cleanAttrs: [
-        'class', 'style', 'dir', 'id', 'title', 'target', 'tabindex',
-        'onclick', 'oncontextmenu', 'ondblclick', 'onmousedown', 'onmouseenter',
-        'onmouseleave', 'onmousemove', 'onmouseover', 'onmouseout', 'onmouseup',
-        'onwheel', 'onmousewheel', 'onmessage', 'ontouchstart', 'ontouchmove',
-        'ontouchend', 'ontouchcancel', 'onload', 'onscroll',
+        'class',
+        'style',
+        'dir',
+        'id',
+        'title',
+        'target',
+        'tabindex',
+        'onclick',
+        'oncontextmenu',
+        'ondblclick',
+        'onmousedown',
+        'onmouseenter',
+        'onmouseleave',
+        'onmousemove',
+        'onmouseover',
+        'onmouseout',
+        'onmouseup',
+        'onwheel',
+        'onmousewheel',
+        'onmessage',
+        'ontouchstart',
+        'ontouchmove',
+        'ontouchend',
+        'ontouchcancel',
+        'onload',
+        'onscroll',
       ],
       // list of element tag names to remove during
       // paste when `cleanPastedHTML` is `true`
       cleanTags: [
-        'link', 'iframe', 'frameset', 'noframes', 'object', 'video', 'audio',
-        'track', 'source', 'base', 'basefont', 'applet', 'param', 'embed',
-        'script', 'meta', 'head', 'title', 'svg', 'script', 'style',
-        'input', 'textarea', 'form', 'hr', 'select', 'optgroup', 'label',
-        'img', 'canvas', 'area', 'map', 'figure', 'picture', 'figcaption',
+        'link',
+        'iframe',
+        'frameset',
+        'noframes',
+        'object',
+        'video',
+        'audio',
+        'track',
+        'source',
+        'base',
+        'basefont',
+        'applet',
+        'param',
+        'embed',
+        'script',
+        'meta',
+        'head',
+        'title',
+        'svg',
+        'script',
+        'style',
+        'input',
+        'textarea',
+        'form',
+        'hr',
+        'select',
+        'optgroup',
+        'label',
+        'img',
+        'canvas',
+        'area',
+        'map',
+        'figure',
+        'picture',
+        'figcaption',
         'noscript',
       ],
       //  list of element tag names to unwrap (remove the element tag but retain
       // its child elements) during paste when `cleanPastedHTML` is `true`
       unwrapTags: [
-        '!DOCTYPE', 'html', 'body', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        'table', 'th', 'tr', 'td', 'tbody', 'thead', 'tfoot', 'article',
-        'header', 'footer', 'section', 'aside', 'font', 'center', 'big',
-        'code', 'pre', 'small', 'button', 'label', 'fieldset', 'legend',
-        'datalist', 'keygen', 'output', 'nav', 'main', 'div', 'span',
+        '!DOCTYPE',
+        'html',
+        'body',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+        'table',
+        'th',
+        'tr',
+        'td',
+        'tbody',
+        'thead',
+        'tfoot',
+        'article',
+        'header',
+        'footer',
+        'section',
+        'aside',
+        'font',
+        'center',
+        'big',
+        'code',
+        'pre',
+        'small',
+        'button',
+        'label',
+        'fieldset',
+        'legend',
+        'datalist',
+        'keygen',
+        'output',
+        'nav',
+        'main',
+        'div',
+        'span',
       ],
     },
     // Toolbar buttons which appear when highlighting text
     toolbar: {
-      buttons: [{
-        name: 'bold',
-        contentDefault: '<span class="icon-bold"></span>',
-      }, {
-        name: 'italic',
-        contentDefault: '<span class="icon-italic"></span>',
-      }, {
-        name: 'underline',
-        contentDefault: '<span class="icon-underline"></span>',
-      }, {
-        name: 'anchor',
-        contentDefault: '<span class="icon-link"></span>',
-      }, {
-        name: 'quote',
-        contentDefault: '<span class="icon-quote"></span>',
-      }, {
-        name: 'unorderedlist',
-        contentDefault: '<span class="icon-list"></span>',
-      }],
+      buttons: [
+        {
+          name: 'bold',
+          contentDefault: '<span class="icon-bold"></span>',
+        },
+        {
+          name: 'italic',
+          contentDefault: '<span class="icon-italic"></span>',
+        },
+        {
+          name: 'underline',
+          contentDefault: '<span class="icon-underline"></span>',
+        },
+        {
+          name: 'anchor',
+          contentDefault: '<span class="icon-link"></span>',
+        },
+        {
+          name: 'quote',
+          contentDefault: '<span class="icon-quote"></span>',
+        },
+        {
+          name: 'unorderedlist',
+          contentDefault: '<span class="icon-list"></span>',
+        },
+      ],
     },
   };
 
@@ -131,11 +220,10 @@ function AppController(
    * Initialize controller
    */
   function activate() {
-
     /**
      * Show "service unavailable" badge if http interceptor sends us this signal
      */
-    $rootScope.$on('serviceUnavailable', function () {
+    $rootScope.$on('serviceUnavailable', function() {
       $uibModal.open({
         ariaLabelledBy: 'Service unavailable',
         template:
@@ -155,23 +243,27 @@ function AppController(
     /**
      * Snif and apply user changes
      */
-    $scope.$on('userUpdated', function () {
+    $scope.$on('userUpdated', function() {
       vm.user = Authentication.user;
     });
 
     /**
      * Before page change
      */
-    $scope.$on('$stateChangeStart', function (event, toState, toParams) {
-
+    $scope.$on('$stateChangeStart', function(event, toState, toParams) {
       if (toState.requiresRole) {
         if (!Authentication.user) {
           toState.requiresAuth = true;
         }
         // Check if user has the required role
-        else if (Authentication.user && !Authentication.user.roles.includes(toState.requiresRole)) {
+        else if (
+          Authentication.user &&
+          !Authentication.user.roles.includes(toState.requiresRole)
+        ) {
           event.preventDefault();
-          $window.alert('This page would require you to be a Trustroots volunteer. Wanna help us build Trustroots?');
+          $window.alert(
+            'This page would require you to be a Trustroots volunteer. Wanna help us build Trustroots?',
+          );
           $state.go('volunteering');
         }
       }
@@ -194,22 +286,24 @@ function AppController(
           $state.go('search-signin', toParams || {});
         } else {
           // Or just continue to the signup page...
-          $state.go('signin', { 'continue': true });
+          $state.go('signin', { continue: true });
         }
       }
-
     });
 
     /**
      * After page change
      */
-    $scope.$on('$stateChangeSuccess', function (event, toState) {
-
+    $scope.$on('$stateChangeSuccess', function(event, toState) {
       // Footer is hidden on these pages
-      vm.isFooterHidden = (angular.isDefined(toState.footerHidden) && toState.footerHidden === true);
+      vm.isFooterHidden =
+        angular.isDefined(toState.footerHidden) &&
+        toState.footerHidden === true;
 
       // Header is hidden on these pages
-      vm.isHeaderHidden = (angular.isDefined(toState.headerHidden) && toState.headerHidden === true);
+      vm.isHeaderHidden =
+        angular.isDefined(toState.headerHidden) &&
+        toState.headerHidden === true;
 
       // Indicate we are browsing primary landing page
       vm.isHomePage = toState.name === 'home';
@@ -226,11 +320,17 @@ function AppController(
     /**
      * Sniff and apply photo credit changes
      */
-    $scope.$on('photoCreditsUpdated', function (scope, photo) {
+    $scope.$on('photoCreditsUpdated', function(scope, photo) {
       angular.extend(vm.photoCredits, photo);
       vm.photoCreditsCount++;
     });
 
+    $scope.$on('photoCreditsRemoved', function(scope, photo) {
+      const photoName = Object.keys(photo)[0];
+      // @TODO inconsistent results when there is the same photo displayed multiple times
+      delete vm.photoCredits[photoName];
+      vm.photoCreditsCount--;
+    });
   }
 
   /**
@@ -263,19 +363,20 @@ function AppController(
       locker.clean();
     }
 
-    push.disable().finally(function () {
+    push.disable().finally(function() {
       // Do the signout and refresh the page
       $window.top.location.href = '/api/auth/signout';
     });
 
     // This will tell Mobile apps wrapping the site to disable push notifications at the device
     if (angular.isFunction($window.postMessage)) {
-      $window.postMessage('unAuthenticated', $location.protocol() + '://' + $location.host());
+      $window.postMessage(
+        'unAuthenticated',
+        $location.protocol() + '://' + $location.host(),
+      );
     }
 
     // Signal native mobile app we've unauthenticated
     trNativeAppBridge.signalUnAuthenticated();
   }
-
-
 }

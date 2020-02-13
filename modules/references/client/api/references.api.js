@@ -10,11 +10,11 @@ import has from 'lodash/has';
  * @param {boolean=false} backwards - map from the 2nd to 1st path, i.e. backwards
  * @returns {Object} - the result of mapping
  */
-function mapObjectToObject(object, mapping, backwards=false) {
+function mapObjectToObject(object, mapping, backwards = false) {
   const output = {};
   mapping.forEach(([key1, key2]) => {
-    const pathFrom = ((backwards) ? key2 : key1);
-    const pathTo = ((backwards) ? key1 : key2);
+    const pathFrom = backwards ? key2 : key1;
+    const pathTo = backwards ? key1 : key2;
 
     if (has(object, pathFrom)) {
       set(output, pathTo, get(object, pathFrom));
@@ -43,7 +43,10 @@ const referenceMapping = [
  */
 export async function create(reference) {
   const requestReference = mapObjectToObject(reference, referenceMapping);
-  const { data: responseReference } = await axios.post('/api/references', requestReference);
+  const { data: responseReference } = await axios.post(
+    '/api/references',
+    requestReference,
+  );
   return mapObjectToObject(responseReference, referenceMapping, true);
 }
 
@@ -54,8 +57,12 @@ export async function create(reference) {
  * @returns Promise<Reference[]> - array of the found references
  */
 export async function read({ userFrom, userTo }) {
-  const { data: references } = await axios.get(`/api/references?userFrom=${userFrom}&userTo=${userTo}`);
-  return references.map(reference => mapObjectToObject(reference, referenceMapping, true));
+  const { data: references } = await axios.get(
+    `/api/references?userFrom=${userFrom}&userTo=${userTo}`,
+  );
+  return references.map(reference =>
+    mapObjectToObject(reference, referenceMapping, true),
+  );
 }
 
 /**

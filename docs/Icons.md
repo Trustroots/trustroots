@@ -12,9 +12,10 @@
 
 ```html
 <i class="icon-newiconname"></i>
-````
+```
 
 ## To add new icons
+
 - Open http://fontello.com
 - Drag and drop `modules/core/client/fonts/fontello/config.json` over the page
 - Find the icon you need and select it

@@ -17,9 +17,8 @@ let supportMessage;
 /**
  * Support routes tests
  */
-describe('Support CRUD tests', function () {
-
-  before(function (done) {
+describe('Support CRUD tests', function() {
+  before(function(done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -27,7 +26,7 @@ describe('Support CRUD tests', function () {
     done();
   });
 
-  beforeEach(function (done) {
+  beforeEach(function(done) {
     // Create user credentials
     credentials = {
       username: 'loremipsum',
@@ -54,18 +53,18 @@ describe('Support CRUD tests', function () {
     };
 
     // Save user to the test db
-    user.save(function (err) {
+    user.save(function(err) {
       should.not.exist(err);
       return done();
     });
   });
 
-  it('should be able to send support message when not logged in', function (done) {
-    agent.post('/api/support')
+  it('should be able to send support message when not logged in', function(done) {
+    agent
+      .post('/api/support')
       .send(supportMessage)
       .expect(200)
-      .end(function (supportSaveErr, supportSaveRes) {
-
+      .end(function(supportSaveErr, supportSaveRes) {
         supportSaveRes.body.message.should.equal('Support request sent.');
 
         // Call the assertion callback
@@ -73,16 +72,16 @@ describe('Support CRUD tests', function () {
       });
   });
 
-  it('should be able to send support message wihout email and username', function (done) {
-    agent.post('/api/support')
+  it('should be able to send support message wihout email and username', function(done) {
+    agent
+      .post('/api/support')
       .send({
         username: '',
         email: '',
         message: 'Trustroots is cool!',
       })
       .expect(200)
-      .end(function (supportSaveErr, supportSaveRes) {
-
+      .end(function(supportSaveErr, supportSaveRes) {
         supportSaveRes.body.message.should.equal('Support request sent.');
 
         // Call the assertion callback
@@ -90,30 +89,30 @@ describe('Support CRUD tests', function () {
       });
   });
 
-  it('should be able to send support message when logged in', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to send support message when logged in', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Send support message
-        agent.post('/api/support')
+        agent
+          .post('/api/support')
           .send(supportMessage)
           .expect(200)
-          .end(function (supportSaveErr, supportSaveRes) {
-
+          .end(function(supportSaveErr, supportSaveRes) {
             supportSaveRes.body.message.should.equal('Support request sent.');
 
             // Call the assertion callback
             return done(supportSaveErr);
           });
-
       });
   });
 
-  afterEach(function (done) {
+  afterEach(function(done) {
     // Clean out
     User.deleteMany().exec(done);
   });

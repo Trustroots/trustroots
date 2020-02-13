@@ -6,7 +6,9 @@ const mmmagic = require('mmmagic');
 
 // Internal dependencies
 const config = require(path.resolve('./config/config'));
-const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const errorService = require(path.resolve(
+  './modules/core/server/services/error.server.service',
+));
 
 /**
  * Upload file handler and validator using Multer and Mmmagic.
@@ -36,7 +38,9 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     // Note: A proper "magic byte" check is still required after this
     fileFilter: (req, file, callback) => {
       if (!file.mimetype || !validMimeTypes.includes(file.mimetype)) {
-        const err = new Error('Please upload a file that is in correct format.');
+        const err = new Error(
+          'Please upload a file that is in correct format.',
+        );
         err.code = 'UNSUPPORTED_MEDIA_TYPE';
         return callback(err, false);
       }
@@ -44,7 +48,7 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     },
   }).single(uploadField);
 
-  upload(req, res, (err) => {
+  upload(req, res, err => {
     // An error occurred when uploading
     // See Multer default error codes:
     // @link https://github.com/expressjs/multer/blob/805170c61530e1f1cafd818c9b63d16a9dd46c36/lib/multer-error.js
@@ -55,11 +59,15 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
       // This error code is generated from Multer's fileFilter above
       if (err.code && err.code === 'UNSUPPORTED_MEDIA_TYPE') {
         // Unsupported media type -error
-        errorMessage = errorService.getErrorMessageByKey('unsupported-media-type');
+        errorMessage = errorService.getErrorMessageByKey(
+          'unsupported-media-type',
+        );
         errorStatus = 415;
       } else if (err.code && err.code === 'LIMIT_FILE_SIZE') {
         // Too big file
-        const maxUploadSizeMb = (config.maxUploadSize / (1024 * 1024)).toFixed(2);
+        const maxUploadSizeMb = (config.maxUploadSize / (1024 * 1024)).toFixed(
+          2,
+        );
         errorMessage = `Image too big. Please maximum ${maxUploadSizeMb} Mb files.`;
         errorStatus = 413; // 413: "Request Entity Too Large"
       } else if (err.code && err.code === 'LIMIT_UNEXPECTED_FILE') {
@@ -102,6 +110,5 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
       // file onwards from temp folder
       next();
     });
-
   });
 };

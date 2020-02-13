@@ -3,8 +3,21 @@ angular
   .controller('OfferHostEditController', OfferHostEditController);
 
 /* @ngInject */
-function OfferHostEditController($window, $state, $stateParams, $analytics, $timeout, leafletData, OffersService, Authentication, messageCenterService, offers, defaultLocation, $scope, $filter) {
-
+function OfferHostEditController(
+  $window,
+  $state,
+  $stateParams,
+  $analytics,
+  $timeout,
+  leafletData,
+  OffersService,
+  Authentication,
+  messageCenterService,
+  offers,
+  defaultLocation,
+  $scope,
+  $filter,
+) {
   // ViewModel
   const vm = this;
 
@@ -26,7 +39,6 @@ function OfferHostEditController($window, $state, $stateParams, $analytics, $tim
    * Initialize controller
    */
   function activate() {
-
     const defaultOfferConfig = {
       type: 'host',
       status: 'yes',
@@ -37,52 +49,59 @@ function OfferHostEditController($window, $state, $stateParams, $analytics, $tim
     };
 
     // Make sure offer is there
-    offers.$promise.then(function () {
+    offers.$promise
+      .then(
+        function() {
+          if (angular.isArray(offers) && offers.length) {
+            vm.offer = new OffersService(
+              angular.extend(defaultOfferConfig, offers[0]),
+            );
 
-      if (angular.isArray(offers) && offers.length) {
-        vm.offer = new OffersService(angular.extend(defaultOfferConfig, offers[0]));
+            // Populate map
+            if (
+              angular.isArray(vm.offer.location) &&
+              vm.offer.location.length === 2
+            ) {
+              vm.mapCenter.lat = parseFloat(vm.offer.location[0]);
+              vm.mapCenter.lng = parseFloat(vm.offer.location[1]);
+              vm.mapCenter.zoom = 16;
+            }
+          }
+        },
+        function(err) {
+          // No previous offer, fill in defaults
+          if (err && err.status === 404) {
+            // Creating new hosting offer, set defaults
+            vm.offer = new OffersService(defaultOfferConfig);
 
-        // Populate map
-        if (angular.isArray(vm.offer.location) && vm.offer.location.length === 2) {
-          vm.mapCenter.lat = parseFloat(vm.offer.location[0]);
-          vm.mapCenter.lng = parseFloat(vm.offer.location[1]);
-          vm.mapCenter.zoom = 16;
-        }
-      }
+            // Show guidance
+            vm.firstTimeAround = true;
 
-
-    },
-    function (err) {
-
-      // No previous offer, fill in defaults
-      if (err && err.status === 404) {
-
-        // Creating new hosting offer, set defaults
-        vm.offer = new OffersService(defaultOfferConfig);
-
-        // Show guidance
-        vm.firstTimeAround = true;
-
-        // Locale map to user's living- or from- location, if they're set
-        if (Authentication.user.locationLiving && Authentication.user.locationLiving !== '') {
-          vm.searchQuery = Authentication.user.locationLiving;
-        } else if (Authentication.user.locationFrom && Authentication.user.locationFrom !== '') {
-          vm.searchQuery = Authentication.user.locationFrom;
-        }
-      } else {
-        vm.offer = false;
-      }
-
-    })
-    // Always execute this on both error and success
-      .finally(function () {
+            // Locale map to user's living- or from- location, if they're set
+            if (
+              Authentication.user.locationLiving &&
+              Authentication.user.locationLiving !== ''
+            ) {
+              vm.searchQuery = Authentication.user.locationLiving;
+            } else if (
+              Authentication.user.locationFrom &&
+              Authentication.user.locationFrom !== ''
+            ) {
+              vm.searchQuery = Authentication.user.locationFrom;
+            }
+          } else {
+            vm.offer = false;
+          }
+        },
+      )
+      // Always execute this on both error and success
+      .finally(function() {
         setStatusByURL();
         vm.isLoading = false;
       });
-
   }
 
-  $scope.$watch('offerHostEdit.offer.description', function (newValue) {
+  $scope.$watch('offerHostEdit.offer.description', function(newValue) {
     vm.isDescriptionTooShort = $filter('plainTextLength')(newValue) < 5;
   });
 
@@ -92,8 +111,8 @@ function OfferHostEditController($window, $state, $stateParams, $analytics, $tim
    * tile positions properly until it's visible in DOM
    */
   function invalidateMapSize() {
-    $timeout(function () {
-      leafletData.getMap().then(function (map) {
+    $timeout(function() {
+      leafletData.getMap().then(function(map) {
         // @link http://leafletjs.com/reference-1.2.0.html#map-invalidatesize
         map.invalidateSize(false);
       });
@@ -105,7 +124,10 @@ function OfferHostEditController($window, $state, $stateParams, $analytics, $tim
    * Overrides any previous status
    */
   function setStatusByURL() {
-    if ($stateParams.status && ['yes', 'maybe', 'no'].indexOf($stateParams.status) > -1) {
+    if (
+      $stateParams.status &&
+      ['yes', 'maybe', 'no'].indexOf($stateParams.status) > -1
+    ) {
       vm.offer.status = $stateParams.status;
     }
   }
@@ -121,9 +143,13 @@ function OfferHostEditController($window, $state, $stateParams, $analytics, $tim
     vm.isLoading = true;
 
     // Pick location from the map
-    vm.offer.location = [parseFloat(vm.mapCenter.lat), parseFloat(vm.mapCenter.lng)];
+    vm.offer.location = [
+      parseFloat(vm.mapCenter.lat),
+      parseFloat(vm.mapCenter.lng),
+    ];
 
-    vm.offer.createOrUpdate()
+    vm.offer
+      .createOrUpdate()
       .then(successCallback)
       .catch(errorCallback);
 
@@ -135,7 +161,9 @@ function OfferHostEditController($window, $state, $stateParams, $analytics, $tim
         value: vm.offer.status,
       });
       if ($window.innerWidth < 768) {
-        $state.go('profile.accommodation', { username: Authentication.user.username });
+        $state.go('profile.accommodation', {
+          username: Authentication.user.username,
+        });
       } else {
         $state.go('profile.about', { username: Authentication.user.username });
       }
@@ -143,10 +171,11 @@ function OfferHostEditController($window, $state, $stateParams, $analytics, $tim
 
     function errorCallback(res) {
       vm.isLoading = false;
-      const errorMessage = (res && res.data && res.data.message) ? res.data.message : 'Snap! Something went wrong. If this keeps happening, please contact us.';
+      const errorMessage =
+        res && res.data && res.data.message
+          ? res.data.message
+          : 'Snap! Something went wrong. If this keeps happening, please contact us.';
       messageCenterService.add('danger', errorMessage);
     }
-
   }
-
 }

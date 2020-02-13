@@ -1,46 +1,62 @@
 <section class="container container-fullscreen board" tr-boards="'bokeh'">
   <div class="row">
     <div class="col-xs-12 text-center">
-      <img class="hidden-xs" src="/img/tree-color.svg" alt="Trustroots" width="120" height="120" />
-      <img class="visible-xs-inline-block" src="/img/tree-color.svg" alt="Trustroots" width="80" height="80" />
+      <img
+        class="hidden-xs"
+        src="/img/tree-color.svg"
+        alt="Trustroots"
+        width="120"
+        height="120"
+      />
+      <img
+        class="visible-xs-inline-block"
+        src="/img/tree-color.svg"
+        alt="Trustroots"
+        width="80"
+        height="80"
+      />
     </div>
   </div>
   <div class="row">
     <div class="col-xs-12 text-center">
-
-      <br><br>
+      <br /><br />
 
       <!-- Loading -->
-      <tr-spinner ng-if="removeProfile.state === 'loading'" size="md"></tr-spinner>
+      <tr-spinner
+        ng-if="removeProfile.state === 'loading'"
+        size="md"
+      ></tr-spinner>
 
       <!-- Success -->
       <div ng-if="removeProfile.state === 'success'">
-        <i class="icon-4x icon-ok"></i><br>
+        <i class="icon-4x icon-ok"></i><br />
         <h3>Your profile was removed.</h3>
         <p class="lead">
-          <br>
-          <a ui-sref="support">Give us feedback</a>;
-          it's extremely valuable to us!
+          <br />
+          <a ui-sref="support">Give us feedback</a>; it's extremely valuable to
+          us!
         </p>
       </div>
 
       <!-- Errors -->
-      <div role="alert"
-           ng-if="removeProfile.state === 'failure'">
-        <i class="icon-4x icon-invalid"></i><br>
+      <div role="alert" ng-if="removeProfile.state === 'failure'">
+        <i class="icon-4x icon-invalid"></i><br />
         <h3>Something went wrong.</h3>
-        <br><br>
+        <br /><br />
         <p class="lead">
           <strong>Your profile was not removed.</strong>
-          <br><br>
-          Confirmation link might have been expired; they are valid for 24 hours.
-          <br><br>
-          <a class="btn btn-primary" ui-sref="profile-edit.account({ '#': 'remove' })">
+          <br /><br />
+          Confirmation link might have been expired; they are valid for 24
+          hours.
+          <br /><br />
+          <a
+            class="btn btn-primary"
+            ui-sref="profile-edit.account({ '#': 'remove' })"
+          >
             Get a new confirmation email
           </a>
         </p>
       </div>
-
     </div>
   </div>
 </section>

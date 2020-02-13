@@ -6,17 +6,18 @@
  * If Mapbox `user` or `publicKey` are set false,
  * fall back to OSM and MapQuest
  */
-angular
-  .module('core')
-  .factory('MapLayersFactory', MapLayersFactory);
+angular.module('core').factory('MapLayersFactory', MapLayersFactory);
 
 /* @ngInject */
 function MapLayersFactory(SettingsFactory, LocationService) {
-
   const appSettings = SettingsFactory.get();
 
   // Is Mapbox configuration available
-  const isMapboxAvailable = (appSettings.mapbox && angular.isObject(appSettings.mapbox.maps) && appSettings.mapbox.user && appSettings.mapbox.publicKey);
+  const isMapboxAvailable =
+    appSettings.mapbox &&
+    angular.isObject(appSettings.mapbox.maps) &&
+    appSettings.mapbox.user &&
+    appSettings.mapbox.publicKey;
 
   // Location for "improve this map"-links
   const location = LocationService.getDefaultLocation(3);
@@ -27,12 +28,10 @@ function MapLayersFactory(SettingsFactory, LocationService) {
 
   return service;
 
-
   /**
    * Return object for Mapbox layer
    */
   function getMapboxLayer(label, TRStyle, layerConf) {
-
     if (!isMapboxAvailable || !layerConf) return;
 
     const layer = {
@@ -44,7 +43,8 @@ function MapLayersFactory(SettingsFactory, LocationService) {
         token: appSettings.mapbox.publicKey,
       },
       layerOptions: {
-        attribution: '<a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">© Mapbox © OpenStreetMap</a>',
+        attribution:
+          '<a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">© Mapbox © OpenStreetMap</a>',
         continuousWorld: true,
         TRStyle: TRStyle || 'streets', // Not native Leaflet key, required by our layer switch
       },
@@ -52,10 +52,12 @@ function MapLayersFactory(SettingsFactory, LocationService) {
 
     if (layerConf.legacy) {
       // Legacy tiles URL
-      layer.url = 'https://{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token={token}&secure=1';
+      layer.url =
+        'https://{s}.tiles.mapbox.com/v4/{user}.{map}/{z}/{x}/{y}.png?access_token={token}&secure=1';
     } else {
       // Publicly available Mapbox styles URL
-      layer.url = 'https://api.mapbox.com/styles/v1/{user}/{map}/tiles/{z}/{x}/{y}?access_token={token}';
+      layer.url =
+        'https://api.mapbox.com/styles/v1/{user}/{map}/tiles/{z}/{x}/{y}?access_token={token}';
     }
 
     // This feedback layer id is good for private styles
@@ -71,10 +73,14 @@ function MapLayersFactory(SettingsFactory, LocationService) {
     // Add feedback link to attribution info
     layer.layerOptions.attribution +=
       ' <a href="https://www.mapbox.com/map-feedback/#' +
-      feedbackLayer + '/' +
-      location.lng + '/' +
-      location.lat + '/' +
-      location.zoom + '" ' +
+      feedbackLayer +
+      '/' +
+      location.lng +
+      '/' +
+      location.lat +
+      '/' +
+      location.zoom +
+      '" ' +
       'target="_blank" rel="noopener" class="improve-map">' +
       'Improve the underlying map' +
       '</a>';
@@ -86,19 +92,25 @@ function MapLayersFactory(SettingsFactory, LocationService) {
    * Return object containing different Leaflet layers
    */
   function getLayers(options) {
-
     const layers = {};
 
     // Set layer types to return
     // Defaults to return only `streets` layer
-    options = angular.merge({
-      streets: true,
-      satellite: false,
-      outdoors: false,
-    }, options || {});
+    options = angular.merge(
+      {
+        streets: true,
+        satellite: false,
+        outdoors: false,
+      },
+      options || {},
+    );
 
     // Streets
-    if (options.streets && isMapboxAvailable && appSettings.mapbox.maps.streets) {
+    if (
+      options.streets &&
+      isMapboxAvailable &&
+      appSettings.mapbox.maps.streets
+    ) {
       // Streets: Mapbox
       layers.streets = getMapboxLayer(
         'Streets',
@@ -118,7 +130,11 @@ function MapLayersFactory(SettingsFactory, LocationService) {
             '<a href="https://www.openstreetmap.org/" target="_blank" ' +
             'rel="noopener">© OpenStreetMap</a> ' +
             '<a href="https://www.openstreetmap.org/login#map=' +
-            location.zoom + '/' + location.lat + '/' + location.lng +
+            location.zoom +
+            '/' +
+            location.lat +
+            '/' +
+            location.lng +
             '" target="_blank" class="improve-map">' +
             'Improve the underlying map' +
             '</a>',
@@ -129,7 +145,11 @@ function MapLayersFactory(SettingsFactory, LocationService) {
     }
 
     // Satellite
-    if (options.satellite && isMapboxAvailable && appSettings.mapbox.maps.satellite) {
+    if (
+      options.satellite &&
+      isMapboxAvailable &&
+      appSettings.mapbox.maps.satellite
+    ) {
       // Satellite: Mapbox
       layers.satellite = getMapboxLayer(
         'Satellite',
@@ -144,13 +164,15 @@ function MapLayersFactory(SettingsFactory, LocationService) {
       layers.satellite = {
         name: 'Satellite',
         type: 'xyz',
-        url: '//gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
+        url:
+          '//gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
         layerOptions: {
           layer: 'Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual',
           tileMatrixSet: 'GoogleMapsCompatible_Level12',
           time: '2009-08-22',
           subdomains: ['a', 'b', 'c'],
-          attribution: '<a href="https://wiki.earthdata.nasa.gov/display/GIBS" target="_blank" rel="noopener">© NASA Earth Data</a>',
+          attribution:
+            '<a href="https://wiki.earthdata.nasa.gov/display/GIBS" target="_blank" rel="noopener">© NASA Earth Data</a>',
           noWrap: true,
           continuousWorld: true,
           tileSize: 256,
@@ -165,7 +187,11 @@ function MapLayersFactory(SettingsFactory, LocationService) {
     }
 
     // Outdoors (without fallback)
-    if (options.outdoors && isMapboxAvailable && appSettings.mapbox.maps.outdoors) {
+    if (
+      options.outdoors &&
+      isMapboxAvailable &&
+      appSettings.mapbox.maps.outdoors
+    ) {
       // Outdoors: Mapbox
       layers.outdoors = getMapboxLayer(
         'Outdoors',
@@ -176,5 +202,4 @@ function MapLayersFactory(SettingsFactory, LocationService) {
 
     return layers;
   }
-
 }

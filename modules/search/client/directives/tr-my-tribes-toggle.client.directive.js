@@ -12,7 +12,6 @@ angular
 
 /* @ngInject */
 function trMyTribesToggleDirective(UserMembershipsService) {
-
   const directive = {
     restrict: 'A',
     replace: true,
@@ -28,7 +27,6 @@ function trMyTribesToggleDirective(UserMembershipsService) {
 
   /* @ngInject */
   function trMyTribesToggleController($scope) {
-
     // Flag used to detect if toggle was touched
     let toggled = false;
 
@@ -47,7 +45,7 @@ function trMyTribesToggleDirective(UserMembershipsService) {
      * Receives an array of tribes id's from outside the directive
      * and switches this toggle off
      */
-    $scope.$watchCollection('tribeIds', function () {
+    $scope.$watchCollection('tribeIds', function() {
       if (toggled) {
         toggled = false;
         return;
@@ -63,24 +61,21 @@ function trMyTribesToggleDirective(UserMembershipsService) {
      */
     function collectUserTribeIds() {
       UserMembershipsService.query()
-        .$promise
-        .then(function (userMemberships) {
-
+        .$promise.then(function(userMemberships) {
           if (!angular.isArray(userMemberships) || !userMemberships.length) {
             return;
           }
 
           // Fill `vm.userTribes` array with ids of tribes
           const tribeIds = [];
-          angular.forEach(userMemberships, function (membership) {
+          angular.forEach(userMemberships, function(membership) {
             tribeIds.push(membership.tribe._id);
           });
           vm.userTribes = tribeIds;
         })
-        .finally(function () {
+        .finally(function() {
           vm.initialized = true;
         });
-
     }
 
     /**
@@ -99,6 +94,5 @@ function trMyTribesToggleDirective(UserMembershipsService) {
       // and replace them with user's tribe ids
       $scope.tribeIds = vm.userTribes;
     }
-
   }
 }

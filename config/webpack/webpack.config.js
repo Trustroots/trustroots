@@ -19,11 +19,13 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const styleLoaders = [
-  isProduction ? {
-    loader: MiniCssExtractPlugin.loader,
-  } : {
-    loader: 'style-loader',
-  },
+  isProduction
+    ? {
+        loader: MiniCssExtractPlugin.loader,
+      }
+    : {
+        loader: 'style-loader',
+      },
   {
     loader: 'css-loader',
     options: { importLoaders: 1 },
@@ -32,9 +34,7 @@ const styleLoaders = [
     loader: 'postcss-loader',
     options: {
       ident: 'postcss',
-      plugins: [
-        require('autoprefixer')(),
-      ],
+      plugins: [require('autoprefixer')()],
     },
   },
 ];
@@ -66,9 +66,9 @@ module.exports = merge(shims, {
       '@': basedir,
 
       // These are (mainly) to use within less/css files
-      'img': join(basedir, 'public', 'img'),
-      'less': join(basedir, 'modules', 'core', 'client', 'less'),
-      'modules': join(basedir, 'modules'),
+      img: join(basedir, 'public', 'img'),
+      less: join(basedir, 'modules', 'core', 'client', 'less'),
+      modules: join(basedir, 'modules'),
     },
   },
   module: {
@@ -116,10 +116,7 @@ module.exports = merge(shims, {
             loader: 'html-loader',
             options: {
               minimize: true,
-              attrs: [
-                'img:src',
-                ':ng-include',
-              ],
+              attrs: ['img:src', ':ng-include'],
             },
           },
         ],
@@ -140,15 +137,17 @@ module.exports = merge(shims, {
     ],
   },
   plugins: compact([
-    isProduction && new MiniCssExtractPlugin({
-      filename: 'main.css',
-    }),
+    isProduction &&
+      new MiniCssExtractPlugin({
+        filename: 'main.css',
+      }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId),
+      FCM_SENDER_ID: JSON.stringify(config.fcm.senderId),
     }),
-    isDevelopment && new ReactRefreshWebpackPlugin({
-      disableRefreshCheck: true,
-    }),
+    isDevelopment &&
+      new ReactRefreshWebpackPlugin({
+        disableRefreshCheck: true,
+      }),
   ]),
 });

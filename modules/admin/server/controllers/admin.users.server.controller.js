@@ -3,7 +3,9 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const errorService = require(path.resolve(
+  './modules/core/server/services/error.server.service',
+));
 const escapeStringRegexp = require('escape-string-regexp');
 const mongoose = require('mongoose');
 const log = require(path.resolve('./config/lib/logger'));
@@ -17,6 +19,21 @@ const User = mongoose.model('User');
 
 const SEARCH_USERS_LIMIT = 50;
 const SEARCH_STRING_LIMIT = 3;
+
+// Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
+const USER_LIST_FIELDS = [
+  '_id',
+  'displayName',
+  'email',
+  'emailTemporary',
+  'public',
+  'removeProfileExpires',
+  'removeProfileToken',
+  'resetPasswordExpires',
+  'resetPasswordToken',
+  'roles',
+  'username',
+];
 
 /**
  * Overwrite tokens from results as a security measure.
@@ -41,7 +58,7 @@ function obfuscateTokens(user) {
     ['additionalProvidersData', 'github', 'refreshToken'],
     ['additionalProvidersData', 'twitter', 'token'],
     ['additionalProvidersData', 'twitter', 'tokenSecret'],
-  ].forEach((path) => {
+  ].forEach(path => {
     if (_.has(_user, path)) {
       _.set(_user, path, '(Hidden from admins.)');
     }
@@ -59,35 +76,60 @@ exports.searchUsers = (req, res) => {
   // Validate the query string
   if (!search || search.length < SEARCH_STRING_LIMIT) {
     return res.status(400).send({
-      message: `Query string at least ${ SEARCH_STRING_LIMIT } characters long required.`,
+      message: `Query string at least ${SEARCH_STRING_LIMIT} characters long required.`,
     });
   }
 
-  const regexpSearch = new RegExp('.*' + escapeStringRegexp(search) + '.*', 'i');
+  const regexpSearch = new RegExp(
+    '.*' + escapeStringRegexp(search) + '.*',
+    'i',
+  );
 
-  User
-    .find({ $or: [
-      { 'displayName': regexpSearch },
-      { 'email': regexpSearch },
-      { 'emailTemporary': regexpSearch },
-      { 'username': regexpSearch },
-    ] })
-    // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
-    .select([
-      '_id',
-      'displayName',
-      'email',
-      'emailTemporary',
-      'public',
-      'removeProfileExpires',
-      'removeProfileToken',
-      'resetPasswordExpires',
-      'resetPasswordToken',
-      'roles',
-      'username',
-    ])
+  User.find({
+    $or: [
+      { displayName: regexpSearch },
+      { email: regexpSearch },
+      { emailTemporary: regexpSearch },
+      { username: regexpSearch },
+    ],
+  })
+    .select(USER_LIST_FIELDS)
     .sort('username displayName')
     .limit(SEARCH_USERS_LIMIT)
+    .exec((err, users) => {
+      if (err) {
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err),
+        });
+      }
+
+      const result = users ? users.map(obfuscateTokens) : [];
+
+      return res.send(result);
+    });
+};
+
+/*
+ * This middleware sends response with an array of found users
+ */
+exports.listUsersByRole = (req, res) => {
+  const role = _.get(req, ['body', 'role']);
+
+  // Allowed roles to query
+  if (
+    !role ||
+    !['shadowban', 'suspended', 'admin', 'moderator'].includes(role)
+  ) {
+    return res.status(400).send({
+      message: 'Invalid role.',
+    });
+  }
+
+  User.find({
+    roles: { $in: [role] },
+  })
+    .select(USER_LIST_FIELDS)
+    .sort('username displayName')
     .exec((err, users) => {
       if (err) {
         return res.status(400).send({
@@ -123,8 +165,7 @@ exports.getUser = async (req, res) => {
   }
 
   try {
-    const user = await User
-      .findById(userId)
+    const user = await User.findById(userId)
       // Avoid pulling in sensitive fields from Mongoose
       .select('-password -salt')
       .populate({
@@ -139,43 +180,38 @@ exports.getUser = async (req, res) => {
       });
     }
 
-    const messageFromCount = await Message
-      .find({ 'userFrom': userId })
-      .count();
+    const messageFromCount = await Message.find({ userFrom: userId }).count();
 
-    const messageToCount = await Message
-      .find({ 'userTo': userId })
-      .count();
+    const messageToCount = await Message.find({ userTo: userId }).count();
 
-    const threadCount = await Thread
-      .find({ $or: [
-        { 'userFrom': userId },
-        { 'userTo': userId },
-      ] })
-      .count();
+    const threadCount = await Thread.find({
+      $or: [{ userFrom: userId }, { userTo: userId }],
+    }).count();
 
     // @TODO these could be compiled using aggregate grouping
-    const threadReferencesSentNo = await ReferenceThread
-      .find({ 'userFrom': userId, 'reference': 'no' })
-      .count();
+    const threadReferencesSentNo = await ReferenceThread.find({
+      userFrom: userId,
+      reference: 'no',
+    }).count();
 
-    const threadReferencesReceivedNo = await ReferenceThread
-      .find({ 'userTo': userId, 'reference': 'no' })
-      .count();
+    const threadReferencesReceivedNo = await ReferenceThread.find({
+      userTo: userId,
+      reference: 'no',
+    }).count();
 
-    const threadReferencesReceivedYes = await ReferenceThread
-      .find({ 'userFrom': userId, 'reference': 'yes' })
-      .count();
+    const threadReferencesReceivedYes = await ReferenceThread.find({
+      userFrom: userId,
+      reference: 'yes',
+    }).count();
 
-    const threadReferencesSentYes = await ReferenceThread
-      .find({ 'userto': userId, 'reference': 'yes' })
-      .count();
+    const threadReferencesSentYes = await ReferenceThread.find({
+      userto: userId,
+      reference: 'yes',
+    }).count();
 
-    const contacts = await Contact
-      .find({ $or: [
-        { 'userFrom': userId },
-        { 'userTo': userId },
-      ] })
+    const contacts = await Contact.find({
+      $or: [{ userFrom: userId }, { userTo: userId }],
+    })
       .populate({
         path: 'userFrom',
         select: 'username displayName',
@@ -210,10 +246,19 @@ exports.getUser = async (req, res) => {
 };
 
 /**
- * This middleware suspends users by ID
+ * This middleware changes user roles by ID
+ * Used for suspending users or setting them a "shadow ban"
  */
-exports.suspend = async (req, res) => {
+exports.changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
+  const role = _.get(req, ['body', 'role']);
+
+  // Allowed new roles — for security reasons never allow `admin` role to be changed programmatically.
+  if (!role || !['shadowban', 'suspended', 'moderator'].includes(role)) {
+    return res.status(400).send({
+      message: 'Invalid role.',
+    });
+  }
 
   // Check that the search string is provided
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
@@ -222,17 +267,17 @@ exports.suspend = async (req, res) => {
     });
   }
 
+  // If switching role to 'suspended', change also these settings straight up
+  const additionalChanges =
+    role === 'suspended' ? { $set: { newsletter: false, public: false } } : {};
+
   try {
-    // Unpublish user
     const user = await User.updateOne(
       { _id: userId },
       {
-        $set: {
-          newsletter: false,
-          public: false,
-        },
+        ...additionalChanges,
         $addToSet: {
-          roles: 'suspended',
+          roles: role,
         },
       },
     );
@@ -244,7 +289,7 @@ exports.suspend = async (req, res) => {
       });
     }
 
-    res.send({ message: 'Suspended.' });
+    res.send({ message: 'Role changed.' });
   } catch (err) {
     log('error', 'Failed to load member in admin tool. #ggi323', {
       error: err,

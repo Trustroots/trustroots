@@ -3,10 +3,11 @@ const path = require('path');
 const agenda = require(path.resolve('./config/lib/agenda'));
 const config = require(path.resolve('./config/config'));
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-const analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
+const analyticsHandler = require(path.resolve(
+  './modules/core/server/controllers/analytics.server.controller',
+));
 
-exports.notifyPushDeviceAdded = function (user, platform, callback) {
-
+exports.notifyPushDeviceAdded = function(user, platform, callback) {
   if (_.get(user, 'pushRegistration', []).length === 0) return callback();
 
   const editAccountUrl = url + '/profile/edit/account';
@@ -28,7 +29,10 @@ exports.notifyPushDeviceAdded = function (user, platform, callback) {
 
   const notification = {
     title: 'Trustroots',
-    body: 'You just enabled Trustroots ' + platformVerbal(platform) + ' notifications. Yay!',
+    body:
+      'You just enabled Trustroots ' +
+      platformVerbal(platform) +
+      ' notifications. Yay!',
     click_action: analyticsHandler.appendUTMParams(editAccountUrl, {
       source: 'push-notification',
       medium: 'fcm',
@@ -40,8 +44,7 @@ exports.notifyPushDeviceAdded = function (user, platform, callback) {
   exports.sendUserNotification(user, notification, callback);
 };
 
-exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
-
+exports.notifyMessagesUnread = function(userFrom, userTo, data, callback) {
   // User does not have push registrations
   if (_.get(userTo, 'pushRegistration', []).length === 0) {
     return callback();
@@ -90,14 +93,17 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
  * @param {Object} data - notification config
  * @param {boolean} data.isFirst - is it the first reference between users?
  */
-exports.notifyNewReference = function (userFrom, userTo, data, callback) {
-  const giveReferenceUrl = url + '/profile/' + userFrom.username + '/references/new';
+exports.notifyNewReference = function(userFrom, userTo, data, callback) {
+  const giveReferenceUrl =
+    url + '/profile/' + userFrom.username + '/references/new';
   const readReferencesUrl = url + '/profile/' + userTo.username + '/references';
 
   // When the reference is first, reply reference can be given.
   // Otherwise both references are public now and can be seen.
-  const actionText = (data.isFirst) ? 'Give a reference back.' : 'You can see it.';
-  const actionUrl = (data.isFirst) ? giveReferenceUrl : readReferencesUrl;
+  const actionText = data.isFirst
+    ? 'Give a reference back.'
+    : 'You can see it.';
+  const actionUrl = data.isFirst ? giveReferenceUrl : readReferencesUrl;
 
   const notification = {
     title: 'Trustroots',
@@ -112,8 +118,7 @@ exports.notifyNewReference = function (userFrom, userTo, data, callback) {
   exports.sendUserNotification(userTo, notification, callback);
 };
 
-exports.sendUserNotification = function (user, notification, callback) {
-
+exports.sendUserNotification = function(user, notification, callback) {
   const data = {
     userId: user._id,
     pushServices: user.pushRegistration,
@@ -121,5 +126,4 @@ exports.sendUserNotification = function (user, notification, callback) {
   };
 
   agenda.now('send push message', data, callback);
-
 };

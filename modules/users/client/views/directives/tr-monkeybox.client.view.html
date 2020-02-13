@@ -1,17 +1,25 @@
 <div class="monkeybox panel panel-default">
   <div class="panel-body">
     <div tr-avatar data-user="profile" data-size="64"></div>
-    <h3><a ui-sref="profile.about({username: profile.username})" ng-bind="profile.displayName"></a></h3>
+    <h3>
+      <a
+        ui-sref="profile.about({username: profile.username})"
+        ng-bind="profile.displayName"
+      ></a>
+    </h3>
 
-    <div class="monkeybox-section"
-         ng-if="profile.member.length"
-         tr-tribes-in-common="::profile.member">
-    </div>
+    <div
+      class="monkeybox-section"
+      ng-if="profile.member.length"
+      tr-tribes-in-common="::profile.member"
+    ></div>
 
     <div class="monkeybox-section" ng-if="profile.languages.length">
       <h4>Languages</h4>
       <ul class="list-unstyled">
-        <li ng-repeat="code in profile.languages track by code">{{ ::languageNames[code] || code }}</li>
+        <li ng-repeat="code in profile.languages track by code">
+          {{ ::languageNames[code] || code }}
+        </li>
       </ul>
     </div>
   </div>

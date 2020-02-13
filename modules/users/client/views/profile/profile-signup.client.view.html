@@ -1,49 +1,63 @@
 <section class="container container-spacer profile-signup" id="profile">
+  <div class="row" aria-hidden="true">
+    <div class="col-xs-12 text-center visible-xs-block profile-signup-blur">
+      <div
+        tr-avatar
+        data-source="none"
+        data-size="512"
+        data-link="false"
+        class="visible-xs-block avatar-circle"
+      ></div>
+    </div>
+  </div>
 
-    <div class="row" aria-hidden="true">
-      <div class="col-xs-12 text-center visible-xs-block profile-signup-blur">
-        <div tr-avatar data-source="none" data-size="512" data-link="false" class="visible-xs-block avatar-circle"></div>
+  <div class="row">
+    <div class="col-sm-3 hidden-xs" aria-hidden="true">
+      <div class="panel panel-default profile-signup-blur" id="profile-sidebar">
+        <div
+          tr-avatar
+          data-source="none"
+          data-size="256"
+          data-link="false"
+          class="hidden-xs"
+        ></div>
+        <div class="panel-body">
+          <div class="profile-sidebar-section">Lorem ipsum</div>
+          <div class="profile-sidebar-section">Lorem ipsum</div>
+        </div>
       </div>
     </div>
 
-    <div class="row">
-
-      <div class="col-sm-3 hidden-xs" aria-hidden="true">
-        <div class="panel panel-default profile-signup-blur" id="profile-sidebar">
-          <div tr-avatar data-source="none" data-size="256" data-link="false" class="hidden-xs"></div>
-          <div class="panel-body">
-            <div class="profile-sidebar-section">Lorem ipsum</div>
-            <div class="profile-sidebar-section">Lorem ipsum</div>
-          </div>
+    <div class="col-sm-9">
+      <div class="row" aria-hidden="true">
+        <div class="col-md-6 hidden-xs profile-signup-blur">
+          <h2 class="profile-name">Firstname Lastname</h2>
+          <h4 class="profile-username">@username</h4>
+          <div class="profile-tagline">My mission on earth!</div>
         </div>
       </div>
 
-      <div class="col-sm-9">
-
-        <div class="row" aria-hidden="true">
-          <div class="col-md-6 hidden-xs profile-signup-blur">
-              <h2 class="profile-name">Firstname Lastname</h2>
-              <h4 class="profile-username">@username</h4>
-              <div class="profile-tagline">My mission on earth!</div>
+      <!-- Profile tabs -->
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="profile-signup-action" role="dialog">
+            <p class="lead">
+              Join our community to connect with this and many more members.
+            </p>
+            <p class="lead">
+              <a ui-sref="signup">Become a member</a> or
+              <a href="about">read more about us</a>.
+            </p>
+            <p>
+              Already a member? <a ui-sref="signin({continue:true})">Login</a>
+            </p>
           </div>
         </div>
-
-        <!-- Profile tabs -->
-        <div class="row">
-          <div class="col-xs-12">
-
-            <div class="profile-signup-action" role="dialog">
-              <p class="lead">Join our community to connect with this and many more members.</p>
-              <p class="lead"><a ui-sref="signup">Become a member</a> or <a href="about">read more about us</a>.</p>
-              <p>Already a member? <a ui-sref="signin({continue:true})">Login</a></p>
-            </div>
-
-          </div>
-        </div>
-        <!-- /Profile tabs -->
-
-      </div><!-- /.col -->
-
-    </div><!-- /.row -->
-
-</section><!-- /.container -->
+      </div>
+      <!-- /Profile tabs -->
+    </div>
+    <!-- /.col -->
+  </div>
+  <!-- /.row -->
+</section>
+<!-- /.container -->

@@ -3,8 +3,14 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 
-export default function RemoveContact({ contact, show, inProgress, selfId, onRemove, onCancel }) {
-
+export default function RemoveContact({
+  contact,
+  show,
+  inProgress,
+  selfId,
+  onRemove,
+  onCancel,
+}) {
   const { t } = useTranslation('contact');
 
   // modal title, label for confirmation button, creation information
@@ -38,12 +44,16 @@ export default function RemoveContact({ contact, show, inProgress, selfId, onRem
     <Modal show={show} onHide={onCancel}>
       <div className="modal-content">
         <Modal.Header>
-          {!inProgress && <button
-            type="button"
-            className="close"
-            aria-hidden="true"
-            onClick={onCancel}
-          >&times;</button>}
+          {!inProgress && (
+            <button
+              type="button"
+              className="close"
+              aria-hidden="true"
+              onClick={onCancel}
+            >
+              &times;
+            </button>
+          )}
           <Modal.Title>{labelTitle}</Modal.Title>
         </Modal.Header>
 
@@ -56,19 +66,20 @@ export default function RemoveContact({ contact, show, inProgress, selfId, onRem
             className="btn btn-link"
             onClick={onCancel}
             disabled={inProgress}
-          >{t('Cancel')}</button>
+          >
+            {t('Cancel')}
+          </button>
           <button
             className="btn btn-primary"
             onClick={onRemove}
             disabled={inProgress}
           >
             {!inProgress && <span>{labelConfirm}</span>}
-            {inProgress && <span
-              role="alertdialog"
-              aria-busy="true"
-              aria-live="assertive">
-              {t('Wait a moment...')}
-            </span>}
+            {inProgress && (
+              <span role="alertdialog" aria-busy="true" aria-live="assertive">
+                {t('Wait a moment...')}
+              </span>
+            )}
           </button>
         </Modal.Footer>
       </div>

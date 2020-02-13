@@ -38,13 +38,14 @@ function fixName(name) {
  * Determine if language should be picked and used at Trustroots
  */
 function includeLanguage(language) {
-
   // Add individually picked languages if these languages have
   // significant "hobbyist" community around them
-  if ([
-    'grc', // Ancient Greek
-    'lat', // Latin
-  ].indexOf(language.iso_639_2b) > -1) {
+  if (
+    [
+      'grc', // Ancient Greek
+      'lat', // Latin
+    ].indexOf(language.iso_639_2b) > -1
+  ) {
     return true;
   }
 
@@ -117,8 +118,7 @@ function collectLanguages() {
   const languagesOrig = require('./languages_orig.json');
   const languagesNew = {};
 
-  _.forEach(languagesOrig, function (language) {
-
+  _.forEach(languagesOrig, function(language) {
     // Pick a key
     // Most of the time `iso_639_2b` is what we need but it's not always available
     const key = getKey(language);
@@ -147,7 +147,13 @@ function collectLanguages() {
     languagesNew[key] = fixName(language.name);
   });
 
-  console.log('Picked ' + _.keys(languagesNew).length + ' languages from total ' + languagesOrig.length + ' languages.');
+  console.log(
+    'Picked ' +
+      _.keys(languagesNew).length +
+      ' languages from total ' +
+      languagesOrig.length +
+      ' languages.',
+  );
 
   return languagesNew;
 }
@@ -162,7 +168,7 @@ function generate(targetFile) {
   const languages = collectLanguages();
   const languagesString = JSON.stringify(languages);
 
-  fs.writeFile(targetFile, languagesString, function (err) {
+  fs.writeFile(targetFile, languagesString, function(err) {
     if (err) {
       console.error('Failed saving languages to file `' + targetFile + '`');
       console.error(err);

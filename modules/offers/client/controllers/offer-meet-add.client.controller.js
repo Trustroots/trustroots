@@ -3,8 +3,14 @@ angular
   .controller('OfferMeetAddController', OfferMeetAddController);
 
 /* @ngInject */
-function OfferMeetAddController($state, $analytics, leafletData, OffersService, messageCenterService, defaultLocation) {
-
+function OfferMeetAddController(
+  $state,
+  $analytics,
+  leafletData,
+  OffersService,
+  messageCenterService,
+  defaultLocation,
+) {
   // ViewModel
   const vm = this;
 
@@ -40,20 +46,23 @@ function OfferMeetAddController($state, $analytics, leafletData, OffersService, 
       validUntil: vm.offer.validUntil,
     });
 
-    newOffer.$save(function () {
-      // Done!
-      vm.isLoading = false;
-      $analytics.eventTrack('offer-modified', {
-        category: 'offer.meet.add',
-        label: 'Added meet offer',
-      });
-      $state.go('offer.meet.list');
-    }, function (err) {
-      vm.isLoading = false;
-      const errorMessage = (err.data.message) ? err.data.message : 'Error occured. Please try again.';
-      messageCenterService.add('danger', errorMessage);
-    });
-
+    newOffer.$save(
+      function() {
+        // Done!
+        vm.isLoading = false;
+        $analytics.eventTrack('offer-modified', {
+          category: 'offer.meet.add',
+          label: 'Added meet offer',
+        });
+        $state.go('offer.meet.list');
+      },
+      function(err) {
+        vm.isLoading = false;
+        const errorMessage = err.data.message
+          ? err.data.message
+          : 'Error occured. Please try again.';
+        messageCenterService.add('danger', errorMessage);
+      },
+    );
   }
-
 }

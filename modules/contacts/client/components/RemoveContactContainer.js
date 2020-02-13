@@ -4,7 +4,13 @@ import RemoveContact from './RemoveContact';
 import * as contacts from '../api/contacts.api';
 const api = { contacts };
 
-export default function RemoveContactContainer({ selfId, contact, show, onSuccess, onCancel }) {
+export default function RemoveContactContainer({
+  selfId,
+  contact,
+  show,
+  onSuccess,
+  onCancel,
+}) {
   const [removing, setRemoving] = useState(false);
 
   async function handleRemove() {
@@ -14,14 +20,16 @@ export default function RemoveContactContainer({ selfId, contact, show, onSucces
     onSuccess();
   }
 
-  return <RemoveContact
-    contact={contact}
-    selfId={selfId}
-    show={show}
-    inProgress={removing}
-    onRemove={handleRemove}
-    onCancel={onCancel}
-  />;
+  return (
+    <RemoveContact
+      contact={contact}
+      selfId={selfId}
+      show={show}
+      inProgress={removing}
+      onRemove={handleRemove}
+      onCancel={onCancel}
+    />
+  );
 }
 
 RemoveContactContainer.propTypes = {

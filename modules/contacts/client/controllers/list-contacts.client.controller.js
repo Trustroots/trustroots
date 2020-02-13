@@ -4,7 +4,6 @@ angular
 
 /* @ngInject */
 function ContactsListController($scope, $rootScope) {
-
   // ViewModel
   const vm = this;
 
@@ -17,15 +16,14 @@ function ContactsListController($scope, $rootScope) {
   /**
    * provide broadcast function for react removeContact component
    */
-  vm.broadcastRemoveContact = function (contact) {
+  vm.broadcastRemoveContact = function(contact) {
     $rootScope.$broadcast('contactRemoved', contact);
   };
 
   /**
    * When contact removal modal signals that the contact was removed, remove it from this list as well
    */
-  $scope.$on('contactRemoved', function (event, removedContact) {
+  $scope.$on('contactRemoved', function(event, removedContact) {
     vm.contacts.splice(vm.contacts.indexOf(removedContact), 1);
   });
-
 }

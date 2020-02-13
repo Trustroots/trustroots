@@ -37,7 +37,9 @@ if (fbClientID && fbClientSecret) {
    * @link https://github.com/criso/fbgraph#static-access-token-used-on-all-calls
    * @link https://developers.facebook.com/docs/facebook-login/access-tokens#apptokens
    */
-  fbgraph.setAccessToken(fbClientAccessToken || fbClientID + '|' + fbClientSecret);
+  fbgraph.setAccessToken(
+    fbClientAccessToken || fbClientID + '|' + fbClientSecret,
+  );
 
   /**
    * Facebook recommends adding the `appsecret_proof` parameter to all API calls

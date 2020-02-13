@@ -2,8 +2,7 @@ import '@/modules/users/client/users.client.module';
 import '@/modules/search/client/search.client.module';
 import AppConfig from '@/modules/core/client/app/config';
 
-describe('ProfileEditAccountController', function () {
-
+describe('ProfileEditAccountController', function() {
   let ProfileEditAccountController;
   let $httpBackend;
   let messageCenterService;
@@ -18,7 +17,7 @@ describe('ProfileEditAccountController', function () {
   // Load the main application module
   beforeEach(angular.mock.module(AppConfig.appModuleName));
 
-  beforeEach(inject(function (
+  beforeEach(inject(function(
     _$httpBackend_,
     _Authentication_,
     _messageCenterService_,
@@ -30,28 +29,29 @@ describe('ProfileEditAccountController', function () {
     spyOn(messageCenterService, 'add').and.callThrough();
   }));
 
-  afterEach(function () {
+  afterEach(function() {
     $httpBackend.verifyNoOutstandingExpectation();
     $httpBackend.verifyNoOutstandingRequest();
   });
 
-  describe('Logged in user', function () {
-
-    beforeEach(function (done) {
-      inject(function ($controller, $rootScope) {
+  describe('Logged in user', function() {
+    beforeEach(function(done) {
+      inject(function($controller, $rootScope) {
         Authentication.user = user;
-        ProfileEditAccountController = $controller('ProfileEditAccountController', {
-          messageCenterService: messageCenterService,
-          $scope: $rootScope.$new(),
-          push: {}, // this ends up trying to load firebaseMessaging service otherwise
-        });
+        ProfileEditAccountController = $controller(
+          'ProfileEditAccountController',
+          {
+            messageCenterService: messageCenterService,
+            $scope: $rootScope.$new(),
+            push: {}, // this ends up trying to load firebaseMessaging service otherwise
+          },
+        );
         done();
       });
     });
 
-    describe('change email address', function () {
-
-      it('can update email address', function () {
+    describe('change email address', function() {
+      it('can update email address', function() {
         ProfileEditAccountController.user.emailTemporary = 'new@email.com';
         const expectedPutData = {
           _id: 'user',
@@ -67,28 +67,32 @@ describe('ProfileEditAccountController', function () {
         );
       });
 
-      it('can show an error message during failure', function () {
+      it('can show an error message during failure', function() {
         ProfileEditAccountController.user.emailTemporary = 'new@email.com';
         $httpBackend.expect('PUT', '/api/users').respond(500);
         ProfileEditAccountController.updateUserEmail();
         $httpBackend.flush();
-        expect(ProfileEditAccountController.emailError).toEqual('Something went wrong.');
+        expect(ProfileEditAccountController.emailError).toEqual(
+          'Something went wrong.',
+        );
       });
 
-      it('can show a custom error message during failure', function () {
+      it('can show a custom error message during failure', function() {
         ProfileEditAccountController.user.emailTemporary = 'new@email.com';
-        $httpBackend.expect('PUT', '/api/users').respond(400, { message: 'custom error' });
+        $httpBackend
+          .expect('PUT', '/api/users')
+          .respond(400, { message: 'custom error' });
         ProfileEditAccountController.updateUserEmail();
         $httpBackend.flush();
         expect(ProfileEditAccountController.emailError).toEqual('custom error');
       });
-
     });
 
-    describe('resend email confirmation', function () {
-
-      it('can resend email', function () {
-        $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(200);
+    describe('resend email confirmation', function() {
+      it('can resend email', function() {
+        $httpBackend
+          .expect('POST', '/api/auth/resend-confirmation')
+          .respond(200);
         ProfileEditAccountController.resendUserEmailConfirm();
         $httpBackend.flush();
         expect(messageCenterService.add).toHaveBeenCalledWith(
@@ -97,8 +101,10 @@ describe('ProfileEditAccountController', function () {
         );
       });
 
-      it('can show an error message during failure', function () {
-        $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(500);
+      it('can show an error message during failure', function() {
+        $httpBackend
+          .expect('POST', '/api/auth/resend-confirmation')
+          .respond(500);
         ProfileEditAccountController.resendUserEmailConfirm();
         $httpBackend.flush();
         expect(messageCenterService.add).toHaveBeenCalledWith(
@@ -107,10 +113,12 @@ describe('ProfileEditAccountController', function () {
         );
       });
 
-      it('can show an custom error message during failure', function () {
-        $httpBackend.expect('POST', '/api/auth/resend-confirmation').respond(400, {
-          message: 'my custom error',
-        });
+      it('can show an custom error message during failure', function() {
+        $httpBackend
+          .expect('POST', '/api/auth/resend-confirmation')
+          .respond(400, {
+            message: 'my custom error',
+          });
         ProfileEditAccountController.resendUserEmailConfirm();
         $httpBackend.flush();
         expect(messageCenterService.add).toHaveBeenCalledWith(
@@ -118,9 +126,6 @@ describe('ProfileEditAccountController', function () {
           'Error: my custom error',
         );
       });
-
     });
-
   });
-
 });

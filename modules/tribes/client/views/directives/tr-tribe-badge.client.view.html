@@ -1,16 +1,23 @@
 <div class="tribe-badge">
-  <div class="tribe-badge-image"
-       tr-tribe-styles="{{::tribeBadge.tribe}}"
-       tr-tribe-styles-dimensions="120x120"
-       tr-tribe-styles-quality="lightest"
-       ng-click="tribeBadge.openTribe()">
-    <span ng-if="::!tribeBadge.tribe.image_UUID" ng-bind="::tribeBadge.tribe.label.charAt(0)"></span>
+  <div
+    class="tribe-badge-image"
+    tr-tribe-styles="{{::tribeBadge.tribe}}"
+    tr-tribe-styles-dimensions="120x120"
+    tr-tribe-styles-quality="lightest"
+    ng-click="tribeBadge.openTribe()"
+  >
+    <span
+      ng-if="::!tribeBadge.tribe.image_UUID"
+      ng-bind="::tribeBadge.tribe.label.charAt(0)"
+    ></span>
   </div>
   <div class="tribe-badge-info">
-    <a class="tribe-badge-link"
-       ng-click="tribeBadge.openTribe()"
-       ng-bind="::tribeBadge.tribe.label"></a>
-    <br>
+    <a
+      class="tribe-badge-link"
+      ng-click="tribeBadge.openTribe()"
+      ng-bind="::tribeBadge.tribe.label"
+    ></a>
+    <br />
     <small class="text-muted">
       <ng-pluralize
         count="tribeBadge.tribe.count"
@@ -18,14 +25,16 @@
           '0': 'No members yet',
           '1': 'One member',
           'other': '{{tribeBadge.tribe.count|number}} members'
-        }"></ng-pluralize>
+        }"
+      ></ng-pluralize>
     </small>
   </div>
   <div class="tribe-badge-actions">
     <tr-tribe-join-button
       tribe="tribeBadge.tribe"
       icon="true"
-      class="btn btn-xs btn-primary">
+      class="btn btn-xs btn-primary"
+    >
     </tr-tribe-join-button>
   </div>
 </div>

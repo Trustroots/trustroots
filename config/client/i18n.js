@@ -4,6 +4,7 @@ import { initReactI18next } from 'react-i18next';
 import Backend from 'i18next-xhr-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import moment from 'moment';
+import locales from '@/config/shared/locales';
 
 const isTest = process.env.NODE_ENV === 'test';
 
@@ -36,7 +37,6 @@ const isTest = process.env.NODE_ENV === 'test';
  *                         or the original value, if the value type or format not recognized)
  */
 function format(value, format, languageCode) {
-
   if (value instanceof Date) {
     moment.locale(languageCode);
     if (format === 'fromNow') return moment(value).fromNow();
@@ -44,8 +44,23 @@ function format(value, format, languageCode) {
     return moment(value).format(format);
   }
 
+  if (typeof value === 'number' && format === 'number') {
+    return value.toLocaleString(languageCode);
+  }
+
   return value;
 }
+
+const defaultLanguageDetector = {
+  name: 'default',
+
+  lookup({ detection = {} }) {
+    return detection.defaultLng || 'en';
+  },
+};
+
+const languageDetector = new LanguageDetector();
+languageDetector.addDetector(defaultLanguageDetector);
 
 if (!isTest) {
   // load translation using xhr -> see /public/locales
@@ -56,36 +71,44 @@ if (!isTest) {
 i18n
   // detect user language
   // learn more: https://github.com/i18next/i18next-browser-languageDetector
-  .use(LanguageDetector)
+  .use(languageDetector)
   // pass the i18n instance to react-i18next.
   .use(initReactI18next)
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
-    ...(isTest ? {
-      resources: {
-        en: {},
-      },
-    } : {}),
-    fallbackLng: 'en', // a default app locale
+    ...(isTest
+      ? {
+          resources: {
+            en: {},
+          },
+        }
+      : {}),
+    fallbackLng: false, // a default app locale
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
-    // saveMissing: true, // @TODO send not translated keys to endpoint
+    saveMissing: process.env.NODE_ENV === 'development', // send not translated keys to endpoint
+    saveMissingTo: 'current',
+    returnEmptyString: false,
     interpolation: {
       escapeValue: false, // react already safes from xss
       format,
     },
     detection: {
       lookupCookie: 'i18n',
-      order: ['cookie'],
+      order: ['cookie', 'default'],
       caches: ['cookie'],
     },
     react: {
       useSuspense: false,
     },
-    // saveMissingPlurals: true,
-    // debug: true // show missing translation keys in console.log
+    backend: {
+      addPath: '/api/locales/{{lng}}/{{ns}}',
+    },
+    saveMissingPlurals: true,
+    whitelist: locales.map(({ code }) => code),
+    // debug: true, // show missing translation keys in console.log
   });
 
 export default i18n;

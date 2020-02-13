@@ -1,10 +1,14 @@
-angular
-  .module('pages')
-  .controller('FaqController', FaqController);
+angular.module('pages').controller('FaqController', FaqController);
 
 /* @ngInject */
-function FaqController($scope, $timeout, $window, $location, $state, $uiViewScroll) {
-
+function FaqController(
+  $scope,
+  $timeout,
+  $window,
+  $location,
+  $state,
+  $uiViewScroll,
+) {
   // ViewModel
   const vm = this;
 
@@ -17,9 +21,8 @@ function FaqController($scope, $timeout, $window, $location, $state, $uiViewScro
    * Initialize
    */
   function activate() {
-
     // Follow on which FAQ category we are at
-    $scope.$on('$stateChangeSuccess', function () {
+    $scope.$on('$stateChangeSuccess', function() {
       if ($state.current.name.substr(0, 4) === 'faq.') {
         vm.category = $state.current.name.replace('faq.', '');
         canSidebarBeSticky();
@@ -27,7 +30,7 @@ function FaqController($scope, $timeout, $window, $location, $state, $uiViewScro
     });
 
     // Act when hash changes
-    $scope.$on('$locationChangeSuccess', function () {
+    $scope.$on('$locationChangeSuccess', function() {
       if ($location.hash() !== '') {
         highlightQuestion($location.hash());
       }
@@ -36,8 +39,7 @@ function FaqController($scope, $timeout, $window, $location, $state, $uiViewScro
     // Determine sidebar's stickiness
     canSidebarBeSticky();
 
-    $timeout(function () {
-
+    $timeout(function() {
       // If hash is present on initial page load, open it
       if ($location.hash() !== '') {
         // Scroll to element
@@ -46,9 +48,10 @@ function FaqController($scope, $timeout, $window, $location, $state, $uiViewScro
       }
 
       // Determine fixed width for the sidebar so it doesn't overflow when it gets fixed position
-      angular.element('#faq-sidebar').css({ 'width': angular.element('#faq-sidebar').width() });
+      angular
+        .element('#faq-sidebar')
+        .css({ width: angular.element('#faq-sidebar').width() });
     });
-
   }
 
   /**
@@ -57,7 +60,7 @@ function FaqController($scope, $timeout, $window, $location, $state, $uiViewScro
    * don't let it stick
    */
   function canSidebarBeSticky() {
-    $timeout(function () {
+    $timeout(function() {
       if ($window.innerHeight <= angular.element('#faq-sidebar').height()) {
         vm.allowStickySidebar = false;
       }
@@ -74,10 +77,9 @@ function FaqController($scope, $timeout, $window, $location, $state, $uiViewScro
     // Animation time at CSS is 1000ms
     if ($el.length) {
       $el.addClass('faq-question-flash');
-      $timeout(function () {
+      $timeout(function() {
         $el.removeClass('faq-question-flash');
       }, 1010);
     }
   }
-
 }

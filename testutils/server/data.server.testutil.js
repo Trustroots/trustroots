@@ -35,7 +35,7 @@ async function saveDocumentsToCollection(collection, _docs) {
  * @returns {Promise<User[]>}
  * the callback support can be removed when the whole codebase is migrated to ES6
  */
-async function saveUsers(_docs, done=() => {}) {
+async function saveUsers(_docs, done = () => {}) {
   try {
     const docs = await saveDocumentsToCollection('User', _docs);
     done(null, docs);
@@ -53,7 +53,7 @@ async function saveUsers(_docs, done=() => {}) {
  * @returns {Promise<Reference[]>}
  * the callback support can be removed when the whole codebase is migrated to ES6
  */
-async function saveReferences(_docs, done=() => {}) {
+async function saveReferences(_docs, done = () => {}) {
   try {
     const docs = await saveDocumentsToCollection('Reference', _docs);
     done(null, docs);
@@ -82,10 +82,7 @@ async function clearDatabaseCollections(collections) {
  * The new collections should be added as needed
  * Eventually this list shall become complete
  */
-const collections = [
-  'User',
-  'Reference',
-];
+const collections = ['User', 'Reference'];
 
 /**
  * Clear all collections in a database
@@ -106,7 +103,8 @@ async function clearDatabase() {
  */
 async function signIn(user, agent) {
   const { username, password } = user;
-  await agent.post('/api/auth/signin')
+  await agent
+    .post('/api/auth/signin')
     .send({ username, password })
     .expect(200);
 }
@@ -117,10 +115,8 @@ async function signIn(user, agent) {
  * @returns {Promise<void>}
  */
 async function signOut(agent) {
-  await agent.get('/api/auth/signout')
-    .expect(302);
+  await agent.get('/api/auth/signout').expect(302);
 }
-
 
 module.exports = {
   generateUsers,

@@ -3,6 +3,7 @@
 Design principles to follow while building Trustroots interfaces.
 
 #### In this guide:
+
 - [Feature creep](#feature-creep)
 - [Icons](#icons)
 - [Language](#language)
@@ -10,6 +11,7 @@ Design principles to follow while building Trustroots interfaces.
 - [Colours](#colours)
 
 ### Feature creep
+
 Our features list is kept short and simple. While many things would be awesome to have, it sometimes makes more sense to make less but better. Avoid clutter and keep things simple.
 
 ### Icons
@@ -33,6 +35,7 @@ Feel free to add phrases such as "well done!" or "oops!" to make it more playful
 In public facing interfaces, avoid technical terms that might not be familiar with all members, or that might sound cold.
 
 For example, use:
+
 - "Members" instead of "users".
 - "Profile photo" instead of "avatar".
 - "Website address" instead of "URL"

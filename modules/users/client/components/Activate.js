@@ -8,16 +8,24 @@ export default function Activate() {
   const { t } = useTranslation('users');
 
   return (
-    <div className="row" role="alertdialog" aria-labelledby="activate-profile-message">
+    <div
+      className="row"
+      role="alertdialog"
+      aria-labelledby="activate-profile-message"
+    >
       <div className="col-xs-12 text-center" role="document" tabIndex="0">
-        <h2>{t('Don\'t panic!')}</h2>
+        <h2>{t("Don't panic!")}</h2>
         <p className="lead" id="activate-profile-message">
-          <em>{t('Sorry, you need to first activate your profile by confirming your email.')}</em>
+          <em>
+            {t(
+              'Sorry, you need to first activate your profile by confirming your email.',
+            )}
+          </em>
         </p>
         <p>
           <Trans t={t}>
-            If you didn&apos;t receive the message,
-            check your spam folder or resend it via
+            If you didn&apos;t receive the message, check your spam folder or
+            resend it via
             <a href="/profile/edit/account">email settings</a>.
           </Trans>
         </p>

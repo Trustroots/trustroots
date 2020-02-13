@@ -7,10 +7,16 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 
-export default function BottomNavigationSmall({ username, isSelf, contactCount }) {
+export default function BottomNavigationSmall({
+  username,
+  isSelf,
+  contactCount,
+}) {
   // @TODO the default value for 'active' will need to be fetched in more React way
   // when we have a router in place
-  const [active, setActive] = useState(window.location.pathname.split('/')[3] || 'about');
+  const [active, setActive] = useState(
+    window.location.pathname.split('/')[3] || 'about',
+  );
 
   const { t } = useTranslation('user');
 
@@ -43,19 +49,22 @@ export default function BottomNavigationSmall({ username, isSelf, contactCount }
   }
 
   return (
-    <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block" role="navigation">
+    <nav
+      className="navbar navbar-default navbar-fixed-bottom visible-xs-block"
+      role="navigation"
+    >
       <div className="container">
         <ul className="nav navbar-nav" role="tablist">
           {tabs.map(({ key, label, link, count }) => (
             <li
               key={key}
               className={classNames({ active: active === key })}
-              ui-sref-active="active" role="presentation">
-              <a
-                href={link}
-                role="tab"
-                onClick={() => setActive(key)}
-              >{label} <span className="badge">{count}</span></a>
+              ui-sref-active="active"
+              role="presentation"
+            >
+              <a href={link} role="tab" onClick={() => setActive(key)}>
+                {label} <span className="badge">{count}</span>
+              </a>
             </li>
           ))}
         </ul>
