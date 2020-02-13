@@ -1,4 +1,3 @@
-/* eslint-disable no-console,no-unused-vars */
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 
@@ -17,7 +16,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
       onSend(value);
       setContent('');
       // There is a bug somewhere that means just setting content to '' does not
-      // the text in the editor after pressing send, we can work around that by
+      // set the text in the editor after pressing send, we can work around that by
       // recreating the TrEditor component after each send by setting a fresh key
       setEditorKeyCounter(n => n + 1);
       clearDraft();
