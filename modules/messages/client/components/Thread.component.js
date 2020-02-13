@@ -63,6 +63,15 @@ const LoadingContainer = styled.div`
   text-align: center;
 `;
 
+function UserDoesNotExist() {
+  return (
+    <div className="content-empty">
+      <i className="icon-3x icon-messages-alt" />
+      <h4>This user isn&apos;t a member anymore.</h4>
+    </div>
+  );
+}
+
 export default function Thread({ user, profileMinimumLength }) {
   if (!user.public) {
     return (
@@ -75,13 +84,14 @@ export default function Thread({ user, profileMinimumLength }) {
   const [isFetching, setIsFetching] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
+  const [doesNotExist, setDoesNotExist] = useState(false);
   const [messages, setMessages] = useState([]);
   const cacheKey = `messages.thread.${user._id}-${getRouteParams().username}`;
 
   const userHasReplied = Boolean(
     messages.find(message => message.userFrom._id === user._id),
   );
-  const showQuickReply = !userHasReplied;
+  const showQuickReply = messages.length > 0 && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
@@ -105,6 +115,12 @@ export default function Thread({ user, profileMinimumLength }) {
       const messages = await api.messages.fetchMessages(otherUser._id);
       setOtherUser(otherUser);
       setMessages(messages.sort((a, b) => a.created.localeCompare(b.created)));
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setDoesNotExist(true);
+      } else {
+        throw error;
+      }
     } finally {
       setIsFetching(false);
     }
@@ -139,6 +155,14 @@ export default function Thread({ user, profileMinimumLength }) {
     }
     markRead();
   }, [messages]);
+
+  if (doesNotExist) {
+    return (
+      <section className="container-spacer">
+        <UserDoesNotExist />
+      </section>
+    );
+  }
 
   return (
     <section className="container container-spacer">
