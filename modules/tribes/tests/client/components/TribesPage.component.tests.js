@@ -13,25 +13,29 @@ jest.mock('@/modules/tribes/client/api/tribes.api');
 
 const onMembershipUpdated = jest.fn();
 
-const dummyTribes = [{
-  _id: 'aaaa',
-  id: 'aaaa',
-  count: 20000,
-  slug: 'hitchhikers',
-  label: 'Hitchhikers',
-}, {
-  _id: 'bbbb',
-  id: 'bbbb',
-  count: 5000,
-  slug: 'snails',
-  label: 'Snails',
-}, {
-  _id: 'cccc',
-  id: 'cccc',
-  count: 1500,
-  slug: 'teddybears',
-  label: 'Teddy Bears',
-}];
+const dummyTribes = [
+  {
+    _id: 'aaaa',
+    id: 'aaaa',
+    count: 20000,
+    slug: 'hitchhikers',
+    label: 'Hitchhikers',
+  },
+  {
+    _id: 'bbbb',
+    id: 'bbbb',
+    count: 5000,
+    slug: 'snails',
+    label: 'Snails',
+  },
+  {
+    _id: 'cccc',
+    id: 'cccc',
+    count: 1500,
+    slug: 'teddybears',
+    label: 'Teddy Bears',
+  },
+];
 
 const dummyUser = {
   _id: 'user0',
@@ -40,19 +44,26 @@ const dummyUser = {
 };
 
 api.tribes.read.mockImplementation(async () => dummyTribes);
-api.tribes.join.mockImplementation(async id => ({ tribe: dummyTribes.find(tribe => tribe._id === id) }));
-api.tribes.leave.mockImplementation(async id => ({ tribe: dummyTribes.find(tribe => tribe._id === id) }));
+api.tribes.join.mockImplementation(async id => ({
+  tribe: dummyTribes.find(tribe => tribe._id === id),
+}));
+api.tribes.leave.mockImplementation(async id => ({
+  tribe: dummyTribes.find(tribe => tribe._id === id),
+}));
 
 // helper function to determine a membership
 const isMember = (user, tribe) => user.memberIds.includes(tribe._id);
 
 // TextMatch function for finding an element with arbitrarily nested text
 // https://testing-library.com/docs/dom-testing-library/api-queries#textmatch
-const nestedTextMatch = text => (content, element) => element.textContent.includes(text);
+const nestedTextMatch = text => (content, element) =>
+  element.textContent.includes(text);
 
 // helper that renders the TribesPage, waits for the tribes to be loaded from API and returns the rendered page
 const renderAndWaitForTribes = async ({ user }) => {
-  const page = render(<TribesPage onMembershipUpdated={onMembershipUpdated} user={user} />);
+  const page = render(
+    <TribesPage onMembershipUpdated={onMembershipUpdated} user={user} />,
+  );
 
   // the tribes should be displayed
   await waitForElement(() => {
@@ -66,9 +77,7 @@ const renderAndWaitForTribes = async ({ user }) => {
   return page;
 };
 
-
 describe('TribesPage', () => {
-
   afterEach(() => {
     jest.clearAllMocks();
   });
@@ -76,7 +85,6 @@ describe('TribesPage', () => {
   let page;
 
   describe('not signed in', () => {
-
     beforeEach(async () => {
       page = await renderAndWaitForTribes({ user: null });
     });
@@ -103,14 +111,15 @@ describe('TribesPage', () => {
       expect(buttons).toHaveLength(dummyTribes.length);
 
       dummyTribes.forEach((tribeData, i) => {
-        expect(buttons[i]).toHaveAttribute('href', `/signup?tribe=${tribeData.slug}`);
+        expect(buttons[i]).toHaveAttribute(
+          'href',
+          `/signup?tribe=${tribeData.slug}`,
+        );
       });
     });
-
   });
 
   describe('signed in', () => {
-
     beforeEach(async () => {
       page = await renderAndWaitForTribes({ user: dummyUser });
     });
@@ -131,9 +140,10 @@ describe('TribesPage', () => {
     });
 
     it('user is member of some tribes and not member of others', async () => {
-
       dummyTribes.forEach(tribeData => {
-        const tribe = page.getByText(nestedTextMatch(tribeData.label), { selector: 'li' });
+        const tribe = page.getByText(nestedTextMatch(tribeData.label), {
+          selector: 'li',
+        });
 
         if (isMember(dummyUser, tribeData)) {
           within(tribe).getByText('Joined', { selector: 'button' });
@@ -141,61 +151,76 @@ describe('TribesPage', () => {
           within(tribe).getByText('Join', { selector: 'button' });
         }
       });
-
     });
 
     for (const tribeData of dummyTribes) {
       if (isMember(dummyUser, tribeData)) {
-
         it('[user is a member] click leave with modal and send api request', async () => {
           expect(api.tribes.leave).toHaveBeenCalledTimes(0);
 
           // Find the tribe item...
-          const tribe = page.getByText(nestedTextMatch(tribeData.label), { selector: 'li' });
+          const tribe = page.getByText(nestedTextMatch(tribeData.label), {
+            selector: 'li',
+          });
           // ...find the Joined button...
-          const joined = within(tribe).getByText('Joined', { selector: 'button' });
+          const joined = within(tribe).getByText('Joined', {
+            selector: 'button',
+          });
           // ...and click it!
           fireEvent.click(joined);
 
           // Confirmation modal should open...
-          const modal = await waitForElement(() => page.getByText(nestedTextMatch('Leave this Tribe?'), { selector: '.modal-dialog' }));
+          const modal = await waitForElement(() =>
+            page.getByText(nestedTextMatch('Leave this Tribe?'), {
+              selector: '.modal-dialog',
+            }),
+          );
 
           // ...and we click Leave Tribe button within it.
-          const confirm = within(modal).getByText('Leave Tribe', { selector: 'button' });
+          const confirm = within(modal).getByText('Leave Tribe', {
+            selector: 'button',
+          });
           fireEvent.click(confirm);
 
           // Wait until the Joined button changes to Join
-          await waitForElement(() => within(tribe).getByText('Join', { selector: 'button' }));
+          await waitForElement(() =>
+            within(tribe).getByText('Join', { selector: 'button' }),
+          );
 
           // Check that api and onMembershipUpdated was called.
           expect(api.tribes.leave).toHaveBeenCalledTimes(1);
           expect(api.tribes.leave).toHaveBeenCalledWith(tribeData._id);
           expect(onMembershipUpdated).toHaveBeenCalledTimes(1);
-          expect(onMembershipUpdated).toHaveBeenCalledWith({ tribe: tribeData });
+          expect(onMembershipUpdated).toHaveBeenCalledWith({
+            tribe: tribeData,
+          });
         });
-
       } else {
-
         it('[user is not a member] click join and send api request', async () => {
           expect(api.tribes.join).toHaveBeenCalledTimes(0);
 
           // Find the tribe item...
-          const tribe = page.getByText(nestedTextMatch(tribeData.label), { selector: 'li' });
+          const tribe = page.getByText(nestedTextMatch(tribeData.label), {
+            selector: 'li',
+          });
           // ...find the Join button...
           const join = within(tribe).getByText('Join', { selector: 'button' });
           // ...and click it!
           fireEvent.click(join);
 
           // Wait until the Join button changes to Joined
-          await waitForElement(() => within(tribe).getByText('Joined', { selector: 'button' }));
+          await waitForElement(() =>
+            within(tribe).getByText('Joined', { selector: 'button' }),
+          );
 
           // Check that api and onMembershipUpdated was called.
           expect(api.tribes.join).toHaveBeenCalledTimes(1);
           expect(api.tribes.join).toHaveBeenCalledWith(tribeData._id);
           expect(onMembershipUpdated).toHaveBeenCalledTimes(1);
-          expect(onMembershipUpdated).toHaveBeenCalledWith({ tribe: tribeData });
+          expect(onMembershipUpdated).toHaveBeenCalledWith({
+            tribe: tribeData,
+          });
         });
-
       }
     }
   });
