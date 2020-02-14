@@ -7,8 +7,12 @@ const async = require('async');
 const juice = require('juice');
 const moment = require('moment');
 const autolinker = require('autolinker');
-const analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
-const textService = require(path.resolve('./modules/core/server/services/text.server.service'));
+const analyticsHandler = require(path.resolve(
+  './modules/core/server/controllers/analytics.server.controller',
+));
+const textService = require(path.resolve(
+  './modules/core/server/services/text.server.service',
+));
 const render = require(path.resolve('./config/lib/render'));
 const agenda = require(path.resolve('./config/lib/agenda'));
 const config = require(path.resolve('./config/config'));
@@ -25,14 +29,18 @@ function getSupportVolunteerName() {
   return _.sample(config.supportVolunteerNames);
 }
 
-exports.sendMessagesUnread = function (userFrom, userTo, notification, callback) {
-
+exports.sendMessagesUnread = function(
+  userFrom,
+  userTo,
+  notification,
+  callback,
+) {
   // Is the notification the first one?
   // If not, we send a different subject.
   const isFirst = !(notification.notificationCount > 0);
 
   // Generate mail subject
-  const mailSubject = (isFirst)
+  const mailSubject = isFirst
     ? userFrom.displayName + ' wrote you from Trustroots'
     : userFrom.displayName + ' is still waiting for a reply on Trustroots';
 
@@ -72,7 +80,14 @@ exports.sendMessagesUnread = function (userFrom, userTo, notification, callback)
   exports.renderEmailAndSend('messages-unread', params, callback);
 };
 
-exports.sendConfirmContact = function (user, friend, contact, messageHTML, messageText, callback) {
+exports.sendConfirmContact = function(
+  user,
+  friend,
+  contact,
+  messageHTML,
+  messageText,
+  callback,
+) {
   const meURL = url + '/profile/' + user.username;
   const urlConfirm = url + '/contact-confirm/' + contact._id;
   const campaign = 'confirm-contact';
@@ -108,7 +123,7 @@ exports.sendConfirmContact = function (user, friend, contact, messageHTML, messa
 /**
  * Email with a token to initialize removing a user
  */
-exports.sendRemoveProfile = function (user, callback) {
+exports.sendRemoveProfile = function(user, callback) {
   const urlConfirm = url + '/remove/' + user.removeProfileToken;
   const campaign = 'remove-profile';
 
@@ -131,7 +146,7 @@ exports.sendRemoveProfile = function (user, callback) {
 /**
  * Email confirmation that user was removed
  */
-exports.sendRemoveProfileConfirmed = function (user, callback) {
+exports.sendRemoveProfileConfirmed = function(user, callback) {
   const campaign = 'remove-profile-confirmed';
 
   const params = exports.addEmailBaseTemplateParams({
@@ -144,7 +159,7 @@ exports.sendRemoveProfileConfirmed = function (user, callback) {
   exports.renderEmailAndSend('remove-profile-confirmed', params, callback);
 };
 
-exports.sendResetPassword = function (user, callback) {
+exports.sendResetPassword = function(user, callback) {
   const urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken;
   const campaign = 'reset-password';
 
@@ -164,8 +179,7 @@ exports.sendResetPassword = function (user, callback) {
   exports.renderEmailAndSend('reset-password', params, callback);
 };
 
-exports.sendResetPasswordConfirm = function (user, callback) {
-
+exports.sendResetPasswordConfirm = function(user, callback) {
   const urlResetPassword = url + '/password/forgot';
   const campaign = 'reset-password-confirm';
 
@@ -185,8 +199,7 @@ exports.sendResetPasswordConfirm = function (user, callback) {
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
 };
 
-exports.sendChangeEmailConfirmation = function (user, callback) {
-
+exports.sendChangeEmailConfirmation = function(user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken;
   const campaign = 'confirm-email';
 
@@ -207,8 +220,7 @@ exports.sendChangeEmailConfirmation = function (user, callback) {
   exports.renderEmailAndSend('email-confirmation', params, callback);
 };
 
-exports.sendSignupEmailConfirmation = function (user, callback) {
-
+exports.sendSignupEmailConfirmation = function(user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
   const campaign = 'confirm-email';
 
@@ -229,8 +241,7 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
   exports.renderEmailAndSend('signup', params, callback);
 };
 
-exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
-
+exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
   let subject = 'Support request';
 
   // I miss CoffeeSscript
@@ -255,15 +266,16 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
   exports.renderEmailAndSend('support-request', params, callback);
 };
 
-exports.sendSignupEmailReminder = function (user, callback) {
-
+exports.sendSignupEmailReminder = function(user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
   const campaign = 'signup-reminder';
 
   // This email is a reminder number `n` to this user
   // Set to `1` (first) if the field doesn't exist yet
   // `publicReminderCount` contains number of reminders already sent to user
-  const reminderCount = user.publicReminderCount ? user.publicReminderCount + 1 : 1;
+  const reminderCount = user.publicReminderCount
+    ? user.publicReminderCount + 1
+    : 1;
 
   const params = exports.addEmailBaseTemplateParams({
     subject: 'Complete your signup to Trustroots',
@@ -283,14 +295,14 @@ exports.sendSignupEmailReminder = function (user, callback) {
   });
 
   // This will be the last reminder, mention that at the email subject line
-  if ((user.publicReminderCount + 1) === config.limits.maxSignupReminders) {
+  if (user.publicReminderCount + 1 === config.limits.maxSignupReminders) {
     params.subject = 'Last chance to complete your signup to Trustroots!';
   }
 
   exports.renderEmailAndSend('signup-reminder', params, callback);
 };
 
-exports.sendReactivateHosts = function (user, callback) {
+exports.sendReactivateHosts = function(user, callback) {
   const urlOffer = url + '/offer';
   const campaign = 'reactivate-hosts';
   const utmParams = {
@@ -307,7 +319,12 @@ exports.sendReactivateHosts = function (user, callback) {
     urlOfferPlainText: urlOffer,
     urlOffer: analyticsHandler.appendUTMParams(urlOffer, utmParams),
     urlSurveyPlainText: config.surveyReactivateHosts || false,
-    urlSurvey: config.surveyReactivateHosts ? analyticsHandler.appendUTMParams(config.surveyReactivateHosts, utmParams) : false,
+    urlSurvey: config.surveyReactivateHosts
+      ? analyticsHandler.appendUTMParams(
+          config.surveyReactivateHosts,
+          utmParams,
+        )
+      : false,
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
   });
@@ -318,7 +335,7 @@ exports.sendReactivateHosts = function (user, callback) {
 /**
  * 1/3 welcome sequence email
  */
-exports.sendWelcomeSequenceFirst = function (user, callback) {
+exports.sendWelcomeSequenceFirst = function(user, callback) {
   const urlEditProfile = url + '/profile/edit';
   const urlFAQ = url + '/faq';
   const campaign = 'welcome-sequence-first';
@@ -351,7 +368,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
 /**
  * 2/3 welcome sequence email
  */
-exports.sendWelcomeSequenceSecond = function (user, callback) {
+exports.sendWelcomeSequenceSecond = function(user, callback) {
   const urlMeet = url + '/offer/meet';
   const campaign = 'welcome-sequence-second';
   const utmParams = {
@@ -382,13 +399,16 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
 /**
  * 3/3 welcome sequence email
  */
-exports.sendWelcomeSequenceThird = function (user, callback) {
-
+exports.sendWelcomeSequenceThird = function(user, callback) {
   // For members with empty profiles,
   // remind them how important it is to fill their profile.
   // Ask for feedback from the rest.
-  const descriptionLength = textService.plainText(user.description || '', true).length;
-  const messageTopic = (descriptionLength < config.profileMinimumLength) ? 'fill-profile' : 'feedback';
+  const descriptionLength = textService.plainText(user.description || '', true)
+    .length;
+  const messageTopic =
+    descriptionLength < config.profileMinimumLength
+      ? 'fill-profile'
+      : 'feedback';
 
   const urlEditProfile = url + '/profile/edit';
   const campaign = 'welcome-sequence-third' + '-' + messageTopic;
@@ -421,8 +441,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
 /**
  * Reference Notification (First between users)
  */
-exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
-
+exports.sendReferenceNotificationFirst = function(userFrom, userTo, callback) {
   const params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
@@ -439,8 +458,12 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
 /**
  * Reference Notification (Second reference between users)
  */
-exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference, callback) {
-
+exports.sendReferenceNotificationSecond = function(
+  userFrom,
+  userTo,
+  reference,
+  callback,
+) {
   const params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
@@ -463,9 +486,13 @@ exports.sendReferenceNotificationSecond = function (userFrom, userTo, reference,
  * @param {Object[]} params - Parameters used for rendering emails
  * @returns {Object[]} - Returns object with supportUrl, footerUrl and headerUrl parameters.
  */
-exports.addEmailBaseTemplateParams = function (params) {
+exports.addEmailBaseTemplateParams = function(params) {
   if (params === null || typeof params !== 'object') {
-    log('error', 'addEmailBaseTemplateParams: requires param to be Object. No URL parameters added.', params);
+    log(
+      'error',
+      'addEmailBaseTemplateParams: requires param to be Object. No URL parameters added.',
+      params,
+    );
     return {};
   }
 
@@ -474,7 +501,7 @@ exports.addEmailBaseTemplateParams = function (params) {
   params.urlSupportPlainText = baseUrl + '/support';
   params.footerUrlPlainText = baseUrl;
 
-  const buildAnalyticsUrl = function (url, content) {
+  const buildAnalyticsUrl = function(url, content) {
     return analyticsHandler.appendUTMParams(url, {
       source: 'transactional-email',
       medium: 'email',
@@ -485,88 +512,101 @@ exports.addEmailBaseTemplateParams = function (params) {
 
   params.headerUrl = buildAnalyticsUrl(baseUrl, 'email-header');
   params.footerUrl = buildAnalyticsUrl(baseUrl, 'email-footer');
-  params.supportUrl = buildAnalyticsUrl(params.urlSupportPlainText, 'email-support');
+  params.supportUrl = buildAnalyticsUrl(
+    params.urlSupportPlainText,
+    'email-support',
+  );
   if (params.username) {
-    params.profileUrl = buildAnalyticsUrl(baseUrl + '/profile/' + params.username, 'email-profile');
+    params.profileUrl = buildAnalyticsUrl(
+      baseUrl + '/profile/' + params.username,
+      'email-profile',
+    );
   }
   return params;
 };
 
-exports.renderEmail = function (templateName, params, callback) {
-
+exports.renderEmail = function(templateName, params, callback) {
   const templatePaths = {};
 
   // `./modules/core/server/views/email-templates-text`
-  templatePaths.text = path.join('email-templates-text', templateName + '.server.view.html');
+  templatePaths.text = path.join(
+    'email-templates-text',
+    templateName + '.server.view.html',
+  );
 
   if (!params.skipHtmlTemplate) {
     // `./modules/core/server/views/email-templates`
-    templatePaths.html = path.join('email-templates', templateName + '.server.view.html');
+    templatePaths.html = path.join(
+      'email-templates',
+      templateName + '.server.view.html',
+    );
   }
 
   // Rendering in parallel leads to an error. maybe because
   // swig is unmaintained now https://github.com/paularmstrong/swig)
-  async.mapValuesSeries(templatePaths, function (templatePath, key, done) {
-    render(templatePath, params, function (err, rendered) {
+  async.mapValuesSeries(
+    templatePaths,
+    function(templatePath, key, done) {
+      render(templatePath, params, function(err, rendered) {
+        // there are promises inside render(), need to execute callback in
+        // nextTick() so callback can safely throw exceptions
+        // see https://github.com/caolan/async/issues/1150
+        async.nextTick(function() {
+          done(err, rendered);
+        });
+      });
+    },
+    function(err, result) {
+      if (err) return callback(err);
 
-      // there are promises inside render(), need to execute callback in
-      // nextTick() so callback can safely throw exceptions
-      // see https://github.com/caolan/async/issues/1150
-      async.nextTick(function () {
-        done(err, rendered);
+      // Clean out html entities (like &gt;) from plain text emails
+      result.text = textService.plainText(result.text);
+
+      // Wrap links with `<` and `>` from plain text emails
+      result.text = autolinker.link(result.text, {
+        urls: true,
+        email: false,
+        phone: false,
+        mention: false,
+        hashtag: false,
+        stripPrefix: false,
+        replaceFn: function(match) {
+          return '<' + match.getAnchorHref() + '>';
+        },
       });
 
-    });
-  }, function (err, result) {
-    if (err) return callback(err);
-
-    // Clean out html entities (like &gt;) from plain text emails
-    result.text = textService.plainText(result.text);
-
-    // Wrap links with `<` and `>` from plain text emails
-    result.text = autolinker.link(result.text, {
-      urls: true,
-      email: false,
-      phone: false,
-      mention: false,
-      hashtag: false,
-      stripPrefix: false,
-      replaceFn: function (match) {
-        return '<' + match.getAnchorHref() + '>';
-      },
-    });
-
-    const email = {
-      to: {
-        name: params.name,
-        address: params.email,
-      },
-      from: params.from || 'Trustroots <' + config.mailer.from + '>',
-      subject: params.subject,
-      text: result.text,
-    };
-    if (result.html) {
-      // Inline CSS with Juice
-      email.html = juice(result.html);
-    }
-    if (params.replyTo) {
-      email.replyTo = params.replyTo;
-    }
-    // Add SparkPost `campaign_id` to headers if available
-    // @link https://developers.sparkpost.com/api/smtp-api.html
-    if (params.sparkpostCampaign) {
-      email.headers = {
-        'X-MSYS-API': {
-          'campaign_id': params.sparkpostCampaign,
+      const email = {
+        to: {
+          name: params.name,
+          address: params.email,
         },
+        from: params.from || 'Trustroots <' + config.mailer.from + '>',
+        subject: params.subject,
+        text: result.text,
       };
-    }
-    callback(null, email);
-  });
+      if (result.html) {
+        // Inline CSS with Juice
+        email.html = juice(result.html);
+      }
+      if (params.replyTo) {
+        email.replyTo = params.replyTo;
+      }
+      // Add SparkPost `campaign_id` to headers if available
+      // @link https://developers.sparkpost.com/api/smtp-api.html
+      if (params.sparkpostCampaign) {
+        email.headers = {
+          'X-MSYS-API': {
+            campaign_id: params.sparkpostCampaign,
+          },
+        };
+      }
+      callback(null, email);
+    },
+  );
 };
 
-exports.renderEmailAndSend = function (templateName, params, callback) {
-  exports.renderEmail(templateName, params, function (err, email) {
+exports.renderEmailAndSend = function(templateName, params, callback) {
+  exports.renderEmail(templateName, params, function(err, email) {
     if (err) return callback(err);
     agenda.now('send email', email, callback);
   });

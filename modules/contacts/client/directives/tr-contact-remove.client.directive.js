@@ -14,8 +14,7 @@ function trContactRemoveDirective($uibModal) {
     scope: {
       contactToRemove: '=trContactRemove',
     },
-    link: function (scope, element) {
-
+    link: function(scope, element) {
       function openModal() {
         $uibModal.open({
           templateUrl,
@@ -27,7 +26,6 @@ function trContactRemoveDirective($uibModal) {
 
       // Bind opening modal to the click
       element.bind('click', openModal);
-
     },
   };
 }

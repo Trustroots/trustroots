@@ -20,13 +20,12 @@ function trConfirmPasswordDirective() {
     scope: {
       comparisonValue: '=trConfirmPassword',
     },
-    link: function (scope, element, attributes, ngModel) {
-
-      ngModel.$validators.confirmPassword = function (modelValue) {
+    link: function(scope, element, attributes, ngModel) {
+      ngModel.$validators.confirmPassword = function(modelValue) {
         return modelValue === scope.comparisonValue;
       };
 
-      scope.$watch('comparisonValue', function () {
+      scope.$watch('comparisonValue', function() {
         ngModel.$validate();
       });
     },

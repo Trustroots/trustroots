@@ -9,16 +9,13 @@
  * ```
  *
  */
-angular
-  .module('core')
-  .directive('trSwitch', trSwitchDirective);
+angular.module('core').directive('trSwitch', trSwitchDirective);
 
 /* @ngInject */
 function trSwitchDirective() {
   return {
     restrict: 'A',
-    link: function (scope, elem, attrs) {
-
+    link: function(scope, elem, attrs) {
       elem.addClass('tr-switch');
 
       // Small size
@@ -35,7 +32,6 @@ function trSwitchDirective() {
       // Add toggle
       const toggle = angular.element('<div class="toggle"></div>');
       elem.find('input').after(toggle);
-
     },
   };
 }

@@ -9,8 +9,8 @@ export default function UserLink({ user }) {
 
   const { _id, displayName, username } = user;
   return (
-    <a href={ `/admin/user?id=${ _id }` } title="Show user report card">
-      { displayName || username || _id }
+    <a href={`/admin/user?id=${_id}`} title="Show user report card">
+      {displayName || username || _id}
     </a>
   );
 }

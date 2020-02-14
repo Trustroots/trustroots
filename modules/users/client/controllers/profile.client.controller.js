@@ -1,10 +1,17 @@
-angular
-  .module('users')
-  .controller('ProfileController', ProfileController);
+angular.module('users').controller('ProfileController', ProfileController);
 
 /* @ngInject */
-function ProfileController($scope, $stateParams, $state, $filter, Authentication, $timeout, profile, contact, contacts) {
-
+function ProfileController(
+  $scope,
+  $stateParams,
+  $state,
+  $filter,
+  Authentication,
+  $timeout,
+  profile,
+  contact,
+  contacts,
+) {
   // No user defined at URL, just redirect to user's own profile
   if (!$stateParams.username) {
     $state.go('profile.about', { username: Authentication.user.username });
@@ -25,10 +32,9 @@ function ProfileController($scope, $stateParams, $state, $filter, Authentication
   /**
    * Remove contact via React RemoveContact component
    */
-  vm.removeContact = function (contact) {
+  vm.removeContact = function(contact) {
     vm.contacts.splice(vm.contacts.indexOf(contact), 1);
   };
-
 
   activate();
 
@@ -42,26 +48,32 @@ function ProfileController($scope, $stateParams, $state, $filter, Authentication
       // If we're on small screens, direct to `overview` tab instead
       if ($state.current.name === 'profile.about') {
         // Timeout ensures `ui-sref-active=""` gets updated at the templates
-        $timeout(function () {
+        $timeout(function() {
           $state.go('profile.overview', { username: profile.username });
         }, 25);
       }
-    // When on bigger screen...
-    // Redirect "mobile only" tabs to about tab
-    } else if (['profile.overview', 'profile.accommodation'].indexOf($state.current.name) > -1) {
+      // When on bigger screen...
+      // Redirect "mobile only" tabs to about tab
+    } else if (
+      ['profile.overview', 'profile.accommodation'].indexOf(
+        $state.current.name,
+      ) > -1
+    ) {
       $state.go('profile.about', { username: profile.username });
     }
 
     // If this is authenticated user's own profile, measure profile description length
     if (Authentication.user._id === profile._id) {
-      vm.profileDescriptionLength = Authentication.user.description ? $filter('plainTextLength')(Authentication.user.description) : 0;
+      vm.profileDescriptionLength = Authentication.user.description
+        ? $filter('plainTextLength')(Authentication.user.description)
+        : 0;
     }
 
     /**
      * When contact removal modal signals that the contact was removed, remove it from this scope as well
      * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
      */
-    $scope.$on('contactRemoved', function () {
+    $scope.$on('contactRemoved', function() {
       if (vm.contact) {
         delete vm.contact._id;
       }
@@ -74,21 +86,30 @@ function ProfileController($scope, $stateParams, $state, $filter, Authentication
    */
   function isWarmshowersId() {
     let x;
-    return isNaN(vm.profile.extSitesWS) ? !1 : (x = parseFloat(vm.profile.extSitesWS), (0 | x) === x);
+    return isNaN(vm.profile.extSitesWS)
+      ? !1
+      : ((x = parseFloat(vm.profile.extSitesWS)), (0 | x) === x);
   }
 
   /**
    * Check if there are additional accounts
    */
   function hasConnectedAdditionalSocialAccounts() {
-    return (vm.profile.additionalProvidersData && Object.keys(vm.profile.additionalProvidersData).length);
+    return (
+      vm.profile.additionalProvidersData &&
+      Object.keys(vm.profile.additionalProvidersData).length
+    );
   }
 
   /**
    * Check if provider is already in use with profile
    */
   function isConnectedSocialAccount(provider) {
-    return vm.profile.provider === provider || (vm.profile.additionalProvidersData && vm.profile.additionalProvidersData[provider]);
+    return (
+      vm.profile.provider === provider ||
+      (vm.profile.additionalProvidersData &&
+        vm.profile.additionalProvidersData[provider])
+    );
   }
 
   /**
@@ -106,5 +127,4 @@ function ProfileController($scope, $stateParams, $state, $filter, Authentication
       return '#';
     }
   }
-
 }

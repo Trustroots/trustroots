@@ -25,7 +25,9 @@ export default function ReadMorePanel({ content, id }) {
     <div className="panel-more-wrap">
       <div
         className="panel-more-wrap"
-        dangerouslySetInnerHTML={{ __html: `${plainText(content).substr(0, LIMIT)} …` }}
+        dangerouslySetInnerHTML={{
+          __html: `${plainText(content).substr(0, LIMIT)} …`,
+        }}
         id={id}
         onClick={() => setShowMore(true)}
       />

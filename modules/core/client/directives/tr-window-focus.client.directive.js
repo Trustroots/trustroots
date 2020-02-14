@@ -8,9 +8,7 @@
  * Based on
  * @link http://www.bennadel.com/blog/2934-handling-window-blur-and-focus-events-in-angularjs.htm
  */
-angular
-  .module('core')
-  .directive('trWindowFocus', trWindowFocusDirective);
+angular.module('core').directive('trWindowFocus', trWindowFocusDirective);
 
 /* @ngInject */
 function trWindowFocusDirective($window) {
@@ -22,7 +20,6 @@ function trWindowFocusDirective($window) {
   return directive;
 
   function link(scope, element, attributes) {
-
     // Hook up focus-handler
     const win = angular.element($window).on('focus', handleFocus);
 
@@ -39,6 +36,5 @@ function trWindowFocusDirective($window) {
     function handleDestroy() {
       win.off('focus', handleFocus);
     }
-
   }
 }

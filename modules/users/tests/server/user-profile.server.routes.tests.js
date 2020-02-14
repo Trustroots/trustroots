@@ -24,9 +24,8 @@ let _unConfirmedUser;
 /**
  * User routes tests
  */
-describe('User profile CRUD tests', function () {
-
-  before(function (done) {
+describe('User profile CRUD tests', function() {
+  before(function(done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -35,7 +34,7 @@ describe('User profile CRUD tests', function () {
   });
 
   // Create a confirmed user
-  beforeEach(function (done) {
+  beforeEach(function(done) {
     // Create user credentials
     credentials = {
       username: 'TR_username',
@@ -62,7 +61,7 @@ describe('User profile CRUD tests', function () {
   });
 
   // Create another confirmed user
-  beforeEach(function (done) {
+  beforeEach(function(done) {
     _user2 = {
       public: true,
       firstName: 'Full2',
@@ -79,8 +78,7 @@ describe('User profile CRUD tests', function () {
   });
 
   // Create an unconfirmed user
-  beforeEach(function (done) {
-
+  beforeEach(function(done) {
     unConfirmedCredentials = {
       username: 'TR_username_unconfirmed',
       password: 'TR-I$Aw3$0m4',
@@ -105,20 +103,22 @@ describe('User profile CRUD tests', function () {
     unConfirmedUser.save(done);
   });
 
-  it('should be able to get own user details successfully even when profile is still non-public', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to get own user details successfully even when profile is still non-public', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(unConfirmedCredentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
         }
 
         // Get own user details
-        agent.get('/api/users/' + unConfirmedCredentials.username.toLowerCase())
+        agent
+          .get('/api/users/' + unConfirmedCredentials.username.toLowerCase())
           .expect(200)
-          .end(function (err, res) {
+          .end(function(err, res) {
             if (err) {
               return done(err);
             }
@@ -143,79 +143,87 @@ describe('User profile CRUD tests', function () {
       });
   });
 
-  it('should be able to get own user details successfully with role "shadowban"', function (done) {
+  it('should be able to get own user details successfully with role "shadowban"', function(done) {
     user.roles = ['user', 'shadowban'];
 
-    user.save(function (err) {
+    user.save(function(err) {
       should.not.exist(err);
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           should.not.exist(signinErr);
 
           // Get own user details
-          agent.get('/api/users/' + user.username.toLowerCase())
+          agent
+            .get('/api/users/' + user.username.toLowerCase())
             .expect(200)
             .end(done);
         });
     });
   });
 
-  it('should be able to get other user details successfully when with role "shadowban"', function (done) {
+  it('should be able to get other user details successfully when with role "shadowban"', function(done) {
     user.roles = ['user', 'shadowban'];
 
-    user.save(function (err) {
+    user.save(function(err) {
       should.not.exist(err);
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           should.not.exist(signinErr);
 
           // Get their user details
-          agent.get('/api/users/' + user2.username)
+          agent
+            .get('/api/users/' + user2.username)
             .expect(200)
             .end(done);
         });
     });
   });
 
-  it('should not be able to get other users details successfully that have "shadowban" role', function (done) {
+  it('should not be able to get other users details successfully that have "shadowban" role', function(done) {
     user2.roles = ['user', 'shadowban'];
 
-    user2.save(function (err) {
+    user2.save(function(err) {
       should.not.exist(err);
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           should.not.exist(signinErr);
 
           // Get their user details
-          agent.get('/api/users/' + user2.username)
+          agent
+            .get('/api/users/' + user2.username)
             .expect(404)
             .end(done);
         });
     });
   });
 
-  it('should be able to get other users details successfully that have "shadowban" role when with role "moderator"', function (done) {
+  it('should be able to get other users details successfully that have "shadowban" role when with role "moderator"', function(done) {
     user.roles = ['user', 'moderator'];
     user2.roles = ['user', 'shadowban'];
 
-    user.save(function (err) {
+    user.save(function(err) {
       should.not.exist(err);
-      user2.save(function (err) {
+      user2.save(function(err) {
         should.not.exist(err);
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (signinErr) {
+          .end(function(signinErr) {
             should.not.exist(signinErr);
 
             // Get their user details
-            agent.get('/api/users/' + user2.username)
+            agent
+              .get('/api/users/' + user2.username)
               .expect(200)
               .end(done);
           });
@@ -223,22 +231,24 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should be able to get other users details successfully that have "shadowban" role when with role "admin"', function (done) {
+  it('should be able to get other users details successfully that have "shadowban" role when with role "admin"', function(done) {
     user.roles = ['user', 'admin'];
     user2.roles = ['user', 'shadowban'];
 
-    user.save(function (err) {
+    user.save(function(err) {
       should.not.exist(err);
-      user2.save(function (err) {
+      user2.save(function(err) {
         should.not.exist(err);
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (signinErr) {
+          .end(function(signinErr) {
             should.not.exist(signinErr);
 
             // Get their user details
-            agent.get('/api/users/' + user2.username)
+            agent
+              .get('/api/users/' + user2.username)
               .expect(200)
               .end(done);
           });
@@ -246,11 +256,12 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should not be able to get any user details of confirmed user if not logged in', function (done) {
+  it('should not be able to get any user details of confirmed user if not logged in', function(done) {
     // Get own user details
-    agent.get('/api/users/' + user.username)
+    agent
+      .get('/api/users/' + user.username)
       .expect(403)
-      .end(function (err, res) {
+      .end(function(err, res) {
         if (err) {
           return done(err);
         }
@@ -260,12 +271,12 @@ describe('User profile CRUD tests', function () {
       });
   });
 
-
-  it('should not be able to get any user details of un-confirmed user if not logged in', function (done) {
+  it('should not be able to get any user details of un-confirmed user if not logged in', function(done) {
     // Get own user details
-    agent.get('/api/users/' + unConfirmedUser.username)
+    agent
+      .get('/api/users/' + unConfirmedUser.username)
       .expect(403)
-      .end(function (err, res) {
+      .end(function(err, res) {
         if (err) {
           return done(err);
         }
@@ -275,15 +286,16 @@ describe('User profile CRUD tests', function () {
       });
   });
 
-  it('should be able to update own profile details', function (done) {
+  it('should be able to update own profile details', function(done) {
     user.roles = ['user'];
 
-    user.save(function (err) {
+    user.save(function(err) {
       should.not.exist(err);
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -294,10 +306,11 @@ describe('User profile CRUD tests', function () {
             lastName: 'user_update_last',
           };
 
-          agent.put('/api/users')
+          agent
+            .put('/api/users')
             .send(userUpdate)
             // .expect(200)
-            .end(function (userInfoErr, userInfoRes) {
+            .end(function(userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
@@ -315,15 +328,16 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should not be able to add roles to own profile', function (done) {
+  it('should not be able to add roles to own profile', function(done) {
     user.roles = ['user'];
 
-    user.save(function (err) {
+    user.save(function(err) {
       should.not.exist(err);
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -335,19 +349,22 @@ describe('User profile CRUD tests', function () {
             roles: ['user', 'admin'], // This admin role should not appear in their profile
           };
 
-          agent.put('/api/users')
+          agent
+            .put('/api/users')
             .send(userUpdate)
             .expect(200)
-            .end(function (userInfoErr) {
+            .end(function(userInfoErr) {
               should.not.exist(userInfoErr);
 
-              User.findById(user._id, function (err, userFindRes) {
+              User.findById(user._id, function(err, userFindRes) {
                 should.not.exist(userInfoErr);
 
                 userFindRes.firstName.should.be.equal('user_update_first');
                 userFindRes.lastName.should.be.equal('user_update_last');
                 userFindRes._id.toString().should.be.equal(user._id.toString());
-                userFindRes.roles.should.be.instanceof(Array).and.have.lengthOf(1);
+                userFindRes.roles.should.be
+                  .instanceof(Array)
+                  .and.have.lengthOf(1);
                 userFindRes.roles.indexOf('user').should.equal(0);
 
                 return done();
@@ -357,8 +374,7 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should not be able to update profile details with existing email', function (done) {
-
+  it('should not be able to update profile details with existing email', function(done) {
     const _user2 = _user;
 
     _user2.username = 'user2_username';
@@ -375,13 +391,14 @@ describe('User profile CRUD tests', function () {
 
     const user2 = new User(_user2);
 
-    user2.save(function (err) {
+    user2.save(function(err) {
       should.not.exist(err);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentials2)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -393,16 +410,19 @@ describe('User profile CRUD tests', function () {
             email: user.email,
           };
 
-          agent.put('/api/users')
+          agent
+            .put('/api/users')
             .send(userUpdate)
             .expect(403)
-            .end(function (userInfoErr, userInfoRes) {
+            .end(function(userInfoErr, userInfoRes) {
               if (userInfoErr) {
                 return done(userInfoErr);
               }
 
               // Call the assertion callback
-              userInfoRes.body.message.should.equal('This email is already in use. Please use another one.');
+              userInfoRes.body.message.should.equal(
+                'This email is already in use. Please use another one.',
+              );
 
               return done();
             });
@@ -410,11 +430,10 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should not be able to update profile if not logged-in', function (done) {
+  it('should not be able to update profile if not logged-in', function(done) {
     user.roles = ['user'];
 
-    user.save(function (err) {
-
+    user.save(function(err) {
       should.not.exist(err);
 
       const userUpdate = {
@@ -422,10 +441,11 @@ describe('User profile CRUD tests', function () {
         lastName: 'user_update_last',
       };
 
-      agent.put('/api/users')
+      agent
+        .put('/api/users')
         .send(userUpdate)
         .expect(403)
-        .end(function (userInfoErr, userInfoRes) {
+        .end(function(userInfoErr, userInfoRes) {
           if (userInfoErr) {
             return done(userInfoErr);
           }
@@ -438,14 +458,13 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  describe('Profile picture tests', function () {
-
-    it('should not be able to update profile picture without being logged-in', function (done) {
-
-      agent.post('/api/users-avatar')
+  describe('Profile picture tests', function() {
+    it('should not be able to update profile picture without being logged-in', function(done) {
+      agent
+        .post('/api/users-avatar')
         .send({})
         .expect(403)
-        .end(function (userInfoErr, userInfoRes) {
+        .end(function(userInfoErr, userInfoRes) {
           if (userInfoErr) {
             return done(userInfoErr);
           }
@@ -457,20 +476,22 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should be able to change profile picture to a jpg file when logged-in', function (done) {
-      agent.post('/api/auth/signin')
+    it('should be able to change profile picture to a jpg file when logged-in', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
+          agent
+            .post('/api/users-avatar')
             .attach('avatar', './modules/users/tests/server/img/avatar.jpg')
             .expect(200)
-            .end(function (userInfoErr, userInfoRes) {
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -483,20 +504,22 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should be able to change profile picture to a gif file when logged-in', function (done) {
-      agent.post('/api/auth/signin')
+    it('should be able to change profile picture to a gif file when logged-in', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
+          agent
+            .post('/api/users-avatar')
             .attach('avatar', './modules/users/tests/server/img/avatar.gif')
             .expect(200)
-            .end(function (userInfoErr, userInfoRes) {
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -509,20 +532,22 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should be able to change profile picture to a png file when logged-in', function (done) {
-      agent.post('/api/auth/signin')
+    it('should be able to change profile picture to a png file when logged-in', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
+          agent
+            .post('/api/users-avatar')
             .attach('avatar', './modules/users/tests/server/img/avatar.png')
             .expect(200)
-            .end(function (userInfoErr, userInfoRes) {
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -535,41 +560,49 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should not be able to change profile picture if attach a picture with a different field name', function (done) {
-      agent.post('/api/auth/signin')
+    it('should not be able to change profile picture if attach a picture with a different field name', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
-            .attach('fieldThatDoesntWork', './modules/users/tests/server/img/avatar.jpg')
+          agent
+            .post('/api/users-avatar')
+            .attach(
+              'fieldThatDoesntWork',
+              './modules/users/tests/server/img/avatar.jpg',
+            )
             .expect(400)
-            .end(function (userInfoErr, userInfoRes) {
-              userInfoRes.body.message.should.equal('Missing "avatar" field from the API call.');
+            .end(function(userInfoErr, userInfoRes) {
+              userInfoRes.body.message.should.equal(
+                'Missing "avatar" field from the API call.',
+              );
               done(userInfoErr);
             });
         });
     });
 
-    it('should not be able to change profile picture to a pdf file', function (done) {
-      agent.post('/api/auth/signin')
+    it('should not be able to change profile picture to a pdf file', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
+          agent
+            .post('/api/users-avatar')
             .attach('avatar', './modules/users/tests/server/img/test.pdf')
             .expect(415)
-            .end(function (userInfoErr, userInfoRes) {
-
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -582,21 +615,25 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should not be able to change profile picture to a pdf file disguised as jpg file', function (done) {
-      agent.post('/api/auth/signin')
+    it('should not be able to change profile picture to a pdf file disguised as jpg file', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
-            .attach('avatar', './modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg')
+          agent
+            .post('/api/users-avatar')
+            .attach(
+              'avatar',
+              './modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg',
+            )
             .expect(415)
-            .end(function (userInfoErr, userInfoRes) {
-
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -609,21 +646,22 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should not be able to change profile picture to a svg file', function (done) {
-      agent.post('/api/auth/signin')
+    it('should not be able to change profile picture to a svg file', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
+          agent
+            .post('/api/users-avatar')
             .attach('avatar', './modules/users/tests/server/img/test.svg')
             .expect(415)
-            .end(function (userInfoErr, userInfoRes) {
-
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -636,21 +674,25 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should not be able to change profile picture to a text file with jpg extension', function (done) {
-      agent.post('/api/auth/signin')
+    it('should not be able to change profile picture to a text file with jpg extension', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
-            .attach('avatar', './modules/users/tests/server/img/this-is-text-file.jpg')
+          agent
+            .post('/api/users-avatar')
+            .attach(
+              'avatar',
+              './modules/users/tests/server/img/this-is-text-file.jpg',
+            )
             .expect(415) // 415: Unsupported Media Type.
-            .end(function (userInfoErr, userInfoRes) {
-
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
@@ -663,27 +705,35 @@ describe('User profile CRUD tests', function () {
         });
     });
 
-    it('should not be able to change profile picture to a too big file', function (done) {
-      agent.post('/api/auth/signin')
+    it('should not be able to change profile picture to a too big file', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.post('/api/users-avatar')
-            .attach('avatar', './modules/users/tests/server/img/too-big-file.png')
+          agent
+            .post('/api/users-avatar')
+            .attach(
+              'avatar',
+              './modules/users/tests/server/img/too-big-file.png',
+            )
             .expect(413)
-            .end(function (userInfoErr, userInfoRes) {
-
+            .end(function(userInfoErr, userInfoRes) {
               // Handle change profile picture error
               if (userInfoErr) {
                 return done(userInfoErr);
               }
 
-              userInfoRes.body.message.should.equal('Image too big. Please maximum ' + (config.maxUploadSize / (1024 * 1024)).toFixed(2) + ' Mb files.');
+              userInfoRes.body.message.should.equal(
+                'Image too big. Please maximum ' +
+                  (config.maxUploadSize / (1024 * 1024)).toFixed(2) +
+                  ' Mb files.',
+              );
 
               return done();
             });
@@ -691,51 +741,57 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  describe('Username change', function () {
-    it('should not let a new user to change username', function (done) {
-      agent.post('/api/auth/signin')
+  describe('Username change', function() {
+    it('should not let a new user to change username', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (err) {
+        .end(function(err) {
           if (err) {
             return done(err);
           }
           const user2 = _user;
           user2.username = _user.username + '01';
           delete user2.email;
-          agent.put('/api/users')
+          agent
+            .put('/api/users')
             .send(user2)
             .expect(403)
-            .end(function (err, res) {
+            .end(function(err, res) {
               if (err) {
                 return done(err);
               }
-              res.body.message.should.equal('You cannot change your username at this time.');
+              res.body.message.should.equal(
+                'You cannot change your username at this time.',
+              );
               return done();
             });
         });
     });
 
-    it('should allow changing username for users created 3 months ago who never changed their username', function (done) {
+    it('should allow changing username for users created 3 months ago who never changed their username', function(done) {
       const threeMonthsAgo = moment(user.created)
         .subtract(3, 'months')
         .toDate();
-      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
+      user.update({ $set: { created: threeMonthsAgo } }, function(err) {
         should.not.exist(err);
-        agent.post('/api/auth/signin')
+        agent
+          .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function (err) {
+          .end(function(err) {
             if (err) {
               return done(err);
             }
             const user2 = _user;
             user2.username = _user.username + '01';
             delete user2.email;
-            agent.put('/api/users')
+            agent
+              .put('/api/users')
               .send(user2)
               .expect(200)
-              .end(function (err, res) {
+              .end(function(err, res) {
                 if (err) {
                   return done(err);
                 }
@@ -746,170 +802,183 @@ describe('User profile CRUD tests', function () {
       });
     });
 
-    it('should not be able to change username if username was changed within previous 3 months',
-      function (done) {
-        const threeMonthsAgo = moment(user.created)
-          .subtract(3, 'months')
-          .toDate();
-        user.update({ $set: { created: threeMonthsAgo } }, function (err) {
-          should.not.exist(err);
-          agent.post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(function (err) {
-              if (err) {
-                return done(err);
-              }
-              const user2 = _user;
-              user2.username = _user.username + '01';
-              delete user2.email;
-              // First username change
-              // First we're setting usernameUpdate
-              // This should succeed
-              agent.put('/api/users')
-                .send(user2)
-                .expect(200)
-                .end(function (err, res) {
-                  if (err) {
-                    return done(err);
-                  }
-                  res.body.username.should.equal(user2.username);
-                  user2.username = _user.username + '02';
-                  // Second username change for the same user
-                  // Then we're testing that previous usernameUpdate prevents further changes
-                  // This should fail
-                  agent.put('/api/users')
-                    .send(user2)
-                    .end(function (err, res) {
-                      if (err) {
-                        return done(err);
-                      }
-                      res.body.message.should.equal('You cannot change your username at this time.');
-                      return done();
-                    });
-                });
-            });
-        });
-      });
-
-    it('should be able to change username if username was changed more than 3 months ago',
-      function (done) {
-        const threeMonthsAgo = moment(user.created)
-          .subtract(3, 'months')
-          .toDate();
-        user.update({ $set: { created: threeMonthsAgo } }, function (err) {
-          should.not.exist(err);
-          agent.post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(function (err) {
-              if (err) {
-                return done(err);
-              }
-              // First change
-              const user2 = _user;
-              user2.username = _user.username + '01';
-              delete user2.email;
-              agent.put('/api/users')
-                .send(user2)
-                .expect(200)
-                .end(function (err, res) {
-                  if (err) {
-                    return done(err);
-                  }
-                  res.body.username.should.equal(user2.username);
-                  User.findById(user._id, function (err, user) {
+    it('should not be able to change username if username was changed within previous 3 months', function(done) {
+      const threeMonthsAgo = moment(user.created)
+        .subtract(3, 'months')
+        .toDate();
+      user.update({ $set: { created: threeMonthsAgo } }, function(err) {
+        should.not.exist(err);
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function(err) {
+            if (err) {
+              return done(err);
+            }
+            const user2 = _user;
+            user2.username = _user.username + '01';
+            delete user2.email;
+            // First username change
+            // First we're setting usernameUpdate
+            // This should succeed
+            agent
+              .put('/api/users')
+              .send(user2)
+              .expect(200)
+              .end(function(err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.username.should.equal(user2.username);
+                user2.username = _user.username + '02';
+                // Second username change for the same user
+                // Then we're testing that previous usernameUpdate prevents further changes
+                // This should fail
+                agent
+                  .put('/api/users')
+                  .send(user2)
+                  .end(function(err, res) {
                     if (err) {
                       return done(err);
                     }
-                    const threeMonthsAgo = moment(user.usernameUpdated)
-                      .subtract(3, 'months')
-                      .toDate();
-                    user.update(
-                      { $set: { usernameUpdated: threeMonthsAgo } },
-                      function (err) {
-                        if (err) {
-                          return done(err);
-                        }
-                        // Second time changing it
-                        user2.username = _user.username + '02';
-                        agent.put('/api/users')
-                          .send(user2)
-                          .end(function (err, res) {
-                            if (err) {
-                              return done(err);
-                            }
-                            res.body.username.should.equal(user2.username);
-                            return done();
-                          });
-                      });
+                    res.body.message.should.equal(
+                      'You cannot change your username at this time.',
+                    );
+                    return done();
                   });
+              });
+          });
+      });
+    });
+
+    it('should be able to change username if username was changed more than 3 months ago', function(done) {
+      const threeMonthsAgo = moment(user.created)
+        .subtract(3, 'months')
+        .toDate();
+      user.update({ $set: { created: threeMonthsAgo } }, function(err) {
+        should.not.exist(err);
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function(err) {
+            if (err) {
+              return done(err);
+            }
+            // First change
+            const user2 = _user;
+            user2.username = _user.username + '01';
+            delete user2.email;
+            agent
+              .put('/api/users')
+              .send(user2)
+              .expect(200)
+              .end(function(err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.username.should.equal(user2.username);
+                User.findById(user._id, function(err, user) {
+                  if (err) {
+                    return done(err);
+                  }
+                  const threeMonthsAgo = moment(user.usernameUpdated)
+                    .subtract(3, 'months')
+                    .toDate();
+                  user.update(
+                    { $set: { usernameUpdated: threeMonthsAgo } },
+                    function(err) {
+                      if (err) {
+                        return done(err);
+                      }
+                      // Second time changing it
+                      user2.username = _user.username + '02';
+                      agent
+                        .put('/api/users')
+                        .send(user2)
+                        .end(function(err, res) {
+                          if (err) {
+                            return done(err);
+                          }
+                          res.body.username.should.equal(user2.username);
+                          return done();
+                        });
+                    },
+                  );
                 });
+              });
+          });
+      });
+    });
+
+    it('should not be allowed to change the usernameUpdateAllowed status', function(done) {
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(err) {
+          if (err) {
+            return done(err);
+          }
+          agent
+            .put('/api/users')
+            .send({
+              usernameUpdateAllowed: true,
+            })
+            .expect(200)
+            .end(function(err, res) {
+              if (err) {
+                return done(err);
+              }
+
+              res.body.usernameUpdateAllowed.should.equal(false);
+
+              User.findOne({ username: credentials.username }, function(
+                err,
+                newUser,
+              ) {
+                should.not.exist(newUser.usernameUpdateAllowed);
+                done(err);
+              });
             });
         });
-      });
+    });
 
-    it('should not be allowed to change the usernameUpdateAllowed status',
-      function (done) {
-        agent.post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (err) {
-            if (err) {
-              return done(err);
-            }
-            agent.put('/api/users')
-              .send({
-                usernameUpdateAllowed: true,
-              })
-              .expect(200)
-              .end(function (err, res) {
-                if (err) {
-                  return done(err);
-                }
-
-                res.body.usernameUpdateAllowed.should.equal(false);
-
-                User.findOne(
-                  { username: credentials.username },
-                  function (err, newUser) {
-                    should.not.exist(newUser.usernameUpdateAllowed);
-                    done(err);
-                  });
+    it('should not be allowed to change the date when their username was last changed', function(done) {
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function(err) {
+          if (err) {
+            return done(err);
+          }
+          agent
+            .put('/api/users')
+            .send({
+              usernameUpdated: moment()
+                .subtract(3, 'months')
+                .toDate(),
+            })
+            .expect(200)
+            .end(function(err) {
+              if (err) {
+                return done(err);
+              }
+              User.findOne({ username: credentials.username }, function(
+                err,
+                newUser,
+              ) {
+                should.not.exist(newUser.usernameUpdated);
+                done(err);
               });
-          });
-      });
-
-    it('should not be allowed to change the date when their username was last changed',
-      function (done) {
-        agent.post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (err) {
-            if (err) {
-              return done(err);
-            }
-            agent.put('/api/users')
-              .send({
-                usernameUpdated: moment().subtract(3, 'months').toDate(),
-              })
-              .expect(200)
-              .end(function (err) {
-                if (err) {
-                  return done(err);
-                }
-                User.findOne(
-                  { username: credentials.username },
-                  function (err, newUser) {
-                    should.not.exist(newUser.usernameUpdated);
-                    done(err);
-                  });
-              });
-          });
-      });
+            });
+        });
+    });
   });
 
-  afterEach(function (done) {
+  afterEach(function(done) {
     User.deleteMany().exec(done);
   });
 });

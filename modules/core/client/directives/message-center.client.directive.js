@@ -13,13 +13,12 @@
 /**
  * Directive for error/success/info etc notifications
  */
-angular
-  .module('core')
-  .directive('mcMessages', mcMessages);
+angular.module('core').directive('mcMessages', mcMessages);
 
 /* @ngInject */
 function mcMessages($rootScope, messageCenterService) {
-  const templateString = '\
+  const templateString =
+    '\
   <div id="mc-messages-wrapper">\
     <div class="alert alert-{{ message.type }} {{ animation }}" ng-repeat="message in mcMessages">\
       <a class="close" ng-click="message.close();" data-dismiss="alert" aria-hidden="true">&times;</a>\
@@ -37,10 +36,11 @@ function mcMessages($rootScope, messageCenterService) {
   return {
     restrict: 'EA',
     template: templateString,
-    link: function (scope, element, attrs) {
+    link: function(scope, element, attrs) {
       // Bind the messages from the service to the root scope.
       messageCenterService.flush();
-      const changeReaction = function () { // event, to, from
+      const changeReaction = function() {
+        // event, to, from
         // Update 'unseen' messages to be marked as 'shown'.
         messageCenterService.markShown();
         // Remove the messages that have been shown.
@@ -49,7 +49,10 @@ function mcMessages($rootScope, messageCenterService) {
         messageCenterService.flush();
       };
       if (angular.isUndefined(messageCenterService.offlistener)) {
-        messageCenterService.offlistener = $rootScope.$on('$locationChangeSuccess', changeReaction);
+        messageCenterService.offlistener = $rootScope.$on(
+          '$locationChangeSuccess',
+          changeReaction,
+        );
       }
       scope.animation = attrs.animation || 'fade in';
     },

@@ -7,17 +7,20 @@ const htmlLoader = require('html-loader');
 
 module.exports = {
   process(src, filename) {
-    return templateLoader.call({
-      resourcePath: filename,
-    }, htmlLoader.call({
-      resourcePath: filename,
-      query: {
-        minimize: true,
-        attrs: [
-          'img:src',
-          ':ng-include',
-        ],
+    return templateLoader.call(
+      {
+        resourcePath: filename,
       },
-    }, src));
+      htmlLoader.call(
+        {
+          resourcePath: filename,
+          query: {
+            minimize: true,
+            attrs: ['img:src', ':ng-include'],
+          },
+        },
+        src,
+      ),
+    );
   },
 };

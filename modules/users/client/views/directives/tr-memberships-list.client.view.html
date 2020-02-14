@@ -1,24 +1,35 @@
 <div>
   <ul class="profile-memberships-list panel-more-wrap" ng-if="memberships">
     <div class="panel-more-excerpt">
-      <li class="tribe" ng-repeat="membership in memberships | orderBy: '-tribe.count' | limitTo:tribeListLimit">
+      <li
+        class="tribe"
+        ng-repeat="membership in memberships | orderBy: '-tribe.count' | limitTo:tribeListLimit"
+      >
         <div tr-tribe-badge="membership.tribe"></div>
       </li>
     </div>
-    <div ng-if="memberships.length > tribeListLimit" class="panel-more-fade" ng-click="toggle()">Show more...</div>
+    <div
+      ng-if="memberships.length > tribeListLimit"
+      class="panel-more-fade"
+      ng-click="toggle()"
+    >
+      Show more...
+    </div>
   </ul>
 
   <div class="text-center" ng-if="isOwnProfile">
     <div class="content-empty" ng-if="memberships && memberships.length === 0">
       <div class="icon-tribes icon-3x text-muted"></div>
-      <p><em>Joining Tribes helps you find likeminded Trustroots members.</em></p>
-      <br><br>
+      <p>
+        <em>Joining Tribes helps you find likeminded Trustroots members.</em>
+      </p>
+      <br /><br />
       <a ui-sref="tribes.list" class="btn btn-primary">
         Join Tribes
       </a>
     </div>
     <div ng-if="memberships && memberships.length > 0">
-      <hr class="hr-gray hr-tight"/>
+      <hr class="hr-gray hr-tight" />
       <a ui-sref="tribes.list" class="btn btn-sm btn-default">
         Join more Tribes
       </a>

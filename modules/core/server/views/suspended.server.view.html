@@ -1,28 +1,23 @@
-{% extends 'layout.server.view.html' %}
-
-{% block header %}{% endblock header %}
-
+{% extends 'layout.server.view.html' %} {% block header %}{% endblock header %}
 {% block content %}
-  <section class="container container-fullscreen container-error board board-error">
-    <div class="middle-wrapper middle-wrapper-horizontal">
-      <div class="middle-content">
-
-        <div class="row">
-          <div class="col-md-6 col-md-offset-3 text-center" role="alert">
-            <h1>{{message}}</h1>
-            <br><br>
-            <a href="/rules" target="_top" class="btn btn-default btn-md">
-              Rules Of Trustroots
-            </a>
-            <a href="/contact" target="_top" class="btn btn-default btn-md">
-              Contact us
-            </a>
-          </div>
+<section
+  class="container container-fullscreen container-error board board-error"
+>
+  <div class="middle-wrapper middle-wrapper-horizontal">
+    <div class="middle-content">
+      <div class="row">
+        <div class="col-md-6 col-md-offset-3 text-center" role="alert">
+          <h1>{{message}}</h1>
+          <br /><br />
+          <a href="/rules" target="_top" class="btn btn-default btn-md">
+            Rules Of Trustroots
+          </a>
+          <a href="/contact" target="_top" class="btn btn-default btn-md">
+            Contact us
+          </a>
         </div>
-
       </div>
     </div>
-  </section>
-{% endblock content %}
-
-{% block footer %}{% endblock footer %}
+  </div>
+</section>
+{% endblock content %} {% block footer %}{% endblock footer %}

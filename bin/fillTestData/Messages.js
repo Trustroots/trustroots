@@ -10,13 +10,13 @@ const faker = require('faker');
 const mongoose = require('mongoose');
 const config = require(path.resolve('./config/config'));
 
-
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
  */
-const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
+const argv = yargs.usage(
+  '$0 <numberOfThreads> <maxMessages>',
   'Seed database with number of threads with up to max messages per thread',
-  (yargs) => {
+  yargs => {
     return yargs
       .positional('numberOfThreads', {
         describe: 'Number of threads to add',
@@ -29,23 +29,35 @@ const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
       .boolean('debug')
       .boolean('limit')
       .describe('debug', 'Enable extra database output (default=false)')
-      .describe('limit', 'If threads already exist in the database, only add up to the number of threads (default=false)')
-      .example('$0 100 10', 'Adds 100 random threads wth up to 10 messages per thread to the database')
-      .example('$0 100 10 --debug', 'Adds 100 random threads wth up to 10 messages per thread to the database with debug database output')
-      .example('$0 10 5 --limit', 'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)')
-      .check((argv) => {
+      .describe(
+        'limit',
+        'If threads already exist in the database, only add up to the number of threads (default=false)',
+      )
+      .example(
+        '$0 100 10',
+        'Adds 100 random threads wth up to 10 messages per thread to the database',
+      )
+      .example(
+        '$0 100 10 --debug',
+        'Adds 100 random threads wth up to 10 messages per thread to the database with debug database output',
+      )
+      .example(
+        '$0 10 5 --limit',
+        'Adds up to 10 randomly seeded threads to the database with up to 5 message per thread (eg. If 5 threads already exist, 5 threads will be added)',
+      )
+      .check(argv => {
         if (argv.numberOfThreads < 1) {
           throw new Error('Error: Number of threads should be greater than 0');
-        }
-        else if (argv.maxMessages < 1) {
-          throw new Error('Error: Max messages per thread should be greater than 0');
+        } else if (argv.maxMessages < 1) {
+          throw new Error(
+            'Error: Max messages per thread should be greater than 0',
+          );
         }
         return true;
       })
       .strict().yargs;
-  })
-  .argv;
-
+  },
+).argv;
 
 /**
  * This generates a random integer between 0 and max - 1 inclusively
@@ -56,7 +68,6 @@ const argv = yargs.usage('$0 <numberOfThreads> <maxMessages>',
 function random(max) {
   return Math.floor(Math.random() * max);
 }
-
 
 /**
  * Adds number of days to the date and returns a new date
@@ -80,9 +91,9 @@ function addDays(date, days) {
 function seedThreads() {
   let index = 0;
   const numThreads = argv.numberOfThreads;
-  const maxMessages= argv.maxMessages;
-  const debug = (argv.debug === true);
-  const limit = (argv.limit === true);
+  const maxMessages = argv.maxMessages;
+  const debug = argv.debug === true;
+  const limit = argv.limit === true;
 
   console.log('Generating ' + numThreads + ' message threads...');
   if (numThreads > 2000) {
@@ -102,7 +113,6 @@ function seedThreads() {
       const Thread = mongoose.model('Thread');
       const Message = mongoose.model('Message');
       const User = mongoose.model('User');
-
 
       /**
        * Adds the number of threads using the values and options specified
@@ -125,7 +135,12 @@ function seedThreads() {
 
           // if we already hit the limit
           if (index >= numThreads) {
-            console.log(chalk.green(initialThreadCount + ' message threads already exist. No threads created!'));
+            console.log(
+              chalk.green(
+                initialThreadCount +
+                  ' message threads already exist. No threads created!',
+              ),
+            );
             console.log(chalk.white('')); // Reset to white
             resolve();
             return;
@@ -136,7 +151,9 @@ function seedThreads() {
 
           // If we don't have enough users in the database
           if (users.length < 2) {
-            reject('Error: At least 2 users must exist to create message threads. Please create more users and run again');
+            reject(
+              'Error: At least 2 users must exist to create message threads. Please create more users and run again',
+            );
             return;
           }
 
@@ -187,7 +204,7 @@ function seedThreads() {
                 message.notificationCount = 0;
 
                 // save the newly created message
-                message.save((err) => {
+                message.save(err => {
                   if (err != null) {
                     console.log(err);
                   } else {
@@ -195,29 +212,48 @@ function seedThreads() {
 
                     // Add thread for the most recent message
                     if (depth === 1) {
-                      const messageThread = new Thread;
+                      const messageThread = new Thread();
 
                       // seed the message thread data
                       seedThread(messageThread, message);
 
                       // save the message thread
-                      messageThread.save((err) => {
+                      messageThread.save(err => {
                         if (err != null) {
                           console.log(err);
-                        }
-                        else {
+                        } else {
                           // Thread was saved successfully
                           process.stdout.write('.');
                           threadsSaved += 1;
 
                           // If all threads have been saved print a summary and
                           // resolve the promise.
-                          if ((limit && (threadsSaved + initialThreadCount >= numThreads))
-                                  || !limit && ((threadsSaved >= numThreads))) {
+                          if (
+                            (limit &&
+                              threadsSaved + initialThreadCount >=
+                                numThreads) ||
+                            (!limit && threadsSaved >= numThreads)
+                          ) {
                             console.log('');
-                            console.log(chalk.green(initialThreadCount + ' message threads existed in the database.'));
-                            console.log(chalk.green(threadsSaved + ' message threads successfully added.'));
-                            console.log(chalk.green('Database now contains ' + (initialThreadCount + threadsSaved) + ' message threads.'));
+                            console.log(
+                              chalk.green(
+                                initialThreadCount +
+                                  ' message threads existed in the database.',
+                              ),
+                            );
+                            console.log(
+                              chalk.green(
+                                threadsSaved +
+                                  ' message threads successfully added.',
+                              ),
+                            );
+                            console.log(
+                              chalk.green(
+                                'Database now contains ' +
+                                  (initialThreadCount + threadsSaved) +
+                                  ' message threads.',
+                              ),
+                            );
                             console.log(chalk.white('')); // Reset to white
                             resolve();
                             return;
@@ -231,10 +267,10 @@ function seedThreads() {
 
               if (messageIndex === messageCount) {
                 addMessage(messageIndex);
-              } else if (((messageIndex + 1) % 2) === 0) {
+              } else if ((messageIndex + 1) % 2 === 0) {
                 // Reverse the order of to and from to simulate a conversation going back and forth
                 addMessage(messageIndex, from, to);
-              } else if (((messageIndex + 1) % 2) === 1) {
+              } else if ((messageIndex + 1) % 2 === 1) {
                 addMessage(messageIndex, to, from);
               }
 
@@ -257,10 +293,8 @@ function seedThreads() {
 
       // Disconnect from the database
       mongooseService.disconnect();
-
     }); // monggooseService.loadModels
   }); // mongooseService.connect
-
 
   /**
    * Seed the message thread with fake data and data from the message.
@@ -278,7 +312,6 @@ function seedThreads() {
 
     return thread;
   } // seedThread
-
 } // seedThreads
 
 seedThreads();

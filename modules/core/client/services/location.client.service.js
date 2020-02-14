@@ -1,13 +1,10 @@
 /**
  * Service for querying MapBox geocoder
  */
-angular
-  .module('core')
-  .factory('LocationService', LocationService);
+angular.module('core').factory('LocationService', LocationService);
 
 /* @ngInject */
 function LocationService($log, $http, SettingsFactory) {
-
   const appSettings = SettingsFactory.get();
 
   // Defaults location to be used with maps (Europe)
@@ -61,35 +58,52 @@ function LocationService($log, $http, SettingsFactory) {
    * }
    */
   function getBounds(geolocation) {
-    if (!geolocation || !geolocation.bbox || !angular.isArray(geolocation.bbox) || geolocation.bbox.length !== 4) {
+    if (
+      !geolocation ||
+      !geolocation.bbox ||
+      !angular.isArray(geolocation.bbox) ||
+      geolocation.bbox.length !== 4
+    ) {
       const center = geolocation.center;
-      if (!geolocation || !center || !angular.isArray(center) || center.length !== 2) {
+      if (
+        !geolocation ||
+        !center ||
+        !angular.isArray(center) ||
+        center.length !== 2
+      ) {
         return false;
       } else {
-        const borderFromCenter = .002;
+        const borderFromCenter = 0.002;
         return getBoundsObject(
           parseFloat(center[1]) + borderFromCenter,
           parseFloat(center[0]) - borderFromCenter,
           parseFloat(center[1]) - borderFromCenter,
-          parseFloat(center[0]) + borderFromCenter);
+          parseFloat(center[0]) + borderFromCenter,
+        );
       }
     }
     return getBoundsObject(
       parseFloat(geolocation.bbox[3]),
       parseFloat(geolocation.bbox[2]),
       parseFloat(geolocation.bbox[1]),
-      parseFloat(geolocation.bbox[0]));
+      parseFloat(geolocation.bbox[0]),
+    );
   }
 
-  function getBoundsObject(northEastLat, northEastLng, southWestLat, southWestLng) {
+  function getBoundsObject(
+    northEastLat,
+    northEastLng,
+    southWestLat,
+    southWestLng,
+  ) {
     return {
-      'northEast': {
-        'lat': northEastLat,
-        'lng': northEastLng,
+      northEast: {
+        lat: northEastLat,
+        lng: northEastLng,
       },
-      'southWest': {
-        'lat': southWestLat,
-        'lng': southWestLng,
+      southWest: {
+        lat: southWestLat,
+        lng: southWestLng,
       },
     };
   }
@@ -147,19 +161,28 @@ function LocationService($log, $http, SettingsFactory) {
       return Promise.resolve([]);
     }
 
-    return $http.get(
-      'https://api.mapbox.com/geocoding/v5/mapbox.places/' + encodeURIComponent(val) + '.json'
-      + '?access_token=' + appSettings.mapbox.publicKey
-      + '&language=en'
-      + (types ? '&types=' + types : ''),
-      {
-        // Tells Angular-Loading-Bar to ignore this http request
-        // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
-        ignoreLoadingBar: true,
-      })
-      .then(function (response) {
-        if (response.status === 200 && response.data.features && response.data.features.length > 0) {
-          return response.data.features.map(function (geolocation) {
+    return $http
+      .get(
+        'https://api.mapbox.com/geocoding/v5/mapbox.places/' +
+          encodeURIComponent(val) +
+          '.json' +
+          '?access_token=' +
+          appSettings.mapbox.publicKey +
+          '&language=en' +
+          (types ? '&types=' + types : ''),
+        {
+          // Tells Angular-Loading-Bar to ignore this http request
+          // @link https://github.com/chieffancypants/angular-loading-bar#ignoring-particular-xhr-requests
+          ignoreLoadingBar: true,
+        },
+      )
+      .then(function(response) {
+        if (
+          response.status === 200 &&
+          response.data.features &&
+          response.data.features.length > 0
+        ) {
+          return response.data.features.map(function(geolocation) {
             geolocation.trTitle = shortTitle(geolocation);
             return geolocation;
           });
@@ -194,14 +217,12 @@ function LocationService($log, $http, SettingsFactory) {
           }
         }
       }
-
     } else if (geolocation.place_name) {
       title = geolocation.place_name;
     }
 
     return title;
   }
-
 
   return service;
 }

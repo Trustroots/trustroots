@@ -1,43 +1,93 @@
 <section class="container container-spacer">
-  <form name="confirmForm" class="form-horizontal" novalidate autocomplete="off" ng-submit="confirmEmail.confirmEmail()">
+  <form
+    name="confirmForm"
+    class="form-horizontal"
+    novalidate
+    autocomplete="off"
+    ng-submit="confirmEmail.confirmEmail()"
+  >
     <fieldset>
-
       <div class="row">
         <div class="col-xs-12 text-center">
-          <img class="hidden-xs" src="/img/tree-color.svg" alt="Trustroots" width="120" height="120" aria-hidden="true">
-          <img class="visible-xs-inline-block" src="/img/tree-color.svg" alt="Trustroots" width="80" height="80" aria-hidden="true">
-          <br><br>
+          <img
+            class="hidden-xs"
+            src="/img/tree-color.svg"
+            alt="Trustroots"
+            width="120"
+            height="120"
+            aria-hidden="true"
+          />
+          <img
+            class="visible-xs-inline-block"
+            src="/img/tree-color.svg"
+            alt="Trustroots"
+            width="80"
+            height="80"
+            aria-hidden="true"
+          />
+          <br /><br />
         </div>
       </div>
 
       <!-- Confirm form -->
       <div class="row">
         <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-
           <div class="text-center form-group" ng-if="!confirmEmail.success">
-
-            <h4 ng-if="::confirmEmail.email" ng-bind="::confirmEmail.email"></h4>
-            <p class="lead" ng-if="confirmEmail.signup">Confirm your email and make your profile visible to others.</p>
+            <h4
+              ng-if="::confirmEmail.email"
+              ng-bind="::confirmEmail.email"
+            ></h4>
+            <p class="lead" ng-if="confirmEmail.signup">
+              Confirm your email and make your profile visible to others.
+            </p>
             <p class="lead" ng-if="!confirmEmail.signup">Confirm your email.</p>
 
-            <button type="submit" class="btn btn-lg btn-primary" ng-disabled="confirmEmail.isLoading || confirmEmail.error">Confirm</button>
+            <button
+              type="submit"
+              class="btn btn-lg btn-primary"
+              ng-disabled="confirmEmail.isLoading || confirmEmail.error"
+            >
+              Confirm
+            </button>
           </div>
-          <div ng-if="confirmEmail.error" class="alert alert-danger text-center" role="alert">
-            <p><strong>Email confirm token is invalid or has expired.</strong></p>
-            <p>Perhaps you already confirmed your email? <span ng-if="app.user">Your current activated email is <strong>{{ app.user.email }}</strong></span></p>
-            <p ng-if="app.user">To send a new confirmation or change your email, go to <a ui-sref="profile-edit.account">your settings</a>.</p>
-            <p ng-if="!app.user"><a ui-sref="signin">Login first</a> to send a new confirmation or change your email.</p>
+          <div
+            ng-if="confirmEmail.error"
+            class="alert alert-danger text-center"
+            role="alert"
+          >
+            <p>
+              <strong>Email confirm token is invalid or has expired.</strong>
+            </p>
+            <p>
+              Perhaps you already confirmed your email?
+              <span ng-if="app.user"
+                >Your current activated email is
+                <strong>{{ app.user.email }}</strong></span
+              >
+            </p>
+            <p ng-if="app.user">
+              To send a new confirmation or change your email, go to
+              <a ui-sref="profile-edit.account">your settings</a>.
+            </p>
+            <p ng-if="!app.user">
+              <a ui-sref="signin">Login first</a> to send a new confirmation or
+              change your email.
+            </p>
           </div>
-          <div ng-if="confirmEmail.success" class="alert alert-success text-center" role="alert">
+          <div
+            ng-if="confirmEmail.success"
+            class="alert alert-success text-center"
+            role="alert"
+          >
             <p><strong>Your email is now confirmed!</strong></p>
             <p><a ui-sref="profile-edit.about">Edit your profile</a></p>
           </div>
-
-        </div><!-- /.col -->
-      </div><!-- .row-->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- .row-->
       <!-- /Confirm form -->
-
     </fieldset>
   </form>
-
-</section><!-- .container -->
+</section>
+<!-- .container -->

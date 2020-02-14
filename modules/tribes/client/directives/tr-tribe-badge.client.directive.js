@@ -3,9 +3,7 @@ import templateUrl from '@/modules/tribes/client/views/directives/tr-tribe-badge
 /**
  * List tribes in common between two lists of tribes
  */
-angular
-  .module('tribes')
-  .directive('trTribeBadge', trTribeBadgeDirective);
+angular.module('tribes').directive('trTribeBadge', trTribeBadgeDirective);
 
 /* @ngInject */
 function trTribeBadgeDirective(TribeService) {
@@ -22,7 +20,6 @@ function trTribeBadgeDirective(TribeService) {
 
   /* @ngInject */
   function trTribeBadgeController($scope, $state) {
-
     // View Model
     const vm = this;
 
@@ -37,8 +34,7 @@ function trTribeBadgeDirective(TribeService) {
       // Put tribe object to cache to be used after page transition has
       // finished, thus no need to reload tribe from the API
       TribeService.fillCache(angular.copy(vm.tribe));
-      $state.go('tribes.tribe', { 'tribe': vm.tribe.slug });
+      $state.go('tribes.tribe', { tribe: vm.tribe.slug });
     }
-
   }
 }

@@ -19,9 +19,7 @@
  *
  * Note that this directive will re-render input element using $compile.
  */
-angular
-  .module('core')
-  .directive('trLocation', trLocationDirective);
+angular.module('core').directive('trLocation', trLocationDirective);
 
 /* @ngInject */
 function trLocationDirective($compile, $timeout, LocationService) {
@@ -38,10 +36,9 @@ function trLocationDirective($compile, $timeout, LocationService) {
       trLocationBounds: '=?',
     },
     replace: false,
-    link: function (scope, element, attr, ngModel) {
-
+    link: function(scope, element, attr, ngModel) {
       // Event handler to stop submitting the surrounding form
-      element.bind('keydown keypress focus', function ($event) {
+      element.bind('keydown keypress focus', function($event) {
         scope.trLocationNotfound = false;
 
         // On enter
@@ -56,14 +53,29 @@ function trLocationDirective($compile, $timeout, LocationService) {
 
       // Attach Angular UI Bootstrap TypeAhead
       // @link http://angular-ui.github.io/bootstrap/#!#typeahead
-      element.attr('typeahead-min-length', attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength, 10) : 3);
-      element.attr('typeahead-wait-ms', attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs, 10) : 300);
-      element.attr('typeahead-on-select', 'trLocation.onSelect($item, $model, $label, $event)');
-      element.attr('uib-typeahead', 'trTitle as address.trTitle for address in trLocation.searchSuggestions('
-        + getQueryParameters(scope.limitLocationTypes) + ')');
+      element.attr(
+        'typeahead-min-length',
+        attr.typeaheadMinLength ? parseInt(attr.typeaheadMinLength, 10) : 3,
+      );
+      element.attr(
+        'typeahead-wait-ms',
+        attr.typeaheadWaitMs ? parseInt(attr.typeaheadWaitMs, 10) : 300,
+      );
+      element.attr(
+        'typeahead-on-select',
+        'trLocation.onSelect($item, $model, $label, $event)',
+      );
+      element.attr(
+        'uib-typeahead',
+        'trTitle as address.trTitle for address in trLocation.searchSuggestions(' +
+          getQueryParameters(scope.limitLocationTypes) +
+          ')',
+      );
 
       function getQueryParameters(limitLocationTypes) {
-        return limitLocationTypes ? '$viewValue, "country,region,place,locality,neighborhood"' : '$viewValue';
+        return limitLocationTypes
+          ? '$viewValue, "country,region,place,locality,neighborhood"'
+          : '$viewValue';
       }
 
       // Stop infinite rendering on $compile
@@ -73,15 +85,13 @@ function trLocationDirective($compile, $timeout, LocationService) {
 
       // Without this input value would be left empty due $compile
       // @todo: any better way of handling this?
-      $timeout(function () {
+      $timeout(function() {
         ngModel.$setViewValue(scope.value);
         ngModel.$render();
       });
-
     },
     controllerAs: 'trLocation',
-    controller: function ($scope, $timeout) {
-
+    controller: function($scope, $timeout) {
       // View Model
       const vm = this;
 
@@ -93,7 +103,9 @@ function trLocationDirective($compile, $timeout, LocationService) {
        */
       function searchSuggestions(query, types) {
         $scope.trLocationNotfound = false;
-        return LocationService.suggestions(query, types).then(function (suggestions) {
+        return LocationService.suggestions(query, types).then(function(
+          suggestions,
+        ) {
           // Enter was pressed before we got these results, thus just pick first
           if ($scope.skipSuggestions) {
             $scope.skipSuggestions = false;
@@ -117,7 +129,7 @@ function trLocationDirective($compile, $timeout, LocationService) {
        * When selecting autosuggested location
        */
       function onSelect($item, $model, $label) {
-        $timeout(function () {
+        $timeout(function() {
           $scope.value = $label;
         });
         locate($item);
@@ -127,7 +139,6 @@ function trLocationDirective($compile, $timeout, LocationService) {
        * Modify `trLocationCenter` or `trLocationBounds` objects
        */
       function locate(location) {
-
         // Set center bounds and center coordinates for (Angular-UI-Leaflet) model
         const bounds = LocationService.getBounds(location);
         const center = LocationService.getCenter(location);
@@ -141,9 +152,7 @@ function trLocationDirective($compile, $timeout, LocationService) {
         } else if (angular.isFunction($scope.trLocationChange) && center) {
           $scope.trLocationChange(center, 'center');
         }
-
       }
-
     },
   };
 }

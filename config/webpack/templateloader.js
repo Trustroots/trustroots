@@ -3,7 +3,7 @@ const { join, resolve } = require('path');
 const basedir = resolve(join(__dirname, '../..'));
 
 // MUST use it with html-loader first
-module.exports = function (source) {
+module.exports = function(source) {
   const templateName = this.resourcePath
     .substring(basedir.length) // makes it relative to project root directory
     .replace(/\/client\//, '/') // give our templates the expected name
@@ -13,7 +13,10 @@ module.exports = function (source) {
   source = source.replace('module.exports =', 'const html =');
 
   // ensure the ng-include replacements are correctly quoted
-  source = source.replace(/ng-include=" \+ (require[^+]+) \+ "/g, 'ng-include=\\"\'" + $1 + "\'\\"');
+  source = source.replace(
+    /ng-include=" \+ (require[^+]+) \+ "/g,
+    'ng-include=\\"\'" + $1 + "\'\\"',
+  );
 
   return `
     ${source}

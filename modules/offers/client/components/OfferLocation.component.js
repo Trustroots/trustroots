@@ -4,7 +4,6 @@ import OfferLocationPresentational from './OfferLocationPresentational';
 import throttle from 'lodash/throttle';
 
 export default class OfferLocation extends React.Component {
-
   constructor(props) {
     super(props);
 
@@ -16,7 +15,10 @@ export default class OfferLocation extends React.Component {
     this.handleChangeZoom = this.handleChangeZoom.bind(this);
     this.updateWindowDimensions = this.updateWindowDimensions.bind(this);
     // update window size max every 200 milliseconds, not faster
-    this.throttledUpdateWindowDimensions = throttle(this.updateWindowDimensions, 200);
+    this.throttledUpdateWindowDimensions = throttle(
+      this.updateWindowDimensions,
+      200,
+    );
   }
 
   /* updating windows size with https://stackoverflow.com/a/42141641 */
@@ -38,16 +40,17 @@ export default class OfferLocation extends React.Component {
   }
 
   render() {
-
     const marker = getOfferMarkerType(this.props.offer);
 
-    return <OfferLocationPresentational
-      zoom={this.state.zoom}
-      location={this.props.offer.location}
-      marker={marker}
-      onChangeZoom={this.handleChangeZoom}
-      windowWidth={this.state.windowWidth}
-    />;
+    return (
+      <OfferLocationPresentational
+        zoom={this.state.zoom}
+        location={this.props.offer.location}
+        marker={marker}
+        onChangeZoom={this.handleChangeZoom}
+        windowWidth={this.state.windowWidth}
+      />
+    );
   }
 }
 
@@ -56,7 +59,7 @@ OfferLocation.propTypes = {
 };
 
 function getOfferMarkerType(offer) {
-  const { type='other', status='yes' } = offer;
+  const { type = 'other', status = 'yes' } = offer;
 
   if (type === 'host' && status === 'yes') return 'yes';
   if (type === 'host' && status === 'maybe') return 'maybe';

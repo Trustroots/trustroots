@@ -1,11 +1,8 @@
 // Messages service used for communicating with the messages REST endpoints
-angular
-  .module('messages')
-  .factory('Messages', Messages);
+angular.module('messages').factory('Messages', Messages);
 
 /* @ngInject */
 function Messages($resource) {
-
   function MessageHandler() {
     // Control flow variable; Prevents multiple identical ajax calls
     this.paginationTimeout = false;
@@ -15,7 +12,7 @@ function Messages($resource) {
   }
 
   MessageHandler.prototype = {
-    parseHeaders: function (header) {
+    parseHeaders: function(header) {
       if (header) {
         return {
           page: /<.*\/[^<>]*\?.*page=(\d*).*>;.*/.exec(header)[1],
@@ -29,10 +26,11 @@ function Messages($resource) {
      * Fetches messages and sets up pagination environment
      * Takes additional query params passed in as key , value pairs
      */
-    fetchMessages: function (param) {
-
+    fetchMessages: function(param) {
       const that = this;
-      const query = (this.nextPage) ? angular.extend(this.nextPage, param) : param;
+      const query = this.nextPage
+        ? angular.extend(this.nextPage, param)
+        : param;
 
       if (!this.paginationTimeout) {
         this.paginationTimeout = true;
@@ -40,20 +38,21 @@ function Messages($resource) {
         return this.ajaxCall.query(
           query,
           // Successful callback
-          function (data, headers) {
+          function(data, headers) {
             that.nextPage = that.parseHeaders(headers().link);
             that.resolved = true;
             that.paginationTimeout = false;
           },
           // Error callback
-          function () {
+          function() {
             that.paginationTimeout = false;
             that.resolved = false;
           },
         );
       }
     },
-    ajaxCall: $resource('/api/messages/:userId',
+    ajaxCall: $resource(
+      '/api/messages/:userId',
       { userId: '@_id' },
       { update: { method: 'PUT' } },
     ),

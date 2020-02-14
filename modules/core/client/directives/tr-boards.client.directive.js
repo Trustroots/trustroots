@@ -13,9 +13,7 @@ import photos from '@/modules/core/client/services/photos.service';
  * use `tr-boards-ignore-small` attribute.
  *
  */
-angular
-  .module('core')
-  .directive('trBoards', trBoardsDirective);
+angular.module('core').directive('trBoards', trBoardsDirective);
 
 /* @ngInject */
 function trBoardsDirective($window) {
@@ -25,10 +23,12 @@ function trBoardsDirective($window) {
     scope: {
       trBoards: '=',
     },
-    link: function (scope, elem, attrs) {
-
+    link: function(scope, elem, attrs) {
       // Don't set background images for mobile screens if defined so via attribute
-      if (angular.isDefined(attrs.trBoardsIgnoreSmall) && $window.innerWidth <= 480) {
+      if (
+        angular.isDefined(attrs.trBoardsIgnoreSmall) &&
+        $window.innerWidth <= 480
+      ) {
         return;
       }
 
@@ -36,7 +36,9 @@ function trBoardsDirective($window) {
       const defaultPhoto = 'bokeh';
 
       // scope.trBoards might be an array (therefore just pick one key from it) or a string (thus just use it as is)
-      const key = angular.isArray(scope.trBoards) ? scope.trBoards[Math.floor(Math.random() * (scope.trBoards.length))] : scope.trBoards;
+      const key = angular.isArray(scope.trBoards)
+        ? scope.trBoards[Math.floor(Math.random() * scope.trBoards.length)]
+        : scope.trBoards;
 
       // Pick the photo
       const photo = photos[key] || photos[defaultPhoto];
@@ -45,7 +47,10 @@ function trBoardsDirective($window) {
       elem.addClass('board-' + key);
 
       // For small screens, if mobile image exists, use it
-      const file = ($window.innerWidth <= 480 && photo.file_mobile) ? photo.file_mobile : photo.file;
+      const file =
+        $window.innerWidth <= 480 && photo.file_mobile
+          ? photo.file_mobile
+          : photo.file;
 
       elem.css({
         'background-image': 'url(/img/board/' + file + ')',
@@ -57,7 +62,6 @@ function trBoardsDirective($window) {
 
       // Send copyright info down the scope... something will pick it up! (pst, core/app-controller)
       scope.$emit('photoCreditsUpdated', photoObject);
-
     },
   };
 }

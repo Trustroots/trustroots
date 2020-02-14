@@ -10,7 +10,7 @@ import { withTranslation as withTranslationOriginal } from 'react-i18next';
  * This helper should be used only with react components which need to be imported to angular.
  */
 export function withTranslation(namespaces) {
-  return (Component) => {
+  return Component => {
     // add namespaces to Component
     const ComponentHOC = withTranslationOriginal(namespaces)(Component);
 

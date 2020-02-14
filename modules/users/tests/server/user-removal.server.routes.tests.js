@@ -29,11 +29,10 @@ let _userB;
 /**
  * User routes tests
  */
-describe('User removal CRUD tests', function () {
-
+describe('User removal CRUD tests', function() {
   const jobs = testutils.catchJobs();
 
-  before(function (done) {
+  before(function(done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -42,17 +41,17 @@ describe('User removal CRUD tests', function () {
   });
 
   // initialize sinon
-  beforeEach(function () {
+  beforeEach(function() {
     sinon.useFakeTimers({ now: 1500 * 1000 * 1000 * 1000, toFake: ['Date'] });
   });
 
-  afterEach(function () {
+  afterEach(function() {
     sinon.restore();
   });
 
   // Create an user A
 
-  beforeEach(function (done) {
+  beforeEach(function(done) {
     // Create user credentials for user A
     credentialsA = {
       username: 'user_a',
@@ -79,7 +78,7 @@ describe('User removal CRUD tests', function () {
 
   // Create user B
 
-  beforeEach(function (done) {
+  beforeEach(function(done) {
     // Create user credentials for user B
     credentialsB = {
       username: 'user_b',
@@ -104,10 +103,11 @@ describe('User removal CRUD tests', function () {
     userB.save(done);
   });
 
-  it('should not be able to initiate removing profile when not logged in', function (done) {
-    agent.del('/api/users')
+  it('should not be able to initiate removing profile when not logged in', function(done) {
+    agent
+      .del('/api/users')
       .expect(403)
-      .end(function (deleteErr) {
+      .end(function(deleteErr) {
         // Handle signup error
         if (deleteErr) {
           return done(deleteErr);
@@ -116,7 +116,10 @@ describe('User removal CRUD tests', function () {
         jobs.length.should.equal(0);
 
         // User should still exist
-        User.findOne({ username: userA.username }, function (findUsersErr, findUser) {
+        User.findOne({ username: userA.username }, function(
+          findUsersErr,
+          findUser,
+        ) {
           if (findUsersErr) {
             return done(findUsersErr);
           }
@@ -128,17 +131,18 @@ describe('User removal CRUD tests', function () {
       });
   });
 
-  it('Signin in should not reveal profile removal tokens', function (done) {
+  it('Signin in should not reveal profile removal tokens', function(done) {
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
     userA.removeProfileExpires = new Date();
 
-    userA.save(function (err) {
+    userA.save(function(err) {
       should.not.exist(err);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function (signinErr, signinRes) {
+        .end(function(signinErr, signinRes) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -153,37 +157,48 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  it('should be able to initiate removing profile when signed in', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to initiate removing profile when signed in', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentialsA)
       .expect(200)
-      .end(function (signinErr, signedInUser) {
+      .end(function(signinErr, signedInUser) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
         }
 
-        agent.del('/api/users')
+        agent
+          .del('/api/users')
           .expect(200)
-          .end(function (deleteErr, deleteRes) {
+          .end(function(deleteErr, deleteRes) {
             // Handle signup error
             if (deleteErr) {
               return done(deleteErr);
             }
 
-            deleteRes.body.message.should.equal('We sent you an email with further instructions.');
+            deleteRes.body.message.should.equal(
+              'We sent you an email with further instructions.',
+            );
 
             jobs.length.should.equal(1);
             jobs[0].type.should.equal('send email');
-            jobs[0].data.subject.should.equal('Confirm removing your Trustroots profile');
+            jobs[0].data.subject.should.equal(
+              'Confirm removing your Trustroots profile',
+            );
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function (findUsersErr, findUser) {
+            User.findById(signedInUser.body._id, function(
+              findUsersErr,
+              findUser,
+            ) {
               if (findUsersErr) {
                 return done(findUsersErr);
               }
 
-              jobs[0].data.text.should.containEql('/remove/' + findUser.removeProfileToken);
+              jobs[0].data.text.should.containEql(
+                '/remove/' + findUser.removeProfileToken,
+              );
 
               should.exist(findUser.removeProfileExpires);
               should.exist(findUser.removeProfileToken);
@@ -194,64 +209,85 @@ describe('User removal CRUD tests', function () {
       });
   });
 
-  it('should be able to initiate removing profile when already initiated once earlier', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to initiate removing profile when already initiated once earlier', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentialsA)
       .expect(200)
-      .end(function (signinErr, signedInUser) {
+      .end(function(signinErr, signedInUser) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
         }
 
-        agent.del('/api/users')
+        agent
+          .del('/api/users')
           .expect(200)
-          .end(function (deleteErr1, deleteRes1) {
+          .end(function(deleteErr1, deleteRes1) {
             // Handle signup error
             if (deleteErr1) {
               return done(deleteErr1);
             }
 
-            deleteRes1.body.message.should.equal('We sent you an email with further instructions.');
+            deleteRes1.body.message.should.equal(
+              'We sent you an email with further instructions.',
+            );
 
             jobs.length.should.equal(1);
             jobs[0].type.should.equal('send email');
-            jobs[0].data.subject.should.equal('Confirm removing your Trustroots profile');
+            jobs[0].data.subject.should.equal(
+              'Confirm removing your Trustroots profile',
+            );
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function (findUsersErr1, findUser1) {
+            User.findById(signedInUser.body._id, function(
+              findUsersErr1,
+              findUser1,
+            ) {
               if (findUsersErr1) {
                 return done(findUsersErr1);
               }
 
-              jobs[0].data.text.should.containEql('/remove/' + findUser1.removeProfileToken);
+              jobs[0].data.text.should.containEql(
+                '/remove/' + findUser1.removeProfileToken,
+              );
 
               should.exist(findUser1.removeProfileExpires);
               should.exist(findUser1.removeProfileToken);
 
               // Send another delete request
               // This should refresh token to new one so check everything again
-              agent.del('/api/users')
+              agent
+                .del('/api/users')
                 .expect(200)
-                .end(function (deleteErr2, deleteRes2) {
+                .end(function(deleteErr2, deleteRes2) {
                   // Handle signup error
                   if (deleteErr2) {
                     return done(deleteErr2);
                   }
 
-                  deleteRes2.body.message.should.equal('We sent you an email with further instructions.');
+                  deleteRes2.body.message.should.equal(
+                    'We sent you an email with further instructions.',
+                  );
 
                   jobs.length.should.equal(2); // now two because earlier we sent already one
                   jobs[1].type.should.equal('send email');
-                  jobs[1].data.subject.should.equal('Confirm removing your Trustroots profile');
+                  jobs[1].data.subject.should.equal(
+                    'Confirm removing your Trustroots profile',
+                  );
                   jobs[1].data.to.address.should.equal(_userA.email);
 
-                  User.findById(signedInUser.body._id, function (findUsersErr2, findUser2) {
+                  User.findById(signedInUser.body._id, function(
+                    findUsersErr2,
+                    findUser2,
+                  ) {
                     if (findUsersErr2) {
                       return done(findUsersErr2);
                     }
 
-                    jobs[1].data.text.should.containEql('/remove/' + findUser2.removeProfileToken);
+                    jobs[1].data.text.should.containEql(
+                      '/remove/' + findUser2.removeProfileToken,
+                    );
 
                     should.exist(findUser2.removeProfileExpires);
                     should.exist(findUser2.removeProfileToken);
@@ -264,40 +300,47 @@ describe('User removal CRUD tests', function () {
       });
   });
 
-  it('should be able to confirm removing profile when signed in', function (done) {
-
-    userA.removeProfileExpires = Date.now() + (24 * 3600000);
+  it('should be able to confirm removing profile when signed in', function(done) {
+    userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function (err, savedUser) {
+    userA.save(function(err, savedUser) {
       should.not.exist(err);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.del('/api/users/remove/' + savedUser.removeProfileToken)
+          agent
+            .del('/api/users/remove/' + savedUser.removeProfileToken)
             .expect(200)
-            .end(function (deleteErr, deleteRes) {
+            .end(function(deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
               }
 
-              deleteRes.body.message.should.equal('Your profile has been removed.');
+              deleteRes.body.message.should.equal(
+                'Your profile has been removed.',
+              );
 
               jobs.length.should.equal(1);
               jobs[0].type.should.equal('send email');
-              jobs[0].data.subject.should.equal('Your Trustroots profile has been removed');
+              jobs[0].data.subject.should.equal(
+                'Your Trustroots profile has been removed',
+              );
               jobs[0].data.to.address.should.equal(_userA.email);
-              jobs[0].data.text.should.containEql('Your Trustroots account has been removed.');
+              jobs[0].data.text.should.containEql(
+                'Your Trustroots account has been removed.',
+              );
 
-              User.findById(savedUser._id, function (findUsersErr, findUser) {
+              User.findById(savedUser._id, function(findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -311,24 +354,28 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  it('should not able to initiate removing profile with role "shadowban"', function (done) {
+  it('should not able to initiate removing profile with role "shadowban"', function(done) {
     userA.roles = ['user', 'shadowban'];
 
-    userA.save(function (err) {
+    userA.save(function(err) {
       should.not.exist(err);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           should.not.exist(signinErr);
 
-          agent.del('/api/users')
+          agent
+            .del('/api/users')
             .expect(403)
-            .end(function (deleteErr, deleteRes) {
+            .end(function(deleteErr, deleteRes) {
               should.not.exist(deleteErr);
 
-              deleteRes.body.message.should.equal('Oops! Something went wrong. Please get in touch with support at trustroots.org/support');
+              deleteRes.body.message.should.equal(
+                'Oops! Something went wrong. Please get in touch with support at trustroots.org/support',
+              );
               jobs.length.should.equal(0);
 
               done();
@@ -337,17 +384,17 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  it('should not be able to confirm removing profile when not signed in', function (done) {
-
-    userA.removeProfileExpires = Date.now() + (24 * 3600000);
+  it('should not be able to confirm removing profile when not signed in', function(done) {
+    userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function (err, savedUser) {
+    userA.save(function(err, savedUser) {
       should.not.exist(err);
 
-      agent.del('/api/users/remove/' + savedUser.removeProfileToken)
+      agent
+        .del('/api/users/remove/' + savedUser.removeProfileToken)
         .expect(403)
-        .end(function (deleteErr, deleteRes) {
+        .end(function(deleteErr, deleteRes) {
           // Handle signup error
           if (deleteErr) {
             return done(deleteErr);
@@ -358,7 +405,7 @@ describe('User removal CRUD tests', function () {
           jobs.length.should.equal(0);
 
           // User should still exist
-          User.findById(savedUser._id, function (findUsersErr, findUser) {
+          User.findById(savedUser._id, function(findUsersErr, findUser) {
             if (findUsersErr) {
               return done(findUsersErr);
             }
@@ -371,42 +418,47 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  it('should not be able to confirm removing profile with wrong token', function (done) {
-
-    userA.removeProfileExpires = Date.now() + (24 * 3600000);
+  it('should not be able to confirm removing profile with wrong token', function(done) {
+    userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function (err, savedUser) {
+    userA.save(function(err, savedUser) {
       should.not.exist(err);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.del('/api/users/remove/wrongtoken')
+          agent
+            .del('/api/users/remove/wrongtoken')
             .expect(400)
-            .end(function (deleteErr, deleteRes) {
+            .end(function(deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
               }
 
-              deleteRes.body.message.should.equal('Profile remove token is invalid or has expired.');
+              deleteRes.body.message.should.equal(
+                'Profile remove token is invalid or has expired.',
+              );
 
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function (findUsersErr, findUser) {
+              User.findById(savedUser._id, function(findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
 
-                findUser.removeProfileToken.should.equal(userA.removeProfileToken);
+                findUser.removeProfileToken.should.equal(
+                  userA.removeProfileToken,
+                );
 
                 done();
               });
@@ -415,42 +467,47 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  it('should not be able to confirm removing profile with expired token', function (done) {
-
-    userA.removeProfileExpires = Date.now() - (24 * 3600000); // 24h in the past
+  it('should not be able to confirm removing profile with expired token', function(done) {
+    userA.removeProfileExpires = Date.now() - 24 * 3600000; // 24h in the past
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function (err, savedUser) {
+    userA.save(function(err, savedUser) {
       should.not.exist(err);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.del('/api/users/remove/' + userA.removeProfileToken)
+          agent
+            .del('/api/users/remove/' + userA.removeProfileToken)
             .expect(400)
-            .end(function (deleteErr, deleteRes) {
+            .end(function(deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
               }
 
-              deleteRes.body.message.should.equal('Profile remove token is invalid or has expired.');
+              deleteRes.body.message.should.equal(
+                'Profile remove token is invalid or has expired.',
+              );
 
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function (findUsersErr, findUser) {
+              User.findById(savedUser._id, function(findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
 
-                findUser.removeProfileToken.should.equal(userA.removeProfileToken);
+                findUser.removeProfileToken.should.equal(
+                  userA.removeProfileToken,
+                );
 
                 done();
               });
@@ -459,46 +516,53 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  it('should not be able to confirm removing profile when signed in as wrong user', function (done) {
-
-    userA.removeProfileExpires = Date.now() + (24 * 3600000);
+  it('should not be able to confirm removing profile when signed in as wrong user', function(done) {
+    userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function (err, savedUser) {
+    userA.save(function(err, savedUser) {
       should.not.exist(err);
 
-      agent.post('/api/auth/signin')
+      agent
+        .post('/api/auth/signin')
         .send(credentialsB) // User B signs in insetead of user A
         .expect(200)
-        .end(function (signinErr) {
-
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
           }
 
-          agent.del('/api/users/remove/' + userA.removeProfileToken)
+          agent
+            .del('/api/users/remove/' + userA.removeProfileToken)
             .expect(400)
-            .end(function (deleteErr, deleteRes) {
+            .end(function(deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
               }
 
-              deleteRes.body.message.should.equal('Profile remove token is invalid or has expired.');
+              deleteRes.body.message.should.equal(
+                'Profile remove token is invalid or has expired.',
+              );
 
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function (findUsersErr, findUser) {
+              User.findById(savedUser._id, function(findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
 
-                findUser.removeProfileToken.should.equal(userA.removeProfileToken);
+                findUser.removeProfileToken.should.equal(
+                  userA.removeProfileToken,
+                );
 
                 // Signed in user should still exist
-                User.findOne({ username: userB.username }, function (findUsersErr, findUser) {
+                User.findOne({ username: userB.username }, function(
+                  findUsersErr,
+                  findUser,
+                ) {
                   if (findUsersErr) {
                     return done(findUsersErr);
                   }
@@ -515,39 +579,40 @@ describe('User removal CRUD tests', function () {
     });
   });
 
-  context('logged in & valid token', function () {
-
+  context('logged in & valid token', function() {
     function sendDeleteRequest(cb) {
-      agent.del('/api/users/remove/' + userA.removeProfileToken)
+      agent
+        .del('/api/users/remove/' + userA.removeProfileToken)
         .expect(200)
-        .end(function (deleteErr) {
+        .end(function(deleteErr) {
           cb(deleteErr);
         });
     }
 
     // sign in
-    beforeEach(function (done) {
-      agent.post('/api/auth/signin')
+    beforeEach(function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           return done(signinErr);
         });
     });
 
     // save removeToken for user a
-    beforeEach(function (done) {
-      userA.removeProfileExpires = Date.now() + (24 * 3600000);
+    beforeEach(function(done) {
+      userA.removeProfileExpires = Date.now() + 24 * 3600000;
       userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
       userA.save(done);
     });
 
-    it('should remove profile images', function (done) {
-
+    it('should remove profile images', function(done) {
       // Each user has their own folder for avatars
-      const uploadDir = path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
+      const uploadDir =
+        path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
 
       function checkAvatarExistence(shouldExist, cb) {
         const exists = fs.existsSync(uploadDir);
@@ -560,296 +625,325 @@ describe('User removal CRUD tests', function () {
         }
       }
 
+      async.waterfall(
+        [
+          // Avatar should not exist yet
+          checkAvatarExistence.bind(null, false),
 
-      async.waterfall([
+          // Upload avatar image
+          function(cb) {
+            agent
+              .post('/api/users-avatar')
+              .attach('avatar', './modules/users/tests/server/img/avatar.png')
+              .expect(200)
+              .end(function(err) {
+                cb(err);
+              });
+          },
 
-        // Avatar should not exist yet
-        checkAvatarExistence.bind(null, false),
+          // Avatar should now exist
+          checkAvatarExistence.bind(null, true),
 
-        // Upload avatar image
-        function (cb) {
-          agent.post('/api/users-avatar')
-            .attach('avatar', './modules/users/tests/server/img/avatar.png')
-            .expect(200)
-            .end(function (err) { cb(err); });
-        },
+          sendDeleteRequest,
 
-        // Avatar should now exist
-        checkAvatarExistence.bind(null, true),
-
-        sendDeleteRequest,
-
-        // Avatar should not exist anymore
-        checkAvatarExistence.bind(null, false),
-
-      ], done);
+          // Avatar should not exist anymore
+          checkAvatarExistence.bind(null, false),
+        ],
+        done,
+      );
     });
 
-    it('should mark all messages to the removed user as notified and keep the ones from her untouched', function (done) {
-      async.waterfall([
-        // create some unnotified messages between the users
-        function (cb) {
-          const messageAB = new Message({
-            content: 'Message content',
-            userFrom: userA._id,
-            userTo: userB._id,
-            read: false,
-          });
+    it('should mark all messages to the removed user as notified and keep the ones from her untouched', function(done) {
+      async.waterfall(
+        [
+          // create some unnotified messages between the users
+          function(cb) {
+            const messageAB = new Message({
+              content: 'Message content',
+              userFrom: userA._id,
+              userTo: userB._id,
+              read: false,
+            });
 
-          const messageBA = new Message({
-            content: 'Message content',
-            userFrom: userB._id,
-            userTo: userA._id,
-            read: false,
-          });
+            const messageBA = new Message({
+              content: 'Message content',
+              userFrom: userB._id,
+              userTo: userA._id,
+              read: false,
+            });
 
-          async.each([messageAB, messageBA], function (msg, callback) {
-            msg.save(callback);
-          }, cb);
-        },
+            async.each(
+              [messageAB, messageBA],
+              function(msg, callback) {
+                msg.save(callback);
+              },
+              cb,
+            );
+          },
 
-        sendDeleteRequest,
+          sendDeleteRequest,
 
-        // check that the messages to the removed user are notificationCount: 2
-        function (cb) {
-          Message.findOne({ userTo: userA._id }, function (err, msg) {
-            try {
-              should(msg.notificationCount).eql(2);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          });
-        },
+          // check that the messages to the removed user are notificationCount: 2
+          function(cb) {
+            Message.findOne({ userTo: userA._id }, function(err, msg) {
+              try {
+                should(msg.notificationCount).eql(2);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            });
+          },
 
-        // check that the messages from the removed user are left unchanged
-        function (cb) {
-          Message.findOne({ userFrom: userA._id }, function (err, msg) {
-            try {
-              should(msg.notificationCount).eql(0);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          });
-        },
-
-      ], done);
+          // check that the messages from the removed user are left unchanged
+          function(cb) {
+            Message.findOne({ userFrom: userA._id }, function(err, msg) {
+              try {
+                should(msg.notificationCount).eql(0);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            });
+          },
+        ],
+        done,
+      );
     });
 
-    it('should subtract 1 from tribes.count for each tribe user is member of', function (done) {
-
+    it('should subtract 1 from tribes.count for each tribe user is member of', function(done) {
       let tribeA;
       let tribeB;
 
-      async.waterfall([
-        // Create some tribes
-        function (cb) {
-          tribeA = new Tribe({
-            label: 'Tribe A',
-            attribution: 'Photo credits',
-            attribution_url: 'http://www.trustroots.org/team',
-            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
-            description: 'Lorem ipsum.',
-            count: 5,
-          });
+      async.waterfall(
+        [
+          // Create some tribes
+          function(cb) {
+            tribeA = new Tribe({
+              label: 'Tribe A',
+              attribution: 'Photo credits',
+              attribution_url: 'http://www.trustroots.org/team',
+              image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
+              description: 'Lorem ipsum.',
+              count: 5,
+            });
 
-          tribeB = new Tribe({
-            label: 'Tribe B',
-            attribution: 'Photo credits',
-            attribution_url: 'http://www.trustroots.org/team2',
-            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
-            description: 'Lorem ipsum.',
-            count: 5,
-          });
+            tribeB = new Tribe({
+              label: 'Tribe B',
+              attribution: 'Photo credits',
+              attribution_url: 'http://www.trustroots.org/team2',
+              image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
+              description: 'Lorem ipsum.',
+              count: 5,
+            });
 
-          async.each([tribeA, tribeB], function (tribe, callback) {
-            tribe.save(callback);
-          }, cb);
-        },
+            async.each(
+              [tribeA, tribeB],
+              function(tribe, callback) {
+                tribe.save(callback);
+              },
+              cb,
+            );
+          },
 
-        // join the tribeA with the removed user
-        function (cb) {
-          agent.post('/api/users/memberships/' + tribeA._id)
-            .send()
-            .expect(200)
-            .end(function (err) {
+          // join the tribeA with the removed user
+          function(cb) {
+            agent
+              .post('/api/users/memberships/' + tribeA._id)
+              .send()
+              .expect(200)
+              .end(function(err) {
+                cb(err);
+              });
+          },
+
+          // now the tribeA should have count 6
+          function(cb) {
+            Tribe.findById(tribeA._id, function(err, tribe) {
+              try {
+                should(tribe.count).eql(6);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            });
+          },
+
+          sendDeleteRequest,
+
+          // tribeA should have lower count by 1 (5 -> 6 -> 5 now)
+          function(cb) {
+            Tribe.findById(tribeA._id, function(err, tribe) {
+              try {
+                should(tribe.count).eql(5);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            });
+          },
+
+          // tribeB should have count 5 all the time
+          function(cb) {
+            Tribe.findById(tribeB._id, function(err, tribe) {
+              try {
+                should(tribe.count).eql(5);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            });
+          },
+        ],
+        done,
+      );
+    });
+
+    it('should remove hosting offer of the user', function(done) {
+      async.waterfall(
+        [
+          // Create an offer for the user
+          function(cb) {
+            const offer = new Offer({
+              user: userA._id,
+              location: [0, 0],
+            });
+
+            offer.save(function(err) {
               cb(err);
             });
-        },
+          },
 
-        // now the tribeA should have count 6
-        function (cb) {
-          Tribe.findById(tribeA._id, function (err, tribe) {
-            try {
-              should(tribe.count).eql(6);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          });
-        },
+          // at the beginning 1 offer should exist in database
+          function(cb) {
+            Offer.find({ user: userA._id }, function(err, offer) {
+              try {
+                should(offer).length(1);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            });
+          },
 
-        sendDeleteRequest,
+          sendDeleteRequest,
 
-        // tribeA should have lower count by 1 (5 -> 6 -> 5 now)
-        function (cb) {
-          Tribe.findById(tribeA._id, function (err, tribe) {
-            try {
-              should(tribe.count).eql(5);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          });
-        },
-
-        // tribeB should have count 5 all the time
-        function (cb) {
-          Tribe.findById(tribeB._id, function (err, tribe) {
-            try {
-              should(tribe.count).eql(5);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          });
-        },
-
-      ], done);
+          // now the offer shouldn't be there
+          function(cb) {
+            Offer.find({ user: userA._id }, function(err, offers) {
+              try {
+                should(offers).length(0);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            });
+          },
+        ],
+        done,
+      );
     });
 
-    it('should remove hosting offer of the user', function (done) {
-      async.waterfall([
-
-        // Create an offer for the user
-        function (cb) {
-          const offer = new Offer({
-            user: userA._id,
-            location: [0, 0],
-          });
-
-          offer.save(function (err) { cb(err); });
-        },
-
-        // at the beginning 1 offer should exist in database
-        function (cb) {
-          Offer.find({ user: userA._id }, function (err, offer) {
-            try {
-              should(offer).length(1);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          });
-        },
-
-        sendDeleteRequest,
-
-        // now the offer shouldn't be there
-        function (cb) {
-          Offer.find({ user: userA._id }, function (err, offers) {
-            try {
-              should(offers).length(0);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          });
-        },
-      ], done);
-    });
-
-    it('should remove contacts of the user', function (done) {
-
+    it('should remove contacts of the user', function(done) {
       let userC;
 
-      async.waterfall([
-        // create a 3rd user
-        function (cb) {
-          userC = new User({
-            public: true,
-            firstName: 'Full',
-            lastName: 'Name C',
-            displayName: 'Full Name C',
-            email: 'user_c@example.com',
-            username: 'userc',
-            password: '**********asdfasdf',
-            provider: 'local',
-          });
+      async.waterfall(
+        [
+          // create a 3rd user
+          function(cb) {
+            userC = new User({
+              public: true,
+              firstName: 'Full',
+              lastName: 'Name C',
+              displayName: 'Full Name C',
+              email: 'user_c@example.com',
+              username: 'userc',
+              password: '**********asdfasdf',
+              provider: 'local',
+            });
 
-          userC.save(function (err) { cb(err); });
-        },
+            userC.save(function(err) {
+              cb(err);
+            });
+          },
 
-        // add contacts between the users
-        function (cb) {
-          const contactAB = new Contact({
-            userFrom: userA._id,
-            userTo: userB._id,
-            confirmed: true,
-          });
+          // add contacts between the users
+          function(cb) {
+            const contactAB = new Contact({
+              userFrom: userA._id,
+              userTo: userB._id,
+              confirmed: true,
+            });
 
-          const contactBC = new Contact({
-            userFrom: userB._id,
-            userTo: userC._id,
-            confirmed: true,
-          });
+            const contactBC = new Contact({
+              userFrom: userB._id,
+              userTo: userC._id,
+              confirmed: true,
+            });
 
-          const contactCA = new Contact({
-            userFrom: userC._id,
-            userTo: userA._id,
-            confirmed: false,
-          });
+            const contactCA = new Contact({
+              userFrom: userC._id,
+              userTo: userA._id,
+              confirmed: false,
+            });
 
-          async.each([contactAB, contactBC, contactCA], function (contact, callback) {
-            contact.save(callback);
-          }, cb);
-        },
+            async.each(
+              [contactAB, contactBC, contactCA],
+              function(contact, callback) {
+                contact.save(callback);
+              },
+              cb,
+            );
+          },
 
-        // 3 contacts should exist
-        function (cb) {
-          Contact.find().exec(function (err, contacts) {
-            cb(null, contacts);
-          });
-        },
-        function (contacts, cb) {
-          try {
-            should(contacts).length(3);
-            cb();
-          } catch (e) {
-            cb(e);
-          }
-        },
+          // 3 contacts should exist
+          function(cb) {
+            Contact.find().exec(function(err, contacts) {
+              cb(null, contacts);
+            });
+          },
+          function(contacts, cb) {
+            try {
+              should(contacts).length(3);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          },
 
-        sendDeleteRequest,
+          sendDeleteRequest,
 
-        // only 1 contact should exist now (the one between users B and C)
-        function (cb) {
-          Contact.find().exec(function (err, contacts) {
-            cb(null, contacts);
-          });
-        },
+          // only 1 contact should exist now (the one between users B and C)
+          function(cb) {
+            Contact.find().exec(function(err, contacts) {
+              cb(null, contacts);
+            });
+          },
 
-        function (contacts, cb) {
-          try {
-            should(contacts).length(1);
-            cb();
-          } catch (e) {
-            cb(e);
-          }
-        },
-
-      ], done);
+          function(contacts, cb) {
+            try {
+              should(contacts).length(1);
+              cb();
+            } catch (e) {
+              cb(e);
+            }
+          },
+        ],
+        done,
+      );
     });
-
   });
 
   // clear database
-  afterEach(function (done) {
+  afterEach(function(done) {
     const collectionsToClear = [User, Contact, Message, Offer, Tribe];
 
-    async.each(collectionsToClear, function (collection, cb) {
-      collection.deleteMany().exec(cb);
-    }, done);
+    async.each(
+      collectionsToClear,
+      function(collection, cb) {
+        collection.deleteMany().exec(cb);
+      },
+      done,
+    );
   });
 });

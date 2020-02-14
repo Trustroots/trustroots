@@ -1,10 +1,7 @@
-angular
-  .module('tribes')
-  .controller('TribeController', TribeController);
+angular.module('tribes').controller('TribeController', TribeController);
 
 /* @ngInject */
 function TribeController($scope, $state, tribe, Facebook) {
-
   const headerHeight = angular.element('#tr-header').height() || 0;
 
   // ViewModel
@@ -17,7 +14,7 @@ function TribeController($scope, $state, tribe, Facebook) {
   vm.facebookIsActibe = Facebook.isActive;
 
   // Ensure tribe in view updates when directives modify it
-  $scope.$on('tribeUpdated', function (event, tribe) {
+  $scope.$on('tribeUpdated', function(event, tribe) {
     vm.tribe = tribe;
   });
 
@@ -27,5 +24,4 @@ function TribeController($scope, $state, tribe, Facebook) {
   function goBack() {
     $state.go('tribes.list');
   }
-
 }

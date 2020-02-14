@@ -1,119 +1,167 @@
-
 <div class="panel panel-default">
   <div class="panel-heading">
     Profile photo
   </div>
   <div class="panel-body">
-
     <div class="profile-avatar-choises">
-
       <!-- Upload photo -->
       <div class="row profile-edit-avatar-choise">
         <div class="col-xs-12 col-md-3">
-
           <!-- Show when we don't have avatar file -->
-          <div ng-if="!profileEditPhoto.user.avatarUploaded && !profileEditPhoto.avatarUploading" tr-avatar data-size="128" data-link="false" data-source="none"></div>
+          <div
+            ng-if="!profileEditPhoto.user.avatarUploaded && !profileEditPhoto.avatarUploading"
+            tr-avatar
+            data-size="128"
+            data-link="false"
+            data-source="none"
+          ></div>
 
           <!-- Show when we have avatar uploaded -->
-          <div ng-if="profileEditPhoto.user.avatarUploaded && !profileEditPhoto.avatarUploading">
-            <div ng-if="!profileEditPhoto.avatarPreview" ng-click="profileEditPhoto.user.avatarSource = 'local'; profileEditPhoto.updateUserProfile();" tr-avatar data-user="profileEditPhoto.user" data-size="128" data-link="false" data-source="local" draggable="false"></div>
-            <div ng-if="profileEditPhoto.avatarPreview" id="avatarPreview" ng-style="{ 'background-image': 'url(' + profileEditPhoto.previewStyle + ')' }" class="avatar avatar-source-preview"></div>
+          <div
+            ng-if="profileEditPhoto.user.avatarUploaded && !profileEditPhoto.avatarUploading"
+          >
+            <div
+              ng-if="!profileEditPhoto.avatarPreview"
+              ng-click="profileEditPhoto.user.avatarSource = 'local'; profileEditPhoto.updateUserProfile();"
+              tr-avatar
+              data-user="profileEditPhoto.user"
+              data-size="128"
+              data-link="false"
+              data-source="local"
+              draggable="false"
+            ></div>
+            <div
+              ng-if="profileEditPhoto.avatarPreview"
+              id="avatarPreview"
+              ng-style="{ 'background-image': 'url(' + profileEditPhoto.previewStyle + ')' }"
+              class="avatar avatar-source-preview"
+            ></div>
           </div>
 
           <!-- Show when the avatar is loading -->
-          <div ng-if="profileEditPhoto.avatarUploading" class="avatar-source-link avatar-source-upload">
-            <div ng-if="!profileEditPhoto.avatarPreview" tr-avatar data-user="profileEditPhoto.user" data-size="128" data-link="false" data-source="local"></div>
-            <div id="avatarPreview" ng-if="profileEditPhoto.avatarPreview" ng-style="{ 'background-image': 'url(' + profileEditPhoto.previewStyle + ')' }" class="avatar avatar-source-preview"></div>
+          <div
+            ng-if="profileEditPhoto.avatarUploading"
+            class="avatar-source-link avatar-source-upload"
+          >
+            <div
+              ng-if="!profileEditPhoto.avatarPreview"
+              tr-avatar
+              data-user="profileEditPhoto.user"
+              data-size="128"
+              data-link="false"
+              data-source="local"
+            ></div>
+            <div
+              id="avatarPreview"
+              ng-if="profileEditPhoto.avatarPreview"
+              ng-style="{ 'background-image': 'url(' + profileEditPhoto.previewStyle + ')' }"
+              class="avatar avatar-source-preview"
+            ></div>
             <span ng-if="profileEditPhoto.avatarUploading">
-              <span ng-if="profileEditPhoto.uploadProgressPercentage">{{ profileEditPhoto.uploadProgressPercentage }}%</span>
+              <span ng-if="profileEditPhoto.uploadProgressPercentage"
+                >{{ profileEditPhoto.uploadProgressPercentage }}%</span
+              >
               <tr-spinner size="sm"></tr-spinner>
             </span>
           </div>
-
         </div>
         <div class="col-xs-12 col-md-3 profile-edit-avatar-label">
-
-          <div class="flex-centered radio" ng-if="profileEditPhoto.user.avatarUploaded">
+          <div
+            class="flex-centered radio"
+            ng-if="profileEditPhoto.user.avatarUploaded"
+          >
             <label>
-              <input type="radio"
-                     value="local"
-                     ng-change="profileEditPhoto.updateUserProfile()"
-                     ng-model="profileEditPhoto.user.avatarSource"
-                     ng-disabled="profileEditPhoto.avatarUploading">
+              <input
+                type="radio"
+                value="local"
+                ng-change="profileEditPhoto.updateUserProfile()"
+                ng-model="profileEditPhoto.user.avatarSource"
+                ng-disabled="profileEditPhoto.avatarUploading"
+              />
               My own
             </label>
           </div>
-          <div class="flex-centered radio disabled" ng-if="!profileEditPhoto.user.avatarUploaded">
-            <label uib-tooltip="First upload a photo" tooltip-placement="bottom">
-                <input type="radio" disabled>
-                My own
+          <div
+            class="flex-centered radio disabled"
+            ng-if="!profileEditPhoto.user.avatarUploaded"
+          >
+            <label
+              uib-tooltip="First upload a photo"
+              tooltip-placement="bottom"
+            >
+              <input type="radio" disabled />
+              My own
             </label>
           </div>
-
         </div>
         <div class="col-xs-12 col-md-6 text-center">
-
           <div class="flex-centered">
             <div>
-              <p ngf-hide-on-drop-not-available="true" class="text-muted hidden-xs">
+              <p
+                ngf-hide-on-drop-not-available="true"
+                class="text-muted hidden-xs"
+              >
                 Drag a profile photo to this page.
-                <br>
+                <br />
                 <small>— or —</small>
               </p>
-              <p>
+              <div>
                 <!-- File upload selector -->
                 <button
-                     role="button"
-                     id="profile-edit-avatar-file"
-                     ng-disabled="profileEditPhoto.avatarUploading"
-                     ngf-select="profileEditPhoto.fileSelected($files, $event)"
-                     ngf-multiple="false"
-                     accept="image/*"
-                     ngf-accept="'image/*'"
-                     ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
-                     class="btn btn-primary">
+                  role="button"
+                  id="profile-edit-avatar-file"
+                  ng-disabled="profileEditPhoto.avatarUploading"
+                  ngf-select="profileEditPhoto.fileSelected($files, $event)"
+                  ngf-multiple="false"
+                  accept="image/*"
+                  ngf-accept="'image/*'"
+                  ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
+                  class="btn btn-primary"
+                >
                   <i class="icon-picture-change"></i> Select a photo
                 </button>
 
                 <!-- Photo uploader via camera for small screens -->
                 <div class="visible-xs-block text-muted">
-                  <br>
+                  <br />
                   <small>— or —</small>
-                  <br>
+                  <br />
                 </div>
                 <button
-                     role="button"
-                     id="profile-edit-avatar-camera"
-                     ng-disabled="profileEditPhoto.avatarUploading"
-                     ngf-select="profileEditPhoto.fileSelected($files, $event)"
-                     ngf-multiple="false"
-                     accept="image/*"
-                     ngf-capture="'camera'"
-                     ngf-accept="'image/*'"
-                     ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
-                     class="btn btn-primary visible-xs-block center-block">
+                  role="button"
+                  id="profile-edit-avatar-camera"
+                  ng-disabled="profileEditPhoto.avatarUploading"
+                  ngf-select="profileEditPhoto.fileSelected($files, $event)"
+                  ngf-multiple="false"
+                  accept="image/*"
+                  ngf-capture="'camera'"
+                  ngf-accept="'image/*'"
+                  ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
+                  class="btn btn-primary visible-xs-block center-block"
+                >
                   <i class="icon-camera"></i> Take a photo
                 </button>
-              </p>
+              </div>
             </div>
           </div>
-
         </div>
 
         <!-- If file drop is available -->
-        <div tr-avatar-drop-helper
-             ngf-drop
-             ngf-drag-over-class="{ accept: 'acceptDrop', reject: 'rejectDrop', delay: 100 }"
-             ngf-stop-propagation="false"
-             ngf-change="profileEditPhoto.fileSelected($files, $event)"
-             ngf-multiple="false"
-             accept="image/*"
-             ngf-accept="'image/*'"
-             ngf-max-size="{{::app.appSettings.maxUploadSize}}"
-             ngf-min-size="1024"
-             class="profile-edit-avatar-drop"
-             ng-class="{'visibleDrop': profileEditPhoto.showDropzone && !profileEditPhoto.avatarUploading }"
-             id="profile-edit-avatar-drop">
+        <div
+          tr-avatar-drop-helper
+          ngf-drop
+          ngf-drag-over-class="{ accept: 'acceptDrop', reject: 'rejectDrop', delay: 100 }"
+          ngf-stop-propagation="false"
+          ngf-change="profileEditPhoto.fileSelected($files, $event)"
+          ngf-multiple="false"
+          accept="image/*"
+          ngf-accept="'image/*'"
+          ngf-max-size="{{::app.appSettings.maxUploadSize}}"
+          ngf-min-size="1024"
+          class="profile-edit-avatar-drop"
+          ng-class="{'visibleDrop': profileEditPhoto.showDropzone && !profileEditPhoto.avatarUploading }"
+          id="profile-edit-avatar-drop"
+        >
           <div class="drop-instructions flex-centered">
             <div class="drop-instructions-accept">
               <i class="icon-ok icon-3x"></i>
@@ -124,130 +172,149 @@
               <p class="lead">This type of file is not accepted</p>
             </div>
           </div>
-        </div><!-- /avatar-source-droparea -->
-
+        </div>
+        <!-- /avatar-source-droparea -->
       </div>
       <!-- /Upload photo -->
 
-      <br>
+      <br />
 
       <!-- Gravatar -->
       <div class="row profile-edit-avatar-choise">
         <div class="col-xs-12 col-md-3">
-
-          <div ng-click="profileEditPhoto.user.avatarSource = 'gravatar'; profileEditPhoto.updateUserProfile();" tr-avatar data-user="profileEditPhoto.user" data-size="128" data-link="false" data-source="gravatar"></div>
-
+          <div
+            ng-click="profileEditPhoto.user.avatarSource = 'gravatar'; profileEditPhoto.updateUserProfile();"
+            tr-avatar
+            data-user="profileEditPhoto.user"
+            data-size="128"
+            data-link="false"
+            data-source="gravatar"
+          ></div>
         </div>
         <div class="col-xs-12 col-md-3 profile-edit-avatar-label">
-
           <div class="flex-centered radio">
             <label>
-              <input type="radio"
-                     value="gravatar"
-                     ng-change="profileEditPhoto.updateUserProfile()"
-                     ng-model="profileEditPhoto.user.avatarSource"
-                     ng-disabled="profileEditPhoto.avatarUploading">
+              <input
+                type="radio"
+                value="gravatar"
+                ng-change="profileEditPhoto.updateUserProfile()"
+                ng-model="profileEditPhoto.user.avatarSource"
+                ng-disabled="profileEditPhoto.avatarUploading"
+              />
               Gravatar
             </label>
           </div>
-
         </div>
         <div class="col-xs-12 col-md-6 text-center">
-
           <div class="flex-centered">
             <small class="text-muted">
-              <i class="icon-picture-change hidden-xs"></i> You can change your gravatar at <a href="https://en.gravatar.com/" target="_blank" rel="noopener">Gravatar.com</a>
+              <i class="icon-picture-change hidden-xs"></i> You can change your
+              gravatar at
+              <a href="https://en.gravatar.com/" target="_blank" rel="noopener"
+                >Gravatar.com</a
+              >
             </small>
           </div>
-
         </div>
-
       </div>
       <!-- /Gravatar -->
 
-      <br>
+      <br />
 
       <!-- Facebook photo - when connected to FB-->
-      <div class="row profile-edit-avatar-choise" ng-if="profileEditPhoto.user.additionalProvidersData.facebook">
+      <div
+        class="row profile-edit-avatar-choise"
+        ng-if="profileEditPhoto.user.additionalProvidersData.facebook"
+      >
         <div class="col-xs-12 col-md-3">
-
-          <div ng-click="profileEditPhoto.user.avatarSource = 'facebook'; profileEditPhoto.updateUserProfile();" tr-avatar data-user="profileEditPhoto.user" data-size="128" data-link="false" data-source="facebook"></div>
-
+          <div
+            ng-click="profileEditPhoto.user.avatarSource = 'facebook'; profileEditPhoto.updateUserProfile();"
+            tr-avatar
+            data-user="profileEditPhoto.user"
+            data-size="128"
+            data-link="false"
+            data-source="facebook"
+          ></div>
         </div>
         <div class="col-xs-12 col-md-3 profile-edit-avatar-label">
-
           <div class="flex-centered radio">
             <label>
-                <input type="radio"
-                       value="facebook"
-                       ng-change="profileEditPhoto.updateUserProfile()"
-                       ng-model="profileEditPhoto.user.avatarSource"
-                       ng-disabled="profileEditPhoto.avatarUploading">
-                Facebook
+              <input
+                type="radio"
+                value="facebook"
+                ng-change="profileEditPhoto.updateUserProfile()"
+                ng-model="profileEditPhoto.user.avatarSource"
+                ng-disabled="profileEditPhoto.avatarUploading"
+              />
+              Facebook
             </label>
           </div>
-
         </div>
       </div>
       <!-- /Facebook photo -->
       <!-- Facebook photo - when NOT connected to FB-->
-      <div class="row profile-edit-avatar-choise" ng-if="!profileEditPhoto.user.additionalProvidersData.facebook">
+      <div
+        class="row profile-edit-avatar-choise"
+        ng-if="!profileEditPhoto.user.additionalProvidersData.facebook"
+      >
         <div class="col-xs-12 col-md-3">
-
-          <div tr-avatar data-size="128" data-link="false" data-source="none"></div>
-
+          <div
+            tr-avatar
+            data-size="128"
+            data-link="false"
+            data-source="none"
+          ></div>
         </div>
         <div class="col-xs-12 col-md-3 profile-edit-avatar-label">
-
           <div class="flex-centered radio disabled">
-            <label uib-tooltip="Connect first to Facebook" tooltip-placement="bottom">
-                <input type="radio" disabled>
-                Facebook
+            <label
+              uib-tooltip="Connect first to Facebook"
+              tooltip-placement="bottom"
+            >
+              <input type="radio" disabled />
+              Facebook
             </label>
           </div>
-
         </div>
         <div class="col-xs-12 col-md-6 text-center">
-
           <div class="flex-centered">
             <a href="/api/auth/facebook" target="_top" class="btn btn-primary">
               <i class="icon-facebook"></i> Connect first to Facebook
             </a>
           </div>
-
         </div>
       </div>
       <!-- /Facebook photo - when NOT connected to FB-->
 
-      <br>
+      <br />
 
       <!-- No photo -->
       <div class="row profile-edit-avatar-choise">
         <div class="col-xs-12 col-md-3">
-
-          <div ng-click="profileEditPhoto.user.avatarSource = 'none'; profileEditPhoto.updateUserProfile();" tr-avatar data-size="128" data-link="false" data-source="none"></div>
-
+          <div
+            ng-click="profileEditPhoto.user.avatarSource = 'none'; profileEditPhoto.updateUserProfile();"
+            tr-avatar
+            data-size="128"
+            data-link="false"
+            data-source="none"
+          ></div>
         </div>
         <div class="col-xs-12 col-md-9 profile-edit-avatar-label">
-
           <div class="flex-centered radio">
             <label>
-              <input type="radio"
-                     value="none"
-                     ng-change="profileEditPhoto.updateUserProfile()"
-                     ng-model="profileEditPhoto.user.avatarSource"
-                     ng-disabled="profileEditPhoto.avatarUploading">
+              <input
+                type="radio"
+                value="none"
+                ng-change="profileEditPhoto.updateUserProfile()"
+                ng-model="profileEditPhoto.user.avatarSource"
+                ng-disabled="profileEditPhoto.avatarUploading"
+              />
               No profile photo
             </label>
           </div>
-
         </div>
-
       </div>
       <!-- /No photo -->
-
-
     </div>
-
   </div>
 </div>

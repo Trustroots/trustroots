@@ -1,7 +1,5 @@
 // Authentication service for user variables
-angular
-  .module('users')
-  .factory('Authentication', Authentication);
+angular.module('users').factory('Authentication', Authentication);
 
 /* @ngInject */
 function Authentication($window) {

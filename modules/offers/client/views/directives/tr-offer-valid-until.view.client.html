@@ -1,25 +1,33 @@
 <div>
   <fieldset ng-if="!trOfferValidUntil.isCalendarVisible">
-    <div class="btn-group-vertical btn-group-lg"
-         role="radiogroup"
-         aria-label="">
-      <label ng-repeat="(label, days) in ::trOfferValidUntil.choices"
-             class="btn btn-primary btn-lg"
-             role="radio"
-             ng-model="trOfferValidUntil.offerValidityInDays"
-             ng-data-aria-checked="{{ trOfferValidUntil.offerValidityInDays === days }}"
-             uib-btn-radio="days">
+    <div
+      class="btn-group-vertical btn-group-lg"
+      role="radiogroup"
+      aria-label=""
+    >
+      <label
+        ng-repeat="(label, days) in ::trOfferValidUntil.choices"
+        class="btn btn-primary btn-lg"
+        role="radio"
+        ng-model="trOfferValidUntil.offerValidityInDays"
+        ng-data-aria-checked="{{ trOfferValidUntil.offerValidityInDays === days }}"
+        uib-btn-radio="days"
+      >
         <span ng-bind="::label"></span>
       </label>
-      <label class="btn btn-primary btn-lg"
-             ng-click="trOfferValidUntil.isCalendarVisible = true">
+      <label
+        class="btn btn-primary btn-lg"
+        ng-click="trOfferValidUntil.isCalendarVisible = true"
+      >
         <span>Other...</span>
       </label>
     </div>
   </fieldset>
 
-  <div ng-if="trOfferValidUntil.isCalendarVisible"
-       uib-datepicker
-       ng-model="trOfferValidUntil.validUntil"
-       datepicker-options="trOfferValidUntil.calendarOptions"></div>
+  <div
+    ng-if="trOfferValidUntil.isCalendarVisible"
+    uib-datepicker
+    ng-model="trOfferValidUntil.validUntil"
+    datepicker-options="trOfferValidUntil.calendarOptions"
+  ></div>
 </div>

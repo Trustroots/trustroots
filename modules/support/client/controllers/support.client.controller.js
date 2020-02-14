@@ -1,10 +1,7 @@
-angular
-  .module('support')
-  .controller('SupportController', SupportController);
+angular.module('support').controller('SupportController', SupportController);
 
 /* @ngInject */
 function SupportController(SupportService, messageCenterService, $stateParams) {
-
   // ViewModel
   const vm = this;
 
@@ -42,21 +39,28 @@ function SupportController(SupportService, messageCenterService, $stateParams) {
     }
 
     if (vm.request.message === '') {
-      messageCenterService.add('danger', 'Please write a message first.', { timeout: 20000 });
+      messageCenterService.add('danger', 'Please write a message first.', {
+        timeout: 20000,
+      });
       vm.isLoading = false;
       return false;
     }
 
     const supportRequest = new SupportService(vm.request);
 
-    supportRequest.$save(function () {
-      vm.success = true;
-      vm.isLoading = false;
-    }, function (err) {
-      vm.isLoading = false;
-      messageCenterService.add('danger', err.message || 'Something went wrong. Please try again.', { timeout: 20000 });
-    });
-
+    supportRequest.$save(
+      function() {
+        vm.success = true;
+        vm.isLoading = false;
+      },
+      function(err) {
+        vm.isLoading = false;
+        messageCenterService.add(
+          'danger',
+          err.message || 'Something went wrong. Please try again.',
+          { timeout: 20000 },
+        );
+      },
+    );
   }
-
 }

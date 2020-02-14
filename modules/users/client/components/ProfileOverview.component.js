@@ -15,44 +15,37 @@ export default function ProfileOverview({ profile }) {
 
   const handleClose = () => setIsAvatarModalOpen(false);
 
-  return (<>
-    {/* panel with avatar and basic info */}
-    <div className="panel panel-default profile-overview">
-      {/* avatar */}
-      <a
-        className="hidden-xs"
-        aria-hidden={true}
-        onClick={() => setIsAvatarModalOpen(true)}
-      >
-        <Avatar
-          user={profile}
-          size={256}
-          link={false}
-        />
-      </a>
+  return (
+    <>
+      {/* panel with avatar and basic info */}
+      <div className="panel panel-default profile-overview">
+        {/* avatar */}
+        <a
+          className="hidden-xs"
+          aria-hidden={true}
+          onClick={() => setIsAvatarModalOpen(true)}
+        >
+          <Avatar user={profile} size={256} link={false} />
+        </a>
 
-      {/* basic info panel */}
-      <div className="panel-body">
-        <div className="profile-sidebar-section">
-          <ProfileViewBasics profile={profile} />
+        {/* basic info panel */}
+        <div className="panel-body">
+          <div className="profile-sidebar-section">
+            <ProfileViewBasics profile={profile} />
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* modal with avatar */}
-    <Modal
-      show={isAvatarModalOpen}
-      onHide={handleClose}
-      className="modal-avatar"
-    >
-      <Avatar
-        user={profile}
-        size={512}
-        link={false}
-        onClick={handleClose}
-      />
-    </Modal>
-  </>);
+      {/* modal with avatar */}
+      <Modal
+        show={isAvatarModalOpen}
+        onHide={handleClose}
+        className="modal-avatar"
+      >
+        <Avatar user={profile} size={512} link={false} onClick={handleClose} />
+      </Modal>
+    </>
+  );
 }
 
 ProfileOverview.propTypes = {

@@ -3,15 +3,22 @@ angular
   .controller('SearchSignupController', SearchSignupController);
 
 /* @ngInject */
-function SearchSignupController($stateParams, MapLayersFactory, LocationService) {
-
+function SearchSignupController(
+  $stateParams,
+  MapLayersFactory,
+  LocationService,
+) {
   // ViewModel
   const vm = this;
 
   // Variables passed to leaflet directive at init
   vm.mapCenter = LocationService.getDefaultLocation(3);
   vm.mapLayers = {
-    baselayers: MapLayersFactory.getLayers({ streets: false, satellite: true, outdoors: false }),
+    baselayers: MapLayersFactory.getLayers({
+      streets: false,
+      satellite: true,
+      outdoors: false,
+    }),
   };
   vm.mapDefaults = {
     attributionControl: false,
@@ -31,5 +38,4 @@ function SearchSignupController($stateParams, MapLayersFactory, LocationService)
   if ($stateParams.location && $stateParams.location !== '') {
     vm.searchQuery = $stateParams.location.replace('_', ' ', 'g');
   }
-
 }

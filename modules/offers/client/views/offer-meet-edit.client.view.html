@@ -1,221 +1,246 @@
 <section class="offers-edit">
+  <form
+    name="offerForm"
+    novalidate
+    autocomplete="off"
+    ng-submit="offerMeet.editOffer()"
+    ng-if="app.user.public === true && offerMeet.offer"
+  >
+    <button
+      type="submit"
+      class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
+      aria-hidden="true"
+      ng-if="!offerMeet.newOffer"
+      ng-disabled="offerMeet.isLoading || (offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+    >
+      Save and Exit
+    </button>
 
-  <form name="offerForm"
-        novalidate
-        autocomplete="off"
-        ng-submit="offerMeet.editOffer()"
-        ng-if="app.user.public === true && offerMeet.offer">
+    <button
+      class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
+      aria-label="Cancel adding a meet offer"
+      ui-sref="offer.meet.list"
+    >
+      Cancel
+    </button>
 
-  <button type="submit"
-          class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
-          aria-hidden="true"
-          ng-if="!offerMeet.newOffer"
-          ng-disabled="offerMeet.isLoading || (offerMeet.offer.description|plainTextLength) < offerMeet.minDescription">
-    Save and Exit
-  </button>
-
-  <button
-  class="btn btn-lg btn-inverse-primary pull-right hidden-xs"
-  aria-label="Cancel adding a meet offer"
-  ui-sref="offer.meet.list">
-  Cancel
- </button>
-
-  <uib-tabset class="offer-tabs" active="offerMeet.offerTab">
-
-    <uib-tab index="0" heading="Details">
-
-      <div class="row">
-        <div class="col-xs-12 col-sm-6 col-sm-push-6 text-center">
-          <div class="icon-users icon-3x text-muted hidden-xs"></div>
-          <p class="lead">
-            <strong>Travelling? Organising an event? Just making a dinner and would like to invite people over?</strong>
-            <br><br>
-            Meetups stay visible on map at most one month.
-          </p>
-        </div>
-        <div class="col-xs-12 col-sm-6 col-sm-pull-6">
-
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h4 id="offerDescriptionLabel">
-                What is this about? <i>(required)</i>
-              </h4>
+    <uib-tabset class="offer-tabs" active="offerMeet.offerTab">
+      <uib-tab index="0" heading="Details">
+        <div class="row">
+          <div class="col-xs-12 col-sm-6 col-sm-push-6 text-center">
+            <div class="icon-users icon-3x text-muted hidden-xs"></div>
+            <p class="lead">
+              <strong
+                >Travelling? Organising an event? Just making a dinner and would
+                like to invite people over?</strong
+              >
+              <br /><br />
+              Meetups stay visible on map at most one month.
+            </p>
+          </div>
+          <div class="col-xs-12 col-sm-6 col-sm-pull-6">
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h4 id="offerDescriptionLabel">
+                  What is this about? <i>(required)</i>
+                </h4>
+              </div>
+              <div class="panel-body">
+                <div
+                  class="offer-description offer-description-"
+                  aria-labelledby="offerDescriptionLabel"
+                  aria-required="true"
+                  uib-tooltip="Write more please"
+                  tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+                  tooltip-is-open="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+                  ng-class="{ 'is-not-empty': offer.description.length }"
+                  ng-hide="!offerMeet.offer"
+                  ng-model="offerMeet.offer.description"
+                  tr-editor
+                  tr-editor-options="::app.editorOptions"
+                  data-placeholder="Write here..."
+                ></div>
+              </div>
             </div>
-            <div class="panel-body">
-              <div class="offer-description offer-description-"
-                   aria-labelledby="offerDescriptionLabel"
-                   aria-required="true"
-                   uib-tooltip="Write more please"
-                   tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-                   tooltip-is-open="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-                   ng-class="{ 'is-not-empty': offer.description.length }"
-                   ng-hide="!offerMeet.offer" ng-model="offerMeet.offer.description"
-                   tr-editor
-                   tr-editor-options="::app.editorOptions"
-                   data-placeholder="Write here..."></div>
+
+            <div class="panel panel-default">
+              <div class="panel-heading">
+                <h4 id="offerVisibilityLabel">
+                  How long should this be visible?
+                </h4>
+              </div>
+              <div class="panel-body text-center">
+                <div tr-offer-valid-until="offerMeet.offer.validUntil"></div>
+
+                <br /><br />
+
+                <p class="lead">
+                  Visible through {{ offerMeet.offer.validUntil |
+                  date:'mediumDate' }}
+                </p>
+
+                <small class="text-muted">
+                  You can set visibility at most one month ahead.
+                </small>
+              </div>
             </div>
           </div>
+        </div>
+      </uib-tab>
+      <uib-tab
+        index="1"
+        heading="Location"
+        disable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+        uib-tooltip="Write some description first"
+        tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+        tooltip-placement="right"
+        select="offer.invalidateMapSize(offerMeet.leafletData)"
+      >
+        <!-- Location -->
+        <div class="panel panel-default offer-panel-map">
+          <div class="panel-body">
+            <p id="offerLocation" class="lead">
+              <strong>Where’s this located?</strong><br />
+              Zoom in and drag pin to change location.
+            </p>
 
-          <div class="panel panel-default">
-            <div class="panel-heading">
-              <h4 id="offerVisibilityLabel">
-                How long should this be visible?
-              </h4>
+            <!-- Search location -->
+            <div
+              class="form-group has-feedback offer-map-location-search"
+              ng-if="::app.appSettings.mapbox.publicKey"
+            >
+              <label for="search-query" class="sr-only">
+                Search for places on the map
+              </label>
+              <span
+                class="form-control-feedback visible-xs-inline"
+                aria-hidden="true"
+              >
+                <span class="icon-search icon-lg text-muted"></span>
+              </span>
+              <input
+                type="text"
+                id="search-query"
+                class="form-control input-lg"
+                placeholder="Search"
+                ng-model="offerMeet.searchQuery"
+                tr-location
+                tr-location-center="offerMeet.mapCenter"
+              />
             </div>
-            <div class="panel-body text-center">
-
-              <div tr-offer-valid-until="offerMeet.offer.validUntil"></div>
-
-              <br><br>
-
-              <p class="lead">
-                Visible through {{ offerMeet.offer.validUntil | date:'mediumDate' }}
-              </p>
-
-              <small class="text-muted">
-                You can set visibility at most one month ahead.
-              </small>
-
-            </div>
+            <!-- /Search location -->
           </div>
 
-        </div>
-      </div>
-
-    </uib-tab>
-    <uib-tab index="1"
-             heading="Location"
-             disable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-             uib-tooltip="Write some description first"
-             tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-             tooltip-placement="right"
-             select="offer.invalidateMapSize(offerMeet.leafletData)">
-
-      <!-- Location -->
-      <div class="panel panel-default offer-panel-map">
-
-        <div class="panel-body">
-
-          <p id="offerLocation" class="lead">
-            <strong>Where’s this located?</strong><br>
-            Zoom in and drag pin to change location.
-          </p>
-
-          <!-- Search location -->
-          <div class="form-group has-feedback offer-map-location-search" ng-if="::app.appSettings.mapbox.publicKey">
-            <label for="search-query" class="sr-only">
-              Search for places on the map
-            </label>
-            <span class="form-control-feedback visible-xs-inline" aria-hidden="true">
-              <span class="icon-search icon-lg text-muted"></span>
-            </span>
-            <input type="text"
-                   id="search-query"
-                   class="form-control input-lg"
-                   placeholder="Search"
-                   ng-model="offerMeet.searchQuery"
-                   tr-location
-                   tr-location-center="offerMeet.mapCenter">
+          <div class="offer-map">
+            <leaflet
+              ng-if="offerMeet.offerTab === 1"
+              defaults="offer.mapDefaults"
+              layers="offer.mapLayers"
+              lf-center="offerMeet.mapCenter"
+              aria-describedby="offerLocation"
+              id="offer-add-location-canvas"
+            ></leaflet>
+            <div class="offer-location-overlay"></div>
           </div>
-          <!-- /Search location -->
-
         </div>
+        <!-- /Location -->
+      </uib-tab>
+    </uib-tabset>
 
-        <div class="offer-map">
-          <leaflet ng-if="offerMeet.offerTab === 1"
-                   defaults="offer.mapDefaults"
-                   layers="offer.mapLayers"
-                   lf-center="offerMeet.mapCenter"
-                   aria-describedby="offerLocation"
-                   id="offer-add-location-canvas"></leaflet>
-          <div class="offer-location-overlay"></div>
-        </div>
-
-      </div>
-      <!-- /Location -->
-
-    </uib-tab>
-  </uib-tabset>
-
-  <!-- Navigation for big screens -->
-  <div class="text-center hidden-xs">
-    <br>
-    <button ng-if="offerMeet.offerTab > 0"
-       type="button"
-       class="btn btn-action btn-link"
-       aria-label="Previous section"
-       ng-click="offerMeet.offerTab = offerMeet.offerTab - 1">
-      <span class="icon-left"></span>
-      Back
-    </button>
-    <button ng-if="offerMeet.offerTab < 1"
-       type="button"
-       class="btn btn-action btn-primary"
-       aria-label="Next section"
-       uib-tooltip="Write some description first"
-       tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-       ng-disabled="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-       ng-click="offerMeet.offerTab = offerMeet.offerTab + 1">
-      Next
-    </button>
-    <!-- For last tab -->
-    <button ng-if="offerMeet.offerTab === 1"
-       type="submit"
-       class="btn btn-action btn-primary"
-       aria-label="Finish editing and save"
-       ng-disabled="offerMeet.isLoading">
-      Finish
-    </button>
-  </div>
-
-  <!-- Navigation for small screens -->
-  <nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
-    <div class="container">
-      <ul class="nav navbar-nav nav-justified" role="toolbar" aria-label="Offer actions">
-        <li>
-          <button ng-if="offerMeet.offerTab === 0"
-             type="button"
-             class="btn btn-lg btn-primary"
-             aria-label="Cancel adding a meet offer"
-             ui-sref="offer.meet.list">
-            Cancel
-          </button>
-          <button ng-if="offerMeet.offerTab >= 1"
-             type="button"
-             class="btn btn-lg btn-primary"
-             aria-label="Previous section"
-             ng-click="offerMeet.offerTab = offerMeet.offerTab - 1">
-            <span class="icon-left"></span>
-            Back
-          </button>
-        </li>
-        <li class="pull-right">
-          <button ng-if="offerMeet.offerTab < 1"
-             type="button"
-             class="btn btn-lg btn-primary"
-             aria-label="Next section"
-             uib-tooltip="Write some description first"
-             tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-             ng-disabled="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
-             ng-click="offerMeet.offerTab = offerMeet.offerTab + 1">
-            Next
-            <span class="icon-right"></span>
-          </button>
-          <!-- For last tab -->
-          <button ng-if="offerMeet.offerTab === 1"
-             type="submit"
-             class="btn btn-lg btn-primary"
-             aria-label="Finish editing and save"
-             ng-disabled="offerMeet.isLoading">
-            Finish
-            <span class="icon-ok"></span>
-          </button>
-        </li>
-      </ul>
+    <!-- Navigation for big screens -->
+    <div class="text-center hidden-xs">
+      <br />
+      <button
+        ng-if="offerMeet.offerTab > 0"
+        type="button"
+        class="btn btn-action btn-link"
+        aria-label="Previous section"
+        ng-click="offerMeet.offerTab = offerMeet.offerTab - 1"
+      >
+        <span class="icon-left"></span>
+        Back
+      </button>
+      <button
+        ng-if="offerMeet.offerTab < 1"
+        type="button"
+        class="btn btn-action btn-primary"
+        aria-label="Next section"
+        uib-tooltip="Write some description first"
+        tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+        ng-disabled="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+        ng-click="offerMeet.offerTab = offerMeet.offerTab + 1"
+      >
+        Next
+      </button>
+      <!-- For last tab -->
+      <button
+        ng-if="offerMeet.offerTab === 1"
+        type="submit"
+        class="btn btn-action btn-primary"
+        aria-label="Finish editing and save"
+        ng-disabled="offerMeet.isLoading"
+      >
+        Finish
+      </button>
     </div>
-  </nav>
 
+    <!-- Navigation for small screens -->
+    <nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+      <div class="container">
+        <ul
+          class="nav navbar-nav nav-justified"
+          role="toolbar"
+          aria-label="Offer actions"
+        >
+          <li>
+            <button
+              ng-if="offerMeet.offerTab === 0"
+              type="button"
+              class="btn btn-lg btn-primary"
+              aria-label="Cancel adding a meet offer"
+              ui-sref="offer.meet.list"
+            >
+              Cancel
+            </button>
+            <button
+              ng-if="offerMeet.offerTab >= 1"
+              type="button"
+              class="btn btn-lg btn-primary"
+              aria-label="Previous section"
+              ng-click="offerMeet.offerTab = offerMeet.offerTab - 1"
+            >
+              <span class="icon-left"></span>
+              Back
+            </button>
+          </li>
+          <li class="pull-right">
+            <button
+              ng-if="offerMeet.offerTab < 1"
+              type="button"
+              class="btn btn-lg btn-primary"
+              aria-label="Next section"
+              uib-tooltip="Write some description first"
+              tooltip-enable="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+              ng-disabled="(offerMeet.offer.description|plainTextLength) < offerMeet.minDescription"
+              ng-click="offerMeet.offerTab = offerMeet.offerTab + 1"
+            >
+              Next
+              <span class="icon-right"></span>
+            </button>
+            <!-- For last tab -->
+            <button
+              ng-if="offerMeet.offerTab === 1"
+              type="submit"
+              class="btn btn-lg btn-primary"
+              aria-label="Finish editing and save"
+              ng-disabled="offerMeet.isLoading"
+            >
+              Finish
+              <span class="icon-ok"></span>
+            </button>
+          </li>
+        </ul>
+      </div>
+    </nav>
   </form>
-
 </section>

@@ -3,19 +3,16 @@ import hostEditTemplateUrl from '@/modules/offers/client/views/offer-host-edit.c
 import meetListTemplateUrl from '@/modules/offers/client/views/offer-meet-list.client.view.html';
 import meetEditTemplateUrl from '@/modules/offers/client/views/offer-meet-edit.client.view.html';
 
-angular
-  .module('offers')
-  .config(OffersRoutes);
+angular.module('offers').config(OffersRoutes);
 
 /* @ngInject */
 function OffersRoutes($stateProvider, $urlRouterProvider) {
-
   // Redirect parent states,
   // otherwise `/offer` would throw 404 because the route is `abstract`
   $urlRouterProvider.when('/offer', '/offer/host');
 
-  $stateProvider.
-    state('offer', {
+  $stateProvider
+    .state('offer', {
       url: '/offer',
       abstract: true,
       requiresAuth: true,
@@ -27,13 +24,13 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
         LocationService: 'LocationService',
 
         // Initial default location for all offer maps
-        defaultLocation: function (LocationService) {
+        defaultLocation: function(LocationService) {
           // Returns `{lat: Float, lng: Float, zoom: 4}`
           return LocationService.getDefaultLocation(4);
         },
       },
-    }).
-    state('offer.host', {
+    })
+    .state('offer.host', {
       url: '/host',
       abstract: true,
       requiresAuth: true,
@@ -44,15 +41,15 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
         // A string value resolves to a service
         OffersByService: 'OffersByService',
 
-        offers: function (OffersByService, Authentication) {
+        offers: function(OffersByService, Authentication) {
           return OffersByService.query({
             userId: Authentication.user._id,
             types: 'host',
           });
         },
       },
-    }).
-    state('offer.host.edit', {
+    })
+    .state('offer.host.edit', {
       url: '?status',
       templateUrl: hostEditTemplateUrl,
       requiresAuth: true,
@@ -62,16 +59,16 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
       data: {
         pageTitle: 'Host travellers',
       },
-    }).
-    state('offer.meet', {
+    })
+    .state('offer.meet', {
       url: '/meet',
       abstract: true,
       requiresAuth: true,
       template: '<div ui-view></div>',
       controller: 'OfferController',
       controllerAs: 'offer',
-    }).
-    state('offer.meet.list', {
+    })
+    .state('offer.meet.list', {
       url: '',
       templateUrl: meetListTemplateUrl,
       requiresAuth: true,
@@ -84,15 +81,15 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
         // A string value resolves to a service
         OffersByService: 'OffersByService',
 
-        offers: function (OffersByService, Authentication) {
+        offers: function(OffersByService, Authentication) {
           return OffersByService.query({
             userId: Authentication.user._id,
             types: 'meet',
           });
         },
       },
-    }).
-    state('offer.meet.add', {
+    })
+    .state('offer.meet.add', {
       url: '/add',
       templateUrl: meetEditTemplateUrl,
       requiresAuth: true,
@@ -102,8 +99,8 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
       data: {
         pageTitle: 'Add meeting offer',
       },
-    }).
-    state('offer.meet.edit', {
+    })
+    .state('offer.meet.edit', {
       url: '/:offerId',
       templateUrl: meetEditTemplateUrl,
       requiresAuth: true,
@@ -124,5 +121,4 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
       offerId: $stateParams.offerId,
     }).$promise;
   }
-
 }

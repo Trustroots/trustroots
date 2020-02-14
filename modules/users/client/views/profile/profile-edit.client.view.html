@@ -34,11 +34,12 @@
 <section class="container container-spacer profile-edit">
   <div class="row">
     <div class="col-sm-3 hidden-xs">
-
       <!-- Navi for bigger screens -->
-      <ul class="nav nav-pills nav-stacked profile-edit-navbar"
-          role="toolbar"
-          aria-label="Profile actions">
+      <ul
+        class="nav nav-pills nav-stacked profile-edit-navbar"
+        role="toolbar"
+        aria-label="Profile actions"
+      >
         <li ui-sref-active="active">
           <a ui-sref="profile-edit.about">Edit profile</a>
         </li>
@@ -57,15 +58,19 @@
       </ul>
 
       <p>
-        <br><br>
-        <a ui-sref="profile.about({username: app.user.username})" class="btn btn-block btn-default">
+        <br /><br />
+        <a
+          ui-sref="profile.about({username: app.user.username})"
+          class="btn btn-block btn-default"
+        >
           View profile
         </a>
       </p>
-
     </div>
     <div class="col-xs-12 col-sm-9">
       <div ui-view></div>
     </div>
-  </div><!-- /.row -->
-</section><!-- /.container -->
+  </div>
+  <!-- /.row -->
+</section>
+<!-- /.container -->

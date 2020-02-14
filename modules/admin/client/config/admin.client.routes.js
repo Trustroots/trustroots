@@ -1,12 +1,9 @@
-angular
-  .module('admin')
-  .config(AdminRoutes);
+angular.module('admin').config(AdminRoutes);
 
 /* @ngInject */
 function AdminRoutes($stateProvider) {
-
-  $stateProvider.
-    state('admin', {
+  $stateProvider
+    .state('admin', {
       url: '/admin',
       template: '<admin></admin>', // This should be lowercase
       requiresRole: 'admin',
@@ -15,8 +12,8 @@ function AdminRoutes($stateProvider) {
       data: {
         pageTitle: 'Admin',
       },
-    }).
-    state('admin-audit-log', {
+    })
+    .state('admin-audit-log', {
       url: '/admin/audit-log',
       // `template` is Angular state so
       // it should be lowercase, with dashes
@@ -28,8 +25,8 @@ function AdminRoutes($stateProvider) {
       data: {
         pageTitle: 'Admin - Audit log',
       },
-    }).
-    state('admin-acquisition-stories', {
+    })
+    .state('admin-acquisition-stories', {
       url: '/admin/acquisition-stories',
       // `template` is Angular state so
       // it should be lowercase, with dashes
@@ -41,8 +38,8 @@ function AdminRoutes($stateProvider) {
       data: {
         pageTitle: 'Admin - Acquisition stories',
       },
-    }).
-    state('admin-messages', {
+    })
+    .state('admin-messages', {
       url: '/admin/messages',
       // `template` is Angular state so
       // it should be lowercase, with dashes
@@ -54,8 +51,8 @@ function AdminRoutes($stateProvider) {
       data: {
         pageTitle: 'Admin - Messages',
       },
-    }).
-    state('admin-search-users', {
+    })
+    .state('admin-search-users', {
       url: '/admin/search-users',
       // `template` is Angular state so
       // it should be lowercase, with dashes
@@ -67,8 +64,8 @@ function AdminRoutes($stateProvider) {
       data: {
         pageTitle: 'Admin - Search users',
       },
-    }).
-    state('admin-user', {
+    })
+    .state('admin-user', {
       url: '/admin/user',
       // `template` is Angular state so
       // it should be lowercase, with dashes
@@ -81,5 +78,4 @@ function AdminRoutes($stateProvider) {
         pageTitle: 'Admin - User',
       },
     });
-
 }

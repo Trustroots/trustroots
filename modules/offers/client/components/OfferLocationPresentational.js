@@ -7,8 +7,13 @@ import { Map, Circle, Marker } from 'react-leaflet';
 // Internal dependencies
 import MapLayers from '../../../core/client/components/MapLayers.component';
 
-export default function OfferLocationPresentational({ zoom, location, onChangeZoom, marker='', windowWidth }) {
-
+export default function OfferLocationPresentational({
+  zoom,
+  location,
+  onChangeZoom,
+  marker = '',
+  windowWidth,
+}) {
   return (
     <Map
       className="offer-location"
@@ -20,7 +25,7 @@ export default function OfferLocationPresentational({ zoom, location, onChangeZo
     >
       <MapLayers />
       {/* @TODO Circle and Marker will need to be reusable when we migrate the /search to React */}
-      {(zoom >= 12) ?
+      {zoom >= 12 ? (
         <Circle
           center={location}
           radius={500}
@@ -31,7 +36,8 @@ export default function OfferLocationPresentational({ zoom, location, onChangeZo
           clickable={false}
           interactive={false}
           layer="locationPath"
-        /> :
+        />
+      ) : (
         <Marker
           position={location}
           layer="locationMarker"
@@ -39,7 +45,7 @@ export default function OfferLocationPresentational({ zoom, location, onChangeZo
           focus={false}
           icon={getIcon(marker, windowWidth)}
         />
-      }
+      )}
     </Map>
   );
 }
@@ -50,7 +56,7 @@ export default function OfferLocationPresentational({ zoom, location, onChangeZo
  * @param {String} marker - maybe, meet, yes or an empty string
  */
 function getMarkerUrl(marker) {
-  const markerFile = (marker) ? `-${marker}` : '';
+  const markerFile = marker ? `-${marker}` : '';
   return `/img/map/marker-icon${markerFile}.svg`;
 }
 
@@ -64,7 +70,7 @@ function getMarkerUrl(marker) {
  * perhaps in the related smart component
  */
 function getIconSize(windowWidth) {
-  return (windowWidth < 768) ? 30 : 20;
+  return windowWidth < 768 ? 30 : 20;
 }
 
 /**

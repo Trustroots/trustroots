@@ -11,7 +11,10 @@ export function isWarmshowersId(id) {
  * Check if there are additional accounts
  */
 export function hasConnectedAdditionalSocialAccounts(profile) {
-  return profile.additionalProvidersData && Object.keys(profile.additionalProvidersData).length > 0;
+  return (
+    profile.additionalProvidersData &&
+    Object.keys(profile.additionalProvidersData).length > 0
+  );
 }
 
 /**

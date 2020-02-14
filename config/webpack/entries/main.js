@@ -54,17 +54,24 @@ function importAll(r) {
  *  Uses a webpack require context
  *  See https://webpack.js.org/guides/dependency-management/#require-context
  */
-importComponents(require.context('../../../modules/', true, /\.component\.js$/));
+importComponents(
+  require.context('../../../modules/', true, /\.component\.js$/),
+);
 
 function importComponents(r) {
   r.keys().forEach(path => {
     const Component = r(path).default;
     const name = extractComponentNameFromPath(path);
     if (name !== Component.name && process.env.NODE_ENV !== 'production') {
-      throw new Error(`Component filename and component name do not match: ${name || '<empty>'} vs ${Component.name || '<empty>'}`);
+      throw new Error(
+        `Component filename and component name do not match: ${name ||
+          '<empty>'} vs ${Component.name || '<empty>'}`,
+      );
     }
     if (!Component.propTypes) {
-      throw new Error(`You must define propTypes on your component, e.g. ${name}.propTypes = {};`);
+      throw new Error(
+        `You must define propTypes on your component, e.g. ${name}.propTypes = {};`,
+      );
     }
     const propNames = Object.keys(Component.propTypes);
 

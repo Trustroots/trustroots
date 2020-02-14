@@ -3,8 +3,12 @@ angular
   .controller('RemoveProfileController', RemoveProfileController);
 
 /* @ngInject */
-function RemoveProfileController($stateParams, Users, Authentication, messageCenterService) {
-
+function RemoveProfileController(
+  $stateParams,
+  Users,
+  Authentication,
+  messageCenterService,
+) {
   // ViewModel
   const vm = this;
 
@@ -21,10 +25,10 @@ function RemoveProfileController($stateParams, Users, Authentication, messageCen
     vm.state = 'loading';
 
     Users.deleteWithToken($stateParams.token)
-      .then(function () {
+      .then(function() {
         vm.state = 'success';
       })
-      .catch(function () {
+      .catch(function() {
         vm.state = 'failure';
       });
   }
@@ -32,18 +36,19 @@ function RemoveProfileController($stateParams, Users, Authentication, messageCen
   // Get a new confirmation email
   function resendConfirmation() {
     vm.resendConfirmationLoading = true;
-    new Users(Authentication.user).$delete()
-      .then(function (response) {
+    new Users(Authentication.user)
+      .$delete()
+      .then(function(response) {
         vm.removeProfileInitialized = response.message || 'Success.';
       })
-      .catch(function (response) {
+      .catch(function(response) {
         vm.removeProfileLoading = false;
         messageCenterService.add(
           'danger',
-          response.message || 'Something went wrong while initializing profile removal, try again.',
+          response.message ||
+            'Something went wrong while initializing profile removal, try again.',
           { timeout: 10000 },
         );
       });
   }
-
 }
