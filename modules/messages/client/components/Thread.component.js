@@ -14,16 +14,17 @@ import { userType } from '@/modules/users/client/users.prop-types';
 import Monkeybox from '@/modules/messages/client/components/Monkeybox';
 import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
-import Activate from 'modules/users/client/components/Activate';
+import Activate from '@/modules/users/client/components/Activate';
 import ThreadMessages from '@/modules/messages/client/components/ThreadMessages';
 import QuickReply from '@/modules/messages/client/components/QuickReply';
-import Flashcard from 'modules/messages/client/components/Flashcard';
+import Flashcard from '@/modules/messages/client/components/Flashcard';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
 // @TODO remove this stuff once ready
 import range from 'lodash/range';
 import faker from 'faker';
 import { generateMongoId } from '@/testutils/common/data.common.testutil';
-import plainTextLength from 'modules/core/client/filters/plain-text-length.client.filter';
+import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 
 function generateMessage(userFrom) {
   return {
@@ -104,6 +105,14 @@ function UserDoesNotExist() {
       <i className="icon-3x icon-messages-alt" />
       <h4>{t("This user isn't a member anymore.")}</h4>
     </div>
+  );
+}
+
+function Loading() {
+  return (
+    <LoadingContainer>
+      <LoadingIndicator />
+    </LoadingContainer>
   );
 }
 
@@ -209,20 +218,10 @@ export default function Thread({ user, profileMinimumLength }) {
     <section className="container container-spacer">
       <div className="row">
         <div className="col-xs-12 col-sm-9">
-          {isFetching && (
-            <LoadingContainer>
-              {/* @TODO replace with a proper loader */}
-              Loading initial...
-            </LoadingContainer>
-          )}
+          {isFetching && <Loading />}
           {!isFetching && (
             <ThreadContainer>
-              {isFetchingMore && (
-                <LoadingContainer>
-                  {/* @TODO replace with a proper loader */}
-                  Loading...
-                </LoadingContainer>
-              )}
+              {isFetchingMore && <Loading />}
               {messages.length === 0 ? (
                 <>
                   <FlexGrow />

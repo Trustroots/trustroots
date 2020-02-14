@@ -5,8 +5,8 @@ import { useMediaQuery } from 'react-responsive';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
-import InfiniteMessages from 'modules/messages/client/components/InfiniteMessages';
-import Avatar from 'modules/users/client/components/Avatar.component';
+import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
+import Avatar from '@/modules/users/client/components/Avatar.component';
 import ThreadMessage from '@/modules/messages/client/components/ThreadMessage';
 import { userType } from '@/modules/users/client/users.prop-types';
 
