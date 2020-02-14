@@ -1,41 +1,40 @@
 {
-  "assignees": [
-    "mrkvon",
-    "nicksellen",
-    "simison"
+  "assignees": ["nicksellen", "simison"],
+  "extends": ["config:base"],
+  "ignorePaths": ["scripts/mass-email/package.json"],
+  "packageRules": [
+    {
+      "packageNames": [
+        "angular",
+        "angular-animate",
+        "angular-aria",
+        "angular-message-format",
+        "angular-mocks",
+        "angular-resource",
+        "angular-sanitize",
+        "angular-touch"
+      ],
+      "allowedVersions": "<=1.6"
+    },
+    {
+      "packageNames": ["angular-confirm"],
+      "allowedVersions": "<=1"
+    },
+    {
+      "packageNames": ["bootstrap"],
+      "allowedVersions": "<=3"
+    },
+    {
+      "packageNames": ["angular-ui-router"],
+      "allowedVersions": "<=0.4"
+    },
+    {
+      "sourceUrlPrefixes": ["https://github.com/babel/babel"]
+    },
+    {
+      "sourceUrlPrefixes": ["https://github.com/facebook/react"]
+    }
   ],
-  "extends": [
-    "config:base"
-  ],
-  "ignorePaths": [
-    "scripts/mass-email/package.json"
-  ],
-  "packageRules": [{
-    "packageNames": [
-      "angular",
-      "angular-animate",
-      "angular-aria",
-      "angular-message-format",
-      "angular-mocks",
-      "angular-resource",
-      "angular-sanitize",
-      "angular-touch"
-    ],
-    "allowedVersions": "<=1.6"
-  },{
-    "packageNames": ["angular-confirm"],
-    "allowedVersions": "<=1"
-  },{
-    "packageNames": ["bootstrap"],
-    "allowedVersions": "<=3"
-  },{
-    "packageNames": ["angular-ui-router"],
-    "allowedVersions": "<=0.4"
-  },{
-    "sourceUrlPrefixes": ["https://github.com/babel/babel"]
-  },{
-    "sourceUrlPrefixes": ["https://github.com/facebook/react"]
-  }],
   "supportPolicy": "lts_latest",
   "travis": {
     "enabled": true
