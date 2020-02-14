@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import keyBy from 'lodash/keyBy';
+import { useTranslation } from 'react-i18next';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import { userType } from '@/modules/users/client/users.prop-types';
 
 function TribesInCommon({ user, otherUser }) {
+  const { t } = useTranslation('messages');
+
   const [tribesInCommon, setTribesInCommon] = useState([]);
 
   useEffect(() => {
@@ -24,7 +27,7 @@ function TribesInCommon({ user, otherUser }) {
   return (
     <div className="monkeybox-section">
       <div className="tribes-common">
-        <h4>Tribes in common</h4>
+        <h4>{t('Tribes in common')}</h4>
         <ul className="list-inline">
           {tribesInCommon.map(tribe => (
             <li key={tribe._id}>

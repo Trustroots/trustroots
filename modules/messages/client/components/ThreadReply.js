@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 
 import TrEditor from '@/modules/messages/client/components/TrEditor';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 
 export default function ThreadReply({ onSend, cacheKey }) {
+  const { t } = useTranslation('messages');
+
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
   const [content, setContent] = useState(() => getDraft() || '');
 
@@ -70,8 +73,9 @@ export default function ThreadReply({ onSend, cacheKey }) {
       </div>
       <div className="col-xs-2 col-sm-12">
         <small className="text-muted hidden-xs">
-          Highlight text to add links or change its appearance. Ctrl+Enter to
-          send.
+          {t(
+            'Highlight text to add links or change its appearance. Ctrl+Enter to send.',
+          )}
         </small>
         <button
           id="messageReplySubmit"
@@ -79,7 +83,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
           type="submit"
         >
           <i className="icon-send" />
-          <span className="hidden-xs"> Send</span>
+          <span className="hidden-xs">&nbsp;{t('Send')}</span>
         </button>
       </div>
     </form>

@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 const replies = [
   {
@@ -17,6 +18,7 @@ const replies = [
 ];
 
 export default function QuickReply({ onSend, onFocus }) {
+  const { t } = useTranslation('messages');
   return (
     <div className="btn-toolbar" id="message-quick-reply">
       {replies.map(({ write, host, content }) => {
@@ -30,7 +32,7 @@ export default function QuickReply({ onSend, onFocus }) {
           } else {
             onSend(`
               <p data-hosting="${host ? 'yes' : 'no'}">
-                <b><i>${content}</i></b>
+                <b><i>${t(content)}</i></b>
               </p>
             `);
           }

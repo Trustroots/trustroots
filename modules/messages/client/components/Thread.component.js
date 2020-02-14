@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
+import { useTranslation } from 'react-i18next';
 
 import {
   $broadcast,
@@ -64,10 +65,11 @@ const LoadingContainer = styled.div`
 `;
 
 function UserDoesNotExist() {
+  const { t } = useTranslation('messages');
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
-      <h4>This user isn&apos;t a member anymore.</h4>
+      <h4>{t("This user isn't a member anymore.")}</h4>
     </div>
   );
 }

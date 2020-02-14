@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import moment from 'moment';
 import { useMediaQuery } from 'react-responsive';
+import { useTranslation } from 'react-i18next';
 
 import InfiniteMessages from 'modules/messages/client/components/InfiniteMessages';
 import Avatar from 'modules/users/client/components/Avatar.component';
@@ -24,25 +25,27 @@ const FlexGrow = styled.div`
 `;
 
 function YouHaveNotBeenTalkingYet() {
+  const { t } = useTranslation('messages');
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
-      <h4>You haven&apos;t been talking yet.</h4>
+      <h4>{t("You haven't been talking yet.")}</h4>
       <Flashcard />
     </div>
   );
 }
 
 function YourProfileSeemsQuiteEmpty() {
+  const { t } = useTranslation('messages');
   return (
     <div className="content-empty">
       <i className="icon-3x icon-messages-alt" />
       <p className="lead">
-        Your profile seems quite empty.
+        {t('Your profile seems quite empty.')}
         <br />
-        Please write longer profile description before sending messages.
+        {t('Please write longer profile description before sending messages.')}
         <br />
-        <a href="/profile/edit">Edit your profile</a>
+        <a href="/profile/edit">{t('Edit your profile')}</a>
       </p>
     </div>
   );
@@ -55,6 +58,7 @@ export default function ThreadMessages({
   profileMinimumLength,
   onFetchMore,
 }) {
+  const { t } = useTranslation('messages');
   if (messages.length === 0) {
     const hasEmptyProfile =
       plainTextLength(user.description) < profileMinimumLength;
@@ -87,7 +91,9 @@ export default function ThreadMessages({
         <div className="message">
           <div className="divider divider-first text-muted">
             <small>
-              Conversation started {moment(messages[0].created).format('LL')}
+              {t('Conversation started {{ date }}', {
+                date: moment(messages[0].created).format('LL'),
+              })}
             </small>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
@@ -63,6 +64,8 @@ const MessageContainer = styled.div.attrs(({ message }) => ({
 `;
 
 export default function ThreadMessage({ message, user }) {
+  const { t } = useTranslation('messages');
+
   function isMe(otherUser) {
     return otherUser._id === user._id;
   }
@@ -72,7 +75,7 @@ export default function ThreadMessage({ message, user }) {
       <div className="message-main">
         <div className="message-meta">
           {isMe(message.userFrom) ? (
-            <span>You</span>
+            <span>{t('You')}</span>
           ) : (
             <a href={`/profile/${message.userFrom.username}`}>
               {message.userFrom.displayName}
