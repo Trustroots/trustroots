@@ -1,6 +1,7 @@
 {
   "assignees": ["nicksellen", "simison"],
   "extends": ["config:base"],
+  "schedule": "every weekend",
   "ignorePaths": ["scripts/mass-email/package.json"],
   "packageRules": [
     {
