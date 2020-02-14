@@ -13,6 +13,36 @@
       ]
     },
     {
+      "packagePatterns": [
+        "^passport"
+      ]
+    },
+    {
+      "packageNames": [
+        "@pmmmwh/react-refresh-webpack-plugin"
+      ],
+      "packagePatterns": [
+        "^webpack"
+      ]
+    },
+    {
+      "packageNames": [
+        "react-leaflet",
+        "ui-leaflet"
+      ],
+      "packagePatterns": [
+        "^leaflet"
+      ]
+    },
+    {
+      "packageNames": [
+        "react-i18next"
+      ],
+      "packagePatterns": [
+        "^i18next"
+      ]
+    },
+    {
       "packageNames": [
         "angular",
         "angular-animate",
