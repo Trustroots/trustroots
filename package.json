@@ -192,7 +192,7 @@
     "babel-eslint": "10.0.3",
     "babel-loader": "8.0.6",
     "babel-plugin-angularjs-annotate": "0.10.0",
-    "concurrently": "5.0.2",
+    "concurrently": "5.1.0",
     "css-loader": "3.4.2",
     "eslint": "6.8.0",
     "eslint-config-prettier": "6.9.0",
