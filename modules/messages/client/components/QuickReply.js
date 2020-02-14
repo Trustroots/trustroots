@@ -30,9 +30,12 @@ export default function QuickReply({ onSend, onFocus }) {
           if (write) {
             onFocus();
           } else {
+            // we write the english content into the message
+            // potentially we auto-translate those "special"
+            // messages at some point
             onSend(`
               <p data-hosting="${host ? 'yes' : 'no'}">
-                <b><i>${t(content)}</i></b>
+                <b><i>${content}</i></b>
               </p>
             `);
           }
@@ -44,7 +47,7 @@ export default function QuickReply({ onSend, onFocus }) {
             className={`btn btn-sm ${className}`}
             onClick={onClick}
           >
-            {content}
+            {t(content)}
           </button>
         );
       })}

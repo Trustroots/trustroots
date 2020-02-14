@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
@@ -17,11 +17,13 @@ import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import Activate from 'modules/users/client/components/Activate';
 import ThreadMessages from '@/modules/messages/client/components/ThreadMessages';
 import QuickReply from '@/modules/messages/client/components/QuickReply';
+import Flashcard from 'modules/messages/client/components/Flashcard';
 
 // @TODO remove this stuff once ready
 import range from 'lodash/range';
 import faker from 'faker';
 import { generateMongoId } from '@/testutils/common/data.common.testutil';
+import plainTextLength from 'modules/core/client/filters/plain-text-length.client.filter';
 
 function generateMessage(userFrom) {
   return {
@@ -64,6 +66,37 @@ const LoadingContainer = styled.div`
   text-align: center;
 `;
 
+const FlexGrow = styled.div`
+  flex-grow: 1;
+`;
+
+function YouHaveNotBeenTalkingYet() {
+  const { t } = useTranslation('messages');
+  return (
+    <div className="content-empty">
+      <i className="icon-3x icon-messages-alt" />
+      <h4>{t("You haven't been talking yet.")}</h4>
+      <Flashcard />
+    </div>
+  );
+}
+
+function YourProfileSeemsQuiteEmpty() {
+  const { t } = useTranslation('messages');
+  return (
+    <div className="content-empty">
+      <i className="icon-3x icon-messages-alt" />
+      <p className="lead">
+        {t('Your profile seems quite empty.')}
+        <br />
+        {t('Please write longer profile description before sending messages.')}
+        <br />
+        <a href="/profile/edit">{t('Edit your profile')}</a>
+      </p>
+    </div>
+  );
+}
+
 function UserDoesNotExist() {
   const { t } = useTranslation('messages');
   return (
@@ -90,10 +123,16 @@ export default function Thread({ user, profileMinimumLength }) {
   const [messages, setMessages] = useState([]);
   const cacheKey = `messages.thread.${user._id}-${getRouteParams().username}`;
 
+  const hasEmptyProfile = useMemo(
+    () => plainTextLength(user.description) < profileMinimumLength,
+    [user],
+  );
+
   const userHasReplied = Boolean(
     messages.find(message => message.userFrom._id === user._id),
   );
   const showQuickReply = messages.length > 0 && !userHasReplied;
+  const showReply = !hasEmptyProfile;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
@@ -184,23 +223,37 @@ export default function Thread({ user, profileMinimumLength }) {
                   Loading...
                 </LoadingContainer>
               )}
-              <ThreadMessages
-                user={user}
-                otherUser={otherUser}
-                messages={messages}
-                profileMinimumLength={profileMinimumLength}
-                onFetchMore={fetchMoreData}
-              />
+              {messages.length === 0 ? (
+                <>
+                  <FlexGrow />
+                  {hasEmptyProfile ? (
+                    <YourProfileSeemsQuiteEmpty />
+                  ) : (
+                    <YouHaveNotBeenTalkingYet />
+                  )}
+                  <FlexGrow />
+                </>
+              ) : (
+                <ThreadMessages
+                  user={user}
+                  otherUser={otherUser}
+                  messages={messages}
+                  profileMinimumLength={profileMinimumLength}
+                  onFetchMore={fetchMoreData}
+                />
+              )}
               {showQuickReply && (
                 <QuickReply
                   onSend={content => sendMessage(content)}
                   onFocus={focus}
                 />
               )}
-              <ThreadReply
-                cacheKey={cacheKey}
-                onSend={content => sendMessage(content)}
-              />
+              {showReply && (
+                <ThreadReply
+                  cacheKey={cacheKey}
+                  onSend={content => sendMessage(content)}
+                />
+              )}
             </ThreadContainer>
           )}
         </div>
