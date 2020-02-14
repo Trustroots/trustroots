@@ -5,6 +5,15 @@
   "packageRules": [
     {
       "packageNames": [
+        "babel-eslint",
+        "gulp-eslint"
+      ],
+      "packagePatterns": [
+        "^eslint"
+      ]
+    },
+    {
+      "packageNames": [
         "angular",
         "angular-animate",
         "angular-aria",
