@@ -12,7 +12,16 @@ export function generateThreads(count, { userFrom, userTo } = {}) {
   return range(count).map(() => generateThread({ userFrom, userTo }));
 }
 
-function generateThread({
+export function generateMessage(userFrom) {
+  return {
+    _id: generateMongoId(),
+    userFrom,
+    created: new Date().toISOString(),
+    content: faker.lorem.text(),
+  };
+}
+
+export function generateThread({
   userFrom = generateClientUser(),
   userTo = generateClientUser(),
 } = {}) {

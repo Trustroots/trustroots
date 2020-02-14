@@ -20,7 +20,11 @@ const replies = [
 export default function QuickReply({ onSend, onFocus }) {
   const { t } = useTranslation('messages');
   return (
-    <div className="btn-toolbar" id="message-quick-reply">
+    <div
+      className="btn-toolbar"
+      id="message-quick-reply"
+      data-testid="quick-reply"
+    >
       {replies.map(({ write, host, content }) => {
         const className = write
           ? 'btn-offer-meet'
