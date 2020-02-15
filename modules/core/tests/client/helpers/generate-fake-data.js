@@ -1,5 +1,5 @@
 import faker from 'faker';
-import { sample, sampleSize } from 'lodash';
+import _ from 'lodash';
 import moment from 'moment';
 
 /**
@@ -50,7 +50,7 @@ const generateTribe = index => ({
   created: Date.now(),
   modified: Date.now(),
   public: true,
-  image_UUID: sample(tribeImageUUIDs),
+  image_UUID: _.sample(tribeImageUUIDs),
   attribution: faker.name.findName(),
   attribution_url: faker.internet.url(),
   description: faker.lorem.sentences(),
@@ -58,7 +58,7 @@ const generateTribe = index => ({
 
 const selectRandom = (list, fraction = 0.5) => {
   const count = Math.floor(list.length * fraction);
-  return sampleSize(list, count);
+  return _.sampleSize(list, count);
 };
 
 const generateUser = (index, tribes) => ({
@@ -91,10 +91,9 @@ const generateUser = (index, tribes) => ({
   memberIds: selectRandom(tribes, 0.4).map(tribe => tribe._id),
 });
 
-const generateTribes = count =>
-  [...Array(count).keys()].map(i => generateTribe(i));
+const generateTribes = count => _.range(count).map(i => generateTribe(i));
 const generateUsers = (count, tribes) =>
-  [...Array(count).keys()].map(i => generateUser(i, tribes));
+  _.range(count).map(i => generateUser(i, tribes));
 
 export default count => {
   const tribes = generateTribes(count.tribes);
