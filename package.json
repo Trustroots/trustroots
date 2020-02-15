@@ -214,7 +214,7 @@
     "husky": "4.2.3",
     "imports-loader": "0.8.0",
     "jasmine-core": "3.5.0",
-    "jest": "24.9.0",
+    "jest": "25.1.0",
     "jquery": "3.4.1",
     "less-loader": "5.0.0",
     "lolex": "5.1.2",
