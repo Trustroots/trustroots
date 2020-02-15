@@ -211,7 +211,7 @@
     "gulp-mocha": "3.0.1",
     "gulp-nodemon": "2.4.2",
     "html-loader": "0.5.5",
-    "husky": "3.1.0",
+    "husky": "4.2.3",
     "imports-loader": "0.8.0",
     "jasmine-core": "3.5.0",
     "jest": "24.9.0",
