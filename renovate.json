@@ -1,10 +1,17 @@
 {
-  "assignees": ["nicksellen", "simison"],
   "extends": ["config:base"],
   "schedule": "every weekend",
   "ignorePaths": ["scripts/mass-email/package.json"],
   "masterIssue": true,
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["nicksellen", "simison"]
+  },
   "packageRules": [
+    {
+      "depTypeList": ["devDependencies"],
+      "prPriority": -1
+    },
     {
       "packageNames": ["babel-eslint", "gulp-eslint"],
       "packagePatterns": ["^eslint"]
