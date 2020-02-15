@@ -1,47 +1,35 @@
 {
-  "assignees": ["nicksellen", "simison"],
   "extends": ["config:base"],
   "schedule": "every weekend",
   "ignorePaths": ["scripts/mass-email/package.json"],
+  "masterIssue": true,
+  "vulnerabilityAlerts": {
+    "labels": ["security"],
+    "assignees": ["nicksellen", "simison"]
+  },
   "packageRules": [
     {
-      "packageNames": [
-        "babel-eslint",
-        "gulp-eslint"
-      ],
-      "packagePatterns": [
-        "^eslint"
-      ]
+      "depTypeList": ["devDependencies"],
+      "prPriority": -1
     },
     {
-      "packagePatterns": [
-        "^passport"
-      ]
+      "packageNames": ["babel-eslint", "gulp-eslint"],
+      "packagePatterns": ["^eslint"]
     },
     {
-      "packageNames": [
-        "@pmmmwh/react-refresh-webpack-plugin"
-      ],
-      "packagePatterns": [
-        "^webpack"
-      ]
+      "packagePatterns": ["^passport"]
     },
     {
-      "packageNames": [
-        "react-leaflet",
-        "ui-leaflet"
-      ],
-      "packagePatterns": [
-        "^leaflet"
-      ]
+      "packageNames": ["@pmmmwh/react-refresh-webpack-plugin"],
+      "packagePatterns": ["^webpack"]
     },
     {
-      "packageNames": [
-        "react-i18next"
-      ],
-      "packagePatterns": [
-        "^i18next"
-      ]
+      "packageNames": ["react-leaflet", "ui-leaflet"],
+      "packagePatterns": ["^leaflet"]
+    },
+    {
+      "packageNames": ["react-i18next"],
+      "packagePatterns": ["^i18next"]
     },
     {
       "packageNames": [
@@ -75,6 +63,8 @@
       "sourceUrlPrefixes": ["https://github.com/facebook/react"]
     }
   ],
+  "rebaseConflictedPrs": false,
+  "rebaseStalePrs": false,
   "supportPolicy": "lts_latest",
   "travis": {
     "enabled": true
