@@ -1,6 +1,5 @@
 import faker from 'faker';
-import sample from 'lodash/sample';
-import sampleSize from 'lodash/sampleSize';
+import { sample, sampleSize } from 'lodash';
 import moment from 'moment';
 
 /**
