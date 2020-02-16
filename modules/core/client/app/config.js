@@ -1,6 +1,7 @@
 /* eslint no-var: 0 */
 
 import angular from 'angular';
+import compact from 'lodash/compact';
 
 import bootstrapModules from '@/config/client/bootstrap';
 
@@ -37,6 +38,10 @@ import ngreact from 'ngreact';
 
 import 'angular-waypoints/dist/angular-waypoints.all';
 
+if (SENTRY_OPTIONS) {
+  require('@/config/client/sentry');
+}
+
 // Init the application configuration module for AngularJS application
 // Init module configuration options
 // When testing, `window.env` is undefined, thus default to 'test'
@@ -44,7 +49,7 @@ import 'angular-waypoints/dist/angular-waypoints.all';
 const appEnv = process.env.NODE_ENV || 'test';
 
 const appModuleName = 'trustroots';
-const appModuleVendorDependencies = [
+const appModuleVendorDependencies = compact([
   ngreact.name,
   ngAria,
   ngResource,
@@ -66,8 +71,9 @@ const appModuleVendorDependencies = [
   angularLocker,
   'angular-confirm',
   angularGrid,
+  SENTRY_OPTIONS && 'ngSentry',
   ...bootstrapModules,
-];
+]);
 
 /**
  * Load different service dependency for Angulartics depending on environment

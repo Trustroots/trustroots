@@ -22,6 +22,19 @@ const git = require('git-rev');
 const path = require('path');
 const paginate = require('express-paginate');
 const uuid = require('uuid');
+const Sentry = require('@sentry/node');
+
+module.exports.initSentryRequestHandler = function(app) {
+  if (config.sentry.enabled) {
+    app.use(Sentry.Handlers.requestHandler());
+  }
+};
+
+module.exports.initSentryErrorHandler = function(app) {
+  if (config.sentry.enabled) {
+    app.use(Sentry.Handlers.errorHandler());
+  }
+};
 
 /**
  * Initialize local variables
@@ -360,6 +373,7 @@ module.exports.initHelmetHeaders = function(app) {
           'fcm.googleapis.com',
           'maitreapp.co', // Signup waiting list feature
           'www.facebook.com',
+          'https://sentry.io',
         ],
 
         // Allows control over Flash and other plugins.
@@ -518,6 +532,9 @@ module.exports.init = function(connection) {
   // Initialize express app
   const app = express();
 
+  // Initialize sentry request handler, must be first
+  this.initSentryRequestHandler(app);
+
   // Initialize local variables
   this.initLocalVariables(app);
 
@@ -547,6 +564,9 @@ module.exports.init = function(connection) {
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);
+
+  // Initialize sentry error handler, must be after routes, but before error handlers
+  this.initSentryErrorHandler(app);
 
   // Initialize error routes
   this.initErrorRoutes(app);

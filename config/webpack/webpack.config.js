@@ -144,6 +144,9 @@ module.exports = merge(shims, {
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
       FCM_SENDER_ID: JSON.stringify(config.fcm.senderId),
+      SENTRY_OPTIONS: config.sentry.enabled
+        ? JSON.stringify(config.sentry.options)
+        : null,
     }),
     isDevelopment &&
       new ReactRefreshWebpackPlugin({

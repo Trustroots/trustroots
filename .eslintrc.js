@@ -166,6 +166,9 @@ module.exports = {
       env: {
         browser: true,
       },
+      globals: {
+        SENTRY_OPTIONS: true,
+      },
       extends: [
         'plugin:react/recommended',
         // Make sure these Prettier ones are last items on this list

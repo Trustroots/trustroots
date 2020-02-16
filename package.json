@@ -59,6 +59,9 @@
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js"
   },
   "dependencies": {
+    "@sentry/browser": "5.12.1",
+    "@sentry/integrations": "5.12.0",
+    "@sentry/node": "5.12.3",
     "acl": "0.4.11",
     "agenda": "1.0.3",
     "angular": "1.6.10",
