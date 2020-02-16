@@ -38,8 +38,11 @@ import ngreact from 'ngreact';
 
 import 'angular-waypoints/dist/angular-waypoints.all';
 
-if (SENTRY_OPTIONS) {
-  require('@/config/client/sentry');
+// eslint-disable-next-line angular/window-service
+const SENTRY_DSN = window.SENTRY_DSN;
+
+if (SENTRY_DSN) {
+  require('@/config/client/sentry').init(SENTRY_DSN);
 }
 
 // Init the application configuration module for AngularJS application
@@ -71,7 +74,7 @@ const appModuleVendorDependencies = compact([
   angularLocker,
   'angular-confirm',
   angularGrid,
-  SENTRY_OPTIONS && 'ngSentry',
+  SENTRY_DSN && 'ngSentry',
   ...bootstrapModules,
 ]);
 

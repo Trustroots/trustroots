@@ -48,6 +48,7 @@ module.exports.initLocalVariables = function(app) {
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
   app.locals.googleAnalytics = config.googleAnalytics;
+  app.locals.sentry = config.sentry;
   app.locals.languages = languages;
   app.locals.env =
     ['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1
