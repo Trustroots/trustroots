@@ -1,6 +1,7 @@
 import faker from 'faker';
 import _ from 'lodash';
 import moment from 'moment';
+import mongo from 'mongodb';
 
 /**
  * Most of the logic for creating the users and tribes is copied from @/bin/fillTestData/...
@@ -36,11 +37,10 @@ const tribeImageUUIDs = [
   '69a500a4-a16e-4c4d-9981-84fbe310d531',
 ];
 
+const generateId = () => new mongo.ObjectId().toString();
+
 const generateTribe = index => ({
-  _id: String(index).repeat(10),
-  get id() {
-    return this._id;
-  },
+  _id: generateId(),
   label: faker.lorem.word() + '_' + index,
   labelHistory: faker.random.words(),
   slugHistory: faker.random.words(),
@@ -62,10 +62,7 @@ const selectRandom = (list, fraction = 0.5) => {
 };
 
 const generateUser = (index, tribes) => ({
-  _id: String(index).repeat(10),
-  get id() {
-    return this._id;
-  },
+  _id: generateId(),
   firstName: faker.name.firstName(),
   lastName: faker.name.lastName(),
   get displayName() {
