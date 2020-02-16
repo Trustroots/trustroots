@@ -9,7 +9,6 @@ const Sentry = require('@sentry/node');
 
 if (config.sentry.enabled) {
   Sentry.init(config.sentry.options);
-  console.log('initialized sentry on the server!');
 }
 
 // Initialize Models
