@@ -3,7 +3,10 @@ import { within } from '@testing-library/react';
 import { render, fireEvent, waitForElement } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import '@/config/client/i18n';
-import generateFakeData from '@/modules/core/tests/client/helpers/generate-fake-data';
+import {
+  generateUsers,
+  generateTribes,
+} from '@/testutils/common/data.common.testutil';
 
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
@@ -40,7 +43,13 @@ const renderAndWaitForTribes = async ({ user }) => {
 };
 
 describe('TribesPage', () => {
-  const fake = generateFakeData({ users: 1, tribes: 5 });
+  const fake = (() => {
+    const tribes = generateTribes(5);
+    return {
+      tribes,
+      users: generateUsers(1, {}, 'client', tribes),
+    };
+  })();
 
   let page;
 

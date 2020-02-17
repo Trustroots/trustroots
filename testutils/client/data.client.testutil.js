@@ -1,10 +1,7 @@
 import faker from 'faker';
 import range from 'lodash/range';
 
-import {
-  generateClientUser,
-  generateMongoId,
-} from '../common/data.common.testutil';
+import { generateClientUser, generateId } from '../common/data.common.testutil';
 
 export { generateClientUser };
 
@@ -17,7 +14,7 @@ function generateThread({
   userTo = generateClientUser(),
 } = {}) {
   return {
-    _id: generateMongoId(),
+    _id: generateId(),
     read: true,
     updated: new Date().toISOString(),
     message: {
