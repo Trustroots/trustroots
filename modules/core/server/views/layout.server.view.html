@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
     {% endfor %} {# Sentry DSN - make sure this is above scripts #} {% if
     sentry.enabled === true %}
-    <script>
+    <script nonce="{{ nonce }}">
       window.SENTRY_DSN = '{{ sentry.options.dsn }}';
     </script>
     {% endif %} {% if env === 'development' %} {# in dev load js in head, as it
