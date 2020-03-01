@@ -5,6 +5,11 @@ const config = require('../config');
 const mongoose = require('./mongoose');
 const express = require('./express');
 const chalk = require('chalk');
+const Sentry = require('@sentry/node');
+
+if (config.sentry.enabled) {
+  Sentry.init(config.sentry.options);
+}
 
 // Initialize Models
 mongoose.loadModels();

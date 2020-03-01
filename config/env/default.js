@@ -229,4 +229,10 @@ module.exports = {
     },
   },
   i18nBackend: false,
+  sentry: {
+    enabled: false,
+    options: {
+      dsn: '',
+    },
+  },
 };

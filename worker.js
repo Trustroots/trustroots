@@ -3,11 +3,17 @@
  *
  * Worker main entry file
  */
+const config = require('./config/config');
 const async = require('async');
 const mongooseService = require('./config/lib/mongoose');
 const worker = require('./config/lib/worker');
 const path = require('path');
 const log = require(path.resolve('./config/lib/logger'));
+const Sentry = require('@sentry/node');
+
+if (config.sentry.enabled) {
+  Sentry.init(config.sentry.options);
+}
 
 async.waterfall(
   [
