@@ -1,6 +1,7 @@
 language: node_js
 matrix:
   fast_finish: true
+  # Generally using active LTS versions here, see https://github.com/nodejs/Release 
   include:
   - name: Test client
     node_js: 12
@@ -11,6 +12,7 @@ matrix:
   - name: Lint and build
     node_js: 12
     env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build:tarball'" DEPLOY="true"
+# https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
 script: "$RUN"
 install: npm ci
 dist: bionic
@@ -24,12 +26,17 @@ addons:
 before_script:
 - mongo --version
 - mongod --version
+# Ensure stable NPM version (avoids `-next.0` tags)
 - npm install -g npm
 cache:
   directories:
   - "$HOME/.node-gyp"
   - "$HOME/.npm"
+# https://docs.travis-ci.com/user/deployment-v2
 deploy:
+  # this creates a tarball from the built files and uploads it to DigitalOcean spaces
+  # it is then available publically at https://trustroots-builds.fra1.digitaloceanspaces.com/trustroots.tar.gz
+  edge: true # opt in to use deployments v2
   provider: s3
   access_key_id: C6VPVZTPB2LWSGECOJAV
   secret_access_key:
@@ -39,16 +46,16 @@ deploy:
   glob: trustroots.tar.gz
   acl: public_read
   verbose: true
-  cleanup: false  # not sure if I need/want this
-  edge: true      # opt in to v2 deployments
+  # https://docs.travis-ci.com/user/deployment-v2/conditional
   on:
-    all_branches: true # just whilst getting the deployment to work...
+    branch: master
     condition: "$DEPLOY == 'true'" # only run for the build job
 after_deploy:
-  # actually run the deployment now, the deploy step above just put the built tarball in place
+  # deploy the tarball to the dev site
+  # runs the debops trustroots/deploy playbook from https://github.com/trustroots/trustroots-debops
+  # using the docker image built here https://hub.docker.com/repository/docker/trustroots/trustroots-debops
   - openssl aes-256-cbc -K $encrypted_67cd8b498c7f_key -iv $encrypted_67cd8b498c7f_iv -in deploy/debops/files/id_ed25519_trustroots_deploy_2020-03-02.enc -out deploy/debops/files/id_ed25519_trustroots_deploy_2020-03-02 -d
   - ./deploy/debops/deploy deploy deploy/debops/files/id_ed25519_trustroots_deploy_2020-03-02
-
 notifications:
   slack:
     secure: XRMYG9Hf+bJjMSHHXN0XeGT4ZhSP+oCHBUWmjBwxO0p+VORBOEZvlh/2OvxingFuzLGOXFeOPr1g91G+OgiCGR6GxaDpf680lEjk8ESTJ4oECv0aO2NQEZWYR4peiLRtBmJZTCSsKXDY21nrDHiKOaMQyPJqbzkIrTBMnK/YJpg=
