@@ -29,9 +29,12 @@ fi
 
 keyfile_absolute_path=$(readlink -f "$keyfile")
 
+# ensure we get the latest image
+docker pull trustroots/trustroots-debops:latest
+
 docker run --rm -it \
   -v "$keyfile_absolute_path":/private-ssh-key \
-  trustroots/trustroots-debops \
+  trustroots/trustroots-debops:latest \
   debops trustroots/deploy -l dev2 \
     --private-key=/private-ssh-key \
     --user "$deploy_user" \
