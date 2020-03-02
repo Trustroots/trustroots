@@ -14,7 +14,9 @@ matrix:
 script: "$RUN"
 install: npm ci
 dist: bionic
-services: mongodb
+services:
+  - mongodb
+  - docker
 addons:
   apt:
     packages:
@@ -42,6 +44,11 @@ deploy:
   on:
     all_branches: true # just whilst getting the deployment to work...
     condition: "$DEPLOY == 'true'" # only run for the build job
+after_deploy:
+  # actually run the deployment now, the deploy step above just put the built tarball in place
+  - openssl aes-256-cbc -K $encrypted_67cd8b498c7f_key -iv $encrypted_67cd8b498c7f_iv -in deploy/debops/files/id_ed25519_trustroots_deploy_2020-03-02.enc -out deploy/debops/files/id_ed25519_trustroots_deploy_2020-03-02 -d
+  - ./deploy/debops/deploy deploy deploy/debops/files/id_ed25519_trustroots_deploy_2020-03-02
+
 notifications:
   slack:
     secure: XRMYG9Hf+bJjMSHHXN0XeGT4ZhSP+oCHBUWmjBwxO0p+VORBOEZvlh/2OvxingFuzLGOXFeOPr1g91G+OgiCGR6GxaDpf680lEjk8ESTJ4oECv0aO2NQEZWYR4peiLRtBmJZTCSsKXDY21nrDHiKOaMQyPJqbzkIrTBMnK/YJpg=
