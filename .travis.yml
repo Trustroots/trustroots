@@ -1,36 +1,47 @@
 language: node_js
 matrix:
   fast_finish: true
-  # Generally using active LTS versions here, see https://github.com/nodejs/Release
   include:
-    - name: "Test client"
-      node_js: 12
-      env: RUN="npm run test:client"
-    - name: "Test server"
-      node_js: 12
-      env: RUN="npm run test:server"
-    - name: "Lint and try building"
-      node_js: 12
-      env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build'"
-# https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
-script: $RUN
+  - name: Test client
+    node_js: 12
+    env: RUN="npm run test:client"
+  - name: Test server
+    node_js: 12
+    env: RUN="npm run test:server"
+  - name: Lint and build
+    node_js: 12
+    env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build:tarball'" DEPLOY="true"
+script: "$RUN"
 install: npm ci
-dist: trusty
+dist: buster
 services: mongodb
 addons:
   apt:
     packages:
     - graphicsmagick
 before_script:
-  - mongo --version
-  - mongod --version
-  # Ensure stable NPM version (avoids `-next.0` tags)
-  - 'npm install -g npm'
+- mongo --version
+- mongod --version
+- npm install -g npm
 cache:
   directories:
-    - "$HOME/.node-gyp"
-    - "$HOME/.npm"
-
+  - "$HOME/.node-gyp"
+  - "$HOME/.npm"
+deploy:
+  provider: s3
+  access_key_id: C6VPVZTPB2LWSGECOJAV
+  secret_access_key:
+    secure: KZ/M6Nnn3raktHWjYs0ddoRS/1ojfQpBXKiqroJMh1k2qy07j/GM5j/CKZH+aJGB5AU9QxKahF+zrQs2Gh5Uo3Uoo9gpVGUxqTb2Ok57zUBw3lywTbYCliisIpSA+NPLCzEI/C82Db603wk8yiD8TJyZCTPWFUyhGNUVKSy4Y/w=
+  bucket: trustroots-builds
+  endpoint: https://fra1.digitaloceanspaces.com
+  glob: trustroots.tar.gz
+  acl: public_read
+  verbose: true
+  cleanup: false  # not sure if I need/want this
+  edge: true      # opt in to v2 deployments
+  on:
+    all_branches: true # just whilst getting the deployment to work...
+    condition: "$DEPLOY == 'true'" # only run for the build job
 notifications:
   slack:
     secure: XRMYG9Hf+bJjMSHHXN0XeGT4ZhSP+oCHBUWmjBwxO0p+VORBOEZvlh/2OvxingFuzLGOXFeOPr1g91G+OgiCGR6GxaDpf680lEjk8ESTJ4oECv0aO2NQEZWYR4peiLRtBmJZTCSsKXDY21nrDHiKOaMQyPJqbzkIrTBMnK/YJpg=
