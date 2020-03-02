@@ -33,6 +33,8 @@ cache:
   - "$HOME/.node-gyp"
   - "$HOME/.npm"
 # https://docs.travis-ci.com/user/deployment-v2
+before_deploy:
+  - sha256sum trustroots.tar.gz > trustroots.tar.gz.sha256
 deploy:
   # this creates a tarball from the built files and uploads it to DigitalOcean spaces
   # it is then available publically at https://trustroots-builds.fra1.digitaloceanspaces.com/trustroots.tar.gz
@@ -43,7 +45,7 @@ deploy:
     secure: KZ/M6Nnn3raktHWjYs0ddoRS/1ojfQpBXKiqroJMh1k2qy07j/GM5j/CKZH+aJGB5AU9QxKahF+zrQs2Gh5Uo3Uoo9gpVGUxqTb2Ok57zUBw3lywTbYCliisIpSA+NPLCzEI/C82Db603wk8yiD8TJyZCTPWFUyhGNUVKSy4Y/w=
   bucket: trustroots-builds
   endpoint: https://fra1.digitaloceanspaces.com
-  glob: trustroots.tar.gz
+  glob: "trustroots.tar.gz*"
   acl: public_read
   verbose: true
   # https://docs.travis-ci.com/user/deployment-v2/conditional

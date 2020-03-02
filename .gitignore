@@ -79,4 +79,4 @@ docs/Gemfile
 docs/Gemfile.lock
 
 # Builds
-trustroots.tar.gz
+trustroots.tar.gz*
