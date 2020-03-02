@@ -13,7 +13,7 @@ matrix:
     env: RUN="npx concurrently --kill-others-on-fail 'npm:lint' 'npm:build:tarball'" DEPLOY="true"
 script: "$RUN"
 install: npm ci
-dist: buster
+dist: bionic
 services: mongodb
 addons:
   apt:
