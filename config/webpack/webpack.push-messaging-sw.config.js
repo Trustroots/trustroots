@@ -1,9 +1,6 @@
-const webpack = require('webpack');
 const { join } = require('path');
 
 const basedir = join(__dirname, '../..');
-
-const config = require('../config');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -29,10 +26,4 @@ module.exports = {
       },
     ],
   },
-  plugins: [
-    new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      FCM_SENDER_ID: JSON.stringify(config.fcm.senderId),
-    }),
-  ],
 };
