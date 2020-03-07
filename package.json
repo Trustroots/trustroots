@@ -179,11 +179,11 @@
     "winston-papertrail": "1.0.5"
   },
   "devDependencies": {
-    "@babel/core": "7.8.4",
+    "@babel/core": "7.8.7",
     "@babel/plugin-proposal-nullish-coalescing-operator": "7.8.3",
     "@babel/plugin-proposal-object-rest-spread": "7.8.3",
     "@babel/plugin-proposal-optional-chaining": "7.8.3",
-    "@babel/preset-env": "7.8.4",
+    "@babel/preset-env": "7.8.7",
     "@babel/preset-react": "7.8.3",
     "@pmmmwh/react-refresh-webpack-plugin": "0.1.3",
     "@testing-library/jest-dom": "5.1.1",
@@ -191,7 +191,7 @@
     "@wordpress/browserslist-config": "2.6.0",
     "agendash": "1.0.0",
     "autoprefixer": "9.7.4",
-    "babel-eslint": "10.0.3",
+    "babel-eslint": "10.1.0",
     "babel-loader": "8.0.6",
     "babel-plugin-angularjs-annotate": "0.10.0",
     "concurrently": "5.1.0",
