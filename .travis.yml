@@ -1,4 +1,6 @@
 language: node_js
+# run for only for pull requests or master branch
+if: "type = pull_request OR branch = master"
 matrix:
   fast_finish: true
   # Generally using active LTS versions here, see https://github.com/nodejs/Release 
