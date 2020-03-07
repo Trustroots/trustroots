@@ -48,6 +48,7 @@ module.exports = {
   uploadDir: './public/uploads-profile',
   port: 3000,
   host: 'localhost',
+  fd: null, // listen on a file descriptor (instead of host/port)
   https: false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',

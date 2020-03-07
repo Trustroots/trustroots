@@ -26,8 +26,15 @@ module.exports.start = function start(callback) {
   const _this = this;
 
   _this.init(function(app, db, config) {
-    // Start the app by listening on <port> at <host>
-    app.listen(config.port, config.host, function() {
+    const listenArgs = [];
+    if (config.fd) {
+      // Start the app by listening on a file descriptor (useful for systemd socket activation)
+      listenArgs.push({ fd: config.fd });
+    } else {
+      // Start the app by listening on <port> at <host>
+      listenArgs.push(config.port, config.host);
+    }
+    app.listen(...listenArgs, function() {
       // Check in case mailer config is still set to default values (a common problem)
       if (
         config.mailer.service &&
@@ -51,7 +58,11 @@ module.exports.start = function start(callback) {
         ),
       );
       console.log(chalk.green('HTTPS:\t\t\t' + (config.https ? 'on' : 'off')));
-      console.log(chalk.green('Port:\t\t\t' + config.port));
+      if (config.fd) {
+        console.log(chalk.green('File Descriptor:\t' + config.fd));
+      } else {
+        console.log(chalk.green('Port:\t\t\t' + config.port));
+      }
       console.log(chalk.green('Image processor:\t' + config.imageProcessor));
       console.log(
         chalk.green(
