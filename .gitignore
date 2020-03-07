@@ -77,3 +77,6 @@ modules/users/client/img/profile/uploads # folder removed 2018-08
 docs/_site
 docs/Gemfile
 docs/Gemfile.lock
+
+# Builds
+trustroots.tar.gz*

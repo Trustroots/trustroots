@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# A script to deploy trustroots using the docker image
+# created from https://github.com/trustroots/trustroots-debops
+#
+# Currently only deploys to dev2.trustroots.org.
+#
+# It's intended for use inside travis, but you can run it
+# yourself too.
+#
+# You need to pass two argments:
+# - a username wth server access
+# - the corresponding ssh private key for that user
+
+set -eu
+
+deploy_user="${1:-}"
+keyfile="${2:-}"
+
+if [[ -z "$deploy_user" || -z "$keyfile" ]]; then
+  echo "Usage: $0 <path/to/ssh/private/key>"
+  exit 1
+fi
+
+if [[ ! -f "$keyfile" ]]; then
+  echo "Keyfile: $keyfile does not exist"
+  exit 1
+fi
+
+keyfile_absolute_path=$(readlink -f "$keyfile")
+
+# ensure we get the latest image
+docker pull trustroots/trustroots-debops:latest
+
+docker run --rm -it \
+  -v "$keyfile_absolute_path":/private-ssh-key \
+  trustroots/trustroots-debops:latest \
+  debops trustroots/deploy -l dev2 \
+    --private-key=/private-ssh-key \
+    --user "$deploy_user" \
+    --ssh-extra-args="-o StrictHostKeyChecking=no"
