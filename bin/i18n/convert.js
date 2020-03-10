@@ -29,7 +29,13 @@ async function convertFile(file) {
   const locale = getLocale(file);
 
   // convert
-  const converted = await convert(locale, await fs.readFile(file));
+  let converted = await convert(locale, await fs.readFile(file));
+
+  // add a formatting to the output json, so it conforms with json formatting elsewhere
+  // i.e. have 2 space tabs instead of 4, and newline at the end of file
+  if (targetExtension === '.json') {
+    converted = JSON.stringify(JSON.parse(converted), null, 2) + '\n';
+  }
 
   // write the updated file
   await fs.writeFile(targetFile, converted);
