@@ -3,54 +3,44 @@ const fs = require('fs-extra');
 const path = require('path');
 
 /**
- * Convert all translation files from json to po or vice versa
+ * Convert a translation file from json to po or vice versa
  *
- * @param {string} source - source files (json or po)
- * @param {string} target - target files (po or json)
- * @param {string} [base=public/locales] - directory with locale directories with translation files
+ * @param {string} file - a path to the file to convert
+ * @returns {string} - output filename
  */
-async function convert(source, target, base = 'public/locales') {
-  // find all existing translation files in source format
-  const locales = await fs.readdir(base);
-  for (const locale of locales) {
-    const files = (await fs.readdir(path.join(base, locale))).filter(
-      file => path.parse(file).ext === `.${source}`,
-    );
-
-    // transform each of the found translation files to target format
-    for (const file of files) {
-      const transformed = await (source === 'json'
-        ? i18nextToPo
-        : gettextToI18next)(
-        locale,
-        await fs.readFile(path.join(base, locale, file)),
-      );
-      await fs.writeFile(
-        path.join(base, locale, path.parse(file).name + `.${target}`),
-        transformed,
-      );
-    }
-  }
-}
-
 async function convertFile(file) {
   const extension = path.parse(file).ext;
 
   const extensions = ['.json', '.po'];
 
-  if (!extensions.includes(extension))
-    throw new Error('unsupported file extension');
+  if (!extensions.includes(extension)) {
+    throw new Error('unsupported translation file extension');
+  }
 
-  const transform = extension === '.json' ? i18nextToPo : gettextToI18next;
+  // choose which way to perform the conversion
+  const convert = extension === '.json' ? i18nextToPo : gettextToI18next;
+
+  // get data about the converted file
   const targetExtension = extensions.find(ext => ext !== extension);
-  const target = changeExtension(file, targetExtension);
+  const targetFile = changeExtension(file, targetExtension);
   const locale = getLocale(file);
 
-  const transformed = await transform(locale, await fs.readFile(file));
+  // convert
+  const converted = await convert(locale, await fs.readFile(file));
 
-  await fs.writeFile(target, transformed);
+  // write the updated file
+  await fs.writeFile(targetFile, converted);
+
+  return targetFile;
 }
 
+/**
+ * Given a path to a file, change its extension
+ *
+ * @param {string} file - path/to/file.ext
+ * @param {string} extension - desired file extension in format ".extension"
+ * @returns {string} - path/to/file-with-the-new.extension
+ */
 function changeExtension(file, extension) {
   const parsed = path.parse(file);
   delete parsed.base;
@@ -58,11 +48,27 @@ function changeExtension(file, extension) {
   return path.format(parsed);
 }
 
+/**
+ * Given a path in format path/to/translation/locale/filename.ext, returns "locale"
+ * e.g. "/home/user/trustroots/public/locales/en/tribes.json" returns "en"
+ *
+ * @param {string} file - path/to/locale/file.ext
+ * @returns {string} - locale
+ */
 function getLocale(file) {
   const directory = path.parse(file).dir;
-  return directory.split(path.sep).slice(-1)[0];
+  return directory.split(path.sep).pop();
 }
 
+/**
+ * The conflict: An array of paths includes both path to en/example.json and en/example.po
+ * therefore we don't know which direction to perform the conversion in
+ * It's not very general, but serves our purpose here.
+ * If you use it outside our context, you can get false positives.
+ *
+ * @param {string[]} files - array of paths/to/file
+ * @returns {boolean} - if a conflict was detected, returns true, otherwise false
+ */
 function isConflict(files) {
   const identifiers = files.map(file =>
     path.join(getLocale(file), path.parse(file).name),
@@ -71,4 +77,4 @@ function isConflict(files) {
   return new Set(identifiers).size !== identifiers.length;
 }
 
-module.exports = { convert, convertFile, isConflict };
+module.exports = { convertFile, isConflict };
