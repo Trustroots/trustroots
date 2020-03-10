@@ -14,14 +14,19 @@ describe('Convert files from .json to .po and vice-versa', () => {
   const jsonPath2 = path.join(base, locale, filename2 + '.json');
   const poPath = path.join(base, locale, filename + '.po');
   const poPath2 = path.join(base, locale, filename2 + '.po');
-  const testStringOriginal = 'a test string';
-  const testStringConverted = 'a converted test string';
+  const testJson = JSON.stringify({ test: 'test' }, null, 2) + '\n';
+  const testPo = 'this is not a po file';
 
   beforeEach(() => {
-    sinon.stub(fs, 'readFile').returns(testStringOriginal);
+    sinon
+      .stub(fs, 'readFile')
+      .withArgs(jsonPath)
+      .returns(testJson)
+      .withArgs(poPath)
+      .returns(testPo);
     sinon.stub(fs, 'writeFile');
-    sinon.stub(i18nextConv, 'i18nextToPo').returns(testStringConverted);
-    sinon.stub(i18nextConv, 'gettextToI18next').returns(testStringConverted);
+    sinon.stub(i18nextConv, 'i18nextToPo').returns(testPo);
+    sinon.stub(i18nextConv, 'gettextToI18next').returns(testJson);
   });
 
   afterEach(() => {
@@ -35,13 +40,10 @@ describe('Convert files from .json to .po and vice-versa', () => {
     should(output).eql(poPath);
     // convert is called with the correct parameters
     should(i18nextConv.i18nextToPo.callCount).eql(1);
-    should(i18nextConv.i18nextToPo.getCall(0).args).eql([
-      locale,
-      testStringOriginal,
-    ]);
+    should(i18nextConv.i18nextToPo.getCall(0).args).eql([locale, testJson]);
     // file is saved with the correct parameters
     should(fs.writeFile.callCount).eql(1);
-    should(fs.writeFile.getCall(0).args).eql([poPath, testStringConverted]);
+    should(fs.writeFile.getCall(0).args).eql([poPath, testPo]);
   });
 
   it('convert from .po to .json', async () => {
@@ -51,13 +53,10 @@ describe('Convert files from .json to .po and vice-versa', () => {
     should(output).eql(jsonPath);
     // convert is called with the correct parameters
     should(i18nextConv.gettextToI18next.callCount).eql(1);
-    should(i18nextConv.gettextToI18next.getCall(0).args).eql([
-      locale,
-      testStringOriginal,
-    ]);
+    should(i18nextConv.gettextToI18next.getCall(0).args).eql([locale, testPo]);
     // file is saved with the correct parameters
     should(fs.writeFile.callCount).eql(1);
-    should(fs.writeFile.getCall(0).args).eql([jsonPath, testStringConverted]);
+    should(fs.writeFile.getCall(0).args).eql([jsonPath, testJson]);
   });
 
   it('test that isConflict works', () => {
