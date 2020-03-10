@@ -22,6 +22,7 @@
     "build:tarball": "npm run build && rm -fr trustroots.tar.gz && touch trustroots.tar.gz && tar --exclude=trustroots.tar.gz --exclude=node_modules/prunecluster/examples --exclude-vcs -czf trustroots.tar.gz .",
     "check-environment": "npm run install-dependencies && npx check-node-version --package && npm run ensure-config-exists && npm run ensure-uploads-dir-exists",
     "clean:public": "rm -fr ./public/dist ./public/assets ./public/push-messaging-sw.js",
+    "convert-translations": "node bin/i18n",
     "dashboard:jobs": "agendash --db=mongodb://localhost/trustroots-dev --collection=agendaJobs --port=1081",
     "dashboard:mail": "maildev",
     "distclean": "rm -fr ./node_modules && rm -fr trustroots.tar.gz && npm run clean:public",
@@ -265,6 +266,10 @@
     }
   },
   "lint-staged": {
+    "public/locales/**/*.{json,po}": [
+      "npm run convert-translations",
+      "git add public/locales/**/*.json public/locales/**/*.po"
+    ],
     "*.js": [
       "npm run reformat-files",
       "eslint"

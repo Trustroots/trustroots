@@ -9,11 +9,7 @@ const path = require('path');
  * @param {string} target - target files (po or json)
  * @param {string} [base=public/locales] - directory with locale directories with translation files
  */
-module.exports = async function convert(
-  source,
-  target,
-  base = 'public/locales',
-) {
+async function convert(source, target, base = 'public/locales') {
   // find all existing translation files in source format
   const locales = await fs.readdir(base);
   for (const locale of locales) {
@@ -35,4 +31,44 @@ module.exports = async function convert(
       );
     }
   }
-};
+}
+
+async function convertFile(file) {
+  const extension = path.parse(file).ext;
+
+  const extensions = ['.json', '.po'];
+
+  if (!extensions.includes(extension))
+    throw new Error('unsupported file extension');
+
+  const transform = extension === '.json' ? i18nextToPo : gettextToI18next;
+  const targetExtension = extensions.find(ext => ext !== extension);
+  const target = changeExtension(file, targetExtension);
+  const locale = getLocale(file);
+
+  const transformed = await transform(locale, await fs.readFile(file));
+
+  await fs.writeFile(target, transformed);
+}
+
+function changeExtension(file, extension) {
+  const parsed = path.parse(file);
+  delete parsed.base;
+  parsed.ext = extension;
+  return path.format(parsed);
+}
+
+function getLocale(file) {
+  const directory = path.parse(file).dir;
+  return directory.split(path.sep).slice(-1)[0];
+}
+
+function isConflict(files) {
+  const identifiers = files.map(file =>
+    path.join(getLocale(file), path.parse(file).name),
+  );
+
+  return new Set(identifiers).size !== identifiers.length;
+}
+
+module.exports = { convert, convertFile, isConflict };
