@@ -1,4 +1,4 @@
-const { i18nextToPo, gettextToI18next } = require('i18next-conv');
+const i18nextConv = require('i18next-conv');
 const fs = require('fs-extra');
 const path = require('path');
 
@@ -18,7 +18,10 @@ async function convertFile(file) {
   }
 
   // choose which way to perform the conversion
-  const convert = extension === '.json' ? i18nextToPo : gettextToI18next;
+  const convert =
+    extension === '.json'
+      ? i18nextConv.i18nextToPo
+      : i18nextConv.gettextToI18next;
 
   // get data about the converted file
   const targetExtension = extensions.find(ext => ext !== extension);
