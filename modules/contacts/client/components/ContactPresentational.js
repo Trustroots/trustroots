@@ -1,10 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Trans, withTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
+import '@/config/client/i18n';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 
-export function ContactPresentational({
-  t,
+export default function ContactPresentational({
   className,
   contact,
   avatarSize = 128,
@@ -12,6 +12,8 @@ export function ContactPresentational({
   situation,
   onClickRemove,
 }) {
+  const { t } = useTranslation('contact');
+
   const { username, displayName, locationFrom, locationLiving } = contact.user;
   return (
     <div className={className}>
@@ -90,7 +92,6 @@ export function ContactPresentational({
 }
 
 ContactPresentational.propTypes = {
-  t: PropTypes.func.isRequired,
   className: PropTypes.string,
   contact: PropTypes.object.isRequired,
   avatarSize: PropTypes.number,
@@ -98,5 +99,3 @@ ContactPresentational.propTypes = {
   hideMeta: PropTypes.bool,
   onClickRemove: PropTypes.func.isRequired,
 };
-
-export default withTranslation('contact')(ContactPresentational);

@@ -1,14 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Navigation is a react component.
  * It can contain three different buttons: Back, Next, Submit.
  * Each of them has a related property onBack, onNext, onSubmit
  */
-export function Navigation({
-  t,
+export default function Navigation({
   disabled,
   tab,
   tabs,
@@ -17,6 +16,8 @@ export function Navigation({
   onNext,
   onSubmit,
 }) {
+  const { t } = useTranslation('reference');
+
   const backButton = (
     <button
       type="button"
@@ -66,7 +67,6 @@ export function Navigation({
 }
 
 Navigation.propTypes = {
-  t: PropTypes.func.isRequired,
   onBack: PropTypes.func.isRequired,
   onNext: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
@@ -75,5 +75,3 @@ Navigation.propTypes = {
   tabs: PropTypes.number.isRequired, // amount of tabs to display
   tabDone: PropTypes.number.isRequired, // which tab is already filled
 };
-
-export default withTranslation('reference')(Navigation);
