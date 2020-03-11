@@ -55,11 +55,9 @@ export function LoadingInfo() {
  * @param {User} userTo
  */
 export function DuplicateInfo({ userTo }) {
-  useTranslation('reference');
-
   return (
     <div role="alert" className="alert alert-warning">
-      <Trans>
+      <Trans ns="reference">
         You&apos;ve already given a reference to <UserLink user={userTo} />.
       </Trans>
     </div>
@@ -81,7 +79,7 @@ export function SubmittedInfo({ isReported, isPublic, userFrom, userTo }) {
   const isPublicMessage = isPublic ? (
     <>
       <div>
-        <Trans>
+        <Trans ns="reference">
           <a href={`/profile/${userTo.username}/references`}>Your reference</a>{' '}
           for <UserLink user={userTo} /> is public now.
         </Trans>
@@ -94,7 +92,7 @@ export function SubmittedInfo({ isReported, isPublic, userFrom, userTo }) {
     </>
   ) : (
     <div>
-      <Trans daysToReply={daysToReply}>
+      <Trans ns="reference" daysToReply={daysToReply}>
         Your reference will become public when <UserLink user={userTo} /> gives
         you a reference back, or in {{ daysToReply }} days.
       </Trans>
@@ -107,7 +105,7 @@ export function SubmittedInfo({ isReported, isPublic, userFrom, userTo }) {
       <div>{isPublicMessage}</div>
       {isReported && (
         <div>
-          <Trans>
+          <Trans ns="reference">
             Also, <UserLink user={userTo} /> was reported.
           </Trans>
         </div>

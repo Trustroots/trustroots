@@ -25,7 +25,7 @@ export default function ContactPresentational({
         <div>
           <i className="icon-fw icon-building text-muted"></i>
           <small>
-            <Trans locationLiving={locationLiving}>
+            <Trans ns="contact" locationLiving={locationLiving}>
               Lives in{' '}
               <a href={`/search?location=${locationLiving}`}>
                 {{ locationLiving }}
@@ -38,7 +38,7 @@ export default function ContactPresentational({
         <div>
           <i className="icon-fw icon-home text-muted"></i>
           <small>
-            <Trans locationFrom={locationFrom}>
+            <Trans ns="contact" locationFrom={locationFrom}>
               From{' '}
               <a href={`/search?location=${locationFrom}`}>
                 {{ locationFrom }}

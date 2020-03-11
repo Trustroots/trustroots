@@ -9,8 +9,6 @@ import * as api from '../api/tribes.api';
 function JoinButtonPresentational({
   isMember,
   isLoading,
-  joinLabel = 'Join',
-  joinedLabel = 'Joined',
   tribe,
   isLoggedIn,
   onToggle,
@@ -19,8 +17,8 @@ function JoinButtonPresentational({
 
   const ariaLabel = isMember
     ? t('Leave Tribe')
-    : t(`${joinLabel} ({{label}})`, { label: tribe.label });
-  const buttonLabel = isMember ? t(joinedLabel) : t(joinLabel);
+    : t('Join ({{label}})', { label: tribe.label });
+  const buttonLabel = isMember ? t('Joined') : t('Join');
 
   // a button to be shown when user is signed out
   if (!isLoggedIn) {
@@ -70,8 +68,6 @@ JoinButtonPresentational.propTypes = {
   isMember: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool,
   isLoggedIn: PropTypes.bool.isRequired,
-  joinLabel: PropTypes.string,
-  joinedLabel: PropTypes.string,
   tribe: PropTypes.object.isRequired,
   onToggle: PropTypes.func,
 };
