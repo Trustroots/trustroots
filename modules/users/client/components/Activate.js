@@ -1,6 +1,5 @@
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-
 import '@/config/client/i18n';
 
 export default function Activate() {
