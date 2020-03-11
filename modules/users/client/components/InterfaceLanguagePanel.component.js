@@ -46,3 +46,5 @@ export default function InterfaceLanguagePanel() {
     </div>
   );
 }
+
+InterfaceLanguagePanel.propTypes = {};
