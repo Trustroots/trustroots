@@ -1,7 +1,6 @@
 import React from 'react';
 import classnames from 'classnames';
-import { withTranslation } from 'react-i18next';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
 import {
@@ -10,7 +9,9 @@ import {
   socialAccountLink,
 } from '../utils/networks';
 
-export function ProfileViewBasics({ t, profile }) {
+export default function ProfileViewBasics({ profile }) {
+  const { t } = useTranslation(['user-profile', 'languages']);
+
   /*
    * Functions passing strings to translation fuction for translation scripts
    */
@@ -236,9 +237,4 @@ export function ProfileViewBasics({ t, profile }) {
 
 ProfileViewBasics.propTypes = {
   profile: PropTypes.object,
-  t: PropTypes.func,
 };
-
-export default withTranslation(['user-profile', 'languages'])(
-  ProfileViewBasics,
-);

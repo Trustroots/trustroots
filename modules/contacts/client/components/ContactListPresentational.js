@@ -1,17 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import Contact from './Contact';
 
-export function ContactListPresentational({
-  t,
+export default function ContactListPresentational({
   selfId,
   contacts,
   filter,
   onContactRemoved,
   onFilterChange,
 }) {
+  const { t } = useTranslation('contact');
+
   const confirmed = contacts.filter(contact => contact.confirmed);
   const unconfirmed = contacts.filter(contact => !contact.confirmed);
 
@@ -95,15 +96,12 @@ export function ContactListPresentational({
 }
 
 ContactListPresentational.propTypes = {
-  t: PropTypes.func.isRequired,
   contacts: PropTypes.array,
   filter: PropTypes.string.isRequired,
   selfId: PropTypes.string.isRequired,
   onContactRemoved: PropTypes.func.isRequired,
   onFilterChange: PropTypes.func.isRequired,
 };
-
-export default withTranslation('contact')(ContactListPresentational);
 
 /**
  * This filter is probably different from the AngularJS filter.
