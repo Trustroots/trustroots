@@ -1,11 +1,24 @@
 <!-- Top Navigation for small screens -->
 <top-navigation-small
+  ng-if="profileCtrl.contact.$resolved"
   username="profileCtrl.profile.username"
   selfId="app.user._id"
   userId="profileCtrl.profile._id"
   contact="profileCtrl.contact"
   referencesEnabled="app.appSettings.referencesEnabled"
-  isResolved="profileCtrl.contact.$resolved"
+  isResolved="true"
+  onContactRemoved="profileCtrl.removeContact"
+></top-navigation-small>
+<!-- a hack for isResolved to contain a correct value -->
+<!-- @TODO this should be removed as migration to React continues -->
+<top-navigation-small
+  ng-if="!profileCtrl.contact.$resolved"
+  username="profileCtrl.profile.username"
+  selfId="app.user._id"
+  userId="profileCtrl.profile._id"
+  contact="profileCtrl.contact"
+  referencesEnabled="app.appSettings.referencesEnabled"
+  isResolved="false"
   onContactRemoved="profileCtrl.removeContact"
 ></top-navigation-small>
 
