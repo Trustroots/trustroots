@@ -33,6 +33,7 @@ export default function TopNavigationSmall({
   if (isSelf) {
     links = [
       {
+        id: 'edit-profile',
         label: t('Edit your profile'),
         link: '/profile/edit',
       },
@@ -40,6 +41,7 @@ export default function TopNavigationSmall({
   } else {
     links = [
       {
+        id: 'send-message',
         label: t('Send a message'),
         link: `/messages/${username}`,
       },
@@ -47,6 +49,7 @@ export default function TopNavigationSmall({
 
     if (referencesEnabled) {
       links.push({
+        id: 'write-reference',
         label: t('Write a reference'),
         link: `/profile/${username}/references/new`,
       });
@@ -55,11 +58,13 @@ export default function TopNavigationSmall({
     if (isResolved) {
       const contactLink = !contact._id
         ? {
+            id: 'add-contact',
             label: t('Add contact'),
             link: `/contact-add/${userId}`,
           }
         : contact.confirmed
         ? {
+            id: 'remove-contact',
             label: t('Remove contact'),
             tooltip: t('Contacts since {{created, MMM DD, YYYY}}', {
               created: new Date(contact.created),
@@ -67,6 +72,7 @@ export default function TopNavigationSmall({
             onClick: () => setShowRemoveModal(true),
           }
         : {
+            id: 'delete-contact-request',
             label: t('Delete contact request'),
             tooltip: t('Request sent {{created, MMM DD, YYYY}}', {
               created: new Date(contact.created),
@@ -99,9 +105,10 @@ export default function TopNavigationSmall({
       <nav className="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block">
         <div className="container">
           <ul className="nav navbar-nav" role="navigation">
-            {links.map(({ label, link, tooltip, onClick }, index) => (
-              <li key={index}>
+            {links.map(({ id, label, link, tooltip, onClick }) => (
+              <li key={id}>
                 <NavButton
+                  id={id}
                   label={label}
                   link={link}
                   tooltip={tooltip}
@@ -116,17 +123,20 @@ export default function TopNavigationSmall({
   );
 }
 
-function LabelWithTooltip({ label, tooltip }) {
+function LabelWithTooltip({ id, label, tooltip }) {
   return (
-    <OverlayTrigger placement="bottom" overlay={<Tooltip>{tooltip}</Tooltip>}>
+    <OverlayTrigger
+      placement="bottom"
+      overlay={<Tooltip id={`tooltip-${id}`}>{tooltip}</Tooltip>}
+    >
       <span>{label}</span>
     </OverlayTrigger>
   );
 }
 
-function NavButton({ label, link, tooltip, onClick }) {
+function NavButton({ id, label, link, tooltip, onClick }) {
   const labelWithTooltip = tooltip ? (
-    <LabelWithTooltip label={label} tooltip={tooltip} />
+    <LabelWithTooltip id={id} label={label} tooltip={tooltip} />
   ) : (
     label
   );
@@ -139,6 +149,7 @@ function NavButton({ label, link, tooltip, onClick }) {
 }
 
 NavButton.propTypes = {
+  id: PropTypes.string.isRequired,
   label: PropTypes.any.isRequired,
   link: PropTypes.string,
   tooltip: PropTypes.string,
@@ -146,6 +157,7 @@ NavButton.propTypes = {
 };
 
 LabelWithTooltip.propTypes = {
+  id: PropTypes.string.isRequired,
   label: PropTypes.string.isRequired,
   tooltip: PropTypes.string.isRequired,
 };
