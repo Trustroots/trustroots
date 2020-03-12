@@ -123,6 +123,16 @@ export default function TopNavigationSmall({
   );
 }
 
+TopNavigationSmall.propTypes = {
+  username: PropTypes.string.isRequired,
+  selfId: PropTypes.string.isRequired,
+  userId: PropTypes.string.isRequired,
+  contact: PropTypes.object,
+  referencesEnabled: PropTypes.bool.isRequired,
+  isResolved: PropTypes.bool.isRequired,
+  onContactRemoved: PropTypes.func.isRequired,
+};
+
 function LabelWithTooltip({ id, label, tooltip }) {
   return (
     <OverlayTrigger
@@ -133,6 +143,12 @@ function LabelWithTooltip({ id, label, tooltip }) {
     </OverlayTrigger>
   );
 }
+
+LabelWithTooltip.propTypes = {
+  id: PropTypes.string.isRequired,
+  label: PropTypes.string.isRequired,
+  tooltip: PropTypes.string.isRequired,
+};
 
 function NavButton({ id, label, link, tooltip, onClick }) {
   const labelWithTooltip = tooltip ? (
@@ -154,20 +170,4 @@ NavButton.propTypes = {
   link: PropTypes.string,
   tooltip: PropTypes.string,
   onClick: PropTypes.func,
-};
-
-LabelWithTooltip.propTypes = {
-  id: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  tooltip: PropTypes.string.isRequired,
-};
-
-TopNavigationSmall.propTypes = {
-  username: PropTypes.string.isRequired,
-  selfId: PropTypes.string.isRequired,
-  userId: PropTypes.string.isRequired,
-  contact: PropTypes.object,
-  referencesEnabled: PropTypes.bool.isRequired,
-  isResolved: PropTypes.bool.isRequired,
-  onContactRemoved: PropTypes.func.isRequired,
 };
