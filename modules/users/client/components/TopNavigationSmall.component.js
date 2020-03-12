@@ -166,7 +166,7 @@ TopNavigationSmall.propTypes = {
   username: PropTypes.string.isRequired,
   selfId: PropTypes.string.isRequired,
   userId: PropTypes.string.isRequired,
-  contact: PropTypes.object.isRequired,
+  contact: PropTypes.object,
   referencesEnabled: PropTypes.bool.isRequired,
   isResolved: PropTypes.bool.isRequired,
   onContactRemoved: PropTypes.func.isRequired,
