@@ -40,13 +40,6 @@ function ProfileController(
     }
   };
 
-  /**
-   * Remove contact via React RemoveContact component
-   */
-  vm.removeContact = function(contact) {
-    vm.contacts.splice(vm.contacts.indexOf(contact), 1);
-  };
-
   activate();
 
   /**

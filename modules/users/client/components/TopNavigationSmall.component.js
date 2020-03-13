@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import RemoveContact from '../../../contacts/client/components/RemoveContactContainer';
+import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
 
 export default function TopNavigationSmall({
   username,
@@ -66,17 +65,11 @@ export default function TopNavigationSmall({
         ? {
             id: 'remove-contact',
             label: t('Remove contact'),
-            tooltip: t('Contacts since {{created, MMM DD, YYYY}}', {
-              created: new Date(contact.created),
-            }),
             onClick: () => setShowRemoveModal(true),
           }
         : {
             id: 'delete-contact-request',
             label: t('Delete contact request'),
-            tooltip: t('Request sent {{created, MMM DD, YYYY}}', {
-              created: new Date(contact.created),
-            }),
             onClick: () => setShowRemoveModal(true),
           };
 
@@ -105,15 +98,11 @@ export default function TopNavigationSmall({
       <nav className="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block">
         <div className="container">
           <ul className="nav navbar-nav" role="navigation">
-            {links.map(({ id, label, link, tooltip, onClick }) => (
+            {links.map(({ id, label, link, onClick }) => (
               <li key={id}>
-                <NavButton
-                  id={id}
-                  label={label}
-                  link={link}
-                  tooltip={tooltip}
-                  onClick={onClick}
-                />
+                <a href={link} onClick={onClick}>
+                  {label}
+                </a>
               </li>
             ))}
           </ul>
@@ -131,43 +120,4 @@ TopNavigationSmall.propTypes = {
   referencesEnabled: PropTypes.bool.isRequired,
   isResolved: PropTypes.bool.isRequired,
   onContactRemoved: PropTypes.func.isRequired,
-};
-
-function LabelWithTooltip({ id, label, tooltip }) {
-  return (
-    <OverlayTrigger
-      placement="bottom"
-      overlay={<Tooltip id={`tooltip-${id}`}>{tooltip}</Tooltip>}
-    >
-      <span>{label}</span>
-    </OverlayTrigger>
-  );
-}
-
-LabelWithTooltip.propTypes = {
-  id: PropTypes.string.isRequired,
-  label: PropTypes.string.isRequired,
-  tooltip: PropTypes.string.isRequired,
-};
-
-function NavButton({ id, label, link, tooltip, onClick }) {
-  const labelWithTooltip = tooltip ? (
-    <LabelWithTooltip id={id} label={label} tooltip={tooltip} />
-  ) : (
-    label
-  );
-
-  return link ? (
-    <a href={link}>{labelWithTooltip}</a>
-  ) : (
-    <a onClick={onClick}>{labelWithTooltip}</a>
-  );
-}
-
-NavButton.propTypes = {
-  id: PropTypes.string.isRequired,
-  label: PropTypes.any.isRequired,
-  link: PropTypes.string,
-  tooltip: PropTypes.string,
-  onClick: PropTypes.func,
 };
