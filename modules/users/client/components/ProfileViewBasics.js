@@ -49,6 +49,7 @@ export default function ProfileViewBasics({ profile }) {
     return t('Online long ago');
   };
 
+  // i18next-extract-disable-next-line
   const getLanguage = code => t(languages[code], { ns: 'languages' });
 
   /*
@@ -89,7 +90,7 @@ export default function ProfileViewBasics({ profile }) {
   const renderLocationLiving = locationLiving => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-building text-muted" />
-      <Trans>
+      <Trans ns="user-profile">
         Lives in{' '}
         <a href={`/search?location=${locationLiving}`}>{{ locationLiving }}</a>
       </Trans>
@@ -99,7 +100,7 @@ export default function ProfileViewBasics({ profile }) {
   const renderLocationFrom = locationFrom => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-home text-muted"></i>
-      <Trans>
+      <Trans ns="user-profile">
         From <a href={`/search?location=${locationFrom}`}>{{ locationFrom }}</a>
       </Trans>
     </div>

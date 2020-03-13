@@ -1,7 +1,5 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
-import { Trans } from 'react-i18next';
-
+import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 
 export default function Activate() {
@@ -23,7 +21,7 @@ export default function Activate() {
           </em>
         </p>
         <p>
-          <Trans t={t}>
+          <Trans t={t} ns="users">
             If you didn&apos;t receive the message, check your spam folder or
             resend it via
             <a href="/profile/edit/account">email settings</a>.
