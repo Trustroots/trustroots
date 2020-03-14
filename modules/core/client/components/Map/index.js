@@ -50,7 +50,6 @@ export default function Map(props) {
       onViewportChange={setViewport}
       touchRotate={false}
       width="100%"
-      captureClick
       {...props}
       {...viewport}
     >
@@ -119,4 +118,5 @@ Map.propTypes = {
   children: PropTypes.node,
   location: PropTypes.arrayOf(PropTypes.number),
   zoom: PropTypes.number,
+  onMapViewPortChange: PropTypes.func,
 };

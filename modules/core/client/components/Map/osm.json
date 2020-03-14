@@ -6,7 +6,7 @@
     "osm": {
       "attribution": "<a href=\"https://www.openstreetmap.org/about/\" target=\"_blank\" rel=\"noopener\">&copy; OpenStreetMap</a>",
       "mapbox_logo": true,
-      "maxzoom": 14,
+      "maxzoom": 19,
       "minzoom": 0,
       "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
       "type": "raster"
