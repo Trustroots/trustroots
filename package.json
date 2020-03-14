@@ -167,7 +167,7 @@
     "react-bootstrap": "0.33.1",
     "react-dom": "16.13.0",
     "react-i18next": "11.3.3",
-    "react-leaflet": "2.6.1",
+    "react-leaflet": "2.6.3",
     "sanitize-html": "1.21.1",
     "serve-favicon": "2.5.0",
     "speakingurl": "14.0.1",
