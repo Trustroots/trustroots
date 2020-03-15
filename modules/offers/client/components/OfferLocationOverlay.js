@@ -1,6 +1,5 @@
 // External dependencies
-import { BaseControl } from 'react-map-gl';
-import { SVGOverlay } from 'react-map-gl';
+import { BaseControl, SVGOverlay } from 'react-map-gl';
 import PropTypes from 'prop-types';
 import React from 'react';
 
