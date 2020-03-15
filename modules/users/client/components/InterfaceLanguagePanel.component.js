@@ -1,10 +1,11 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch.component';
 import '@/config/client/i18n';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
+import { useTranslation } from 'react-i18next';
 
-export function InterfaceLanguagePanel({ t }) {
+export default function InterfaceLanguagePanel() {
+  const { t } = useTranslation('user');
+
   return (
     <div className="panel panel-default" id="locale">
       <div className="panel-heading">{t('Interface language')}</div>
@@ -46,8 +47,4 @@ export function InterfaceLanguagePanel({ t }) {
   );
 }
 
-InterfaceLanguagePanel.propTypes = {
-  t: PropTypes.func.isRequired,
-};
-
-export default withTranslation('user')(InterfaceLanguagePanel);
+InterfaceLanguagePanel.propTypes = {};

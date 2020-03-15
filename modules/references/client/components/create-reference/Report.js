@@ -1,15 +1,16 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
-const Report = withTranslation('reference')(function({
-  t,
+export default function Report({
   report,
   reportMessage,
   onChangeReport,
   onChangeReportMessage,
 }) {
+  const { t } = useTranslation('reference');
+
   return (
     <div>
       <br />
@@ -46,7 +47,7 @@ const Report = withTranslation('reference')(function({
       )}
     </div>
   );
-});
+}
 
 Report.propTypes = {
   report: PropTypes.bool.isRequired,
@@ -54,5 +55,3 @@ Report.propTypes = {
   onChangeReport: PropTypes.func.isRequired,
   onChangeReportMessage: PropTypes.func.isRequired,
 };
-
-export default Report;
