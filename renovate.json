@@ -24,7 +24,12 @@
       "packagePatterns": ["^webpack"]
     },
     {
-      "packageNames": ["react-leaflet", "ui-leaflet"],
+      "packageNames": [
+        "mapbox-gl",
+        "react-leaflet",
+        "react-map-gl",
+        "ui-leaflet"
+      ],
       "packagePatterns": ["^leaflet"]
     },
     {
