@@ -373,7 +373,7 @@ module.exports.initHelmetHeaders = function(app) {
           "'self'",
           'https://api.mapbox.com',
           'https://events.mapbox.com',
-          'tile.openstreetmap.org',
+          'https://tile.openstreetmap.org',
           'fcm.googleapis.com',
           'maitreapp.co', // Signup waiting list feature
           'www.facebook.com',

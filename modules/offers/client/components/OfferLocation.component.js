@@ -13,6 +13,7 @@ export default function OfferLocation({ location, offerType, offerStatus }) {
 
   return (
     <Map
+      aria-hidden
       className="offer-location"
       height={320}
       location={location}
