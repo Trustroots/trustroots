@@ -36,16 +36,23 @@
        'leaflet-layerstyle-satellite': searchMap.mapLayerstyle === 'satellite'
      }"
 >
-  <leaflet
+  <search-map
     id="search-map-canvas"
-    lf-center="searchMap.mapCenter"
-    markers="searchMap.mapMarkers"
-    layers="searchMap.mapLayers"
-    bounds="searchMap.mapBounds"
-    paths="searchMap.mapPaths"
-    defaults="searchMap.mapDefaults"
-    event-broadcast="searchMap.mapEvents"
-    tabindex="0"
-    aria-label="Map"
-  ></leaflet>
+    location="searchMap.mapCenter"
+    offers="searchMap.mapMarkers"
+  ></search-map>
+  <!--
+    leaflet
+      id="search-map-canvas"
+      lf-center="searchMap.mapCenter"
+      markers="searchMap.mapMarkers"
+      layers="searchMap.mapLayers"
+      bounds="searchMap.mapBounds"
+      paths="searchMap.mapPaths"
+      defaults="searchMap.mapDefaults"
+      event-broadcast="searchMap.mapEvents"
+      tabindex="0"
+      aria-label="Map"
+    ></leaflet>
+  -->
 </div>
