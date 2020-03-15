@@ -1,6 +1,5 @@
 import React from 'react';
-import { within } from '@testing-library/react';
-import { render, fireEvent, waitForElement } from '@testing-library/react';
+import { render, fireEvent, waitForElement, within } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import '@/config/client/i18n';
 import {
