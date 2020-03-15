@@ -98,7 +98,7 @@
     "compression": "1.7.4",
     "connect-flash": "0.1.1",
     "connect-mongo": "3.2.0",
-    "cookie-parser": "1.4.4",
+    "cookie-parser": "1.4.5",
     "del": "5.1.0",
     "escape-string-regexp": "2.0.0",
     "expect-ct": "0.3.0",
