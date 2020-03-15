@@ -230,7 +230,9 @@
       <!-- The map (React component) -->
       <offer-location
         ng-if="trOfferHost.offer.status === 'yes' || trOfferHost.offer.status === 'maybe'"
-        offer="trOfferHost.offer"
+        location="trOfferHost.offer.location"
+        offerStatus="trOfferHost.offer.status"
+        offerType="trOfferHost.offer.type"
       ></offer-location>
 
       <div
