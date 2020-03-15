@@ -1,0 +1,51 @@
+
+@import '~/node_modules/mapbox-gl/dist/mapbox-gl.css';
+@import '~bootstrap/less/mixins/size';
+@import '~less/global-variables';
+
+/**
+ * Mapbox-gl overrides
+ */
+.mapboxgl-map {
+  background: @gray-lighter;
+}
+
+.map-navigation-control-container {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 5;
+
+  .mapboxgl-ctrl-group {
+    border-radius: @border-radius-small;
+    border: 0;
+    background: @map-toolbar-background;
+    transition: background 0.25s;
+
+    &:hover {
+      background: @map-toolbar-background-hover;
+    }
+
+    &:not(:empty) {
+      box-shadow: @map-toolbar-shadow;
+    }
+
+    button {
+      .square(36px);
+      border-radius: @border-radius-small;
+      border: 0;
+    }
+  }
+}
+
+.map-scale-control-container {
+  position: absolute;
+  bottom: 10px;
+  right: 50px;
+
+  .mapboxgl-ctrl-scale {
+    border-color: @gray;
+    border-top: @gray;
+    color: @gray;
+  }
+}
