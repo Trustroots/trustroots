@@ -61,5 +61,4 @@ Map.propTypes = {
   children: PropTypes.node,
   location: PropTypes.arrayOf(PropTypes.number),
   zoom: PropTypes.number,
-  onMapViewPortChange: PropTypes.func,
 };
