@@ -140,8 +140,8 @@ describe('Admin User CRUD tests', () => {
 
         should(body.length).equal(2);
 
-        should(body[0].created).should.exist();
-        should(body[1].created).should.exist();
+        should.exist(body[0].created);
+        should.exist(body[1].created);
         should(body[0].username).equal('user-admin');
         should(body[1].username).equal('user-regular');
 
