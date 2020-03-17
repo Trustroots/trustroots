@@ -1,5 +1,6 @@
 // External dependencies
-import React, { Component } from 'react';
+import classnames from 'classnames';
+import React, { useState } from 'react';
 
 // Internal dependencies
 import { getThreads } from '../api/threads.api';
@@ -11,48 +12,29 @@ import TimeAgo from '@/modules/core/client/components/TimeAgo';
 // Mongo ObjectId is always 24 chars long
 const MONGO_OBJECT_ID_LENGTH = 24;
 
-export default class AdminThreads extends Component {
-  constructor(props) {
-    super(props);
-    this.onUserIdChange = this.onUserIdChange.bind(this);
-    this.renderResults = this.renderResults.bind(this);
-    this.onSubmit = this.onSubmit.bind(this);
-    this.state = {
-      queried: false,
-      threads: [],
-      userId: '',
-    };
-  }
+export default function AdminThreads() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlUserId = urlParams.get('userId');
+  const initialUserId =
+    urlUserId && urlUserId.length === MONGO_OBJECT_ID_LENGTH ? urlUserId : '';
 
-  componentDidMount() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('userId');
+  const [queried, setQueried] = useState(false);
+  const [threads, setThreads] = useState([]);
+  const [userId, setUserId] = useState(initialUserId);
 
-    if (userId && userId.length === MONGO_OBJECT_ID_LENGTH) {
-      this.setState({ userId });
-    }
-  }
-
-  onUserIdChange(event) {
-    const userId = event.target.value;
-    this.setState({ userId });
-  }
-
-  async onSubmit(event) {
+  async function onSubmit(event) {
     if (event) {
       event.preventDefault();
     }
-    const { userId } = this.state;
     // Mongo ObjectId is always 24 chars long
     if (userId && userId.length === MONGO_OBJECT_ID_LENGTH) {
       const threads = await getThreads(userId);
-      this.setState({ threads, queried: true });
+      setThreads(threads);
+      setQueried(true);
     }
   }
 
-  renderResults() {
-    const { threads, queried, userId } = this.state;
-
+  function renderResults() {
     if (!queried && threads.length === 0) {
       return (
         <p>
@@ -83,11 +65,23 @@ export default class AdminThreads extends Component {
                   <UserLink user={thread.userFromProfile[0]} />
                   {' → '}
                   <UserLink user={thread.userToProfile[0]} />
-                  {` (${thread.read ? 'read' : 'unread'})`}
+                  <span
+                    className={classnames('label pull-right', {
+                      'label-success': thread.read,
+                      'label-warning': !thread.read,
+                    })}
+                  >
+                    {thread.read ? 'Read' : 'Unread'}
+                  </span>
                 </p>
                 <p>
-                  <TimeAgo date={thread.updated} />
-                  {` (${thread.updated})`}
+                  <TimeAgo date={new Date(thread.updated)} />
+                  {` (${thread.updated}) `}
+                  <a
+                    href={`/admin/messages?userId1=${thread.userFromProfile[0]?._id}&userId2=${thread.userToProfile[0]?._id}`}
+                  >
+                    Read thread
+                  </a>
                 </p>
                 <details>
                   <summary>Thread details</summary>
@@ -101,40 +95,36 @@ export default class AdminThreads extends Component {
     );
   }
 
-  render() {
-    const { userId } = this.state;
-
-    return (
-      <>
-        <AdminHeader />
-        <div className="container">
-          <h2>Threads</h2>
-          <form className="form-inline" onSubmit={this.onSubmit}>
-            <input
-              aria-label="Member ID"
-              className="form-control input-lg"
-              maxLength={MONGO_OBJECT_ID_LENGTH}
-              name="userId"
-              onChange={this.onUserIdChange}
-              placeholder="Member ID"
-              size={MONGO_OBJECT_ID_LENGTH + 2}
-              type="text"
-              value={userId}
-            />
-            <button
-              className="btn btn-lg btn-default"
-              disabled={userId.length !== MONGO_OBJECT_ID_LENGTH}
-              type="submit"
-            >
-              Query
-            </button>
-          </form>
-          <br />
-          {this.renderResults()}
-        </div>
-      </>
-    );
-  }
+  return (
+    <>
+      <AdminHeader />
+      <div className="container">
+        <h2>Threads</h2>
+        <form className="form-inline" onSubmit={event => onSubmit(event)}>
+          <input
+            aria-label="Member ID"
+            className="form-control input-lg"
+            maxLength={MONGO_OBJECT_ID_LENGTH}
+            name="userId"
+            onChange={({ target: { value } }) => setUserId(value)}
+            placeholder="Member ID"
+            size={MONGO_OBJECT_ID_LENGTH + 2}
+            type="text"
+            value={userId}
+          />
+          <button
+            className="btn btn-lg btn-default"
+            disabled={userId.length !== MONGO_OBJECT_ID_LENGTH}
+            type="submit"
+          >
+            Query
+          </button>
+        </form>
+        <br />
+        {renderResults()}
+      </div>
+    </>
+  );
 }
 
 AdminThreads.propTypes = {};
