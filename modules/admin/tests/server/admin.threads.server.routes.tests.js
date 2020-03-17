@@ -55,10 +55,11 @@ describe('Admin Thread CRUD tests', () => {
     await message2.save();
   });
 
-  describe('Read user\'s threads', () => {
-    it('non-authenticated users should not be allowed to read threads', (done) => {
-      agent.post('/api/admin/threads')
-        .send({ 'userId': _users[1]._id })
+  describe("Read user's threads", () => {
+    it('non-authenticated users should not be allowed to read threads', done => {
+      agent
+        .post('/api/admin/threads')
+        .send({ userId: _users[1]._id })
         .expect(403)
         .end((err, res) => {
           res.body.message.should.equal('Forbidden.');
@@ -74,8 +75,9 @@ describe('Admin Thread CRUD tests', () => {
       it('non-admin users should not be allowed to read threads', async () => {
         await utils.signIn(credentialsRegular, agent);
 
-        const { body } = await agent.post('/api/admin/threads')
-          .send({ 'userId': _users[1]._id })
+        const { body } = await agent
+          .post('/api/admin/threads')
+          .send({ userId: _users[1]._id })
           .expect(403);
 
         body.message.should.equal('Forbidden.');
@@ -84,8 +86,9 @@ describe('Admin Thread CRUD tests', () => {
       it('admin users should be allowed to read threads', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/threads')
-          .send({ 'userId': _users[1]._id })
+        const { body } = await agent
+          .post('/api/admin/threads')
+          .send({ userId: _users[1]._id })
           .expect(200);
 
         // body.length.should.equal(2);
