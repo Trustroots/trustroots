@@ -23,6 +23,7 @@ const SEARCH_STRING_LIMIT = 3;
 // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
 const USER_LIST_FIELDS = [
   '_id',
+  'created',
   'displayName',
   'email',
   'emailTemporary',
