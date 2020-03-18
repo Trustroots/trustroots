@@ -22,16 +22,23 @@ module.exports = {
     '@babel/plugin-proposal-optional-chaining',
     'angularjs-annotate',
     isDevelopment && 'react-refresh/babel',
-    [
-      'i18next-extract',
-      {
-        nsSeparator: false,
-        locales: locales.map(locale => locale.code),
-        keySeparator: false,
-        outputPath: 'public/locales/{{locale}}/{{ns}}.json',
-        keyAsDefaultValue: ['en'],
-        discardOldKeys: true,
-      },
-    ],
   ]),
+  env: {
+    production: {
+      plugins: compact([
+        [
+          // extraction of the i18next translation strings
+          'i18next-extract',
+          {
+            nsSeparator: false,
+            locales: locales.map(locale => locale.code),
+            keySeparator: false,
+            outputPath: 'public/locales/{{locale}}/{{ns}}.json',
+            keyAsDefaultValue: ['en'],
+            discardOldKeys: true,
+          },
+        ],
+      ]),
+    },
+  },
 };
