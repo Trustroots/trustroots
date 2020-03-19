@@ -25,7 +25,7 @@ module.exports = {
   ]),
   env: {
     production: {
-      plugins: compact([
+      plugins: [
         [
           // extraction of the i18next translation strings
           'i18next-extract',
@@ -38,7 +38,7 @@ module.exports = {
             discardOldKeys: true,
           },
         ],
-      ]),
+      ],
     },
   },
 };
