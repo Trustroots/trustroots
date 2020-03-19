@@ -1,4 +1,6 @@
 const compact = require('lodash/compact');
+const path = require('path');
+const locales = require(path.resolve('./config/shared/locales'));
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -21,4 +23,22 @@ module.exports = {
     'angularjs-annotate',
     isDevelopment && 'react-refresh/babel',
   ]),
+  env: {
+    production: {
+      plugins: [
+        [
+          // extraction of the i18next translation strings
+          'i18next-extract',
+          {
+            nsSeparator: false,
+            locales: locales.map(locale => locale.code),
+            keySeparator: false,
+            outputPath: 'public/locales/{{locale}}/{{ns}}.json',
+            keyAsDefaultValue: ['en'],
+            discardOldKeys: true,
+          },
+        ],
+      ],
+    },
+  },
 };
