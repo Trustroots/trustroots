@@ -6,32 +6,32 @@ const express = require(path.resolve('./config/lib/express'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 require('should');
 
-/**
- * Globals
- */
-let userRegular1Id;
-let userRegular2Id;
-
 describe('Admin Thread CRUD tests', () => {
   // Get application
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
 
-  const _users = utils.generateUsers(3);
-  _users[0].roles = ['user', 'admin'];
+  let _users;
+  let userRegular1Id;
+  let userRegular2Id;
+
+  const _usersRaw = utils.generateUsers(3);
+  _usersRaw[0].roles = ['user', 'admin'];
 
   const credentialsAdmin = {
-    username: _users[0].username,
-    password: _users[0].password,
+    username: _usersRaw[0].username,
+    password: _usersRaw[0].password,
   };
 
   const credentialsRegular = {
-    username: _users[1].username,
-    password: _users[1].password,
+    username: _usersRaw[1].username,
+    password: _usersRaw[1].password,
   };
 
   beforeEach(async () => {
-    await utils.saveUsers(_users);
+    _users = await utils.saveUsers(_usersRaw);
+    userRegular1Id = _users[1]._id;
+    userRegular2Id = _users[2]._id;
   });
 
   afterEach(utils.clearDatabase);
@@ -59,7 +59,7 @@ describe('Admin Thread CRUD tests', () => {
     it('non-authenticated users should not be allowed to read threads', done => {
       agent
         .post('/api/admin/threads')
-        .send({ userId: _users[1]._id })
+        .send({ userId: userRegular1Id })
         .expect(403)
         .end((err, res) => {
           res.body.message.should.equal('Forbidden.');
@@ -77,7 +77,7 @@ describe('Admin Thread CRUD tests', () => {
 
         const { body } = await agent
           .post('/api/admin/threads')
-          .send({ userId: _users[1]._id })
+          .send({ userId: userRegular1Id })
           .expect(403);
 
         body.message.should.equal('Forbidden.');
@@ -88,12 +88,10 @@ describe('Admin Thread CRUD tests', () => {
 
         const { body } = await agent
           .post('/api/admin/threads')
-          .send({ userId: _users[1]._id })
+          .send({ userId: userRegular1Id })
           .expect(200);
 
-        // body.length.should.equal(2);
-        console.log(body); //eslint-disable-line
-        // body[0].userFrom.username.should.equal('user-regular1');
+        body.length.should.equal(2);
       });
     });
   });
