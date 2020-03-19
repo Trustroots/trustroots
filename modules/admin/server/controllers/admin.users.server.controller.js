@@ -298,3 +298,18 @@ exports.changeRole = async (req, res) => {
     handleAdminApiError(res, err);
   }
 };
+
+exports.usernameToUserId = async (req, res, next) => {
+  const username = _.get(req, ['body', 'username']);
+
+  // Get userID based on provided username
+  if (username) {
+    const user = await User.findOne({ username });
+
+    if (user) {
+      req.userId = user._id;
+    }
+  }
+
+  next();
+};

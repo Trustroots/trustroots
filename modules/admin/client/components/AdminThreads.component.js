@@ -15,22 +15,28 @@ const MONGO_OBJECT_ID_LENGTH = 24;
 export default function AdminThreads() {
   const urlParams = new URLSearchParams(window.location.search);
   const urlUserId = urlParams.get('userId');
+  const initialUsername = urlParams.get('username') || '';
   const initialUserId =
     urlUserId && urlUserId.length === MONGO_OBJECT_ID_LENGTH ? urlUserId : '';
 
   const [queried, setQueried] = useState(false);
   const [threads, setThreads] = useState([]);
   const [userId, setUserId] = useState(initialUserId);
+  const [username, setUsername] = useState(initialUsername);
 
   async function onSubmit(event) {
-    if (event) {
-      event.preventDefault();
-    }
+    event.preventDefault();
+
     // Mongo ObjectId is always 24 chars long
-    if (userId && userId.length === MONGO_OBJECT_ID_LENGTH) {
-      const threads = await getThreads(userId);
+    if (!username && userId && userId.length !== MONGO_OBJECT_ID_LENGTH) {
+      alert('User ID is wrong length');
+      return;
+    }
+
+    const threads = await getThreads({ userId, username });
+    setQueried(true);
+    if (threads) {
       setThreads(threads);
-      setQueried(true);
     }
   }
 
@@ -111,11 +117,24 @@ export default function AdminThreads() {
             size={MONGO_OBJECT_ID_LENGTH + 2}
             type="text"
             value={userId}
+            disabled={username.length}
+          />
+          <em> or </em>
+          <input
+            aria-label="Username"
+            className="form-control input-lg"
+            name="userId"
+            onChange={({ target: { value } }) => setUsername(value)}
+            placeholder="Username"
+            size={20}
+            type="text"
+            value={username}
+            disabled={userId && userId.length === MONGO_OBJECT_ID_LENGTH}
           />
           <button
             className="btn btn-lg btn-default"
-            disabled={userId.length !== MONGO_OBJECT_ID_LENGTH}
             type="submit"
+            disabled={!username.length && !userId.length}
           >
             Query
           </button>

@@ -83,7 +83,7 @@ describe('Admin Thread CRUD tests', () => {
         body.message.should.equal('Forbidden.');
       });
 
-      it('admin users should be allowed to read threads', async () => {
+      it('admin users should be allowed to read threads by user ID', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
         const { body } = await agent
@@ -92,6 +92,19 @@ describe('Admin Thread CRUD tests', () => {
           .expect(200);
 
         body.length.should.equal(2);
+        body[0].userToProfile[0]._id.should.equal(_usersRaw[2]._id);
+      });
+
+      it('admin users should be allowed to read threads by username', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/threads')
+          .send({ username: _usersRaw[1].username })
+          .expect(200);
+
+        body.length.should.equal(2);
+        body[0].userToProfile[0]._id.should.equal(_usersRaw[1]._id);
       });
     });
   });

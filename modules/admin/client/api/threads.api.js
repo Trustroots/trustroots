@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export async function getThreads(userId) {
-  const { data } = await axios.post('/api/admin/threads', { userId });
+export async function getThreads({ userId = '', username = '' }) {
+  const { data } = await axios.post('/api/admin/threads', { userId, username });
   return data;
 }

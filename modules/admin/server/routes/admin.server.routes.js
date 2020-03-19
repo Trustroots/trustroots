@@ -27,7 +27,11 @@ module.exports = app => {
   app
     .route('/api/admin/threads')
     .all(adminPolicy.isAllowed)
-    .post(adminAuditLog.record, adminThreads.getThreads);
+    .post(
+      adminAuditLog.record,
+      adminUsers.usernameToUserId,
+      adminThreads.getThreads,
+    );
 
   app
     .route('/api/admin/users')

@@ -12,10 +12,12 @@ const Thread = mongoose.model('Thread');
 /*
  * This middleware sends response with an array of found users
  */
-exports.getThreads = (req, res) => {
-  const userId = _.get(req, ['body', 'userId']);
+exports.getThreads = async (req, res) => {
+  // See `usernameToUserId` middleware from admin.users.server.controller.js
+  // req.userId can get placed in request when `req.body.username` is set.
+  const userId = req.userId || _.get(req, ['body', 'userId']);
 
-  // Check that all provided IDs are  valid
+  // Check that provided ID is valid
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),

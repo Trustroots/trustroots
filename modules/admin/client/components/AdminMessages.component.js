@@ -91,7 +91,7 @@ export default function AdminMessages() {
           </p>
         )}
 
-        {queried && messages.length ? (
+        {queried && messages.length > 0 && (
           <>
             <h3>
               Messaging between <UserLink user={messages[0].userFrom} />
@@ -116,7 +116,8 @@ export default function AdminMessages() {
               );
             })}
           </>
-        ) : (
+        )}
+        {queried && messages.length === 0 && (
           <div className="alert alert-info">
             <em>Nothing found…</em>
           </div>
