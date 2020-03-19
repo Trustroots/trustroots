@@ -92,7 +92,7 @@ describe('Admin Thread CRUD tests', () => {
           .expect(200);
 
         body.length.should.equal(2);
-        body[0].userToProfile[0]._id.should.equal(_usersRaw[2]._id);
+        body[0].userToProfile[0]._id.should.equal(_users[2]._id.toString());
       });
 
       it('admin users should be allowed to read threads by username', async () => {
@@ -104,7 +104,7 @@ describe('Admin Thread CRUD tests', () => {
           .expect(200);
 
         body.length.should.equal(2);
-        body[0].userToProfile[0]._id.should.equal(_usersRaw[1]._id);
+        body[0].userToProfile[0].username.should.equal(_users[2].username);
       });
     });
   });
