@@ -15,7 +15,7 @@ const Thread = mongoose.model('Thread');
 exports.getThreads = async (req, res) => {
   // See `usernameToUserId` middleware from admin.users.server.controller.js
   // req.userId can get placed in request when `req.body.username` is set.
-  const userId = req.userId || _.get(req, ['body', 'userId']);
+  const userId = req.userIdFromUsername || _.get(req, ['body', 'userId']);
 
   // Check that provided ID is valid
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {

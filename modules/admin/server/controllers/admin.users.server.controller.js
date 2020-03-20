@@ -307,7 +307,7 @@ exports.usernameToUserId = async (req, res, next) => {
     const user = await User.findOne({ username });
 
     if (user) {
-      req.userId = user._id;
+      req.userIdFromUsername = user._id;
     }
   }
 
