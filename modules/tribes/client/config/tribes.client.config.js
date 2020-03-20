@@ -1,19 +1,16 @@
 import showTemplateUrl from '@/modules/tribes/client/views/tribe.client.view.html';
 
-angular
-  .module('tribes')
-  .config(TribesRoutes);
+angular.module('tribes').config(TribesRoutes);
 
 /* @ngInject */
 function TribesRoutes($stateProvider) {
-
-  $stateProvider.
-    state('tribes', {
+  $stateProvider
+    .state('tribes', {
       url: '/tribes',
       abstract: true,
       template: '<ui-view/>',
-    }).
-    state('tribes.list', {
+    })
+    .state('tribes.list', {
       url: '',
       template: `
         <tribes-page
@@ -28,8 +25,8 @@ function TribesRoutes($stateProvider) {
       data: {
         pageTitle: 'Tribes',
       },
-    }).
-    state('tribes.tribe', {
+    })
+    .state('tribes.tribe', {
       url: '/:tribe',
       footerHidden: true,
       templateUrl: showTemplateUrl,
@@ -38,7 +35,7 @@ function TribesRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         TribeService: 'TribeService',
-        tribe: function (TribeService, $stateParams) {
+        tribe: function(TribeService, $stateParams) {
           return TribeService.get({
             tribeSlug: $stateParams.tribe,
           });
@@ -48,5 +45,4 @@ function TribesRoutes($stateProvider) {
         pageTitle: 'Tribe',
       },
     });
-
 }

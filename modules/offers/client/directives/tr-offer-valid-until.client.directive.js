@@ -24,8 +24,11 @@ function trOfferValidUntilDirective() {
   return directive;
 
   /* @ngInject */
-  function trOfferValidUntilDirectiveController($scope, moment, SettingsFactory) {
-
+  function trOfferValidUntilDirectiveController(
+    $scope,
+    moment,
+    SettingsFactory,
+  ) {
     const appSettings = SettingsFactory.get();
 
     // View model
@@ -48,7 +51,9 @@ function trOfferValidUntilDirective() {
     // https://angular-ui.github.io/bootstrap/#!#datepicker
     vm.calendarOptions = {
       showWeeks: false, // Hide week numbers
-      maxDate: moment().add(appSettings.limits.maxOfferValidFromNow || { days: 30 }).toDate(),
+      maxDate: moment()
+        .add(appSettings.limits.maxOfferValidFromNow || { days: 30 })
+        .toDate(),
       minDate: new Date(), // @TODO: this could be server date instead of client date
       startingDay: 1, // Start week on Monday
       maxMode: 'month', // Disable year selector
@@ -60,7 +65,6 @@ function trOfferValidUntilDirective() {
      * Initialize controller
      */
     function activate() {
-
       // If date was prepopulated, just set directive to calendar mode
       if ($scope.validUntil) {
         vm.isCalendarVisible = true;
@@ -69,14 +73,17 @@ function trOfferValidUntilDirective() {
         setValidUntilDays(vm.offerValidityInDays);
       }
 
-      $scope.$watch('trOfferValidUntil.offerValidityInDays', function (newValue, oldValue) {
+      $scope.$watch('trOfferValidUntil.offerValidityInDays', function(
+        newValue,
+        oldValue,
+      ) {
         if (newValue !== oldValue) {
           setValidUntilDays(newValue);
         }
       });
 
       // Update $scope when view model updates
-      $scope.$watch('trOfferValidUntil.validUntil', function (date) {
+      $scope.$watch('trOfferValidUntil.validUntil', function(date) {
         $scope.validUntil = date;
       });
     }
@@ -87,16 +94,18 @@ function trOfferValidUntilDirective() {
      * @param {Int} days Number of days to set to future
      */
     function setValidUntilDays(days) {
-
       days = parseInt(days, 10);
 
       // Defaults to max
       // @link https://momentjs.com/docs/#/manipulating/add/
-      const add = days ? { days: days } : appSettings.limits.maxOfferValidFromNow;
+      const add = days
+        ? { days: days }
+        : appSettings.limits.maxOfferValidFromNow;
 
-      vm.validUntil = moment().endOf('day').add(add).toDate();
+      vm.validUntil = moment()
+        .endOf('day')
+        .add(add)
+        .toDate();
     }
-
   }
-
 }

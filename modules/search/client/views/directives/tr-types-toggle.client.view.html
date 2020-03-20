@@ -1,13 +1,14 @@
 <div>
   <ul class="list-unstyled" ng-if="trTypesToggle.types.length">
-    <li class="form-group"
-        ng-repeat="type in ::trTypesToggle.types">
-        <label tr-switch tr-switch-side="left">
-          <input type="checkbox"
-                 ng-model="trTypesToggle.toggles[type.id]"
-                 ng-change="trTypesToggle.onToggleChange()">
-          {{::type.label}}
-        </label>
+    <li class="form-group" ng-repeat="type in ::trTypesToggle.types">
+      <label tr-switch tr-switch-side="left">
+        <input
+          type="checkbox"
+          ng-model="trTypesToggle.toggles[type.id]"
+          ng-change="trTypesToggle.onToggleChange()"
+        />
+        {{::type.label}}
+      </label>
     </li>
   </ul>
 </div>

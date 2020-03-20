@@ -2,11 +2,15 @@
   <div ng-if="tribesInCommon.memberships.length" class="tribes-common">
     <h4>Tribes in common</h4>
     <ul class="list-inline">
-      <li ng-repeat="membership in ::tribesInCommon.memberships track by membership.tribe._id">
-        <a class="tribe-link"
-           ui-sref="tribes.tribe({ tribe: membership.tribe.slug })"
-           ng-click="tribesInCommon.openTribe(membership.tribe)"
-           ng-bind="::membership.tribe.label"></a>
+      <li
+        ng-repeat="membership in ::tribesInCommon.memberships track by membership.tribe._id"
+      >
+        <a
+          class="tribe-link"
+          ui-sref="tribes.tribe({ tribe: membership.tribe.slug })"
+          ng-click="tribesInCommon.openTribe(membership.tribe)"
+          ng-bind="::membership.tribe.label"
+        ></a>
       </li>
     </ul>
   </div>

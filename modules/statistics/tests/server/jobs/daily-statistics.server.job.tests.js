@@ -7,23 +7,24 @@ const stathat = require('stathat');
 const sinon = require('sinon');
 const _ = require('lodash');
 const config = require(path.resolve('./config/config'));
-const statsJob = require(path.resolve('./modules/statistics/server/jobs/daily-statistics.server.job'));
+const statsJob = require(path.resolve(
+  './modules/statistics/server/jobs/daily-statistics.server.job',
+));
 
-describe('Daily Statistics Job - Unit Test', function () {
-
-  afterEach(function () {
+describe('Daily Statistics Job - Unit Test', function() {
+  afterEach(function() {
     // restore the stubbed services
     sinon.restore();
   });
 
   // stub the influx and stathat endpoints
-  beforeEach(function () {
+  beforeEach(function() {
     // stub the influx endpoint(s)
     sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
 
     // and writeMeasurement returns a Promise
     influx.InfluxDB.prototype.writeMeasurement.returns(
-      new Promise(function (resolve) {
+      new Promise(function(resolve) {
         process.nextTick(resolve());
       }),
     );
@@ -41,8 +42,8 @@ describe('Daily Statistics Job - Unit Test', function () {
     stathat.trackEZValue.callsArgAsync(3);
   });
 
-  context('influxdb configured', function () {
-    beforeEach(function () {
+  context('influxdb configured', function() {
+    beforeEach(function() {
       // stub enable stathat in config
       sinon.stub(config.stathat, 'enabled').value(false);
 
@@ -50,34 +51,53 @@ describe('Daily Statistics Job - Unit Test', function () {
       sinon.stub(config.influxdb, 'enabled').value(true);
     });
 
-    it('should reach the influxdb with data in correct format', function (done) {
-      statsJob(null, function (e) {
+    it('should reach the influxdb with data in correct format', function(done) {
+      statsJob(null, function(e) {
         if (e) return done(e);
 
         try {
           // test influx endpoint
 
           // Called total 2 times, once per each stat call in job
-          sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 17);
+          sinon.assert.callCount(
+            influx.InfluxDB.prototype.writeMeasurement,
+            17,
+          );
 
           // Member count stat point
-          const memberMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
-          const memberPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
+          const memberMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(
+            0,
+          ).args[0];
+          const memberPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(
+            0,
+          ).args[1];
           const memberPoint = memberPoints[0];
           should(memberPoints.length).eql(1);
           should(memberMeasurement).eql('members');
-          should(memberPoint).have.propertyByPath('fields', 'count').eql(0);
-          should(memberPoint).have.propertyByPath('tags', 'members').eql('members');
+          should(memberPoint)
+            .have.propertyByPath('fields', 'count')
+            .eql(0);
+          should(memberPoint)
+            .have.propertyByPath('tags', 'members')
+            .eql('members');
           should(memberPoint).not.have.property('timestamp');
 
           // Push registration count stat point
-          const pushMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[0];
-          const pushPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[1];
+          const pushMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(
+            1,
+          ).args[0];
+          const pushPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(
+            1,
+          ).args[1];
           const pushPoint = pushPoints[0];
           should(pushPoints.length).eql(1);
           should(pushMeasurement).eql('pushRegistrations');
-          should(pushPoint).have.propertyByPath('fields', 'count').eql(0);
-          should(pushPoint).have.propertyByPath('tags', 'type').eql('all');
+          should(pushPoint)
+            .have.propertyByPath('fields', 'count')
+            .eql(0);
+          should(pushPoint)
+            .have.propertyByPath('tags', 'type')
+            .eql('all');
           should(pushPoint).not.have.property('timestamp');
 
           return done();
@@ -88,8 +108,8 @@ describe('Daily Statistics Job - Unit Test', function () {
     });
   });
 
-  context('stathat configured', function () {
-    beforeEach(function () {
+  context('stathat configured', function() {
+    beforeEach(function() {
       // stub the config.stathat.key
       sinon.stub(config.stathat, 'key').value('stathatkey');
 
@@ -100,8 +120,8 @@ describe('Daily Statistics Job - Unit Test', function () {
       sinon.stub(config.influxdb, 'enabled').value(false);
     });
 
-    it('should reach stathat with data in correct format', function (done) {
-      statsJob(null, function (e) {
+    it('should reach stathat with data in correct format', function(done) {
+      statsJob(null, function(e) {
         if (e) return done(e);
 
         try {
@@ -123,33 +143,45 @@ describe('Daily Statistics Job - Unit Test', function () {
           ]);
 
           // the first argument to the endpoint should be the stathat key
-          should(memberGroupedArgs[0]).deepEqual([config.stathat.key, config.stathat.key]);
-          should(pushGroupedArgs[0]).deepEqual([config.stathat.key, config.stathat.key]);
+          should(memberGroupedArgs[0]).deepEqual([
+            config.stathat.key,
+            config.stathat.key,
+          ]);
+          should(pushGroupedArgs[0]).deepEqual([
+            config.stathat.key,
+            config.stathat.key,
+          ]);
 
           // the 2nd argument to the endpoint should be the name
-          _.forEach([
-            'members.count',
-            'members.count.members.members', // with the members tag
-          ], function (value) {
-            should(memberGroupedArgs[1]).containEql(value);
-          });
+          _.forEach(
+            [
+              'members.count',
+              'members.count.members.members', // with the members tag
+            ],
+            function(value) {
+              should(memberGroupedArgs[1]).containEql(value);
+            },
+          );
 
-          _.forEach([
-            'pushRegistrations.count',
-            'pushRegistrations.count.type.all', // with the members tag
-          ], function (value) {
-            should(pushGroupedArgs[1]).containEql(value);
-          });
+          _.forEach(
+            [
+              'pushRegistrations.count',
+              'pushRegistrations.count.type.all', // with the members tag
+            ],
+            function(value) {
+              should(pushGroupedArgs[1]).containEql(value);
+            },
+          );
 
           // the 3rd argument to the endpoint should be a value (values)
           should(memberGroupedArgs[2]).deepEqual([0, 0]);
           should(pushGroupedArgs[2]).deepEqual([0, 0]);
 
           // the 4th argument to the endpoint is a callback
-          _.forEach(memberGroupedArgs[3], function (arg) {
+          _.forEach(memberGroupedArgs[3], function(arg) {
             should(arg).be.Function();
           });
-          _.forEach(pushGroupedArgs[3], function (arg) {
+          _.forEach(pushGroupedArgs[3], function(arg) {
             should(arg).be.Function();
           });
 
@@ -159,7 +191,5 @@ describe('Daily Statistics Job - Unit Test', function () {
         }
       });
     });
-
   });
-
 });

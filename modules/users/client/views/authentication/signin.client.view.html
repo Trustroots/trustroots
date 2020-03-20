@@ -1,69 +1,87 @@
-<section class="container board container-fullscreen" tr-boards="['nordiclights', 'jungleroad']">
+<section
+  class="container board container-fullscreen"
+  tr-boards="['nordiclights', 'jungleroad']"
+>
   <div class="middle-wrapper middle-wrapper-horizontal">
     <div class="middle-content">
-
       <div class="row">
-        <div class="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4">
-          <form name="signinForm"
-                class="form-auth"
-                autocomplete="off"
-                ng-submit="auth.signin()" >
+        <div
+          class="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4"
+        >
+          <form
+            name="signinForm"
+            class="form-auth"
+            autocomplete="off"
+            ng-submit="auth.signin()"
+          >
             <fieldset>
               <div class="form-group">
                 <label for="username" class="lead">Email or username</label>
-                <input type="text"
-                       autocapitalize="off"
-                       required
-                       id="username"
-                       name="username"
-                       class="form-control input-lg"
-                       placeholder="Email or username"
-                       ng-model="auth.credentials.username"
-                       ng-disabled="auth.isLoading"
-                       tabindex="1">
+                <input
+                  type="text"
+                  autocapitalize="off"
+                  required
+                  id="username"
+                  name="username"
+                  class="form-control input-lg"
+                  placeholder="Email or username"
+                  ng-model="auth.credentials.username"
+                  ng-disabled="auth.isLoading"
+                  tabindex="1"
+                />
               </div>
               <div class="form-group">
                 <label for="password" class="lead">Password</label>
                 <div class="input-group">
-                  <input required
-                         id="password"
-                         name="password"
-                         placeholder="Password"
-                         class="form-control input-lg"
-                         ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
-                         autocapitalize="off"
-                         ng-disabled="auth.isLoading"
-                         ng-model="auth.credentials.password"
-                         tabindex="2">
+                  <input
+                    required
+                    id="password"
+                    name="password"
+                    placeholder="Password"
+                    class="form-control input-lg"
+                    ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
+                    autocapitalize="off"
+                    ng-disabled="auth.isLoading"
+                    ng-model="auth.credentials.password"
+                    tabindex="2"
+                  />
                   <span class="input-group-btn">
-                    <a class="btn btn-lg btn-default btn-password-toggle"
-                       role="button"
-                       aria-label="Toggle password visibility"
-                       ng-click="showPassword = !showPassword">
-                      <i class="icon-lg"
+                    <a
+                      class="btn btn-lg btn-default btn-password-toggle"
+                      role="button"
+                      aria-label="Toggle password visibility"
+                      ng-click="showPassword = !showPassword"
+                    >
+                      <i
+                        class="icon-lg"
                         ng-class="{
                           'icon-eye': !showPassword,
                           'icon-eye-off': showPassword
-                        }"></i>
+                        }"
+                      ></i>
                     </a>
                   </span>
                 </div>
               </div>
               <div class="form-group">
-                <button type="submit"
-                        class="btn btn-default btn-lg"
-                        ng-disabled="auth.isLoading"
-                        tabindex="3">
+                <button
+                  type="submit"
+                  class="btn btn-default btn-lg"
+                  ng-disabled="auth.isLoading"
+                  tabindex="3"
+                >
                   <span ng-if="!auth.isLoading">
                     {{ auth.continue ? 'Sign in to continue' : 'Login' }}
                   </span>
                   <span ng-if="auth.isLoading">Wait...</span>
                 </button>
                 <span class="btn space-h"></span>
-                <a ui-sref="forgot({ userhandle: auth.credentials.username })"
-                   class="btn-link"
-                   ng-class="{ 'btn-lg btn-link': auth.authError }"
-                   tabindex="4">
+                <a
+                  ui-sref="forgot({ userhandle: auth.credentials.username })"
+                  class="btn-link"
+                  ng-class="{ 'btn-lg btn-link': auth.authError }"
+                  tabindex="4"
+                >
                   Forgot?
                   <span ng-if="auth.authError" class="hidden-xs">
                     Recover your password
@@ -74,25 +92,30 @@
           </form>
           <!-- For bigger screens -->
           <div class="text-white hidden-xs">
-            <br>
-            <a ui-sref="signup" class="btn btn-inverse btn-lg btn-signup">Become a member</a>
+            <br />
+            <a ui-sref="signup" class="btn btn-inverse btn-lg btn-signup"
+              >Become a member</a
+            >
             <span>&nbsp;&nbsp;or&nbsp;&nbsp;</span>
             <a ui-sref="home" class="link">Back home</a>
           </div>
         </div>
-      </div><!-- .row-->
-
-
+      </div>
+      <!-- .row-->
 
       <!-- For smaller screens -->
       <nav class="navbar navbar-default navbar-fixed-bottom visible-xs-block">
         <div class="container">
-          <ul class="nav navbar-nav nav-justified" role="toolbar" aria-label="Profile actions">
-          <li>
-            <a ui-sref="home" aria-label="Go to home page">
-              Back home
-            </a>
-          </li>
+          <ul
+            class="nav navbar-nav nav-justified"
+            role="toolbar"
+            aria-label="Profile actions"
+          >
+            <li>
+              <a ui-sref="home" aria-label="Go to home page">
+                Back home
+              </a>
+            </li>
             <li class="pull-right">
               <a ui-sref="signup" aria-label="Sign up">
                 Become a member
@@ -101,7 +124,7 @@
           </ul>
         </div>
       </nav>
-
     </div>
   </div>
-</section><!-- .container -->
+</section>
+<!-- .container -->

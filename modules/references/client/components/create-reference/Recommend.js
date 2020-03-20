@@ -2,10 +2,19 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import '@/config/client/i18n';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import Report from './Report';
 
-const Recommend = withTranslation('reference')(function ({ t, primaryInteraction, recommend, report, reportMessage, onChangeRecommend, onChangeReport, onChangeReportMessage }) {
+export default function Recommend({
+  primaryInteraction,
+  recommend,
+  report,
+  reportMessage,
+  onChangeRecommend,
+  onChangeReport,
+  onChangeReportMessage,
+}) {
+  const { t } = useTranslation('reference');
 
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),
@@ -26,7 +35,8 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
           name="recommend"
           onChange={onChangeRecommend}
           value={recommend}
-          aria-labelledby="would-you-recommend-them-question">
+          aria-labelledby="would-you-recommend-them-question"
+        >
           <ToggleButton
             className="btn btn-lg"
             aria-checked={recommend === 'yes'}
@@ -51,7 +61,7 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
             bsStyle="default"
             bsSize="large"
           >
-            {t('I don\'t know')}
+            {t("I don't know")}
           </ToggleButton>
         </ToggleButtonGroup>
         {recommend === 'no' && (
@@ -65,7 +75,7 @@ const Recommend = withTranslation('reference')(function ({ t, primaryInteraction
       </div>
     </div>
   );
-});
+}
 
 Recommend.propTypes = {
   primaryInteraction: PropTypes.string.isRequired,
@@ -76,5 +86,3 @@ Recommend.propTypes = {
   onChangeReport: PropTypes.func.isRequired,
   onChangeReportMessage: PropTypes.func.isRequired,
 };
-
-export default Recommend;

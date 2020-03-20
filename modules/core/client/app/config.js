@@ -1,6 +1,7 @@
 /* eslint no-var: 0 */
 
 import angular from 'angular';
+import compact from 'lodash/compact';
 
 import bootstrapModules from '@/config/client/bootstrap';
 
@@ -37,6 +38,13 @@ import ngreact from 'ngreact';
 
 import 'angular-waypoints/dist/angular-waypoints.all';
 
+// eslint-disable-next-line angular/window-service
+const SENTRY_DSN = window.SENTRY_DSN;
+
+if (SENTRY_DSN) {
+  require('@/config/client/sentry').init(SENTRY_DSN);
+}
+
 // Init the application configuration module for AngularJS application
 // Init module configuration options
 // When testing, `window.env` is undefined, thus default to 'test'
@@ -44,7 +52,7 @@ import 'angular-waypoints/dist/angular-waypoints.all';
 const appEnv = process.env.NODE_ENV || 'test';
 
 const appModuleName = 'trustroots';
-const appModuleVendorDependencies = [
+const appModuleVendorDependencies = compact([
   ngreact.name,
   ngAria,
   ngResource,
@@ -66,8 +74,9 @@ const appModuleVendorDependencies = [
   angularLocker,
   'angular-confirm',
   angularGrid,
+  SENTRY_DSN && 'ngSentry',
   ...bootstrapModules,
-];
+]);
 
 /**
  * Load different service dependency for Angulartics depending on environment
@@ -87,7 +96,7 @@ if (appEnv === 'production') {
 }
 
 // Add a new vertical module
-const registerModule = function (moduleName, dependencies) {
+const registerModule = function(moduleName, dependencies) {
   // Create angular module
   angular.module(moduleName, dependencies || []);
 

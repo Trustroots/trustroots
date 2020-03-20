@@ -46,10 +46,10 @@ function runNodemon(done) {
       defaultAssets.server.config,
     ),
   })
-    .on('crash', function () {
+    .on('crash', function() {
       console.error('[Server] Script crashed.');
     })
-    .on('exit', function () {
+    .on('exit', function() {
       console.log('[Server] Script exited.');
     });
   done();
@@ -71,41 +71,46 @@ function runNodemonWorker(done) {
       defaultAssets.server.config,
     ),
   })
-    .on('crash', function () {
+    .on('crash', function() {
       console.error('[Worker] Script crashed.');
     })
-    .on('exit', function () {
+    .on('exit', function() {
       console.log('[Worker] Script exited.');
     });
   done();
 }
 
 // Set NODE_ENV to 'development' and prepare environment
-gulp.task('env:dev', gulp.series(
-  function (done) {
+gulp.task(
+  'env:dev',
+  gulp.series(function(done) {
     process.env.NODE_ENV = 'development';
     done();
-  },
-));
+  }),
+);
 
 // Set NODE_ENV to 'production' and prepare environment
-gulp.task('env:prod', gulp.series(
-  function (done) {
+gulp.task(
+  'env:prod',
+  gulp.series(function(done) {
     process.env.NODE_ENV = 'production';
     done();
-  },
-));
+  }),
+);
 
 // Watch server test files
 gulp.task('watch:server:run-tests', function watchServerRunTests() {
   // Add Server Test file rules
-  gulp.watch([
-    'modules/*/tests/server/**/*.js',
-    ...defaultAssets.server.allJS,
-    defaultAssets.server.migrations,
-  ],
-  gulp.series('test:server'))
-    .on('change', function (changedFile) {
+  gulp
+    .watch(
+      [
+        'modules/*/tests/server/**/*.js',
+        ...defaultAssets.server.allJS,
+        defaultAssets.server.migrations,
+      ],
+      gulp.series('test:server'),
+    )
+    .on('change', function(changedFile) {
       changedTestFiles = [];
       // determine if the changed (watched) file is a server test
       if (minimatch(changedFile, 'modules/*/tests/server/**/*.js')) {
@@ -121,12 +126,15 @@ gulp.task('clean', function clean() {
 
 // Generate font icon files from Fontello.com
 function fontello() {
-  return gulp.src(defaultAssets.server.fontelloConfig)
-    .pipe(plugins.fontello({
-      font: 'font', // Destination dir for Fonts and Glyphs
-      css: 'css', // Destination dir for CSS Styles,
-      assetsOnly: false,
-    }))
+  return gulp
+    .src(defaultAssets.server.fontelloConfig)
+    .pipe(
+      plugins.fontello({
+        font: 'font', // Destination dir for Fonts and Glyphs
+        css: 'css', // Destination dir for CSS Styles,
+        assetsOnly: false,
+      }),
+    )
     .pipe(print())
     .pipe(gulp.dest('modules/core/client/fonts/fontello'));
 }
@@ -135,33 +143,39 @@ function mocha(done) {
   // Open mongoose connections
   const mongooseService = require('./config/lib/mongoose');
   const agenda = require('./config/lib/agenda');
-  const testSuites = changedTestFiles.length > 0 ? changedTestFiles : 'modules/*/tests/server/**/*.js';
+  const testSuites =
+    changedTestFiles.length > 0
+      ? changedTestFiles
+      : 'modules/*/tests/server/**/*.js';
   let error;
 
   // Connect mongoose
-  mongooseService.connect(function (db) {
+  mongooseService.connect(function(db) {
     // Clean out test database to have clean base
-    mongooseService.dropDatabase(db, function () {
+    mongooseService.dropDatabase(db, function() {
       mongooseService.loadModels();
 
       // Run the tests
-      gulp.src(testSuites)
-        .pipe(plugins.mocha({
-          reporter: 'spec',
-          timeout: 10000,
-        }))
-        .on('error', function (err) {
+      gulp
+        .src(testSuites)
+        .pipe(
+          plugins.mocha({
+            reporter: 'spec',
+            timeout: 10000,
+          }),
+        )
+        .on('error', function(err) {
           // If an error occurs, save it
           error = err;
           console.error(err);
         })
-        .on('end', function () {
+        .on('end', function() {
           // When the tests are done, disconnect agenda/mongoose
           // and pass the error state back to gulp
           // @TODO: https://github.com/Trustroots/trustroots/issues/438
           // @link https://github.com/agenda/agenda/pull/450
-          agenda._mdb.close(function () {
-            mongooseService.disconnect(function () {
+          agenda._mdb.close(function() {
+            mongooseService.disconnect(function() {
               done(error);
             });
           });
@@ -173,37 +187,22 @@ function mocha(done) {
 // Run fontello update
 gulp.task('fontello', fontello);
 
-gulp.task('test:server', gulp.series(
-  mocha,
-));
-
+gulp.task('test:server', gulp.series(mocha));
 
 // Watch all server files for changes & run server tests (test:server) task on changes
-gulp.task('test:server:watch', gulp.series(
-  'test:server',
-  'watch:server:run-tests',
-));
+gulp.task(
+  'test:server:watch',
+  gulp.series('test:server', 'watch:server:run-tests'),
+);
 
 // Run the project in development mode
-gulp.task('develop', gulp.series(
-  'env:dev',
-  runNodemon,
-));
+gulp.task('develop', gulp.series('env:dev', runNodemon));
 
 // Run the project in production mode
-gulp.task('prod', gulp.series(
-  'env:prod',
-  runNodemon,
-));
+gulp.task('prod', gulp.series('env:prod', runNodemon));
 
 // Run worker script in development mode
-gulp.task('worker:dev', gulp.series(
-  'env:dev',
-  runNodemonWorker,
-));
+gulp.task('worker:dev', gulp.series('env:dev', runNodemonWorker));
 
 // Run worker script in production mode
-gulp.task('worker:prod', gulp.series(
-  'env:prod',
-  runNodemonWorker,
-));
+gulp.task('worker:prod', gulp.series('env:prod', runNodemonWorker));

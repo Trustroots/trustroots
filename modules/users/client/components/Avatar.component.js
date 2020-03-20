@@ -1,7 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import has from 'lodash/has';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
+import '@/config/client/i18n';
+import { useTranslation } from 'react-i18next';
 
 /**
  * User's avatar
@@ -10,7 +11,14 @@ import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
  * @param {string=''} source - Leave empty to use user's selected source. Values "none", "facebook", "local", "gravatar".
  * @param {boolean=true} link - Include a link to user's profile. Defaults to true.
  */
-export function Avatar({ t, user, size=256, source='', link=true, onClick }) {
+export default function Avatar({
+  user,
+  size = 256,
+  source = '',
+  link = true,
+  onClick,
+}) {
+  const { t } = useTranslation('user');
 
   source = source || user.avatarSource;
   const defaultAvatar = '/img/avatar.png';
@@ -18,8 +26,11 @@ export function Avatar({ t, user, size=256, source='', link=true, onClick }) {
   const avatar = avatarUrl(user, source, size, defaultAvatar);
 
   const img = (
-    <img className={`avatar avatar-${size} avatar-${source}`}
-      alt={''/* t('Profile picture of {{name}}', { name: user.displayName }) */}
+    <img
+      className={`avatar avatar-${size} avatar-${source}`}
+      alt={
+        '' /* t('Profile picture of {{name}}', { name: user.displayName }) */
+      }
       aria-hidden="true"
       src={avatar}
       draggable="false"
@@ -27,30 +38,30 @@ export function Avatar({ t, user, size=256, source='', link=true, onClick }) {
   );
 
   return (
-    <div onClick={onClick}>{
-      (link)
-        ?
+    <div onClick={onClick}>
+      {link ? (
         <a
           href={`/profile/${user.username}`}
-          aria-label={t('Open user profile for {{name}}', { name: user.displayName })}
-        >{img}</a>
-        :
+          aria-label={t('Open user profile for {{name}}', {
+            name: user.displayName,
+          })}
+        >
+          {img}
+        </a>
+      ) : (
         img
-    }</div>
+      )}
+    </div>
   );
 }
 
 Avatar.propTypes = {
-  t: PropTypes.func.isRequired,
   user: PropTypes.object.isRequired,
   size: PropTypes.number,
   source: PropTypes.string,
   link: PropTypes.bool,
   onClick: PropTypes.func,
 };
-
-export default withTranslation('user')(Avatar);
-
 
 /**
  * Generate avatar url from facebook
@@ -63,7 +74,10 @@ export default withTranslation('user')(Avatar);
 function facebookAvatarUrl(user, size) {
   const isValid = has(user, 'additionalProvidersData.facebook.id');
 
-  return isValid && `https://graph.facebook.com/${user.additionalProvidersData.facebook.id}/picture/?width=${size}&height=${size}`;
+  return (
+    isValid &&
+    `https://graph.facebook.com/${user.additionalProvidersData.facebook.id}/picture/?width=${size}&height=${size}`
+  );
 }
 
 /**
@@ -102,7 +116,12 @@ function gravatarUrl(user, size, defaultAvatar) {
   // @TODO use config to set the location. (host, port & protocol should be provided from config)
   const fallbackImage = `https://trustroots.org${defaultAvatar}`;
 
-  return isValid && `https://gravatar.com/avatar/${user.emailHash}?s=${size}&d=${encodeURIComponent(fallbackImage)}`;
+  return (
+    isValid &&
+    `https://gravatar.com/avatar/${
+      user.emailHash
+    }?s=${size}&d=${encodeURIComponent(fallbackImage)}`
+  );
 }
 
 /**
@@ -114,8 +133,10 @@ function gravatarUrl(user, size, defaultAvatar) {
  * @returns {string} - the url
  */
 function avatarUrl(user, source, size, defaultAvatar) {
-  return (source === 'local' && localAvatarUrl(user, size))
-    || (source === 'gravatar' && gravatarUrl(user, size, defaultAvatar))
-    || (source === 'facebook' && facebookAvatarUrl(user, size))
-    || `${defaultAvatar}?none`;
+  return (
+    (source === 'local' && localAvatarUrl(user, size)) ||
+    (source === 'gravatar' && gravatarUrl(user, size, defaultAvatar)) ||
+    (source === 'facebook' && facebookAvatarUrl(user, size)) ||
+    `${defaultAvatar}?none`
+  );
 }

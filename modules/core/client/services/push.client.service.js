@@ -1,8 +1,6 @@
 import questionModalTemplateUrl from '@/modules/core/client/views/push-notification-question-modal.client.view.html';
 
-angular
-  .module('core')
-  .factory('push', push);
+angular.module('core').factory('push', push);
 
 /* @ngInject */
 function push(
@@ -13,8 +11,8 @@ function push(
   $window,
   $uibModal,
   locker,
-  $q) {
-
+  $q,
+) {
   const LOCKER_KEY = 'tr.push';
 
   const push = {
@@ -23,7 +21,7 @@ function push(
     isEnabled: loadEnabled(),
     isBlocked: getIsBlocked(),
 
-    init: function () {
+    init: function() {
       if (firebaseMessaging.shouldInitialize) {
         return setup();
       } else {
@@ -32,23 +30,22 @@ function push(
     },
 
     /**
-    * Enable local browser push notifications
-    */
-    enable: function () {
+     * Enable local browser push notifications
+     */
+    enable: function() {
       if (!push.isSupported) return $q.reject(new Error('push is unsupported'));
       saveEnabled(true);
       return enable();
     },
 
     /**
-    * Disable local browser push notifications
-    */
-    disable: function () {
+     * Disable local browser push notifications
+     */
+    disable: function() {
       if (!push.isSupported) return $q.reject(new Error('push is unsupported'));
       saveEnabled(false);
       return disable();
     },
-
   };
 
   const store = {
@@ -57,7 +54,7 @@ function push(
 
   firebaseMessaging.onTokenRefresh(setup);
 
-  firebaseMessaging.onMessage(function (payload) {
+  firebaseMessaging.onMessage(function(payload) {
     // eslint-disable-next-line no-new
     new $window.Notification(payload.notification.title, {
       body: payload.notification.body,
@@ -69,9 +66,11 @@ function push(
   return push;
 
   function getIsSupported() {
-    return !!($window.Notification &&
-              $window.navigator.serviceWorker &&
-              $window.PushManager);
+    return !!(
+      $window.Notification &&
+      $window.navigator.serviceWorker &&
+      $window.PushManager
+    );
   }
 
   function getIsBlocked() {
@@ -103,17 +102,21 @@ function push(
     // - locker isn't supported (we can't store status)
     // - we've asked already (stored with `locker`)
     // - no authenticated user
-    if (!locker.supported() || locker.get(pushAskedKey) || !Authentication.user) {
+    if (
+      !locker.supported() ||
+      locker.get(pushAskedKey) ||
+      !Authentication.user
+    ) {
       return;
     }
 
     $uibModal.open({
       templateUrl: questionModalTemplateUrl,
-      controller: function ($scope, $uibModalInstance) {
+      controller: function($scope, $uibModalInstance) {
         const vm = this;
 
         // Yes! Turn push notifications on
-        vm.yes = function () {
+        vm.yes = function() {
           // Enable push notifications
           enable();
 
@@ -122,11 +125,10 @@ function push(
         };
 
         // When modal is closed/dismissed
-        $scope.$on('modal.closing', function () {
+        $scope.$on('modal.closing', function() {
           // Store info that we've now asked and user reacted
           locker.put(pushAskedKey, 'yes');
         });
-
       },
       controllerAs: 'askPushNotificationsModal',
       animation: true,
@@ -159,11 +161,12 @@ function push(
 
   function enable() {
     push.isBusy = true;
-    return firebaseMessaging.getToken()
-      .then(function (token) {
+    return firebaseMessaging
+      .getToken()
+      .then(function(token) {
         store.token = token;
         if (token) {
-          return receivedToken(token).then(function () {
+          return receivedToken(token).then(function() {
             push.isEnabled = true;
             push.isBusy = false;
           });
@@ -171,9 +174,12 @@ function push(
           // no token yet, have to ask user nicely
           return firebaseMessaging.requestPermission().then(enable);
         }
-      }).catch(function (err) {
-        if (err.code === 'messaging/notifications-blocked' ||
-            err.code === 'messaging/permission-blocked') {
+      })
+      .catch(function(err) {
+        if (
+          err.code === 'messaging/notifications-blocked' ||
+          err.code === 'messaging/permission-blocked'
+        ) {
           push.isBlocked = true;
         }
         push.isBusy = false;
@@ -184,44 +190,52 @@ function push(
   function disable() {
     if (!store.token) return $q.resolve();
     push.isBusy = true;
-    return firebaseMessaging.deleteToken(
-      store.token,
-    ).then(function () {
-      return removeTokenFromServer(store.token);
-    }).then(function () {
-      push.isBusy = false;
-      store.token = null;
-      push.isEnabled = false;
-    }).catch(function (err) {
-      push.isBusy = false;
-      return $q.reject(err);
-    });
+    return firebaseMessaging
+      .deleteToken(store.token)
+      .then(function() {
+        return removeTokenFromServer(store.token);
+      })
+      .then(function() {
+        push.isBusy = false;
+        store.token = null;
+        push.isEnabled = false;
+      })
+      .catch(function(err) {
+        push.isBusy = false;
+        return $q.reject(err);
+      });
   }
 
   function userHasToken(token) {
-    return !!Authentication.user.pushRegistration.find(function (registration) {
+    return !!Authentication.user.pushRegistration.find(function(registration) {
       return registration.token === token;
     });
   }
 
   function addTokenToServer(token) {
-    return $http.post('/api/users/push/registrations', { token: token, platform: 'web' })
-      .then(function (res) {
+    return $http
+      .post('/api/users/push/registrations', { token: token, platform: 'web' })
+      .then(function(res) {
         Authentication.user = res.data.user;
-      }).catch(handleServerError);
+      })
+      .catch(handleServerError);
   }
 
   function removeTokenFromServer(token) {
-    return $http.delete('/api/users/push/registrations/' + token)
-      .then(function (res) {
+    return $http
+      .delete('/api/users/push/registrations/' + token)
+      .then(function(res) {
         Authentication.user = res.data.user;
-      }).catch(handleServerError);
+      })
+      .catch(handleServerError);
   }
 
   function handleServerError(response) {
     let errorMessage;
     if (response) {
-      errorMessage = 'Error: ' + ((response.data && response.data.message) || 'Something went wrong.');
+      errorMessage =
+        'Error: ' +
+        ((response.data && response.data.message) || 'Something went wrong.');
     } else {
       errorMessage = 'Something went wrong.';
     }
@@ -240,5 +254,4 @@ function push(
       firebaseMessaging.removeServiceWorker();
     }
   }
-
 }

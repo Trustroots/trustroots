@@ -50,13 +50,10 @@ import MediumEditor from 'medium-editor/dist/js/medium-editor';
  * ```
  *
  */
-angular
-  .module('core')
-  .directive('trEditor', trEditorDirective);
+angular.module('core').directive('trEditor', trEditorDirective);
 
 /* @ngInject */
 function trEditorDirective($parse) {
-
   function toInnerText(value) {
     // eslint-disable-next-line angular/document-service
     const tempEl = document.createElement('div');
@@ -71,15 +68,14 @@ function trEditorDirective($parse) {
     scope: {
       trEditorOptions: '=',
     },
-    link: function (scope, iElement, iAttrs, ngModel) {
-
+    link: function(scope, iElement, iAttrs, ngModel) {
       const angularIElement = angular.element(iElement);
 
       angularIElement.addClass('tr-editor');
 
       ngModel.editor = new MediumEditor(iElement, scope.trEditorOptions);
 
-      ngModel.$render = function () {
+      ngModel.$render = function() {
         iElement.html(ngModel.$viewValue || '');
 
         const placeholder = ngModel.editor.getExtensionByName('placeholder');
@@ -88,7 +84,7 @@ function trEditorDirective($parse) {
         }
       };
 
-      ngModel.$isEmpty = function (value) {
+      ngModel.$isEmpty = function(value) {
         if (/[<>]/.test(value)) {
           return toInnerText(value).length === 0;
         } else if (value) {
@@ -98,13 +94,13 @@ function trEditorDirective($parse) {
         }
       };
 
-      ngModel.editor.subscribe('editableInput', function (event, editable) {
+      ngModel.editor.subscribe('editableInput', function(event, editable) {
         ngModel.$setViewValue(editable.innerHTML.trim());
       });
 
       // On ctrl+enter
       if (iAttrs.trEditorOnCtrlEnter) {
-        ngModel.editor.subscribe('editableKeydownEnter', function (event) {
+        ngModel.editor.subscribe('editableKeydownEnter', function(event) {
           if (event.ctrlKey) {
             event.preventDefault();
             // Apply linked function
@@ -113,7 +109,7 @@ function trEditorDirective($parse) {
         });
       }
 
-      scope.$watch('trEditorOptions', function (trEditorOptions) {
+      scope.$watch('trEditorOptions', function(trEditorOptions) {
         ngModel.editor.init(iElement, trEditorOptions);
       });
     },

@@ -1,6 +1,4 @@
-angular
-  .module('core')
-  .factory('SettingsService', SettingsService);
+angular.module('core').factory('SettingsService', SettingsService);
 
 /* @ngInject */
 function SettingsService($window) {
@@ -20,12 +18,9 @@ function SettingsService($window) {
   }
 }
 
-
 // TODO: Clean this out (deprecated)
 
-angular
-  .module('core')
-  .factory('SettingsFactory', SettingsFactory);
+angular.module('core').factory('SettingsFactory', SettingsFactory);
 
 /* @ngInject */
 function SettingsFactory($window) {

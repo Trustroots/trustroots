@@ -3,8 +3,13 @@ angular
   .controller('ProfileEditNetworksController', ProfileEditNetworksController);
 
 /* @ngInject */
-function ProfileEditNetworksController($scope, $http, Users, Authentication, messageCenterService) {
-
+function ProfileEditNetworksController(
+  $scope,
+  $http,
+  Users,
+  Authentication,
+  messageCenterService,
+) {
   // ViewModel
   const vm = this;
 
@@ -26,38 +31,55 @@ function ProfileEditNetworksController($scope, $http, Users, Authentication, mes
    */
   function isWarmshowersId() {
     let x;
-    return isNaN(vm.user.extSitesWS) ? !1 : (x = parseFloat(vm.user.extSitesWS), (0 | x) === x);
+    return isNaN(vm.user.extSitesWS)
+      ? !1
+      : ((x = parseFloat(vm.user.extSitesWS)), (0 | x) === x);
   }
 
   /**
    * Check if there are additional accounts
    */
   function hasConnectedAdditionalSocialAccounts() {
-    return (vm.user.additionalProvidersData && Object.keys(vm.user.additionalProvidersData).length);
+    return (
+      vm.user.additionalProvidersData &&
+      Object.keys(vm.user.additionalProvidersData).length
+    );
   }
 
   /**
    * Check if provider is already in use with current user
    */
   function isConnectedSocialAccount(provider) {
-    return vm.user.additionalProvidersData && vm.user.additionalProvidersData[provider];
+    return (
+      vm.user.additionalProvidersData &&
+      vm.user.additionalProvidersData[provider]
+    );
   }
 
   /**
    * Remove a user social account
    */
   function removeUserSocialAccount(provider) {
-    $http.delete('/api/users/accounts/' + provider)
-      .then(
-        function (response) { // On success function
-          messageCenterService.add('success', 'Succesfully disconnected from ' + provider);
-          vm.user = Authentication.user = response.data;
-          $scope.$emit('userUpdated');
-        },
-        function (response) { // On error function
-          messageCenterService.add('danger', response.data.message || 'Something went wrong. Try again or contact us to disconnect your profile.', { timeout: 10000 });
-        },
-      );
+    $http.delete('/api/users/accounts/' + provider).then(
+      function(response) {
+        // On success function
+        messageCenterService.add(
+          'success',
+          'Succesfully disconnected from ' + provider,
+        );
+        vm.user = Authentication.user = response.data;
+        $scope.$emit('userUpdated');
+      },
+      function(response) {
+        // On error function
+        messageCenterService.add(
+          'danger',
+          response.data.message ||
+            'Something went wrong. Try again or contact us to disconnect your profile.',
+          { timeout: 10000 },
+        );
+      },
+    );
   }
 
   /**
@@ -65,16 +87,26 @@ function ProfileEditNetworksController($scope, $http, Users, Authentication, mes
    */
   function updateUserProfile(isValid) {
     if (isValid) {
-      vm.user.$update(function (response) {
-        Authentication.user = response;
-        $scope.$emit('userUpdated');
-        messageCenterService.add('success', 'Hospitality networks updated.');
-      }, function (response) {
-        messageCenterService.add('danger', response.data.message || 'Something went wrong. Please try again!', { timeout: 10000 });
-      });
+      vm.user.$update(
+        function(response) {
+          Authentication.user = response;
+          $scope.$emit('userUpdated');
+          messageCenterService.add('success', 'Hospitality networks updated.');
+        },
+        function(response) {
+          messageCenterService.add(
+            'danger',
+            response.data.message || 'Something went wrong. Please try again!',
+            { timeout: 10000 },
+          );
+        },
+      );
     } else {
-      messageCenterService.add('danger', 'Please fix errors from your profile and try again.', { timeout: 10000 });
+      messageCenterService.add(
+        'danger',
+        'Please fix errors from your profile and try again.',
+        { timeout: 10000 },
+      );
     }
   }
-
 }

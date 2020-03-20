@@ -5,7 +5,9 @@ const request = require('supertest');
 const should = require('should');
 const sinon = require('sinon');
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
-const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
+const userProfile = require(path.resolve(
+  './modules/users/server/controllers/users.profile.server.controller',
+));
 const express = require(path.resolve('./config/lib/express'));
 
 describe('Read a single reference by reference id', () => {
@@ -17,14 +19,21 @@ describe('Read a single reference by reference id', () => {
   const agent = request.agent(app);
 
   const _usersPublic = utils.generateUsers(3, { public: true });
-  const _usersPrivate = utils.generateUsers(1, { public: false, username: 'private', email: 'non@example.com' });
+  const _usersPrivate = utils.generateUsers(1, {
+    public: false,
+    username: 'private',
+    email: 'non@example.com',
+  });
   const _users = [..._usersPublic, ..._usersPrivate];
 
   let users;
   let references;
 
   beforeEach(() => {
-    sinon.useFakeTimers({ now: new Date('2019-01-13 13:21:55.1'), toFake: ['Date'] });
+    sinon.useFakeTimers({
+      now: new Date('2019-01-13 13:21:55.1'),
+      toFake: ['Date'],
+    });
   });
 
   afterEach(() => {
@@ -51,9 +60,12 @@ describe('Read a single reference by reference id', () => {
    * 2 T F .
    */
   const referenceData = [
-    [0, 1], [0, 2, { public: false }],
-    [1, 0, { public: false }], [1, 2],
-    [2, 0], [2, 1, { public: false }],
+    [0, 1],
+    [0, 2, { public: false }],
+    [1, 0, { public: false }],
+    [1, 2],
+    [2, 0],
+    [2, 1, { public: false }],
   ];
 
   beforeEach(async () => {
@@ -64,7 +76,6 @@ describe('Read a single reference by reference id', () => {
   afterEach(utils.clearDatabase);
 
   context('logged in as public user', () => {
-
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
@@ -117,7 +128,13 @@ describe('Read a single reference by reference id', () => {
         created: new Date().toISOString(),
       });
 
-      should(body).have.only.keys('userFrom', 'userTo', '_id', 'public', 'created');
+      should(body).have.only.keys(
+        'userFrom',
+        'userTo',
+        '_id',
+        'public',
+        'created',
+      );
     });
 
     it('[private references not from self] 404', async () => {
@@ -133,7 +150,7 @@ describe('Read a single reference by reference id', () => {
       });
     });
 
-    it('[reference doesn\'t exist] 404', async () => {
+    it("[reference doesn't exist] 404", async () => {
       const { body } = await agent
         .get(`/api/references/${'a'.repeat(24)}`)
         .expect(404);
@@ -147,9 +164,7 @@ describe('Read a single reference by reference id', () => {
     });
 
     it('[invalid referenceId] 400', async () => {
-      const { body } = await agent
-        .get('/api/references/foo')
-        .expect(400);
+      const { body } = await agent.get('/api/references/foo').expect(400);
 
       should(body).eql({
         message: 'Bad request.',
@@ -165,17 +180,13 @@ describe('Read a single reference by reference id', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent
-        .get(`/api/references/${references[3]._id}`)
-        .expect(403);
+      await agent.get(`/api/references/${references[3]._id}`).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent
-        .get(`/api/references/${references[3]._id}`)
-        .expect(403);
+      await agent.get(`/api/references/${references[3]._id}`).expect(403);
     });
   });
 });

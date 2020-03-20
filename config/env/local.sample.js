@@ -16,7 +16,6 @@ module.exports = {
     // List your fature flag modifications here
   }
   */
-
   /*
   // Appears on top of every page for authenticated users.
   // There's no way turning them off permanently,
@@ -28,7 +27,6 @@ module.exports = {
     message: 'Hey {{app.user.displayName}}!'
   },
   */
-
   // Uncomment if you have installed InfluxDB and would like to store collected statistics
   /*
   influxdb: {
@@ -43,7 +41,6 @@ module.exports = {
     }
   },
   */
-
   // Uncomment if you have a stathat account and would like to collect statistics.
   // You need to provide your stathat key
   /*
@@ -54,7 +51,6 @@ module.exports = {
     key: ''
   },
   */
-
   // Uncomment to configure Google FCM push
   // serviceAccount comes from a json file downloaded from the fcm console
   /*
@@ -64,7 +60,6 @@ module.exports = {
     }
   },
   */
-
   // Uncomment if you want to have Mapbox maps at development environment
   /*
   mapbox: {
@@ -97,7 +92,6 @@ module.exports = {
     publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
   }
   */
-
   /*
   // Is site invitation only?
   // Set `enabled` to `true`

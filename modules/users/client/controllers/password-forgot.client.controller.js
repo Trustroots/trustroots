@@ -4,7 +4,6 @@ angular
 
 /* @ngInject */
 function ForgotPasswordController($http, $stateParams) {
-
   // ViewModel
   const vm = this;
 
@@ -22,19 +21,20 @@ function ForgotPasswordController($http, $stateParams) {
   function askForPasswordReset() {
     vm.success = vm.error = null;
     vm.isLoading = true;
-    $http.post('/api/auth/forgot', vm.credentials)
-      .then(
-        function (response) { // On success function
+    $http.post('/api/auth/forgot', vm.credentials).then(
+      function(response) {
+        // On success function
         // Show user success message and clear form
-          vm.credentials = null;
-          vm.success = response.data.message;
-          vm.isLoading = false;
-        },
-        function (response) { // On error function
+        vm.credentials = null;
+        vm.success = response.data.message;
+        vm.isLoading = false;
+      },
+      function(response) {
+        // On error function
         // Show user error message
-          vm.isLoading = false;
-          vm.error = response.data.message;
-        },
-      );
+        vm.isLoading = false;
+        vm.error = response.data.message;
+      },
+    );
   }
 }

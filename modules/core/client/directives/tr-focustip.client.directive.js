@@ -6,9 +6,7 @@
  *
  * Note that currently this directive uses isolated scope, so you can't combine it with other isolate scope directives.
  */
-angular
-  .module('core')
-  .directive('trFocustip', trFocustipDirective);
+angular.module('core').directive('trFocustip', trFocustipDirective);
 
 /* @ngInject */
 function trFocustipDirective($compile) {
@@ -18,24 +16,27 @@ function trFocustipDirective($compile) {
     scope: {
       trFocustip: '=',
     },
-    link: function (scope, element) {
-
+    link: function(scope, element) {
       // Compiled template
       // after() requires jQuery
-      const template = $compile('<div class="help-block" ng-show="enabled">' + scope.trFocustip + '</div>')(scope);
+      const template = $compile(
+        '<div class="help-block" ng-show="enabled">' +
+          scope.trFocustip +
+          '</div>',
+      )(scope);
       element.after(template);
 
       element
-        .bind('focus', function () {
+        .bind('focus', function() {
           // Enable only if there's some text to show
-          scope.enabled = (angular.isString(scope.trFocustip) && scope.trFocustip !== '');
+          scope.enabled =
+            angular.isString(scope.trFocustip) && scope.trFocustip !== '';
           scope.$apply();
         })
-        .bind('blur', function () {
+        .bind('blur', function() {
           scope.enabled = false;
           scope.$apply();
         });
-
     },
   };
 }

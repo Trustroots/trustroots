@@ -3,14 +3,15 @@ const path = require('path');
 const facebook = require(path.resolve('./config/lib/facebook-api.js'));
 const log = require(path.resolve('./config/lib/logger'));
 
-module.exports = function (job, done) {
-
+module.exports = function(job, done) {
   // Get job id from Agenda job attributes
   // Agenda stores Mongo `ObjectId` so turning that into a string here
   const jobId = _.get(job, 'attrs._id').toString();
 
   // Log that we're sending an email
-  log('debug', 'Starting `send facebook notification` job #jdjh73', { jobId: jobId });
+  log('debug', 'Starting `send facebook notification` job #jdjh73', {
+    jobId: jobId,
+  });
 
   // Collect parameters for FB notification object
   // https://developers.facebook.com/docs/games/services/appnotifications#parameters
@@ -41,23 +42,28 @@ module.exports = function (job, done) {
   facebook.post(
     '/' + job.attrs.data.toUserFacebookId + '/notifications',
     notification,
-    function (err) {
+    function(err) {
       if (err) {
         // Log the failure to send the notification
         log('error', 'The `send facebook notification` job failed #38hgsj', {
           jobId: jobId,
           error: err,
         });
-        return done(new Error('Failed to communicate with Facebook Graph API. #38hgtt'));
+        return done(
+          new Error('Failed to communicate with Facebook Graph API. #38hgtt'),
+        );
       } else {
         // Log the successful delivery of the notification
-        log('info', 'Successfully finished `send facebook notification` job #39jjjd', {
-          jobId: jobId,
-        });
+        log(
+          'info',
+          'Successfully finished `send facebook notification` job #39jjjd',
+          {
+            jobId: jobId,
+          },
+        );
 
         return done();
       }
     },
   );
-
 };

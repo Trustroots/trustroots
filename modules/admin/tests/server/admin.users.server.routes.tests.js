@@ -63,6 +63,7 @@ describe('Admin User CRUD tests', () => {
         removeProfileToken: 'test-token',
         resetPasswordToken: 'test-token',
         roles: ['user'],
+        created: new Date(),
         ...credentialsRegular,
       });
 
@@ -79,48 +80,52 @@ describe('Admin User CRUD tests', () => {
 
   describe('As non-authenticated user...', () => {
     it('Non-authenticated users should not be allowed to search users', async () => {
-      await agent.post('/api/admin/users')
+      await agent
+        .post('/api/admin/users')
         .send({ search: 'Name' })
         .expect(403);
     });
 
     it('Non-authenticated users should not be allowed to list users by role', async () => {
-      await agent.post('/api/admin/users/by-role')
+      await agent
+        .post('/api/admin/users/by-role')
         .send({ role: 'admin' })
         .expect(403);
     });
 
     it('Mon-authenticated users should not be allowed to get user by ID', async () => {
-      await agent.post('/api/admin/user')
+      await agent
+        .post('/api/admin/user')
         .send({ id: userRegularId })
         .expect(403);
     });
 
     it('Non-authenticated users should not be allowed to change user roles', async () => {
-      await agent.post('/api/admin/user/change-role')
+      await agent
+        .post('/api/admin/user/change-role')
         .send({ id: userRegularId, role: 'suspended' })
         .expect(403);
     });
 
     it('Non-authenticated users should not be allowed to change user roles', async () => {
-      await agent.post('/api/admin/user/change-role')
+      await agent
+        .post('/api/admin/user/change-role')
         .send({ id: userRegularId, role: 'suspended' })
         .expect(403);
     });
   });
 
   describe('As authenticated user...', () => {
-
     afterEach(async () => {
       await utils.signOut(agent);
     });
 
     describe('Search users', () => {
-
       it('non-admin users should not be allowed to search', async () => {
         await utils.signIn(credentialsRegular, agent);
 
-        await agent.post('/api/admin/users')
+        await agent
+          .post('/api/admin/users')
           .send({ search: 'Name' })
           .expect(403);
       });
@@ -128,16 +133,19 @@ describe('Admin User CRUD tests', () => {
       it('admin users should be allowed to search and get correct results', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/users')
+        const { body } = await agent
+          .post('/api/admin/users')
           .send({ search: 'Name' })
           .expect(200);
 
         should(body.length).equal(2);
 
+        should.exist(body[0].created);
+        should.exist(body[1].created);
         should(body[0].username).equal('user-admin');
         should(body[1].username).equal('user-regular');
 
-        body.forEach((user) => {
+        body.forEach(user => {
           // These should have been removed
           should.not.exist(user.password);
           should.not.exist(user.salt);
@@ -150,7 +158,8 @@ describe('Admin User CRUD tests', () => {
       it('should find by username', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/users')
+        const { body } = await agent
+          .post('/api/admin/users')
           .send({ search: 'user-regular' })
           .expect(200);
 
@@ -161,7 +170,8 @@ describe('Admin User CRUD tests', () => {
       it('should find by email', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/users')
+        const { body } = await agent
+          .post('/api/admin/users')
           .send({ search: 'regular@example.com' })
           .expect(200);
 
@@ -171,11 +181,11 @@ describe('Admin User CRUD tests', () => {
     });
 
     describe('List users by role', () => {
-
       it('non-admin users should not be allowed to list users by role', async () => {
         await utils.signIn(credentialsRegular, agent);
 
-        await agent.post('/api/admin/users/by-role')
+        await agent
+          .post('/api/admin/users/by-role')
           .send({ role: 'admin' })
           .expect(403);
       });
@@ -183,7 +193,8 @@ describe('Admin User CRUD tests', () => {
       it('admin users should be allowed to list users by role and get correct results', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/users/by-role')
+        const { body } = await agent
+          .post('/api/admin/users/by-role')
           .send({ role: 'admin' })
           .expect(200);
 
@@ -205,19 +216,19 @@ describe('Admin User CRUD tests', () => {
       it('listing users by invalid role should not be possible', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        await agent.post('/api/admin/users/by-role')
+        await agent
+          .post('/api/admin/users/by-role')
           .send({ role: 'fake' })
           .expect(400);
       });
-
     });
 
     describe('Get user by ID', () => {
-
       it('non-admin users should not be allowed to query', async () => {
         await utils.signIn(credentialsRegular, agent);
 
-        await agent.post('/api/admin/user')
+        await agent
+          .post('/api/admin/user')
           .send({ id: userRegularId })
           .expect(403);
       });
@@ -225,7 +236,8 @@ describe('Admin User CRUD tests', () => {
       it('admin users should be allowed to query and get correct result', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/user')
+        const { body } = await agent
+          .post('/api/admin/user')
           .send({ id: userRegularId })
           .expect(200);
 
@@ -244,7 +256,8 @@ describe('Admin User CRUD tests', () => {
       it('missing id should return no users', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/user')
+        const { body } = await agent
+          .post('/api/admin/user')
           .send({ id: '' })
           .expect(400);
 
@@ -254,7 +267,8 @@ describe('Admin User CRUD tests', () => {
       it('invalid id should return no users', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/user')
+        const { body } = await agent
+          .post('/api/admin/user')
           .send({ id: '123' })
           .expect(400);
 
@@ -263,21 +277,22 @@ describe('Admin User CRUD tests', () => {
     });
 
     describe('Changing user roles', () => {
-
       it('non-admin users should not be allowed to change user roles', async () => {
         await utils.signIn(credentialsRegular, agent);
 
-        await agent.post('/api/admin/user/change-role')
+        await agent
+          .post('/api/admin/user/change-role')
           .send({ id: userRegularId, role: 'suspended' })
           .expect(403);
       });
 
       // Allowed roles
-      ['moderator', 'shadowban', 'suspended'].map((role) => {
+      ['moderator', 'shadowban', 'suspended'].map(role => {
         it(`admin users should be allowed change user role to ${role}`, async () => {
           await utils.signIn(credentialsAdmin, agent);
 
-          await agent.post('/api/admin/user/change-role')
+          await agent
+            .post('/api/admin/user/change-role')
             .send({ id: userRegularId, role })
             .expect(200);
         });
@@ -286,7 +301,8 @@ describe('Admin User CRUD tests', () => {
       it('missing id should not change user role', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/user/change-role')
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
           .send({ id: '', role: 'suspended' })
           .expect(400);
 
@@ -296,7 +312,8 @@ describe('Admin User CRUD tests', () => {
       it('invalid role should not be change user roles', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/user/change-role')
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
           .send({ id: userRegularId, role: 'fake' })
           .expect(400);
 
@@ -306,7 +323,8 @@ describe('Admin User CRUD tests', () => {
       it('cannot change user role to admin', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/user/change-role')
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
           .send({ id: userRegularId, role: 'admin' })
           .expect(400);
 
@@ -316,7 +334,8 @@ describe('Admin User CRUD tests', () => {
       it('invalid id should not change user roles', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
-        const { body } = await agent.post('/api/admin/user/change-role')
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
           .send({ id: '123', role: 'suspended' })
           .expect(400);
 
@@ -324,5 +343,4 @@ describe('Admin User CRUD tests', () => {
       });
     });
   });
-
 });

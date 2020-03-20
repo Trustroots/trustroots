@@ -12,9 +12,7 @@
  * Options: yes (default), no
  * See https://uploadcare.com/documentation/cdn/#operation-progressive
  */
-angular
-  .module('tribes')
-  .directive('trTribeStyles', trTribeStylesDirective);
+angular.module('tribes').directive('trTribeStyles', trTribeStylesDirective);
 
 /* @ngInject */
 function trTribeStylesDirective() {
@@ -22,18 +20,33 @@ function trTribeStylesDirective() {
     restrict: 'A',
     replace: false,
     scope: false,
-    link: function (scope, elem, attrs) {
-
-      if (angular.isDefined(attrs.trTribeStyles) && attrs.trTribeStyles !== '') {
+    link: function(scope, elem, attrs) {
+      if (
+        angular.isDefined(attrs.trTribeStyles) &&
+        attrs.trTribeStyles !== ''
+      ) {
         let style = '';
         const tribe = angular.fromJson(attrs.trTribeStyles);
 
         // Set background image
         // Uses Uploadcare.com to resize and deliver images
         if (tribe.image_UUID) {
-          const dimensions = (angular.isDefined(attrs.trTribeStylesDimensions) && attrs.trTribeStylesDimensions !== '') ? attrs.trTribeStylesDimensions : '1024x768';
-          const quality = (angular.isDefined(attrs.trTribeStylesQuality) && attrs.trTribeStylesQuality !== '') ? attrs.trTribeStylesQuality : 'lighter';
-          const progressive = (angular.isDefined(attrs.trTribeStylesProgressive) && (attrs.trTribeStylesProgressive === 'yes' || attrs.trTribeStylesProgressive === 'no')) ? attrs.trTribeStylesProgressive : 'no';
+          const dimensions =
+            angular.isDefined(attrs.trTribeStylesDimensions) &&
+            attrs.trTribeStylesDimensions !== ''
+              ? attrs.trTribeStylesDimensions
+              : '1024x768';
+          const quality =
+            angular.isDefined(attrs.trTribeStylesQuality) &&
+            attrs.trTribeStylesQuality !== ''
+              ? attrs.trTribeStylesQuality
+              : 'lighter';
+          const progressive =
+            angular.isDefined(attrs.trTribeStylesProgressive) &&
+            (attrs.trTribeStylesProgressive === 'yes' ||
+              attrs.trTribeStylesProgressive === 'no')
+              ? attrs.trTribeStylesProgressive
+              : 'no';
 
           // Available CDN parameters: https://uploadcare.com/documentation/cdn/
           const img_params = [
@@ -43,7 +56,12 @@ function trTribeStylesDirective() {
             'format/jpeg',
           ];
 
-          style += 'background-image: url(https://ucarecdn.com/' + tribe.image_UUID + '/-/' + img_params.join('/-/') + '/);';
+          style +=
+            'background-image: url(https://ucarecdn.com/' +
+            tribe.image_UUID +
+            '/-/' +
+            img_params.join('/-/') +
+            '/);';
         }
 
         if (tribe.color) {
@@ -54,7 +72,6 @@ function trTribeStylesDirective() {
           attrs.$set('style', style);
         }
       }
-
     },
   };
 }

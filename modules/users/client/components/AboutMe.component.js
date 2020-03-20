@@ -14,9 +14,7 @@ export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
   return (
     <>
       <section className="panel panel-default">
-        <header className="panel-heading">
-          {t('About me')}
-        </header>
+        <header className="panel-heading">{t('About me')}</header>
         <div className="panel-body">
           {profile.description && (
             <ReadMorePanel
@@ -28,7 +26,9 @@ export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
           {/* If no description, show deep thoughts... */}
           {!profile.description && (
             <blockquote
-              aria-label={t('Member has not written description about themself.')}
+              aria-label={t(
+                'Member has not written description about themself.',
+              )}
               className="profile-quote"
             >
               {t('“Everyone is necessarily the hero of their own life story.”')}
@@ -37,14 +37,22 @@ export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
         </div>
 
         {/* User watching their own profile and it's too short */}
-        {(isSelf && (!profile.description || plainTextLength(profile.description) < profileMinimumLength)) &&
-        <footer className="panel-footer">
-          <p className="lead">
-            {t('Your profile description should be longer so that you can send messages.')}
-            <br/><br />
-            <a href="/profile/edit" className="btn btn-primary">{t('Fill your profile')}</a>
-          </p>
-        </footer>}
+        {isSelf &&
+          (!profile.description ||
+            plainTextLength(profile.description) < profileMinimumLength) && (
+            <footer className="panel-footer">
+              <p className="lead">
+                {t(
+                  'Your profile description should be longer so that you can send messages.',
+                )}
+                <br />
+                <br />
+                <a href="/profile/edit" className="btn btn-primary">
+                  {t('Fill your profile')}
+                </a>
+              </p>
+            </footer>
+          )}
       </section>
     </>
   );

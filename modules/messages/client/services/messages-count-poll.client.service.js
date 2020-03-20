@@ -8,8 +8,12 @@ angular
   .factory('PollMessagesCount', PollMessagesCountFactory);
 
 /* @ngInject */
-function PollMessagesCountFactory($interval, $rootScope, MessagesCount, Authentication) {
-
+function PollMessagesCountFactory(
+  $interval,
+  $rootScope,
+  MessagesCount,
+  Authentication,
+) {
   const highFrequency = 2 * 60 * 1000; // once every 2 minutes
   const lowFrequency = 5 * 60 * 1000; // once every 5 minutes
   let frequency = highFrequency;
@@ -62,10 +66,11 @@ function PollMessagesCountFactory($interval, $rootScope, MessagesCount, Authenti
       return;
     }
     isPolling = true;
-    MessagesCount.get(function (data) {
+    MessagesCount.get(function(data) {
       isPolling = false;
 
-      const newUnreadCount = (data && data.unread) ? parseInt(data.unread, 10) : 0;
+      const newUnreadCount =
+        data && data.unread ? parseInt(data.unread, 10) : 0;
 
       if (unreadCount !== newUnreadCount) {
         unreadCount = newUnreadCount;
@@ -85,16 +90,20 @@ function PollMessagesCountFactory($interval, $rootScope, MessagesCount, Authenti
    * Set the frequency
    */
   function setFrequency(frequencyString) {
-    const newFrequency = (frequencyString === 'low') ? lowFrequency : highFrequency;
+    const newFrequency =
+      frequencyString === 'low' ? lowFrequency : highFrequency;
 
     if (newFrequency !== frequency) {
       frequency = newFrequency;
       setPollingInterval();
       // When turning to high frequency, poll on frequency change
-      if (frequencyString === 'high' && Authentication.user && Authentication.user.public) {
+      if (
+        frequencyString === 'high' &&
+        Authentication.user &&
+        Authentication.user.public
+      ) {
         poll();
       }
     }
   }
-
 }

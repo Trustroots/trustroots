@@ -19,27 +19,34 @@ describe('Admin Audit Log CRUD tests', () => {
   afterEach(utils.clearDatabase);
 
   describe('Search users', () => {
-    it('non-authenticated users should not be allowed to read audit log', (done) => {
-      agent.get('/api/admin/audit-log').expect(403).end(done);
+    it('non-authenticated users should not be allowed to read audit log', done => {
+      agent
+        .get('/api/admin/audit-log')
+        .expect(403)
+        .end(done);
     });
 
-    it('non-admin users should not be allowed to read audit log', (done) => {
-      agent.post('/api/auth/signin')
+    it('non-admin users should not be allowed to read audit log', done => {
+      agent
+        .post('/api/auth/signin')
         .send(_users[1])
         .expect(200)
         .end(() => {
-          agent.get('/api/admin/audit-log')
+          agent
+            .get('/api/admin/audit-log')
             .expect(403)
             .end(done);
         });
     });
 
-    it('admin users should be allowed to read audit log', (done) => {
-      agent.post('/api/auth/signin')
+    it('admin users should be allowed to read audit log', done => {
+      agent
+        .post('/api/auth/signin')
         .send(_users[0])
         .expect(200)
         .end(() => {
-          agent.get('/api/admin/audit-log')
+          agent
+            .get('/api/admin/audit-log')
             .expect(200)
             .end(done);
         });

@@ -4,10 +4,8 @@ angular
 
 /* @ngInject */
 function threadDimensionsDirective($window, $timeout) {
-
   return {
-    link: function (scope, elemContainer) {
-
+    link: function(scope, elemContainer) {
       // vars used with $timeout to cancel() timeouts.
       let refreshLayoutTimeout;
       let scrollToBottomTimeout;
@@ -27,9 +25,9 @@ function threadDimensionsDirective($window, $timeout) {
        * Fire resize() at <html> so that jQuery-Waypoints wakes up and can thus
        * check what's visible on the screen and mark visible messages read.
        */
-      elemThread.bind('scroll', function () {
+      elemThread.bind('scroll', function() {
         if (onScrollTimeout) $timeout.cancel(onScrollTimeout);
-        onScrollTimeout = $timeout(function () {
+        onScrollTimeout = $timeout(function() {
           elemHtml.resize();
         }, 300);
       });
@@ -46,7 +44,7 @@ function threadDimensionsDirective($window, $timeout) {
       /**
        * Scroll thread to bottom to show latest messages
        */
-      const scrollToBottom = function () {
+      const scrollToBottom = function() {
         elemThread.scrollTop(elemThread[0].scrollHeight);
       };
 
@@ -59,7 +57,6 @@ function threadDimensionsDirective($window, $timeout) {
         scrollToBottomTimeout = $timeout(scrollToBottom, 300);
       }
 
-
       /**
        * Refresh layout
        *
@@ -68,11 +65,10 @@ function threadDimensionsDirective($window, $timeout) {
        * Mostly this is needed due growing text field
        */
       function refreshLayout() {
-
         if (!isInitialized) {
           isInitialized = true;
-          $timeout(function () {
-            elemContainer.css({ 'opacity': '1.0' });
+          $timeout(function() {
+            elemContainer.css({ opacity: '1.0' });
           });
         }
 
@@ -82,9 +78,9 @@ function threadDimensionsDirective($window, $timeout) {
         const elemContainerWidth = elemContainer.width();
 
         // container has 15px padding on both sides when window is bigger than screen-sm-max (768px)
-        const elemContainerPadding = ($window.innerWidth < 768) ? -15 : 30;
+        const elemContainerPadding = $window.innerWidth < 768 ? -15 : 30;
 
-        const combinedHeight = elemReplyHeight + (elemReplyHeight / 3);
+        const combinedHeight = elemReplyHeight + elemReplyHeight / 3;
 
         elemQuickReply.css({
           bottom: combinedHeight,
@@ -104,15 +100,16 @@ function threadDimensionsDirective($window, $timeout) {
       /**
        * Listeners & event bindings
        */
-      scope.$on('threadRefreshLayout', function () {
+      scope.$on('threadRefreshLayout', function() {
         activateRefreshLayout();
       });
 
-      scope.$on('threadScrollToBottom', function () {
+      scope.$on('threadScrollToBottom', function() {
         activateScrollToBottom();
       });
 
-      angular.element($window)
+      angular
+        .element($window)
         .on('resize', activateRefreshLayout)
         .bind('orientationchange', activateRefreshLayout);
 
@@ -120,7 +117,6 @@ function threadDimensionsDirective($window, $timeout) {
       activateRefreshLayout();
       activateScrollToBottom();
       scope.$emit('threadDimensinsLoaded');
-
     }, // link()
   };
 }

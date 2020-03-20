@@ -27,17 +27,22 @@ function HomeRunBlock($location, $window, Authentication) {
 
 /* @ngInject */
 function HomeController($stateParams, $window, TribesService, TribeService) {
-
   const headerHeight = angular.element('#tr-header').height() || 0;
 
   // View model
   const vm = this;
 
   // Exposed to the view
-  vm.boardHeight = $window.innerWidth <= 480 && $window.innerHeight < 700 ? 400 : $window.innerHeight - headerHeight + 14;
+  vm.boardHeight =
+    $window.innerWidth <= 480 && $window.innerHeight < 700
+      ? 400
+      : $window.innerHeight - headerHeight + 14;
 
   // Load front page's landing photos
-  if ($stateParams.tribe && ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1) {
+  if (
+    $stateParams.tribe &&
+    ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1
+  ) {
     // Photos for these 3 tribes
     vm.boards = [
       'rainbowpeople',
@@ -60,7 +65,7 @@ function HomeController($stateParams, $window, TribesService, TribeService) {
   }
 
   function isTribeLoaded(tribeSlug) {
-    angular.forEach(vm.tribes, function (tribe) {
+    angular.forEach(vm.tribes, function(tribe) {
       if (tribe.slug === tribeSlug) {
         return true;
       }
@@ -70,20 +75,22 @@ function HomeController($stateParams, $window, TribesService, TribeService) {
   }
 
   // Load suggested tribes
-  vm.tribes = TribesService.query({
-    limit: 3,
-  }, function () {
-    // Got those three tribes, now fetch one more if requested
-    if ($stateParams.tribe && !isTribeLoaded($stateParams.tribe)) {
-      TribeService.get({
-        tribeSlug: $stateParams.tribe,
-      }).then(function (tribe) {
-        // If tribe was found, put it to the beginning of `vm.tribes` array
-        if (tribe && tribe._id) {
-          vm.tribes.unshift(tribe);
-        }
-      });
-    }
-  });
-
+  vm.tribes = TribesService.query(
+    {
+      limit: 3,
+    },
+    function() {
+      // Got those three tribes, now fetch one more if requested
+      if ($stateParams.tribe && !isTribeLoaded($stateParams.tribe)) {
+        TribeService.get({
+          tribeSlug: $stateParams.tribe,
+        }).then(function(tribe) {
+          // If tribe was found, put it to the beginning of `vm.tribes` array
+          if (tribe && tribe._id) {
+            vm.tribes.unshift(tribe);
+          }
+        });
+      }
+    },
+  );
 }

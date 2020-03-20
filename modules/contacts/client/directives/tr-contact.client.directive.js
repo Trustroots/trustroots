@@ -10,9 +10,7 @@ import templateUrl from '@/modules/contacts/client/views/directives/tr-contact.c
  *
  * You can also define avatar size by passing `tr-contact-avatar-size="128"`
  */
-angular
-  .module('contacts')
-  .directive('trContact', trContactDirective);
+angular.module('contacts').directive('trContact', trContactDirective);
 
 /* @ngInject */
 function trContactDirective(Authentication) {
@@ -32,7 +30,6 @@ function trContactDirective(Authentication) {
 
   /* @ngInject */
   function trContactController($scope) {
-
     // ViewModel
     const vm = this;
 
@@ -44,6 +41,5 @@ function trContactDirective(Authentication) {
 
     // Hides meta info such as "connected since"
     vm.hideMeta = $scope.hideMeta || false;
-
   }
 }

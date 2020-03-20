@@ -2,22 +2,22 @@
 
 Refer to the [Ubuntu Code of Conduct](http://www.ubuntu.com/about/about-ubuntu/conduct) for guidance on how to contribute, particularly the following points:
 
-* Be considerate
-* Be respectful
-* Take responsibility for our words and our actions
-* Be collaborative
-* Value decisiveness, clarity and consensus
-* Ask for help when unsure
-* Step down considerately
+- Be considerate
+- Be respectful
+- Take responsibility for our words and our actions
+- Be collaborative
+- Value decisiveness, clarity and consensus
+- Ask for help when unsure
+- Step down considerately
 
 Our code of conduct might be described as follows.
 
-* Be pragmatic.
-* Be nice to people.
-* Show respect for those who do the work.
-* When in doubt, defer to those with more experience, who have contributed for longer, and support their decisions.
-* [We believe](https://www.trustroots.org/about) in beauty, simplicity and transparency.
-* We emphasize community.
+- Be pragmatic.
+- Be nice to people.
+- Show respect for those who do the work.
+- When in doubt, defer to those with more experience, who have contributed for longer, and support their decisions.
+- [We believe](https://www.trustroots.org/about) in beauty, simplicity and transparency.
+- We emphasize community.
 
 ## Not a discussion forum
 
@@ -34,4 +34,3 @@ We value getting things done attitude. Arguments about minor issues shouldn't ge
 ## Real life interaction
 
 We highly value real life interaction. Both within the network as well as among technical contributors. If possible, try to meet up with other Trustroots contributors in real life. You can connect your Trustroots profile to your GitHub account to facilitate such connections.
-

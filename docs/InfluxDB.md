@@ -128,7 +128,6 @@ _To be continued..._
 
 You can also filter by the position in the thread. You can try to write your own query which will show average and median message length.
 
-
 ### Users
 
 ### Offers

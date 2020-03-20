@@ -8,7 +8,7 @@ import UsersList from '@/modules/users/client/components/UsersList';
 import NoContent from '@/modules/core/client/components/NoContent';
 
 export default function UsersResults({ users }) {
-  const { t } = useTranslation('core');
+  const { t } = useTranslation('search');
   if (!users || users.length === 0) {
     return (
       <NoContent icon="users" message={t('No members found by this name.')} />
@@ -19,7 +19,7 @@ export default function UsersResults({ users }) {
     <div className="row">
       <div className="col-xs-12">
         <h4 className="text-muted">
-          {t('{{users.length}} members found', { count: users.length })}
+          {t('{{count}} members found', { count: users.length })}
         </h4>
         <UsersList users={users} />
       </div>

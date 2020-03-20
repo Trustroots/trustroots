@@ -6,37 +6,59 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 
 import * as api from '../api/tribes.api';
 
-function JoinButtonPresentational({ isMember, isLoading, joinLabel='Join', joinedLabel='Joined', tribe, isLoggedIn, onToggle }) {
+function JoinButtonPresentational({
+  isMember,
+  isLoading,
+  tribe,
+  isLoggedIn,
+  onToggle,
+}) {
   const { t } = useTranslation('tribes');
 
-  const ariaLabel = (isMember) ? t('Leave Tribe') : t(`${joinLabel} ({{label}})`, { label: tribe.label });
-  const buttonLabel = (isMember) ? t(joinedLabel) : t(joinLabel);
+  const ariaLabel = isMember
+    ? t('Leave Tribe')
+    : t('Join ({{label}})', { label: tribe.label });
+  const buttonLabel = isMember ? t('Joined') : t('Join');
 
   // a button to be shown when user is signed out
   if (!isLoggedIn) {
-    return <a
-      href={`/signup?tribe=${tribe.slug}`}
-      type="button"
-      className="btn btn-sm btn-default tribe-join"
-    >
-      <i className="icon-plus" /> {buttonLabel}
-    </a>;
+    return (
+      <a
+        href={`/signup?tribe=${tribe.slug}`}
+        type="button"
+        className="btn btn-sm btn-default tribe-join"
+      >
+        <i className="icon-plus" /> {buttonLabel}
+      </a>
+    );
   }
 
   // a button for joining and leaving a tribe
-  const leaveTooltip = <Tooltip id={`tribe-${tribe._id}`} placement="bottom">{t('Leave Tribe')}</Tooltip>;
-  const btn = <button
-    type="button"
-    className={`${isMember ? 'btn-active' : ''} btn btn-sm btn-default tribe-join`}
-    onClick={onToggle}
-    disabled={isLoading}
-    aria-label={ariaLabel}
-  >
-    <i className={(isMember) ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
-  </button>;
+  const leaveTooltip = (
+    <Tooltip id={`tribe-${tribe._id}`} placement="bottom">
+      {t('Leave Tribe')}
+    </Tooltip>
+  );
+  const btn = (
+    <button
+      type="button"
+      className={`${
+        isMember ? 'btn-active' : ''
+      } btn btn-sm btn-default tribe-join`}
+      onClick={onToggle}
+      disabled={isLoading}
+      aria-label={ariaLabel}
+    >
+      <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
+    </button>
+  );
 
   if (isMember) {
-    return <OverlayTrigger placement="bottom" overlay={leaveTooltip}>{btn}</OverlayTrigger>;
+    return (
+      <OverlayTrigger placement="bottom" overlay={leaveTooltip}>
+        {btn}
+      </OverlayTrigger>
+    );
   } else {
     return btn;
   }
@@ -46,8 +68,6 @@ JoinButtonPresentational.propTypes = {
   isMember: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool,
   isLoggedIn: PropTypes.bool.isRequired,
-  joinLabel: PropTypes.string,
-  joinedLabel: PropTypes.string,
   tribe: PropTypes.object.isRequired,
   onToggle: PropTypes.func,
 };
@@ -107,10 +127,24 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
     setIsLeaving(false);
   }
 
-  return <>
-    <LeaveTribeModal show={isLeaving} tribe={tribe} onConfirm={handleLeave} onCancel={handleCancelLeave}/>
-    <JoinButtonPresentational tribe={tribe} isLoggedIn={!!user} isMember={isMember} isLoading={isUpdating} {...rest} onToggle={handleToggleMembership} />
-  </>;
+  return (
+    <>
+      <LeaveTribeModal
+        show={isLeaving}
+        tribe={tribe}
+        onConfirm={handleLeave}
+        onCancel={handleCancelLeave}
+      />
+      <JoinButtonPresentational
+        tribe={tribe}
+        isLoggedIn={!!user}
+        isMember={isMember}
+        isLoading={isUpdating}
+        {...rest}
+        onToggle={handleToggleMembership}
+      />
+    </>
+  );
 }
 
 JoinButton.propTypes = {

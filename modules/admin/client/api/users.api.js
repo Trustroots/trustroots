@@ -16,6 +16,9 @@ export async function getUser(id) {
 }
 
 export async function setUserRole(id, role) {
-  const { data } = await axios.post('/api/admin/user/change-role', { id, role });
+  const { data } = await axios.post('/api/admin/user/change-role', {
+    id,
+    role,
+  });
   return data;
 }

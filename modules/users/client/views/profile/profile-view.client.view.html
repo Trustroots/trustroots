@@ -1,52 +1,26 @@
 <!-- Top Navigation for small screens -->
-<!-- When looking at own profile -->
-<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block"
-     ng-if="app.user._id === profileCtrl.profile._id">
-  <div class="container">
-    <ul class="nav navbar-nav" role="navigation">
-      <li><a ui-sref="profile-edit.about">Edit your profile</a></li>
-    </ul>
-  </div>
-</nav>
-
-<!-- Top Navigation for small screens -->
-<!-- When looking at somebody else's profile -->
-<nav class="navbar navbar-white navbar-fixed-top navbar-fixed-top-below visible-xs-block"
-     ng-if="app.user._id !== profileCtrl.profile._id">
-  <div class="container">
-    <ul class="nav navbar-nav" role="toolbar" aria-label="Profile actions">
-      <li>
-        <a ui-sref="messageThread({username: profileCtrl.profile.username})">
-          Send a message
-        </a>
-      </li>
-      <li ng-if="app.appSettings.referencesEnabled">
-        <a ui-sref="profile.references.new({username: profileCtrl.profile.username})">
-          Write a reference
-        </a>
-      </li>
-      <li>
-        <a ui-sref="contactAdd({userId: profileCtrl.profile._id})"
-           ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">
-          Add contact
-        </a>
-        <a ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id"
-           tr-contact-remove="profileCtrl.contact">
-          <span ng-if="profileCtrl.contact.confirmed"
-                uib-tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
-                tooltip-placement="bottom">
-            Remove contact
-          </span>
-          <span ng-if="!profileCtrl.contact.confirmed"
-                uib-tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
-                tooltip-placement="bottom">
-            Delete contact request
-          </span>
-        </a>
-      </li>
-    </ul>
-  </div>
-</nav>
+<top-navigation-small
+  ng-if="profileCtrl.contact.$resolved"
+  username="profileCtrl.profile.username"
+  selfId="app.user._id"
+  userId="profileCtrl.profile._id"
+  contact="profileCtrl.contact"
+  referencesEnabled="app.appSettings.referencesEnabled"
+  isResolved="true"
+  onContactRemoved="profileCtrl.removeContact"
+></top-navigation-small>
+<!-- a hack for isResolved to contain a correct value -->
+<!-- @TODO this should be removed as migration to React continues -->
+<top-navigation-small
+  ng-if="!profileCtrl.contact.$resolved"
+  username="profileCtrl.profile.username"
+  selfId="app.user._id"
+  userId="profileCtrl.profile._id"
+  contact="profileCtrl.contact"
+  referencesEnabled="app.appSettings.referencesEnabled"
+  isResolved="false"
+  onContactRemoved="profileCtrl.removeContact"
+></top-navigation-small>
 
 <!-- Bottom Navigation for small screens -->
 <!-- react component -->
@@ -69,43 +43,55 @@ this is a fallback when the contacts are loading
 ></bottom-navigation-small>
 
 <section class="container container-spacer profile-view">
-
   <!-- Loading -->
-  <div class="row content-wait"
-       role="alertdialog"
-       aria-busy="true"
-       aria-live="assertive"
-       ng-if="profileCtrl.profile && !profileCtrl.profile.$resolved">
+  <div
+    class="row content-wait"
+    role="alertdialog"
+    aria-busy="true"
+    aria-live="assertive"
+    ng-if="profileCtrl.profile && !profileCtrl.profile.$resolved"
+  >
     <small>Wait a moment...</small>
   </div>
 
   <!-- Couldn't find profile... -->
-  <div class="row text-center"
-       aria-role="alert"
-       ng-if="!profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public !== false">
+  <div
+    class="row text-center"
+    aria-role="alert"
+    ng-if="!profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public !== false"
+  >
     <h1>Don't panic!</h1>
     <em class="lead">User does not exist.</em>
-    <br><br>
+    <br /><br />
     <a ui-sref="search.map">Continue...</a>
   </div>
 
   <!-- Own profile is non-public -->
-  <div class="row text-center"
-       aria-role="alert"
-       ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false">
-    <em class="lead">Note that your profile will not be visible to others until you confirm your email.</em>
-    <p>If you didn't receive the message, check your spam folder or resend it via <a ui-sref="profile-edit.account">email settings</a>.</p>
-    <hr>
+  <div
+    class="row text-center"
+    aria-role="alert"
+    ng-if="app.user.username === profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public === false"
+  >
+    <em class="lead"
+      >Note that your profile will not be visible to others until you confirm
+      your email.</em
+    >
+    <p>
+      If you didn't receive the message, check your spam folder or resend it via
+      <a ui-sref="profile-edit.account">email settings</a>.
+    </p>
+    <hr />
   </div>
 
   <!-- Profile -->
   <div ng-if="profileCtrl.profile.username && profileCtrl.profile.$resolved">
-
     <!-- Confirm contact -->
-    <div class="row"
-         aria-role="alertdialog"
-         aria-labeledby="confirmContactDialogLabel"
-         ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id && !profileCtrl.contact.confirmed && profileCtrl.contact.userTo._id === app.user._id">
+    <div
+      class="row"
+      aria-role="alertdialog"
+      aria-labeledby="confirmContactDialogLabel"
+      ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id && !profileCtrl.contact.confirmed && profileCtrl.contact.userTo._id === app.user._id"
+    >
       <div class="col-xs-12 text-center">
         <ul class="list-inline">
           <li id="confirmContactDialogLabel">
@@ -113,91 +99,116 @@ this is a fallback when the contacts are loading
             sent you a contact request
           </li>
           <li>
-            <a class="btn btn-sm btn-primary"
-               ui-sref="contactConfirm({contactId: profileCtrl.contact._id})">
+            <a
+              class="btn btn-sm btn-primary"
+              ui-sref="contactConfirm({contactId: profileCtrl.contact._id})"
+            >
               Confirm Request
             </a>
           </li>
           <li>
-            <a class="btn btn-sm btn-danger"
-               tr-contact-remove="profileCtrl.contact">
+            <a
+              class="btn btn-sm btn-danger"
+              tr-contact-remove="profileCtrl.contact"
+            >
               Decline Request
             </a>
           </li>
         </ul>
-        <hr>
+        <hr />
       </div>
     </div>
 
     <div class="row">
-
-      <div class="col-sm-3 hidden-xs" ng-include="~modules/users/client/views/profile/profile-view-basics.client.view.html"></div>
+      <div
+        class="col-sm-3 hidden-xs"
+        ng-include="~modules/users/client/views/profile/profile-view-basics.client.view.html"
+      ></div>
 
       <div class="col-sm-9">
-
         <div class="row hidden-xs">
           <div class="col-xs-12">
-            <h2 class="profile-name"
-                ng-if="profileCtrl.profile.displayName"
-                ng-bind="profileCtrl.profile.displayName">
-            </h2>
+            <h2
+              class="profile-name"
+              ng-if="profileCtrl.profile.displayName"
+              ng-bind="profileCtrl.profile.displayName"
+            ></h2>
 
-            <h4 class="text-muted profile-username"
-                ng-if="profileCtrl.profile.username">
+            <h4
+              class="text-muted profile-username"
+              ng-if="profileCtrl.profile.username"
+            >
               @{{ profileCtrl.profile.username }}
             </h4>
 
-            <a ui-sref="profile-edit.about"
-               class="btn btn-primary pull-right"
-               ng-if="app.user._id === profileCtrl.profile._id">
+            <a
+              ui-sref="profile-edit.about"
+              class="btn btn-primary pull-right"
+              ng-if="app.user._id === profileCtrl.profile._id"
+            >
               Edit your profile
             </a>
 
-            <div class="profile-tagline"
-                 ng-if="profileCtrl.profile.tagline"
-                 ng-bind="profileCtrl.profile.tagline">
-            </div>
+            <div
+              class="profile-tagline"
+              ng-if="profileCtrl.profile.tagline"
+              ng-bind="profileCtrl.profile.tagline"
+            ></div>
           </div>
-
         </div>
 
         <!-- Profile actions -->
         <div class="row hidden-xs">
-
           <!-- When looking at somebody else's profile -->
-          <div class="col-xs-12" ng-if="app.user._id !== profileCtrl.profile._id">
+          <div
+            class="col-xs-12"
+            ng-if="app.user._id !== profileCtrl.profile._id"
+          >
             <ul class="nav nav-pills nav-narrow" role="navigation">
               <li>
-                <a ui-sref="messageThread({username: profileCtrl.profile.username})" class="btn btn-link">
+                <a
+                  ui-sref="messageThread({username: profileCtrl.profile.username})"
+                  class="btn btn-link"
+                >
                   <i class="fa icon-message-alt"></i>
                   Send a message
                 </a>
               </li>
               <li ng-if="app.appSettings.referencesEnabled">
-                <a ui-sref="profile.references.new({username: profileCtrl.profile.username})">
+                <a
+                  ui-sref="profile.references.new({username: profileCtrl.profile.username})"
+                >
                   <i class="icon-plus-squared-alt"></i>
                   Write a reference
                 </a>
               </li>
               <li>
-                <a class="btn btn-link"
-                   ui-sref="contactAdd({userId: profileCtrl.profile._id})"
-                   ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id">
+                <a
+                  class="btn btn-link"
+                  ui-sref="contactAdd({userId: profileCtrl.profile._id})"
+                  ng-if="profileCtrl.contact.$resolved && !profileCtrl.contact._id"
+                >
                   <i class="icon-plus-squared-alt"></i>
                   Add contact
                 </a>
-                <a class="btn btn-link"
-                   ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id"
-                   tr-contact-remove="profileCtrl.contact">
+                <a
+                  class="btn btn-link"
+                  ng-if="profileCtrl.contact.$resolved && profileCtrl.contact._id"
+                  tr-contact-remove="profileCtrl.contact"
+                >
                   <i class="icon-minus-squared-alt"></i>
-                  <span ng-if="profileCtrl.contact.confirmed"
-                        uib-tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
-                        tooltip-placement="bottom">
+                  <span
+                    ng-if="profileCtrl.contact.confirmed"
+                    uib-tooltip="Contacts since {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
+                    tooltip-placement="bottom"
+                  >
                     Remove contact
                   </span>
-                  <span ng-if="!profileCtrl.contact.confirmed"
-                        uib-tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
-                        tooltip-placement="bottom">
+                  <span
+                    ng-if="!profileCtrl.contact.confirmed"
+                    uib-tooltip="Request sent {{ ::profileCtrl.contact.created | date:'mediumDate' }}"
+                    tooltip-placement="bottom"
+                  >
                     Delete contact request
                   </span>
                 </a>
@@ -210,32 +221,42 @@ this is a fallback when the contacts are loading
         <div class="row">
           <div class="col-xs-12">
             <div class="profile-tabs hidden-xs" role="navigation">
-              <ul class="nav panel panel-default nav-pills nav-narrow nav-underline" role="tablist">
+              <ul
+                class="nav panel panel-default nav-pills nav-narrow nav-underline"
+                role="tablist"
+              >
                 <li ui-sref-active="active" role="presentation">
                   <a ui-sref="profile.about" role="tab">About</a>
                 </li>
-                <li ui-sref-active="active"
-                    ng-if="profileCtrl.contacts.length || profileCtrl.profile._id === app.user._id"
-                    role="presentation">
+                <li
+                  ui-sref-active="active"
+                  ng-if="profileCtrl.contacts.length || profileCtrl.profile._id === app.user._id"
+                  role="presentation"
+                >
                   <a ui-sref="profile.contacts" role="tab">
                     <span aria-hidden="true">Contacts</span>
-                    <span class="badge"
-                          aria-hidden="true"
-                          ng-bind="profileCtrl.contacts.length"></span>
+                    <span
+                      class="badge"
+                      aria-hidden="true"
+                      ng-bind="profileCtrl.contacts.length"
+                    ></span>
                     <span class="sr-only">
                       {{profileCtrl.contacts.length}} Contacts
                     </span>
                   </a>
                 </li>
                 <li
-                  ui-sref-active="active" role="presentation"
+                  ui-sref-active="active"
+                  role="presentation"
                   ng-if="app.appSettings.referencesEnabled"
                 >
                   <a ui-sref="profile.references.list" role="tab">
                     <span aria-hidden="true">References</span>
-                    <span class="badge"
-                          aria-hidden="true"
-                          ng-bind="profileCtrl.referencesCount || 0"></span>
+                    <span
+                      class="badge"
+                      aria-hidden="true"
+                      ng-bind="profileCtrl.referencesCount || 0"
+                    ></span>
                     <span class="sr-only">
                       {{profileCtrl.referencesCount || 0}} References
                     </span>
@@ -247,11 +268,11 @@ this is a fallback when the contacts are loading
           </div>
         </div>
         <!-- /Profile tabs -->
-
-      </div><!-- /.col -->
-
-    </div><!-- /.row -->
-
-  </div><!-- /Profile -->
-
-</section><!-- /.container -->
+      </div>
+      <!-- /.col -->
+    </div>
+    <!-- /.row -->
+  </div>
+  <!-- /Profile -->
+</section>
+<!-- /.container -->

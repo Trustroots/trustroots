@@ -1,58 +1,64 @@
 <!-- Tribe loading -->
-<div class="container container-spacer text-muted text-center" ng-if="tribeCtrl.tribe && !tribeCtrl.tribe.$resolved">
+<div
+  class="container container-spacer text-muted text-center"
+  ng-if="tribeCtrl.tribe && !tribeCtrl.tribe.$resolved"
+>
   <!-- tr-spinner will have `aria-busy` etc -->
   <tr-spinner size="sm"></tr-spinner>
-  <br><br>
+  <br /><br />
   <small aria-hidden="true">Wait a moment...</small>
 </div>
 
 <div ng-if="tribeCtrl.tribe && tribeCtrl.tribe.$resolved">
-
   <!-- Tribe not found -->
-  <section class="container container-spacer"
-           ng-if="!tribeCtrl.tribe._id">
-
+  <section class="container container-spacer" ng-if="!tribeCtrl.tribe._id">
     <div class="row">
       <div class="col-xs-12">
         <h2>This tribe is not here...</h2>
         <p class="lead">
-          The tribe you're seeking isn't here.
-          Check if your address is correct.
+          The tribe you're seeking isn't here. Check if your address is correct.
         </p>
         <a ng-click="tribeCtrl.goBack()" class="btn btn-primary">
           See other tribes
         </a>
       </div>
     </div>
-
   </section>
 
   <!-- Tribe found -->
-  <section class="board tribe-image tribe-header"
-           ng-if="tribeCtrl.tribe._id"
-           tr-tribe-styles="{{::tribeCtrl.tribe}}"
-           tr-tribe-styles-dimensions="1400x900"
-           tr-tribe-styles-progressive="yes"
-           ng-swipe-left="tribeCtrl.goBack()"
-           ng-swipe-right="tribeCtrl.goBack()"
-           ng-class="{'is-guest': !app.user}">
-           <div class="tribe-header-info">
-             <div class="container">
-               <div class="row no-gutters">
-                 <div class="col-xs-12">
-                <a ng-click="tribeCtrl.goBack()" class="btn btn-lg btn-link tribe-header-back">
-                  <i class="icon-left"></i> More tribes
-                </a>
-              </div>
+  <section
+    class="board tribe-image tribe-header"
+    ng-if="tribeCtrl.tribe._id"
+    tr-tribe-styles="{{::tribeCtrl.tribe}}"
+    tr-tribe-styles-dimensions="1400x900"
+    tr-tribe-styles-progressive="yes"
+    ng-swipe-left="tribeCtrl.goBack()"
+    ng-swipe-right="tribeCtrl.goBack()"
+    ng-class="{'is-guest': !app.user}"
+  >
+    <div class="tribe-header-info">
+      <div class="container">
+        <div class="row no-gutters">
+          <div class="col-xs-12">
+            <a
+              ng-click="tribeCtrl.goBack()"
+              class="btn btn-lg btn-link tribe-header-back"
+            >
+              <i class="icon-left"></i> More tribes
+            </a>
           </div>
+        </div>
         <div class="row">
-
           <!-- For authenticated members -->
-          <div class="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
-               ng-if="app.user">
+          <div
+            class="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
+            ng-if="app.user"
+          >
             <p class="lead tribe-pre">Tribe</p>
-            <h2 class="font-brand-regular tribe-title"
-                ng-bind="::tribeCtrl.tribe.label"></h2>
+            <h2
+              class="font-brand-regular tribe-title"
+              ng-bind="::tribeCtrl.tribe.label"
+            ></h2>
             <ng-pluralize
               class="tribe-meta"
               count="tribeCtrl.tribe.count"
@@ -60,46 +66,61 @@
                 '0': 'No members yet',
                 '1': 'One member',
                 'other': '{{tribeCtrl.tribe.count | number}} members'
-              }"></ng-pluralize>
-            <div class="lead tribe-meta"
-                 ng-if="tribeCtrl.tribe.description"
-                 ng-bind-html="::tribeCtrl.tribe.description"></div>
-            <br><br>
+              }"
+            ></ng-pluralize>
+            <div
+              class="lead tribe-meta"
+              ng-if="tribeCtrl.tribe.description"
+              ng-bind-html="::tribeCtrl.tribe.description"
+            ></div>
+            <br /><br />
             <tr-tribe-join-button
-                    class="btn btn-lg btn-primary tribe-join"
-                    tribe="tribeCtrl.tribe"
-                    joined-label="'You\'re a member'"
-                    join-label="'Join this tribe'"
-                    icon="false">
+              class="btn btn-lg btn-primary tribe-join"
+              tribe="tribeCtrl.tribe"
+              joined-label="'You\'re a member'"
+              join-label="'Join this tribe'"
+              icon="false"
+            >
             </tr-tribe-join-button>
             &nbsp;
-            <a class="btn btn-lg btn-default"
-               ui-sref="search.map({ tribe: tribeCtrl.tribe.slug })">
+            <a
+              class="btn btn-lg btn-default"
+              ui-sref="search.map({ tribe: tribeCtrl.tribe.slug })"
+            >
               Find members
             </a>
-            <br><br>
+            <br /><br />
             <p class="lead tribe-intro">
-              Trustroots is built on communities.
-              Share this page within your community and invite them to join!
+              Trustroots is built on communities. Share this page within your
+              community and invite them to join!
             </p>
 
             <!-- Twitter share button -->
-            <div class="tribe-share"
-                 ng-if="tribeCtrl.tribe.label"
-                 tr-share-twitter
-                 data-text="Join to meet, host and get hosted by Trustroots Tribe {{::tribeCtrl.tribe.label}} — I'm in!"></div>
+            <div
+              class="tribe-share"
+              ng-if="tribeCtrl.tribe.label"
+              tr-share-twitter
+              data-text="Join to meet, host and get hosted by Trustroots Tribe {{::tribeCtrl.tribe.label}} — I'm in!"
+            ></div>
 
             <!-- FB share button -->
-            <div class="tribe-share"
-                 ng-if="tribeCtrl.tribe.label"
-                 tr-share-fb></div>
-
+            <div
+              class="tribe-share"
+              ng-if="tribeCtrl.tribe.label"
+              tr-share-fb
+            ></div>
           </div>
 
           <!-- For non authenticated members -->
-          <div class="col-xs-12 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5" ng-if="!app.user">
+          <div
+            class="col-xs-12 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
+            ng-if="!app.user"
+          >
             <p class="lead tribe-pre">Trustroots Tribe</p>
-            <h2 class="font-brand-regular tribe-title" ng-bind="::tribeCtrl.tribe.label"></h2>
+            <h2
+              class="font-brand-regular tribe-title"
+              ng-bind="::tribeCtrl.tribe.label"
+            ></h2>
             <ng-pluralize
               class="lead tribe-meta"
               count="tribeCtrl.tribe.count"
@@ -107,33 +128,49 @@
                 '0': 'No members yet',
                 '1': 'One member',
                 'other': '{{tribeCtrl.tribe.count | number}} members'
-              }"></ng-pluralize>
-            <br><br>
+              }"
+            ></ng-pluralize>
+            <br /><br />
             <p class="lead tribe-intro">
-              Trustroots is a travellers' community for sharing, hosting and getting people together.
-              <br><br>
+              Trustroots is a travellers' community for sharing, hosting and
+              getting people together.
+              <br /><br />
               Join to meet, host and get hosted by this and other communities.
-              <br><br>
-              <a class="btn btn-lg btn-primary btn-action tribe-join"
-                 ui-sref="signup({'tribe': tribeCtrl.tribe.slug})">
+              <br /><br />
+              <a
+                class="btn btn-lg btn-primary btn-action tribe-join"
+                ui-sref="signup({'tribe': tribeCtrl.tribe.slug})"
+              >
                 Join {{::tribeCtrl.tribe.label}} on Trustroots
               </a>
-              <br>
-              <a class="btn btn-lg btn-link tribe-readmore" ui-sref="home({'tribe': tribeCtrl.tribe.slug})">
+              <br />
+              <a
+                class="btn btn-lg btn-link tribe-readmore"
+                ui-sref="home({'tribe': tribeCtrl.tribe.slug})"
+              >
                 <i class="icon-right"></i>
                 How does it work?
               </a>
             </p>
           </div>
-
-        </div><!-- /.row -->
+        </div>
+        <!-- /.row -->
       </div>
-      <small class="hidden-xs font-brand-light tribe-attribution" ng-if="::tribe.attribution">
+      <small
+        class="hidden-xs font-brand-light tribe-attribution"
+        ng-if="::tribe.attribution"
+      >
         Photo by
-          <a ng-if="tribe.attribution_url" ng-href="{{::tribe.attribution_url}}" ng-bind="::tribe.attribution"></a>
-          <span ng-if="!tribe.attribution_url" ng-bind="::tribe.attribution"></span>
+        <a
+          ng-if="tribe.attribution_url"
+          ng-href="{{::tribe.attribution_url}}"
+          ng-bind="::tribe.attribution"
+        ></a>
+        <span
+          ng-if="!tribe.attribution_url"
+          ng-bind="::tribe.attribution"
+        ></span>
       </small>
     </div>
   </section>
-
 </div>
