@@ -11,6 +11,7 @@ import UserLink from './UserLink.component';
 const MONGO_OBJECT_ID_LENGTH = 24;
 
 export default function AdminMessages() {
+  // @TODO: replace with useLocation of react-router or similar.
   const urlParams = new URLSearchParams(window.location.search);
   const urlUserId1 = urlParams.get('userId1');
   const urlUserId2 = urlParams.get('userId2');

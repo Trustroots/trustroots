@@ -13,6 +13,7 @@ import TimeAgo from '@/modules/core/client/components/TimeAgo';
 const MONGO_OBJECT_ID_LENGTH = 24;
 
 export default function AdminThreads() {
+  // @TODO: replace with useLocation of react-router or similar.
   const urlParams = new URLSearchParams(window.location.search);
   const urlUserId = urlParams.get('userId');
   const initialUsername = urlParams.get('username') || '';
@@ -45,7 +46,7 @@ export default function AdminThreads() {
       return (
         <p>
           <em className="text-muted">
-            {userId ? 'Press "Query"' : 'Enter member ID…'}
+            {userId ? 'Press "Query"' : 'Enter member ID or username…'}
           </em>
         </p>
       );
@@ -117,7 +118,7 @@ export default function AdminThreads() {
             size={MONGO_OBJECT_ID_LENGTH + 2}
             type="text"
             value={userId}
-            disabled={username.length}
+            disabled={username.length > 0}
           />
           <em> or </em>
           <input
@@ -129,7 +130,7 @@ export default function AdminThreads() {
             size={20}
             type="text"
             value={username}
-            disabled={userId && userId.length === MONGO_OBJECT_ID_LENGTH}
+            disabled={userId.length > 0}
           />
           <button
             className="btn btn-lg btn-default"
