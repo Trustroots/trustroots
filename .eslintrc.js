@@ -35,6 +35,7 @@ const rules = {
   'arrow-spacing': [2, { before: true, after: true }],
   'require-atomic-updates': 0,
   'import/first': 2,
+  'import/no-extraneous-dependencies': 2,
   'prettier/prettier': 2,
 };
 
