@@ -212,7 +212,7 @@
     "exports-loader": "0.7.0",
     "expose-loader": "0.7.5",
     "faker": "4.1.0",
-    "file-loader": "5.1.0",
+    "file-loader": "6.0.0",
     "gulp-mocha": "3.0.1",
     "gulp-nodemon": "2.5.0",
     "html-loader": "0.5.5",
