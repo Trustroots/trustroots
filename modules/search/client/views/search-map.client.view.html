@@ -26,16 +26,12 @@
   <h4 id="map-zoom-message">Zoom in closer to see everyone</h4>
 </div>
 
-<div class="search-map-active-area-demo"></div>
-
-<div
-  class="search-map-container"
-  ng-if="searchMap.mapCenter"
+<div ng-if="searchMap.mapCenter">
+  <!--
   ng-class="{
        'is-sidebar-open': search.isSidebarOpen,
-       'leaflet-layerstyle-satellite': searchMap.mapLayerstyle === 'satellite'
      }"
->
+   -->
   <search-map
     id="search-map-canvas"
     location="searchMap.mapCenter"

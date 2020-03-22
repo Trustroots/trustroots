@@ -1,5 +1,6 @@
 <section class="search" ng-class="{ 'is-sidebar-open': search.isSidebarOpen }">
   <!-- Search settings navi for small screens-->
+  <!--
   <div class="visible-xs panel panel-default search-map-meta">
     <div
       class="btn-group btn-group-justified"
@@ -28,10 +29,12 @@
       </div>
     </div>
   </div>
+  -->
   <!-- /Search settings -->
 
   <!-- Location search for small screens -->
   <!-- There's another one inside `search-sidebar.client.view.html` template -->
+  <!--
   <div
     class="visible-xs-block panel panel-default search-map-place"
     ng-show="search.isPlaceSearchVisible"
@@ -39,7 +42,6 @@
     <div
       ng-include="~modules/search/client/views/search-input.client.view.html"
     ></div>
-    <!-- Search bar closing toggle -->
     <button
       type="button"
       class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
@@ -48,9 +50,9 @@
       Back to map
     </button>
   </div>
+  -->
 
-  <div ui-view="map"></div>
-
+  <!--
   <div
     class="search-sidebar-toggle hidden-xs"
     ng-if="app.user && app.user.public"
@@ -72,9 +74,10 @@
       ></i>
     </button>
   </div>
+  -->
 
   <aside
-    class="search-sidebar"
+    class="search-sidebar-container"
     ui-view="sidebar"
     ng-if="app.user.public"
     ng-show="search.isSidebarOpen"
@@ -82,4 +85,5 @@
          'is-offer-open': search.offer || search.loadingOffer
        }"
   ></aside>
+  <div ui-view="map" class="search-map-container"></div>
 </section>
