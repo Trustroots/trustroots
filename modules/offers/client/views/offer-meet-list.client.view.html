@@ -46,9 +46,11 @@
   >
     <div class="panel-body">
       <!-- The map (React component) -->
+      <!-- showMapStyles prop should be boolean, and the !!offer thing is just Angular.js hack to get it be boolean -->
       <offer-location
         location="offer.location"
         offerType="offer.type"
+        showMapStyles="!!offer"
       ></offer-location>
 
       <br /><br />
