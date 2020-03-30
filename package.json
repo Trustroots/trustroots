@@ -266,10 +266,6 @@
     }
   },
   "lint-staged": {
-    "public/locales/**/*.{json,po}": [
-      "npm run convert-translations",
-      "git add public/locales/**/*.json public/locales/**/*.po"
-    ],
     "*.js": [
       "npm run reformat-files",
       "eslint"
