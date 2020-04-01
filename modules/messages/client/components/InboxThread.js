@@ -47,7 +47,7 @@ export default function InboxThread({ user, thread }) {
 InboxThread.propTypes = {
   user: userType.isRequired,
   thread: PropTypes.shape({
-    read: PropTypes.boolean.isRequired,
+    read: PropTypes.boolean,
     updated: PropTypes.string.isRequired,
     userFrom: userType.isRequired,
     userTo: userType.isRequired,
