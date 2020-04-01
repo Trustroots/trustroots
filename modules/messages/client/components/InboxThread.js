@@ -10,8 +10,14 @@ export default function InboxThread({ user, thread }) {
   const { t } = useTranslation('messages');
   const otherUser = findOtherUser(user, thread);
   const haveReplied = thread.userFrom._id === user._id;
+  const { read } = thread;
+
   return (
-    <li className="list-group-item threadlist-thread">
+    <li
+      className={`list-group-item threadlist-thread ${
+        !read ? 'threadlist-thread-unread' : ''
+      }`}
+    >
       <a href={`/messages/${otherUser.username}`}>
         <div className="media">
           <div className="media-left">
@@ -41,6 +47,7 @@ export default function InboxThread({ user, thread }) {
 InboxThread.propTypes = {
   user: userType.isRequired,
   thread: PropTypes.shape({
+    read: PropTypes.string.isRequired,
     updated: PropTypes.string.isRequired,
     userFrom: userType.isRequired,
     userTo: userType.isRequired,
