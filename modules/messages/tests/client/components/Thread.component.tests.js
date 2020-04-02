@@ -53,7 +53,7 @@ describe('<Thread>', () => {
 
   describe('no messages', () => {
     beforeEach(() => {
-      api.messages.fetchMessages.mockResolvedValueOnce([]);
+      api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
     });
 
     it('does not allow sending a message when the profile is too short', async () => {
@@ -78,9 +78,9 @@ describe('<Thread>', () => {
 
   describe('only messages from other user', () => {
     beforeEach(() => {
-      api.messages.fetchMessages.mockResolvedValueOnce([
-        generateMessage(otherUser),
-      ]);
+      api.messages.fetchMessages.mockResolvedValueOnce({
+        messages: [generateMessage(otherUser)],
+      });
     });
 
     it('shows quick reply buttons', async () => {
@@ -101,10 +101,9 @@ describe('<Thread>', () => {
 
   describe('messages from both users', () => {
     beforeEach(() => {
-      api.messages.fetchMessages.mockResolvedValueOnce([
-        generateMessage(otherUser),
-        generateMessage(me),
-      ]);
+      api.messages.fetchMessages.mockResolvedValueOnce({
+        messages: [generateMessage(otherUser), generateMessage(me)],
+      });
     });
 
     it('does not show the quick reply buttons', async () => {
