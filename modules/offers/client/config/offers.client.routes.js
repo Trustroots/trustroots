@@ -1,5 +1,4 @@
 import viewTemplateUrl from '@/modules/offers/client/views/offer.client.view.html';
-import hostEditTemplateUrl from '@/modules/offers/client/views/offer-host-edit.client.view.html';
 import meetListTemplateUrl from '@/modules/offers/client/views/offer-meet-list.client.view.html';
 import meetEditTemplateUrl from '@/modules/offers/client/views/offer-meet-edit.client.view.html';
 
@@ -51,11 +50,9 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
     })
     .state('offer.host.edit', {
       url: '?status',
-      templateUrl: hostEditTemplateUrl,
+      template: '<offer-host-edit user="app.user"></offer-host-edit>',
       requiresAuth: true,
       footerHidden: true,
-      controller: 'OfferHostEditController',
-      controllerAs: 'offerHostEdit',
       data: {
         pageTitle: 'Host travellers',
       },
