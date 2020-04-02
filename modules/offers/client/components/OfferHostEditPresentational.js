@@ -2,6 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 export default function OfferHostEditPresentational({
+  disabled,
   status,
   maxGuests,
   description,
@@ -73,13 +74,16 @@ export default function OfferHostEditPresentational({
         />
       </li>
       <li>
-        <button onClick={onSubmit}>Save and Exit</button>
+        <button disabled={disabled} onClick={onSubmit}>
+          Save and Exit
+        </button>
       </li>
     </ul>
   );
 }
 
 OfferHostEditPresentational.propTypes = {
+  disabled: PropTypes.bool.isRequired,
   status: PropTypes.oneOf(['yes', 'maybe', 'no']).isRequired,
   maxGuests: PropTypes.number.isRequired,
   description: PropTypes.string.isRequired,

@@ -14,6 +14,7 @@ const DEFAULT_LOCATION = {
 
 export default function OfferHostEdit({ user }) {
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [offerId, setOfferId] = useState();
   const [status, setStatus] = useState('yes');
   const [maxGuests, setMaxGuests] = useState(1);
@@ -75,6 +76,7 @@ export default function OfferHostEdit({ user }) {
   };
 
   const handleSubmit = async () => {
+    setIsSaving(true);
     const { lat, lng } = location;
     const data = {
       status,
@@ -88,6 +90,7 @@ export default function OfferHostEdit({ user }) {
     } else {
       await api.offers.create({ ...data, type: 'host' });
     }
+    setIsSaving(false);
     const nextUrl =
       window.innerWidth < 768
         ? `/profile/${user.username}/accommodation`
@@ -99,6 +102,7 @@ export default function OfferHostEdit({ user }) {
 
   return (
     <OfferHostEditPresentational
+      disabled={isSaving}
       status={status}
       maxGuests={maxGuests}
       description={description}
