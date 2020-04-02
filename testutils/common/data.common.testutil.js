@@ -3,11 +3,12 @@
  */
 
 const faker = require('faker');
-const mongo = require('mongodb');
 const _ = require('lodash');
 
 function generateId() {
-  return new mongo.ObjectId().toString(); // looks a bit like one!
+  // TODO: use mongo lib again if it never needs to be called in a browser
+  // return new mongo.ObjectId().toString(); // looks a bit like one!
+  return faker.random.alphaNumeric(24); // looks a bit like one!
 }
 
 const selectRandom = (list, fraction = 0.5) => {
