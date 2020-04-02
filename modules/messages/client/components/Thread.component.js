@@ -11,7 +11,7 @@ import {
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
-import Monkeybox from '@/modules/messages/client/components/Monkeybox';
+import Monkeybox from '@/modules/users/client/components/Monkeybox';
 import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import Activate from '@/modules/users/client/components/Activate';

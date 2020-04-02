@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import TrEditor from '@/modules/messages/client/components/TrEditor';
+import TrEditor from '@/modules/core/client/components/TrEditor';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 
 export default function ThreadReply({ onSend, cacheKey }) {
