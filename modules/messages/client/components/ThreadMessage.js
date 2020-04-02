@@ -101,6 +101,7 @@ export default function ThreadMessage({ message, user }) {
 
 ThreadMessage.propTypes = {
   message: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
     userFrom: userType.isRequired,
     created: PropTypes.string.isRequired,
     content: PropTypes.string.isRequired,

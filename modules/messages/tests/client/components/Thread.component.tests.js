@@ -115,4 +115,6 @@ describe('<Thread>', () => {
       expect(queryByTestId('quick-reply')).not.toBeInTheDocument();
     });
   });
+
+  // TODO: write a pagination test!
 });

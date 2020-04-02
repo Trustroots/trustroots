@@ -1,8 +1,8 @@
 import axios from 'axios';
 import parseLinkheader from 'parse-link-header';
 
-export async function fetchThreads(params = {}) {
-  const { data: threads, headers } = await axios.get('/api/messages', {
+async function fetchWithNextParams(url, params = {}) {
+  const { data, headers } = await axios.get(url, {
     params,
   });
   let nextParams;
@@ -16,14 +16,31 @@ export async function fetchThreads(params = {}) {
     }
   }
   return {
+    data,
+    nextParams,
+  };
+}
+
+export async function fetchThreads(params = {}) {
+  const { data: threads, nextParams } = await fetchWithNextParams(
+    '/api/messages',
+    params,
+  );
+  return {
     threads,
     nextParams,
   };
 }
 
-export async function fetchMessages(userId) {
-  const { data: messages } = await axios.get(`/api/messages/${userId}`);
-  return messages;
+export async function fetchMessages(userId, params = {}) {
+  const { data: messages, nextParams } = await fetchWithNextParams(
+    `/api/messages/${userId}`,
+    params,
+  );
+  return {
+    messages,
+    nextParams,
+  };
 }
 
 export async function sendMessage(userToId, content) {

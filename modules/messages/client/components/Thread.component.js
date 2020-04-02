@@ -19,22 +19,7 @@ import ThreadMessages from '@/modules/messages/client/components/ThreadMessages'
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-
-// @TODO remove this stuff once ready
-import range from 'lodash/range';
-import faker from 'faker';
-import { generateId } from '@/testutils/common/data.common.testutil';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
-
-function generateMessage(userFrom) {
-  return {
-    _id: generateId(),
-    fake: true,
-    userFrom,
-    created: new Date().toISOString(),
-    content: faker.lorem.text(),
-  };
-}
 
 const api = {
   messages: messagesAPI,
@@ -62,7 +47,7 @@ const ThreadContainer = styled.div`
 
 const LoadingContainer = styled.div`
   position: absolute;
-  top: 10px;
+  top: 0;
   width: 100%;
   text-align: center;
 `;
@@ -125,6 +110,7 @@ export default function Thread({ user, profileMinimumLength }) {
     );
   }
 
+  const [nextParams, setNextParams] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
@@ -145,26 +131,42 @@ export default function Thread({ user, profileMinimumLength }) {
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
-  function fetchMoreData() {
-    // @TODO only if there is more ...
+  async function fetchMoreData() {
+    if (isFetchingMore || !nextParams) return;
     setIsFetchingMore(true);
-    setTimeout(() => {
+    try {
+      const {
+        messages: moreMessages,
+        nextParams: moreNextParams,
+      } = await api.messages.fetchMessages(otherUser._id, nextParams);
       setMessages(messages => [
-        ...range(10).map(() => generateMessage(otherUser)),
+        ...moreMessages.sort((a, b) => a.created.localeCompare(b.created)),
         ...messages,
       ]);
+      setNextParams(moreNextParams);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        setDoesNotExist(true);
+      } else {
+        throw error;
+      }
+    } finally {
       setIsFetchingMore(false);
-    }, 500);
+    }
   }
 
   async function fetchData() {
+    if (isFetching) return;
     const username = getRouteParams().username;
     try {
       setIsFetching(true);
       const otherUser = await api.users.fetch(username);
-      const messages = await api.messages.fetchMessages(otherUser._id);
+      const { messages, nextParams } = await api.messages.fetchMessages(
+        otherUser._id,
+      );
       setOtherUser(otherUser);
       setMessages(messages.sort((a, b) => a.created.localeCompare(b.created)));
+      setNextParams(nextParams);
     } catch (error) {
       if (error.response?.status === 404) {
         setDoesNotExist(true);

@@ -9,6 +9,12 @@ export function generateThreads(count, { userFrom, userTo } = {}) {
   return range(count).map(() => generateThread({ userFrom, userTo }));
 }
 
+export function generateMessages(count, { userFrom, userTo }) {
+  return range(count).map(n =>
+    generateMessage(n % 2 === 0 ? userFrom : userTo),
+  );
+}
+
 export function generateMessage(userFrom) {
   return {
     _id: generateId(),
