@@ -1,4 +1,4 @@
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
 import Reference from './Reference';
@@ -39,18 +39,13 @@ export default function ReferencesReadPresentational({
     return (
       <div className="panel panel-default">
         <div className="panel-body references-summary">
-          <Trans
-            ns="reference"
-            negativeCount={negativeCount}
-            positiveCount={positiveCount}
-            unknownCount={unknownCount}
-          >
-            <span className="text-success">{{ positiveCount }} recommend</span>{' '}
-            <span>{{ unknownCount }} unknown</span>{' '}
-            <span className="text-danger">
-              {{ negativeCount }} not recommend
-            </span>
-          </Trans>
+          <span className="text-success">
+            {t('{{count}} recommend', { count: positiveCount })}
+          </span>{' '}
+          <span>{t('{{count}} unknown', { count: unknownCount })}</span>{' '}
+          <span className="text-danger">
+            {t('{{count}} not recommend', { count: negativeCount })}
+          </span>
         </div>
       </div>
     );
