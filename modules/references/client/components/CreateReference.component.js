@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Tab, Tabs } from 'react-bootstrap';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
+import { useTranslation } from 'react-i18next';
+import '@/config/client/i18n';
 import * as references from '../api/references.api';
 import Navigation from './create-reference/Navigation';
 import Interaction from './create-reference/Interaction';
@@ -15,186 +16,138 @@ import {
 
 const api = { references };
 
-export class CreateReference extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      met: false,
-      hostedThem: false,
-      hostedMe: false,
-      recommend: null,
-      report: false,
-      reportMessage: '',
-      tab: 0,
-      isSelf: props.userFrom._id === props.userTo._id,
-      isLoading: true,
-      isSubmitting: false,
-      isDuplicate: false,
-      isSubmitted: false,
-      isPublic: false,
-    };
+export default function CreateReference({ userFrom, userTo }) {
+  const { t } = useTranslation('reference');
 
-    // bind methods
-    this.handleTabSwitch = this.handleTabSwitch.bind(this);
-    this.handleChangeInteraction = this.handleChangeInteraction.bind(this);
-    this.handleChangeRecommend = this.handleChangeRecommend.bind(this);
-    this.handleChangeReport = this.handleChangeReport.bind(this);
-    this.handleChangeReportMessage = this.handleChangeReportMessage.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-  }
+  const [met, setMet] = useState(false);
+  const [hostedThem, setHostedThem] = useState(false);
+  const [hostedMe, setHostedMe] = useState(false);
+  const [recommend, setRecommend] = useState(null);
+  const [report, setReport] = useState(false);
+  const [reportMessage, setReportMessage] = useState('');
+  const [tab, setTab] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
 
-  async componentDidMount() {
-    const reference = await api.references.read({
-      userFrom: this.props.userFrom._id,
-      userTo: this.props.userTo._id,
-    });
+  useEffect(() => {
+    (async () => {
+      const reference = await api.references.read({
+        userFrom: userFrom._id,
+        userTo: userTo._id,
+      });
 
-    this.setState(() => {
-      const newState = { isLoading: false };
-      if (reference.length === 1) newState.isDuplicate = true;
-      return newState;
-    });
-  }
+      if (reference.length === 1) setIsDuplicate(true);
+      setIsLoading(false);
+    })();
+  }, [userFrom, userTo]);
 
-  handleTabSwitch(move) {
-    this.setState(state => ({
-      tab: state.tab + move,
-    }));
-  }
+  const handleChangeInteraction = interactionType => {
+    switch (interactionType) {
+      case 'met':
+        setMet(met => !met);
+        break;
+      case 'hostedThem':
+        setHostedThem(hostedThem => !hostedThem);
+        break;
+      case 'hostedMe':
+        setHostedMe(hostedMe => !hostedMe);
+        break;
+      default:
+    }
+  };
 
-  handleChangeInteraction(interactionType) {
-    this.setState(state => ({ [interactionType]: !state[interactionType] }));
-  }
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
 
-  handleChangeRecommend(recommend) {
-    this.setState(() => ({ recommend }));
-  }
-
-  handleChangeReport() {
-    this.setState(state => ({ report: !state.report }));
-  }
-
-  handleChangeReportMessage(reportMessage) {
-    this.setState(() => ({ reportMessage }));
-  }
-
-  async handleSubmit() {
-    // start submitting
-    this.setState(() => ({ isSubmitting: true }));
-
-    // get data from state
-    const {
-      met,
-      hostedThem,
-      hostedMe,
-      recommend,
-      report,
-      reportMessage,
-    } = this.state;
     const reference = { met, hostedThem, hostedMe, recommend };
 
     // save the reference
     const [savedReference] = await Promise.all([
-      api.references.create({ ...reference, userTo: this.props.userTo._id }),
+      api.references.create({ ...reference, userTo: userTo._id }),
       recommend === 'no' && report
-        ? api.references.report(this.props.userTo, reportMessage)
+        ? api.references.report(userTo, reportMessage)
         : null,
     ]);
 
-    this.setState(() => ({
-      isSubmitting: false,
-      isSubmitted: true,
-      isPublic: savedReference.public,
-    }));
-  }
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+    setIsPublic(savedReference.public);
+  };
 
-  render() {
-    const { t } = this.props;
-    const {
-      hostedMe,
-      hostedThem,
-      met,
-      recommend,
-      report,
-      reportMessage,
-    } = this.state;
-    const primaryInteraction =
-      (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
+  const primaryInteraction =
+    (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
 
-    const tabs = [
-      <Interaction
-        key="interaction"
-        interactions={{ hostedMe, hostedThem, met }}
-        onChange={this.handleChangeInteraction}
-      />,
-      <Recommend
-        key="recommend"
-        primaryInteraction={primaryInteraction}
-        recommend={recommend}
-        report={report}
-        reportMessage={reportMessage}
-        onChangeRecommend={this.handleChangeRecommend}
-        onChangeReport={this.handleChangeReport}
-        onChangeReportMessage={this.handleChangeReportMessage}
-      />,
-    ];
+  const tabs = [
+    <Interaction
+      key="interaction"
+      interactions={{ hostedMe, hostedThem, met }}
+      onChange={handleChangeInteraction}
+    />,
+    <Recommend
+      key="recommend"
+      primaryInteraction={primaryInteraction}
+      recommend={recommend}
+      report={report}
+      reportMessage={reportMessage}
+      onChangeRecommend={recommend => setRecommend(recommend)}
+      onChangeReport={() => setReport(report => !report)}
+      onChangeReportMessage={message => setReportMessage(message)}
+    />,
+  ];
 
-    const tabDone = recommend ? 1 : hostedMe || hostedThem || met ? 0 : -1;
+  const tabDone = recommend ? 1 : hostedMe || hostedThem || met ? 0 : -1;
 
-    if (this.state.isSelf) return <ReferenceToSelfInfo />;
+  if (userFrom._id === userTo._id) return <ReferenceToSelfInfo />;
 
-    if (this.state.isLoading) return <LoadingInfo />;
+  if (isLoading) return <LoadingInfo />;
 
-    if (this.state.isDuplicate)
-      return <DuplicateInfo userTo={this.props.userTo} />;
+  if (isDuplicate) return <DuplicateInfo userTo={userTo} />;
 
-    if (this.state.isSubmitted) {
-      const isReported = recommend === 'no' && report;
-      const isPublic = this.state.isPublic;
-      return (
-        <SubmittedInfo
-          isReported={isReported}
-          isPublic={isPublic}
-          userFrom={this.props.userFrom}
-          userTo={this.props.userTo}
-        />
-      );
-    }
-
+  if (isSubmitted) {
+    const isReported = recommend === 'no' && report;
     return (
-      <div>
-        <Tabs
-          activeKey={this.state.tab}
-          bsStyle="pills"
-          onSelect={() => {}}
-          id="create-reference-tabs"
-        >
-          <Tab eventKey={0} title={t('How do you know them')} disabled>
-            {tabs[0]}
-          </Tab>
-          <Tab eventKey={1} title={t('Recommendation')} disabled>
-            {tabs[1]}
-          </Tab>
-        </Tabs>
-        {/* <!-- Navigation for big screens -->*/}
-        <Navigation
-          tab={this.state.tab}
-          tabDone={tabDone}
-          tabs={tabs.length}
-          disabled={this.state.isSubmitting}
-          onBack={() => this.handleTabSwitch(-1)}
-          onNext={() => this.handleTabSwitch(+1)}
-          onSubmit={this.handleSubmit}
-        />
-      </div>
+      <SubmittedInfo
+        isReported={isReported}
+        isPublic={isPublic}
+        userFrom={userFrom}
+        userTo={userTo}
+      />
     );
   }
+
+  return (
+    <div>
+      <Tabs
+        activeKey={tab}
+        bsStyle="pills"
+        onSelect={() => {}}
+        id="create-reference-tabs"
+      >
+        <Tab eventKey={0} title={t('How do you know them')} disabled>
+          {tabs[0]}
+        </Tab>
+        <Tab eventKey={1} title={t('Recommendation')} disabled>
+          {tabs[1]}
+        </Tab>
+      </Tabs>
+      {/* <!-- Navigation for big screens -->*/}
+      <Navigation
+        tab={tab}
+        tabDone={tabDone}
+        tabs={tabs.length}
+        disabled={isSubmitting}
+        onBack={() => setTab(tab => tab - 1)}
+        onNext={() => setTab(tab => tab + 1)}
+        onSubmit={handleSubmit}
+      />
+    </div>
+  );
 }
 
 CreateReference.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired,
-  t: PropTypes.func.isRequired,
 };
-
-export default withTranslation('reference')(CreateReference);

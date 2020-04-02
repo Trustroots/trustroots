@@ -22,6 +22,19 @@ const git = require('git-rev');
 const path = require('path');
 const paginate = require('express-paginate');
 const uuid = require('uuid');
+const Sentry = require('@sentry/node');
+
+module.exports.initSentryRequestHandler = function(app) {
+  if (config.sentry.enabled) {
+    app.use(Sentry.Handlers.requestHandler());
+  }
+};
+
+module.exports.initSentryErrorHandler = function(app) {
+  if (config.sentry.enabled) {
+    app.use(Sentry.Handlers.errorHandler());
+  }
+};
 
 /**
  * Initialize local variables
@@ -35,6 +48,7 @@ module.exports.initLocalVariables = function(app) {
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
   app.locals.googleAnalytics = config.googleAnalytics;
+  app.locals.sentry = config.sentry;
   app.locals.languages = languages;
   app.locals.env =
     ['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1
@@ -331,8 +345,9 @@ module.exports.initHelmetHeaders = function(app) {
         imgSrc: [
           "'self'",
           'grafana.trustroots.org',
-          '*.tiles.mapbox.com', // Map tiles
-          'api.mapbox.com', // Map tiles/Geocoding
+          'https://*.tiles.mapbox.com', // Map tiles
+          'https://api.mapbox.com', // Map tiles/Geocoding
+          'https://events.mapbox.com',
           '*.tile.openstreetmap.org', // Map tiles
           '*.earthdata.nasa.gov', // Map tiles
           '*.facebook.com',
@@ -356,10 +371,13 @@ module.exports.initHelmetHeaders = function(app) {
         // If not allowed the browser emulates a 400 HTTP status code.
         connectSrc: [
           "'self'",
-          'api.mapbox.com',
+          'https://api.mapbox.com',
+          'https://events.mapbox.com',
+          'https://tile.openstreetmap.org',
           'fcm.googleapis.com',
           'maitreapp.co', // Signup waiting list feature
           'www.facebook.com',
+          'https://sentry.io',
         ],
 
         // Allows control over Flash and other plugins.
@@ -378,7 +396,9 @@ module.exports.initHelmetHeaders = function(app) {
 
         // Defines valid sources for web workers and nested browsing contexts
         // loaded using elements such as `<frame>` and `<iframe>`
-        childSrc: ["'self'", '*.twitter.com', '*.facebook.com'],
+        childSrc: ["'self'", 'blob:', '*.twitter.com', '*.facebook.com'],
+
+        workerSrc: ["'self'", 'blob:'],
 
         // San
         // @link https://developers.google.com/web/fundamentals/security/csp/#sandboxing
@@ -518,6 +538,9 @@ module.exports.init = function(connection) {
   // Initialize express app
   const app = express();
 
+  // Initialize sentry request handler, must be first
+  this.initSentryRequestHandler(app);
+
   // Initialize local variables
   this.initLocalVariables(app);
 
@@ -547,6 +570,9 @@ module.exports.init = function(connection) {
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);
+
+  // Initialize sentry error handler, must be after routes, but before error handlers
+  this.initSentryErrorHandler(app);
 
   // Initialize error routes
   this.initErrorRoutes(app);

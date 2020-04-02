@@ -2,24 +2,18 @@
  * Various shared client/server functions that repeat in tests a lot
  */
 
-const range = require('lodash/range');
-const defaultsDeep = require('lodash/defaultsDeep');
-const crypto = require('crypto');
 const faker = require('faker');
+const mongo = require('mongodb');
+const _ = require('lodash');
 
-/**
- * Get random integer within [0, exclusiveMaximum)
- * Is not cryptographically secure!
- * @param {integer} exclusiveMaximum
- * @returns {integer} an integer in range [0, exclusiveMaximum), exclusiveMaximum is not included
- */
-function getRandInt(exclusiveMaximum) {
-  return Math.floor(exclusiveMaximum * Math.random());
+function generateId() {
+  return new mongo.ObjectId().toString(); // looks a bit like one!
 }
 
-function generateMongoId() {
-  return faker.random.alphaNumeric(24); // looks a bit like one!
-}
+const selectRandom = (list, fraction = 0.5) => {
+  const count = Math.floor(list.length * fraction);
+  return _.sampleSize(list, count);
+};
 
 function generateBaseUser() {
   return {
@@ -37,14 +31,14 @@ function generateServerUser(overrides = {}) {
     locale: '',
     public: faker.random.boolean(),
     roles: ['user'],
-    password: crypto.randomBytes(24).toString('base64'),
+    password: faker.internet.password(),
     ...overrides,
   };
 }
 
 function generateClientUser(overrides = {}) {
   return {
-    _id: generateMongoId(),
+    _id: generateId(),
     displayName: faker.name.findName(),
     ...generateBaseUser(),
     ...overrides,
@@ -55,13 +49,20 @@ function generateClientUser(overrides = {}) {
  * Generate user objects.
  * @returns {object[]} array of user data
  */
-function generateUsers(count, { public: pub, locale } = {}, type = 'server') {
-  return range(count).map(() => {
+function generateUsers(
+  count,
+  { public: pub, locale } = {},
+  type = 'server',
+  tribes = [],
+) {
+  return _.range(count).map(() => {
     switch (type) {
       case 'server':
         return generateServerUser({ public: pub, locale });
       case 'client':
-        return generateClientUser();
+        return generateClientUser({
+          memberIds: selectRandom(tribes, 0.4).map(tribe => tribe._id),
+        });
     }
   });
 }
@@ -81,20 +82,69 @@ function generateReferences(users, referenceData) {
       userTo: users[data[1]]._id,
       public: true,
       interactions: {
-        met: !getRandInt(2),
-        hostedMe: !getRandInt(2),
-        hostedThem: !getRandInt(2),
+        met: faker.random.boolean(),
+        hostedMe: faker.random.boolean(),
+        hostedThem: faker.random.boolean(),
       },
-      recommend: ['yes', 'no', 'unknown'][getRandInt(3)],
+      recommend: _.sample(['yes', 'no', 'unknown']),
     };
 
-    return defaultsDeep({}, data[2], defaultReference);
+    return _.defaultsDeep({}, data[2], defaultReference);
   });
 }
 
+const tribeImageUUIDs = [
+  '171433b0-853b-4d19-a8b4-44def956696d',
+  '22028fde-5302-4172-954d-f54949afd7e4',
+  'e69eb05f-773f-423c-9246-43629b5a8baf',
+  '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
+  'd5563f29-669f-4f18-9802-d1924ff31364',
+  '4ff6463d-c482-4be6-9a49-294fc8712d83',
+  'e4466aa6-46f1-460f-94ef-8cec882d7103',
+  '12a2c124-a38a-4df8-8987-e01ee3741727',
+  'e23060e2-393d-4b4a-b469-450053538f8a',
+  '6274fd88-9178-4cea-8bb4-60f22e4cc904',
+  'fb2b6d50-9d51-4755-9b44-1395fae4cf5d',
+  '656e4872-15a4-4be4-8059-6e7c39b07c5d',
+  'e060263a-9684-4065-85f3-460e9fffbd40',
+  'ad2062d0-aadd-475d-bf85-2cd2e30a9d38',
+  'bfaf468a-2c48-4798-b1bb-bffd0c6b716b',
+  '0fd49df4-88e7-4380-b38a-3625e4b02dde',
+  'cef34c15-b527-4f89-a7a5-456f62ff9ce2',
+  'c84f93f1-421d-4339-a61f-a5efc2d24297',
+  'd4a04ce4-3aeb-43a4-882b-43b1974d86e0',
+  '310f68af-3e77-451e-96a7-09132d26fdb4',
+  'dcb0ed04-cdd6-45ea-b773-e09320a4f759',
+  '434018c8-4f4f-4054-9bd2-6618e9d5a77f',
+  '0ce0abdf-6898-4191-9a86-4f03807291b5',
+  '0ebcabec-2bc5-4eee-ab17-991b9dd52eae',
+  '4f7805e7-b5e6-4b40-bb32-3aafbe1bbc74',
+  '69a500a4-a16e-4c4d-9981-84fbe310d531',
+];
+
+const generateTribe = index => ({
+  _id: generateId(),
+  label: faker.lorem.word() + '_' + index,
+  labelHistory: faker.random.words(),
+  slugHistory: faker.random.words(),
+  synonyms: faker.random.words(),
+  color: faker.internet.color().slice(1),
+  count: Math.floor(Math.random() * 50000),
+  created: Date.now(),
+  modified: Date.now(),
+  public: true,
+  image_UUID: _.sample(tribeImageUUIDs),
+  attribution: faker.name.findName(),
+  attribution_url: faker.internet.url(),
+  description: faker.lorem.sentences(),
+});
+
+const generateTribes = count => _.range(count).map(i => generateTribe(i));
+
 module.exports = {
-  generateMongoId,
+  generateId,
   generateClientUser,
   generateUsers,
   generateReferences,
+  generateTribes,
 };

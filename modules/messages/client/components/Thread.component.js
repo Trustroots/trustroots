@@ -23,12 +23,12 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 // @TODO remove this stuff once ready
 import range from 'lodash/range';
 import faker from 'faker';
-import { generateMongoId } from '@/testutils/common/data.common.testutil';
+import { generateId } from '@/testutils/common/data.common.testutil';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 
 function generateMessage(userFrom) {
   return {
-    _id: generateMongoId(),
+    _id: generateId(),
     fake: true,
     userFrom,
     created: new Date().toISOString(),

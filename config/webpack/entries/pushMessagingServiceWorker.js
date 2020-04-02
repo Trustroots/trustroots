@@ -1,4 +1,4 @@
-/* global FCM_SENDER_ID */
+/* global FCM_SENDER_ID,importScripts */
 
 /**
  *  This will not rebuild on change, so if you're doing development you might want to rebuild it manually:
@@ -11,6 +11,8 @@
 
 import firebase from 'firebase/app';
 import 'firebase/messaging';
+
+importScripts('/config/sw.js');
 
 firebase.initializeApp({
   messagingSenderId: FCM_SENDER_ID,

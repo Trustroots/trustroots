@@ -1,5 +1,4 @@
 import supportTemplateUrl from '@/modules/support/client/views/support.client.view.html';
-import contactTemplateUrl from '@/modules/support/client/views/support.client.view.html';
 
 angular.module('support').config(SupportRoutes);
 
@@ -19,7 +18,7 @@ function SupportRoutes($stateProvider) {
     // Deprecated (02-2016):
     .state('contact', {
       url: '/contact',
-      templateUrl: contactTemplateUrl,
+      templateUrl: supportTemplateUrl,
       requiresAuth: false,
       controller: 'SupportController',
       controllerAs: 'support',

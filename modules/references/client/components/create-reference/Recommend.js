@@ -2,11 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
 import '@/config/client/i18n';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import Report from './Report';
 
-const Recommend = withTranslation('reference')(function({
-  t,
+export default function Recommend({
   primaryInteraction,
   recommend,
   report,
@@ -15,6 +14,8 @@ const Recommend = withTranslation('reference')(function({
   onChangeReport,
   onChangeReportMessage,
 }) {
+  const { t } = useTranslation('reference');
+
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),
     hostedThem: t('Would you recommend others to host them?'),
@@ -74,7 +75,7 @@ const Recommend = withTranslation('reference')(function({
       </div>
     </div>
   );
-});
+}
 
 Recommend.propTypes = {
   primaryInteraction: PropTypes.string.isRequired,
@@ -85,5 +86,3 @@ Recommend.propTypes = {
   onChangeReport: PropTypes.func.isRequired,
   onChangeReportMessage: PropTypes.func.isRequired,
 };
-
-export default Recommend;

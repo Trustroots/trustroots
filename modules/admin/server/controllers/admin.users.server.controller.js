@@ -23,6 +23,7 @@ const SEARCH_STRING_LIMIT = 3;
 // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
 const USER_LIST_FIELDS = [
   '_id',
+  'created',
   'displayName',
   'email',
   'emailTemporary',
@@ -296,4 +297,19 @@ exports.changeRole = async (req, res) => {
     });
     handleAdminApiError(res, err);
   }
+};
+
+exports.usernameToUserId = async (req, res, next) => {
+  const username = _.get(req, ['body', 'username']);
+
+  // Get userID based on provided username
+  if (username) {
+    const user = await User.findOne({ username });
+
+    if (user) {
+      req.userIdFromUsername = user._id;
+    }
+  }
+
+  next();
 };

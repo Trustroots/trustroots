@@ -1,7 +1,6 @@
 import React from 'react';
 import classnames from 'classnames';
-import { withTranslation } from 'react-i18next';
-import { Trans } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
 import {
@@ -10,7 +9,9 @@ import {
   socialAccountLink,
 } from '../utils/networks';
 
-export function ProfileViewBasics({ t, profile }) {
+export default function ProfileViewBasics({ profile }) {
+  const { t } = useTranslation(['user-profile', 'languages']);
+
   /*
    * Functions passing strings to translation fuction for translation scripts
    */
@@ -48,6 +49,7 @@ export function ProfileViewBasics({ t, profile }) {
     return t('Online long ago');
   };
 
+  // i18next-extract-disable-next-line
   const getLanguage = code => t(languages[code], { ns: 'languages' });
 
   /*
@@ -88,7 +90,7 @@ export function ProfileViewBasics({ t, profile }) {
   const renderLocationLiving = locationLiving => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-building text-muted" />
-      <Trans>
+      <Trans ns="user-profile">
         Lives in{' '}
         <a href={`/search?location=${locationLiving}`}>{{ locationLiving }}</a>
       </Trans>
@@ -98,7 +100,7 @@ export function ProfileViewBasics({ t, profile }) {
   const renderLocationFrom = locationFrom => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-home text-muted"></i>
-      <Trans>
+      <Trans ns="user-profile">
         From <a href={`/search?location=${locationFrom}`}>{{ locationFrom }}</a>
       </Trans>
     </div>
@@ -236,9 +238,4 @@ export function ProfileViewBasics({ t, profile }) {
 
 ProfileViewBasics.propTypes = {
   profile: PropTypes.object,
-  t: PropTypes.func,
 };
-
-export default withTranslation(['user-profile', 'languages'])(
-  ProfileViewBasics,
-);

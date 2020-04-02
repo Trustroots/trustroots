@@ -138,6 +138,7 @@ export default class AdminSearchUsers extends Component {
                       <th>Name</th>
                       <th>Username</th>
                       <th>Email</th>
+                      <th>Signed up</th>
                       <th>ID</th>
                     </tr>
                   </thead>
@@ -145,6 +146,7 @@ export default class AdminSearchUsers extends Component {
                     {userResults.map(user => {
                       const {
                         _id,
+                        created,
                         displayName,
                         email,
                         emailTemporary,
@@ -193,6 +195,13 @@ export default class AdminSearchUsers extends Component {
                                 />
                               </>
                             )}
+                          </td>
+                          <td>
+                            {new Date(created).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
                           </td>
                           <td>
                             <small>
