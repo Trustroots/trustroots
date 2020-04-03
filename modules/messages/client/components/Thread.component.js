@@ -152,12 +152,6 @@ export default function Thread({ user, profileMinimumLength }) {
         ...messages,
       ]);
       setNextParams(moreNextParams);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setDoesNotExist(true);
-      } else {
-        throw error;
-      }
     } finally {
       setIsFetchingMore(false);
     }
