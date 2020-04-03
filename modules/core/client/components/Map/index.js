@@ -1,8 +1,7 @@
 // External dependencies
-import { debounce } from 'lodash';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ReactMapGL, { NavigationControl, ScaleControl } from 'react-map-gl';
 
 // Internal dependencies
@@ -31,21 +30,6 @@ export default function Map(props) {
     zoom,
   });
 
-  useEffect(() => {
-    const debouncedHandleResize = debounce(function handleResize() {
-      // Re-render map on window resize but preserve location
-      const { latitude, longitude, zoom } = viewport;
-      setViewport({ latitude, longitude, zoom });
-    }, 1000);
-
-    window.addEventListener('resize', debouncedHandleResize);
-
-    // Cleanup function
-    return () => {
-      window.removeEventListener('resize', debouncedHandleResize);
-    };
-  });
-
   return (
     <ReactMapGL
       dragRotate={false}
@@ -54,9 +38,10 @@ export default function Map(props) {
       mapStyle={MAP_STYLE_DEFAULT}
       onViewportChange={setViewport}
       touchRotate={false}
-      width="100%"
-      {...props}
       {...viewport}
+      width={
+        '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
+      }
     >
       <div className="map-navigation-control-container">
         <NavigationControl
