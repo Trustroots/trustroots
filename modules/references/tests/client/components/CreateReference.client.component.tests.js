@@ -97,7 +97,7 @@ describe('<CreateReference />', () => {
     ).toBeInTheDocument();
     fireEvent.click(getByText('Yes'));
 
-    fireEvent.click(getByText('Submit'));
+    fireEvent.click(getByText('Finish'));
 
     expect(api.references.create).toHaveBeenCalledWith({
       met: false,
@@ -138,7 +138,7 @@ describe('<CreateReference />', () => {
       target: { value: 'they were mean to me' },
     });
 
-    fireEvent.click(getByText('Submit'));
+    fireEvent.click(getByText('Finish'));
 
     expect(api.references.create).toHaveBeenCalledWith({
       met: false,

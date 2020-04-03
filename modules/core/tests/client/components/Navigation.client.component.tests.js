@@ -4,7 +4,7 @@ import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
 
-import Navigation from '@/modules/references/client/components/create-reference/Navigation';
+import Navigation from '@/modules/core/client/components/Navigation';
 
 describe('Navigation through 3 tabs', () => {
   const f = () => {}; // dummy handler function
@@ -21,7 +21,7 @@ describe('Navigation through 3 tabs', () => {
   [
     { tab: 0, tabs: 3, buttons: ['Next'] },
     { tab: 1, tabs: 3, buttons: ['Back', 'Next'] },
-    { tab: 2, tabs: 3, buttons: ['Back', 'Submit'] },
+    { tab: 2, tabs: 3, buttons: ['Back', 'Finish'] },
   ].forEach(({ tab, tabs, buttons }) => {
     it(`when tab=${tab} and tabs=${3} there is only ${buttons.join(
       ' and ',
@@ -65,7 +65,7 @@ describe('Navigation through 3 tabs', () => {
       tabDone: 1,
       buttons: [
         { name: 'Back', disabled: false },
-        { name: 'Submit', disabled: true },
+        { name: 'Finish', disabled: true },
       ],
     },
     {
@@ -74,7 +74,7 @@ describe('Navigation through 3 tabs', () => {
       tabDone: 2,
       buttons: [
         { name: 'Back', disabled: false },
-        { name: 'Submit', disabled: false },
+        { name: 'Finish', disabled: false },
       ],
     },
   ].forEach(({ tab, tabs, tabDone, buttons }) => {
@@ -127,7 +127,7 @@ describe('Navigation through 3 tabs', () => {
       tab: 2,
       tabDone: 2,
       tabs: 3,
-      button: 'Submit',
+      button: 'Finish',
       buttonIndex: 1,
       testTrigger: 'onSubmit',
     },
