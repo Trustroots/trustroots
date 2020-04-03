@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import {
   $broadcast,
   getRouteParams,
+  go,
 } from '@/modules/core/client/services/angular-compat';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
@@ -110,13 +111,20 @@ export default function Thread({ user, profileMinimumLength }) {
     );
   }
 
+  const username = getRouteParams().username;
+
+  if (user.username === username) {
+    go('inbox');
+    return null; // important to return null to indicate "nothing to render"
+  }
+
   const [nextParams, setNextParams] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
   const [doesNotExist, setDoesNotExist] = useState(false);
   const [messages, setMessages] = useState([]);
-  const cacheKey = `messages.thread.${user._id}-${getRouteParams().username}`;
+  const cacheKey = `messages.thread.${user._id}-${username}`;
 
   const hasEmptyProfile = useMemo(
     () => plainTextLength(user.description) < profileMinimumLength,

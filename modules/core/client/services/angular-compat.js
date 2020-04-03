@@ -18,3 +18,7 @@ export function eventTrack(...args) {
 export function getRouteParams() {
   return get('$stateParams');
 }
+
+export function go(...args) {
+  return get('$state').go(...args);
+}
