@@ -1,3 +1,23 @@
+/**
+ * Welcome to infinite messages component.
+ *
+ * It's a bit complex, sorry for that. I did look at all the
+ * infinite scroll react libraries, but they didn't work so well
+ * for this use case.
+ *
+ * The main things that happen are:
+ * - first loaded
+ *    - scroll to bottom to show latest message
+ * - user scrolls to top
+ *    - needs to trigger "onFetchMore"
+ * - older messages are inserted at the top
+ *    - needs to retain scroll position
+ * - newer messages are inserted at the bottom
+ *    - jump to bottom to view them
+ * - user resizes the windows
+ *    - should maintain scroll position (approx, at least work when scroll to the bottom)
+ */
+
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import last from 'lodash/last';
@@ -23,6 +43,10 @@ export default function InfiniteMessages({
     ref.current.scrollTop = ref.current.scrollHeight - ref.current.offsetHeight;
   }
 
+  // preserve scroll position when resizing
+  // this is not really precise as it doesn't take into account the changing
+  // height of the messages, but it at least keeps us at the bottom if we were there.
+  // to do it better we could keep track of the key of the child item we have in view).
   useEffect(() => {
     const onResize = debounce(() => {
       if (!ref.current) return;
@@ -47,6 +71,7 @@ export default function InfiniteMessages({
       scrollHeight !== ref.current.scrollHeight
     ) {
       // the height as changed, we must have added a message
+      // might be at the top or the bottom, let's find out...
 
       const newScrollHeight = ref.current.scrollHeight;
 
@@ -64,6 +89,7 @@ export default function InfiniteMessages({
     }
   });
 
+  // trigger fetching more messages when we scroll to the top
   function onScroll() {
     if (!ref.current) return;
 
