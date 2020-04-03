@@ -49,7 +49,7 @@ export default function Navigation({
       onClick={onSubmit}
       disabled={tabDone < tabs - 1 || disabled}
     >
-      {t('Submit')}
+      {t('Finish')}
     </button>
   );
 

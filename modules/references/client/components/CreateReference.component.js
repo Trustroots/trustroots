@@ -4,7 +4,7 @@ import { Tab, Tabs } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import * as references from '../api/references.api';
-import Navigation from './create-reference/Navigation';
+import Navigation from '@/modules/core/client/components/Navigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
 import {
