@@ -1,5 +1,3 @@
-import messageThreadTemplateUrl from '@/modules/messages/client/views/thread.client.view.html';
-
 angular.module('messages').config(MessagesRoutes);
 
 /* @ngInject */
@@ -20,29 +18,6 @@ function MessagesRoutes($stateProvider) {
         '<thread user="app.user" profileMinimumLength="app.appSettings.profileMinimumLength"></thread>',
       requiresAuth: true,
       footerHidden: true,
-      data: {
-        pageTitle: 'Messages',
-      },
-    })
-    .state('messageThread2', {
-      url: '/messages2/:username',
-      templateUrl: messageThreadTemplateUrl,
-      controller: 'MessagesThreadController',
-      controllerAs: 'thread',
-      requiresAuth: true,
-      footerHidden: true,
-      resolve: {
-        // A string value resolves to a service
-        UserProfilesService: 'UserProfilesService',
-        SettingsService: 'SettingsService',
-
-        userTo: function(UserProfilesService, $stateParams) {
-          return UserProfilesService.get({ username: $stateParams.username });
-        },
-        appSettings: function(SettingsService) {
-          return SettingsService.get();
-        },
-      },
       data: {
         pageTitle: 'Messages',
       },
