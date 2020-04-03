@@ -159,6 +159,11 @@ const options = {
   },
 };
 
+// medium-editor can give us a <br> at the end that we don't want
+function removeTrailingBr(value) {
+  return value.replace(/<br><\/p>$/, '</p>');
+}
+
 export default function TrEditor({ id, text, onChange, onCtrlEnter }) {
   const ref = React.createRef();
 
@@ -175,8 +180,14 @@ export default function TrEditor({ id, text, onChange, onCtrlEnter }) {
     };
   }, [onCtrlEnter]);
 
-  const props = { id, text, onChange, options, className: 'tr-editor' };
-  return <MediumEditor ref={ref} {...props} />;
+  const props = { id, text, options, className: 'tr-editor' };
+  return (
+    <MediumEditor
+      ref={ref}
+      onChange={value => onChange(removeTrailingBr(value))}
+      {...props}
+    />
+  );
 }
 
 TrEditor.defaultProps = {

@@ -14,9 +14,8 @@ export default function ThreadReply({ onSend, cacheKey }) {
   function send(event) {
     event.preventDefault();
     event.stopPropagation();
-    const value = content.replace(/<br><\/p>$/, '</p>'); // remove the last <br>
-    if (plainTextLength(value) > 0) {
-      onSend(value);
+    if (plainTextLength(content) > 0) {
+      onSend(content);
       setContent('');
       // There is a bug somewhere that means just setting content to '' does not
       // set the text in the editor after pressing send, we can work around that by
