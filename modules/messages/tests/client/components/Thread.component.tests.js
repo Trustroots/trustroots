@@ -28,7 +28,6 @@ jest.mock('@/modules/core/client/services/angular-compat');
 
 afterEach(() => jest.clearAllMocks());
 
-// @TODO implement a better way of generating the different type of user objects we have
 const me = {
   ...generateClientUser({ public: true }),
   memberIds: [],

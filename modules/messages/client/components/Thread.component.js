@@ -195,8 +195,7 @@ export default function Thread({ user, profileMinimumLength }) {
     async function markRead() {
       const unreadMessages = messages
         .filter(message => !message.read) // only unread
-        .filter(message => message.userFrom._id !== user._id) // only other persons messages
-        .filter(message => !message.fake); // @TODO remove this later
+        .filter(message => message.userFrom._id !== user._id); // only other persons messages
       if (unreadMessages.length > 0) {
         await api.messages.markRead(unreadMessages.map(message => message._id));
         setMessages(messages =>
