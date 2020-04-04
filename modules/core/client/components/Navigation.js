@@ -1,6 +1,75 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import classnames from 'classnames';
+
+const BackButton = ({ small, ...props }) => {
+  const { t } = useTranslation('core');
+  return (
+    <button
+      type="button"
+      className={classnames({
+        btn: true,
+        'btn-lg': small,
+        'btn-primary': small,
+        'btn-action': !small,
+        'btn-link': !small,
+      })}
+      aria-label={t('Previous section')}
+      {...props}
+    >
+      <span className="icon-left" aria-hidden="true"></span>
+      {t('Back')}
+    </button>
+  );
+};
+BackButton.propTypes = { small: PropTypes.bool };
+
+const NextButton = ({ small, ...props }) => {
+  const { t } = useTranslation('core');
+
+  return (
+    <button
+      type="button"
+      className={classnames({
+        btn: true,
+        'btn-lg': small,
+        'btn-action': !small,
+        'btn-primary': true,
+      })}
+      aria-label={t('Next section')}
+      uib-tooltip="Write longer description first"
+      tooltip-enable="offerHostEdit.isDescriptionTooShort && offerHostEdit.offerTab === 1"
+      ng-disabled="offerHostEdit.isDescriptionTooShort && offerHostEdit.offerTab === 1"
+      {...props}
+    >
+      {t('Next')}
+      {small && <span className="icon-right" aria-hidden="true"></span>}
+    </button>
+  );
+};
+NextButton.propTypes = { small: PropTypes.bool };
+
+const SubmitButton = ({ small, ...props }) => {
+  const { t } = useTranslation('core');
+  return (
+    <button
+      type="submit"
+      className={classnames({
+        btn: true,
+        'btn-lg': small,
+        'btn-action': !small,
+        'btn-primary': true,
+      })}
+      aria-label={t('Finish editing and save')}
+      {...props}
+    >
+      {t('Finish')}
+      {small && <span className="icon-ok" aria-hidden="true"></span>}
+    </button>
+  );
+};
+SubmitButton.propTypes = { small: PropTypes.bool };
 
 /**
  * Navigation is a react component.
@@ -16,53 +85,59 @@ export default function Navigation({
   onNext,
   onSubmit,
 }) {
-  const { t } = useTranslation('reference');
+  const backButtonProps = {
+    onClick: onBack,
+  };
 
-  const backButton = (
-    <button
-      type="button"
-      className="btn btn-action btn-link"
-      aria-label="Previous section"
-      onClick={onBack}
-    >
-      <span className="icon-left"></span>
-      {t('Back')}
-    </button>
-  );
+  const nextButtonProps = {
+    onClick: onNext,
+    disabled: tabDone < tab,
+  };
 
-  const nextButton = (
-    <button
-      type="button"
-      className="btn btn-action btn-primary"
-      aria-label="Next section"
-      onClick={onNext}
-      disabled={tabDone < tab}
-    >
-      {t('Next')}
-    </button>
-  );
-
-  const submitButton = (
-    <button
-      className="btn btn-action btn-primary"
-      aria-label="Submit reference"
-      onClick={onSubmit}
-      disabled={tabDone < tabs - 1 || disabled}
-    >
-      {t('Finish')}
-    </button>
-  );
+  const submitButtonProps = {
+    onClick: onSubmit,
+    disabled: tabDone < tabs - 1 || disabled,
+  };
 
   const showBackButton = tab > 0; // not the first tab
   const showNextButton = tab < tabs - 1; // not the last tab
   const showSubmitButton = tab === tabs - 1; // the last tab
 
   return (
-    <div className="text-center">
-      {showBackButton && backButton}
-      {showNextButton && nextButton}
-      {showSubmitButton && submitButton}
-    </div>
+    <>
+      <div className="text-center hidden-xs">
+        {showBackButton && <BackButton {...backButtonProps} />}
+        {showNextButton && <NextButton {...nextButtonProps} />}
+        {showSubmitButton && <SubmitButton {...submitButtonProps} />}
+      </div>
+      <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
+        <div className="container">
+          <ul
+            className="nav navbar-nav nav-justified"
+            role="toolbar"
+            aria-label="Offer actions"
+          >
+            <li></li>
+            <li className="pull-right">{/* <!-- For last tab --> */}</li>
+            {showBackButton && (
+              <li>
+                <BackButton small {...backButtonProps} />
+              </li>
+            )}
+            {showNextButton && (
+              <li className="pull-right">
+                <NextButton small {...nextButtonProps} />
+              </li>
+            )}
+            {showSubmitButton && (
+              <li className="pull-right">
+                <SubmitButton small {...submitButtonProps} />
+              </li>
+            )}
+          </ul>
+        </div>
+      </nav>
+    </>
   );
 }
 
