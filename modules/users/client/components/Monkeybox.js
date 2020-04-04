@@ -48,6 +48,7 @@ TribesInCommon.propTypes = {
 };
 
 export default function Monkeybox({ user, otherUser }) {
+  const { t } = useTranslation(['user-profile', 'languages']);
   return (
     <div className="monkeybox panel panel-default">
       <div className="panel-body">
@@ -58,7 +59,7 @@ export default function Monkeybox({ user, otherUser }) {
         <TribesInCommon user={user} otherUser={otherUser} />
         {user.languages.length > 0 && (
           <div className="monkeybox-section">
-            <h4>Languages</h4>
+            <h4>{t('Languages')}</h4>
             <ul className="list-unstyled">
               {user.languages.map(language => (
                 <li key={language.code}>{language.code}</li>
