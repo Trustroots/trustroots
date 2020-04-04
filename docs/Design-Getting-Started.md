@@ -5,6 +5,7 @@
 Suppose you've already dropped by at [volunteer chat](Chat.md) at this point and if you haven't, you should! Lots of the design discussions happen there.
 
 Repositories — see "issues" and "pulls":
+
 - [Website](https://github.com/trustroots/trustroots)
 - [Mobile](https://github.com/trustroots/trustroots-expo-mobile)
 

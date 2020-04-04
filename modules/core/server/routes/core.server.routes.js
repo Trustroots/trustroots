@@ -2,16 +2,20 @@
  * Module dependencies.
  */
 const path = require('path');
-const facebookNotificationService = require(path.resolve('./modules/core/server/services/facebook-notification.server.service'));
+const facebookNotificationService = require(path.resolve(
+  './modules/core/server/services/facebook-notification.server.service',
+));
 const core = require('../controllers/core.server.controller');
-const userProfile = require(path.resolve('./modules/users/server/controllers/users.profile.server.controller'));
-const tribes = require(path.resolve('./modules/tribes/server/controllers/tribes.server.controller'));
+const userProfile = require(path.resolve(
+  './modules/users/server/controllers/users.profile.server.controller',
+));
+const tribes = require(path.resolve(
+  './modules/tribes/server/controllers/tribes.server.controller',
+));
 
-
-module.exports = function (app) {
-
-  const redirect = function (src, dst) {
-    app.route(src).get(function (req, res) {
+module.exports = function(app) {
+  const redirect = function(src, dst) {
+    app.route(src).get(function(req, res) {
       res.redirect(301, dst);
     });
   };
@@ -35,7 +39,9 @@ module.exports = function (app) {
   // handling these violations without a valid CSRF token. The fix is to put
   // your CSP report route above csurf middleware.
   // See `config/lib/express.js` and `initHelmetHeaders()` for more
-  app.route('/api/report-expect-ct-violation').post(core.receiveExpectCTViolationReport);
+  app
+    .route('/api/report-expect-ct-violation')
+    .post(core.receiveExpectCTViolationReport);
 
   // Return a 404 for all undefined api, module or lib routes
   app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);
@@ -59,5 +65,4 @@ module.exports = function (app) {
 
   // Finish by binding the tribes middleware
   app.param('tribe', tribes.tribeBySlug);
-
 };

@@ -1,17 +1,29 @@
 <div class="form-group">
-  <label tr-switch
-         ng-if="myTribesToggle.initialized && myTribesToggle.userTribes.length">
-    <input type="checkbox"
-           ng-disabled="!myTribesToggle.userTribes || !myTribesToggle.userTribes.length"
-           ng-change="myTribesToggle.onChange()"
-           ng-model="myTribesToggle.toggle">
-    <ng-pluralize count="myTribesToggle.userTribes.length"
-                  when="{
+  <label
+    tr-switch
+    ng-if="myTribesToggle.initialized && myTribesToggle.userTribes.length"
+  >
+    <input
+      type="checkbox"
+      ng-disabled="!myTribesToggle.userTribes || !myTribesToggle.userTribes.length"
+      ng-change="myTribesToggle.onChange()"
+      ng-model="myTribesToggle.toggle"
+    />
+    <ng-pluralize
+      count="myTribesToggle.userTribes.length"
+      when="{
                     'one': 'Show only members from my tribe',
                     'other': 'Show only members from my tribes'
-                  }"></ng-pluralize>
+                  }"
+    ></ng-pluralize>
   </label>
-  <p class="help-block" ng-if="myTribesToggle.initialized && !myTribesToggle.userTribes.length">
-    <span class="icon-right"></span> <a ui-sref="tribes.list" class="text-muted">Join tribes to find similar users</a>
+  <p
+    class="help-block"
+    ng-if="myTribesToggle.initialized && !myTribesToggle.userTribes.length"
+  >
+    <span class="icon-right"></span>
+    <a ui-sref="tribes.list" class="text-muted"
+      >Join tribes to find similar users</a
+    >
   </p>
 </div>

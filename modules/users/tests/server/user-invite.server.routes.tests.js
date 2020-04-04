@@ -2,7 +2,9 @@ const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
-const inviteCodeService = require(path.resolve('./modules/users/server/services/invite-codes.server.service'));
+const inviteCodeService = require(path.resolve(
+  './modules/users/server/services/invite-codes.server.service',
+));
 const express = require(path.resolve('./config/lib/express'));
 
 require('should');
@@ -19,9 +21,8 @@ let _user;
 /**
  * User routes tests
  */
-describe('User invites CRUD tests', function () {
-
-  before(function (done) {
+describe('User invites CRUD tests', function() {
+  before(function(done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -30,7 +31,7 @@ describe('User invites CRUD tests', function () {
   });
 
   // Create an user
-  beforeEach(function (done) {
+  beforeEach(function(done) {
     // Create user credentials
     credentials = {
       username: 'TR_username',
@@ -55,20 +56,21 @@ describe('User invites CRUD tests', function () {
     user.save(done);
   });
 
-  it('should be able to receive invite code when authenticated', function (done) {
-    agent.post('/api/auth/signin')
+  it('should be able to receive invite code when authenticated', function(done) {
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (signinErr) {
+      .end(function(signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
         }
 
-        agent.get('/api/users/invitecode')
+        agent
+          .get('/api/users/invitecode')
           .expect(200)
-          .end(function (userInviteCodeErr, userInviteCodeRes) {
-
+          .end(function(userInviteCodeErr, userInviteCodeRes) {
             // Handle error
             if (userInviteCodeErr) {
               return done(userInviteCodeErr);
@@ -85,12 +87,11 @@ describe('User invites CRUD tests', function () {
       });
   });
 
-  it('should not able to receive invite code when not authenticated', function (done) {
-
-    agent.get('/api/users/invitecode')
+  it('should not able to receive invite code when not authenticated', function(done) {
+    agent
+      .get('/api/users/invitecode')
       .expect(403)
-      .end(function (userInviteCodeErr, userInviteCodeRes) {
-
+      .end(function(userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -102,14 +103,13 @@ describe('User invites CRUD tests', function () {
       });
   });
 
-  it('should be able to validate invite code when not authenticated', function (done) {
-
+  it('should be able to validate invite code when not authenticated', function(done) {
     const code = inviteCodeService.getCode();
 
-    agent.post('/api/users/invitecode/' + code)
+    agent
+      .post('/api/users/invitecode/' + code)
       .expect(200)
-      .end(function (userInviteCodeErr, userInviteCodeRes) {
-
+      .end(function(userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -121,14 +121,13 @@ describe('User invites CRUD tests', function () {
       });
   });
 
-  it('should be able to validate invite code in all caps', function (done) {
-
+  it('should be able to validate invite code in all caps', function(done) {
     const code = inviteCodeService.getCode();
 
-    agent.post('/api/users/invitecode/' + code.toUpperCase())
+    agent
+      .post('/api/users/invitecode/' + code.toUpperCase())
       .expect(200)
-      .end(function (userInviteCodeErr, userInviteCodeRes) {
-
+      .end(function(userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -140,12 +139,11 @@ describe('User invites CRUD tests', function () {
       });
   });
 
-  it('should be able to return false for invalid code', function (done) {
-
-    agent.post('/api/users/invitecode/INVALID')
+  it('should be able to return false for invalid code', function(done) {
+    agent
+      .post('/api/users/invitecode/INVALID')
       .expect(200)
-      .end(function (userInviteCodeErr, userInviteCodeRes) {
-
+      .end(function(userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -157,14 +155,13 @@ describe('User invites CRUD tests', function () {
       });
   });
 
-  it('should be able to validate invite code from predefined list', function (done) {
-
+  it('should be able to validate invite code from predefined list', function(done) {
     const code = 'trustroots'; // Defined at `./configs/env/default.js`
 
-    agent.post('/api/users/invitecode/' + code)
+    agent
+      .post('/api/users/invitecode/' + code)
       .expect(200)
-      .end(function (userInviteCodeErr, userInviteCodeRes) {
-
+      .end(function(userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -176,15 +173,15 @@ describe('User invites CRUD tests', function () {
       });
   });
 
-  it('should be able to redirect to correct page using short invite URL', function (done) {
-
-    agent.get('/c/CODE')
+  it('should be able to redirect to correct page using short invite URL', function(done) {
+    agent
+      .get('/c/CODE')
       .expect(301)
       .expect('Location', '/signup?code=CODE')
       .end(done);
   });
 
-  afterEach(function (done) {
+  afterEach(function(done) {
     User.deleteMany().exec(done);
   });
 });

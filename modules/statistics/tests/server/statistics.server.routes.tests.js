@@ -20,17 +20,15 @@ let offer;
 /**
  * Statistics routes tests
  */
-describe('Statistics CRUD tests', function () {
-
-  before(function () {
+describe('Statistics CRUD tests', function() {
+  before(function() {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
   });
 
-  describe('Reading statistics', function () {
-
-    before(function (done) {
+  describe('Reading statistics', function() {
+    before(function(done) {
       // Create user credentials
       credentials = {
         username: 'loremipsum',
@@ -106,23 +104,23 @@ describe('Statistics CRUD tests', function () {
       };
 
       // Save users and offers to the test db
-      user1.save(function (err, user1res) {
+      user1.save(function(err, user1res) {
         should.not.exist(err);
         offer.user = user1res._id;
         offer.status = 'yes';
-        new Offer(offer).save(function (err) {
+        new Offer(offer).save(function(err) {
           should.not.exist(err);
-          user2.save(function (err, user2res) {
+          user2.save(function(err, user2res) {
             should.not.exist(err);
             offer.user = user2res._id;
             offer.status = 'maybe';
-            new Offer(offer).save(function (err) {
+            new Offer(offer).save(function(err) {
               should.not.exist(err);
-              user3.save(function (err, user3res) {
+              user3.save(function(err, user3res) {
                 should.not.exist(err);
                 offer.user = user3res._id;
                 offer.status = 'no';
-                new Offer(offer).save(function (err) {
+                new Offer(offer).save(function(err) {
                   should.not.exist(err);
                   return done();
                 });
@@ -131,16 +129,14 @@ describe('Statistics CRUD tests', function () {
           });
         });
       });
-
     });
 
-    it('should be able to read statistics when not logged in', function (done) {
-
+    it('should be able to read statistics when not logged in', function(done) {
       // Read statistics
-      agent.get('/api/statistics')
+      agent
+        .get('/api/statistics')
         .expect(200)
-        .end(function (statsReadErr, statsReadRes) {
-
+        .end(function(statsReadErr, statsReadRes) {
           statsReadRes.body.connected.bewelcome.should.equal(1);
           statsReadRes.body.connected.couchsurfing.should.equal(2);
           statsReadRes.body.connected.warmshowers.should.equal(1);
@@ -160,19 +156,20 @@ describe('Statistics CRUD tests', function () {
         });
     });
 
-    it('should be able to read statistics when logged in', function (done) {
-      agent.post('/api/auth/signin')
+    it('should be able to read statistics when logged in', function(done) {
+      agent
+        .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function(signinErr) {
           // Handle signin error
           if (signinErr) return done(signinErr);
 
           // Read statistics
-          agent.get('/api/statistics')
+          agent
+            .get('/api/statistics')
             .expect(200)
-            .end(function (statsReadErr, statsReadRes) {
-
+            .end(function(statsReadErr, statsReadRes) {
               statsReadRes.body.connected.bewelcome.should.equal(1);
               statsReadRes.body.connected.couchsurfing.should.equal(2);
               statsReadRes.body.connected.warmshowers.should.equal(1);
@@ -190,24 +187,22 @@ describe('Statistics CRUD tests', function () {
               // Call the assertion callback
               return done(statsReadErr);
             });
-
         });
     });
 
-    after(function (done) {
+    after(function(done) {
       // Clean out
-      User.deleteMany().exec(function () {
+      User.deleteMany().exec(function() {
         Offer.deleteMany().exec(done);
       });
     });
   });
 
-  describe('Writing statistics', function () {
-
-    it('should be able to write to statistics endpoint', function (done) {
-
+  describe('Writing statistics', function() {
+    it('should be able to write to statistics endpoint', function(done) {
       // Write statistics
-      agent.post('/api/statistics')
+      agent
+        .post('/api/statistics')
         .send({
           collection: 'mobileAppInit',
           stats: {
@@ -218,7 +213,7 @@ describe('Statistics CRUD tests', function () {
           },
         })
         // .expect(200)
-        .end(function (statsWriteErr, statsWriteRes) {
+        .end(function(statsWriteErr, statsWriteRes) {
           if (statsWriteErr) {
             return done(statsWriteErr);
           }
@@ -229,13 +224,12 @@ describe('Statistics CRUD tests', function () {
           // Call the assertion callback
           return done();
         });
-
     });
 
-    it('should return update header with invalid collection value', function (done) {
-
+    it('should return update header with invalid collection value', function(done) {
       // Write statistics
-      agent.post('/api/statistics')
+      agent
+        .post('/api/statistics')
         .send({
           collection: 'WRONG',
           stats: {
@@ -246,25 +240,28 @@ describe('Statistics CRUD tests', function () {
           },
         })
         .expect(400)
-        .end(function (statsWriteErr, statsWriteRes) {
+        .end(function(statsWriteErr, statsWriteRes) {
           if (statsWriteErr) {
             return done(statsWriteErr);
           }
 
-          statsWriteRes.body.message.should.equal('Missing or invalid `collection`.');
+          statsWriteRes.body.message.should.equal(
+            'Missing or invalid `collection`.',
+          );
           statsWriteRes.headers.should.have.property('x-tr-update-needed');
-          statsWriteRes.headers['x-tr-update-needed'].should.equal('You should update Trustroots app or otherwise it will not continue functioning.');
+          statsWriteRes.headers['x-tr-update-needed'].should.equal(
+            'You should update Trustroots app or otherwise it will not continue functioning.',
+          );
 
           // Call the assertion callback
           return done();
         });
-
     });
 
-    it('should return update header with old app version', function (done) {
-
+    it('should return update header with old app version', function(done) {
       // Write statistics
-      agent.post('/api/statistics')
+      agent
+        .post('/api/statistics')
         .send({
           collection: 'mobileAppInit',
           stats: {
@@ -275,20 +272,22 @@ describe('Statistics CRUD tests', function () {
           },
         })
         .expect(200)
-        .end(function (statsWriteErr, statsWriteRes) {
+        .end(function(statsWriteErr, statsWriteRes) {
           if (statsWriteErr) {
             return done(statsWriteErr);
           }
 
-          statsWriteRes.body.message.should.equal('You should update Trustroots app or otherwise it will not continue functioning.');
+          statsWriteRes.body.message.should.equal(
+            'You should update Trustroots app or otherwise it will not continue functioning.',
+          );
           statsWriteRes.headers.should.have.property('x-tr-update-needed');
-          statsWriteRes.headers['x-tr-update-needed'].should.equal('You should update Trustroots app or otherwise it will not continue functioning.');
+          statsWriteRes.headers['x-tr-update-needed'].should.equal(
+            'You should update Trustroots app or otherwise it will not continue functioning.',
+          );
 
           // Call the assertion callback
           return done();
         });
-
     });
   });
-
 });

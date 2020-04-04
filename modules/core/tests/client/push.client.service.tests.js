@@ -1,261 +1,283 @@
+import AppConfig from '@/modules/core/client/app/config';
+
 /**
  * Push service
  */
-(function () {
-  describe('Push Service Tests', function () {
+describe('Push Service Tests', function() {
+  let $httpBackend;
+  let firebaseMessaging;
+  let locker;
 
-    let $httpBackend;
-    let firebaseMessaging;
-    let locker;
+  const firebase = createFirebaseMock();
 
-    const firebase = createFirebaseMock();
+  // Load the main application module
+  beforeEach(angular.mock.module(AppConfig.appModuleName, firebase.moduleName));
 
-    // Load the main application module
-    beforeEach(module(AppConfig.appModuleName, firebase.moduleName));
+  beforeEach(firebase.reset);
 
-    beforeEach(firebase.reset);
+  const notifications = [];
 
-    const notifications = [];
+  beforeEach(inject(function(
+    _$httpBackend_,
+    _locker_,
+    $window,
+    Authentication,
+    _firebaseMessaging_,
+  ) {
+    $httpBackend = _$httpBackend_;
+    locker = _locker_;
+    firebaseMessaging = _firebaseMessaging_;
+    Authentication.user = {
+      pushRegistration: [],
+    };
+    notifications.length = 0;
+    firebaseMessaging.shouldInitialize = false;
+    $window.Notification = function(title, options) {
+      notifications.push({ title: title, options: options });
+    };
+  }));
 
-    beforeEach(inject(function (
-      _$httpBackend_, _locker_, $window, Authentication, _firebaseMessaging_) {
+  afterEach(function() {
+    locker.clean();
+  });
 
-      $httpBackend = _$httpBackend_;
-      locker = _locker_;
-      firebaseMessaging = _firebaseMessaging_;
-      Authentication.user = {
-        pushRegistration: [],
-      };
-      notifications.length = 0;
-      firebaseMessaging.shouldInitialize = false;
-      $window.Notification = function (title, options) {
-        notifications.push({ title: title, options: options });
-      };
-    }));
+  afterEach(function() {
+    $httpBackend.verifyNoOutstandingExpectation();
+    $httpBackend.verifyNoOutstandingRequest();
+  });
 
-    afterEach(function () {
-      locker.clean();
-    });
+  it('will save to server if enabled', inject(function(push, Authentication) {
+    if (!push.isSupported) return;
 
-    afterEach(function () {
-      $httpBackend.verifyNoOutstandingExpectation();
-      $httpBackend.verifyNoOutstandingRequest();
-    });
+    const token = 'mynicetoken';
+    firebase.token = token;
 
-    it('will save to server if enabled', inject(function (
-      push, Authentication) {
-      if (!push.isSupported) return;
+    $httpBackend
+      .expect('POST', '/api/users/push/registrations', {
+        token: token,
+        platform: 'web',
+      })
+      .respond(200, {
+        user: {
+          pushRegistration: [
+            { token: token, platform: 'web', created: Date.now() },
+          ],
+        },
+      });
 
-      const token = 'mynicetoken';
-      firebase.token = token;
+    push.enable();
 
-      $httpBackend.expect('POST', '/api/users/push/registrations',
-        { token: token, platform: 'web' })
-        .respond(200, {
-          user: {
-            pushRegistration: [{ token: token, platform: 'web', created: Date.now() }],
-          },
-        });
+    $httpBackend.flush();
+    expect(firebase.requestPermissionCalled).toBe(1);
+    expect(firebase.permissionGranted).toBe(true);
+    expect(Authentication.user.pushRegistration.length).toBe(1);
+    expect(Authentication.user.pushRegistration[0].token).toBe(token);
+    expect(locker.get('tr.push')).toBe('on');
+  }));
 
-      push.enable();
+  it('will save to server during initialization if on but not present', inject(function(
+    push,
+    Authentication,
+  ) {
+    if (!push.isSupported) return;
 
-      $httpBackend.flush();
-      expect(firebase.requestPermissionCalled).toBe(1);
-      expect(firebase.permissionGranted).toBe(true);
-      expect(Authentication.user.pushRegistration.length).toBe(1);
-      expect(Authentication.user.pushRegistration[0].token).toBe(token);
-      expect(locker.get('tr.push')).toBe('on');
-    }));
+    const token = 'mynicetokenforinitializing';
 
-    it('will save to server during initialization if on but not present', inject(function (
-      push, Authentication) {
-      if (!push.isSupported) return;
-
-      const token = 'mynicetokenforinitializing';
-
-      $httpBackend.expect('POST', '/api/users/push/registrations',
-        { token: token, platform: 'web' })
-        .respond(200, {
-          user: {
-            pushRegistration: [{
+    $httpBackend
+      .expect('POST', '/api/users/push/registrations', {
+        token: token,
+        platform: 'web',
+      })
+      .respond(200, {
+        user: {
+          pushRegistration: [
+            {
               token: token,
               platform: 'web',
               created: Date.now(),
-            }],
-          },
-        });
-
-      // if we turn it on...
-      locker.put('tr.push', 'on');
-      firebase.permissionGranted = true;
-      firebase.token = token;
-
-      // .. and enable it to be initialized
-      firebaseMessaging.shouldInitialize = true;
-
-      // we will cause it to register on the server
-      push.init();
-
-      expect(Authentication.user.pushRegistration.length).toBe(0);
-
-      $httpBackend.flush();
-
-      expect(Authentication.user.pushRegistration.length).toBe(1);
-      expect(Authentication.user.pushRegistration[0].token).toBe(token);
-    }));
-
-    it('can be disabled and will be removed from server', inject(function (
-      push, Authentication, locker, $rootScope) {
-      if (!push.isSupported) return;
-
-      const token = 'sometokenfordisabling';
-
-      // Preregister it
-      firebase.token = token;
-      firebase.permissionGranted = true;
-      Authentication.user.pushRegistration.push({
-        token: token, platform: 'web',
-      });
-
-      expect(push.isEnabled).toBe(false);
-
-      // first enable it ...
-
-      push.enable();
-      $rootScope.$apply();
-
-      expect(firebase.requestPermissionCalled).toBe(0);
-      expect(Authentication.user.pushRegistration.length).toBe(1);
-      expect(locker.get('tr.push')).toBe('on');
-      expect(push.isEnabled).toBe(true);
-
-      // ... now disable it again
-
-      $httpBackend.expect('DELETE', '/api/users/push/registrations/' + token)
-        .respond(200, {
-          user: {
-            pushRegistration: [],
-          },
-        });
-
-      push.disable();
-      $httpBackend.flush();
-
-      expect(Authentication.user.pushRegistration.length).toBe(0);
-      expect(locker.get('tr.push')).toBeFalsy();
-      expect(firebase.deletedTokens.length).toBe(1);
-      expect(firebase.deletedTokens[0]).toBe(token);
-      expect(push.isEnabled).toBe(false);
-
-    }));
-
-    it('will not save to server if enabling and already registered', inject(function (
-      push, Authentication, $rootScope) {
-      if (!push.isSupported) return;
-
-      const token = 'sometoken';
-      // Preregister it
-      firebase.token = token;
-      firebase.permissionGranted = true;
-      Authentication.user.pushRegistration.push({
-        token: token, platform: 'web',
-      });
-      push.enable();
-      $rootScope.$apply();
-      expect(firebase.requestPermissionCalled).toBe(0);
-      expect(push.isEnabled).toBe(true);
-      expect(locker.get('tr.push')).toBe('on');
-    }));
-
-    it('should trigger a notification when a message is received', inject(function (push) {
-      if (!push.isSupported) return;
-      firebase.triggerOnMessage({
-        notification: {
-          title: 'foo',
-          body: 'yay',
+            },
+          ],
         },
       });
-      expect(notifications.length).toBe(1);
-      expect(notifications[0].title).toBe('foo');
-      expect(notifications[0].options.body).toBe('yay');
-    }));
 
-  });
+    // if we turn it on...
+    locker.put('tr.push', 'on');
+    firebase.permissionGranted = true;
+    firebase.token = token;
 
-  function createFirebaseMock() {
+    // .. and enable it to be initialized
+    firebaseMessaging.shouldInitialize = true;
 
-    const onMessageCallbacks = [];
-    const onTokenRefreshCallbacks = [];
+    // we will cause it to register on the server
+    push.init();
 
-    const firebase = {
-      deletedTokens: [],
-      reset: reset,
-      moduleName: 'firebaseMessagingMock',
+    expect(Authentication.user.pushRegistration.length).toBe(0);
 
-      triggerOnMessage: function () {
-        const args = arguments;
-        onMessageCallbacks.forEach(function (fn) {
-          fn.apply(null, args);
-        });
+    $httpBackend.flush();
+
+    expect(Authentication.user.pushRegistration.length).toBe(1);
+    expect(Authentication.user.pushRegistration[0].token).toBe(token);
+  }));
+
+  it('can be disabled and will be removed from server', inject(function(
+    push,
+    Authentication,
+    locker,
+    $rootScope,
+  ) {
+    if (!push.isSupported) return;
+
+    const token = 'sometokenfordisabling';
+
+    // Preregister it
+    firebase.token = token;
+    firebase.permissionGranted = true;
+    Authentication.user.pushRegistration.push({
+      token: token,
+      platform: 'web',
+    });
+
+    expect(push.isEnabled).toBe(false);
+
+    // first enable it ...
+
+    push.enable();
+    $rootScope.$apply();
+
+    expect(firebase.requestPermissionCalled).toBe(0);
+    expect(Authentication.user.pushRegistration.length).toBe(1);
+    expect(locker.get('tr.push')).toBe('on');
+    expect(push.isEnabled).toBe(true);
+
+    // ... now disable it again
+
+    $httpBackend
+      .expect('DELETE', '/api/users/push/registrations/' + token)
+      .respond(200, {
+        user: {
+          pushRegistration: [],
+        },
+      });
+
+    push.disable();
+    $httpBackend.flush();
+
+    expect(Authentication.user.pushRegistration.length).toBe(0);
+    expect(locker.get('tr.push')).toBeFalsy();
+    expect(firebase.deletedTokens.length).toBe(1);
+    expect(firebase.deletedTokens[0]).toBe(token);
+    expect(push.isEnabled).toBe(false);
+  }));
+
+  it('will not save to server if enabling and already registered', inject(function(
+    push,
+    Authentication,
+    $rootScope,
+  ) {
+    if (!push.isSupported) return;
+
+    const token = 'sometoken';
+    // Preregister it
+    firebase.token = token;
+    firebase.permissionGranted = true;
+    Authentication.user.pushRegistration.push({
+      token: token,
+      platform: 'web',
+    });
+    push.enable();
+    $rootScope.$apply();
+    expect(firebase.requestPermissionCalled).toBe(0);
+    expect(push.isEnabled).toBe(true);
+    expect(locker.get('tr.push')).toBe('on');
+  }));
+
+  it('should trigger a notification when a message is received', inject(function(
+    push,
+  ) {
+    if (!push.isSupported) return;
+    firebase.triggerOnMessage({
+      notification: {
+        title: 'foo',
+        body: 'yay',
       },
+    });
+    expect(notifications.length).toBe(1);
+    expect(notifications[0].title).toBe('foo');
+    expect(notifications[0].options.body).toBe('yay');
+  }));
+});
 
-      triggerOnTokenRefresh: function () {
-        const args = arguments;
-        onTokenRefreshCallbacks.forEach(function (fn) {
-          fn.apply(null, args);
-        });
-      },
+function createFirebaseMock() {
+  const onMessageCallbacks = [];
+  const onTokenRefreshCallbacks = [];
 
-    };
+  const firebase = {
+    deletedTokens: [],
+    reset: reset,
+    moduleName: 'firebaseMessagingMock',
 
-    function reset() {
-      onMessageCallbacks.length = 0;
-      onTokenRefreshCallbacks.length = 0;
-      firebase.token = null;
-      firebase.permissionGranted = false;
-      firebase.deletedTokens.length = 0;
-      firebase.requestPermissionCalled = 0;
-      firebase.removeServiceWorkerCalled = 0;
-    }
+    triggerOnMessage: function() {
+      const args = arguments;
+      onMessageCallbacks.forEach(function(fn) {
+        fn.apply(null, args);
+      });
+    },
 
-    angular.module(firebase.moduleName, [])
+    triggerOnTokenRefresh: function() {
+      const args = arguments;
+      onTokenRefreshCallbacks.forEach(function(fn) {
+        fn.apply(null, args);
+      });
+    },
+  };
 
-      // this will replace the real one
-      .factory('firebaseMessaging', create);
-
-    function create($q) {
-      return {
-        name: 'fcm-mock',
-        shouldInitialize: false, // means core does not set it up for us
-        getToken: function () {
-          if (firebase.permissionGranted) {
-            return $q.resolve(firebase.token);
-          } else {
-            return $q.resolve(null);
-          }
-        },
-        requestPermission: function () {
-          firebase.permissionGranted = true;
-          firebase.requestPermissionCalled++;
-          return $q.resolve();
-        },
-        deleteToken: function (token) {
-          firebase.deletedTokens.push(token);
-          return $q.resolve();
-        },
-        onTokenRefresh: function (fn) {
-          onTokenRefreshCallbacks.push(fn);
-        },
-        onMessage: function (fn) {
-          onMessageCallbacks.push(fn);
-        },
-        removeServiceWorker: function () {
-          firebase.removeServiceWorkerCalled++;
-        },
-      };
-    }
-
-    return firebase;
-
+  function reset() {
+    onMessageCallbacks.length = 0;
+    onTokenRefreshCallbacks.length = 0;
+    firebase.token = null;
+    firebase.permissionGranted = false;
+    firebase.deletedTokens.length = 0;
+    firebase.requestPermissionCalled = 0;
+    firebase.removeServiceWorkerCalled = 0;
   }
-}());
+
+  angular
+    .module(firebase.moduleName, [])
+
+    // this will replace the real one
+    .factory('firebaseMessaging', create);
+
+  function create($q) {
+    return {
+      name: 'fcm-mock',
+      shouldInitialize: false, // means core does not set it up for us
+      getToken: function() {
+        if (firebase.permissionGranted) {
+          return $q.resolve(firebase.token);
+        } else {
+          return $q.resolve(null);
+        }
+      },
+      requestPermission: function() {
+        firebase.permissionGranted = true;
+        firebase.requestPermissionCalled++;
+        return $q.resolve();
+      },
+      deleteToken: function(token) {
+        firebase.deletedTokens.push(token);
+        return $q.resolve();
+      },
+      onTokenRefresh: function(fn) {
+        onTokenRefreshCallbacks.push(fn);
+      },
+      onMessage: function(fn) {
+        onMessageCallbacks.push(fn);
+      },
+      removeServiceWorker: function() {
+        firebase.removeServiceWorkerCalled++;
+      },
+    };
+  }
+
+  return firebase;
+}

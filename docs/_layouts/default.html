@@ -1,46 +1,54 @@
-{% comment %}
-
-Trustroots Team Guide template
-
-Extends jekyll-theme-cayman theme — see original file:
+{% comment %} Trustroots Team Guide template Extends jekyll-theme-cayman theme —
+see original file:
 https://github.com/pages-themes/cayman/blob/4b7215bd058e0695ebb3fa6929bf8fd0b3bf3714/_layouts/default.html
-
 See Instructions for how to modify and run this template locally:
-
 https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/
 https://help.github.com/articles/customizing-css-and-html-in-your-jekyll-theme/
 https://help.github.com/categories/customizing-github-pages/
-https://jekyllrb.com/docs/themes/
-
-{% endcomment %}
+https://jekyllrb.com/docs/themes/ {% endcomment %}
 <!DOCTYPE html>
-<html lang="{{ site.lang | default: "en-US" }}">
+<html lang="{{ site.lang | default: 'en-US' }}">
   <head>
     {% if site.google_analytics %}
-      <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"></script>
-      <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '{{ site.google_analytics }}');
-      </script>
-      <!-- https://www.trustroots.org/privacy -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', '{{ site.google_analytics }}');
+    </script>
+    <!-- https://www.trustroots.org/privacy -->
     {% endif %}
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
 
-{% seo %}
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#12b591">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
+    {% seo %}
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#12b591" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}"
+    />
   </head>
   <body>
     <a id="skip-to-content" href="#content">Skip to the content.</a>
 
     <header class="page-header" role="banner">
       <div>
-        <h1 class="project-name">{{ site.title | default: site.github.repository_name }}</h1>
-        <h2 class="project-tagline">{{ site.description | default: site.github.project_tagline }}</h2>
+        <h1 class="project-name">
+          {{ site.title | default: site.github.repository_name }}
+        </h1>
+        <h2 class="project-tagline">
+          {{ site.description | default: site.github.project_tagline }}
+        </h2>
       </div>
       <div>
         <!-- https://duckduckgo.com/search_box -->
@@ -57,15 +65,17 @@ https://jekyllrb.com/docs/themes/
 
       <footer class="site-footer">
         <span class="site-footer-owner">
-          <a href="{{ site.github.repository_url }}/edit/master/docs{{ page.dir }}{{ page.name }}">
+          <a
+            href="{{ site.github.repository_url }}/edit/master/docs{{ page.dir }}{{ page.name }}"
+          >
             Edit this page on GitHub
           </a>
         </span>
         <span class="site-footer-credits">
           This documentation is licensed under
           <a href="http://creativecommons.org/licenses/by/4.0/">
-            a Creative Commons Attribution 4.0 International License
-          </a>.
+            a Creative Commons Attribution 4.0 International License </a
+          >.
         </span>
       </footer>
     </main>

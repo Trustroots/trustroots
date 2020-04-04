@@ -57,7 +57,7 @@ const ReferenceSchema = new Schema({
     enum: ['yes', 'no', 'unknown'],
     default: 'unknown',
     required: true,
-  }, /* ,
+  } /* ,
   feedbackPublic: {
     type: String,
     trim: true
@@ -66,7 +66,7 @@ const ReferenceSchema = new Schema({
     type: String,
     trim: true
   }
-  */
+  */,
 });
 
 /**

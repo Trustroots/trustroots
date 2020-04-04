@@ -1,13 +1,15 @@
-(function () {
-  angular
-    .module('users')
-    .factory('UserMembershipsService', UserMembershipsService);
+angular
+  .module('users')
+  .factory('UserMembershipsService', UserMembershipsService);
 
-  /* @ngInject */
-  function UserMembershipsService($resource) {
-    return $resource('/api/users/memberships/:tribeId?', {
+/* @ngInject */
+function UserMembershipsService($resource) {
+  return $resource(
+    '/api/users/memberships/:tribeId?',
+    {
       tribeId: '@tribeId',
-    }, {
+    },
+    {
       post: {
         method: 'POST',
       },
@@ -17,6 +19,6 @@
       get: {
         method: 'GET',
       },
-    });
-  }
-}());
+    },
+  );
+}

@@ -14,7 +14,10 @@ module.exports = {
     i18n: true,
   },
   db: {
-    uri: 'mongodb://' + (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') + '/trustroots-test',
+    uri:
+      'mongodb://' +
+      (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') +
+      '/trustroots-test',
     options: {
       auth: {
         authMechanism: '',
@@ -60,6 +63,7 @@ module.exports = {
       satellite: false,
       hitchmap: false,
     },
-    publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g',
+    publicKey:
+      'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g',
   },
 };

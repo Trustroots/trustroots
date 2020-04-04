@@ -1,33 +1,62 @@
 <section class="container container-spacer">
-
   <!-- Browsing with non-public account -->
-  <div ng-if="!app.user.public" ng-include="'/modules/users/views/profile/activate.client.view.html'"></div>
+  <div
+    ng-if="!app.user.public"
+    ng-include="~modules/users/client/views/profile/activate.client.view.html"
+  ></div>
 
-  <form name="ConfirmContactForm" ng-submit="contactConfirm.confirmContact()" novalidate autocomplete="off" ng-if="app.user.public">
-
+  <form
+    name="ConfirmContactForm"
+    ng-submit="contactConfirm.confirmContact()"
+    novalidate
+    autocomplete="off"
+    ng-if="app.user.public"
+  >
     <div class="row">
-
-      <div class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 col-lg-offset-3 col-lg-6">
-
+      <div
+        class="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8 col-lg-offset-3 col-lg-6"
+      >
         <div class="page-header">
           <h2>Confirm contact</h2>
         </div>
 
-        <div class="panel panel-default contacts-connection" ng-hide="!contactConfirm.contact || contactConfirm.isWrongCode || contactConfirm.contact.userTo._id !== app.user._id">
+        <div
+          class="panel panel-default contacts-connection"
+          ng-hide="!contactConfirm.contact || contactConfirm.isWrongCode || contactConfirm.contact.userTo._id !== app.user._id"
+        >
           <div class="panel-body">
             <div class="row">
               <div class="col-xs-12 col-sm-5 contacts-connection-profile">
-                <div tr-avatar data-user="contactConfirm.contact.userFrom" data-size="128" class="center-block"></div>
-                <h4 class="contacts-connection-name" ng-bind="contactConfirm.contact.userFrom.displayName"></h4>
+                <div
+                  tr-avatar
+                  data-user="contactConfirm.contact.userFrom"
+                  data-size="128"
+                  class="center-block"
+                ></div>
+                <h4
+                  class="contacts-connection-name"
+                  ng-bind="contactConfirm.contact.userFrom.displayName"
+                ></h4>
               </div>
               <div class="hidden-xs col-sm-2">
-                <i class="icon-exchange icon-3x text-muted contacts-connection-divider"></i>
+                <i
+                  class="icon-exchange icon-3x text-muted contacts-connection-divider"
+                ></i>
               </div>
               <div class="col-xs-12 col-sm-5 contacts-connection-profile">
-                <div tr-avatar data-user="contactConfirm.contact.userTo" data-size="128" class="center-block"></div>
-                <h4 class="contacts-connection-name" ng-bind="contactConfirm.contact.userTo.displayName"></h4>
+                <div
+                  tr-avatar
+                  data-user="contactConfirm.contact.userTo"
+                  data-size="128"
+                  class="center-block"
+                ></div>
+                <h4
+                  class="contacts-connection-name"
+                  ng-bind="contactConfirm.contact.userTo.displayName"
+                ></h4>
               </div>
-            </div><!-- /.row -->
+            </div>
+            <!-- /.row -->
           </div>
         </div>
 
@@ -36,36 +65,61 @@
         <div ng-if="contactConfirm.success" class="alert alert-success">
           <h4 ng-bind="contactConfirm.success"></h4>
           <p>
-            <strong><a ui-sref="profile.about({username: contactConfirm.contact.userFrom.username})">{{ ::contactConfirm.contact.userFrom.displayName }}</a></strong> &
-            <strong><a ui-sref="profile.about({username: contactConfirm.contact.userTo.username})">{{ ::contactConfirm.contact.userTo.displayName }}</a></strong>.
+            <strong
+              ><a
+                ui-sref="profile.about({username: contactConfirm.contact.userFrom.username})"
+                >{{ ::contactConfirm.contact.userFrom.displayName }}</a
+              ></strong
+            >
+            &
+            <strong
+              ><a
+                ui-sref="profile.about({username: contactConfirm.contact.userTo.username})"
+                >{{ ::contactConfirm.contact.userTo.displayName }}</a
+              ></strong
+            >.
           </p>
         </div>
         <!-- Errors -->
-        <div ng-if="contactConfirm.error" class="alert alert-danger text-center">
+        <div
+          ng-if="contactConfirm.error"
+          class="alert alert-danger text-center"
+        >
           <strong ng-bind="contactConfirm.error"></strong>
         </div>
         <!-- /Notifications -->
 
-        <div class="text-center" ng-if="contactConfirm.contact && !contactConfirm.isConnected && !contactConfirm.isWrongCode && contactConfirm.contact.userTo._id === app.user._id">
-          <button type="submit" class="btn btn-lg btn-primary" ng-disabled="contactConfirm.isLoading">
+        <div
+          class="text-center"
+          ng-if="contactConfirm.contact && !contactConfirm.isConnected && !contactConfirm.isWrongCode && contactConfirm.contact.userTo._id === app.user._id"
+        >
+          <button
+            type="submit"
+            class="btn btn-lg btn-primary"
+            ng-disabled="contactConfirm.isLoading"
+          >
             <span ng-if="!contactConfirm.isLoading">
               Confirm contact
             </span>
-            <span ng-if="contactConfirm.isLoading"
-                  role="alertdialog"
-                  aria-busy="true"
-                  aria-live="assertive">
+            <span
+              ng-if="contactConfirm.isLoading"
+              role="alertdialog"
+              aria-busy="true"
+              aria-live="assertive"
+            >
               Wait a moment...
             </span>
           </button>
-          <br><br>
-          <a ui-sref="profile.about({username: contactConfirm.contact.userTo.username})" class="text-muted">Cancel</a>
+          <br /><br />
+          <a
+            ui-sref="profile.about({username: contactConfirm.contact.userTo.username})"
+            class="text-muted"
+            >Cancel</a
+          >
         </div>
-
-      </div><!-- /.col-* -->
-
-    </div><!-- /.row -->
-
+      </div>
+      <!-- /.col-* -->
+    </div>
+    <!-- /.row -->
   </form>
-
 </section>

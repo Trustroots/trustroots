@@ -1,17 +1,17 @@
-(function () {
-  angular
-    .module('tribes')
-    .factory('TribesService', TribesService);
+angular.module('tribes').factory('TribesService', TribesService);
 
-  /* @ngInject */
-  function TribesService($resource) {
-    return $resource('/api/tribes', {
+/* @ngInject */
+function TribesService($resource) {
+  return $resource(
+    '/api/tribes',
+    {
       limit: 50,
-    }, {
-      'query': {
+    },
+    {
+      query: {
         method: 'GET',
         isArray: true,
       },
-    });
-  }
-}());
+    },
+  );
+}

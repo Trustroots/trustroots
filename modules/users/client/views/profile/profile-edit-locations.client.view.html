@@ -1,32 +1,34 @@
-
-<form name="userFormLocation"
-      ng-submit="profileEditLocations.updateUserProfile(userFormLocation.$valid)"
-      autocomplete="off"
-      tr-confirm-exit>
-
+<form
+  name="userFormLocation"
+  ng-submit="profileEditLocations.updateUserProfile(userFormLocation.$valid)"
+  autocomplete="off"
+  tr-confirm-exit
+>
   <div class="panel panel-default">
     <div class="panel-heading">
       Locations
     </div>
     <div class="panel-body">
-
-
       <div class="form-horizontal">
-
         <div class="form-group">
-          <label for="location-living" class="col-sm-3 text-right control-label">
+          <label
+            for="location-living"
+            class="col-sm-3 text-right control-label"
+          >
             Where do you live
           </label>
           <div class="col-sm-9 col-md-7 col-lg-6">
-            <input type="text"
-                   class="form-control"
-                   placeholder="City, Country"
-                   id="location-living"
-                   limit-location-types="true"
-                   tr-location
-                   tr-location-center="profileEditLocations.locationLivingCenter"
-                   ng-model="profileEditLocations.user.locationLiving"
-                   ng-change="profileEdit.unsavedModifications = true">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="City, Country"
+              id="location-living"
+              limit-location-types="true"
+              tr-location
+              tr-location-center="profileEditLocations.locationLivingCenter"
+              ng-model="profileEditLocations.user.locationLiving"
+              ng-change="profileEdit.unsavedModifications = true"
+            />
           </div>
         </div>
 
@@ -35,31 +37,33 @@
             Where are you from
           </label>
           <div class="col-sm-9 col-md-7 col-lg-6">
-            <input type="text"
-                   class="form-control"
-                   placeholder="City, Country"
-                   id="location-from"
-                   limit-location-types="true"
-                   tr-location
-                   tr-location-center="profileEditLocations.locationFromCenter"
-                   ng-model="profileEditLocations.user.locationFrom"
-                   ng-change="profileEdit.unsavedModifications = true">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="City, Country"
+              id="location-from"
+              limit-location-types="true"
+              tr-location
+              tr-location-center="profileEditLocations.locationFromCenter"
+              ng-model="profileEditLocations.user.locationFrom"
+              ng-change="profileEdit.unsavedModifications = true"
+            />
           </div>
         </div>
       </div>
-
     </div>
   </div>
 
   <p>
-    <button type="submit"
-            class="btn btn-lg btn-primary profile-editor-save"
-            ng-disabled="!profileEdit.unsavedModifications">
+    <button
+      type="submit"
+      class="btn btn-lg btn-primary profile-editor-save"
+      ng-disabled="!profileEdit.unsavedModifications"
+    >
       Save
     </button>
-    <br><br>
+    <br /><br />
   </p>
-
 </form>
 
 <div class="panel panel-default">
@@ -67,22 +71,27 @@
     Hosting & meet
   </div>
   <div class="panel-body">
-
     <div class="form-horizontal">
-
       <p>
-        <a role="button" ui-sref="offer.host.edit" class="btn btn-inverse-primary">
+        <a
+          role="button"
+          ui-sref="offer.host.edit"
+          class="btn btn-inverse-primary"
+        >
           <i class="icon-sofa"></i>
-          &nbsp;&nbsp;&nbsp;
-          Modify your hosting location
+          &nbsp;&nbsp;&nbsp; Modify your hosting location
         </a>
       </p>
       <p>
-        <a role="button" ui-sref="offer.meet.list" class="btn btn-inverse-primary">
+        <a
+          role="button"
+          ui-sref="offer.meet.list"
+          class="btn btn-inverse-primary"
+        >
           <i class="icon-users"></i>
           Modify your meet locations
         </a>
       </p>
-
+    </div>
   </div>
 </div>

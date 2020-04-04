@@ -9,9 +9,14 @@ import locales from '@/config/shared/locales';
  * @param {String} currentLanguageCode - code of current language
  * @param {Function} onChangeLanguage - what to do when language is changed
  */
-export function LanguageSwitchDropdown({ currentLanguageCode, onChangeLanguage }) {
+export function LanguageSwitchDropdown({
+  currentLanguageCode,
+  onChangeLanguage,
+}) {
   // selected language
-  const currentLanguage = locales.find(language => language.code === currentLanguageCode);
+  const currentLanguage = locales.find(
+    language => language.code === currentLanguageCode,
+  );
 
   return (
     <Dropdown
@@ -26,7 +31,11 @@ export function LanguageSwitchDropdown({ currentLanguageCode, onChangeLanguage }
       </Dropdown.Toggle>
       <Dropdown.Menu>
         {locales.map(({ code, label }) => (
-          <MenuItem key={code} onClick={() => onChangeLanguage(code)} active={code === currentLanguageCode}>
+          <MenuItem
+            key={code}
+            onClick={() => onChangeLanguage(code)}
+            active={code === currentLanguageCode}
+          >
             {label}
           </MenuItem>
         ))}
@@ -40,16 +49,19 @@ export function LanguageSwitchDropdown({ currentLanguageCode, onChangeLanguage }
  * Is used in user's account.
  * Params are the same as for LanguageSwitchDropdownPresentation.
  */
-export function LanguageSwitchSelect({ currentLanguageCode, onChangeLanguage }) {
+export function LanguageSwitchSelect({
+  currentLanguageCode,
+  onChangeLanguage,
+}) {
   return (
     <select
       className="form-control"
       id="locale"
       value={currentLanguageCode}
-      onChange={(event) => onChangeLanguage(event.target.value)}
+      onChange={event => onChangeLanguage(event.target.value)}
     >
       {locales.map(({ code, label }) => (
-        <option key={code} value={code} >
+        <option key={code} value={code}>
           {label}
         </option>
       ))}
@@ -57,7 +69,10 @@ export function LanguageSwitchSelect({ currentLanguageCode, onChangeLanguage }) 
   );
 }
 
-LanguageSwitchSelect.propTypes = LanguageSwitchDropdown.propTypes = {
+const propTypes = {
   currentLanguageCode: PropTypes.string,
   onChangeLanguage: PropTypes.func,
 };
+
+LanguageSwitchSelect.propTypes = propTypes;
+LanguageSwitchDropdown.propTypes = propTypes;

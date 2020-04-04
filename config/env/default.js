@@ -17,7 +17,8 @@ module.exports = {
   },
   app: {
     title: 'Trustroots',
-    description: 'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.',
+    description:
+      'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.',
   },
   // Is site invitation only?
   invitations: {
@@ -47,6 +48,7 @@ module.exports = {
   uploadDir: './public/uploads-profile',
   port: 3000,
   host: 'localhost',
+  fd: null, // listen on a file descriptor (instead of host/port)
   https: false,
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
@@ -56,10 +58,50 @@ module.exports = {
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails
   profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
   // Strings not allowed as usernames and tag/tribe labels
-  illegalStrings: ['trustroots', 'trust', 'roots', 're', 're:', 'fwd', 'fwd:', 'reply', 'admin', 'administrator', 'password',
-    'username', 'unknown', 'anonymous', 'null', 'undefined', 'home', 'signup', 'signin', 'login', 'user',
-    'edit', 'settings', 'username', 'user', 'demo', 'test', 'support', 'networks', 'profile', 'avatar', 'mini',
-    'photo', 'account', 'api', 'modify', 'feedback', 'security', 'accounts', 'tribe', 'tag', 'community', 'remove',
+  illegalStrings: [
+    'trustroots',
+    'trust',
+    'roots',
+    're',
+    're:',
+    'fwd',
+    'fwd:',
+    'reply',
+    'admin',
+    'administrator',
+    'password',
+    'username',
+    'unknown',
+    'anonymous',
+    'null',
+    'undefined',
+    'home',
+    'signup',
+    'signin',
+    'login',
+    'user',
+    'edit',
+    'settings',
+    'username',
+    'user',
+    'demo',
+    'test',
+    'support',
+    'networks',
+    'profile',
+    'avatar',
+    'mini',
+    'photo',
+    'account',
+    'api',
+    'modify',
+    'feedback',
+    'security',
+    'accounts',
+    'tribe',
+    'tag',
+    'community',
+    'remove',
   ],
   // SparkPost webhook API endpoint configuration (`/api/sparkpost/webhook`)
   sparkpostWebhook: {
@@ -185,6 +227,12 @@ module.exports = {
       level: 'debug',
       program: 'production',
       inlineMeta: true,
+    },
+  },
+  sentry: {
+    enabled: false,
+    options: {
+      dsn: '',
     },
   },
 };

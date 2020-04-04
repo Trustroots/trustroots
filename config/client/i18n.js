@@ -1,6 +1,5 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-
 import Backend from 'i18next-xhr-backend';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import moment from 'moment';
@@ -36,12 +35,15 @@ const isTest = process.env.NODE_ENV === 'test';
  *                         or the original value, if the value type or format not recognized)
  */
 function format(value, format, languageCode) {
-
   if (value instanceof Date) {
     moment.locale(languageCode);
     if (format === 'fromNow') return moment(value).fromNow();
     if (format === 'age') return moment().diff(moment(value), 'years');
     return moment(value).format(format);
+  }
+
+  if (typeof value === 'number' && format === 'number') {
+    return value.toLocaleString(languageCode);
   }
 
   return value;
@@ -62,16 +64,18 @@ i18n
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
-    ...(isTest ? {
-      resources: {
-        en: {},
-      },
-    } : {}),
+    ...(isTest
+      ? {
+          resources: {
+            en: {},
+          },
+        }
+      : {}),
     fallbackLng: 'en', // a default app locale
     // allow keys to be phrases having `:`, `.`
     nsSeparator: false,
     keySeparator: false, // we do not use keys in form messages.welcome
-    // saveMissing: true, // @TODO send not translated keys to endpoint
+    returnEmptyString: false,
     interpolation: {
       escapeValue: false, // react already safes from xss
       format,
@@ -84,8 +88,7 @@ i18n
     react: {
       useSuspense: false,
     },
-    // saveMissingPlurals: true,
-    // debug: true // show missing translation keys in console.log
+    // debug: true, // show missing translation keys in console.log
   });
 
 export default i18n;

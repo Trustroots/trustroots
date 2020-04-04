@@ -1,68 +1,85 @@
 <section class="search" ng-class="{ 'is-sidebar-open': search.isSidebarOpen }">
-
   <!-- Search settings navi for small screens-->
   <div class="visible-xs panel panel-default search-map-meta">
-
-    <div class="btn-group btn-group-justified" role="group" aria-label="Search settings">
+    <div
+      class="btn-group btn-group-justified"
+      role="group"
+      aria-label="Search settings"
+    >
       <div class="btn-group btn-group-lg" role="group">
-        <button type="button"
-                class="btn btn-default"
-                ng-click="search.openSearchPlaceInput()">
+        <button
+          type="button"
+          class="btn btn-default"
+          ng-click="search.openSearchPlaceInput()"
+        >
           <i class="icon-search"></i>
           Search places
         </button>
       </div>
       <div class="btn-group btn-group-lg" role="group">
-        <button type="button"
-                class="btn btn-default"
-                ng-click="search.openSidebar('filters')">
+        <button
+          type="button"
+          class="btn btn-default"
+          ng-click="search.openSidebar('filters')"
+        >
           <i class="icon-sliders"></i>
           Filters
         </button>
       </div>
-
     </div>
-
   </div>
   <!-- /Search settings -->
 
   <!-- Location search for small screens -->
   <!-- There's another one inside `search-sidebar.client.view.html` template -->
-  <div class="visible-xs-block panel panel-default search-map-place"
-       ng-show="search.isPlaceSearchVisible">
-    <div ng-include="'/modules/search/views/search-input.client.view.html'"></div>
+  <div
+    class="visible-xs-block panel panel-default search-map-place"
+    ng-show="search.isPlaceSearchVisible"
+  >
+    <div
+      ng-include="~modules/search/client/views/search-input.client.view.html"
+    ></div>
     <!-- Search bar closing toggle -->
-    <button type="button"
-            class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
-            ng-click="search.isPlaceSearchVisible = false">
+    <button
+      type="button"
+      class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+      ng-click="search.isPlaceSearchVisible = false"
+    >
       Back to map
     </button>
   </div>
 
   <div ui-view="map"></div>
 
-  <div class="search-sidebar-toggle hidden-xs"
-       ng-if="app.user && app.user.public">
-    <button class="btn btn-link"
-            ng-click="search.toggleSidebar()"
-            aria-label="{{ search.isSidebarOpen ? 'Hide search filters' : 'Open search filters' }}"
-            uib-tooltip="{{ search.isSidebarOpen ? 'Collapse side panel' : 'Open side panel' }}"
-            tooltip-enable="::searchSidebar.screenWidth >= 768"
-            tooltip-placement="right">
-      <i class="hidden-xs"
-         ng-class="{
+  <div
+    class="search-sidebar-toggle hidden-xs"
+    ng-if="app.user && app.user.public"
+  >
+    <button
+      class="btn btn-link"
+      ng-click="search.toggleSidebar()"
+      aria-label="{{ search.isSidebarOpen ? 'Hide search filters' : 'Open search filters' }}"
+      uib-tooltip="{{ search.isSidebarOpen ? 'Collapse side panel' : 'Open side panel' }}"
+      tooltip-enable="::searchSidebar.screenWidth >= 768"
+      tooltip-placement="right"
+    >
+      <i
+        class="hidden-xs"
+        ng-class="{
            'icon-left': search.isSidebarOpen,
            'icon-right': !search.isSidebarOpen
-         }"></i>
+         }"
+      ></i>
     </button>
   </div>
 
-  <aside class="search-sidebar"
-       ui-view="sidebar"
-       ng-if="app.user.public"
-       ng-show="search.isSidebarOpen"
-       ng-class="{
+  <aside
+    class="search-sidebar"
+    ui-view="sidebar"
+    ng-if="app.user.public"
+    ng-show="search.isSidebarOpen"
+    ng-class="{
          'is-offer-open': search.offer || search.loadingOffer
-       }"></aside>
-
+       }"
+  ></aside>
 </section>

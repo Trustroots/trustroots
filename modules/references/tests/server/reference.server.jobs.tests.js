@@ -10,11 +10,13 @@ const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const Reference = mongoose.model('Reference');
 
 describe('Job: Set reference to public after a given period of time', () => {
-
   // fake Date
   // stub config.limits.timeToReplyReference with custom test value
   beforeEach(() => {
-    sinon.useFakeTimers({ now: new Date('2018-10-12 11:33:21.312'), toFake: ['Date'] });
+    sinon.useFakeTimers({
+      now: new Date('2018-10-12 11:33:21.312'),
+      toFake: ['Date'],
+    });
     sinon.stub(config.limits, 'timeToReplyReference').value({ days: 7 });
   });
 

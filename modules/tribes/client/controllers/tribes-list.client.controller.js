@@ -1,27 +1,34 @@
-(function () {
-  angular
-    .module('tribes')
-    .controller('TribesListController', TribesListController);
+/**
+ * TODO remove this controller
+ * https://github.com/Trustroots/trustroots/pull/1145#discussion_r364183325
+ */
 
-  /* @ngInject */
-  function TribesListController(tribes, $state, Authentication, TribeService) {
+angular
+  .module('tribes')
+  .controller('TribesListController', TribesListController);
 
-    // ViewModel
-    const vm = this;
+/* @ngInject */
+function TribesListController(Authentication, $rootScope, $scope) {
+  // ViewModel
+  const vm = this;
 
-    // Exposed to the view
-    vm.tribes = tribes;
-    vm.user = Authentication.user;
-    vm.openTribe = openTribe;
-
-    /**
-     * Open tribe
-     */
-    function openTribe(tribe) {
-      // Put tribe object to cache to be used after page transition has
-      // finished, thus no need to reload tribe from the API
-      TribeService.fillCache(angular.copy(tribe));
-      $state.go('tribes.tribe', { 'tribe': tribe.slug });
+  /**
+   * Update the Authentication.user with updated tribe membership
+   */
+  vm.broadcastUpdatedUser = function(data) {
+    if (data.user) {
+      Authentication.user = data.user;
+      $rootScope.$broadcast('userUpdated');
     }
-  }
-}());
+  };
+
+  /**
+   * Emit photo credits info
+   */
+  vm.addPhotoCredits = function addPhotoCredits(photo) {
+    $scope.$emit('photoCreditsUpdated', photo);
+  };
+  vm.removePhotoCredits = function removePhotoCredits(photo) {
+    $scope.$emit('photoCreditsRemoved', photo);
+  };
+}

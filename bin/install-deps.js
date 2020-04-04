@@ -14,7 +14,7 @@ const spawnSync = require('child_process').spawnSync;
 
 if (!fs.existsSync('node_modules')) {
   console.log('No "node_modules" present, installing NPM dependencies...');
-  const installResult = spawnSync('npm', [ 'ci' ], {
+  const installResult = spawnSync('npm', ['ci'], {
     shell: true,
     stdio: 'inherit',
   }).status;
@@ -43,7 +43,7 @@ if (!fs.existsSync('node_modules')) {
 
   if (needsInstall()) {
     console.log('NPM dependencies out of date. Updating...');
-    const installResult = spawnSync('npm', [ 'ci' ], {
+    const installResult = spawnSync('npm', ['ci'], {
       shell: true,
       stdio: 'inherit',
     }).status;

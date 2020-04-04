@@ -8,7 +8,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 // See https://github.com/facebook/react/issues/16604 for discussion
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
-const { join } = require('path');
+const { join, resolve } = require('path');
 
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
@@ -19,11 +19,13 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
 const styleLoaders = [
-  isProduction ? {
-    loader: MiniCssExtractPlugin.loader,
-  } : {
-    loader: 'style-loader',
-  },
+  isProduction
+    ? {
+        loader: MiniCssExtractPlugin.loader,
+      }
+    : {
+        loader: 'style-loader',
+      },
   {
     loader: 'css-loader',
     options: { importLoaders: 1 },
@@ -32,9 +34,7 @@ const styleLoaders = [
     loader: 'postcss-loader',
     options: {
       ident: 'postcss',
-      plugins: [
-        require('autoprefixer')(),
-      ],
+      plugins: [require('autoprefixer')()],
     },
   },
 ];
@@ -66,9 +66,9 @@ module.exports = merge(shims, {
       '@': basedir,
 
       // These are (mainly) to use within less/css files
-      'img': join(basedir, 'public', 'img'),
-      'less': join(basedir, 'modules', 'core', 'client', 'less'),
-      'modules': join(basedir, 'modules'),
+      img: join(basedir, 'public', 'img'),
+      less: join(basedir, 'modules', 'core', 'client', 'less'),
+      modules: join(basedir, 'modules'),
     },
   },
   module: {
@@ -107,6 +107,21 @@ module.exports = merge(shims, {
         ],
       },
       {
+        test: /\.(html)$/,
+        use: [
+          {
+            loader: resolve(__dirname + '/templateloader.js'),
+          },
+          {
+            loader: 'html-loader',
+            options: {
+              minimize: true,
+              attrs: ['img:src', ':ng-include'],
+            },
+          },
+        ],
+      },
+      {
         test: /\.css$/,
         use: styleLoaders,
       },
@@ -122,15 +137,16 @@ module.exports = merge(shims, {
     ],
   },
   plugins: compact([
-    isProduction && new MiniCssExtractPlugin({
-      filename: 'main.css',
-    }),
+    isProduction &&
+      new MiniCssExtractPlugin({
+        filename: 'main.css',
+      }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
-      'FCM_SENDER_ID': JSON.stringify(config.fcm.senderId),
     }),
-    isDevelopment && new ReactRefreshWebpackPlugin({
-      disableRefreshCheck: true,
-    }),
+    isDevelopment &&
+      new ReactRefreshWebpackPlugin({
+        disableRefreshCheck: true,
+      }),
   ]),
 });

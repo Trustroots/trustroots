@@ -10,9 +10,12 @@ const app = express.init(mongoose.connection);
 const agent = request.agent(app);
 
 describe('User account: change locale', () => {
-
   const publicUsers = utils.generateUsers(1, { public: true });
-  const nonpublicUsers = utils.generateUsers(1, { public: false, username: 'nonpublic', email: 'nonpublic@example.com' });
+  const nonpublicUsers = utils.generateUsers(1, {
+    public: false,
+    username: 'nonpublic',
+    email: 'nonpublic@example.com',
+  });
   let users;
 
   // save users
@@ -23,7 +26,6 @@ describe('User account: change locale', () => {
   afterEach(utils.clearDatabase);
 
   context('logged in', () => {
-
     beforeEach(async () => {
       await utils.signIn(publicUsers[0], agent);
     });
@@ -34,7 +36,6 @@ describe('User account: change locale', () => {
 
     context('valid value', () => {
       it('200 and save the new locale to user model', async () => {
-
         const { username } = users[0];
 
         const userBefore = await User.findOne({ username }).lean();
@@ -79,7 +80,6 @@ describe('User account: change locale', () => {
     });
 
     it('can update, too', async () => {
-
       const { username } = nonpublicUsers[0];
 
       const userBefore = await User.findOne({ username }).lean();
@@ -116,7 +116,6 @@ describe('User account: read locale', () => {
   afterEach(utils.clearDatabase);
 
   context('logged in', () => {
-
     beforeEach(async () => {
       await utils.signIn(publicUsers[0], agent);
     });
@@ -136,7 +135,7 @@ describe('User account: read locale', () => {
       should(body).have.property('locale', 'en');
     });
 
-    it('response body of /api/users/:username shouldn\'t include locale', async () => {
+    it("response body of /api/users/:username shouldn't include locale", async () => {
       const otherUser = publicUsers[1];
 
       const { body } = await agent

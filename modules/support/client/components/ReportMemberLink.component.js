@@ -16,7 +16,9 @@ export default function ReportMemberLink({ username }) {
       href={`/support?report=${username}`}
       className="small text-muted"
       aria-label={t('Report member {{username}} to support', { username })}
-    >{t('Report member')}</a>
+    >
+      {t('Report member')}
+    </a>
   );
 }
 

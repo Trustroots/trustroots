@@ -1,190 +1,242 @@
 <section class="container container-spacer">
-
   <!-- Invitation form -->
-  <div class="signin form-horizontal"
-       ng-if="app.appSettings.invitationsEnabled && !signup.invitationCodeValid"
-       ng-include="'/modules/users/views/authentication/signup-invite-form.view.html'">
-  </div>
+  <div
+    class="signin form-horizontal"
+    ng-if="app.appSettings.invitationsEnabled && !signup.invitationCodeValid"
+    ng-include="~modules/users/client/views/authentication/signup-invite-form.view.html"
+  ></div>
   <!-- /Invitation form -->
 
-  <form name="userForm"
-        class="signin form-horizontal"
-        novalidate
-        autocomplete="off"
-        ng-if="!app.appSettings.invitationsEnabled || signup.invitationCodeValid">
-
-      <div class="row">
-        <div class="col-xs-12 text-center">
-          <h3>Join Trustroots</h3>
-          <p class="font-brand-light signup-tribe"
-             ng-show="signup.tribe && signup.tribe._id && signup.step < 3">
-            + Tribe {{::signup.tribe.label}}
-          </p>
-          <div class="signup-steps">
-
-            <div ng-class="{
+  <form
+    name="userForm"
+    class="signin form-horizontal"
+    novalidate
+    autocomplete="off"
+    ng-if="!app.appSettings.invitationsEnabled || signup.invitationCodeValid"
+  >
+    <div class="row">
+      <div class="col-xs-12 text-center">
+        <h3>Join Trustroots</h3>
+        <p
+          class="font-brand-light signup-tribe"
+          ng-show="signup.tribe && signup.tribe._id && signup.step < 3"
+        >
+          + Tribe {{::signup.tribe.label}}
+        </p>
+        <div class="signup-steps">
+          <div
+            ng-class="{
                    'signup-step-active font-brand-semibold': signup.step === 1,
                    'font-brand-light': signup.step !== 1
-                 }">
-              <div class="signup-step-indicator">1</div>
-              Info
-            </div>
-            <div class="signup-step-line"></div>
-            <div ng-class="{
+                 }"
+          >
+            <div class="signup-step-indicator">1</div>
+            Info
+          </div>
+          <div class="signup-step-line"></div>
+          <div
+            ng-class="{
                    'signup-step-active font-brand-semibold': signup.step === 2,
                    'font-brand-light': signup.step !== 2
-                 }">
-              <div class="signup-step-indicator">2</div>
-              Tribes
-            </div>
-            <div class="signup-step-line"></div>
-            <div ng-class="{
+                 }"
+          >
+            <div class="signup-step-indicator">2</div>
+            Tribes
+          </div>
+          <div class="signup-step-line"></div>
+          <div
+            ng-class="{
                    'signup-step-active font-brand-semibold': signup.step === 3,
                    'font-brand-light': signup.step !== 3
-                 }">
-              <div class="signup-step-indicator">3</div>
-              Done
-            </div>
-
+                 }"
+          >
+            <div class="signup-step-indicator">3</div>
+            Done
           </div>
         </div>
       </div>
+    </div>
 
-      <div class="row signup-form-steps">
-
+    <div class="row signup-form-steps">
       <!-- STEP 1 -->
       <div class="signup-form-step" ng-if="signup.step === 1">
-        <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4">
-
-
-          <div class="form-group" ng-class="{'has-error': signup.firstName.$invalid && signup.firstName.$dirty}">
-            <label for="firstName" class="col-sm-4 control-label">First Name</label>
+        <div
+          class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4"
+        >
+          <div
+            class="form-group"
+            ng-class="{'has-error': signup.firstName.$invalid && signup.firstName.$dirty}"
+          >
+            <label for="firstName" class="col-sm-4 control-label"
+              >First Name</label
+            >
             <div class="col-sm-8">
-              <input type="text"
-                     required
-                     id="firstName"
-                     name="firstName"
-                     class="form-control input-lg"
-                     ng-model="signup.credentials.firstName"
-                     ng-disabled="signup.isLoading"
-                     tr-focustip="'Visible to other members.'">
+              <input
+                type="text"
+                required
+                id="firstName"
+                name="firstName"
+                class="form-control input-lg"
+                ng-model="signup.credentials.firstName"
+                ng-disabled="signup.isLoading"
+                tr-focustip="'Visible to other members.'"
+              />
             </div>
           </div>
-          <div class="form-group" ng-class="{'has-error': userForm.lastName.$invalid && userForm.lastName.$dirty}">
-            <label for="lastName" class="col-sm-4 control-label">Last Name</label>
+          <div
+            class="form-group"
+            ng-class="{'has-error': userForm.lastName.$invalid && userForm.lastName.$dirty}"
+          >
+            <label for="lastName" class="col-sm-4 control-label"
+              >Last Name</label
+            >
             <div class="col-sm-8">
-              <input type="text"
-                     required
-                     id="lastName"
-                     name="lastName"
-                     class="form-control input-lg"
-                     ng-model="signup.credentials.lastName"
-                     ng-disabled="signup.isLoading"
-                     tr-focustip="'Visible to other members.'">
+              <input
+                type="text"
+                required
+                id="lastName"
+                name="lastName"
+                class="form-control input-lg"
+                ng-model="signup.credentials.lastName"
+                ng-disabled="signup.isLoading"
+                tr-focustip="'Visible to other members.'"
+              />
             </div>
           </div>
-          <div class="form-group" ng-class="{'has-error': userForm.username.$invalid && userForm.username.$dirty}">
-            <label for="username" class="col-sm-4 control-label">Username</label>
+          <div
+            class="form-group"
+            ng-class="{'has-error': userForm.username.$invalid && userForm.username.$dirty}"
+          >
+            <label for="username" class="col-sm-4 control-label"
+              >Username</label
+            >
             <div class="col-sm-8">
-              <input type="text"
-                     required
-                     id="username"
-                     name="username"
-                     autocapitalize="off"
-                     class="form-control input-lg"
-                     ng-disabled="signup.isLoading"
-                     ng-model="signup.credentials.username"
-                     ng-minlength="::signup.usernameMinlength"
-                     ng-maxlength="::signup.usernameMaxlength"
-                     ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
-                     tr-validate-username
-                     tr-focustip="'Can contain only letters, numbers, periods, hyphens, and underscores.<br>3—34 characters long.'"
-                     tooltip-is-open="!userForm.username.$pending && userForm.username.$dirty && !userForm.username.$valid"
-                     uib-tooltip="{{signup.getUsernameValidationError(userForm.username)}}"
-                     tooltip-popup-delay="500"
-                     tooltip-trigger="'none'"
-                     tooltip-placement="top">
+              <input
+                type="text"
+                required
+                id="username"
+                name="username"
+                autocapitalize="off"
+                class="form-control input-lg"
+                ng-disabled="signup.isLoading"
+                ng-model="signup.credentials.username"
+                ng-minlength="::signup.usernameMinlength"
+                ng-maxlength="::signup.usernameMaxlength"
+                ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
+                tr-validate-username
+                tr-focustip="'Can contain only letters, numbers, periods, hyphens, and underscores.<br>3—34 characters long.'"
+                tooltip-is-open="!userForm.username.$pending && userForm.username.$dirty && !userForm.username.$valid"
+                uib-tooltip="{{signup.getUsernameValidationError(userForm.username)}}"
+                tooltip-popup-delay="500"
+                tooltip-trigger="'none'"
+                tooltip-placement="top"
+              />
             </div>
           </div>
-          <div class="form-group" ng-class="{'has-error': userForm.email.$invalid && userForm.email.$dirty}">
+          <div
+            class="form-group"
+            ng-class="{'has-error': userForm.email.$invalid && userForm.email.$dirty}"
+          >
             <label for="email" class="col-sm-4 control-label">Email</label>
             <div class="col-sm-8">
-              <input type="email"
-                     required
-                     mailcheck
-                     id="email"
-                     name="email"
-                     class="form-control input-lg"
-                     ng-model="signup.credentials.email"
-                     ng-disabled="signup.isLoading"
-                     uib-tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
-                     tooltip-trigger="blur"
-                     tooltip-placement="top">
-                     <!-- Temporarily disabled due isolate scope errors with mailcheck:
+              <input
+                type="email"
+                required
+                mailcheck
+                id="email"
+                name="email"
+                class="form-control input-lg"
+                ng-model="signup.credentials.email"
+                ng-disabled="signup.isLoading"
+                uib-tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
+                tooltip-trigger="blur"
+                tooltip-placement="top"
+              />
+              <!-- Temporarily disabled due isolate scope errors with mailcheck:
                      tr-focustip="'We will not reveal this to anyone.'"> -->
             </div>
           </div>
-          <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
-            <label for="password" class="col-sm-4 control-label">Password</label>
+          <div
+            class="form-group"
+            ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}"
+          >
+            <label for="password" class="col-sm-4 control-label"
+              >Password</label
+            >
             <div class="col-sm-8">
               <div class="input-group">
-                <input required
-                       id="password"
-                       name="password"
-                       class="form-control input-lg"
-                       tooltip-is-open="!userForm.password.$pending && userForm.password.$dirty && !userForm.password.$valid"
-                       uib-tooltip="Minimum length 8 characters."
-                       tooltip-popup-delay="500"
-                       tooltip-trigger="'none'"
-                       tooltip-placement="top"
-                       ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
-                       autocapitalize="off"
-                       ng-model="signup.credentials.password"
-                       ng-minlength="8"
-                       ng-disabled="signup.isLoading">
+                <input
+                  required
+                  id="password"
+                  name="password"
+                  class="form-control input-lg"
+                  tooltip-is-open="!userForm.password.$pending && userForm.password.$dirty && !userForm.password.$valid"
+                  uib-tooltip="Minimum length 8 characters."
+                  tooltip-popup-delay="500"
+                  tooltip-trigger="'none'"
+                  tooltip-placement="top"
+                  ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
+                  autocapitalize="off"
+                  ng-model="signup.credentials.password"
+                  ng-minlength="8"
+                  ng-disabled="signup.isLoading"
+                />
                 <span class="input-group-btn">
-                  <a class="btn btn-lg btn-default btn-password-toggle"
-                     role="button"
-                     aria-label="Toggle password visibility"
-                     ng-click="showPassword = !showPassword">
-                    <i class="icon-lg"
+                  <a
+                    class="btn btn-lg btn-default btn-password-toggle"
+                    role="button"
+                    aria-label="Toggle password visibility"
+                    ng-click="showPassword = !showPassword"
+                  >
+                    <i
+                      class="icon-lg"
                       ng-class="{
                         'icon-eye': !showPassword,
                         'icon-eye-off': showPassword
-                      }"></i>
+                      }"
+                    ></i>
                   </a>
                 </span>
               </div>
             </div>
           </div>
-          <div class="form-group" ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}">
-            <label for="verifyPassword" class="col-sm-4 control-label">Repeat password</label>
+          <div
+            class="form-group"
+            ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}"
+          >
+            <label for="verifyPassword" class="col-sm-4 control-label"
+              >Repeat password</label
+            >
             <div class="col-sm-8">
-              <input required
-                     id="verifyPassword"
-                     name="verifyPassword"
-                     class="form-control input-lg"
-                     tr-confirm-password="signup.credentials.password"
-                     tooltip-is-open="!userForm.verifyPassword.$pending && userForm.verifyPassword.$dirty && !userForm.verifyPassword.$valid"
-                     uib-tooltip="Passwords don't match."
-                     tooltip-popup-delay="500"
-                     tooltip-trigger="'none'"
-                     tooltip-placement="top"
-                     ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
-                     ng-model="verifyPassword"
-                     ng-disabled="signup.isLoading">
+              <input
+                required
+                id="verifyPassword"
+                name="verifyPassword"
+                class="form-control input-lg"
+                tr-confirm-password="signup.credentials.password"
+                tooltip-is-open="!userForm.verifyPassword.$pending && userForm.verifyPassword.$dirty && !userForm.verifyPassword.$valid"
+                uib-tooltip="Passwords don't match."
+                tooltip-popup-delay="500"
+                tooltip-trigger="'none'"
+                tooltip-placement="top"
+                ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
+                ng-model="verifyPassword"
+                ng-disabled="signup.isLoading"
+              />
             </div>
           </div>
           <div class="form-group checkbox">
             <div class="col-sm-offset-4 col-sm-8">
               <label>
-                <input type="checkbox"
-                       name="newsletter"
-                       ng-model="signup.credentials.newsletter"
-                       ng-disabled="signup.isLoading">
+                <input
+                  type="checkbox"
+                  name="newsletter"
+                  ng-model="signup.credentials.newsletter"
+                  ng-disabled="signup.isLoading"
+                />
                 Subscribe to community news
               </label>
-              <br><br>
+              <br /><br />
             </div>
           </div>
 
@@ -194,14 +246,23 @@
               <p>
                 By signing up you agree to abide to our
                 <span class="visible-xs-inline">rules</span>
-                <a class="hidden-xs" ui-sref="rules" ng-click="signup.openRules($event);" uib-tooltip="Read rules" tooltip-placement="bottom">rules</a>
+                <a
+                  class="hidden-xs"
+                  ui-sref="rules"
+                  ng-click="signup.openRules($event);"
+                  uib-tooltip="Read rules"
+                  tooltip-placement="bottom"
+                  >rules</a
+                >
                 that include standards of behavior that apply to everyone.
               </p>
             </div>
             <div class="col-xs-4 visible-xs-block">
-              <a class="btn btn-default"
-                 ui-sref="rules"
-                 ng-click="signup.openRules($event);">
+              <a
+                class="btn btn-default"
+                ui-sref="rules"
+                ng-click="signup.openRules($event);"
+              >
                 Read rules
               </a>
             </div>
@@ -210,160 +271,206 @@
 
           <!-- How did you hear about us -->
           <div class="form-group">
-            <label class="col-sm-4 control-label"
-                   for="acquisitionStory">How did you hear about us?</label>
+            <label class="col-sm-4 control-label" for="acquisitionStory"
+              >How did you hear about us?</label
+            >
             <div class="col-sm-8">
-              <input type="text"
-                     id="acquisitionStory"
-                     name="acquisitionStory"
-                     class="form-control input-lg"
-                     maxlength="500"
-                     ng-model="signup.credentials.acquisitionStory">
+              <input
+                type="text"
+                id="acquisitionStory"
+                name="acquisitionStory"
+                class="form-control input-lg"
+                maxlength="500"
+                ng-model="signup.credentials.acquisitionStory"
+              />
             </div>
           </div>
           <!-- /How did you hear about us -->
 
           <!-- Next -->
           <div class="text-center form-group">
-            <br>
-            <button type="button"
-                    class="btn btn-lg btn-primary"
-                    ng-click="signup.submitSignup()"
-                    ng-disabled="userForm.$invalid"
-                    ng-bind="(!userForm.$invalid ? 'Next': 'Please fill in the form')">
-            </button>
-            <br><br>
+            <br />
+            <button
+              type="button"
+              class="btn btn-lg btn-primary"
+              ng-click="signup.submitSignup()"
+              ng-disabled="userForm.$invalid"
+              ng-bind="(!userForm.$invalid ? 'Next': 'Please fill in the form')"
+            ></button>
+            <br /><br />
           </div>
-
-        </div><!-- /.col -->
-      </div><!-- .row-->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- .row-->
       <!-- /STEP 1 -->
-
 
       <!-- STEP 2 -->
       <div class="signup-form-step" ng-if="signup.step === 2">
-        <div class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4 signup-tribe-suggestions">
-
-          <div class="panel tribe tribe-image"
-               ng-if="signup.tribe && signup.tribe._id"
-               ng-repeat="tribe in [signup.tribe] track by tribe._id"
-               tr-tribe-styles="{{::tribe}}"
-               tr-tribe-styles-dimensions="906x240"
-               tr-tribe-styles-quality="lightest"
-               tr-tribe-styles-progressive="yes">
-            <div class="tribe-content" ng-class="{'is-image': tribe.image_UUID}">
+        <div
+          class="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4 signup-tribe-suggestions"
+        >
+          <div
+            class="panel tribe tribe-image"
+            ng-if="signup.tribe && signup.tribe._id"
+            ng-repeat="tribe in [signup.tribe] track by tribe._id"
+            tr-tribe-styles="{{::tribe}}"
+            tr-tribe-styles-dimensions="906x240"
+            tr-tribe-styles-quality="lightest"
+            tr-tribe-styles-progressive="yes"
+          >
+            <div
+              class="tribe-content"
+              ng-class="{'is-image': tribe.image_UUID}"
+            >
               <div>
                 <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
                 <div class="tribe-meta">
-                  <ng-pluralize count="tribe.count" when="{
+                  <ng-pluralize
+                    count="tribe.count"
+                    when="{
                     '0': 'No members yet',
                     '1': 'One member',
                     'other': '{{::tribe.count|number}} members'
-                  }"></ng-pluralize>
+                  }"
+                  ></ng-pluralize>
                 </div>
               </div>
               <tr-tribe-join-button
                 class="btn btn-primary tribe-join"
                 tribe="tribe"
                 join-label="'Join'"
-                joined-label="'Joined'">
+                joined-label="'Joined'"
+              >
               </tr-tribe-join-button>
             </div>
           </div>
-          <p class="lead text-center"
-             ng-if="signup.suggestedTribes && signup.suggestedTribes.length && tribe && tribe._id">
+          <p
+            class="lead text-center"
+            ng-if="signup.suggestedTribes && signup.suggestedTribes.length && tribe && tribe._id"
+          >
             Other suggested Tribes for you
           </p>
 
-          <p class="lead text-center" ng-if="signup.suggestedTribes && signup.suggestedTribes.length && !tribe">
+          <p
+            class="lead text-center"
+            ng-if="signup.suggestedTribes && signup.suggestedTribes.length && !tribe"
+          >
             Join these popular Tribes?
           </p>
 
-          <ul class="list-unstyled tribe-suggestions-list" ng-if="signup.suggestedTribes && signup.suggestedTribes.length">
-            <li class="panel tribe tribe-image"
-                ng-repeat="tribe in signup.suggestedTribes | limitTo:signup.suggestedTribesLimit track by tribe._id"
-                tr-tribe-styles="{{::tribe}}"
-                tr-tribe-styles-dimensions="906x240"
-                tr-tribe-styles-quality="lightest"
-                tr-tribe-styles-progressive="yes">
-              <div class="tribe-content" ng-class="{ 'is-image': tribe.image_UUID }">
+          <ul
+            class="list-unstyled tribe-suggestions-list"
+            ng-if="signup.suggestedTribes && signup.suggestedTribes.length"
+          >
+            <li
+              class="panel tribe tribe-image"
+              ng-repeat="tribe in signup.suggestedTribes | limitTo:signup.suggestedTribesLimit track by tribe._id"
+              tr-tribe-styles="{{::tribe}}"
+              tr-tribe-styles-dimensions="906x240"
+              tr-tribe-styles-quality="lightest"
+              tr-tribe-styles-progressive="yes"
+            >
+              <div
+                class="tribe-content"
+                ng-class="{ 'is-image': tribe.image_UUID }"
+              >
                 <div>
                   <h3 class="tribe-label" ng-bind="::tribe.label"></h3>
                   <div class="tribe-meta">
-                    <ng-pluralize count="tribe.count" when="{
+                    <ng-pluralize
+                      count="tribe.count"
+                      when="{
                       '0': 'No members yet',
                       '1': 'One member',
                       'other': '{{' + tribe.count + '|number}} members'
-                    }"></ng-pluralize>
+                    }"
+                    ></ng-pluralize>
                   </div>
                 </div>
                 <tr-tribe-join-button
                   class="btn btn-primary tribe-join"
                   tribe="tribe"
                   join-label="'Join'"
-                  joined-label="'Joined'">
+                  joined-label="'Joined'"
+                >
                 </tr-tribe-join-button>
               </div>
             </li>
           </ul>
 
-          <button class="btn btn-default center-block"
-                  ng-disabled="signup.suggestedTribesLimit >= signup.suggestedTribes.length"
-                  ng-click="signup.suggestedTribesLimit = signup.suggestedTribesLimit + 3">
+          <button
+            class="btn btn-default center-block"
+            ng-disabled="signup.suggestedTribesLimit >= signup.suggestedTribes.length"
+            ng-click="signup.suggestedTribesLimit = signup.suggestedTribesLimit + 3"
+          >
             Show more tribes
           </button>
 
-          <br>
+          <br />
 
           <p class="lead text-center">
-            Joining Tribes helps you find likeminded Trustroots
-            members and tells others what you're interested in.
+            Joining Tribes helps you find likeminded Trustroots members and
+            tells others what you're interested in.
           </p>
 
           <div class="text-center form-group">
-            <br><br>
-            <button class="btn btn-lg btn-primary"
-                    ng-click="signup.step = 3"
-                    ng-disabled="signup.isLoading">
+            <br /><br />
+            <button
+              class="btn btn-lg btn-primary"
+              ng-click="signup.step = 3"
+              ng-disabled="signup.isLoading"
+            >
               Next
             </button>
-            <br><br>
+            <br /><br />
           </div>
-
-        </div><!-- /.col -->
-      </div><!-- .row-->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- .row-->
       <!-- /STEP 2 -->
-
 
       <!-- STEP 3 (Success) -->
       <div class="signup-form-step" ng-if="signup.step === 3 && app.user">
-        <div class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4 text-center">
+        <div
+          class="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4 text-center"
+        >
           <p class="lead">
-            We sent you an email to <strong ng-bind="::app.user.email"></strong> with further instructions.
-            <br><br>
-            If you don't see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".
+            We sent you an email to
+            <strong ng-bind="::app.user.email"></strong> with further
+            instructions. <br /><br />
+            If you don't see this email in your inbox within 15 minutes, look
+            for it in your junk mail folder. If you find it there, please mark
+            it as "Not Junk".
           </p>
           <p>
-            <a ui-sref="profile-edit.about" class="btn btn-lg btn-primary" id="signup-edit">
+            <a
+              ui-sref="profile-edit.about"
+              class="btn btn-lg btn-primary"
+              id="signup-edit"
+            >
               Fill your profile
             </a>
           </p>
         </div>
       </div>
       <!-- STEP 3 (Success) -->
-
-    </div><!-- /.row.steps -->
+    </div>
+    <!-- /.row.steps -->
 
     <div class="row" ng-if="signup.step === 1">
-      <div class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-        <br><br>
+      <div
+        class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4"
+      >
+        <br /><br />
         <a ui-sref="signin" class="btn btn-link">Login</a>
-        <br><br>
+        <br /><br />
         <p class="visible-xs-block">
           <a ui-sref="home" class="btn btn-link">About Trustroots</a>
         </p>
       </div>
     </div>
-
   </form>
-</section><!-- .container -->
+</section>
+<!-- .container -->

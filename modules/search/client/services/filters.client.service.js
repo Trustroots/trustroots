@@ -1,77 +1,72 @@
-(function () {
+/**
+ * Service for handing filters
+ */
+angular.module('core').factory('FiltersService', FiltersService);
+
+/* @ngInject */
+function FiltersService($log, Authentication, locker) {
+  // Default structure for filters object
+  const defaultFilters = {
+    tribes: [],
+    types: ['host', 'meet'],
+    languages: [],
+    seen: {
+      months: 24,
+    },
+  };
+
+  // Make cache id unique for this user
+  const cachePrefix = Authentication.user
+    ? 'search.filters.' + Authentication.user._id
+    : 'search.filters';
+
+  // Look up for filters from cache.
+  // Returns `defaultFilters` if nothing is found.
+  let filters = locker.supported()
+    ? locker.get(cachePrefix, defaultFilters)
+    : defaultFilters;
+
+  // If cached filters were found, their structure might've been incomplete
+  // `angular.extend` extends `filters` by copying own enumerable
+  // properties from `defaultFilters` to `filters`.
+  filters = angular.extend(defaultFilters, filters);
+
+  const service = {
+    set: set,
+    get: get,
+  };
+
+  return service;
+
   /**
-   * Service for handing filters
+   * Get filter(s)
+   *
+   * @param filter String Filter name to receive. If undefined, will return all filters.
    */
-  angular
-    .module('core')
-    .factory('FiltersService', FiltersService);
-
-  /* @ngInject */
-  function FiltersService($log, Authentication, locker) {
-
-    // Default structure for filters object
-    const defaultFilters = {
-      tribes: [],
-      types: [
-        'host',
-        'meet',
-      ],
-      languages: [],
-      seen: {
-        months: 24,
-      },
-    };
-
-    // Make cache id unique for this user
-    const cachePrefix = (Authentication.user) ? 'search.filters.' + Authentication.user._id : 'search.filters';
-
-    // Look up for filters from cache.
-    // Returns `defaultFilters` if nothing is found.
-    let filters = locker.supported() ? locker.get(cachePrefix, defaultFilters) : defaultFilters;
-
-    // If cached filters were found, their structure might've been incomplete
-    // `angular.extend` extends `filters` by copying own enumerable
-    // properties from `defaultFilters` to `filters`.
-    filters = angular.extend(defaultFilters, filters);
-
-    const service = {
-      set: set,
-      get: get,
-    };
-
-    return service;
-
-    /**
-     * Get filter(s)
-     *
-     * @param filter String Filter name to receive. If undefined, will return all filters.
-     */
-    function get(filter) {
-      // Single filter
-      if (filter && angular.isString(filter)) {
-        if (angular.isDefined(filters[filter])) {
-          return filters[filter];
-        } else {
-          $log.warn('Requested filter does not exist.');
-          return;
-        }
+  function get(filter) {
+    // Single filter
+    if (filter && angular.isString(filter)) {
+      if (angular.isDefined(filters[filter])) {
+        return filters[filter];
       } else {
-        // All filters
-        return filters;
+        $log.warn('Requested filter does not exist.');
+        return;
       }
+    } else {
+      // All filters
+      return filters;
     }
-
-    /**
-     * Set filter
-     */
-    function set(filter, content) {
-      filters[filter] = content;
-
-      // Cache whole filters object
-      if (locker.supported()) {
-        locker.put(cachePrefix, filters);
-      }
-    }
-
   }
-}());
+
+  /**
+   * Set filter
+   */
+  function set(filter, content) {
+    filters[filter] = content;
+
+    // Cache whole filters object
+    if (locker.supported()) {
+      locker.put(cachePrefix, filters);
+    }
+  }
+}

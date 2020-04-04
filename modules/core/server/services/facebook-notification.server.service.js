@@ -13,13 +13,19 @@
 const _ = require('lodash');
 const path = require('path');
 const async = require('async');
-const analyticsHandler = require(path.resolve('./modules/core/server/controllers/analytics.server.controller'));
+const analyticsHandler = require(path.resolve(
+  './modules/core/server/controllers/analytics.server.controller',
+));
 const config = require(path.resolve('./config/config'));
 const render = require(path.resolve('./config/lib/render'));
 const agenda = require(path.resolve('./config/lib/agenda'));
 
-exports.notifyMessagesUnread = function (userFrom, userTo, notification, callback) {
-
+exports.notifyMessagesUnread = function(
+  userFrom,
+  userTo,
+  notification,
+  callback,
+) {
   // Lodash works better with native objects rather than Mongo objects
   userFrom = userFrom.toObject();
   userTo = userTo.toObject();
@@ -37,7 +43,11 @@ exports.notifyMessagesUnread = function (userFrom, userTo, notification, callbac
     toUserFacebookId: _.get(userTo, 'additionalProvidersData.facebook.id'),
 
     // FB id of user who wrote the message (defaults to `false`)
-    fromUserFacebookId: _.get(userFrom, 'additionalProvidersData.facebook.id', false),
+    fromUserFacebookId: _.get(
+      userFrom,
+      'additionalProvidersData.facebook.id',
+      false,
+    ),
 
     // Will be appended after the FB Canvas app URL
     // i.e. don't include "https://www..." here!
@@ -45,12 +55,15 @@ exports.notifyMessagesUnread = function (userFrom, userTo, notification, callbac
     // Facebook canvas iframe. Leaving it out or to `false` will leave page
     // inside canvas when FB notification is clicked.
     // See `/modules/core/client/app/init.js` for more.
-    href: analyticsHandler.appendUTMParams('messages/' + userFrom.username + '?iframe_getaway=true', {
-      source: 'facebook-notification',
-      medium: 'facebook',
-      campaign: 'messages-unread',
-      content: 'reply-to',
-    }),
+    href: analyticsHandler.appendUTMParams(
+      'messages/' + userFrom.username + '?iframe_getaway=true',
+      {
+        source: 'facebook-notification',
+        medium: 'facebook',
+        campaign: 'messages-unread',
+        content: 'reply-to',
+      },
+    ),
   };
 
   // Use different templates for 1st and 2nd notification
@@ -62,26 +75,33 @@ exports.notifyMessagesUnread = function (userFrom, userTo, notification, callbac
 /**
  * Are Facebook notifications enabled?
  */
-exports.isNotificationsEnabled = function () {
-  return _.has(config, 'facebook.clientID') &&
-         _.has(config, 'facebook.clientSecret') &&
-         _.get(config, 'facebook.notificationsEnabled');
+exports.isNotificationsEnabled = function() {
+  return (
+    _.has(config, 'facebook.clientID') &&
+    _.has(config, 'facebook.clientSecret') &&
+    _.get(config, 'facebook.notificationsEnabled')
+  );
 };
 
 /**
  * Can user be notified via Facebook?
  * Requires Facebook connection to be present with `id` and `accessToken` params
  */
-exports.canNotifyUser = function (user) {
-  return _.has(user, 'additionalProvidersData.facebook.id') &&
-         _.has(user, 'additionalProvidersData.facebook.accessToken');
+exports.canNotifyUser = function(user) {
+  return (
+    _.has(user, 'additionalProvidersData.facebook.id') &&
+    _.has(user, 'additionalProvidersData.facebook.accessToken')
+  );
 };
 
-exports.renderNotification = function (templateName, params, callback) {
+exports.renderNotification = function(templateName, params, callback) {
+  const templatePath = path.resolve(
+    './modules/core/server/views/facebook-notifications/' +
+      templateName +
+      '.server.view.html',
+  );
 
-  const templatePath = path.resolve('./modules/core/server/views/facebook-notifications/' + templateName + '.server.view.html');
-
-  render(templatePath, params, function (err, renderedTemplate) {
+  render(templatePath, params, function(err, renderedTemplate) {
     if (err) return callback(err);
 
     // Remove white space
@@ -97,7 +117,7 @@ exports.renderNotification = function (templateName, params, callback) {
     // there are promises inside render(), need to execute callback in
     // nextTick() so callback can safely throw exceptions
     // see https://github.com/caolan/async/issues/1150
-    async.nextTick(function () {
+    async.nextTick(function() {
       if (err) return callback(err);
 
       // Params passed on for the Agenda job
@@ -111,8 +131,8 @@ exports.renderNotification = function (templateName, params, callback) {
   });
 };
 
-exports.renderNotificationAndSend = function (templateName, params, callback) {
-  exports.renderNotification(templateName, params, function (err, notification) {
+exports.renderNotificationAndSend = function(templateName, params, callback) {
+  exports.renderNotification(templateName, params, function(err, notification) {
     if (err) return callback(err);
     // Add to Agenda queue
     agenda.now('send facebook notification', notification, callback);

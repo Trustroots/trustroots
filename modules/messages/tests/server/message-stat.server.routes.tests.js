@@ -7,7 +7,7 @@ const User = mongoose.model('User');
 const MessageStat = mongoose.model('MessageStat');
 const express = require(path.resolve('./config/lib/express'));
 
-describe('Display Message Statistics in User Route', function () {
+describe('Display Message Statistics in User Route', function() {
   let agent;
 
   const NOW = Date.now(); // a current timestamp
@@ -17,7 +17,7 @@ describe('Display Message Statistics in User Route', function () {
 
   const password = 'password123';
 
-  before(function (done) {
+  before(function(done) {
     // Get application
     const app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -26,29 +26,34 @@ describe('Display Message Statistics in User Route', function () {
   });
 
   // create testing users
-  before(function (done) {
+  before(function(done) {
     for (let i = 0; i < 23; ++i) {
-      users.push(new User({
-        firstName: 'firstName',
-        lastName: 'lastName',
-        displayName: 'displayName',
-        email: 'user' + i + '@example.com',
-        username: 'username' + i,
-        password: password,
-        provider: 'local',
-        public: true,
-      }));
+      users.push(
+        new User({
+          firstName: 'firstName',
+          lastName: 'lastName',
+          displayName: 'displayName',
+          email: 'user' + i + '@example.com',
+          username: 'username' + i,
+          password: password,
+          provider: 'local',
+          public: true,
+        }),
+      );
     }
 
     // Save the users to database
-    async.each(users,
-      function (user, callback) {
+    async.each(
+      users,
+      function(user, callback) {
         user.save(callback);
-      }, done);
+      },
+      done,
+    );
   });
 
   // create testing messageStats
-  before(function (done) {
+  before(function(done) {
     // every thread is initiated by different user (user 0 is the receiver of all)
 
     let userno = 3; // the index of user who sent the first message
@@ -62,18 +67,27 @@ describe('Display Message Statistics in User Route', function () {
      * @param {number} replyTime - timeToFirstReply for messageStats [millisecond]
      * @param {timeNow} number - minimum timestamp of the firstMessageCreated
      */
-    function generateMessageStats(userTo, count, repliedCount, replyTime, timeNow) {
+    function generateMessageStats(
+      userTo,
+      count,
+      repliedCount,
+      replyTime,
+      timeNow,
+    ) {
       for (let i = 0; i < count; ++i) {
         const firstCreated = timeNow - replyTime - (i + 1) * DAY;
-        messageStats.push(new MessageStat({
-          firstMessageUserFrom: users[userno]._id,
-          firstMessageUserTo: users[userTo]._id,
-          firstMessageCreated: new Date(firstCreated),
-          firstMessageLength: 100,
-          firstReplyCreated: i < repliedCount ? new Date(firstCreated + replyTime) : null,
-          firstReplyLength: i < repliedCount ? 50 : null,
-          timeToFirstReply: i < repliedCount ? replyTime : null,
-        }));
+        messageStats.push(
+          new MessageStat({
+            firstMessageUserFrom: users[userno]._id,
+            firstMessageUserTo: users[userTo]._id,
+            firstMessageCreated: new Date(firstCreated),
+            firstMessageLength: 100,
+            firstReplyCreated:
+              i < repliedCount ? new Date(firstCreated + replyTime) : null,
+            firstReplyLength: i < repliedCount ? 50 : null,
+            timeToFirstReply: i < repliedCount ? replyTime : null,
+          }),
+        );
 
         // increment the userFrom
         ++userno;
@@ -88,128 +102,137 @@ describe('Display Message Statistics in User Route', function () {
     // 0 messages to user2
     generateMessageStats(2, 0, 0, 0, NOW);
 
-
     // Save the messageStats to database
-    async.each(messageStats,
-      function (messageStat, callback) {
+    async.each(
+      messageStats,
+      function(messageStat, callback) {
         messageStat.save(callback);
-      }, done);
+      },
+      done,
+    );
   });
 
   // clean the database after the tests
-  after(function (done) {
+  after(function(done) {
     // remove all User, MessageStat
-    async.parallel([
-      function (cb) {
-        User.deleteMany().exec(cb);
-      },
-      function (cb) {
-        MessageStat.deleteMany().exec(cb);
-      },
-    ], done);
+    async.parallel(
+      [
+        function(cb) {
+          User.deleteMany().exec(cb);
+        },
+        function(cb) {
+          MessageStat.deleteMany().exec(cb);
+        },
+      ],
+      done,
+    );
   });
 
   // Sign in
-  beforeEach(function (done) {
+  beforeEach(function(done) {
     const credentials = { username: users[4].username, password: password };
 
-    agent.post('/api/auth/signin')
+    agent
+      .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function (err) {
+      .end(function(err) {
         if (err) return done(err);
         return done();
       });
   });
 
   // Sign out
-  afterEach(function (done) {
-    agent.get('/api/auth/signout')
+  afterEach(function(done) {
+    agent
+      .get('/api/auth/signout')
       .expect(302)
-      .end(function (err) {
+      .end(function(err) {
         if (err) return done(err);
         return done();
       });
   });
 
-  it('should show replyRate and replyTime in user\'s profile',
-    function (done) {
-      // request a random user
-      agent.get('/api/users/' + users[5].username)
-        .expect(200)
-        .end(function (err, resp) {
-          if (err) return done(err);
-          try {
-            const response = resp.body;
+  it("should show replyRate and replyTime in user's profile", function(done) {
+    // request a random user
+    agent
+      .get('/api/users/' + users[5].username)
+      .expect(200)
+      .end(function(err, resp) {
+        if (err) return done(err);
+        try {
+          const response = resp.body;
 
-            should(response).have.property('replyRate');
-            should(response).have.property('replyTime');
+          should(response).have.property('replyRate');
+          should(response).have.property('replyTime');
 
-            return done();
-          } catch (e) {
-            if (e) return done(e);
-          }
-        });
-    });
+          return done();
+        } catch (e) {
+          if (e) return done(e);
+        }
+      });
+  });
 
-  it('[no messages] replyRate and replyTime should be \'\'',
-    function (done) {
-      // user username2 has no MessageStats
-      agent.get('/api/users/' + users[2].username)
-        .expect(200)
-        .end(function (err, resp) {
-          if (err) return done(err);
-          try {
-            const response = resp.body;
+  it("[no messages] replyRate and replyTime should be ''", function(done) {
+    // user username2 has no MessageStats
+    agent
+      .get('/api/users/' + users[2].username)
+      .expect(200)
+      .end(function(err, resp) {
+        if (err) return done(err);
+        try {
+          const response = resp.body;
 
-            should(response).have.property('replyRate', '');
-            should(response).have.property('replyTime', '');
+          should(response).have.property('replyRate', '');
+          should(response).have.property('replyTime', '');
 
-            return done();
-          } catch (e) {
-            if (e) return done(e);
-          }
-        });
-    });
+          return done();
+        } catch (e) {
+          if (e) return done(e);
+        }
+      });
+  });
 
-  it('[no replied messages] replyRate should be \'0%\' and replyTime \'\'',
-    function (done) {
-      // user username1 has only unreplied MessageStats
-      agent.get('/api/users/' + users[1].username)
-        .expect(200)
-        .end(function (err, resp) {
-          if (err) return done(err);
-          try {
-            const response = resp.body;
+  it("[no replied messages] replyRate should be '0%' and replyTime ''", function(done) {
+    // user username1 has only unreplied MessageStats
+    agent
+      .get('/api/users/' + users[1].username)
+      .expect(200)
+      .end(function(err, resp) {
+        if (err) return done(err);
+        try {
+          const response = resp.body;
 
-            should(response).have.property('replyRate', '0%');
-            should(response).have.property('replyTime', '');
+          should(response).have.property('replyRate', '0%');
+          should(response).have.property('replyTime', '');
 
-            return done();
-          } catch (e) {
-            if (e) return done(e);
-          }
-        });
-    });
+          return done();
+        } catch (e) {
+          if (e) return done(e);
+        }
+      });
+  });
 
-  it('[some replied messages] replyRate and replyTime should be strings with specific values',
-    function (done) {
-      // user username0 has both replied and unreplied MessageStats
-      agent.get('/api/users/' + users[0].username)
-        .expect(200)
-        .end(function (err, resp) {
-          if (err) return done(err);
-          try {
-            const response = resp.body;
+  it('[some replied messages] replyRate and replyTime should be strings with specific values', function(done) {
+    // user username0 has both replied and unreplied MessageStats
+    agent
+      .get('/api/users/' + users[0].username)
+      .expect(200)
+      .end(function(err, resp) {
+        if (err) return done(err);
+        try {
+          const response = resp.body;
 
-            should(response).have.property('replyRate',
-              Math.round(5 / 12 * 100) + '%');
-            should(response).have.property('replyTime', '3 hours');
+          should(response).have.property(
+            'replyRate',
+            Math.round((5 / 12) * 100) + '%',
+          );
+          should(response).have.property('replyTime', '3 hours');
 
-            return done();
-          } catch (e) {
-            if (e) return done(e);
-          }
-        });
-    });
+          return done();
+        } catch (e) {
+          if (e) return done(e);
+        }
+      });
+  });
 });

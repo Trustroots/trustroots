@@ -2,7 +2,8 @@ const path = require('path');
 const should = require('should');
 const async = require('async');
 const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service'));
+  './modules/messages/server/services/message-stat.server.service',
+));
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
@@ -15,8 +16,8 @@ let firstReply;
 let initiatorMessage;
 let receiverMessage;
 
-describe('Convert Message Statistics to human readable form', function () {
-  it('should convert null values correctly', function () {
+describe('Convert Message Statistics to human readable form', function() {
+  it('should convert null values correctly', function() {
     const converted = messageStatService.formatStats({
       replyRate: null,
       replyTime: null,
@@ -26,7 +27,7 @@ describe('Convert Message Statistics to human readable form', function () {
     converted.should.have.property('replyTime', '');
   });
 
-  it('should convert finite values correctly', function () {
+  it('should convert finite values correctly', function() {
     const converted = messageStatService.formatStats({
       replyRate: 0.37631,
       replyTime: 3600 * 1000 * 3.7,
@@ -37,36 +38,41 @@ describe('Convert Message Statistics to human readable form', function () {
   });
 });
 
-describe('Count Message Statistics of User', function () {
+describe('Count Message Statistics of User', function() {
   const NOW = new Date('2002-02-20').getTime(); // an arbitrary date
   const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
   const messageStats = [];
   const users = [];
 
   // create testing users
-  before(function (done) {
+  before(function(done) {
     for (let i = 0; i < 29; ++i) {
-      users.push(new User({
-        firstName: 'firstName',
-        lastName: 'lastName',
-        displayName: 'displayName',
-        email: 'user' + i + '@example.com',
-        username: 'username' + i,
-        password: 'password123',
-        provider: 'local',
-        public: true,
-      }));
+      users.push(
+        new User({
+          firstName: 'firstName',
+          lastName: 'lastName',
+          displayName: 'displayName',
+          email: 'user' + i + '@example.com',
+          username: 'username' + i,
+          password: 'password123',
+          provider: 'local',
+          public: true,
+        }),
+      );
     }
 
     // Save the users to database
-    async.each(users,
-      function (user, callback) {
+    async.each(
+      users,
+      function(user, callback) {
         user.save(callback);
-      }, done);
+      },
+      done,
+    );
   });
 
   // create testing messageStats
-  before(function (done) {
+  before(function(done) {
     // every thread is initiated by different user (user 0 is the receiver of all)
 
     let userno = 1; // the index of user who sent the first message
@@ -82,15 +88,18 @@ describe('Count Message Statistics of User', function () {
     function generateMessageStats(count, repliedCount, replyTime, timeNow) {
       for (let i = 0; i < count; ++i) {
         const firstCreated = timeNow - replyTime - (i + 1) * DAY;
-        messageStats.push(new MessageStat({
-          firstMessageUserFrom: users[userno]._id,
-          firstMessageUserTo: users[0]._id,
-          firstMessageCreated: new Date(firstCreated),
-          firstMessageLength: 100,
-          firstReplyCreated: i < repliedCount ? new Date(firstCreated + replyTime) : null,
-          firstReplyLength: i < repliedCount ? 50 : null,
-          timeToFirstReply: i < repliedCount ? replyTime : null,
-        }));
+        messageStats.push(
+          new MessageStat({
+            firstMessageUserFrom: users[userno]._id,
+            firstMessageUserTo: users[0]._id,
+            firstMessageCreated: new Date(firstCreated),
+            firstMessageLength: 100,
+            firstReplyCreated:
+              i < repliedCount ? new Date(firstCreated + replyTime) : null,
+            firstReplyLength: i < repliedCount ? 50 : null,
+            timeToFirstReply: i < repliedCount ? replyTime : null,
+          }),
+        );
         // increment the userFrom
         ++userno;
       }
@@ -105,33 +114,40 @@ describe('Count Message Statistics of User', function () {
     // + 4 msg within last 90 - 120 days (0 replied)
     generateMessageStats(4, 0, 1 * DAY, NOW - 90 * DAY);
 
-
     // Save the messageStats to database
-    async.each(messageStats,
-      function (messageStat, callback) {
+    async.each(
+      messageStats,
+      function(messageStat, callback) {
         messageStat.save(callback);
-      }, done);
+      },
+      done,
+    );
   });
 
   // clean the database after the tests
-  after(function (done) {
+  after(function(done) {
     // remove all User, Message, MessageStat
-    async.parallel([
-      function (cb) {
-        User.deleteMany().exec(cb);
-      },
-      function (cb) {
-        Message.deleteMany().exec(cb);
-      },
-      function (cb) {
-        MessageStat.deleteMany().exec(cb);
-      },
-    ], done);
+    async.parallel(
+      [
+        function(cb) {
+          User.deleteMany().exec(cb);
+        },
+        function(cb) {
+          Message.deleteMany().exec(cb);
+        },
+        function(cb) {
+          MessageStat.deleteMany().exec(cb);
+        },
+      ],
+      done,
+    );
   });
 
-  it('[< 10 messages in last 90 days] should use 90 days', function (done) {
-    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 60 * DAY,
-      function (err, stats) {
+  it('[< 10 messages in last 90 days] should use 90 days', function(done) {
+    messageStatService.readMessageStatsOfUser(
+      users[0]._id,
+      NOW - 60 * DAY,
+      function(err, stats) {
         if (err) return done(err);
         try {
           should(stats).have.property('replyRate', 3 / 8);
@@ -140,12 +156,15 @@ describe('Count Message Statistics of User', function () {
         } catch (e) {
           return done(e);
         }
-      });
+      },
+    );
   });
 
-  it('[< 10 messages in last 30 days && > 10 in 90 d] should use last 10 messages', function (done) {
-    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 30 * DAY,
-      function (err, stats) {
+  it('[< 10 messages in last 30 days && > 10 in 90 d] should use last 10 messages', function(done) {
+    messageStatService.readMessageStatsOfUser(
+      users[0]._id,
+      NOW - 30 * DAY,
+      function(err, stats) {
         // expected statistics values
         // out of last 10 messages, 4 are replied;
         // 2 replied within 3 days and 2 within 1 day
@@ -160,31 +179,36 @@ describe('Count Message Statistics of User', function () {
         } catch (e) {
           return done(e);
         }
-      });
+      },
+    );
   });
 
-  it('[> 10 messages in last 30 days] should use last 30 days', function (done) {
-    messageStatService.readMessageStatsOfUser(users[0]._id, NOW,
-      function (err, stats) {
-        // expected statistics values
-        // out of last month 6/12 messages are replied; all within 2 days
-        const expectedReplyRate = 6 / 12;
-        const expectedReplyTime = 2 * DAY;
+  it('[> 10 messages in last 30 days] should use last 30 days', function(done) {
+    messageStatService.readMessageStatsOfUser(users[0]._id, NOW, function(
+      err,
+      stats,
+    ) {
+      // expected statistics values
+      // out of last month 6/12 messages are replied; all within 2 days
+      const expectedReplyRate = 6 / 12;
+      const expectedReplyTime = 2 * DAY;
 
-        if (err) return done(err);
-        try {
-          should(stats).have.property('replyRate', expectedReplyRate);
-          should(stats).have.property('replyTime', expectedReplyTime);
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      });
+      if (err) return done(err);
+      try {
+        should(stats).have.property('replyRate', expectedReplyRate);
+        should(stats).have.property('replyTime', expectedReplyTime);
+        return done();
+      } catch (e) {
+        return done(e);
+      }
+    });
   });
 
-  it('[no messages] reply rate and time should be null', function (done) {
-    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 120 * DAY,
-      function (err, stats) {
+  it('[no messages] reply rate and time should be null', function(done) {
+    messageStatService.readMessageStatsOfUser(
+      users[0]._id,
+      NOW - 120 * DAY,
+      function(err, stats) {
         if (err) return done(err);
         try {
           should(stats).have.property('replyRate', null);
@@ -193,12 +217,15 @@ describe('Count Message Statistics of User', function () {
         } catch (e) {
           return done(e);
         }
-      });
+      },
+    );
   });
 
-  it('[no replied messages] reply rate should be 0 and reply time null', function (done) {
-    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 90 * DAY,
-      function (err, stats) {
+  it('[no replied messages] reply rate should be 0 and reply time null', function(done) {
+    messageStatService.readMessageStatsOfUser(
+      users[0]._id,
+      NOW - 90 * DAY,
+      function(err, stats) {
         if (err) return done(err);
         try {
           should(stats).have.property('replyRate', 0);
@@ -207,12 +234,15 @@ describe('Count Message Statistics of User', function () {
         } catch (e) {
           return done(e);
         }
-      });
+      },
+    );
   });
 
-  it('[some replied messages] reply rate and time should be a number', function (done) {
-    messageStatService.readMessageStatsOfUser(users[0]._id, NOW - 30 * DAY,
-      function (err, stats) {
+  it('[some replied messages] reply rate and time should be a number', function(done) {
+    messageStatService.readMessageStatsOfUser(
+      users[0]._id,
+      NOW - 30 * DAY,
+      function(err, stats) {
         if (err) return done(err);
         try {
           should(stats).have.property('replyRate');
@@ -223,13 +253,13 @@ describe('Count Message Statistics of User', function () {
         } catch (e) {
           return done(e);
         }
-      });
+      },
+    );
   });
 });
 
-
-describe('MessageStat Creation & Updating Test', function () {
-  beforeEach(function () {
+describe('MessageStat Creation & Updating Test', function() {
+  beforeEach(function() {
     // create means create without saving to database, unless explicit
     // create the initiator (User)
     initiator = new User({
@@ -286,64 +316,69 @@ describe('MessageStat Creation & Updating Test', function () {
     });
   });
 
-  afterEach(function (done) {
+  afterEach(function(done) {
     // clean User, Message, MessageStat
-    async.parallel([
-      function (cb) {
-        User.deleteMany().exec(cb);
-      },
-      function (cb) {
-        Message.deleteMany().exec(cb);
-      },
-      function (cb) {
-        MessageStat.deleteMany().exec(cb);
-      },
-    ], done);
+    async.parallel(
+      [
+        function(cb) {
+          User.deleteMany().exec(cb);
+        },
+        function(cb) {
+          Message.deleteMany().exec(cb);
+        },
+        function(cb) {
+          MessageStat.deleteMany().exec(cb);
+        },
+      ],
+      done,
+    );
   });
 
-  describe('updateMessageStat', function () {
-    context('First message in Thread', function () {
-      it('should create a new MessageStat document and respond `first`',
-        function (done) {
-
-          async.waterfall([
+  describe('updateMessageStat', function() {
+    context('First message in Thread', function() {
+      it('should create a new MessageStat document and respond `first`', function(done) {
+        async.waterfall(
+          [
             // save the first message to database
-            function (cb) {
-              firstMessage.save(function (err) {
+            function(cb) {
+              firstMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // generate stats for the first message
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // check that the response is correct and find the MessageStat
-            function (resp, cb) {
+            function(resp, cb) {
               try {
                 resp.should.equal('first');
 
-                MessageStat.findOne({
-                  $or: [
-                    {
-                      firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id,
-                    },
-                    {
-                      firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id,
-                    },
-                  ],
-                }, cb);
+                MessageStat.findOne(
+                  {
+                    $or: [
+                      {
+                        firstMessageUserFrom: initiator._id,
+                        firstMessageUserTo: receiver._id,
+                      },
+                      {
+                        firstMessageUserFrom: receiver._id,
+                        firstMessageUserTo: initiator._id,
+                      },
+                    ],
+                  },
+                  cb,
+                );
               } catch (e) {
                 cb(e);
               }
             },
 
             // check that the MessageStat is correct
-            function (messageStat, cb) {
+            function(messageStat, cb) {
               const ms = messageStat;
               try {
                 ms.should.have.property('firstMessageUserFrom', initiator._id);
@@ -355,383 +390,413 @@ describe('MessageStat Creation & Updating Test', function () {
                 if (e) return cb(e);
               }
             },
-          ], done);
-
-        });
+          ],
+          done,
+        );
+      });
     });
 
-    context('First reply in Thread', function () {
-      it('update the MessageStat with firstReply info & respond firstReply',
-        function (done) {
-          async.waterfall([
-
+    context('First reply in Thread', function() {
+      it('update the MessageStat with firstReply info & respond firstReply', function(done) {
+        async.waterfall(
+          [
             // save the first message to database
-            function (cb) {
-              firstMessage.save(function (err) {
+            function(cb) {
+              firstMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the first message (preparation)
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first reply to database
-            function (resp, cb) {
-              firstReply.save(function (err) {
+            function(resp, cb) {
+              firstReply.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the first reply
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstReply, cb);
             },
 
-            function (resp, cb) {
+            function(resp, cb) {
               try {
                 resp.should.equal('firstReply');
 
-                MessageStat.findOne({
-                  $or: [
-                    {
-                      firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id,
-                    },
-                    {
-                      firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id,
-                    },
-                  ],
-                }, cb);
+                MessageStat.findOne(
+                  {
+                    $or: [
+                      {
+                        firstMessageUserFrom: initiator._id,
+                        firstMessageUserTo: receiver._id,
+                      },
+                      {
+                        firstMessageUserFrom: receiver._id,
+                        firstMessageUserTo: initiator._id,
+                      },
+                    ],
+                  },
+                  cb,
+                );
               } catch (e) {
                 cb(e);
               }
             },
 
-            function (messageStat, cb) {
+            function(messageStat, cb) {
               const ms = messageStat;
               try {
                 ms.should.have.property('firstMessageUserFrom', initiator._id);
                 ms.should.have.property('firstMessageUserTo', receiver._id);
                 ms.should.have.property('firstMessageCreated');
-                ms.should.have.property('firstReplyCreated', firstReply.created);
-                ms.should.have.property('firstReplyLength',
-                  firstReply.content.length);
-                ms.should.have.property('timeToFirstReply',
-                  firstReply.created.getTime() - firstMessage.created.getTime());
+                ms.should.have.property(
+                  'firstReplyCreated',
+                  firstReply.created,
+                );
+                ms.should.have.property(
+                  'firstReplyLength',
+                  firstReply.content.length,
+                );
+                ms.should.have.property(
+                  'timeToFirstReply',
+                  firstReply.created.getTime() - firstMessage.created.getTime(),
+                );
                 return done();
-
               } catch (e) {
                 if (e) return cb(e);
               }
             },
-
-          ], done);
-        });
+          ],
+          done,
+        );
+      });
     });
 
-    context('Other messages in Thread', function () {
-      it('[another message by the initiator before reply] should not change the MessageStat',
-        function (done) {
-          async.waterfall([
-
+    context('Other messages in Thread', function() {
+      it('[another message by the initiator before reply] should not change the MessageStat', function(done) {
+        async.waterfall(
+          [
             // save the first message to database
-            function (cb) {
-              firstMessage.save(function (err) {
+            function(cb) {
+              firstMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the first message (preparation)
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first message to database
-            function (resp, cb) {
-              initiatorMessage.save(function (err) {
+            function(resp, cb) {
+              initiatorMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the second message
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(initiatorMessage, cb);
             },
 
-            function (resp, cb) {
+            function(resp, cb) {
               try {
                 resp.should.equal('other');
 
-                MessageStat.findOne({
-                  $or: [
-                    {
-                      firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id,
-                    },
-                    {
-                      firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id,
-                    },
-                  ],
-                }, cb);
+                MessageStat.findOne(
+                  {
+                    $or: [
+                      {
+                        firstMessageUserFrom: initiator._id,
+                        firstMessageUserTo: receiver._id,
+                      },
+                      {
+                        firstMessageUserFrom: receiver._id,
+                        firstMessageUserTo: initiator._id,
+                      },
+                    ],
+                  },
+                  cb,
+                );
               } catch (e) {
                 cb(e);
               }
             },
 
-            function (messageStat, cb) {
+            function(messageStat, cb) {
               const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
-                ts.should.have.property('firstMessageCreated',
-                  firstMessage.created);
+                ts.should.have.property(
+                  'firstMessageCreated',
+                  firstMessage.created,
+                );
                 ts.should.have.property('firstReplyCreated', null);
                 ts.should.have.property('firstReplyLength', null);
                 ts.should.have.property('timeToFirstReply', null);
                 return done();
-
               } catch (e) {
                 if (e) return cb(e);
               }
             },
-
-          ], done);
-        });
-      it('[another message by the initiator after reply] should not change the MessageStat',
-        function (done) {
-          async.waterfall([
-
+          ],
+          done,
+        );
+      });
+      it('[another message by the initiator after reply] should not change the MessageStat', function(done) {
+        async.waterfall(
+          [
             // save the first message to database (preparation)
-            function (cb) {
-              firstMessage.save(function (err) {
+            function(cb) {
+              firstMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // create stats for the first message (preparation)
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first reply
-            function (resp, cb) {
-              firstReply.save(function (err) {
+            function(resp, cb) {
+              firstReply.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // update stats for the first reply
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstReply, cb);
             },
 
             // save another initiator message
-            function (resp, cb) {
-              firstReply.save(function (err) {
+            function(resp, cb) {
+              firstReply.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // update stats with another initiator's message
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(initiatorMessage, cb);
             },
 
             // run tests
-            function (resp, cb) {
+            function(resp, cb) {
               try {
                 resp.should.equal('other');
 
                 // find the MessageStat to run tests on it
-                MessageStat.findOne({
-                  $or: [
-                    {
-                      firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id,
-                    },
-                    {
-                      firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id,
-                    },
-                  ],
-                }, cb);
+                MessageStat.findOne(
+                  {
+                    $or: [
+                      {
+                        firstMessageUserFrom: initiator._id,
+                        firstMessageUserTo: receiver._id,
+                      },
+                      {
+                        firstMessageUserFrom: receiver._id,
+                        firstMessageUserTo: initiator._id,
+                      },
+                    ],
+                  },
+                  cb,
+                );
               } catch (e) {
                 cb(e);
               }
             },
 
-            function (messageStat, cb) {
+            function(messageStat, cb) {
               const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
-                ts.should.have.property('firstMessageCreated',
-                  firstMessage.created);
-                ts.should.have.property('firstReplyCreated', firstReply.created);
+                ts.should.have.property(
+                  'firstMessageCreated',
+                  firstMessage.created,
+                );
+                ts.should.have.property(
+                  'firstReplyCreated',
+                  firstReply.created,
+                );
                 return done();
-
               } catch (e) {
                 if (e) return cb(e);
               }
             },
+          ],
+          done,
+        );
+      });
 
-          ], done);
-        });
-
-      it('[later message by the receiver] should not change the MessageStat',
-        function (done) {
-          async.waterfall([
-
+      it('[later message by the receiver] should not change the MessageStat', function(done) {
+        async.waterfall(
+          [
             // save the first message to database (preparation)
-            function (cb) {
-              firstMessage.save(function (err) {
+            function(cb) {
+              firstMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the first message (preparation)
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstMessage, cb);
             },
 
             // save the first reply
-            function (resp, cb) {
-              firstReply.save(function (err) {
+            function(resp, cb) {
+              firstReply.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the first reply
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstReply, cb);
             },
 
             // save the further receiver's message
-            function (resp, cb) {
-              receiverMessage.save(function (err) {
+            function(resp, cb) {
+              receiverMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the further receiver's message
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(receiverMessage, cb);
             },
 
-            function (resp, cb) {
+            function(resp, cb) {
               try {
                 resp.should.equal('other');
 
-                MessageStat.findOne({
-                  $or: [
-                    {
-                      firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id,
-                    },
-                    {
-                      firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id,
-                    },
-                  ],
-                }, cb);
+                MessageStat.findOne(
+                  {
+                    $or: [
+                      {
+                        firstMessageUserFrom: initiator._id,
+                        firstMessageUserTo: receiver._id,
+                      },
+                      {
+                        firstMessageUserFrom: receiver._id,
+                        firstMessageUserTo: initiator._id,
+                      },
+                    ],
+                  },
+                  cb,
+                );
               } catch (e) {
                 cb(e);
               }
             },
 
-            function (messageStat, cb) {
+            function(messageStat, cb) {
               const ts = messageStat;
               try {
                 ts.should.have.property('firstMessageUserFrom', initiator._id);
                 ts.should.have.property('firstMessageUserTo', receiver._id);
-                ts.should.have.property('firstMessageCreated',
-                  firstMessage.created);
-                ts.should.have.property('firstReplyCreated', firstReply.created);
+                ts.should.have.property(
+                  'firstMessageCreated',
+                  firstMessage.created,
+                );
+                ts.should.have.property(
+                  'firstReplyCreated',
+                  firstReply.created,
+                );
                 return done();
-
               } catch (e) {
                 if (e) return cb(e);
               }
             },
-
-          ], done);
-        });
+          ],
+          done,
+        );
+      });
     });
 
-    context('It is the firstReply, but MessageStat doesn\'t exist', function () {
-      it('should respond `firstReply`',
-        function (done) {
-          async.waterfall([
-
+    context("It is the firstReply, but MessageStat doesn't exist", function() {
+      it('should respond `firstReply`', function(done) {
+        async.waterfall(
+          [
             // save the first message to database
-            function (cb) {
-              firstMessage.save(function (err) {
+            function(cb) {
+              firstMessage.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // save the first reply to database
-            function (cb) {
-              firstReply.save(function (err) {
+            function(cb) {
+              firstReply.save(function(err) {
                 if (err) return cb(err);
                 cb();
               });
             },
 
             // stats for the further receiver's message
-            function (cb) {
+            function(cb) {
               messageStatService.updateMessageStat(firstReply, cb);
             },
 
-            function (resp, cb) {
+            function(resp, cb) {
               try {
                 resp.should.equal('firstReply');
 
-                MessageStat.findOne({
-                  $or: [
-                    {
-                      firstMessageUserFrom: initiator._id,
-                      firstMessageUserTo: receiver._id,
-                    },
-                    {
-                      firstMessageUserFrom: receiver._id,
-                      firstMessageUserTo: initiator._id,
-                    },
-                  ],
-                }, cb);
+                MessageStat.findOne(
+                  {
+                    $or: [
+                      {
+                        firstMessageUserFrom: initiator._id,
+                        firstMessageUserTo: receiver._id,
+                      },
+                      {
+                        firstMessageUserFrom: receiver._id,
+                        firstMessageUserTo: initiator._id,
+                      },
+                    ],
+                  },
+                  cb,
+                );
               } catch (e) {
                 cb(e);
               }
             },
 
-            function (messageStat, cb) {
+            function(messageStat, cb) {
               const ts = messageStat;
               try {
                 should(ts).not.equal(null);
                 return done();
-
               } catch (e) {
                 if (e) return cb(e);
               }
             },
-
-          ], done);
-        });
+          ],
+          done,
+        );
+      });
     });
   });
 });

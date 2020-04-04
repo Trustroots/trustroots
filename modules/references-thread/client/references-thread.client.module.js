@@ -1,3 +1,11 @@
-// Use Application configuration module to register a new module
-// The core module is required for special route handling; see /core/client/config/core.client.routes
+import AppConfig from '@/modules/core/client/app/config';
+
+import '@/modules/core/client/core.client.module';
+
 AppConfig.registerModule('references-thread', ['core']);
+
+// directives
+require('@/modules/references-thread/client/directives/reference-thread.client.directive');
+
+// services
+require('@/modules/references-thread/client/services/reference-thread.client.service');

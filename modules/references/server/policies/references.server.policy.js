@@ -1,27 +1,38 @@
 let acl = require('acl');
 const path = require('path');
-const errorService = require(path.resolve('./modules/core/server/services/error.server.service'));
+const errorService = require(path.resolve(
+  './modules/core/server/services/error.server.service',
+));
 
 acl = new acl(new acl.memoryBackend());
 
-exports.invokeRolesPolicies = function () {
-  acl.allow([{
-    roles: ['user', 'admin'],
-    allows: [{
-      resources: '/api/references',
-      permissions: ['get', 'post'],
-    }, {
-      resources: '/api/references/:referenceId',
-      permissions: ['get'],
-    }],
-  }]);
+exports.invokeRolesPolicies = function() {
+  acl.allow([
+    {
+      roles: ['user', 'admin'],
+      allows: [
+        {
+          resources: '/api/references',
+          permissions: ['get', 'post'],
+        },
+        {
+          resources: '/api/references/:referenceId',
+          permissions: ['get'],
+        },
+      ],
+    },
+  ]);
 };
 
-exports.isAllowed = async function (req, res, next) {
+exports.isAllowed = async function(req, res, next) {
   try {
-    const roles = (req.user && req.user.roles) ? req.user.roles : ['guest'];
+    const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
 
-    const isAllowed = await acl.areAnyRolesAllowed(roles, req.route.path, req.method.toLowerCase());
+    const isAllowed = await acl.areAnyRolesAllowed(
+      roles,
+      req.route.path,
+      req.method.toLowerCase(),
+    );
 
     if (isAllowed && req.user.public) {
       // Access granted! Invoke next middleware

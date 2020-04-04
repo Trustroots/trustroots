@@ -1,71 +1,65 @@
-import React, { Component } from 'react';
-import { withTranslation } from '@/modules/core/client/utils/i18n-angular-load';
-import '@/config/client/i18n';
+// External dependencies
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import { limitTo, plainTextLength } from '@/modules/core/client/utils/filters';
+import React from 'react';
 
-export class AboutMe extends Component {
-  constructor(props) {
-    super(props);
-    this.changeProfileDescriptionToggle = this.changeProfileDescriptionToggle.bind(this);
+// Internal dependencies
+import '@/config/client/i18n';
+import { plainTextLength } from '@/modules/core/client/utils/filters';
+import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
-    this.state = {
-      profileDescriptionToggle: false,
-    };
-  }
-  changeProfileDescriptionToggle(){
-    this.setState((prevState) => ({
-      profileDescriptionToggle: !prevState.profileDescriptionToggle,
-    }));
-  }
+export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
+  const { t } = useTranslation('user-profile');
 
-  render(){
-    const { t, profile, isSelf, appSettings } = this.props;
-    return (<>
+  return (
+    <>
       <section className="panel panel-default">
-        <header className="panel-heading">
-          {t('About me')}
-        </header>
+        <header className="panel-heading">{t('About me')}</header>
         <div className="panel-body">
-          {/* Short descriptions */}
-          {(profile.description.length < 2400 || this.state.profileDescriptionToggle) &&
-          <div dangerouslySetInnerHTML={{ __html: profile.description }}></div>}
-
-          {/* Long descriptions */}
-          {profile.description.length >= 2400 && !this.state.profileDescriptionToggle &&
-          <div
-            className="panel-more-wrap">
-            <div className="panel-more-excerpt" dangerouslySetInnerHTML={{ __html: limitTo(profile.description, 2400) }}></div>
-            <div className="panel-more-fade" onClick={this.changeProfileDescriptionToggle}>{t('Show more...')}</div>
-          </div>}
+          {profile.description && (
+            <ReadMorePanel
+              content={profile.description}
+              id="profile-description"
+            />
+          )}
 
           {/* If no description, show deep thoughts... */}
-          {(!profile.description || profile.description === '') &&
-          <blockquote className="profile-quote"
-            aria-label={t('Member has not written description about themself.')}>
-          “Everyone is necessarily the hero of their own life story.”
-          </blockquote>}
+          {!profile.description && (
+            <blockquote
+              aria-label={t(
+                'Member has not written description about themself.',
+              )}
+              className="profile-quote"
+            >
+              {t('“Everyone is necessarily the hero of their own life story.”')}
+            </blockquote>
+          )}
         </div>
 
         {/* User watching their own profile and it's too short */}
-        {(isSelf && (!profile.description || plainTextLength(profile.description) < appSettings.profileMinimumLength)) &&
-        <footer className="panel-footer">
-          <p className="lead">
-            {t('Your profile description should be longer so that you can send messages.')}
-            <br/><br />
-            <a href="/profile/edit" className="btn btn-primary">{t('Fill your profile')}</a>
-          </p>
-        </footer>}
+        {isSelf &&
+          (!profile.description ||
+            plainTextLength(profile.description) < profileMinimumLength) && (
+            <footer className="panel-footer">
+              <p className="lead">
+                {t(
+                  'Your profile description should be longer so that you can send messages.',
+                )}
+                <br />
+                <br />
+                <a href="/profile/edit" className="btn btn-primary">
+                  {t('Fill your profile')}
+                </a>
+              </p>
+            </footer>
+          )}
       </section>
-    </>);
-  }
+    </>
+  );
 }
 
 AboutMe.propTypes = {
   profile: PropTypes.object,
   isSelf: PropTypes.bool,
-  appSettings: PropTypes.object,
-  t: PropTypes.func,
+  profileMinimumLength: PropTypes.number.isRequired,
 };
-
-export default withTranslation(['user-profile'])(AboutMe);

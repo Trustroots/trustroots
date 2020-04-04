@@ -1,34 +1,44 @@
 <section class="container board text-center" tr-boards="'bokeh'">
   <div class="row">
     <div class="col-xs-12">
-      <img class="hidden-xs" src="/img/logo/color.svg" alt="Trustroots" width="140" height="140" />
-      <br><br><br>
+      <img
+        class="hidden-xs"
+        src="/img/logo/color.svg"
+        alt="Trustroots"
+        width="140"
+        height="140"
+      />
+      <br /><br /><br />
       <h2>Trustroots Statistics</h2>
-      <br><br><br>
+      <br /><br /><br />
     </div>
 
-    <div class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 stats">
-
-      <div ng-if="!stats.statisticsData.$resolved"
-           role="alertdialog"
-           aria-busy="true"
-           aria-live="assertive"
-           class="content-wait">
+    <div
+      class="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 stats"
+    >
+      <div
+        ng-if="!stats.statisticsData.$resolved"
+        role="alertdialog"
+        aria-busy="true"
+        aria-live="assertive"
+        class="content-wait"
+      >
         <small>Wait a moment...</small>
       </div>
 
       <section ng-if="stats.statisticsData.$resolved">
-
         <div class="row">
           <div class="col-sm-6">
-
             <!-- Total members -->
             <div class="panel panel-default panel-glass">
               <div class="panel-heading">
                 <h3 class="panel-title">Members</h3>
               </div>
               <div class="panel-body">
-                <span class="stats-count stats-count-lg" ng-bind="stats.total | number"></span>
+                <span
+                  class="stats-count stats-count-lg"
+                  ng-bind="stats.total | number"
+                ></span>
               </div>
             </div>
 
@@ -39,31 +49,51 @@
               </div>
               <div class="panel-body">
                 <ul class="list-unstyled text-muted text-capitalize">
-                  <li ng-repeat="connection in stats.connections | orderBy:'-count'">
-                    <h5 uib-tooltip="{{connection.count | number}} members" tooltip-placement="right">
-                      {{ connection.network }}
-                      {{ ((connection.count/stats.total)*100) | number:1 }}%
+                  <li
+                    ng-repeat="connection in stats.connections | orderBy:'-count'"
+                  >
+                    <h5
+                      uib-tooltip="{{connection.count | number}} members"
+                      tooltip-placement="right"
+                    >
+                      {{ connection.network }} {{
+                      ((connection.count/stats.total)*100) | number:1 }}%
                     </h5>
                   </li>
                 </ul>
-                <p ng-if="app.user"><a ui-sref="profile-edit.about" class="btn btn-sm btn-default">Extend your profile</a></p>
+                <p ng-if="app.user">
+                  <a ui-sref="profile-edit.about" class="btn btn-sm btn-default"
+                    >Extend your profile</a
+                  >
+                </p>
               </div>
             </div>
-
           </div>
           <div class="col-sm-6">
-
             <!-- Hosts -->
             <div class="panel panel-default panel-glass">
               <div class="panel-heading">
                 <h3 class="panel-title">Hosts</h3>
               </div>
               <div class="panel-body">
-                <span class="stats-count" uib-tooltip="{{ stats.hostingTotal | number }} members" tooltip-placement="bottom">{{ stats.hostingPercentage | number:1 }}%</span><br>
+                <span
+                  class="stats-count"
+                  uib-tooltip="{{ stats.hostingTotal | number }} members"
+                  tooltip-placement="bottom"
+                  >{{ stats.hostingPercentage | number:1 }}%</span
+                ><br />
                 <h5 class="text-muted">
-                  <span uib-tooltip="{{ stats.hosting.yes | number }} members" tooltip-placement="bottom">{{ stats.hostingYesPercentage | number:1 }}% yes</span>
+                  <span
+                    uib-tooltip="{{ stats.hosting.yes | number }} members"
+                    tooltip-placement="bottom"
+                    >{{ stats.hostingYesPercentage | number:1 }}% yes</span
+                  >
                   —
-                  <span uib-tooltip="{{ stats.hosting.maybe | number }} members" tooltip-placement="bottom">{{ stats.hostingMaybePercentage | number:1 }}% maybe</span>
+                  <span
+                    uib-tooltip="{{ stats.hosting.maybe | number }} members"
+                    tooltip-placement="bottom"
+                    >{{ stats.hostingMaybePercentage | number:1 }}% maybe</span
+                  >
                 </h5>
               </div>
             </div>
@@ -74,17 +104,25 @@
                 <h3 class="panel-title">Newsletter</h3>
               </div>
               <div class="panel-body">
-                <span class="stats-count">{{ stats.newsletterPercentage | number:1 }}%</span><br>
-                <h5 class="text-muted text-uppercase">{{ stats.newsletter | number }} subscribers</h5>
-                <p ng-if="app.user"><a ui-sref="profile-edit.account" class="btn btn-sm btn-default">Subscribe to newsletter</a></p>
+                <span class="stats-count"
+                  >{{ stats.newsletterPercentage | number:1 }}%</span
+                ><br />
+                <h5 class="text-muted text-uppercase">
+                  {{ stats.newsletter | number }} subscribers
+                </h5>
+                <p ng-if="app.user">
+                  <a
+                    ui-sref="profile-edit.account"
+                    class="btn btn-sm btn-default"
+                    >Subscribe to newsletter</a
+                  >
+                </p>
               </div>
             </div>
-
           </div>
-
         </div>
 
-        <hr>
+        <hr />
 
         <div class="panel panel-default">
           <div class="panel-heading">
@@ -92,7 +130,12 @@
           </div>
           <div class="panel-body">
             <a href="https://grafana.trustroots.org/d/000000002/members">
-              <img class="img-responsive" src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&from=1419289200000&to=1543142370362&panelId=1&width=800&height=300&theme=light" width="100%" alt="Trustroots member growth">
+              <img
+                class="img-responsive"
+                src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&from=1419289200000&to=1543142370362&panelId=1&width=800&height=300&theme=light"
+                width="100%"
+                alt="Trustroots member growth"
+              />
             </a>
           </div>
         </div>
@@ -103,25 +146,43 @@
           </div>
           <div class="panel-body">
             <a href="https://grafana.trustroots.org/d/000000001/messages">
-              <img class="img-responsive" src="https://grafana.trustroots.org/render/d-solo/000000001/messages?panelId=3&from=1419289200000&to=1543142370362&panelId=1&width=800&height=300&theme=light" width="100%" alt="Trustroots weekly messages">
+              <img
+                class="img-responsive"
+                src="https://grafana.trustroots.org/render/d-solo/000000001/messages?panelId=3&from=1419289200000&to=1543142370362&panelId=1&width=800&height=300&theme=light"
+                width="100%"
+                alt="Trustroots weekly messages"
+              />
             </a>
           </div>
         </div>
 
-        <p>Are you an (aspiring) data scientist? Check <a href="https://grafana.trustroots.org/">our grafana</a> for stats galore.</p>
+        <p>
+          Are you an (aspiring) data scientist? Check
+          <a href="https://grafana.trustroots.org/">our grafana</a> for stats
+          galore.
+        </p>
 
-        <p>Wanna help get better numbers? Consider <a ui-sref="volunteering">joining us</a>.</p>
+        <p>
+          Wanna help get better numbers? Consider
+          <a ui-sref="volunteering">joining us</a>.
+        </p>
 
-        <hr>
+        <hr />
         <h3>Enabling the latent trust between humans since</h3>
         <time class="lead" ng-bind="stats.launchDate | date:mediumDate"></time>
       </section>
 
       <p>
-        <br>
-        <a ng-if="!app.user" ui-sref="signup" class="btn btn-lg btn-action btn-inverse">Join Trustroots</a>
+        <br />
+        <a
+          ng-if="!app.user"
+          ui-sref="signup"
+          class="btn btn-lg btn-action btn-inverse"
+          >Join Trustroots</a
+        >
       </p>
-
     </div>
-  </div><!-- .row-->
-</section><!-- .container -->
+  </div>
+  <!-- .row-->
+</section>
+<!-- .container -->

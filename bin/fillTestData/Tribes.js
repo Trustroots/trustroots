@@ -13,28 +13,43 @@ const config = require(path.resolve('./config/config'));
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
  */
-const argv = yargs.usage('$0 <numberOfTribes>', 'Seed database with number of tribes', (yargs) => {
-  return yargs
-    .positional('numberOfTribes', {
-      describe: 'Number of tribes to add',
-      type: 'number',
-    })
-    .boolean('debug')
-    .boolean('limit')
-    .describe('debug', 'Enable extra database output (default=false)')
-    .describe('limit', 'If tribes already exist in the database, only add up to the number of tribes (default=false)')
-    .example('node $0 1000', 'Adds 1000 randomly seeded tribes to the database')
-    .example('node $0 100 --debug', 'Adds 100 randomly seeded tribes to the database with debug database output')
-    .example('node $0 100 --limit', 'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)')
-    .check(function (argv) {
-      if (argv.numberOfTribes < 1) {
-        throw new Error('Error: Number of tribes should be greater than 0');
-      }
-      return true;
-    })
-    .strict().yargs;
-}).argv;
-
+const argv = yargs.usage(
+  '$0 <numberOfTribes>',
+  'Seed database with number of tribes',
+  yargs => {
+    return yargs
+      .positional('numberOfTribes', {
+        describe: 'Number of tribes to add',
+        type: 'number',
+      })
+      .boolean('debug')
+      .boolean('limit')
+      .describe('debug', 'Enable extra database output (default=false)')
+      .describe(
+        'limit',
+        'If tribes already exist in the database, only add up to the number of tribes (default=false)',
+      )
+      .example(
+        'node $0 1000',
+        'Adds 1000 randomly seeded tribes to the database',
+      )
+      .example(
+        'node $0 100 --debug',
+        'Adds 100 randomly seeded tribes to the database with debug database output',
+      )
+      .example(
+        'node $0 100 --limit',
+        'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)',
+      )
+      .check(function(argv) {
+        if (argv.numberOfTribes < 1) {
+          throw new Error('Error: Number of tribes should be greater than 0');
+        }
+        return true;
+      })
+      .strict().yargs;
+  },
+).argv;
 
 /**
  * Hardcoded tribe image ids stored on the CDN used for seeding. These were
@@ -78,7 +93,6 @@ const tribeImageUUIDs = [
  * @returns {object} Returns the seeded tribe object
  */
 function seedTribe(tribe, tribeIndex) {
-
   tribe.label = faker.lorem.word() + '_' + tribeIndex;
   tribe.labelHistory = faker.random.words();
   tribe.slugHistory = faker.random.words();
@@ -93,9 +107,7 @@ function seedTribe(tribe, tribeIndex) {
   tribe.attribution_url = faker.internet.url();
   tribe.description = faker.lorem.sentences();
   return tribe;
-
 } // seedTribe()
-
 
 /**
  * This the the main method that seeds all the tribes. Based on the limit
@@ -105,8 +117,8 @@ function seedTribe(tribe, tribeIndex) {
 function seedTribes() {
   let index = 0;
   const max = argv.numberOfTribes;
-  const debug = (argv.debug === true);
-  const limit = (argv.limit === true);
+  const debug = argv.debug === true;
+  const limit = argv.limit === true;
 
   // Display number of tribes to add
   console.log('Generating ' + max + ' tribes...');
@@ -127,16 +139,16 @@ function seedTribes() {
       const Tribe = mongoose.model('Tribe');
 
       /**
-      * Adds the number of tribes using the values and options specified
-      * by the user
-      *
-      * @param {number} initialTribeCount - The number of tribes prior to adding
-      * any new tribes
-      * @returns {Promise} Promise that completes when all tribes have
-      *  successfully been added.
-      */
+       * Adds the number of tribes using the values and options specified
+       * by the user
+       *
+       * @param {number} initialTribeCount - The number of tribes prior to adding
+       * any new tribes
+       * @returns {Promise} Promise that completes when all tribes have
+       *  successfully been added.
+       */
       function addTribes(initialTribeCount) {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           let savedTribes = 0;
 
           // handle the limit option
@@ -146,7 +158,11 @@ function seedTribes() {
 
           // if we already hit the limit
           if (index >= max) {
-            console.log(chalk.green(initialTribeCount + ' tribes already exist. No tribes created!'));
+            console.log(
+              chalk.green(
+                initialTribeCount + ' tribes already exist. No tribes created!',
+              ),
+            );
             console.log(chalk.white('')); // Reset to white
             resolve();
           }
@@ -159,35 +175,45 @@ function seedTribes() {
             seedTribe(tribe, initialTribeCount + index);
 
             // save the newly created tribe
-            tribe.save((err) => {
-
+            tribe.save(err => {
               if (err != null) {
                 console.log(err);
-              }
-              else {
+              } else {
                 // Tribe was saved successfully
                 process.stdout.write('.');
                 savedTribes += 1;
 
                 // If all tribes have been saved print a summary and
                 // resolve the promise.
-                if ((limit && (savedTribes + initialTribeCount >= max))
-                    || !limit && ((savedTribes >= max))) {
+                if (
+                  (limit && savedTribes + initialTribeCount >= max) ||
+                  (!limit && savedTribes >= max)
+                ) {
                   console.log('');
-                  console.log(chalk.green(initialTribeCount + ' tribes existed in the database.'));
-                  console.log(chalk.green(savedTribes + ' tribes successfully added.'));
-                  console.log(chalk.green('Database now contains ' + (initialTribeCount + savedTribes) + ' tribes.'));
+                  console.log(
+                    chalk.green(
+                      initialTribeCount + ' tribes existed in the database.',
+                    ),
+                  );
+                  console.log(
+                    chalk.green(savedTribes + ' tribes successfully added.'),
+                  );
+                  console.log(
+                    chalk.green(
+                      'Database now contains ' +
+                        (initialTribeCount + savedTribes) +
+                        ' tribes.',
+                    ),
+                  );
                   console.log(chalk.white('')); // Reset to white
                   resolve();
                 }
               }
-
             });
             index += 1;
           }
         }); // Promise
       } // addAllTribes()
-
 
       // This is the main sequence to add the tribes.
       //    * First get the current number of tribes from the database
@@ -201,10 +227,8 @@ function seedTribes() {
 
       // Disconnect from the database
       mongooseService.disconnect();
-
     }); // monggooseService.loadModels
   }); // mongooseService.connect
 } // seedTribes
 
 seedTribes();
-

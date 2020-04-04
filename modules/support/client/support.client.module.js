@@ -1,3 +1,14 @@
-// Use application configuration module to register a new module
-// The core module is required for special route handling; see /core/client/config/core.client.routes
+import AppConfig from '@/modules/core/client/app/config';
+
+import '@/modules/core/client/core.client.module';
+
 AppConfig.registerModule('support', ['core']);
+
+// config
+require('@/modules/support/client/config/support.client.routes');
+
+// controllers
+require('@/modules/support/client/controllers/support.client.controller');
+
+// services
+require('@/modules/support/client/services/support.client.service');

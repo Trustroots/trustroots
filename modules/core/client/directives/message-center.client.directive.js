@@ -10,50 +10,51 @@
  * See usage instructions from https://github.com/e0ipso/message-center
  */
 
-(function () {
-  /**
-   * Directive for error/success/info etc notifications
-   */
-  angular
-    .module('core')
-    .directive('mcMessages', mcMessages);
+/**
+ * Directive for error/success/info etc notifications
+ */
+angular.module('core').directive('mcMessages', mcMessages);
 
-  /* @ngInject */
-  function mcMessages($rootScope, messageCenterService) {
-    const templateString = '\
-    <div id="mc-messages-wrapper">\
-      <div class="alert alert-{{ message.type }} {{ animation }}" ng-repeat="message in mcMessages">\
-        <a class="close" ng-click="message.close();" data-dismiss="alert" aria-hidden="true">&times;</a>\
-        <span ng-switch on="message.html">\
-          <span ng-switch-when="true">\
-            <span ng-bind-html="message.message"></span>\
-          </span>\
-          <span ng-switch-default>\
-            {{ message.message }}\
-          </span>\
+/* @ngInject */
+function mcMessages($rootScope, messageCenterService) {
+  const templateString =
+    '\
+  <div id="mc-messages-wrapper">\
+    <div class="alert alert-{{ message.type }} {{ animation }}" ng-repeat="message in mcMessages">\
+      <a class="close" ng-click="message.close();" data-dismiss="alert" aria-hidden="true">&times;</a>\
+      <span ng-switch on="message.html">\
+        <span ng-switch-when="true">\
+          <span ng-bind-html="message.message"></span>\
         </span>\
-      </div>\
+        <span ng-switch-default>\
+          {{ message.message }}\
+        </span>\
+      </span>\
     </div>\
-    ';
-    return {
-      restrict: 'EA',
-      template: templateString,
-      link: function (scope, element, attrs) {
-        // Bind the messages from the service to the root scope.
+  </div>\
+  ';
+  return {
+    restrict: 'EA',
+    template: templateString,
+    link: function(scope, element, attrs) {
+      // Bind the messages from the service to the root scope.
+      messageCenterService.flush();
+      const changeReaction = function() {
+        // event, to, from
+        // Update 'unseen' messages to be marked as 'shown'.
+        messageCenterService.markShown();
+        // Remove the messages that have been shown.
+        messageCenterService.removeShown();
+        $rootScope.mcMessages = messageCenterService.mcMessages;
         messageCenterService.flush();
-        const changeReaction = function () { // event, to, from
-          // Update 'unseen' messages to be marked as 'shown'.
-          messageCenterService.markShown();
-          // Remove the messages that have been shown.
-          messageCenterService.removeShown();
-          $rootScope.mcMessages = messageCenterService.mcMessages;
-          messageCenterService.flush();
-        };
-        if (angular.isUndefined(messageCenterService.offlistener)) {
-          messageCenterService.offlistener = $rootScope.$on('$locationChangeSuccess', changeReaction);
-        }
-        scope.animation = attrs.animation || 'fade in';
-      },
-    };
-  }
-}());
+      };
+      if (angular.isUndefined(messageCenterService.offlistener)) {
+        messageCenterService.offlistener = $rootScope.$on(
+          '$locationChangeSuccess',
+          changeReaction,
+        );
+      }
+      scope.animation = attrs.animation || 'fade in';
+    },
+  };
+}

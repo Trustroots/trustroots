@@ -1,12 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
-import { withTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Presentational component for picking an interaction
  */
-const Interaction = withTranslation('reference')(function ({ t, interactions, onChange }) {
+export default function Interaction({ interactions, onChange }) {
+  const { t } = useTranslation('reference');
+
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
@@ -48,11 +50,9 @@ const Interaction = withTranslation('reference')(function ({ t, interactions, on
       </div>
     </div>
   );
-});
+}
 
 Interaction.propTypes = {
   onChange: PropTypes.func.isRequired,
   interactions: PropTypes.object.isRequired,
 };
-
-export default Interaction;

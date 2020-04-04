@@ -1,46 +1,40 @@
-(function () {
-  /**
-   * Directive to watch window blur events.
-   * See also `tr-window-blur.client.directive.js`
-   *
-   * Usage:
-   * `<body tr-window-focus="doSomething()">`
-   *
-   * Based on
-   * @link http://www.bennadel.com/blog/2934-handling-window-blur-and-focus-events-in-angularjs.htm
-   */
-  angular
-    .module('core')
-    .directive('trWindowFocus', trWindowFocusDirective);
+/**
+ * Directive to watch window blur events.
+ * See also `tr-window-blur.client.directive.js`
+ *
+ * Usage:
+ * `<body tr-window-focus="doSomething()">`
+ *
+ * Based on
+ * @link http://www.bennadel.com/blog/2934-handling-window-blur-and-focus-events-in-angularjs.htm
+ */
+angular.module('core').directive('trWindowFocus', trWindowFocusDirective);
 
-  /* @ngInject */
-  function trWindowFocusDirective($window) {
-    const directive = {
-      link: link,
-      restrict: 'A',
-    };
+/* @ngInject */
+function trWindowFocusDirective($window) {
+  const directive = {
+    link: link,
+    restrict: 'A',
+  };
 
-    return directive;
+  return directive;
 
-    function link(scope, element, attributes) {
+  function link(scope, element, attributes) {
+    // Hook up focus-handler
+    const win = angular.element($window).on('focus', handleFocus);
 
-      // Hook up focus-handler
-      const win = angular.element($window).on('focus', handleFocus);
+    // When the scope is destroyed, we have to make sure to teardown
+    // the event binding so we don't get a leak.
+    scope.$on('$destroy', handleDestroy);
 
-      // When the scope is destroyed, we have to make sure to teardown
-      // the event binding so we don't get a leak.
-      scope.$on('$destroy', handleDestroy);
+    // Handle the focus event on the Window
+    function handleFocus() {
+      scope.$apply(attributes.trWindowFocus);
+    }
 
-      // Handle the focus event on the Window
-      function handleFocus() {
-        scope.$apply(attributes.trWindowFocus);
-      }
-
-      // Teardown the directive
-      function handleDestroy() {
-        win.off('focus', handleFocus);
-      }
-
+    // Teardown the directive
+    function handleDestroy() {
+      win.off('focus', handleFocus);
     }
   }
-}());
+}

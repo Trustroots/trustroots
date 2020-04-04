@@ -1,15 +1,19 @@
 const path = require('path');
 const async = require('async');
-const firebaseMessaging = require(path.resolve('./config/lib/firebase-messaging'));
-const exponentNotifications = require(path.resolve('./config/lib/exponent-notifications'));
+const firebaseMessaging = require(path.resolve(
+  './config/lib/firebase-messaging',
+));
+const exponentNotifications = require(path.resolve(
+  './config/lib/exponent-notifications',
+));
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const log = require(path.resolve('./config/lib/logger'));
 
-const UNREGISTERED_TOKEN_ERROR_CODE = 'messaging/registration-token-not-registered';
+const UNREGISTERED_TOKEN_ERROR_CODE =
+  'messaging/registration-token-not-registered';
 
-module.exports = function (job, done) {
-
+module.exports = function(job, done) {
   const attrs = job.attrs;
   const data = attrs.data;
 
@@ -26,9 +30,13 @@ module.exports = function (job, done) {
 
   // Validate notification
   if (!notification.body || !notification.click_action) {
-    log('error', '`send push notification` job cannot send notification due missing required `body` or `click_action` values #zqo8bf', {
-      jobId: jobId,
-    });
+    log(
+      'error',
+      '`send push notification` job cannot send notification due missing required `body` or `click_action` values #zqo8bf',
+      {
+        jobId: jobId,
+      },
+    );
 
     // Don't return error, as we're not going to let Agenda attempt this job again
     return done();
@@ -39,7 +47,7 @@ module.exports = function (job, done) {
   const exponentTokens = [];
 
   // Sort push tokens by cloud service
-  pushServices.forEach(function (pushService) {
+  pushServices.forEach(function(pushService) {
     switch (String(pushService.platform)) {
       case 'ios':
       case 'android':
@@ -51,26 +59,35 @@ module.exports = function (job, done) {
         exponentTokens.push(pushService.token);
         break;
       default:
-        log('error', 'The `send push notification` job cannot process notification due missing platform value. #f932hf', {
-          jobId: jobId,
-        });
+        log(
+          'error',
+          'The `send push notification` job cannot process notification due missing platform value. #f932hf',
+          {
+            jobId: jobId,
+          },
+        );
     }
   });
 
   // push to Firebase
-  const firebasePushPromise = new Promise(function (resolve, reject) {
+  const firebasePushPromise = new Promise(function(resolve, reject) {
     // any Firebase tokens to push to?
     if (firebaseTokens.length === 0) {
-      log('debug', '`send push notification` job could not find Firebase tokens.', { jobId: jobId });
+      log(
+        'debug',
+        '`send push notification` job could not find Firebase tokens.',
+        { jobId: jobId },
+      );
       // if not, mark as done
       resolve();
       return;
     }
     // push to Firebase
-    firebaseMessaging.sendToDevice(firebaseTokens, { notification: notification })
-      .then(function (response) {
+    firebaseMessaging
+      .sendToDevice(firebaseTokens, { notification: notification })
+      .then(function(response) {
         const unregisteredTokens = [];
-        response.results.forEach(function (result, idx) {
+        response.results.forEach(function(result, idx) {
           if (result.error) {
             if (result.error.code === UNREGISTERED_TOKEN_ERROR_CODE) {
               unregisteredTokens.push(firebaseTokens[idx]);
@@ -78,20 +95,23 @@ module.exports = function (job, done) {
           }
         });
         if (unregisteredTokens.length > 0) {
-          removeUserPushTokens(userId, unregisteredTokens, function (error) {
-            error && reject(error) || resolve();
+          removeUserPushTokens(userId, unregisteredTokens, function(error) {
+            (error && reject(error)) || resolve();
           });
         } else {
           resolve();
         }
       })
-      .catch(function (err) {
+      .catch(function(err) {
         reject(err);
       });
   });
 
   // push to Exponent
-  const exponentPushPromise = exponentNotifications.sendToDevice(exponentTokens, notification);
+  const exponentPushPromise = exponentNotifications.sendToDevice(
+    exponentTokens,
+    notification,
+  );
 
   // Wait for all push services to finish
   // `Promise.all` is rejected if any of the elements are rejected:
@@ -100,22 +120,24 @@ module.exports = function (job, done) {
   Promise.all([
     async.reflect(firebasePushPromise),
     async.reflect(exponentPushPromise),
-  ]).then(function () {
-    process.nextTick(function () {
-      log('info', 'Successfully finished `send push message` job', {
-        jobId: jobId,
+  ])
+    .then(function() {
+      process.nextTick(function() {
+        log('info', 'Successfully finished `send push message` job', {
+          jobId: jobId,
+        });
+        return done();
       });
-      return done();
-    });
-  }).catch(function (err) {
-    process.nextTick(function () {
-      log('error', 'The `send push notification` job failed', {
-        jobId: jobId,
-        error: err,
+    })
+    .catch(function(err) {
+      process.nextTick(function() {
+        log('error', 'The `send push notification` job failed', {
+          jobId: jobId,
+          error: err,
+        });
+        return done(new Error('Failed to send push message.'));
       });
-      return done(new Error('Failed to send push message.'));
     });
-  });
 };
 
 function removeUserPushTokens(userId, tokens, callback) {
@@ -133,13 +155,16 @@ function removeUserPushTokens(userId, tokens, callback) {
     },
   };
 
-  User.findByIdAndUpdate(userId, query).exec(function (err) {
+  User.findByIdAndUpdate(userId, query).exec(function(err) {
     if (err) {
-      log('error', 'The `send push notification` job failed to remove invalid tokens from user. #gj932f', {
-        err: err,
-      });
+      log(
+        'error',
+        'The `send push notification` job failed to remove invalid tokens from user. #gj932f',
+        {
+          err: err,
+        },
+      );
     }
     callback(err);
   });
-
 }

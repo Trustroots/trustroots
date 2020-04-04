@@ -1,13 +1,17 @@
 <div>
   <ul class="list-unstyled row" ng-if="trTribesToggle.tribes.length">
-    <li class="form-group col-xs-12 col-sm-6 col-md-4"
-        ng-repeat="tribe in ::trTribesToggle.tribes">
-        <label tr-switch tr-switch-side="left" tr-switch-size="sm">
-          <input type="checkbox"
-                 ng-model="trTribesToggle.toggles[tribe._id]"
-                 ng-change="trTribesToggle.onToggleChange()">
-          {{::tribe.label}}
-        </label>
+    <li
+      class="form-group col-xs-12 col-sm-6 col-md-4"
+      ng-repeat="tribe in ::trTribesToggle.tribes"
+    >
+      <label tr-switch tr-switch-side="left" tr-switch-size="sm">
+        <input
+          type="checkbox"
+          ng-model="trTribesToggle.toggles[tribe._id]"
+          ng-change="trTribesToggle.onToggleChange()"
+        />
+        {{::tribe.label}}
+      </label>
     </li>
   </ul>
 </div>

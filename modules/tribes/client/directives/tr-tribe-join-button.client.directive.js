@@ -1,152 +1,160 @@
-(function () {
-  /**
-   * Join tribe button
-   */
-  angular
-    .module('tribes')
-    .directive('trTribeJoinButton', trTribeJoinButtonDirective);
+import templateUrl from '@/modules/tribes/client/views/directives/tr-tribe-join-button.client.view.html';
+
+/**
+ * Join tribe button
+ */
+angular
+  .module('tribes')
+  .directive('trTribeJoinButton', trTribeJoinButtonDirective);
+
+/* @ngInject */
+function trTribeJoinButtonDirective() {
+  return {
+    restrict: 'AE',
+    replace: true,
+    transclude: true,
+    scope: {
+      tribe: '=',
+      joinLabel: '=',
+      joinedLabel: '=',
+      icon: '=',
+    },
+    templateUrl,
+    controller: trTribeJoinButtonDirectiveController,
+    controllerAs: 'tribeJoinButton',
+  };
 
   /* @ngInject */
-  function trTribeJoinButtonDirective() {
-    return {
-      restrict: 'AE',
-      replace: true,
-      transclude: true,
-      scope: {
-        tribe: '=',
-        joinLabel: '=',
-        joinedLabel: '=',
-        icon: '=',
-      },
-      templateUrl: '/modules/tribes/views/directives/tr-tribe-join-button.client.view.html',
-      controller: trTribeJoinButtonDirectiveController,
-      controllerAs: 'tribeJoinButton',
-    };
+  function trTribeJoinButtonDirectiveController(
+    $q,
+    $confirm,
+    $scope,
+    $state,
+    $rootScope,
+    $analytics,
+    Authentication,
+    TribeService,
+    UserMembershipsService,
+    messageCenterService,
+  ) {
+    const vm = this;
 
-    /* @ngInject */
-    function trTribeJoinButtonDirectiveController(
-      $q,
-      $confirm,
-      $scope,
-      $state,
-      $rootScope,
-      $analytics,
-      Authentication,
-      TribeService,
-      UserMembershipsService,
-      messageCenterService,
-    ) {
+    vm.tribe = $scope.tribe;
+    vm.isMember = false;
+    vm.isLoading = false;
+    vm.joinLabel = $scope.joinLabel || 'Join';
+    vm.joinedLabel = $scope.joinedLabel || 'Joined';
+    vm.icon = Boolean($scope.icon);
 
-      const vm = this;
+    vm.toggleMembership = toggleMembership;
 
-      vm.tribe = $scope.tribe;
-      vm.isMember = false;
-      vm.isLoading = false;
-      vm.joinLabel = $scope.joinLabel || 'Join';
-      vm.joinedLabel = $scope.joinedLabel || 'Joined';
-      vm.icon = Boolean($scope.icon);
+    activate();
 
-      vm.toggleMembership = toggleMembership;
+    /**
+     * Initialize directive
+     */
+    function activate() {
+      // Check if authenticated user is already a member
+      if (Authentication.user) {
+        vm.isMember =
+          Authentication.user &&
+          Authentication.user.memberIds &&
+          Authentication.user.memberIds.indexOf(vm.tribe._id) > -1;
+      }
+    }
 
-      activate();
+    /**
+     * Go to signup page and refer to this tribe
+     */
+    function tribeSignup() {
+      TribeService.fillCache(angular.copy(vm.tribe));
+      $state.go('signup', { tribe: vm.tribe.slug });
+    }
 
-      /**
-       * Initialize directive
-       */
-      function activate() {
-        // Check if authenticated user is already a member
-        if (Authentication.user) {
-          vm.isMember = Authentication.user
-            && Authentication.user.memberIds
-            && Authentication.user.memberIds.indexOf(vm.tribe._id) > -1;
-        }
+    /**
+     * Toggle membership (join or leave)
+     */
+    function toggleMembership() {
+      if (vm.isLoading) {
+        return;
       }
 
-      /**
-       * Go to signup page and refer to this tribe
-       */
-      function tribeSignup() {
-        TribeService.fillCache(angular.copy(vm.tribe));
-        $state.go('signup', { 'tribe': vm.tribe.slug });
+      vm.isLoading = true;
+
+      // If user is not authenticated, redirect them to signup page
+      if (!Authentication.user) {
+        return tribeSignup();
       }
 
-      /**
-       * Toggle membership (join or leave)
-       */
-      function toggleMembership() {
-        if (vm.isLoading) {
-          return;
-        }
-
-        vm.isLoading = true;
-
-        // If user is not authenticated, redirect them to signup page
-        if (!Authentication.user) {
-          return tribeSignup();
-        }
-
-        // Join tribe
-        if (!vm.isMember) {
-          return join()
-            .then(function (data) {
-              vm.isMember = true;
-
-              applyChangedData(data);
-
-              $analytics.eventTrack('join-tribe', {
-                category: 'tribes.membership',
-                label: 'Join tribe',
-                value: $scope.tribe.slug,
-              });
-            })
-            .catch(function () {
-              messageCenterService.add('danger', 'Failed to join the tribe. Try again!');
-            })
-            .finally(function () {
-              vm.isLoading = false;
-            });
-        }
-
-        // Leave tribe
-        leave()
-          .then(function (data) {
-            vm.isMember = false;
+      // Join tribe
+      if (!vm.isMember) {
+        return join()
+          .then(function(data) {
+            vm.isMember = true;
 
             applyChangedData(data);
 
-            $analytics.eventTrack('leave-tribe', {
+            $analytics.eventTrack('join-tribe', {
               category: 'tribes.membership',
-              label: 'Leave tribe',
+              label: 'Join tribe',
               value: $scope.tribe.slug,
             });
           })
-          .catch(function (err) {
-            if (err === 'cancelled') {
-              $analytics.eventTrack('leave-tribe-cancelled', {
-                category: 'tribes.membership',
-                label: 'Leaving tribe cancelled',
-                value: $scope.tribe.slug,
-              });
-              return;
-            }
-
-            const errorMessage = err && err.data && err.data.message ? err.data.message : 'Failed to leave the tribe. Try again!';
-            messageCenterService.add('danger', errorMessage);
+          .catch(function() {
+            messageCenterService.add(
+              'danger',
+              'Failed to join the tribe. Try again!',
+            );
           })
-          .finally(function () {
+          .finally(function() {
             vm.isLoading = false;
           });
       }
 
-      /**
-       * Join Tribe
-       */
-      function join() {
-        return $q(function (resolve, reject) {
-          UserMembershipsService.post({
+      // Leave tribe
+      leave()
+        .then(function(data) {
+          vm.isMember = false;
+
+          applyChangedData(data);
+
+          $analytics.eventTrack('leave-tribe', {
+            category: 'tribes.membership',
+            label: 'Leave tribe',
+            value: $scope.tribe.slug,
+          });
+        })
+        .catch(function(err) {
+          if (err === 'cancelled') {
+            $analytics.eventTrack('leave-tribe-cancelled', {
+              category: 'tribes.membership',
+              label: 'Leaving tribe cancelled',
+              value: $scope.tribe.slug,
+            });
+            return;
+          }
+
+          const errorMessage =
+            err && err.data && err.data.message
+              ? err.data.message
+              : 'Failed to leave the tribe. Try again!';
+          messageCenterService.add('danger', errorMessage);
+        })
+        .finally(function() {
+          vm.isLoading = false;
+        });
+    }
+
+    /**
+     * Join Tribe
+     */
+    function join() {
+      return $q(function(resolve, reject) {
+        UserMembershipsService.post(
+          {
             tribeId: $scope.tribe._id,
           },
-          function (data) {
+          function(data) {
             if (data.tribe && data.user) {
               data.tribe.$resolved = true;
 
@@ -154,65 +162,68 @@
             } else {
               reject();
             }
-          }, function (err) {
+          },
+          function(err) {
             reject(err);
-          });
-        });
-      }
+          },
+        );
+      });
+    }
 
-      /**
-       * Leave tribe
-       */
-      function leave() {
-        return $q(function (resolve, reject) {
-          // Ask user for confirmation
-          $confirm({
-            title: 'Leave this Tribe?',
-            text: 'Do you want to leave "' + $scope.tribe.label + '"?',
-            ok: 'Leave Tribe',
-            cancel: 'Cancel',
-          })
-            .then(function () {
-              UserMembershipsService.delete({
+    /**
+     * Leave tribe
+     */
+    function leave() {
+      return $q(function(resolve, reject) {
+        // Ask user for confirmation
+        $confirm({
+          title: 'Leave this Tribe?',
+          text: 'Do you want to leave "' + $scope.tribe.label + '"?',
+          ok: 'Leave Tribe',
+          cancel: 'Cancel',
+        }).then(
+          function() {
+            UserMembershipsService.delete(
+              {
                 tribeId: $scope.tribe._id,
               },
-              function (data) {
+              function(data) {
                 if (data.tribe && data.user) {
                   // API success
                   data.tribe.$resolved = true;
 
                   resolve(data);
                 } else {
-                // API returned error
+                  // API returned error
                   reject();
                 }
-              }, function (err) {
-              // API returned error
+              },
+              function(err) {
+                // API returned error
                 reject(err);
-              });
-            },
-            // `Cancel` button from confirm dialog
-            function () {
-              reject('cancelled');
-            });
+              },
+            );
+          },
+          // `Cancel` button from confirm dialog
+          function() {
+            reject('cancelled');
+          },
+        );
+      });
+    }
 
-        });
+    function applyChangedData(data) {
+      // Update tribe with new count
+      if (data.tribe) {
+        $scope.tribe = data.tribe;
+        $rootScope.$broadcast('tribeUpdated', data.tribe);
       }
 
-      function applyChangedData(data) {
-        // Update tribe with new count
-        if (data.tribe) {
-          $scope.tribe = data.tribe;
-          $rootScope.$broadcast('tribeUpdated', data.tribe);
-        }
-
-        // User model is updated with new tribe data
-        if (data.user) {
-          Authentication.user = data.user;
-          $rootScope.$broadcast('userUpdated');
-        }
+      // User model is updated with new tribe data
+      if (data.user) {
+        Authentication.user = data.user;
+        $rootScope.$broadcast('userUpdated');
       }
-
     }
   }
-}());
+}

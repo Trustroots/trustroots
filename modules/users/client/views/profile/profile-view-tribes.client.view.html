@@ -1,32 +1,43 @@
 <div class="row">
   <div class="col-md-12">
-
-    <ul class="tribes-grid"
-        angular-grid="profileCtrl.profile.member"
-        ag-grid-width="300"
-        ag-gutter-size="10"
-        ag-angular-grid-id="tribes"
-        ag-refresh-on-img-load="false">
-      <li class="panel tribe tribe-image"
-          data-ng-repeat="membership in profileCtrl.profile.member | track by tribe.tag._id"
-          tr-tribe-styles="{{::membership.tribe}}">
-        <a ui-sref="tribes.tribe({tribe: membership.tribe.slug})" class="tribe-link">
-          <div class="tribe-content" ng-class="{'is-image': membership.tribe.image}">
+    <ul
+      class="tribes-grid"
+      angular-grid="profileCtrl.profile.member"
+      ag-grid-width="300"
+      ag-gutter-size="10"
+      ag-angular-grid-id="tribes"
+      ag-refresh-on-img-load="false"
+    >
+      <li
+        class="panel tribe tribe-image"
+        data-ng-repeat="membership in profileCtrl.profile.member | track by tribe.tag._id"
+        tr-tribe-styles="{{::membership.tribe}}"
+      >
+        <a
+          ui-sref="tribes.tribe({tribe: membership.tribe.slug})"
+          class="tribe-link"
+        >
+          <div
+            class="tribe-content"
+            ng-class="{'is-image': membership.tribe.image}"
+          >
             <h3 class="tribe-label" ng-bind="::membership.tribe.label"></h3>
             <div class="tribe-meta">
-              <ng-pluralize count="membership.tribe.count"
-                            when="tribes.pluralizeMembers('membership.tribe.count')">
+              <ng-pluralize
+                count="membership.tribe.count"
+                when="tribes.pluralizeMembers('membership.tribe.count')"
+              >
               </ng-pluralize>
             </div>
             <tr-tribe-join-button
               class="btn btn-xs btn-primary"
-              tribe="membership.tribe">
+              tribe="membership.tribe"
+            >
             </tr-tribe-join-button>
           </div>
         </a>
       </li>
     </ul>
-
   </div>
-
-</div><!-- /.row -->
+</div>
+<!-- /.row -->

@@ -9,30 +9,33 @@ const EventEmitter = require('events');
 const influx = require('influx');
 const Promise = require('promise');
 const Message = mongoose.model('Message');
-const messageController =
-  require(path.resolve('./modules/messages/server/controllers/messages.server.controller'));
+const messageController = require(path.resolve(
+  './modules/messages/server/controllers/messages.server.controller',
+));
 
-describe('Message to Stats API server service Integration Test', function () {
+describe('Message to Stats API server service Integration Test', function() {
   let reachEventEmitter;
 
-  before(function () {
+  before(function() {
     // this emitter will emit event 'reachedInfluxdb' with variables measurement,
     // fields, tags when the influxdb stub is reached
     reachEventEmitter = new EventEmitter();
   });
 
-  beforeEach(function () {
+  beforeEach(function() {
     // it will emit an event 'reachedInfluxdb' which should be caught in the tests
-    sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement').callsFake(function (measurement, fields, tags) {
-      return new Promise(function (resolve) {
-        reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
-        resolve();
+    sinon
+      .stub(influx.InfluxDB.prototype, 'writeMeasurement')
+      .callsFake(function(measurement, fields, tags) {
+        return new Promise(function(resolve) {
+          reachEventEmitter.emit('reachedInfluxdb', measurement, fields, tags);
+          resolve();
+        });
       });
-    });
   });
 
   // back to the original
-  afterEach(function () {
+  afterEach(function() {
     sinon.restore();
   });
 
@@ -40,8 +43,7 @@ describe('Message to Stats API server service Integration Test', function () {
   let user2;
 
   // here we create the users before each test
-  beforeEach(function (done) {
-
+  beforeEach(function(done) {
     user1 = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -51,6 +53,7 @@ describe('Message to Stats API server service Integration Test', function () {
       password: 'password123',
       provider: 'local',
       public: true,
+      roles: ['user'],
       description: _.repeat('.', config.profileMinimumLength),
     });
 
@@ -63,12 +66,13 @@ describe('Message to Stats API server service Integration Test', function () {
       password: 'password123',
       provider: 'local',
       public: true,
+      roles: ['user'],
     });
 
     // save those users to mongoDB
-    user1.save(function (err) {
+    user1.save(function(err) {
       if (err) return done(err);
-      user2.save(function (err) {
+      user2.save(function(err) {
         if (err) return done(err);
         done();
       });
@@ -76,29 +80,29 @@ describe('Message to Stats API server service Integration Test', function () {
   });
 
   // after each test removing all the messages and users (cleaning the database)
-  afterEach(function (done) {
-    Message.deleteMany().exec(function () {
+  afterEach(function(done) {
+    Message.deleteMany().exec(function() {
       User.deleteMany().exec(done);
     });
   });
 
-  context('when a new message is sent', function () {
-
+  context('when a new message is sent', function() {
     // send the new message, do it synchronously
     // otherwise the event may be too early and miss the tests
     // there should be no asynchronous beforeEach after this
     // the tests themselves will wait for the event of reaching influxdb
-    beforeEach(function () {
-
+    beforeEach(function() {
       // we're stubbing the express.response here
       // (not sure if i use the mocking/stubbing terminology right)
       function Res() {}
-      Res.prototype.status = function (statusCode) { // eslint-disable-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
+      Res.prototype.status = function(statusCode) {
         // this.statusCode = statusCode; // use for debug
         return this;
       };
       // we could do something on response, but we don't care
-      Res.prototype.send = function (response) { // eslint-disable-line no-unused-vars
+      // eslint-disable-next-line no-unused-vars
+      Res.prototype.send = function(response) {
         // console.log(this.statusCode, response); // use for debug
       };
       Res.prototype.json = Res.prototype.send;
@@ -106,6 +110,7 @@ describe('Message to Stats API server service Integration Test', function () {
       const req = {
         user: {
           _id: user1._id,
+          roles: ['user'],
         },
         body: {
           userTo: String(user2._id),
@@ -118,10 +123,9 @@ describe('Message to Stats API server service Integration Test', function () {
       messageController.send(req, res);
     });
 
-    context('when influxdb is enabled', function () {
-
+    context('when influxdb is enabled', function() {
       // stubbing the influxdb config
-      beforeEach(function () {
+      beforeEach(function() {
         sinon.stub(config.influxdb, 'enabled').value(true);
         sinon.stub(config.influxdb, 'options').value({
           host: 'localhost',
@@ -131,21 +135,24 @@ describe('Message to Stats API server service Integration Test', function () {
         });
       });
 
-      it('the data should reach the database', function (done) {
+      it('the data should reach the database', function(done) {
         // we want to call the listener when the influxdb is reached
         // that means the test passed
-        reachEventEmitter.once('reachedInfluxdb', function () {
+        reachEventEmitter.once('reachedInfluxdb', function() {
           return done();
         });
 
         // otherwise the test will fail with timeout
       });
 
-      it('the data should have a proper format', function (done) {
+      it('the data should have a proper format', function(done) {
         // we want to call the listener only once
-        reachEventEmitter.once('reachedInfluxdb', function (measurement, points) {
+        reachEventEmitter.once('reachedInfluxdb', function(
+          measurement,
+          points,
+        ) {
           try {
-            (measurement).should.equal('messageSent');
+            measurement.should.equal('messageSent');
             points.length.should.equal(1);
             should.exist(points[0].fields);
             should.exist(points[0].tags);
@@ -160,7 +167,7 @@ describe('Message to Stats API server service Integration Test', function () {
       });
     });
 
-    context('when influxdb is disabled', function () {
+    context('when influxdb is disabled', function() {
       // @TODO possibly test with sinon
       // we don't see any way to test this
       // it('saving data to statistics should be silently ignored');

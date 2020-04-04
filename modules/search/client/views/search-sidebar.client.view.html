@@ -1,22 +1,33 @@
 <!-- Location search inside sidebar -->
 <!-- There's another one inside `search.client.view.html` template for small screens -->
-<div class="search-sidebar-section hidden-xs" ng-include="'/modules/search/views/search-input.client.view.html'"></div>
+<div
+  class="search-sidebar-section hidden-xs"
+  ng-include="~modules/search/client/views/search-input.client.view.html"
+></div>
 <!-- /Location search -->
 
 <!-- Tabbed sidebar -->
 <!-- Tabs are hidden on small screens -->
 <uib-tabset active="search.sidebarTab" justified="true">
   <uib-tab index="'filters'">
-    <uib-tab-heading aria-label="Search filters {{ search.sidebarTab === 'filters' ? ' (active now)' : '' }}">
+    <uib-tab-heading
+      aria-label="Search filters {{ search.sidebarTab === 'filters' ? ' (active now)' : '' }}"
+    >
       <i class="icon-sliders"></i>
       Filters
     </uib-tab-heading>
-    <div ng-include="'/modules/search/views/search-sidebar-filters.client.view.html'"></div>
+    <div
+      ng-include="~modules/search/client/views/search-sidebar-filters.client.view.html"
+    ></div>
   </uib-tab>
   <uib-tab index="'results'">
-    <uib-tab-heading aria-label="Selected search results {{ search.sidebarTab === 'results' ? ' (active now)' : '' }}">
+    <uib-tab-heading
+      aria-label="Selected search results {{ search.sidebarTab === 'results' ? ' (active now)' : '' }}"
+    >
       Results
     </uib-tab-heading>
-    <div ng-include="'/modules/search/views/search-sidebar-results.client.view.html'"></div>
+    <div
+      ng-include="~modules/search/client/views/search-sidebar-results.client.view.html"
+    ></div>
   </uib-tab>
 </uib-tabset>

@@ -1,146 +1,95 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+// External dependencies
+import { useTranslation } from 'react-i18next';
+import React, { useState } from 'react';
 
-import UsersList from './UsersList';
-
+// Internal dependencies
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import UsersResults from './UsersResults';
 
 const MINIMUM_QUERY_LENGTH = 3;
 
-function UsersResults({ users }) {
-  const userList = (
-    <div className="contacts-list">
+export default function SearchUsers() {
+  const { t } = useTranslation('search');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [users, setUsers] = useState([]);
 
-      <div className="row">
-        <div className="col-xs-12">
-          <h4 className="text-muted">
-
-            {users.length === 1 &&
-            <span>
-              One member found.
-            </span>
-            }
-
-            {users.length > 1 &&
-            <span>
-              {users.length} members found.
-            </span>
-            }
-
-            <UsersList users={users}/>
-
-          </h4>
-        </div>
-      </div>
-    </div>
-  );
-
-  const noUsers = (
-    <div className="row content-empty">
-      <i className="icon-3x icon-users"></i>
-      <h4>No members found by this name.</h4>
-    </div>
-  );
-
-  return users && users.length > 0 ? userList : noUsers;
-}
-
-UsersResults.propTypes = {
-  users: PropTypes.array,
-};
-
-class SearchUsers extends React.Component {
-
-  constructor(props) {
-    super(props);
-    this.handleChange = this.handleChange.bind(this);
-    this.actionSearch = this.actionSearch.bind(this);
-    this.clearSearchQuery = this.clearSearchQuery.bind(this);
-
-    this.state = {
-      searchQuery: '',
-      isSearching: false,
-    };
+  async function fetchUsers() {
+    setIsSearching(true);
+    setHasSearched(true);
+    setUsers([]);
+    try {
+      const { data: users } = await searchUsers(searchQuery);
+      setUsers(users || []);
+      setIsSearching(false);
+    } finally {
+      setIsSearching(false);
+    }
   }
 
-  handleChange(event) {
-    this.setState({ searchQuery: event.target.value });
-  }
-
-  actionSearch(event) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    this.setState({ isSearching: true }, () => {
-      searchUsers(this.state.searchQuery).then(({ data }) => {
-        this.setState({ users: data, isSearching: false });
-      }).catch(() => {
-        this.setState({ isSearching: false });
-      });
-    });
-  }
-
-  clearSearchQuery() {
-    this.setState({ searchQuery: '' });
-  }
-
-  render() {
-    const loading = (
-      <div className="content-wait"
-        role="alertdialog"
-        aria-busy="true"
-        aria-live="assertive">
-        <small>Wait a moment...</small>
-      </div>
-    );
-
-    const searchForm = (
-      <form className="form-group search-form-group" id="search-users-form"
-        onSubmit={this.actionSearch}>
-        <div className="input-group">
-          <label htmlFor="search-query" className="sr-only">Search members</label>
-          <input type="text"
-            id="search-query"
-            className="form-control input-lg"
-            placeholder="Type name, username..."
-            tabIndex="0"
-            onChange={ this.handleChange }
-            value={this.state.searchQuery} />
-          <span className="input-group-btn">
-            <span>
-              <button type="button"
-                disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
-                onClick={this.clearSearchQuery}
-                className="btn btn-lg btn-default"
-                aria-label="Clear members search">
-                <i className="icon-close"></i>
-              </button>
-            </span>
-            <span>
-              <button type="submit"
-                disabled={this.state.searchQuery.length < MINIMUM_QUERY_LENGTH}
-                className="btn btn-lg btn-default"
-                aria-label="Search members">
-                <i className="icon-search"></i>
-              </button>
-            </span>
+  const searchForm = (
+    <form
+      className="form-group search-form-group"
+      id="search-users-form"
+      onSubmit={event => {
+        event.preventDefault();
+        fetchUsers();
+      }}
+    >
+      <div className="input-group">
+        <input
+          aria-label={t('Search members')}
+          className="form-control input-lg"
+          onChange={({ target: { value } }) => {
+            setHasSearched(false);
+            setSearchQuery(value);
+            setUsers([]);
+          }}
+          placeholder={t('Type name, username…')}
+          tabIndex="0"
+          type="text"
+          value={searchQuery}
+        />
+        <span className="input-group-btn">
+          <span>
+            <button
+              aria-label={t('Clear members search')}
+              className="btn btn-lg btn-default"
+              disabled={searchQuery.length < MINIMUM_QUERY_LENGTH}
+              onClick={() => {
+                setSearchQuery('');
+                setHasSearched(false);
+                setUsers([]);
+              }}
+              type="button"
+            >
+              <i className="icon-close"></i>
+            </button>
           </span>
-        </div>
-      </form>);
+          <span>
+            <button
+              aria-label={t('Search members')}
+              className="btn btn-lg btn-default"
+              disabled={searchQuery.length < MINIMUM_QUERY_LENGTH}
+              type="submit"
+            >
+              <i className="icon-search"></i>
+            </button>
+          </span>
+        </span>
+      </div>
+    </form>
+  );
 
-    return (
-      <section className="container container-spacer">
-        {searchForm}
-        {this.state.isSearching && loading}
-        {!this.state.isSearching && this.state.users &&
-          <UsersResults users={this.state.users} />
-        }
-      </section>
-    );
-  }
+  return (
+    <section className="container container-spacer">
+      {searchForm}
+      {isSearching && <LoadingIndicator />}
+      {!isSearching && hasSearched && <UsersResults users={users} />}
+    </section>
+  );
 }
 
 SearchUsers.propTypes = {};
-
-
-export default SearchUsers;
