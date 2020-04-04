@@ -231,7 +231,7 @@
     "ngreact": "0.5.2",
     "nodemailer-stub-transport": "1.1.0",
     "nodemon": "2.0.2",
-    "npm-merge-driver": "2.3.5",
+    "npm-merge-driver": "2.3.6",
     "parse-link-header": "1.0.1",
     "postcss-loader": "3.0.0",
     "prettier": "1.19.1",
