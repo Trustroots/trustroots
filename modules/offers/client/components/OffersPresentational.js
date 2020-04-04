@@ -33,8 +33,8 @@ export class OffersPresentational extends Component {
     const { offer } = this.props;
     return (
       offer &&
-      offer.hosting &&
-      (offer.hosting === 'yes' || offer.hosting === 'maybe')
+      offer.status &&
+      (offer.status === 'yes' || offer.status === 'maybe')
     );
   }
 
@@ -220,7 +220,13 @@ export class OffersPresentational extends Component {
     const { offer, t } = this.props;
     return (
       <>
-        {this.isHosting() && <OfferLocation offer={offer}></OfferLocation>}
+        {this.isHosting() && (
+          <OfferLocation
+            location={offer.location}
+            offerType={offer.type}
+            offerStatus={offer.status}
+          />
+        )}
         {this.isHosting() && (
           <div className="panel-footer text-center">
             <a
