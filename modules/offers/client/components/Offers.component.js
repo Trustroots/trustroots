@@ -14,7 +14,9 @@ export class Offers extends Component {
       isLoading: true,
       isOwnOffer: false,
       isUserPublic: false,
-      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp,
+      isMobile:
+        window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 ||
+        window.isNativeMobileApp,
     };
   }
 
@@ -28,8 +30,8 @@ export class Offers extends Component {
     if (profile._id) {
       that.setState(() => ({
         profile,
-        isOwnOffer: (authUser && authUser._id && authUser._id === profile._id),
-        isUserPublic: (authUser && authUser.public),
+        isOwnOffer: authUser && authUser._id && authUser._id === profile._id,
+        isUserPublic: authUser && authUser.public,
       }));
 
       const offers = await getOffers(profile._id);

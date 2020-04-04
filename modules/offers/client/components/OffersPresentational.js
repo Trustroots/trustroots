@@ -1,5 +1,11 @@
 // External dependencies
-import { Button, DropdownButton, MenuItem, ButtonGroup, Tooltip } from 'react-bootstrap';
+import {
+  Button,
+  DropdownButton,
+  MenuItem,
+  ButtonGroup,
+  Tooltip,
+} from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -9,7 +15,6 @@ import '@/config/client/i18n';
 import OfferLocation from './OfferLocation.component';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
-
 export class OffersPresentational extends Component {
   constructor(props) {
     super(props);
@@ -18,13 +23,19 @@ export class OffersPresentational extends Component {
     this.renderHostingYesMaybe = this.renderHostingYesMaybe.bind(this);
     this.state = {
       isLoading: true,
-      isMobile: window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 || window.isNativeMobileApp,
+      isMobile:
+        window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 ||
+        window.isNativeMobileApp,
     };
   }
 
   isHosting() {
     const { offer } = this.props;
-    return offer && offer.hosting && (offer.hosting === 'yes' || offer.hosting === 'maybe');
+    return (
+      offer &&
+      offer.hosting &&
+      (offer.hosting === 'yes' || offer.hosting === 'maybe')
+    );
   }
 
   hostingStatusLabel(status) {
@@ -49,7 +60,9 @@ export class OffersPresentational extends Component {
       </Tooltip>
     );
 
-    {/* Hosting status dropdown logged in user */}
+    {
+      /* Hosting status dropdown logged in user */
+    }
     return (
       <ButtonGroup className="pull-right dropdown-menu-offers">
         <DropdownButton
@@ -61,31 +74,50 @@ export class OffersPresentational extends Component {
           id={'dropdown-offers-button'}
           overlay={tooltip}
         >
-          <MenuItem href='/offer/host?status=yes' eventKey="1" className="cursor-pointer offer-hosting-yes">
+          <MenuItem
+            href="/offer/host?status=yes"
+            eventKey="1"
+            className="cursor-pointer offer-hosting-yes"
+          >
             {t('I can host')}
           </MenuItem>
-          <MenuItem href='/offer/host?status=maybe' eventKey="2" className="cursor-pointer offer-hosting-maybe">
+          <MenuItem
+            href="/offer/host?status=maybe"
+            eventKey="2"
+            className="cursor-pointer offer-hosting-maybe"
+          >
             {t('I might be able to host')}
           </MenuItem>
-          <MenuItem href='/offer/host?status=no' eventKey="3" className="cursor-pointer offer-hosting-no">
+          <MenuItem
+            href="/offer/host?status=no"
+            eventKey="3"
+            className="cursor-pointer offer-hosting-no"
+          >
             {t(`I can't host currently`)} {/* eslint-disable-line quotes */}
           </MenuItem>
         </DropdownButton>
-      </ButtonGroup>);
+      </ButtonGroup>
+    );
   }
 
   renderButtonOther() {
     const { offer, t } = this.props;
-    {/* Hosting status button other user */}
+    {
+      /* Hosting status button other user */
+    }
     return (
       <Button
-        aria-label={t('Hosting status: {{statusLabel}}', { statusLabel: this.hostingStatusLabel(status) })}
+        aria-label={t('Hosting status: {{statusLabel}}', {
+          statusLabel: this.hostingStatusLabel(status),
+        })}
         bsSize="small"
         bsStyle="success"
         className={`btn-offer-hosting btn-offer-hosting-${offer.status} pull-right`}
         id="offers-button"
       >
-        <a href={`/messages/${this.props.username}`}>{this.hostingStatusLabel(offer.status)}</a>
+        <a href={`/messages/${this.props.username}`}>
+          {this.hostingStatusLabel(offer.status)}
+        </a>
       </Button>
     );
   }
@@ -95,22 +127,21 @@ export class OffersPresentational extends Component {
     return (
       <>
         {/* Edit button */}
-        {isOwnOffer &&
+        {isOwnOffer && (
           <a
             aria-label={t('Modify hosting offer')}
             className="btn btn-inverse-primary btn-round btn-raised pull-right"
-            href='/offer/host'
+            href="/offer/host"
           >
             <span className="icon-edit"></span>
           </a>
-        }
+        )}
         <ReadMorePanel content={offer.description} id="offer-yes-description" />
         {/* Number of guests */}
         <p className="offer-restrictions">
-          { offer.maxGuests > 0
+          {offer.maxGuests > 0
             ? t('At most {{count}} guests.', { count: offer.maxGuests })
-            : t('No guests.')
-          }
+            : t('No guests.')}
         </p>
       </>
     );
@@ -125,29 +156,38 @@ export class OffersPresentational extends Component {
           <a
             aria-label={t('Modify hosting offer')}
             className="btn btn-inverse-primary btn-round btn-raised pull-right"
-            href='/offer/host'
+            href="/offer/host"
           >
             <span className="icon-edit"></span>
           </a>
         )}
 
         {/* User has written explanation */}
-        {offer.noOfferDescription &&
-          <ReadMorePanel content={offer.noOfferDescription} id="offer-no-description" />
-        }
+        {offer.noOfferDescription && (
+          <ReadMorePanel
+            content={offer.noOfferDescription}
+            id="offer-no-description"
+          />
+        )}
         {/* Default "sorry nope" */}
         {!offer.noOfferDescription && (
           <div className="content-empty text-muted">
             <div className="icon-sofa icon-3x text-muted"></div>
 
             {/* Show for others */}
-            {!isOwnOffer && <h4>{t('Sorry, user is not hosting currently.')}</h4> }
+            {!isOwnOffer && (
+              <h4>{t('Sorry, user is not hosting currently.')}</h4>
+            )}
 
             {/* Show for the user */}
             {isOwnOffer && (
               <p className="lead">
                 <br />
-                <em>{t('Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.')}</em>
+                <em>
+                  {t(
+                    'Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.',
+                  )}
+                </em>
                 <br />
               </p>
             )}
@@ -159,7 +199,10 @@ export class OffersPresentational extends Component {
           <div className="text-center">
             <br />
             <hr className="hr-gray hr-tight hr-xs" />
-            <a href={'/offer/host?status=yes'} className="btn btn-inverse-primary">
+            <a
+              href={'/offer/host?status=yes'}
+              className="btn btn-inverse-primary"
+            >
               {t('Start hosting travellers')}
             </a>
             &nbsp;
@@ -177,7 +220,7 @@ export class OffersPresentational extends Component {
     const { offer, t } = this.props;
     return (
       <>
-        {this.isHosting() && <OfferLocation offer={offer} ></OfferLocation> }
+        {this.isHosting() && <OfferLocation offer={offer}></OfferLocation>}
         {this.isHosting() && (
           <div className="panel-footer text-center">
             <a
@@ -229,8 +272,9 @@ export class OffersPresentational extends Component {
   }
 
   render() {
-    return (this.props.isOwnOffer || this.props.isUserPublic) &&
-        this.renderOffer();
+    return (
+      (this.props.isOwnOffer || this.props.isUserPublic) && this.renderOffer()
+    );
   }
 }
 
