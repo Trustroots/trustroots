@@ -1,4 +1,6 @@
 const semver = require('semver');
+const path = require('path');
+const defaultAssets = require(path.resolve('config/assets/default'));
 
 // Converts semver range `~16.6.0` to strict version `16.6.0`
 const reactVersion = semver.coerce(require('./package.json').dependencies.react)
@@ -231,11 +233,7 @@ module.exports = {
      * Overrides for server side test files
      */
     {
-      files: [
-        'modules/*/tests/server/*.js',
-        'modules/*/tests/server/**/*.js',
-        'testutils/server/*.js',
-      ],
+      files: [...defaultAssets.server.tests, 'testutils/server/*.js'],
       env: {
         node: true,
         mocha: true,

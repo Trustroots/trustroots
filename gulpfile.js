@@ -104,7 +104,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
   gulp
     .watch(
       [
-        'modules/*/tests/server/**/*.js',
+        ...defaultAssets.server.tests,
         ...defaultAssets.server.allJS,
         defaultAssets.server.migrations,
       ],
@@ -113,7 +113,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
     .on('change', function(changedFile) {
       changedTestFiles = [];
       // determine if the changed (watched) file is a server test
-      if (minimatch(changedFile, 'modules/*/tests/server/**/*.js')) {
+      if (minimatch(changedFile, ...defaultAssets.server.tests)) {
         changedTestFiles.push(changedFile);
       }
     });
@@ -144,9 +144,7 @@ function mocha(done) {
   const mongooseService = require('./config/lib/mongoose');
   const agenda = require('./config/lib/agenda');
   const testSuites =
-    changedTestFiles.length > 0
-      ? changedTestFiles
-      : 'modules/*/tests/server/**/*.js';
+    changedTestFiles.length > 0 ? changedTestFiles : defaultAssets.server.tests;
   let error;
 
   // Connect mongoose
