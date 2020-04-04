@@ -183,6 +183,7 @@ export default function Thread({ user, profileMinimumLength }) {
   async function sendMessage(content) {
     const message = await api.messages.sendMessage(otherUser._id, content);
     setMessages(messages => [...messages, message]);
+    focus();
   }
 
   function focus() {
