@@ -107,6 +107,8 @@ export class OffersPresentational extends Component {
     }
     return (
       <Button
+        tag="a"
+        href={`/messages/${this.props.username}`}
         aria-label={t('Hosting status: {{statusLabel}}', {
           statusLabel: this.hostingStatusLabel(status),
         })}
@@ -115,9 +117,7 @@ export class OffersPresentational extends Component {
         className={`btn-offer-hosting btn-offer-hosting-${offer.status} pull-right`}
         id="offers-button"
       >
-        <a href={`/messages/${this.props.username}`}>
-          {this.hostingStatusLabel(offer.status)}
-        </a>
+        {this.hostingStatusLabel(offer.status)}
       </Button>
     );
   }
