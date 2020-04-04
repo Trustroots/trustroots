@@ -1,4 +1,5 @@
 <div class="row">
+  <!-- About me -->
   <div class="col-md-6">
     <about-me
       isSelf="app.user._id === profileCtrl.profile._id"
@@ -9,11 +10,9 @@
 
   <div class="col-md-6">
     <!-- Offers -->
+
     <div class="hidden-xs">
-      <div
-        tr-offer-host-view="profileCtrl.profile"
-        tr-offer-host-view-auth-user="::app.user"
-      ></div>
+      <offers profile="profileCtrl.profile" authUser="app.user"></offers>
     </div>
 
     <!-- Contacts in common -->
