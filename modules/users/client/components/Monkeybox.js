@@ -53,7 +53,7 @@ export default function Monkeybox({ user, otherUser }) {
       <div className="panel-body">
         <Avatar user={user} size={64} />
         <h3>
-          <a>{user.displayName}</a>
+          <a href={`/profile/${user.username}`}>{user.displayName}</a>
         </h3>
         <TribesInCommon user={user} otherUser={otherUser} />
         {user.languages.length > 0 && (
