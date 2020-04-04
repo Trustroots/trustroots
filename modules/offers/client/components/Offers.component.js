@@ -21,28 +21,23 @@ export class Offers extends Component {
   }
 
   async componentDidMount() {
-    const that = this;
     const { profile, authUser } = this.props;
     if (!profile) {
       this.setState(() => ({ isLoading: false }));
       return;
     }
     if (profile._id) {
-      that.setState(() => ({
+      this.setState(() => ({
         profile,
         isOwnOffer: authUser && authUser._id && authUser._id === profile._id,
         isUserPublic: authUser && authUser.public,
       }));
 
-      const offers = await getOffers(profile._id);
-      if (!offers || !offers.length) {
-        this.setState(() => ({ isLoading: false }));
-      } else {
-        that.setState(() => ({
-          offer: offers[0],
-          isLoading: false,
-        }));
-      }
+      const offers = await getOffers(profile._id, 'host');
+      this.setState(() => ({
+        isLoading: false,
+        offer: offers?.[0] ?? { status: 'no' },
+      }));
     }
   }
 
