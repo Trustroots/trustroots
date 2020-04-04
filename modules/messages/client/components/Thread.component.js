@@ -134,8 +134,8 @@ export default function Thread({ user, profileMinimumLength }) {
   const userHasReplied = Boolean(
     messages.find(message => message.userFrom._id === user._id),
   );
-  const showQuickReply = messages.length > 0 && !userHasReplied;
-  const showReply = !hasEmptyProfile;
+  const showReply = messages.length > 0 || !hasEmptyProfile;
+  const showQuickReply = showReply && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
