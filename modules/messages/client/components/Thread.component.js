@@ -261,7 +261,7 @@ export default function Thread({ user, profileMinimumLength }) {
         </div>
         {otherUser && !isExtraSmall && (
           <div className="col-sm-3 text-center">
-            <Monkeybox user={user} otherUser={otherUser} />
+            <Monkeybox user={otherUser} otherUser={user} />
             <ReportMemberLink username={otherUser.username} />
           </div>
         )}
