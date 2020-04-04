@@ -9,7 +9,22 @@ export function generateThreads(count, { userFrom, userTo } = {}) {
   return range(count).map(() => generateThread({ userFrom, userTo }));
 }
 
-function generateThread({
+export function generateMessages(count, { userFrom, userTo }) {
+  return range(count).map(n =>
+    generateMessage(n % 2 === 0 ? userFrom : userTo),
+  );
+}
+
+export function generateMessage(userFrom) {
+  return {
+    _id: generateId(),
+    userFrom,
+    created: new Date().toISOString(),
+    content: faker.lorem.text(),
+  };
+}
+
+export function generateThread({
   userFrom = generateClientUser(),
   userTo = generateClientUser(),
 } = {}) {

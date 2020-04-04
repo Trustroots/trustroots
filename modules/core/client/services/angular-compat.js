@@ -14,3 +14,11 @@ export function $broadcast(...args) {
 export function eventTrack(...args) {
   return get('$analytics').eventTrack(...args);
 }
+
+export function getRouteParams() {
+  return get('$stateParams');
+}
+
+export function go(...args) {
+  return get('$state').go(...args);
+}
