@@ -27,10 +27,17 @@ describe('Navigation through 3 tabs', () => {
       ' and ',
     )} button`, () => {
       const { getAllByRole } = render(
-        <Navigation tab={tab} tabs={tabs} tabDone={0} {...handlers} />,
+        <Navigation
+          tab={tab}
+          tabs={tabs}
+          errors={[[], [], []]}
+          {...handlers}
+        />,
       );
       const foundButtons = getAllByRole('button');
-      expect(foundButtons).toHaveLength(buttons.length);
+      // we have navigation for large and for small screen
+      // so we have all buttons twice
+      expect(foundButtons).toHaveLength(buttons.length * 2);
       buttons.forEach((button, index) => {
         expect(foundButtons[index]).toHaveTextContent(button);
       });
@@ -44,7 +51,7 @@ describe('Navigation through 3 tabs', () => {
     {
       tab: 1,
       tabs: 3,
-      tabDone: 0,
+      errors: [[], ['error'], []],
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Next', disabled: true },
@@ -53,7 +60,7 @@ describe('Navigation through 3 tabs', () => {
     {
       tab: 1,
       tabs: 3,
-      tabDone: 1,
+      errors: [[], [], ['error']],
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Next', disabled: false },
@@ -62,7 +69,7 @@ describe('Navigation through 3 tabs', () => {
     {
       tab: 2,
       tabs: 3,
-      tabDone: 1,
+      errors: [[], [], ['error']],
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Finish', disabled: true },
@@ -71,26 +78,28 @@ describe('Navigation through 3 tabs', () => {
     {
       tab: 2,
       tabs: 3,
-      tabDone: 2,
+      errors: [[], [], []],
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Finish', disabled: false },
       ],
     },
-  ].forEach(({ tab, tabs, tabDone, buttons }) => {
+  ].forEach(({ tab, tabs, errors, buttons }) => {
     const expectations = buttons.map(
       ({ name, disabled }) =>
         `the ${name} button should be ${disabled ? 'disabled' : 'enabled'}`,
     );
 
-    it(`when tab=${tab}, tabs=${tabs} and tabDone=${tabDone}, ${expectations.join(
-      ' and ',
-    )}`, () => {
+    it(`when tab=${tab}, tabs=${tabs} and errors=${JSON.stringify(
+      errors,
+    )}, ${expectations.join(' and ')}`, () => {
       const { getAllByRole } = render(
-        <Navigation tab={tab} tabDone={tabDone} tabs={tabs} {...handlers} />,
+        <Navigation tab={tab} errors={errors} tabs={tabs} {...handlers} />,
       );
       const foundButtons = getAllByRole('button');
-      expect(foundButtons).toHaveLength(buttons.length);
+      // we have navigation for large and for small screen
+      // so we have all buttons twice
+      expect(foundButtons).toHaveLength(buttons.length * 2);
       buttons.forEach(({ name, disabled }, index) => {
         const testedButton = foundButtons[index];
         expect(testedButton).toHaveTextContent(name);
@@ -109,35 +118,35 @@ describe('Navigation through 3 tabs', () => {
   [
     {
       tab: 1,
-      tabDone: 0,
       tabs: 3,
+      errors: [[], ['error'], []],
       button: 'Back',
       buttonIndex: 0,
       testTrigger: 'onBack',
     },
     {
       tab: 1,
-      tabDone: 1,
       tabs: 3,
+      errors: [[], [], ['error']],
       button: 'Next',
       buttonIndex: 1,
       testTrigger: 'onNext',
     },
     {
       tab: 2,
-      tabDone: 2,
       tabs: 3,
+      errors: [[], [], []],
       button: 'Finish',
       buttonIndex: 1,
       testTrigger: 'onSubmit',
     },
-  ].forEach(({ tab, tabs, tabDone, button, buttonIndex, testTrigger }) => {
+  ].forEach(({ tab, tabs, errors, button, buttonIndex, testTrigger }) => {
     it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
       const handler = jest.fn();
       const { getAllByRole } = render(
         <Navigation
           tab={tab}
-          tabDone={tabDone}
+          errors={errors}
           tabs={tabs}
           {...handlers}
           {...{ [testTrigger]: handler }}

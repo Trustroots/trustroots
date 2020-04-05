@@ -81,23 +81,27 @@ describe('<CreateReference />', () => {
     api.references.read.mockResolvedValueOnce([]);
     api.references.create.mockResolvedValueOnce({ public: false });
 
-    const { getByText, getByLabelText, queryByLabelText, queryByRole } = render(
-      <CreateReference userFrom={userFrom} userTo={userTo} />,
-    );
+    const {
+      getByText,
+      getAllByText,
+      getByLabelText,
+      queryByLabelText,
+      queryByRole,
+    } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
     expect(queryByLabelText('How do you know them?')).toBeInTheDocument();
     fireEvent.click(getByLabelText('They hosted me'));
 
-    fireEvent.click(getByText('Next'));
+    fireEvent.click(getAllByText('Next')[0]);
 
     expect(
       queryByLabelText('Would you recommend others to stay with them?'),
     ).toBeInTheDocument();
     fireEvent.click(getByText('Yes'));
 
-    fireEvent.click(getByText('Finish'));
+    fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
       met: false,
@@ -117,16 +121,20 @@ describe('<CreateReference />', () => {
     api.references.read.mockResolvedValueOnce([]);
     api.references.create.mockResolvedValueOnce({ public: false });
 
-    const { getByText, getByLabelText, queryByLabelText, queryByRole } = render(
-      <CreateReference userFrom={userFrom} userTo={userTo} />,
-    );
+    const {
+      getByText,
+      getAllByText,
+      getByLabelText,
+      queryByLabelText,
+      queryByRole,
+    } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
     expect(queryByLabelText('How do you know them?')).toBeInTheDocument();
     fireEvent.click(getByLabelText('They hosted me'));
 
-    fireEvent.click(getByText('Next'));
+    fireEvent.click(getAllByText('Next')[0]);
 
     expect(
       queryByLabelText('Would you recommend others to stay with them?'),
@@ -138,7 +146,7 @@ describe('<CreateReference />', () => {
       target: { value: 'they were mean to me' },
     });
 
-    fireEvent.click(getByText('Finish'));
+    fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
       met: false,
