@@ -19,7 +19,6 @@ function AppController(
   SettingsFactory,
   Languages,
   locker,
-  PollMessagesCount,
   push,
   trNativeAppBridge,
 ) {
@@ -33,28 +32,12 @@ function AppController(
   vm.pageTitle = $window.title;
   vm.goHome = goHome;
   vm.signout = signout;
-  vm.onWindowBlur = onWindowBlur;
-  vm.onWindowFocus = onWindowFocus;
   vm.photoCredits = {};
   vm.photoCreditsCount = 0;
   vm.isFooterHidden = false;
   vm.isHeaderHidden = false;
   vm.isAboutPage = false;
   vm.isNativeMobileApp = $window.isNativeMobileApp;
-
-  /**
-   * Handle the window blur event
-   */
-  function onWindowBlur() {
-    PollMessagesCount.setFrequency('low');
-  }
-
-  /**
-   * handle window focus event
-   */
-  function onWindowFocus() {
-    PollMessagesCount.setFrequency('high');
-  }
 
   // Default options for Medium-Editor directive used site wide
   // @link https://github.com/yabwe/medium-editor/blob/master/OPTIONS.md

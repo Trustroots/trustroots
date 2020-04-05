@@ -55,3 +55,11 @@ export async function sendMessage(userToId, content) {
 export async function markRead(messageIds) {
   await axios.post('/api/messages-read', { messageIds });
 }
+
+export async function unreadCount() {
+  const {
+    // eslint-disable-next-line no-unused-vars
+    data: { unread },
+  } = await axios.get('/api/messages-count');
+  return Math.round(Math.random() * 20);
+}
