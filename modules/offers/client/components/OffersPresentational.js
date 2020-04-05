@@ -1,11 +1,5 @@
 // External dependencies
-import {
-  Button,
-  DropdownButton,
-  MenuItem,
-  ButtonGroup,
-  Tooltip,
-} from 'react-bootstrap';
+import { Button, DropdownButton, MenuItem, ButtonGroup } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -14,6 +8,9 @@ import React, { Component } from 'react';
 import '@/config/client/i18n';
 import OfferLocation from './OfferLocation.component';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
+import withTooltip from '@/modules/core/client/components/withTooltip';
+
+const DropdownButtonWithTooltip = withTooltip(DropdownButton);
 
 export class OffersPresentational extends Component {
   constructor(props) {
@@ -54,25 +51,22 @@ export class OffersPresentational extends Component {
   renderButtonOwn() {
     const { t } = this.props;
     const { offer } = this.props;
-    const tooltip = (
-      <Tooltip placement="left" className="in" id="tooltip-left">
-        {t('Change')}
-      </Tooltip>
-    );
 
     {
       /* Hosting status dropdown logged in user */
     }
     return (
       <ButtonGroup className="pull-right dropdown-menu-offers">
-        <DropdownButton
+        <DropdownButtonWithTooltip
           pullRight
           className={`btn-offer-hosting, btn-offer-hosting-${offer.status}`}
           bsSize="small"
           bsStyle="success"
           title={this.hostingStatusLabel(offer.status)}
           id={'dropdown-offers-button'}
-          overlay={tooltip}
+          tooltip={t('Change')}
+          placement="left"
+          tooltipProps={{ className: 'in', id: 'tooltip-left' }}
         >
           <MenuItem
             href="/offer/host?status=yes"
@@ -95,7 +89,7 @@ export class OffersPresentational extends Component {
           >
             {t(`I can't host currently`)} {/* eslint-disable-line quotes */}
           </MenuItem>
-        </DropdownButton>
+        </DropdownButtonWithTooltip>
       </ButtonGroup>
     );
   }
