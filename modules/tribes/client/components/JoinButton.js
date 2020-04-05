@@ -2,9 +2,30 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import LeaveTribeModal from './LeaveTribeModal';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import withTooltip from '@/modules/core/client/components/withTooltip';
 
 import * as api from '../api/tribes.api';
+
+const JoinButtonSimple = ({ isMember, children, ...props }) => (
+  <button
+    type="button"
+    className={`${
+      isMember ? 'btn-active' : ''
+    } btn btn-sm btn-default tribe-join`}
+    {...props}
+  >
+    <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {children}
+  </button>
+);
+JoinButtonSimple.propTypes = {
+  isMember: PropTypes.bool.isRequired,
+  children: PropTypes.oneOfType([
+    PropTypes.arrayOf(PropTypes.node),
+    PropTypes.node,
+  ]).isRequired,
+};
+
+const JoinButtonWithTooltip = withTooltip(JoinButtonSimple);
 
 function JoinButtonPresentational({
   isMember,
@@ -33,35 +54,27 @@ function JoinButtonPresentational({
     );
   }
 
-  // a button for joining and leaving a tribe
-  const leaveTooltip = (
-    <Tooltip id={`tribe-${tribe._id}`} placement="bottom">
-      {t('Leave Tribe')}
-    </Tooltip>
-  );
-  const btn = (
-    <button
-      type="button"
-      className={`${
-        isMember ? 'btn-active' : ''
-      } btn btn-sm btn-default tribe-join`}
-      onClick={onToggle}
+  const tooltip = isMember
+    ? {
+        tooltip: t('Leave Tribe'),
+        placement: 'bottom',
+        tooltipProps: { id: `tribe-${tribe._id}` },
+      }
+    : {};
+
+  const Button = isMember ? JoinButtonWithTooltip : JoinButtonSimple;
+
+  return (
+    <Button
+      isMember={isMember}
       disabled={isLoading}
       aria-label={ariaLabel}
+      onClick={onToggle}
+      {...tooltip}
     >
-      <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
-    </button>
+      {buttonLabel}
+    </Button>
   );
-
-  if (isMember) {
-    return (
-      <OverlayTrigger placement="bottom" overlay={leaveTooltip}>
-        {btn}
-      </OverlayTrigger>
-    );
-  } else {
-    return btn;
-  }
 }
 
 JoinButtonPresentational.propTypes = {
