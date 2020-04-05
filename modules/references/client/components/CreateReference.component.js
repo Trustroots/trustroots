@@ -13,6 +13,7 @@ import {
   DuplicateInfo,
   SubmittedInfo,
 } from './create-reference/Info';
+import { validate } from '@/modules/core/client/utils/validation';
 
 const api = { references };
 
@@ -98,7 +99,23 @@ export default function CreateReference({ userFrom, userTo }) {
     />,
   ];
 
-  const tabDone = recommend ? 1 : hostedMe || hostedThem || met ? 0 : -1;
+  const ruleDict = {
+    interaction: [
+      [
+        ({ hostedMe, hostedThem, met }) => hostedMe || hostedThem || met,
+        t('Choose your interaction'),
+      ],
+    ],
+    recommend: [[value => !!value, t('Choose your recommendation')]],
+  };
+
+  const valueDict = {
+    interaction: { hostedMe, hostedThem, met },
+    recommend,
+  };
+
+  const errorDict = validate(ruleDict, valueDict);
+  const navigationErrors = [errorDict.interaction, errorDict.recommend];
 
   if (userFrom._id === userTo._id) return <ReferenceToSelfInfo />;
 
@@ -133,11 +150,11 @@ export default function CreateReference({ userFrom, userTo }) {
           {tabs[1]}
         </Tab>
       </Tabs>
-      {/* <!-- Navigation for big screens -->*/}
+      {/* <!-- Navigation -->*/}
       <Navigation
         tab={tab}
-        tabDone={tabDone}
         tabs={tabs.length}
+        errors={navigationErrors}
         disabled={isSubmitting}
         onBack={() => setTab(tab => tab - 1)}
         onNext={() => setTab(tab => tab + 1)}

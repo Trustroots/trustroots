@@ -3,6 +3,8 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 
+import withTooltip from './withTooltip';
+
 const BackButton = ({ small, ...props }) => {
   const { t } = useTranslation('core');
   return (
@@ -38,9 +40,6 @@ const NextButton = ({ small, ...props }) => {
         'btn-primary': true,
       })}
       aria-label={t('Next section')}
-      uib-tooltip="Write longer description first"
-      tooltip-enable="offerHostEdit.isDescriptionTooShort && offerHostEdit.offerTab === 1"
-      ng-disabled="offerHostEdit.isDescriptionTooShort && offerHostEdit.offerTab === 1"
       {...props}
     >
       {t('Next')}
@@ -71,6 +70,9 @@ const SubmitButton = ({ small, ...props }) => {
 };
 SubmitButton.propTypes = { small: PropTypes.bool };
 
+const NextButtonWithTooltip = withTooltip(NextButton);
+const SubmitButtonWithTooltip = withTooltip(SubmitButton);
+
 /**
  * Navigation is a react component.
  * It can contain three different buttons: Back, Next, Submit.
@@ -80,11 +82,16 @@ export default function Navigation({
   disabled,
   tab,
   tabs,
-  tabDone,
+  errors,
   onBack,
   onNext,
   onSubmit,
 }) {
+  const errorTab = errors.findIndex(_errors => _errors.length > 0);
+  const tabDone = errorTab === -1 ? errors.length : errorTab - 1;
+  // get the lowest error valid for the current tab
+  const error = errors.slice(0, tab + 1).flat()[0];
+
   const backButtonProps = {
     onClick: onBack,
   };
@@ -92,12 +99,17 @@ export default function Navigation({
   const nextButtonProps = {
     onClick: onNext,
     disabled: tabDone < tab,
+    tooltip: error,
   };
 
   const submitButtonProps = {
     onClick: onSubmit,
     disabled: tabDone < tabs - 1 || disabled,
+    tooltip: error,
   };
+
+  const EnhancedNextButton = error ? NextButtonWithTooltip : NextButton;
+  const EnhancedSubmitButton = error ? SubmitButtonWithTooltip : SubmitButton;
 
   const showBackButton = tab > 0; // not the first tab
   const showNextButton = tab < tabs - 1; // not the last tab
@@ -107,8 +119,8 @@ export default function Navigation({
     <>
       <div className="text-center hidden-xs">
         {showBackButton && <BackButton {...backButtonProps} />}
-        {showNextButton && <NextButton {...nextButtonProps} />}
-        {showSubmitButton && <SubmitButton {...submitButtonProps} />}
+        {showNextButton && <EnhancedNextButton {...nextButtonProps} />}
+        {showSubmitButton && <EnhancedSubmitButton {...submitButtonProps} />}
       </div>
       <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
         <div className="container">
@@ -126,12 +138,12 @@ export default function Navigation({
             )}
             {showNextButton && (
               <li className="pull-right">
-                <NextButton small {...nextButtonProps} />
+                <EnhancedNextButton small {...nextButtonProps} />
               </li>
             )}
             {showSubmitButton && (
               <li className="pull-right">
-                <SubmitButton small {...submitButtonProps} />
+                <EnhancedSubmitButton small {...submitButtonProps} />
               </li>
             )}
           </ul>
@@ -148,5 +160,5 @@ Navigation.propTypes = {
   disabled: PropTypes.bool,
   tab: PropTypes.number.isRequired, // current tab index - indexed from 0
   tabs: PropTypes.number.isRequired, // amount of tabs to display
-  tabDone: PropTypes.number.isRequired, // which tab is already filled
+  errors: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.string)).isRequired,
 };
