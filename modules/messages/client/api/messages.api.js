@@ -58,8 +58,7 @@ export async function markRead(messageIds) {
 
 export async function unreadCount() {
   const {
-    // eslint-disable-next-line no-unused-vars
     data: { unread },
   } = await axios.get('/api/messages-count');
-  return Math.round(Math.random() * 20);
+  return unread;
 }

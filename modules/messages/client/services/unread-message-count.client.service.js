@@ -1,4 +1,3 @@
-/* eslint-disable angular/interval-service */
 /**
  * PollMessagesCount service used for automatically polling for unread message counter
  */
@@ -6,7 +5,7 @@
 import { $on, getUser } from '@/modules/core/client/services/angular-compat';
 import createSubscribable from '@/modules/core/client/utils/subscribable';
 import { unreadCount } from '@/modules/messages/client/api/messages.api';
-import { watchVisibility } from '@/modules/messages/client/services/visibility.client.service';
+import { watch as watchVisibility } from '@/modules/messages/client/services/visibility.client.service';
 
 const ONE_SECOND = 1000;
 const ONE_MINUTE = 60 * ONE_SECOND;
@@ -53,6 +52,15 @@ export function enable() {
 }
 
 /**
+ * Disable the service.
+ */
+export function disable() {
+  if (!enabled) return;
+  enabled = false;
+  stop();
+}
+
+/**
  * Subscribe to keep updated with the unread messages count!
  * Will send you the current value immediately if we already have it.
  *
@@ -65,7 +73,7 @@ export function enable() {
  * @param fn callback to be passed the value
  * @returns {function(...[*]=)} unsubscribe function
  */
-export function watchUnreadMessageCount(fn) {
+export function watch(fn) {
   if (count !== null) fn(count);
   return subscribe(fn);
 }
@@ -92,7 +100,7 @@ function setPollingInterval(interval) {
   timer = setInterval(update, interval);
 }
 
-async function update() {
+export async function update() {
   const user = getUser();
   if (!user) return;
   const newCount = await unreadCount();

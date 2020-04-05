@@ -27,13 +27,16 @@ export default function createSubscribable() {
       };
     },
     notify(payload) {
+      const errors = [];
       for (const fn of subscribers) {
         try {
           fn(payload);
         } catch (err) {
-          // eslint-disable-next-line no-console
-          console.error(err);
+          errors.push(err);
         }
+      }
+      if (errors.length > 0) {
+        throw new Error('Errors! ' + errors.join(', '));
       }
     },
   };

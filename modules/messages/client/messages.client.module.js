@@ -6,4 +6,7 @@ AppConfig.registerModule('messages', ['core']);
 
 // config
 require('@/modules/messages/client/config/messages.client.routes');
-require('@/modules/messages/client/config/messages.client.run');
+
+if (process.env.NODE_ENV !== 'test') {
+  require('@/modules/messages/client/config/messages.client.run');
+}
