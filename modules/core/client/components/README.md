@@ -1,36 +1,33 @@
 # Reusable components
 
-## withTooltip
+## Tooltip
 
-A Higher-Order Component that adds tooltip to a wrapped component.
+`Tooltip` adds a tooltip to its child component.
 
-It adds attributes `tooltip`, `placement` and `tooltipProps` to the wrapped component.
+### Attributes
 
-Use it [outside of render function](https://reactjs.org/docs/higher-order-components.html#dont-use-hocs-inside-the-render-method) only!
+- `tooltip` - the text or component to display as tooltip
+- `placement` - placement of the tooltip (`left`, `top`, `right`, `bottom`)
 
 ### Usage
 
 ```jsx
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import withTooltip from '@/modules/core/client/components/withTooltip';
+import Tooltip from '@/modules/core/client/components/Tooltip';
 import ComponentWithoutTooltip from '@/path/to/ComponentWithoutTooltip';
-
-// define the component with tooltip outside of render function!
-// https://reactjs.org/docs/higher-order-components.html#dont-use-hocs-inside-the-render-method
-const ComponentWithTooltip = withTooltip(ComponentWithoutTooltip);
 
 export default function Example() {
   const { t } = useTranslation('namespace');
   return (
-    <ComponentWithTooltip
-      {...originalProps}
+    <Tooltip
       tooltip={t('Tooltip text')}
-      placement="top" // (top, left, bottom, right)
-      tooltipProps={{ id: 'tooltip-id', className: 'tooltip-class', ...etc }}
+      placement="top"
+      id="tooltip-id"
+      className="tooltip-class"
     >
-      Hello World!
-    </ComponentWithTooltip>
+      <ComponentWithoutTooltip />
+    </Tooltip>
   );
 }
 ```

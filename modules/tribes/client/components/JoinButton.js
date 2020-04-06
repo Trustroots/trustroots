@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import LeaveTribeModal from './LeaveTribeModal';
-import withTooltip from '@/modules/core/client/components/withTooltip';
+import Tooltip from '@/modules/core/client/components/Tooltip';
 
 import * as api from '../api/tribes.api';
 
@@ -19,13 +19,8 @@ const JoinButtonSimple = ({ isMember, children, ...props }) => (
 );
 JoinButtonSimple.propTypes = {
   isMember: PropTypes.bool.isRequired,
-  children: PropTypes.oneOfType([
-    PropTypes.arrayOf(PropTypes.node),
-    PropTypes.node,
-  ]).isRequired,
+  children: PropTypes.node.isRequired,
 };
-
-const JoinButtonWithTooltip = withTooltip(JoinButtonSimple);
 
 function JoinButtonPresentational({
   isMember,
@@ -54,26 +49,27 @@ function JoinButtonPresentational({
     );
   }
 
-  const tooltip = isMember
-    ? {
-        tooltip: t('Leave Tribe'),
-        placement: 'bottom',
-        tooltipProps: { id: `tribe-${tribe._id}` },
-      }
-    : {};
-
-  const Button = isMember ? JoinButtonWithTooltip : JoinButtonSimple;
-
-  return (
-    <Button
+  const button = (
+    <JoinButtonSimple
       isMember={isMember}
       disabled={isLoading}
       aria-label={ariaLabel}
       onClick={onToggle}
-      {...tooltip}
     >
       {buttonLabel}
-    </Button>
+    </JoinButtonSimple>
+  );
+
+  return isMember ? (
+    <Tooltip
+      tooltip={t('Leave Tribe')}
+      placement="bottom"
+      id={`tribe-${tribe._id}`}
+    >
+      {button}
+    </Tooltip>
+  ) : (
+    button
   );
 }
 
