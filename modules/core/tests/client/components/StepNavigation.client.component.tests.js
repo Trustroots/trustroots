@@ -6,7 +6,7 @@ import '@/config/client/i18n';
 
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 
-describe('Step Navigation through 3 tabs', () => {
+describe('Step Navigation through 3 steps', () => {
   const f = () => {}; // dummy handler function
 
   const handlers = {
@@ -16,21 +16,21 @@ describe('Step Navigation through 3 tabs', () => {
   };
 
   /**
-   * Given tab number and amount of tabs, test that specific buttons are present
+   * Given current step and amount of steps, test that specific buttons are present
    */
   [
-    { tab: 0, tabs: 3, buttons: ['Next'] },
-    { tab: 1, tabs: 3, buttons: ['Back', 'Next'] },
-    { tab: 2, tabs: 3, buttons: ['Back', 'Finish'] },
-  ].forEach(({ tab, tabs, buttons }) => {
-    it(`when tab=${tab} and tabs=${3} there is only ${buttons.join(
+    { currentStep: 0, numberOfSteps: 3, buttons: ['Next'] },
+    { currentStep: 1, numberOfSteps: 3, buttons: ['Back', 'Next'] },
+    { currentStep: 2, numberOfSteps: 3, buttons: ['Back', 'Finish'] },
+  ].forEach(({ currentStep, numberOfSteps, buttons }) => {
+    it(`when currentStep=${currentStep} and numberOfSteps=${3} there is only ${buttons.join(
       ' and ',
     )} button`, () => {
       const { getAllByRole } = render(
         <StepNavigation
-          tab={tab}
-          tabs={tabs}
-          errors={[[], [], []]}
+          currentStep={currentStep}
+          numberOfSteps={numberOfSteps}
+          disabled={false}
           {...handlers}
         />,
       );
@@ -49,52 +49,59 @@ describe('Step Navigation through 3 tabs', () => {
    */
   [
     {
-      tab: 1,
-      tabs: 3,
-      errors: [[], ['error'], []],
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: true,
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Next', disabled: true },
       ],
     },
     {
-      tab: 1,
-      tabs: 3,
-      errors: [[], [], ['error']],
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: false,
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Next', disabled: false },
       ],
     },
     {
-      tab: 2,
-      tabs: 3,
-      errors: [[], [], ['error']],
+      currentStep: 2,
+      numberOfSteps: 3,
+      disabled: true,
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Finish', disabled: true },
       ],
     },
     {
-      tab: 2,
-      tabs: 3,
-      errors: [[], [], []],
+      currentStep: 2,
+      numberOfSteps: 3,
+      disabled: false,
       buttons: [
         { name: 'Back', disabled: false },
         { name: 'Finish', disabled: false },
       ],
     },
-  ].forEach(({ tab, tabs, errors, buttons }) => {
+  ].forEach(({ currentStep, numberOfSteps, disabled, buttons }) => {
     const expectations = buttons.map(
-      ({ name, disabled }) =>
-        `the ${name} button should be ${disabled ? 'disabled' : 'enabled'}`,
+      ({ name, disabled: shouldBeDisabled }) =>
+        `the ${name} button should be ${
+          shouldBeDisabled ? 'disabled' : 'enabled'
+        }`,
     );
 
-    it(`when tab=${tab}, tabs=${tabs} and errors=${JSON.stringify(
-      errors,
+    it(`when currentStep=${currentStep}, numberOfSteps=${numberOfSteps} and disabled=${JSON.stringify(
+      disabled,
     )}, ${expectations.join(' and ')}`, () => {
       const { getAllByRole } = render(
-        <StepNavigation tab={tab} errors={errors} tabs={tabs} {...handlers} />,
+        <StepNavigation
+          currentStep={currentStep}
+          disabled={disabled}
+          numberOfSteps={numberOfSteps}
+          {...handlers}
+        />,
       );
       const foundButtons = getAllByRole('button');
       // we have navigation for large and for small screen
@@ -117,46 +124,55 @@ describe('Step Navigation through 3 tabs', () => {
    */
   [
     {
-      tab: 1,
-      tabs: 3,
-      errors: [[], ['error'], []],
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: true,
       button: 'Back',
       buttonIndex: 0,
       testTrigger: 'onBack',
     },
     {
-      tab: 1,
-      tabs: 3,
-      errors: [[], [], ['error']],
+      currentStep: 1,
+      numberOfSteps: 3,
+      disabled: false,
       button: 'Next',
       buttonIndex: 1,
       testTrigger: 'onNext',
     },
     {
-      tab: 2,
-      tabs: 3,
-      errors: [[], [], []],
+      currentStep: 2,
+      numberOfSteps: 3,
+      disabled: false,
       button: 'Finish',
       buttonIndex: 1,
       testTrigger: 'onSubmit',
     },
-  ].forEach(({ tab, tabs, errors, button, buttonIndex, testTrigger }) => {
-    it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
-      const handler = jest.fn();
-      const { getAllByRole } = render(
-        <StepNavigation
-          tab={tab}
-          errors={errors}
-          tabs={tabs}
-          {...handlers}
-          {...{ [testTrigger]: handler }}
-        />,
-      );
-      const testedButton = getAllByRole('button')[buttonIndex];
-      expect(testedButton).toHaveTextContent(button);
-      expect(handler).not.toHaveBeenCalled();
-      fireEvent.click(testedButton);
-      expect(handler).toHaveBeenCalledTimes(1);
-    });
-  });
+  ].forEach(
+    ({
+      currentStep,
+      numberOfSteps,
+      disabled,
+      button,
+      buttonIndex,
+      testTrigger,
+    }) => {
+      it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
+        const handler = jest.fn();
+        const { getAllByRole } = render(
+          <StepNavigation
+            currentStep={currentStep}
+            disabled={disabled}
+            numberOfSteps={numberOfSteps}
+            {...handlers}
+            {...{ [testTrigger]: handler }}
+          />,
+        );
+        const testedButton = getAllByRole('button')[buttonIndex];
+        expect(testedButton).toHaveTextContent(button);
+        expect(handler).not.toHaveBeenCalled();
+        fireEvent.click(testedButton);
+        expect(handler).toHaveBeenCalledTimes(1);
+      });
+    },
+  );
 });

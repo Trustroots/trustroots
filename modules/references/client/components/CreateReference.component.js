@@ -26,7 +26,7 @@ export default function CreateReference({ userFrom, userTo }) {
   const [recommend, setRecommend] = useState(null);
   const [report, setReport] = useState(false);
   const [reportMessage, setReportMessage] = useState('');
-  const [tab, setTab] = useState(0);
+  const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDuplicate, setIsDuplicate] = useState(false);
@@ -114,8 +114,16 @@ export default function CreateReference({ userFrom, userTo }) {
     recommend,
   };
 
+  // find out whether the current tab is valid, and whether we can continue
   const errorDict = validate(ruleDict, valueDict);
+  // map errors to tabs and find errors relevant for current tab
   const navigationErrors = [errorDict.interaction, errorDict.recommend];
+  const currentStepErrors = navigationErrors.slice(0, step + 1).flat();
+  // can we continue?
+  const isNextStepDisabled = isSubmitting || currentStepErrors.length > 0;
+  // if not, why?
+  const nextStepError =
+    !isSubmitting && currentStepErrors.find(error => error.trim().length > 0);
 
   if (userFrom._id === userTo._id) return <ReferenceToSelfInfo />;
 
@@ -138,7 +146,7 @@ export default function CreateReference({ userFrom, userTo }) {
   return (
     <div>
       <Tabs
-        activeKey={tab}
+        activeKey={step}
         bsStyle="pills"
         onSelect={() => {}}
         id="create-reference-tabs"
@@ -151,12 +159,12 @@ export default function CreateReference({ userFrom, userTo }) {
         </Tab>
       </Tabs>
       <StepNavigation
-        tab={tab}
-        tabs={tabs.length}
-        errors={navigationErrors}
-        disabled={isSubmitting}
-        onBack={() => setTab(tab => tab - 1)}
-        onNext={() => setTab(tab => tab + 1)}
+        currentStep={step}
+        numberOfSteps={tabs.length}
+        disabled={isNextStepDisabled}
+        disabledReason={nextStepError}
+        onBack={() => setStep(step => step - 1)}
+        onNext={() => setStep(step => step + 1)}
         onSubmit={handleSubmit}
       />
     </div>

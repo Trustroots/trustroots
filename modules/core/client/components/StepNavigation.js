@@ -2,8 +2,24 @@ import React, { cloneElement } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-
 import Tooltip from './Tooltip';
+
+/**
+ * StepNavigation can contain three different buttons: Back, Next, Submit we can go through.
+ * Each of them has a related property onBack, onNext, onSubmit.
+ * See it at `/offer/host` or `/profile/{username}/references/new`.
+ * This component doesn't keep its own state.
+ *
+ * @param {number} currentStep - index of current step
+ *                               first step doesn't have Back button
+ *                               last step has Finish/Submit button instead of Next
+ * @param {number} numberOfSteps - amount of steps in total
+ * @param {boolean} [disabled] - disable Next button
+ * @param {string} [disabledReason] - message to show in tooltip of disabled button
+ * @param {function} onBack - method executed on clicking Back
+ * @param {function} onNext - method executed on clicking Next
+ * @param {function} onSubmit - method executed on clicking Submit
+ */
 
 const BackButton = ({ small, ...props }) => {
   const { t } = useTranslation('core');
@@ -70,29 +86,15 @@ const SubmitButton = ({ small, ...props }) => {
 };
 SubmitButton.propTypes = { small: PropTypes.bool };
 
-/**
- * StepNavigation is a react component.
- * It can contain three different buttons: Back, Next, Submit.
- * Each of them has a related property onBack, onNext, onSubmit
- */
 export default function StepNavigation({
-  disabled,
-  tab,
-  tabs,
-  errors,
+  currentStep,
+  numberOfSteps,
+  disabled = false,
+  disabledReason = '',
   onBack,
   onNext,
   onSubmit,
 }) {
-  const errorTab = errors.findIndex(tabErrors => tabErrors.length > 0);
-  const tabDone = errorTab === -1 ? tabs : errorTab - 1;
-  // get the lowest non-empty error valid for the current tab
-  const error =
-    errors
-      .slice(0, tab + 1)
-      .flat()
-      .find(error => error.length > 0) ?? '';
-
   /**
    * We'll reuse the buttons and tooltip defined below
    * either with different children or with additional props.
@@ -100,27 +102,22 @@ export default function StepNavigation({
    * https://reactjs.org/docs/react-api.html#cloneelement
    */
   const backButton = <BackButton onClick={onBack} />;
-  const nextButton = <NextButton onClick={onNext} disabled={tabDone < tab} />;
-  const submitButton = (
-    <SubmitButton
-      onClick={onSubmit}
-      disabled={tabDone < tabs - 1 || disabled}
-    />
-  );
+  const nextButton = <NextButton onClick={onNext} disabled={disabled} />;
+  const submitButton = <SubmitButton onClick={onSubmit} disabled={disabled} />;
   const tooltip = (
     <Tooltip
-      tooltip={error}
+      tooltip={disabledReason}
       id="tooltip-disabled-button"
-      hidden={!error}
+      hidden={!(disabled && disabledReason)}
       placement="top"
     >
       placeholder
     </Tooltip>
   );
 
-  const showBackButton = tab > 0; // not the first tab
-  const showNextButton = tab < tabs - 1; // not the last tab
-  const showSubmitButton = tab === tabs - 1; // the last tab
+  const showBackButton = currentStep > 0; // not the first step
+  const showNextButton = currentStep < numberOfSteps - 1; // not the last step
+  const showSubmitButton = currentStep === numberOfSteps - 1; // the last step
 
   return (
     <>
@@ -165,11 +162,11 @@ export default function StepNavigation({
 }
 
 StepNavigation.propTypes = {
+  currentStep: PropTypes.number.isRequired, // current step index - indexed from 0
+  numberOfSteps: PropTypes.number.isRequired, // amount of steps to go through
+  disabled: PropTypes.bool,
+  disabledReason: PropTypes.string,
   onBack: PropTypes.func.isRequired,
   onNext: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,
-  disabled: PropTypes.bool,
-  tab: PropTypes.number.isRequired, // current tab index - indexed from 0
-  tabs: PropTypes.number.isRequired, // amount of tabs to display
-  errors: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.string)).isRequired,
 };
