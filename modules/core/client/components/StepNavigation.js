@@ -71,11 +71,11 @@ const SubmitButton = ({ small, ...props }) => {
 SubmitButton.propTypes = { small: PropTypes.bool };
 
 /**
- * Navigation is a react component.
+ * StepNavigation is a react component.
  * It can contain three different buttons: Back, Next, Submit.
  * Each of them has a related property onBack, onNext, onSubmit
  */
-export default function Navigation({
+export default function StepNavigation({
   disabled,
   tab,
   tabs,
@@ -84,10 +84,14 @@ export default function Navigation({
   onNext,
   onSubmit,
 }) {
-  const errorTab = errors.findIndex(errors_ => errors_.length > 0);
+  const errorTab = errors.findIndex(tabErrors => tabErrors.length > 0);
   const tabDone = errorTab === -1 ? tabs : errorTab - 1;
-  // get the lowest error valid for the current tab
-  const error = errors.slice(0, tab + 1).flat()[0] ?? '';
+  // get the lowest non-empty error valid for the current tab
+  const error =
+    errors
+      .slice(0, tab + 1)
+      .flat()
+      .find(error => error.length > 0) ?? '';
 
   /**
    * We'll reuse the buttons and tooltip defined below
@@ -160,7 +164,7 @@ export default function Navigation({
   );
 }
 
-Navigation.propTypes = {
+StepNavigation.propTypes = {
   onBack: PropTypes.func.isRequired,
   onNext: PropTypes.func.isRequired,
   onSubmit: PropTypes.func.isRequired,

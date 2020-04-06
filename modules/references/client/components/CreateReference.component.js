@@ -4,7 +4,7 @@ import { Tab, Tabs } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import * as references from '../api/references.api';
-import Navigation from '@/modules/core/client/components/Navigation';
+import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
 import {
@@ -151,7 +151,7 @@ export default function CreateReference({ userFrom, userTo }) {
         </Tab>
       </Tabs>
       {/* <!-- Navigation -->*/}
-      <Navigation
+      <StepNavigation
         tab={tab}
         tabs={tabs.length}
         errors={navigationErrors}

@@ -4,9 +4,9 @@ import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
 
-import Navigation from '@/modules/core/client/components/Navigation';
+import StepNavigation from '@/modules/core/client/components/StepNavigation';
 
-describe('Navigation through 3 tabs', () => {
+describe('Step Navigation through 3 tabs', () => {
   const f = () => {}; // dummy handler function
 
   const handlers = {
@@ -27,7 +27,7 @@ describe('Navigation through 3 tabs', () => {
       ' and ',
     )} button`, () => {
       const { getAllByRole } = render(
-        <Navigation
+        <StepNavigation
           tab={tab}
           tabs={tabs}
           errors={[[], [], []]}
@@ -94,7 +94,7 @@ describe('Navigation through 3 tabs', () => {
       errors,
     )}, ${expectations.join(' and ')}`, () => {
       const { getAllByRole } = render(
-        <Navigation tab={tab} errors={errors} tabs={tabs} {...handlers} />,
+        <StepNavigation tab={tab} errors={errors} tabs={tabs} {...handlers} />,
       );
       const foundButtons = getAllByRole('button');
       // we have navigation for large and for small screen
@@ -144,7 +144,7 @@ describe('Navigation through 3 tabs', () => {
     it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
       const handler = jest.fn();
       const { getAllByRole } = render(
-        <Navigation
+        <StepNavigation
           tab={tab}
           errors={errors}
           tabs={tabs}
