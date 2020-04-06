@@ -150,7 +150,6 @@ export default function CreateReference({ userFrom, userTo }) {
           {tabs[1]}
         </Tab>
       </Tabs>
-      {/* <!-- Navigation -->*/}
       <StepNavigation
         tab={tab}
         tabs={tabs.length}
