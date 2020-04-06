@@ -6,8 +6,9 @@
 
 ### Attributes
 
-- `tooltip` - the text or component to display as tooltip
-- `placement` - placement of the tooltip (`left`, `top`, `right`, `bottom`)
+- `tooltip` - the text or component to display as tooltip _(required)_
+- `placement` - placement of the tooltip (`left`, `top`, `right`, `bottom`) _(default: `'top'`)_
+- `hidden` - when set to `true`, the tooltip is not rendered _(default: `false`)_
 
 ### Usage
 

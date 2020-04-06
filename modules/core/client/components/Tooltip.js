@@ -9,8 +9,10 @@ export default function HoverTooltip({
   children,
   tooltip,
   placement = 'top',
+  hidden = false,
   ...props
 }) {
+  if (hidden) return children;
   const tooltipComponent = (
     <Tooltip id="hover-tooltip" {...props}>
       {tooltip}
@@ -27,4 +29,5 @@ HoverTooltip.propTypes = {
   children: PropTypes.node.isRequired,
   tooltip: PropTypes.string.isRequired,
   placement: PropTypes.string,
+  hidden: PropTypes.bool,
 };

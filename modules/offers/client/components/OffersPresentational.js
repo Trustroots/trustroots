@@ -59,7 +59,7 @@ export class OffersPresentational extends Component {
           tooltip={t('Change')}
           placement="left"
           className="in"
-          id="tooltip-left"
+          id="tooltip-change-host-offer"
         >
           <DropdownButton
             pullRight

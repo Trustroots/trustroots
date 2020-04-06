@@ -6,22 +6,6 @@ import Tooltip from '@/modules/core/client/components/Tooltip';
 
 import * as api from '../api/tribes.api';
 
-const JoinButtonSimple = ({ isMember, children, ...props }) => (
-  <button
-    type="button"
-    className={`${
-      isMember ? 'btn-active' : ''
-    } btn btn-sm btn-default tribe-join`}
-    {...props}
-  >
-    <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {children}
-  </button>
-);
-JoinButtonSimple.propTypes = {
-  isMember: PropTypes.bool.isRequired,
-  children: PropTypes.node.isRequired,
-};
-
 function JoinButtonPresentational({
   isMember,
   isLoading,
@@ -49,27 +33,25 @@ function JoinButtonPresentational({
     );
   }
 
-  const button = (
-    <JoinButtonSimple
-      isMember={isMember}
-      disabled={isLoading}
-      aria-label={ariaLabel}
-      onClick={onToggle}
-    >
-      {buttonLabel}
-    </JoinButtonSimple>
-  );
-
-  return isMember ? (
+  return (
     <Tooltip
       tooltip={t('Leave Tribe')}
       placement="bottom"
+      hidden={!isMember}
       id={`tribe-${tribe._id}`}
     >
-      {button}
+      <button
+        type="button"
+        className={`${
+          isMember ? 'btn-active' : ''
+        } btn btn-sm btn-default tribe-join`}
+        disabled={isLoading}
+        aria-label={ariaLabel}
+        onClick={onToggle}
+      >
+        <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
+      </button>
     </Tooltip>
-  ) : (
-    button
   );
 }
 
