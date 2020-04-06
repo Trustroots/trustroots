@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { cloneElement } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 
-import withTooltip from './withTooltip';
+import Tooltip from './Tooltip';
 
 const BackButton = ({ small, ...props }) => {
   const { t } = useTranslation('core');
@@ -70,9 +70,6 @@ const SubmitButton = ({ small, ...props }) => {
 };
 SubmitButton.propTypes = { small: PropTypes.bool };
 
-const NextButtonWithTooltip = withTooltip(NextButton);
-const SubmitButtonWithTooltip = withTooltip(SubmitButton);
-
 /**
  * Navigation is a react component.
  * It can contain three different buttons: Back, Next, Submit.
@@ -87,29 +84,35 @@ export default function Navigation({
   onNext,
   onSubmit,
 }) {
-  const errorTab = errors.findIndex(_errors => _errors.length > 0);
-  const tabDone = errorTab === -1 ? errors.length : errorTab - 1;
+  const errorTab = errors.findIndex(errors_ => errors_.length > 0);
+  const tabDone = errorTab === -1 ? tabs : errorTab - 1;
   // get the lowest error valid for the current tab
-  const error = errors.slice(0, tab + 1).flat()[0];
+  const error = errors.slice(0, tab + 1).flat()[0] ?? '';
 
-  const backButtonProps = {
-    onClick: onBack,
-  };
-
-  const nextButtonProps = {
-    onClick: onNext,
-    disabled: tabDone < tab,
-    tooltip: error,
-  };
-
-  const submitButtonProps = {
-    onClick: onSubmit,
-    disabled: tabDone < tabs - 1 || disabled,
-    tooltip: error,
-  };
-
-  const EnhancedNextButton = error ? NextButtonWithTooltip : NextButton;
-  const EnhancedSubmitButton = error ? SubmitButtonWithTooltip : SubmitButton;
+  /**
+   * We'll reuse the buttons and tooltip defined below
+   * either with different children or with additional props.
+   * We use React.cloneElement(element, props, children) for that purpose:
+   * https://reactjs.org/docs/react-api.html#cloneelement
+   */
+  const backButton = <BackButton onClick={onBack} />;
+  const nextButton = <NextButton onClick={onNext} disabled={tabDone < tab} />;
+  const submitButton = (
+    <SubmitButton
+      onClick={onSubmit}
+      disabled={tabDone < tabs - 1 || disabled}
+    />
+  );
+  const tooltip = (
+    <Tooltip
+      tooltip={error}
+      id="tooltip-disabled-button"
+      hidden={!error}
+      placement="top"
+    >
+      placeholder
+    </Tooltip>
+  );
 
   const showBackButton = tab > 0; // not the first tab
   const showNextButton = tab < tabs - 1; // not the last tab
@@ -118,9 +121,9 @@ export default function Navigation({
   return (
     <>
       <div className="text-center hidden-xs">
-        {showBackButton && <BackButton {...backButtonProps} />}
-        {showNextButton && <EnhancedNextButton {...nextButtonProps} />}
-        {showSubmitButton && <EnhancedSubmitButton {...submitButtonProps} />}
+        {showBackButton && backButton}
+        {showNextButton && cloneElement(tooltip, null, nextButton)}
+        {showSubmitButton && cloneElement(tooltip, null, submitButton)}
       </div>
       <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
         <div className="container">
@@ -129,21 +132,25 @@ export default function Navigation({
             role="toolbar"
             aria-label="Offer actions"
           >
-            <li></li>
-            <li className="pull-right">{/* <!-- For last tab --> */}</li>
             {showBackButton && (
-              <li>
-                <BackButton small {...backButtonProps} />
-              </li>
+              <li>{cloneElement(backButton, { small: true })}</li>
             )}
             {showNextButton && (
               <li className="pull-right">
-                <EnhancedNextButton small {...nextButtonProps} />
+                {cloneElement(
+                  tooltip,
+                  null,
+                  cloneElement(nextButton, { small: true }),
+                )}
               </li>
             )}
             {showSubmitButton && (
               <li className="pull-right">
-                <EnhancedSubmitButton small {...submitButtonProps} />
+                {cloneElement(
+                  tooltip,
+                  null,
+                  cloneElement(submitButton, { small: true }),
+                )}
               </li>
             )}
           </ul>
