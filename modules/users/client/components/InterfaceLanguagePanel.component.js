@@ -4,7 +4,7 @@ import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 
 export default function InterfaceLanguagePanel() {
-  const { t } = useTranslation('user');
+  const { t } = useTranslation('users');
 
   return (
     <div className="panel panel-default" id="locale">

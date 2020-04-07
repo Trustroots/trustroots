@@ -4,7 +4,7 @@ import '@/config/client/i18n';
 import { selectPhoto } from '@/modules/core/client/services/photos.service';
 
 export default function Volunteering() {
-  const { t } = useTranslation('volunteering');
+  const { t } = useTranslation('pages');
 
   const photo = selectPhoto('happyhippies');
 

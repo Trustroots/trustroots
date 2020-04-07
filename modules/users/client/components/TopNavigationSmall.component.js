@@ -24,7 +24,7 @@ export default function TopNavigationSmall({
 
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
-  const { t } = useTranslation('user');
+  const { t } = useTranslation('users');
 
   const isSelf = selfId === userId;
 
