@@ -1,17 +1,22 @@
 {
   "Accommodation": "Můj dům",
-  "No guests.": "Žádní hosté.",
   "At most {{count}} guests._0": "Nejvíce jeden host.",
   "At most {{count}} guests._1": "Nejvíce {{count}} hosté.",
   "At most {{count}} guests._2": "Nejvíce {{count}} hostů.",
+  "Bigger map": "Větší mapa",
   "Can host": "Hostí",
-  "Might be able to host": "Možná hostí",
   "Cannot host currently": "Nemůže teď hostit",
+  "Change": "",
   "Hosting status: {{statusLabel}}": "Status hostitele: {{statusLabel}}",
   "I can host": "Můžu hostit",
-  "I might be able to host": "Možná můžu hostit",
   "I can't host currently": "Nemůžu teď hostit",
-  "Sorry, user is not hosting currently.": "Bohužel uživatel teď nehostí.",
+  "I might be able to host": "Možná můžu hostit",
+  "Meet people": "",
+  "Might be able to host": "Možná hostí",
+  "Modify hosting offer": "",
+  "No guests.": "Žádní hosté.",
   "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "",
-  "Bigger map": "Větší mapa"
+  "Open on device": "",
+  "Sorry, user is not hosting currently.": "Bohužel uživatel teď nehostí.",
+  "Start hosting travellers": ""
 }
