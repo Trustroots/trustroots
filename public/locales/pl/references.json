@@ -15,14 +15,14 @@
   "Recommendation": "",
   "Report this person to moderators": "",
   "See the reference from {{name}} to you.": "",
-  "Sorry, you can't give a reference to yourself.": "Promiň, sobě nemůžeš dát referenci.",
+  "Sorry, you can't give a reference to yourself.": "",
   "They hosted me": "",
   "Wait a moment...": "",
   "We're sad to hear you didn't have a great experience using Trustroots!": "",
   "Would you recommend others to host them?": "",
   "Would you recommend others to meet them?": "",
   "Would you recommend others to stay with them?": "",
-  "Yes": "Ano",
+  "Yes": "",
   "You've already given a reference to <1></1>.": "",
   "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days.": ""
 }
