@@ -11,7 +11,7 @@ export default function RemoveContact({
   onRemove,
   onCancel,
 }) {
-  const { t } = useTranslation('contact');
+  const { t } = useTranslation('contacts');
 
   // modal title, label for confirmation button, creation information
   // depends on whether contact is confirmed and who sent the request

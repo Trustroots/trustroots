@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
 export default function ContactList({ appUser, contacts, onContactRemoved }) {
-  const { t } = useTranslation('contact');
+  const { t } = useTranslation('contacts');
   const [filter, setFilter] = useState('');
 
   if (!contacts || !contacts.$resolved) {

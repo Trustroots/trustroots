@@ -18,7 +18,7 @@ import { createValidator } from '@/modules/core/client/utils/validation';
 const api = { references };
 
 export default function CreateReference({ userFrom, userTo }) {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   const [met, setMet] = useState(false);
   const [hostedThem, setHostedThem] = useState(false);

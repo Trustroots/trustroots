@@ -18,7 +18,7 @@ export default function Avatar({
   link = true,
   onClick,
 }) {
-  const { t } = useTranslation('user');
+  const { t } = useTranslation('users');
 
   source = source || user.avatarSource;
   const defaultAvatar = '/img/avatar.png';

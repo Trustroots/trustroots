@@ -14,7 +14,7 @@ export default function Recommend({
   onChangeReport,
   onChangeReportMessage,
 }) {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),

@@ -6,7 +6,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 import { userType } from '@/modules/users/client/users.prop-types';
 
 function TribesInCommon({ user, otherUser }) {
-  const { t } = useTranslation('messages');
+  const { t } = useTranslation('users');
 
   const [tribesInCommon, setTribesInCommon] = useState([]);
 
@@ -48,7 +48,7 @@ TribesInCommon.propTypes = {
 };
 
 export default function Monkeybox({ user, otherUser }) {
-  const { t } = useTranslation(['user-profile', 'languages']);
+  const { t } = useTranslation('users');
   return (
     <div className="monkeybox panel panel-default">
       <div className="panel-body">

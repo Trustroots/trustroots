@@ -28,7 +28,7 @@ UserLink.propTypes = {
  * Error message when trying to give a reference to oneself.
  */
 export function ReferenceToSelfInfo() {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   return (
     <div role="alert" className="alert alert-warning">
@@ -41,7 +41,7 @@ export function ReferenceToSelfInfo() {
  * Info that data are loading.
  */
 export function LoadingInfo() {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   return (
     <div role="alert" aria-busy="true" className="alert alert-warning">
@@ -55,9 +55,11 @@ export function LoadingInfo() {
  * @param {User} userTo
  */
 export function DuplicateInfo({ userTo }) {
+  const { t } = useTranslation('references');
   return (
     <div role="alert" className="alert alert-warning">
-      <Trans ns="reference">
+      {/* @TODO remove ns (issue #1368) */}
+      <Trans t={t} ns="references">
         You&apos;ve already given a reference to <UserLink user={userTo} />.
       </Trans>
     </div>
@@ -72,14 +74,15 @@ DuplicateInfo.propTypes = {
  * Info after successful submitting of a new reference.
  */
 export function SubmittedInfo({ isReported, isPublic, userFrom, userTo }) {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   const name = userTo.displayName || userTo.username;
 
   const isPublicMessage = isPublic ? (
     <>
       <div>
-        <Trans ns="reference">
+        {/* @TODO remove ns (issue #1368) */}
+        <Trans t={t} ns="references">
           <a href={`/profile/${userTo.username}/references`}>Your reference</a>{' '}
           for <UserLink user={userTo} /> is public now.
         </Trans>
@@ -92,7 +95,8 @@ export function SubmittedInfo({ isReported, isPublic, userFrom, userTo }) {
     </>
   ) : (
     <div>
-      <Trans ns="reference" daysToReply={daysToReply}>
+      {/* @TODO remove ns (issue #1368) */}
+      <Trans t={t} ns="references" daysToReply={daysToReply}>
         Your reference will become public when <UserLink user={userTo} /> gives
         you a reference back, or in {{ daysToReply }} days.
       </Trans>
@@ -105,7 +109,8 @@ export function SubmittedInfo({ isReported, isPublic, userFrom, userTo }) {
       <div>{isPublicMessage}</div>
       {isReported && (
         <div>
-          <Trans ns="reference">
+          {/* @TODO remove ns (issue #1368) */}
+          <Trans t={t} ns="references">
             Also, <UserLink user={userTo} /> was reported.
           </Trans>
         </div>

@@ -9,7 +9,7 @@ import { plainTextLength } from '@/modules/core/client/utils/filters';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
 export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
-  const { t } = useTranslation('user-profile');
+  const { t } = useTranslation('users');
 
   return (
     <>
