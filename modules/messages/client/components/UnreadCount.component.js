@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { watch as watchUnreadCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 
-export default function MessagesUnreadCount() {
+export default function UnreadCount() {
   const { t } = useTranslation('messages');
 
   const [count, setCount] = useState(null);
@@ -25,4 +25,4 @@ export default function MessagesUnreadCount() {
   );
 }
 
-MessagesUnreadCount.propTypes = {};
+UnreadCount.propTypes = {};
