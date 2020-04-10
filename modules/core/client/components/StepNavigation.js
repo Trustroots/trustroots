@@ -1,4 +1,4 @@
-import React, { cloneElement } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
@@ -101,19 +101,15 @@ export default function StepNavigation({
    * We use React.cloneElement(element, props, children) for that purpose:
    * https://reactjs.org/docs/react-api.html#cloneelement
    */
-  const backButton = <BackButton onClick={onBack} />;
-  const nextButton = <NextButton onClick={onNext} disabled={disabled} />;
-  const submitButton = <SubmitButton onClick={onSubmit} disabled={disabled} />;
-  const tooltip = (
-    <Tooltip
-      tooltip={disabledReason}
-      id="tooltip-disabled-button"
-      hidden={!(disabled && disabledReason)}
-      placement="top"
-    >
-      placeholder
-    </Tooltip>
-  );
+  const backProps = { onClick: onBack };
+  const nextProps = { onClick: onNext, disabled: disabled };
+  const submitProps = { onClick: onSubmit, disabled: disabled };
+  const tooltipProps = {
+    tooltip: disabledReason,
+    id: 'tooltip-disabled-button',
+    hidden: !(disabled && disabledReason),
+    placement: 'top',
+  };
 
   const showBackButton = currentStep > 0; // not the first step
   const showNextButton = currentStep < numberOfSteps - 1; // not the last step
@@ -122,9 +118,17 @@ export default function StepNavigation({
   return (
     <>
       <div className="text-center hidden-xs">
-        {showBackButton && backButton}
-        {showNextButton && cloneElement(tooltip, null, nextButton)}
-        {showSubmitButton && cloneElement(tooltip, null, submitButton)}
+        {showBackButton && <BackButton {...backProps} />}
+        {showNextButton && (
+          <Tooltip {...tooltipProps}>
+            <NextButton {...nextProps} />
+          </Tooltip>
+        )}
+        {showSubmitButton && (
+          <Tooltip {...tooltipProps}>
+            <SubmitButton {...submitProps} />
+          </Tooltip>
+        )}
       </div>
       <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
         <div className="container">
@@ -134,24 +138,22 @@ export default function StepNavigation({
             aria-label="Offer actions"
           >
             {showBackButton && (
-              <li>{cloneElement(backButton, { small: true })}</li>
+              <li>
+                <BackButton {...backProps} small />
+              </li>
             )}
             {showNextButton && (
               <li className="pull-right">
-                {cloneElement(
-                  tooltip,
-                  null,
-                  cloneElement(nextButton, { small: true }),
-                )}
+                <Tooltip {...tooltipProps}>
+                  <NextButton {...nextProps} small />
+                </Tooltip>
               </li>
             )}
             {showSubmitButton && (
               <li className="pull-right">
-                {cloneElement(
-                  tooltip,
-                  null,
-                  cloneElement(submitButton, { small: true }),
-                )}
+                <Tooltip {...tooltipProps}>
+                  <SubmitButton {...submitProps} small />
+                </Tooltip>
               </li>
             )}
           </ul>
