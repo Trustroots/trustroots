@@ -7,7 +7,7 @@ import {
   $broadcast,
   eventTrack,
 } from '@/modules/core/client/services/angular-compat';
-import InboxThread from 'modules/messages/client/components/InboxThread';
+import InboxThread from '@/modules/messages/client/components/InboxThread';
 import { userType } from '@/modules/users/client/users.prop-types';
 
 export default function Inbox({ user }) {
