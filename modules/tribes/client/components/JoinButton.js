@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import LeaveTribeModal from './LeaveTribeModal';
-import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import Tooltip from '@/modules/core/client/components/Tooltip';
 
 import * as api from '../api/tribes.api';
 
@@ -33,35 +33,26 @@ function JoinButtonPresentational({
     );
   }
 
-  // a button for joining and leaving a tribe
-  const leaveTooltip = (
-    <Tooltip id={`tribe-${tribe._id}`} placement="bottom">
-      {t('Leave Tribe')}
+  return (
+    <Tooltip
+      tooltip={t('Leave Tribe')}
+      placement="bottom"
+      hidden={!isMember}
+      id={`tribe-${tribe._id}`}
+    >
+      <button
+        type="button"
+        className={`${
+          isMember ? 'btn-active' : ''
+        } btn btn-sm btn-default tribe-join`}
+        disabled={isLoading}
+        aria-label={ariaLabel}
+        onClick={onToggle}
+      >
+        <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
+      </button>
     </Tooltip>
   );
-  const btn = (
-    <button
-      type="button"
-      className={`${
-        isMember ? 'btn-active' : ''
-      } btn btn-sm btn-default tribe-join`}
-      onClick={onToggle}
-      disabled={isLoading}
-      aria-label={ariaLabel}
-    >
-      <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
-    </button>
-  );
-
-  if (isMember) {
-    return (
-      <OverlayTrigger placement="bottom" overlay={leaveTooltip}>
-        {btn}
-      </OverlayTrigger>
-    );
-  } else {
-    return btn;
-  }
 }
 
 JoinButtonPresentational.propTypes = {

@@ -1,11 +1,5 @@
 // External dependencies
-import {
-  Button,
-  DropdownButton,
-  MenuItem,
-  ButtonGroup,
-  Tooltip,
-} from 'react-bootstrap';
+import { Button, DropdownButton, MenuItem, ButtonGroup } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -14,6 +8,7 @@ import React, { Component } from 'react';
 import '@/config/client/i18n';
 import OfferLocation from './OfferLocation.component';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
+import Tooltip from '@/modules/core/client/components/Tooltip';
 
 export class OffersPresentational extends Component {
   constructor(props) {
@@ -54,48 +49,49 @@ export class OffersPresentational extends Component {
   renderButtonOwn() {
     const { t } = this.props;
     const { offer } = this.props;
-    const tooltip = (
-      <Tooltip placement="left" className="in" id="tooltip-left">
-        {t('Change')}
-      </Tooltip>
-    );
 
     {
       /* Hosting status dropdown logged in user */
     }
     return (
       <ButtonGroup className="pull-right dropdown-menu-offers">
-        <DropdownButton
-          pullRight
-          className={`btn-offer-hosting, btn-offer-hosting-${offer.status}`}
-          bsSize="small"
-          bsStyle="success"
-          title={this.hostingStatusLabel(offer.status)}
-          id={'dropdown-offers-button'}
-          overlay={tooltip}
+        <Tooltip
+          tooltip={t('Change')}
+          placement="left"
+          className="in"
+          id="tooltip-change-host-offer"
         >
-          <MenuItem
-            href="/offer/host?status=yes"
-            eventKey="1"
-            className="cursor-pointer offer-hosting-yes"
+          <DropdownButton
+            pullRight
+            className={`btn-offer-hosting, btn-offer-hosting-${offer.status}`}
+            bsSize="small"
+            bsStyle="success"
+            title={this.hostingStatusLabel(offer.status)}
+            id="dropdown-offers-button"
           >
-            {t('I can host')}
-          </MenuItem>
-          <MenuItem
-            href="/offer/host?status=maybe"
-            eventKey="2"
-            className="cursor-pointer offer-hosting-maybe"
-          >
-            {t('I might be able to host')}
-          </MenuItem>
-          <MenuItem
-            href="/offer/host?status=no"
-            eventKey="3"
-            className="cursor-pointer offer-hosting-no"
-          >
-            {t(`I can't host currently`)} {/* eslint-disable-line quotes */}
-          </MenuItem>
-        </DropdownButton>
+            <MenuItem
+              href="/offer/host?status=yes"
+              eventKey="1"
+              className="cursor-pointer offer-hosting-yes"
+            >
+              {t('I can host')}
+            </MenuItem>
+            <MenuItem
+              href="/offer/host?status=maybe"
+              eventKey="2"
+              className="cursor-pointer offer-hosting-maybe"
+            >
+              {t('I might be able to host')}
+            </MenuItem>
+            <MenuItem
+              href="/offer/host?status=no"
+              eventKey="3"
+              className="cursor-pointer offer-hosting-no"
+            >
+              {t(`I can't host currently`)} {/* eslint-disable-line quotes */}
+            </MenuItem>
+          </DropdownButton>
+        </Tooltip>
       </ButtonGroup>
     );
   }
