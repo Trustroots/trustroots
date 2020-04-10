@@ -13,7 +13,7 @@ import {
   DuplicateInfo,
   SubmittedInfo,
 } from './create-reference/Info';
-import { validate } from '@/modules/core/client/utils/validation';
+import { createValidator } from '@/modules/core/client/utils/validation';
 
 const api = { references };
 
@@ -99,7 +99,10 @@ export default function CreateReference({ userFrom, userTo }) {
     />,
   ];
 
-  const ruleDict = {
+  // find out whether the current tab is valid, and whether we can continue
+  // we'd prefer to create validator outside the render function,
+  // but we'd need to translate errors in a very complicated way
+  const validate = createValidator({
     interaction: [
       [
         ({ hostedMe, hostedThem, met }) => hostedMe || hostedThem || met,
@@ -107,15 +110,11 @@ export default function CreateReference({ userFrom, userTo }) {
       ],
     ],
     recommend: [[value => !!value, t('Choose your recommendation')]],
-  };
-
-  const valueDict = {
+  });
+  const errorDict = validate({
     interaction: { hostedMe, hostedThem, met },
     recommend,
-  };
-
-  // find out whether the current tab is valid, and whether we can continue
-  const errorDict = validate(ruleDict, valueDict);
+  });
   // map errors to tabs and find errors relevant for current tab
   const navigationErrors = [errorDict.interaction, errorDict.recommend];
   const currentStepErrors = navigationErrors.slice(0, step + 1).flat();
