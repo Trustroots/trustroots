@@ -1,6 +1,12 @@
 [
   { "code": "en", "label": "English" },
-  { "code": "cs", "label": "česky" },
+  { "code": "de", "label": "Deutsch" },
+  { "code": "es", "label": "español, castellano" },
+  { "code": "fr", "label": "français" },
+  { "code": "it", "label": "Italiano" },
+  { "code": "nb", "label": "Norsk bokmål" },
+  { "code": "pl", "label": "polski" },
   { "code": "fi", "label": "suomi" },
-  { "code": "pl", "label": "polski" }
+  { "code": "sv", "label": "svenska" },
+  { "code": "cs", "label": "česky" }
 ]
