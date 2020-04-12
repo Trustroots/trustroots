@@ -24,6 +24,7 @@ function selectName(names) {
  */
 export default function Board({
   names = 'bokeh',
+  style = null,
   children,
   onDisplayPhoto = () => {},
   onHidePhoto = () => {},
@@ -50,9 +51,17 @@ export default function Board({
     return () => onHidePhoto(photoObject);
   }, []);
 
-  const style = photo ? { backgroundImage: `url("${photo.imageUrl}")` } : null;
+  if (photo) {
+    style
+      ? (style.backgroundImage = `url("${photo.imageUrl}")`)
+      : (style = { backgroundImage: `url("${photo.imageUrl}")` });
+  }
   return (
-    <section style={style} className={classNames('board', className)} {...rest}>
+    <section
+      style={{ ...style }}
+      className={classNames('board', className)}
+      {...rest}
+    >
       {children}
     </section>
   );
@@ -63,6 +72,7 @@ Board.propTypes = {
     PropTypes.string,
     PropTypes.arrayOf(PropTypes.string),
   ]).isRequired,
+  style: PropTypes.object,
   className: PropTypes.string,
   children: PropTypes.node,
   onDisplayPhoto: PropTypes.func,
