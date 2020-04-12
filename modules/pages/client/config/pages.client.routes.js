@@ -13,7 +13,7 @@ import faqTechnologyTemplateUrl from '@/modules/pages/client/views/faq-technolog
 // import foundationTemplateUrl from '@/modules/pages/client/views/foundation.client.view.html';
 import mediaTemplateUrl from '@/modules/pages/client/views/media.client.view.html';
 import guideTemplateUrl from '@/modules/pages/client/views/guide.client.view.html';
-import homeTemplateUrl from '@/modules/pages/client/views/home.client.view.html';
+// import homeTemplateUrl from '@/modules/pages/client/views/home.client.view.html';
 
 angular.module('pages').config(PagesRoutes);
 
@@ -139,6 +139,13 @@ function PagesRoutes($stateProvider) {
         pageTitle: 'Guide',
       },
     })
+    // .state('home', {
+    //   url: '/hhh?tribe',
+    //   templateUrl: homeTemplateUrl, // ANGULAR
+    //   controller: 'HomeController', // ANGULAR
+    //   controllerAs: 'home', // ANGULAR
+    //   footerHidden: true,
+    // })
     // Redirect to home:
     .state('about', {
       url: '/about',
@@ -159,9 +166,10 @@ function PagesRoutes($stateProvider) {
   if (window.location.search.search('_escaped_fragment_') === -1) {
     $stateProvider.state('home', {
       url: '/?tribe',
-      templateUrl: homeTemplateUrl,
-      controller: 'HomeController',
-      controllerAs: 'home',
+      template: '<home></home>',
+      // templateUrl: homeTemplateUrl, // ANGULAR
+      // controller: 'HomeController', // ANGULAR
+      // controllerAs: 'home', // ANGULAR
       footerHidden: true,
     });
   } else {
