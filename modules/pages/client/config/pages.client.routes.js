@@ -10,7 +10,7 @@ import faqGeneralTemplateUrl from '@/modules/pages/client/views/faq-general.clie
 import faqTribesTemplateUrl from '@/modules/pages/client/views/faq-tribes.client.view.html';
 import faqFoundationTemplateUrl from '@/modules/pages/client/views/faq-foundation.client.view.html';
 import faqTechnologyTemplateUrl from '@/modules/pages/client/views/faq-technology.client.view.html';
-import foundationTemplateUrl from '@/modules/pages/client/views/foundation.client.view.html';
+// import foundationTemplateUrl from '@/modules/pages/client/views/foundation.client.view.html';
 import mediaTemplateUrl from '@/modules/pages/client/views/media.client.view.html';
 import guideTemplateUrl from '@/modules/pages/client/views/guide.client.view.html';
 import homeTemplateUrl from '@/modules/pages/client/views/home.client.view.html';
@@ -113,7 +113,7 @@ function PagesRoutes($stateProvider) {
     })
     .state('foundation', {
       url: '/foundation',
-      templateUrl: foundationTemplateUrl,
+      template: '<foundation></foundation>',
       data: {
         pageTitle: 'Foundation',
       },
