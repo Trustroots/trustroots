@@ -7,12 +7,18 @@ import ReactMapGL, { NavigationControl, ScaleControl } from 'react-map-gl';
 // Internal dependencies
 import MapStyleControl from './MapStyleControl';
 import '@/modules/core/client/components/Map/map.less';
-import { MAPBOX_TOKEN, MAP_STYLE_DEFAULT } from './constants';
+import {
+  getMapboxToken,
+  MAP_STYLE_MAPBOX_STREETS,
+  MAP_STYLE_OSM,
+} from './constants';
 
 export default function Map(props) {
+  const mapboxToken = getMapboxToken();
+  const defaultStyle = mapboxToken ? MAP_STYLE_MAPBOX_STREETS : MAP_STYLE_OSM;
   const showMapStyles =
     props.showMapStyles &&
-    (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
+    (!!mapboxToken || process.env.NODE_ENV !== 'production');
 
   const {
     children,
@@ -23,9 +29,7 @@ export default function Map(props) {
 
   const { t } = useTranslation('core');
 
-  // Set default map style here
-  const [mapStyle, setMapstyle] = useState(MAP_STYLE_DEFAULT);
-
+  const [mapStyle, setMapstyle] = useState(defaultStyle);
   const [viewport, setViewport] = useState({
     latitude: location[0],
     longitude: location[1],
@@ -36,7 +40,7 @@ export default function Map(props) {
     <ReactMapGL
       dragRotate={false}
       height={320}
-      mapboxApiAccessToken={MAPBOX_TOKEN}
+      mapboxApiAccessToken={mapboxToken}
       mapStyle={mapStyle}
       onViewportChange={setViewport}
       touchRotate={false}
