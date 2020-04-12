@@ -3549,10 +3549,10 @@ chardet@^0.7.0:
   resolved "https://registry.yarnpkg.com/chardet/-/chardet-0.7.0.tgz#90094849f0937f2eedc2425d0d28a9e5f0cbad9e"
   integrity sha512-mT8iDcrh03qDGRRmoA2hmBJnxpllMR+0/0qlzjqZES6NdiWDcZkCNAk4rPFZ9Q85r27unkiNNg8ZOiwZXBHwcA==
 
-check-node-version@4.0.2:
-  version "4.0.2"
-  resolved "https://registry.yarnpkg.com/check-node-version/-/check-node-version-4.0.2.tgz#0385880c42425651ce4aaee8de8008e4a640f5dc"
-  integrity sha512-PsIRqtX9i4oWuScZrBf7I3fDfGfo8aS5uU7F1jJ771X0lNwW6hd+SYgIfs9w8Cw9mY4bF2QlU8ZZ1KdYdCobFA==
+check-node-version@4.0.3:
+  version "4.0.3"
+  resolved "https://registry.yarnpkg.com/check-node-version/-/check-node-version-4.0.3.tgz#b783dc7267b2db0c2d0f0f51d75c9b6a5ee292f8"
+  integrity sha512-kbnOaF7SE1uasWx3hqxzsU2yz7I+rkxSMuTW0eKoF39eUtSR/a0F4Sm35LwJNx4itOIARf9eLhWHOOh7rlZ5/g==
   dependencies:
     chalk "^3.0.0"
     map-values "^1.0.1"
@@ -5269,10 +5269,10 @@ eslint-plugin-angular@4.0.1:
   resolved "https://registry.yarnpkg.com/eslint-plugin-angular/-/eslint-plugin-angular-4.0.1.tgz#f6c01d2a1e549d603e29eceb8615b5a989863a5e"
   integrity sha512-OaW5G461C2lIkOG+/bhnBoXB9UQm/r0Dj2Qf9uiIN0/ncvf2Llp30L0q1tqWkN8/CxyBwQKh1v0hpCLLDjaIKQ==
 
-eslint-plugin-import@2.20.1:
-  version "2.20.1"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-import/-/eslint-plugin-import-2.20.1.tgz#802423196dcb11d9ce8435a5fc02a6d3b46939b3"
-  integrity sha512-qQHgFOTjguR+LnYRoToeZWT62XM55MBVXObHM6SKFd1VzDcX/vqT1kAz8ssqigh5eMj8qXcRoXXGZpPP6RfdCw==
+eslint-plugin-import@2.20.2:
+  version "2.20.2"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-import/-/eslint-plugin-import-2.20.2.tgz#91fc3807ce08be4837141272c8b99073906e588d"
+  integrity sha512-FObidqpXrR8OnCh4iNsxy+WACztJLXAHBO5hK79T1Hc77PgQZkyDGA5Ag9xAvRpglvLNxhH/zSmZ70/pZ31dHg==
   dependencies:
     array-includes "^3.0.3"
     array.prototype.flat "^1.2.1"
