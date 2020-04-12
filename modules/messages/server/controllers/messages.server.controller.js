@@ -613,7 +613,7 @@ exports.markRead = function(req, res) {
           message: errorService.getErrorMessage(err),
         });
       } else {
-        res.status(200).send();
+        res.status(200).send({});
       }
     },
   );

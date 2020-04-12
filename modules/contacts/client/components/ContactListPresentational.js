@@ -11,7 +11,7 @@ export default function ContactListPresentational({
   onContactRemoved,
   onFilterChange,
 }) {
-  const { t } = useTranslation('contact');
+  const { t } = useTranslation('contacts');
 
   const confirmed = contacts.filter(contact => contact.confirmed);
   const unconfirmed = contacts.filter(contact => !contact.confirmed);

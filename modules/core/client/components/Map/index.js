@@ -20,6 +20,7 @@ export default function Map(props) {
     children,
     location = [48.6908333333, 9.14055555556], // Default location to Europe when not set
     zoom = 6,
+    ...overrideProps // anything else will be passed down to <ReactMapGL> as props
   } = props;
 
   const { t } = useTranslation('core');
@@ -38,9 +39,11 @@ export default function Map(props) {
       mapStyle={MAP_STYLE_DEFAULT}
       onViewportChange={setViewport}
       touchRotate={false}
-      width="100%"
-      {...props}
       {...viewport}
+      width={
+        '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
+      }
+      {...overrideProps}
     >
       <div className="map-navigation-control-container">
         <NavigationControl

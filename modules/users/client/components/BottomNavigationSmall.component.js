@@ -19,7 +19,7 @@ export default function BottomNavigationSmall({
     window.location.pathname.split('/')[3] || 'about',
   );
 
-  const { t } = useTranslation('user');
+  const { t } = useTranslation('users');
 
   const tabs = [
     {

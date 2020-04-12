@@ -13,7 +13,6 @@ import { eventTrack } from '@/modules/core/client/services/angular-compat';
 
 jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock('@/modules/core/client/services/angular-compat');
-jest.mock('@/modules/core/client/services/angular-compat');
 
 afterEach(() => jest.clearAllMocks());
 

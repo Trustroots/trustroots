@@ -4,7 +4,7 @@ import { Tab, Tabs } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import * as references from '../api/references.api';
-import Navigation from './create-reference/Navigation';
+import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
 import {
@@ -13,11 +13,12 @@ import {
   DuplicateInfo,
   SubmittedInfo,
 } from './create-reference/Info';
+import { createValidator } from '@/modules/core/client/utils/validation';
 
 const api = { references };
 
 export default function CreateReference({ userFrom, userTo }) {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   const [met, setMet] = useState(false);
   const [hostedThem, setHostedThem] = useState(false);
@@ -25,7 +26,7 @@ export default function CreateReference({ userFrom, userTo }) {
   const [recommend, setRecommend] = useState(null);
   const [report, setReport] = useState(false);
   const [reportMessage, setReportMessage] = useState('');
-  const [tab, setTab] = useState(0);
+  const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDuplicate, setIsDuplicate] = useState(false);
@@ -98,7 +99,30 @@ export default function CreateReference({ userFrom, userTo }) {
     />,
   ];
 
-  const tabDone = recommend ? 1 : hostedMe || hostedThem || met ? 0 : -1;
+  // find out whether the current tab is valid, and whether we can continue
+  // we'd prefer to create validator outside the render function,
+  // but we'd need to translate errors in a very complicated way
+  const validate = createValidator({
+    interaction: [
+      [
+        ({ hostedMe, hostedThem, met }) => hostedMe || hostedThem || met,
+        t('Choose your interaction'),
+      ],
+    ],
+    recommend: [[value => !!value, t('Choose your recommendation')]],
+  });
+  const errorDict = validate({
+    interaction: { hostedMe, hostedThem, met },
+    recommend,
+  });
+  // map errors to tabs and find errors relevant for current tab
+  const navigationErrors = [errorDict.interaction, errorDict.recommend];
+  const currentStepErrors = navigationErrors.slice(0, step + 1).flat();
+  // can we continue?
+  const isNextStepDisabled = isSubmitting || currentStepErrors.length > 0;
+  // if not, why?
+  const nextStepError =
+    !isSubmitting && currentStepErrors.find(error => error.trim().length > 0);
 
   if (userFrom._id === userTo._id) return <ReferenceToSelfInfo />;
 
@@ -121,7 +145,7 @@ export default function CreateReference({ userFrom, userTo }) {
   return (
     <div>
       <Tabs
-        activeKey={tab}
+        activeKey={step}
         bsStyle="pills"
         onSelect={() => {}}
         id="create-reference-tabs"
@@ -133,14 +157,13 @@ export default function CreateReference({ userFrom, userTo }) {
           {tabs[1]}
         </Tab>
       </Tabs>
-      {/* <!-- Navigation for big screens -->*/}
-      <Navigation
-        tab={tab}
-        tabDone={tabDone}
-        tabs={tabs.length}
-        disabled={isSubmitting}
-        onBack={() => setTab(tab => tab - 1)}
-        onNext={() => setTab(tab => tab + 1)}
+      <StepNavigation
+        currentStep={step}
+        numberOfSteps={tabs.length}
+        disabled={isNextStepDisabled}
+        disabledReason={nextStepError}
+        onBack={() => setStep(step => step - 1)}
+        onNext={() => setStep(step => step + 1)}
         onSubmit={handleSubmit}
       />
     </div>

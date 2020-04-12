@@ -5,8 +5,10 @@ module.exports = {
     // doesn't play nicely with jest, see jest.setup.js for more info
     'angular-waypoints/dist/angular-waypoints.all':
       '<rootDir>/jest/jest.empty-module.js',
+    '^.+\\.(css)$': '<rootDir>/jest/jest.empty-module.js',
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.js'],
+  testEnvironment: 'jest-environment-jsdom-sixteen',
   setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
   transform: {
     '^.+\\.js$': 'babel-jest',

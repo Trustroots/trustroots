@@ -7,7 +7,7 @@ const mongo = require('mongodb');
 const _ = require('lodash');
 
 function generateId() {
-  return new mongo.ObjectId().toString(); // looks a bit like one!
+  return new mongo.ObjectId().toString();
 }
 
 const selectRandom = (list, fraction = 0.5) => {
@@ -21,6 +21,7 @@ function generateBaseUser() {
     firstName: faker.name.firstName(),
     lastName: faker.name.lastName(),
     email: faker.internet.email(),
+    languages: [],
   };
 }
 

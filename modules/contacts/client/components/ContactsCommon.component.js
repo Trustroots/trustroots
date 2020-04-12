@@ -6,7 +6,7 @@ import { getContactsCommon } from '../api/contacts.api';
 import '@/config/client/i18n';
 
 export default function ContactsCommon({ profileId }) {
-  const { t } = useTranslation('contact');
+  const { t } = useTranslation('contacts');
   const [contacts, setContacts] = useState([]);
 
   useEffect(() => {

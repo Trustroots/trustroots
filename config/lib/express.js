@@ -363,7 +363,8 @@ module.exports.initHelmetHeaders = function(app) {
           'i1.wp.com', // Gravatar (WordPress.com)
           'i2.wp.com', // Gravatar (WordPress.com)
           'ucarecdn.com', // Our Tribe image CDN "Uploadcare.com"
-          'data:', // Inline images (`<img src="data:...">`)
+          'data:', // Inline images (`<img src="data:...">`) + mapbox-gl
+          'blob:', // mapbox-gl https://docs.mapbox.com/mapbox-gl-js/overview/#csp-directives
         ],
 
         // Limits the origins that you can connect to

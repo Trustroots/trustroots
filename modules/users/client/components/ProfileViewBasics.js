@@ -10,7 +10,7 @@ import {
 } from '../utils/networks';
 
 export default function ProfileViewBasics({ profile }) {
-  const { t } = useTranslation(['user-profile', 'languages']);
+  const { t } = useTranslation(['users', 'languages']);
 
   /*
    * Functions passing strings to translation fuction for translation scripts
@@ -90,7 +90,8 @@ export default function ProfileViewBasics({ profile }) {
   const renderLocationLiving = locationLiving => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-building text-muted" />
-      <Trans ns="user-profile">
+      {/* @TODO remove ns (issue #1368) */}
+      <Trans t={t} ns="users">
         Lives in{' '}
         <a href={`/search?location=${locationLiving}`}>{{ locationLiving }}</a>
       </Trans>
@@ -100,7 +101,8 @@ export default function ProfileViewBasics({ profile }) {
   const renderLocationFrom = locationFrom => (
     <div className="profile-sidebar-section">
       <i className="icon-fw icon-home text-muted"></i>
-      <Trans ns="user-profile">
+      {/* @TODO remove ns (issue #1368) */}
+      <Trans t={t} ns="users">
         From <a href={`/search?location=${locationFrom}`}>{{ locationFrom }}</a>
       </Trans>
     </div>

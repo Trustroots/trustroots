@@ -9,7 +9,7 @@ export default function Report({
   onChangeReport,
   onChangeReportMessage,
 }) {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   return (
     <div>

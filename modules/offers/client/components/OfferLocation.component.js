@@ -19,6 +19,7 @@ export default function OfferLocation({ location, offerType, offerStatus }) {
       location={location}
       width="100%"
       zoom={11}
+      scrollZoom={false}
     >
       <OfferLocationOverlay
         location={location}

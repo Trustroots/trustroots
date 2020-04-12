@@ -21,6 +21,7 @@ export default function Activate() {
           </em>
         </p>
         <p>
+          {/* @TODO remove ns (issue #1368) */}
           <Trans t={t} ns="users">
             If you didn&apos;t receive the message, check your spam folder or
             resend it via
