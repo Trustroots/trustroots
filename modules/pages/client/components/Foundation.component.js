@@ -14,7 +14,7 @@ export default function Foundation() {
 
   return (
     <>
-      <Board className="board" names="'nordiclights'">
+      <Board className="board" names="nordiclights">
         <div className="container">
           <div className="row">
             <div className="col-xs-12 text-center">
@@ -121,7 +121,7 @@ export default function Foundation() {
       {/* Manifesto */}
       <Board
         className="board board-primary board-inset"
-        names="'jungleroad'"
+        names="jungleroad"
         id="manifesto"
       >
         <div className="container">
