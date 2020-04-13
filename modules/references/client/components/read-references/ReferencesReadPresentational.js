@@ -7,7 +7,7 @@ export default function ReferencesReadPresentational({
   publicReferences,
   nonpublicReferences,
 }) {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
 
   const hasAnyPublicReferences =
     publicReferences && publicReferences.length > 0;

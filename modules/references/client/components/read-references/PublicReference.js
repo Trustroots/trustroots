@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 export default function PublicReference({ reference }) {
-  const { t } = useTranslation('reference');
+  const { t } = useTranslation('references');
   const created = new Date(reference.created);
   return (
     <div>
