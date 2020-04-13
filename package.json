@@ -145,7 +145,7 @@
     "mmmagic": "0.5.3",
     "moment": "2.24.0",
     "mongodb": "3.5.5",
-    "mongoose": "5.4.0",
+    "mongoose": "5.7.5",
     "mongoose-beautiful-unique-validation": "7.1.1",
     "mongoose-integer": "0.1.1",
     "mongoose-paginate": "5.0.3",
