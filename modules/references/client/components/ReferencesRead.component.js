@@ -1,48 +1,47 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import ReferencesReadPresentational from './read-references/ReferencesReadPresentational';
-import * as references from '../api/references.api';
+import * as referencesApi from '../api/references.api';
 import Loading from '@/modules/core/client/components/Loading';
 
-const api = { references };
+const api = { references: referencesApi };
 
 /**
  * This is a container component for a list of user's References
  */
-export default class ReferencesRead extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      references: null,
-    };
-  }
+export default function ReferencesRead({ user }) {
+  const [references, setReferences] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  async componentDidMount() {
-    const references = await api.references.read({
-      userTo: this.props.user._id,
-    });
+  // load references from api
+  useEffect(() => {
+    (async () => {
+      setIsLoading(true);
+      const references = await api.references.read({
+        userTo: user._id,
+      });
 
-    this.setState(() => ({ references }));
-  }
+      setReferences(references);
+      setIsLoading(false);
+    })();
+  }, [user]);
 
-  render() {
-    if (!this.state.references) return <Loading />;
+  if (isLoading) return <Loading />;
 
-    const publicReferences = this.state.references
-      .filter(reference => reference.public)
-      .sort((a, b) => a.created < b.created);
-    const nonpublicReferences = this.state.references
-      .filter(reference => !reference.public)
-      .sort((a, b) => a.created > b.created);
+  const publicReferences = references
+    .filter(reference => reference.public)
+    .sort((a, b) => a.created < b.created);
+  const nonpublicReferences = references
+    .filter(reference => !reference.public)
+    .sort((a, b) => a.created > b.created);
 
-    return (
-      <ReferencesReadPresentational
-        user={this.props.user}
-        publicReferences={publicReferences}
-        nonpublicReferences={nonpublicReferences}
-      />
-    );
-  }
+  return (
+    <ReferencesReadPresentational
+      user={user}
+      publicReferences={publicReferences}
+      nonpublicReferences={nonpublicReferences}
+    />
+  );
 }
 
 ReferencesRead.propTypes = {
