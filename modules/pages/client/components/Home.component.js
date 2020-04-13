@@ -1,6 +1,7 @@
 import React from 'react';
-// import ManifestoText from './ManifestoText.component.js';
 import Board from '@/modules/core/client/components/Board.js';
+import ManifestoText from './ManifestoText.component.js';
+import Tooltip from '@/modules/core/client/components/Tooltip.js';
 import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import classnames from 'classnames';
@@ -247,19 +248,15 @@ export default function Home() {
       )}
 
       {/* Manifesto */}
-      <section
-        className="board board-primary board-inset"
-        tr-boards="'mountainforest'" // TODO
+      <Board
+        className="board-primary board-inset"
+        names="mountainforest"
         id="manifesto"
       >
         <div className="container">
           <div className="row">
             <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
-              {/* TODO inside a div? */}
-              {/* <div
-                ng-include="~modules/pages/client/views/manifesto-text.client.partial.html" // TODO
-              ></div> */}
-              {/* <ManifestoText></ManifestoText> */}
+              <ManifestoText></ManifestoText>
               {!app.user && (
                 <p>
                   <br />
@@ -275,12 +272,12 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </Board>
 
       {/* Footer */}
-      <section
-        className="board board-primary board-inset home-footer"
-        tr-boards="'bokeh'" // TODO
+      <Board
+        className="board-primary board-inset home-footer"
+        tr-boards="'bokeh'"
       >
         <div className="container">
           <div className="row">
@@ -294,7 +291,7 @@ export default function Home() {
                 <i className="icon-right"></i>
                 <a
                   href="/foundation"
-                  className="home-footer-more font-brand-semibold" // TODO
+                  className="home-footer-more font-brand-semibold"
                 >
                   {t('Learn more')}
                 </a>
@@ -342,7 +339,6 @@ export default function Home() {
             </div>
             <div className="col-sm-6 col-md-3">
               <ul className="list-unstyled home-footer-pages font-brand-light">
-                {/* //TODO faq.general url*/}
                 <li>
                   <a href="/faq">{t('FAQ')}</a>
                 </li>
@@ -359,7 +355,6 @@ export default function Home() {
                   <a href="/media">{t('Media')}</a>
                 </li>
                 <li>
-                  {/* TODO support url */}
                   <a href="/support">{t('Contact & support')}</a>
                 </li>
               </ul>
@@ -390,40 +385,44 @@ export default function Home() {
             )}
             <ul className="list-inline home-footer-some">
               <li>
-                <a
-                  href="https://www.facebook.com/trustroots.org"
-                  uib-tooltip="Facebook" // TODO
-                  aria-label={t('Trustroots at Facebook')}
-                >
-                  <i className="icon-facebook icon-lg"></i>
-                </a>
+                <Tooltip id="facebook-tooltip" tooltip="Facebook">
+                  <a
+                    href="https://www.facebook.com/trustroots.org"
+                    aria-label={t('Trustroots at Facebook')}
+                  >
+                    <i className="icon-facebook icon-lg"></i>
+                  </a>
+                </Tooltip>
               </li>
               <li>
-                <a
-                  href="https://twitter.com/trustroots"
-                  uib-tooltip="Twitter" // TODO
-                  aria-label={t('Trustroots at Twitter')}
-                >
-                  <i className="icon-twitter icon-lg"></i>
-                </a>
+                <Tooltip id="facebook-tooltip" tooltip="Twitter">
+                  <a
+                    href="https://twitter.com/trustroots"
+                    aria-label={t('Trustroots at Twitter')}
+                  >
+                    <i className="icon-twitter icon-lg"></i>
+                  </a>
+                </Tooltip>
               </li>
               <li>
-                <a
-                  href="https://www.instagram.com/trustroots_org/"
-                  uib-tooltip="Instagram" // TODO
-                  aria-label={t('Trustroots at Instagram')}
-                >
-                  <i className="icon-instagram icon-lg"></i>
-                </a>
+                <Tooltip id="instagram-tooltip" tooltip="Instagram">
+                  <a
+                    href="https://www.instagram.com/trustroots_org/"
+                    aria-label={t('Trustroots at Instagram')}
+                  >
+                    <i className="icon-instagram icon-lg"></i>
+                  </a>
+                </Tooltip>
               </li>
               <li>
-                <a
-                  href="https://github.com/Trustroots/trustroots"
-                  uib-tooltip="GitHub" // TODO
-                  aria-label={t('Trustroots at GitHub')}
-                >
-                  <i className="icon-github icon-lg"></i>
-                </a>
+                <Tooltip id="github-tooltip" tooltip="GitHub">
+                  <a
+                    href="https://github.com/Trustroots/trustroots"
+                    aria-label={t('Trustroots at GitHub')}
+                  >
+                    <i className="icon-github icon-lg"></i>
+                  </a>
+                </Tooltip>
               </li>
             </ul>
 
@@ -436,7 +435,7 @@ export default function Home() {
           {/* .row */}
         </div>
         {/* /.container */}
-      </section>
+      </Board>
     </>
   );
 }

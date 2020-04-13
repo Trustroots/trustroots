@@ -139,14 +139,6 @@ function PagesRoutes($stateProvider) {
         pageTitle: 'Guide',
       },
     })
-    // .state('home', {
-    //   url: '/hhh?tribe',
-    //   templateUrl: homeTemplateUrl, // ANGULAR
-    //   controller: 'HomeController', // ANGULAR
-    //   controllerAs: 'home', // ANGULAR
-    //   footerHidden: true,
-    // })
-    // Redirect to home:
     .state('about', {
       url: '/about',
       footerHidden: true,
