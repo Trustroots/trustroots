@@ -6,6 +6,8 @@ import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import classnames from 'classnames';
 
+import getTribeBackgroundStyle from '@/modules/tribes/client/components/helpers/getTribeBackgroundStyle';
+
 export default function Home() {
   const { t } = useTranslation('pages');
 
@@ -49,6 +51,26 @@ export default function Home() {
       'hitchtruck',
     ];
   }
+  home.tribes = [
+    {
+      _id: 1,
+      slug: 'www.google.com',
+      tribe: 'hitchhikers',
+      label: 'hitchhikers',
+    },
+    {
+      _id: 2,
+      slug: 'www.google.com',
+      tribe: 'dumpster-divers',
+      label: 'dumpster-divers',
+    },
+    {
+      _id: 3,
+      slug: 'www.google.com',
+      tribe: 'punks',
+      label: 'punks',
+    },
+  ];
 
   return (
     <>
@@ -56,11 +78,9 @@ export default function Home() {
         <Board
           className="board-primary container home-intro"
           names={home.boards}
-          // backgroundImage: `url("${photo.imageUrl}")`,
           style={{
             height: boardHeight,
           }}
-          // tr-boards="::home.boards"
         >
           <div className="middle-wrapper middle-wrapper-horizontal">
             <div className="middle-content">
@@ -211,21 +231,22 @@ export default function Home() {
                 </div>
               </div>
               <div className="col-xs-12 visible-xs tribes-xs">
-                {home.tribes.slice(0, 2).map(tribe => (
+                {home.tribes.slice(0, 3).map(tribe => (
                   <a
                     key={tribe._id}
                     href={`/tribes/${tribe.slug}`}
                     className="img-circle tribe-xs tribe-image"
-                    tr-tribe-styles="{{::tribe}}" // TODO
-                    tr-tribe-styles-dimensions="520x520" // TODO
-                    tr-tribe-styles-quality="lightest" // TODO
-                    tr-tribe-styles-progressive="yes" // TODO
+                    style={getTribeBackgroundStyle(tribe, {
+                      quality: 'lightest',
+                      dimensions: '520x520',
+                      isProgressive: true,
+                    })}
                   >
                     {!tribe.image_UUID && <span>{tribe.label.charAt(0)}</span>}
                   </a>
                 ))}
               </div>
-              {home.tribes.slice(0, 2).map((tribe, index, items) => (
+              {home.tribes.slice(0, 3).map((tribe, index, items) => (
                 <div
                   key={tribe._id}
                   className={classnames('col-sm-3', 'hidden-xs', {
@@ -234,7 +255,7 @@ export default function Home() {
                 >
                   <div
                     className="img-circle tribe tribe-image"
-                    tr-tribe-styles="{{::tribe}}" // TODO
+                    style={getTribeBackgroundStyle(tribe)}
                   >
                     <a href={`/tribes/${tribe.slug}`} className="tribe-link">
                       <h3 className="tribe-label">{tribe.label}</h3>
