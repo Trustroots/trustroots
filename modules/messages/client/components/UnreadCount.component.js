@@ -6,13 +6,11 @@ import { watch as watchUnreadCount } from '@/modules/messages/client/services/un
 export default function UnreadCount() {
   const { t } = useTranslation('messages');
 
-  const [count, setCount] = useState(null);
+  const [count, setCount] = useState(0);
 
   useEffect(() => watchUnreadCount(setCount), []);
 
-  if (count === null || count === 0) {
-    return null;
-  }
+  if (!count) return null;
 
   return (
     <span
