@@ -1,5 +1,10 @@
 // External dependencies
-import { Button, DropdownButton, MenuItem, ButtonGroup } from 'react-bootstrap';
+import {
+  Button,
+  DropdownButton,
+  DropdownItem,
+  ButtonGroup,
+} from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -65,31 +70,31 @@ export class OffersPresentational extends Component {
             pullRight
             className={`btn-offer-hosting, btn-offer-hosting-${offer.status}`}
             bsSize="small"
-            bsStyle="success"
+            variant="success"
             title={this.hostingStatusLabel(offer.status)}
             id="dropdown-offers-button"
           >
-            <MenuItem
+            <DropdownItem
               href="/offer/host?status=yes"
               eventKey="1"
               className="cursor-pointer offer-hosting-yes"
             >
               {t('I can host')}
-            </MenuItem>
-            <MenuItem
+            </DropdownItem>
+            <DropdownItem
               href="/offer/host?status=maybe"
               eventKey="2"
               className="cursor-pointer offer-hosting-maybe"
             >
               {t('I might be able to host')}
-            </MenuItem>
-            <MenuItem
+            </DropdownItem>
+            <DropdownItem
               href="/offer/host?status=no"
               eventKey="3"
               className="cursor-pointer offer-hosting-no"
             >
               {t(`I can't host currently`)} {/* eslint-disable-line quotes */}
-            </MenuItem>
+            </DropdownItem>
           </DropdownButton>
         </Tooltip>
       </ButtonGroup>
@@ -109,7 +114,7 @@ export class OffersPresentational extends Component {
           statusLabel: this.hostingStatusLabel(status),
         })}
         bsSize="small"
-        bsStyle="success"
+        variant="success"
         className={`btn-offer-hosting btn-offer-hosting-${offer.status} pull-right`}
         id="offers-button"
       >
