@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Board from '@/modules/core/client/components/Board.js';
 import ManifestoText from './ManifestoText.component.js';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
@@ -6,11 +6,24 @@ import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import classnames from 'classnames';
 
+import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
 import getTribeBackgroundStyle from '@/modules/tribes/client/components/helpers/getTribeBackgroundStyle';
+
+const api = {
+  tribes: tribesAPI,
+};
 
 export default function Home() {
   const { t } = useTranslation('pages');
 
+  // TOASK
+  /*
+  - why do the modules reinstall?
+  - lodash was missing -> same error as on env setup
+
+  - BUG logs are double
+
+  */
   // TODO replace mock data with real one
   const boardHeight = 700;
   const app = {
@@ -51,26 +64,20 @@ export default function Home() {
       'hitchtruck',
     ];
   }
-  home.tribes = [
-    {
-      _id: 1,
-      slug: 'www.google.com',
-      tribe: 'hitchhikers',
-      label: 'hitchhikers',
-    },
-    {
-      _id: 2,
-      slug: 'www.google.com',
-      tribe: 'dumpster-divers',
-      label: 'dumpster-divers',
-    },
-    {
-      _id: 3,
-      slug: 'www.google.com',
-      tribe: 'punks',
-      label: 'punks',
-    },
-  ];
+
+  const [tribes, setTribes] = useState([]);
+
+  // TODO Tribes link: TypeError
+  // Cannot read property 'limit' of undefined
+  useEffect(() => {
+    async function fetchData() {
+      const tribes = await api.tribes.read({ limit: 3 });
+      // TODO: consider adding logic to fetch one more tribeif we have the param specified
+      // ... see the angular HomeController ...
+      setTribes(tribes);
+    }
+    fetchData();
+  }, []);
 
   return (
     <>
@@ -162,6 +169,7 @@ export default function Home() {
                 )}
                 <br />
                 <br />
+                {/* @TODO remove ns (issue #1368) */}
                 <Trans t={t} ns="pages">
                   Trustroots is over <a href="/statistics">36,000 members</a>{' '}
                   strong!
@@ -212,7 +220,7 @@ export default function Home() {
 
       {/* Tribes */}
       {/* @TODO delete check for home.tribes after real implementetion of tribes API*/}
-      {home.tribes && home.tribes.length && (
+      {tribes.length && (
         <section className="home-how">
           <div className="container">
             <div className="row">
@@ -231,7 +239,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="col-xs-12 visible-xs tribes-xs">
-                {home.tribes.slice(0, 3).map(tribe => (
+                {tribes.slice(0, 3).map(tribe => (
                   <a
                     key={tribe._id}
                     href={`/tribes/${tribe.slug}`}
@@ -246,7 +254,7 @@ export default function Home() {
                   </a>
                 ))}
               </div>
-              {home.tribes.slice(0, 3).map((tribe, index, items) => (
+              {tribes.slice(0, 3).map((tribe, index, items) => (
                 <div
                   key={tribe._id}
                   className={classnames('col-sm-3', 'hidden-xs', {
@@ -321,6 +329,7 @@ export default function Home() {
             <div className="col-sm-6 col-md-3">
               <h3 className="font-brand-light">{t('Team')}</h3>
               <p>
+                {/* @TODO remove ns (issue #1368) */}
                 <Trans t={t} ns="pages">
                   Trustroots is being built by a small team of activists who
                   felt that the world of sharing is being taken over by
