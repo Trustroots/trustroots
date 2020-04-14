@@ -608,7 +608,7 @@ describe('Create a reference', () => {
         });
       });
 
-      it.only('[too long public feedback] 400', async () => {
+      it('[too long public feedback] 400', async () => {
         const { body } = await agent
           .post('/api/references')
           .send({
