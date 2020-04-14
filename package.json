@@ -164,7 +164,7 @@
     "prunecluster": "2.1.0",
     "randomcolor": "0.5.4",
     "react": "16.13.1",
-    "react-bootstrap": "0.33.1",
+    "react-bootstrap": "1.0.0",
     "react-dom": "16.13.1",
     "react-i18next": "11.3.4",
     "react-map-gl": "5.2.3",
