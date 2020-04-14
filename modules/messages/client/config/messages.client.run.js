@@ -6,5 +6,5 @@ angular.module('messages').run(() => {
   enableVisibilityWatching();
   enableFaviconUpdater();
   // Without setImmediate the stuff in angular-compat cannot load as it's too early
-  setImmediate(enableUnreadMessageCountPolling);
+  setTimeout(enableUnreadMessageCountPolling, 0);
 });

@@ -119,7 +119,7 @@ module.exports = {
         'angular/interval-service': 0,
         'angular/json-functions': 2,
         'angular/log': 1,
-        'angular/timeout-service': 2,
+        'angular/timeout-service': 0,
         'angular/typecheck-array': 2,
         'angular/typecheck-date': 2,
         'angular/typecheck-function': 2,
