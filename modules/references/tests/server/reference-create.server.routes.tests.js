@@ -618,16 +618,14 @@ describe('Create a reference', () => {
               hostedMe: true,
             },
             recommend: 'yes',
-            feedbackPublic: faker.lorem.words(1000), // 1000 words...
+            feedbackPublic: faker.lorem.words(2000), // probably longer than the limit
           })
           .expect(400);
 
         should(body).match({
           message: 'Bad request.',
           details: {
-            interactions: {
-              any: 'missing',
-            },
+            feedbackPublic: 'toolong',
           },
         });
       });

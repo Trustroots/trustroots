@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const _ = require('lodash');
 const path = require('path');
 const util = require('util');
+const config = require(path.resolve('./config/config'));
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
@@ -70,6 +71,16 @@ function validateCreate(req) {
   } else if (!mongoose.Types.ObjectId.isValid(req.body.userTo)) {
     valid = false;
     details.userTo = 'userId expected';
+  }
+
+  if (_.has(req, ['body', 'feedbackPublic'])) {
+    const feedbackPublic = req.body.feedbackPublic;
+    if (
+      feedbackPublic.length > config.limits.maximumReferenceFeedbackPublicLength
+    ) {
+      valid = false;
+      details.feedbackPublic = 'toolong';
+    }
   }
 
   // No unexpected fields
