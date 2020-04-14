@@ -73,7 +73,12 @@ function validateCreate(req) {
   }
 
   // No unexpected fields
-  const allowedFields = ['userTo', 'interactions', 'recommend'];
+  const allowedFields = [
+    'userTo',
+    'interactions',
+    'recommend',
+    'feedbackPublic',
+  ];
   const fields = Object.keys(req.body);
   const unexpectedFields = _.difference(fields, allowedFields);
   const allowedInteractions = ['met', 'hostedMe', 'hostedThem'];
@@ -112,7 +117,7 @@ const referenceFields = nonpublicReferenceFields.concat([
   'interactions.met',
   'interactions.hostedMe',
   'interactions.hostedThem',
-  'recommend',
+  'feedbackPublic',
 ]);
 
 /**
