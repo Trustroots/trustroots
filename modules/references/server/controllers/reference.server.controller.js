@@ -74,7 +74,7 @@ function validateCreate(req) {
   }
 
   if (_.has(req, ['body', 'feedbackPublic'])) {
-    const feedbackPublic = req.body.feedbackPublic;
+    const { feedbackPublic } = req.body;
     if (
       feedbackPublic.length > config.limits.maximumReferenceFeedbackPublicLength
     ) {
