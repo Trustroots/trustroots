@@ -127,6 +127,8 @@ module.exports = {
     key: '',
   },
   limits: {
+    // Maximum length for public feedback for a reference
+    maximumReferenceFeedbackPublicLength: 2000,
     // Messages shorter than this will be tagged 'short' in influxdb,
     // otherwise 'long'
     longMessageMinimumLength: 170,
