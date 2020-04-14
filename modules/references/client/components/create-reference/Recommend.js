@@ -17,9 +17,9 @@ export default function Recommend({
   const { t } = useTranslation('references');
 
   const recommendQuestions = {
-    hostedMe: t('Would you recommend others to stay with them?'),
-    hostedThem: t('Would you recommend others to host them?'),
-    met: t('Would you recommend others to meet them?'),
+    hostedMe: t('Did you feel comfortable being hosted by them?'),
+    hostedThem: t('Did you feel comfortable hosting them?'),
+    met: t('Did you feel comfortable meeting them?'),
   };
 
   const question = recommendQuestions[primaryInteraction];
