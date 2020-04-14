@@ -146,7 +146,7 @@ export default function CreateReference({ userFrom, userTo }) {
     <div>
       <Tabs
         activeKey={step}
-        bsStyle="pills"
+        variant="pills"
         onSelect={() => {}}
         id="create-reference-tabs"
       >
