@@ -32,6 +32,7 @@ const referenceMapping = [
   ['hostedMe', 'interactions.hostedMe'],
   ['hostedThem', 'interactions.hostedThem'],
   ['recommend', 'recommend'],
+  ['feedbackPublic', 'feedbackPublic'],
   ['userTo', 'userTo'],
   ['public', 'public'],
 ];
