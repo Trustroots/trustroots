@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Dropdown, MenuItem } from 'react-bootstrap';
+import { Dropdown } from 'react-bootstrap';
 import locales from '@/config/shared/locales';
 
 /**
@@ -31,13 +31,13 @@ export function LanguageSwitchDropdown({
       </Dropdown.Toggle>
       <Dropdown.Menu>
         {locales.map(({ code, label }) => (
-          <MenuItem
+          <Dropdown.Item
             key={code}
             onClick={() => onChangeLanguage(code)}
             active={code === currentLanguageCode}
           >
             {label}
-          </MenuItem>
+          </Dropdown.Item>
         ))}
       </Dropdown.Menu>
     </Dropdown>
