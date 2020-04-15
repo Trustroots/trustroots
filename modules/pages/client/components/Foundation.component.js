@@ -33,9 +33,9 @@ export default function Foundation() {
         <div className="row">
           <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
             <p className="lead">
-              {t(`Trustroots is owned and operated by Trustroots Foundation, a non-profit
-              Limited by Guarantee (LBG) under section 60 exemption, registered in the
-              United Kingdom in March 2015.`)}
+              {t(
+                'Trustroots is owned and operated by Trustroots Foundation, a non-profit Limited by Guarantee (LBG) under section 60 exemption, registered in the United Kingdom in March 2015.',
+              )}
             </p>
 
             <ul className="list-inline">
@@ -98,9 +98,9 @@ export default function Foundation() {
             <div className="col-sm-4 text-center">
               <h3 id="mission">{t('Mission')}</h3>
               <p className="lead">
-                {t(`Trustroots seeks to be a platform for sharing and getting people
-                together. We aim to connect likeminded people together. We encourage
-                trust, adventure and intercultural connections.`)}
+                {t(
+                  'Trustroots seeks to be a platform for sharing and getting people together. We aim to connect likeminded people together. We encourage trust, adventure and intercultural connections.',
+                )}
               </p>
             </div>
             <div className="col-sm-4 text-center">

@@ -9,12 +9,14 @@ export default function ManifestoText() {
     <>
       <h2 className="font-brand-semibold">{t('Manifesto')}</h2>
       <br />
-      {t(`We want a world that encourages trust, adventure and intercultural
-      connections.`)}
+      {t(
+        'We want a world that encourages trust, adventure and intercultural connections.',
+      )}
       <br />
       <br />
-      {t(`Our willingness to help each other is universal. Trustroots is completely free
-      to use and will remain so forever.`)}
+      {t(
+        'Our willingness to help each other is universal. Trustroots is completely free to use and will remain so forever.',
+      )}
       <br />
       <br />
       {t('We believe in beauty, simplicity and transparency.')}
