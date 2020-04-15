@@ -5,11 +5,6 @@ import privacyTemplateUrl from '@/modules/pages/client/views/privacy.client.view
 import donateTemplateUrl from '@/modules/pages/client/views/donate.client.view.html';
 import donateHelpTemplateUrl from '@/modules/pages/client/views/donate-help.client.view.html';
 import donatePolicyTemplateUrl from '@/modules/pages/client/views/donate-policy.client.view.html';
-import faqTemplateUrl from '@/modules/pages/client/views/faq.client.view.html';
-import faqGeneralTemplateUrl from '@/modules/pages/client/views/faq-general.client.view.html';
-import faqTribesTemplateUrl from '@/modules/pages/client/views/faq-tribes.client.view.html';
-import faqFoundationTemplateUrl from '@/modules/pages/client/views/faq-foundation.client.view.html';
-import faqTechnologyTemplateUrl from '@/modules/pages/client/views/faq-technology.client.view.html';
 // import foundationTemplateUrl from '@/modules/pages/client/views/foundation.client.view.html';
 import mediaTemplateUrl from '@/modules/pages/client/views/media.client.view.html';
 import guideTemplateUrl from '@/modules/pages/client/views/guide.client.view.html';
@@ -75,38 +70,38 @@ function PagesRoutes($stateProvider) {
     })
     .state('faq', {
       url: '/faq',
-      templateUrl: faqTemplateUrl,
       abstract: true,
-      controller: 'FaqController',
-      controllerAs: 'faq',
-      data: {
-        pageTitle: 'FAQ',
-      },
+      // template: '<faq></faq>', // TODO remove after implementing FAQ pages
+      // controller: 'FaqController', // ANGULAR
+      // controllerAs: 'faq', // ANGULAR
+      // data: {
+      //   pageTitle: 'FAQ',
+      // },
     })
     .state('faq.general', {
       url: '',
-      templateUrl: faqGeneralTemplateUrl,
+      template: '<FaqGeneral></FaqGeneral>',
       data: {
         pageTitle: 'FAQ - Site & community',
       },
     })
     .state('faq.tribes', {
       url: '/tribes',
-      templateUrl: faqTribesTemplateUrl,
+      template: '<FaqTribes></FaqTribes>',
       data: {
         pageTitle: 'FAQ - Tribes',
       },
     })
     .state('faq.foundation', {
       url: '/foundation',
-      templateUrl: faqFoundationTemplateUrl,
+      template: '<FaqFoundation></FaqFoundation>',
       data: {
         pageTitle: 'FAQ - Foundation',
       },
     })
     .state('faq.technology', {
       url: '/technology',
-      templateUrl: faqTechnologyTemplateUrl,
+      template: '<FaqTechnology></FaqTechnology>',
       data: {
         pageTitle: 'FAQ - Technology',
       },
