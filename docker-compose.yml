@@ -37,7 +37,7 @@ maildev:
   container_name: maildev
   restart: always
   ports:
-    - "1080:1080"
+    - "1080:80"
 
 ## Database container
 mongodb:
