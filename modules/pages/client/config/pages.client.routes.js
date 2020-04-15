@@ -158,10 +158,12 @@ function PagesRoutes($stateProvider) {
   if (window.location.search.search('_escaped_fragment_') === -1) {
     $stateProvider.state('home', {
       url: '/?tribe',
-      template: '<home></home>',
-      // templateUrl: homeTemplateUrl, // ANGULAR
-      // controller: 'HomeController', // ANGULAR
-      // controllerAs: 'home', // ANGULAR
+      template: `
+        <home
+          user="app.user"
+          isNativeMobileApp="app.isNativeMobileApp"
+          photoCreditsCount="app.photoCreditsCount"
+        />`,
       footerHidden: true,
     });
   } else {

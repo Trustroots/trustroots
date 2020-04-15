@@ -1,78 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import PropTypes from 'prop-types';
+import { userType } from '@/modules/users/client/users.prop-types';
 import ManifestoText from './ManifestoText.component.js';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
 import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import classnames from 'classnames';
-
-import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
+import Board from '@/modules/core/client/components/Board.js';
+import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import getTribeBackgroundStyle from '@/modules/tribes/client/components/helpers/getTribeBackgroundStyle';
+import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
 
 const api = {
   tribes: tribesAPI,
 };
 
-export default function Home() {
+export default function Home({ user, isNativeMobileApp, photoCreditsCount }) {
   const { t } = useTranslation('pages');
+  const { tribe: tribeRoute } = getRouteParams();
 
-  // TOASK
-  /*
-  - why do the modules reinstall?
-  - lodash was missing -> same error as on env setup
-
-  - BUG logs are double
-
-  */
-  // TODO replace mock data with real one
   const boardHeight = 700;
-  const app = {
-    user: false,
-  };
 
-  /*
-    - import/use Board component
-    - pass in a fixed selection of names into the "names" prop
-    - ignore the onDisplayPhoto/onHidePhoto stuff for now
-    - ignore the tr-boards-ignore-small stuff
-  */
-
-  const $stateParams = { tribe: null };
-  const home = {};
-
-  if (
-    $stateParams.tribe &&
-    ['hitchhikers', 'dumpster-divers', 'punks'].indexOf($stateParams.tribe) > -1
-  ) {
-    // Photos for these 3 tribes
-    home.boards = [
-      'rainbowpeople',
-      'hitchroad',
-      'desertgirl',
-      'hitchgirl1',
-      'hitchgirl2',
-      'hitchtruck',
-    ];
-  } else {
-    home.boards = [
-      'woman-bridge',
-      'rainbowpeople',
-      'hitchroad',
-      'hitchgirl1',
-      'wavewatching',
-      'sahara-backpacker',
-      'hitchtruck',
-    ];
-  }
+  const boards =
+    tribeRoute &&
+    ['hitchhikers', 'dumpster-divers', 'punks'].indexOf(tribeRoute) > -1
+      ? // Photos for these 3 tribes
+        [
+          'rainbowpeople',
+          'hitchroad',
+          'desertgirl',
+          'hitchgirl1',
+          'hitchgirl2',
+          'hitchtruck',
+        ]
+      : [
+          'woman-bridge',
+          'rainbowpeople',
+          'hitchroad',
+          'hitchgirl1',
+          'wavewatching',
+          'sahara-backpacker',
+          'hitchtruck',
+        ];
 
   const [tribes, setTribes] = useState([]);
 
-  // TODO Tribes link: TypeError
-  // Cannot read property 'limit' of undefined
   useEffect(() => {
     async function fetchData() {
       const tribes = await api.tribes.read({ limit: 3 });
-      // TODO: consider adding logic to fetch one more tribeif we have the param specified
+      // TODO: consider adding logic to fetch one more tribe if we have the param specified
       // ... see the angular HomeController ...
       setTribes(tribes);
     }
@@ -81,10 +57,12 @@ export default function Home() {
 
   return (
     <>
-      {!app.user && (
+      {!user && (
+        // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.js controller
+        // TODO check if onDisplayPhoto/onHidePhoto should be applied here and implement functionality in the Board.js controller
         <Board
           className="board-primary container home-intro"
-          names={home.boards}
+          names={boards}
           style={{
             height: boardHeight,
           }}
@@ -120,7 +98,7 @@ export default function Home() {
                   >
                     {t('Join Trustroots now')}
                   </a>
-                  {!app.isNativeMobileApp && (
+                  {!isNativeMobileApp && (
                     <div className="home-apps">
                       <a
                         href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
@@ -219,7 +197,6 @@ export default function Home() {
       </section>
 
       {/* Tribes */}
-      {/* @TODO delete check for home.tribes after real implementetion of tribes API*/}
       {tribes.length && (
         <section className="home-how">
           <div className="container">
@@ -286,7 +263,7 @@ export default function Home() {
           <div className="row">
             <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
               <ManifestoText></ManifestoText>
-              {!app.user && (
+              {!user && (
                 <p>
                   <br />
                   <br />
@@ -333,7 +310,7 @@ export default function Home() {
                 <Trans t={t} ns="pages">
                   Trustroots is being built by a small team of activists who
                   felt that the world of sharing is being taken over by
-                  corporations trying to monetize people&#39;s willingness to
+                  corporations trying to monetize people&apos;s willingness to
                   help each other. Same team brought you also{' '}
                   <a href="http://hitchwiki.org/">Hitchwiki</a>,{' '}
                   <a href="http://trashwiki.org/">Trashwiki</a> and{' '}
@@ -393,7 +370,7 @@ export default function Home() {
 
           <div className="row text-center">
             <hr className="hr-white hr-xs" />
-            {!app.isNativeMobileApp && (
+            {!isNativeMobileApp && (
               <div className="home-apps">
                 <a
                   href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
@@ -456,7 +433,7 @@ export default function Home() {
               </li>
             </ul>
 
-            {app.photoCreditsCount && (
+            {photoCreditsCount && (
               <small className="font-brand-light">
                 <span tr-board-credits></span>
               </small>
@@ -470,4 +447,8 @@ export default function Home() {
   );
 }
 
-Home.propTypes = {};
+Home.propTypes = {
+  user: userType,
+  isNativeMobileApp: PropTypes.bool,
+  photoCreditsCount: PropTypes.bool,
+};
