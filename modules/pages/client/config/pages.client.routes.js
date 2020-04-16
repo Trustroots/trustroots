@@ -162,7 +162,7 @@ function PagesRoutes($stateProvider) {
         <home
           user="app.user"
           isNativeMobileApp="app.isNativeMobileApp"
-          photoCreditsCount="app.photoCreditsCount"
+          photoCredits="app.photoCredits"
         />`,
       footerHidden: true,
     });

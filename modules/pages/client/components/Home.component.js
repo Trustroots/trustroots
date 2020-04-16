@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { userType } from '@/modules/users/client/users.prop-types';
 import ManifestoText from './ManifestoText.component.js';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
+import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
 import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import classnames from 'classnames';
@@ -15,7 +16,7 @@ const api = {
   tribes: tribesAPI,
 };
 
-export default function Home({ user, isNativeMobileApp, photoCreditsCount }) {
+export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { t } = useTranslation('pages');
   const { tribe: tribeRoute } = getRouteParams();
 
@@ -197,7 +198,7 @@ export default function Home({ user, isNativeMobileApp, photoCreditsCount }) {
       </section>
 
       {/* Tribes */}
-      {tribes.length && (
+      {tribes.length > 0 && (
         <section className="home-how">
           <div className="container">
             <div className="row">
@@ -281,10 +282,7 @@ export default function Home({ user, isNativeMobileApp, photoCreditsCount }) {
       </Board>
 
       {/* Footer */}
-      <Board
-        className="board-primary board-inset home-footer"
-        tr-boards="'bokeh'"
-      >
+      <Board className="board-primary board-inset home-footer" names="bokeh">
         <div className="container">
           <div className="row">
             <div className="col-sm-6 col-md-3">
@@ -433,11 +431,9 @@ export default function Home({ user, isNativeMobileApp, photoCreditsCount }) {
               </li>
             </ul>
 
-            {photoCreditsCount && (
-              <small className="font-brand-light">
-                <span tr-board-credits></span>
-              </small>
-            )}
+            {/* {photoCreditsCount > 0 && ( */}
+            <BoardCredits photoCredits={photoCredits} />
+            {/* // )} */}
           </div>
           {/* .row */}
         </div>
@@ -450,5 +446,5 @@ export default function Home({ user, isNativeMobileApp, photoCreditsCount }) {
 Home.propTypes = {
   user: userType,
   isNativeMobileApp: PropTypes.bool,
-  photoCreditsCount: PropTypes.bool,
+  photoCredits: PropTypes.object,
 };

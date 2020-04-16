@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import { selectPhoto } from '../services/photos.service';
+import { $broadcast } from '@/modules/core/client/services/angular-compat';
 
 /**
  * @param {string[]|string} names - array of names or a single name
@@ -46,9 +47,14 @@ export default function Board({
     // inform the parent that the photo is displayed
     // ...useful e.g. for displaying photo credits elsewere
     onDisplayPhoto(photoObject);
+    $broadcast('photoCreditsUpdated', photoObject);
 
     // inform the parent that the photo is not displayed anymore
-    return () => onHidePhoto(photoObject);
+    // TODO return () => onHidePhoto(photoObject);
+    return () => {
+      onHidePhoto(photoObject);
+      $broadcast('photoCreditsRemoved', photoObject);
+    };
   }, []);
 
   if (photo) {
