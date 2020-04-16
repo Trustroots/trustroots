@@ -80,28 +80,41 @@ function PagesRoutes($stateProvider) {
     })
     .state('faq.general', {
       url: '',
-      template: '<FaqGeneral></FaqGeneral>',
+      template: `
+        <FaqGeneral
+          user="app.user"
+          invitationsEnabled="app.appSettings.invitationsEnabled"
+        />`,
       data: {
         pageTitle: 'FAQ - Site & community',
       },
     })
     .state('faq.tribes', {
       url: '/tribes',
-      template: '<FaqTribes></FaqTribes>',
+      template: `
+        <FaqTribes
+          invitationsEnabled="app.appSettings.invitationsEnabled"
+        />`,
       data: {
         pageTitle: 'FAQ - Tribes',
       },
     })
     .state('faq.foundation', {
       url: '/foundation',
-      template: '<FaqFoundation></FaqFoundation>',
+      template: `
+        <FaqFoundation
+          invitationsEnabled="app.appSettings.invitationsEnabled"
+        />`,
       data: {
         pageTitle: 'FAQ - Foundation',
       },
     })
     .state('faq.technology', {
       url: '/technology',
-      template: '<FaqTechnology></FaqTechnology>',
+      template: `
+        <FaqTechnology
+          invitationsEnabled="app.appSettings.invitationsEnabled"
+        />`,
       data: {
         pageTitle: 'FAQ - Technology',
       },

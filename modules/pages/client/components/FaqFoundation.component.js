@@ -1,14 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
-import '@/config/client/i18n';
 
-// export default function FaqFoundation({ invitationsEnabled }) {
-export default function FaqFoundation() {
+export default function FaqFoundation({ invitationsEnabled }) {
   const { t } = useTranslation('pages');
 
   return (
-    <Faq>
+    <Faq category="foundation" invitationsEnabled={invitationsEnabled}>
       <div className="faq-question" id="what-is-your-legal-status">
         <h3>{t("What's your legal status?")}</h3>
         <Trans t={t} ns="pages">
@@ -171,4 +170,6 @@ export default function FaqFoundation() {
   );
 }
 
-FaqFoundation.propTypes = {};
+FaqFoundation.propTypes = {
+  invitationsEnabled: PropTypes.bool,
+};

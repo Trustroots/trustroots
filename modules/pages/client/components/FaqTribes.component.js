@@ -1,25 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
-import '@/config/client/i18n';
 
-export default function FaqTribes() {
+export default function FaqTribes({ invitationsEnabled }) {
   const { t } = useTranslation('pages');
 
-  // TODO connect to the API and remove mock data
-  // const faq = {
-  //   category: 'general',
-  //   allowStickySidebar: true,
-  //   waypoints: {
-  //     flags: {
-  //       on: true,
-  //     },
-  //   },
-  // };
-  // const app = { appSettings: { invitationsEnabled: true } };
-
   return (
-    <Faq>
+    <Faq category="tribes" invitationsEnabled={invitationsEnabled}>
       <div className="faq-question" id="what-are-tribes">
         <h3>{t('What are Tribes?')}</h3>
         {t(
@@ -66,4 +54,6 @@ export default function FaqTribes() {
   );
 }
 
-FaqTribes.propTypes = {};
+FaqTribes.propTypes = {
+  invitationsEnabled: PropTypes.bool,
+};

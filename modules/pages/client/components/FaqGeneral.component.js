@@ -1,25 +1,14 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
+import { userType } from '@/modules/users/client/users.prop-types';
 import { Trans, useTranslation } from 'react-i18next';
-import '@/config/client/i18n';
 
-export default function FaqGeneral() {
+export default function FaqGeneral({ invitationsEnabled, user }) {
   const { t } = useTranslation('pages');
 
-  // TODO connect to the API and remove mock data
-  // const faq = {
-  //   category: 'general',
-  //   allowStickySidebar: true,
-  //   waypoints: {
-  //     flags: {
-  //       on: true,
-  //     },
-  //   },
-  // };
-  const app = { appSettings: { invitationsEnabled: true } };
-
   return (
-    <Faq>
+    <Faq category="general" invitationsEnabled={invitationsEnabled}>
       <div
         className="faq-question"
         id="is-trustroots-exclusively-for-hitchhikers"
@@ -141,7 +130,7 @@ export default function FaqGeneral() {
         )}
       </div>
 
-      {app.appSettings.invitationsEnabled && (
+      {invitationsEnabled && (
         <div>
           <div className="faq-question" id="why-is-trustroots-invite-only">
             <h3>{t('Why is Trustroots invite only?')}</h3>
@@ -181,7 +170,7 @@ export default function FaqGeneral() {
                 )}
               </li>
             </ul>
-            {!app.user && (
+            {!user && (
               <p className="text-center">
                 <br />
                 <a href="/signup" className="btn btn-lg btn-primary">
@@ -285,4 +274,7 @@ export default function FaqGeneral() {
   );
 }
 
-FaqGeneral.propTypes = {};
+FaqGeneral.propTypes = {
+  user: userType,
+  invitationsEnabled: PropTypes.bool,
+};

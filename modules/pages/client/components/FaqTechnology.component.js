@@ -1,25 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
-import '@/config/client/i18n';
 
-export default function FaqTechnology() {
+export default function FaqTechnology({ invitationsEnabled }) {
   const { t } = useTranslation('pages');
 
-  // TODO connect to the API and remove mock data
-  // const faq = {
-  //   category: 'general',
-  //   allowStickySidebar: true,
-  //   waypoints: {
-  //     flags: {
-  //       on: true,
-  //     },
-  //   },
-  // };
-  // const app = { appSettings: { invitationsEnabled: true } };
-
   return (
-    <Faq>
+    <Faq category="technology" invitationsEnabled={invitationsEnabled}>
       <div className="faq-question" id="opensource">
         <h3>{t('Is Trustroots open source?')}</h3>
         <Trans t={t} ns="pages">
@@ -114,4 +102,6 @@ export default function FaqTechnology() {
   );
 }
 
-FaqTechnology.propTypes = {};
+FaqTechnology.propTypes = {
+  invitationsEnabled: PropTypes.bool,
+};
