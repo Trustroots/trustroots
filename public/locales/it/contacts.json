@@ -17,12 +17,12 @@
     "Remove contact?": "Rimuovi contatto?",
     "Requested {{created, MMM D, YYYY}}": "",
     "Revoke Request": "Revoca Richiesta",
-    "Revoke contact request?": "",
+    "Revoke contact request?": "Revocare la richiesta di contatto?",
     "Since {{created, MMM D, YYYY}}": "Da {{created, MMM D, YYYY}}",
     "Wait a moment": {
         "": {
             "": {
-                "": ""
+                "": "Aspetta un momento..."
             }
         }
     },
