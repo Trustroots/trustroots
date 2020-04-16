@@ -2,14 +2,14 @@
     "(additional {{amount}} pending)": "",
     "Cancel": "Abbrechen",
     "Confirm Request": "Anfrage bestätigen",
-    "Connected since {{created, MMM D, YYYY}}": "",
+    "Connected since {{created, MMM D, YYYY}}": "Verbunden seit {{created, MMM D, YYYY}}",
     "Contact request sent and pending": {
-        "": ""
+        "": "Kontaktanfrage gesendet und ausstehend."
     },
     "Decline Request": "Anfrage ablehnen",
     "Decline contact request?": "Kontaktanfrage ablehnen?",
-    "From <2>{{locationFrom}}</2>": "",
-    "Lives in <2>{{locationLiving}}</2>": "",
+    "From <2>{{locationFrom}}</2>": "Von <2>{{locationFrom}}</2>",
+    "Lives in <2>{{locationLiving}}</2>": "Lebt in <2>{{locationLiving}}</2>",
     "No contacts yet": {
         "": ""
     },
