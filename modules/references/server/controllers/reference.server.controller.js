@@ -3,6 +3,9 @@ const _ = require('lodash');
 const path = require('path');
 const util = require('util');
 const config = require(path.resolve('./config/config'));
+const textService = require(path.resolve(
+  './modules/core/server/services/text.server.service',
+));
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
@@ -74,6 +77,7 @@ function validateCreate(req) {
   }
 
   if (_.has(req, ['body', 'feedbackPublic'])) {
+    req.body.feedbackPublic = textService.plainText(req.body.feedbackPublic);
     const { feedbackPublic } = req.body;
     if (
       feedbackPublic.length > config.limits.maximumReferenceFeedbackPublicLength
