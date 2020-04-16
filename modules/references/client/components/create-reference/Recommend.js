@@ -24,8 +24,6 @@ export default function Recommend({
 
   const question = recommendQuestions[primaryInteraction];
 
-  const marginRight = { marginRight: '20px' };
-
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
@@ -40,26 +38,25 @@ export default function Recommend({
           aria-labelledby="would-you-recommend-them-question"
         >
           <ToggleButton
-            className="btn btn-lg"
+            className="btn btn-lg recommend-reply-button"
             aria-checked={recommend === 'yes'}
             value="yes"
             bsStyle="default"
             bsSize="large"
-            style={marginRight}
           >
             {t('Yes')}
           </ToggleButton>
           <ToggleButton
-            className="btn btn-lg"
+            className="btn btn-lg recommend-reply-button"
             aria-checked={recommend === 'no'}
             value="no"
             bsStyle="default"
             bsSize="large"
-            style={marginRight}
           >
             {t('No')}
           </ToggleButton>
           <ToggleButton
+            className="btn btn-lg recommend-reply-button"
             aria-checked={recommend === 'unknown'}
             value="unknown"
             bsStyle="default"
