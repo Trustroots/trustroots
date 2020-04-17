@@ -11,14 +11,14 @@
     "From <2>{{locationFrom}}</2>": "Von <2>{{locationFrom}}</2>",
     "Lives in <2>{{locationLiving}}</2>": "Lebt in <2>{{locationLiving}}</2>",
     "No contacts yet": {
-        "": ""
+        "": "Noch keine Kontakte."
     },
-    "One contact": "",
+    "One contact": "Ein Kontakt",
     "Remove contact?": "Kontakt löschen?",
-    "Requested {{created, MMM D, YYYY}}": "",
-    "Revoke Request": "",
-    "Revoke contact request?": "",
-    "Since {{created, MMM D, YYYY}}": "",
+    "Requested {{created, MMM D, YYYY}}": "Angefragt {{created, MMM D, YYYY}}",
+    "Revoke Request": "Anfrage zurückziehen",
+    "Revoke contact request?": "Kontaktanfrage zurückziehen?",
+    "Since {{created, MMM D, YYYY}}": "Seit {{created, MMM D, YYYY}}",
     "Wait a moment": {
         "": {
             "": {
@@ -28,7 +28,7 @@
     },
     "Yes, decline request": "Ja, Anfrage ablehnen",
     "Yes, remove contact": "Ja, Kontakt löschen",
-    "Yes, revoke request": "",
+    "Yes, revoke request": "Ja, Anfrage zurückziehen",
     "You received a contact request": {
         "": "Du hast eine Kontaktanfrage erhalten."
     },
