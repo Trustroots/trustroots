@@ -1,23 +1,23 @@
 {
     "Cancel": "Cancella",
-    "Discover Tribes": "",
-    "Do you want to leave \"{{label}}\"?": "",
-    "Join": "",
-    "Join ({{label}})": "",
+    "Discover Tribes": "Scopri nuove Tribes",
+    "Do you want to leave \"{{label}}\"?": "Vuoi abbandonare\"{{label}}\"?",
+    "Join": "Unisciti",
+    "Join ({{label}})": "Unisciti a ({{label}})",
     "Join Trustroots to find members behind Tribes": {
-        "": ""
+        "": "Unisciti a Trustroots per trovare membri delle Tribes."
     },
     "Joined": "",
     "Joining Tribes helps you find likeminded Trustroots members": {
-        "": ""
+        "": "Unirti alle Tribes ti aiuta a trovare membri con mentalità affini."
     },
-    "Leave Tribe": "",
-    "Leave this Tribe?": "",
+    "Leave Tribe": "Abbandona Tribe",
+    "Leave this Tribe?": "Abbandona questa Tribe?",
     "Missing your Tribe?": "",
-    "New tribe!": "",
-    "No members yet": "",
-    "Send us suggestions!": "",
-    "Sign up with Trustroots": "",
-    "{{count, number}} members": "",
-    "{{count, number}} members_plural": ""
+    "New tribe!": "Nuova Tribe!",
+    "No members yet": "Ancora nessun membro",
+    "Send us suggestions!": "Inviaci suggerimenti!",
+    "Sign up with Trustroots": "Iscriviti a Trustroots",
+    "{{count, number}} members": "{{count, number}} membro",
+    "{{count, number}} members_plural": "{{count, number}} membri"
 }
