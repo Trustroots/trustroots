@@ -1,14 +1,16 @@
 {
     "Accommodation": "Husvære",
     "At most {{count}} guests": {
-        "At most {{count}} guests.": "Kun én gjest.",
-        "At most {{count}} guests._plural": "Kun {{count}} gjester."
+        "At most {{count}} guests": {
+            "At most {{count}} guests.": "Kun én gjest.",
+            "At most {{count}} guests._plural": "Kun {{count}} gjester."
+        }
     },
     "Bigger map": "Større kart",
     "Can host": "Kan huse",
     "Cannot host currently": "Kan ikke huse for øyeblikket",
     "Change": "Endre",
-    "Hosting status: {{statusLabel}}": "Vertsstatus:",
+    "Hosting status: {{statusLabel}}": "Vertsstatus: {{statusLabel}}",
     "I can host": "Jeg kan tilby husvære",
     "I can't host currently": "Jeg kan ikke tilby husvære",
     "I might be able to host": "Det kan hende jeg kan tilby husvære",
