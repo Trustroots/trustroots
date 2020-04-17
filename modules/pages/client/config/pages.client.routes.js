@@ -71,9 +71,12 @@ function PagesRoutes($stateProvider) {
     .state('faq', {
       url: '/faq',
       abstract: true,
-      // template: '<faq></faq>', // TODO remove after implementing FAQ pages
-      // controller: 'FaqController', // ANGULAR
-      // controllerAs: 'faq', // ANGULAR
+      // template: `
+      // <faq
+      //   invitationsEnabled="app.appSettings.invitationsEnabled"
+      // />`, // TODO remove after implementing FAQ pages
+      // // controller: 'FaqController', // ANGULAR
+      // // controllerAs: 'faq', // ANGULAR
       // data: {
       //   pageTitle: 'FAQ',
       // },
@@ -81,7 +84,7 @@ function PagesRoutes($stateProvider) {
     .state('faq.general', {
       url: '',
       template: `
-        <FaqGeneral
+        <faq-general
           user="app.user"
           invitationsEnabled="app.appSettings.invitationsEnabled"
         />`,
@@ -92,7 +95,7 @@ function PagesRoutes($stateProvider) {
     .state('faq.tribes', {
       url: '/tribes',
       template: `
-        <FaqTribes
+        <faq-tribes
           invitationsEnabled="app.appSettings.invitationsEnabled"
         />`,
       data: {
@@ -102,7 +105,7 @@ function PagesRoutes($stateProvider) {
     .state('faq.foundation', {
       url: '/foundation',
       template: `
-        <FaqFoundation
+        <faq-foundation
           invitationsEnabled="app.appSettings.invitationsEnabled"
         />`,
       data: {
@@ -112,16 +115,16 @@ function PagesRoutes($stateProvider) {
     .state('faq.technology', {
       url: '/technology',
       template: `
-        <FaqTechnology
+        <faq-technology
           invitationsEnabled="app.appSettings.invitationsEnabled"
-        />`,
+        ></faq-technology>`,
       data: {
         pageTitle: 'FAQ - Technology',
       },
     })
     .state('foundation', {
       url: '/foundation',
-      template: '<foundation></foundation>',
+      template: '</foundation>',
       data: {
         pageTitle: 'Foundation',
       },
@@ -135,7 +138,7 @@ function PagesRoutes($stateProvider) {
     })
     .state('volunteering', {
       url: '/volunteering',
-      template: '<volunteering></volunteering>',
+      template: '<volunteering/>',
       data: {
         pageTitle: 'Volunteering',
       },

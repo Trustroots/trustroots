@@ -17,9 +17,12 @@ export default function Faq({ category, invitationsEnabled, children }) {
     },
   };
 
+  // eslint-disable-next-line no-console
+  console.log('category ' + category);
+
   return (
     <>
-      <Board className="faq-header" names="['happyhippies', 'guitarcamper']">
+      <Board className="faq-header" names={['happyhippies', 'guitarcamper']}>
         <div className="container">
           <div className="row">
             <div className="col-xs-12 text-center">
@@ -47,9 +50,9 @@ export default function Faq({ category, invitationsEnabled, children }) {
                 'sidebar-sticky':
                   faq.waypoints.flags.on && faq.allowStickySidebar,
               })}
-              zum-waypoint="faq.waypoints" // TODO
-              down="flags.on" // TODO
-              up="flags.off" // TODO
+              // zum-waypoint="faq.waypoints" // TODO
+              // down="flags.on" // TODO
+              // up="flags.off" // TODO
             >
               {/* <Site & Community */}
               <div className="panel panel-default">

@@ -5,7 +5,6 @@ import ManifestoText from './ManifestoText.component.js';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
 import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
 import { Trans, useTranslation } from 'react-i18next';
-import '@/config/client/i18n';
 import classnames from 'classnames';
 import Board from '@/modules/core/client/components/Board.js';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
