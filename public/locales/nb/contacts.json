@@ -9,7 +9,7 @@
     "Decline Request": "Avslå forespørsel",
     "Decline contact request?": "Trekk kontaktforespørsel",
     "From <2>{{locationFrom}}</2>": "Fra <2>{{locationFrom}}</2>",
-    "Lives in <2>{{locationLiving}}</2>": "Bor i <2>{{locationFrom}}</2>",
+    "Lives in <2>{{locationLiving}}</2>": "Bor i <2>{{locationLiving}}</2>",
     "No contacts yet": {
         "": "Ingen kontakter enda."
     },
