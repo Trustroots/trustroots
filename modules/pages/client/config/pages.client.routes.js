@@ -1,14 +1,11 @@
 import navigationTemplateUrl from '@/modules/pages/client/views/navigation.client.view.html';
 import rulesTemplateUrl from '@/modules/pages/client/views/rules.client.view.html';
-import teamTemplateUrl from '@/modules/pages/client/views/team.client.view.html';
 import privacyTemplateUrl from '@/modules/pages/client/views/privacy.client.view.html';
 import donateTemplateUrl from '@/modules/pages/client/views/donate.client.view.html';
 import donateHelpTemplateUrl from '@/modules/pages/client/views/donate-help.client.view.html';
 import donatePolicyTemplateUrl from '@/modules/pages/client/views/donate-policy.client.view.html';
-// import foundationTemplateUrl from '@/modules/pages/client/views/foundation.client.view.html';
 import mediaTemplateUrl from '@/modules/pages/client/views/media.client.view.html';
 import guideTemplateUrl from '@/modules/pages/client/views/guide.client.view.html';
-// import homeTemplateUrl from '@/modules/pages/client/views/home.client.view.html';
 
 angular.module('pages').config(PagesRoutes);
 
@@ -35,7 +32,7 @@ function PagesRoutes($stateProvider) {
     })
     .state('team', {
       url: '/team',
-      templateUrl: teamTemplateUrl,
+      template: '<team/>',
       data: {
         pageTitle: 'Team',
       },
@@ -71,15 +68,7 @@ function PagesRoutes($stateProvider) {
     .state('faq', {
       url: '/faq',
       abstract: true,
-      // template: `
-      // <faq
-      //   invitationsEnabled="app.appSettings.invitationsEnabled"
-      // />`, // TODO remove after implementing FAQ pages
-      // // controller: 'FaqController', // ANGULAR
-      // // controllerAs: 'faq', // ANGULAR
-      // data: {
-      //   pageTitle: 'FAQ',
-      // },
+      template: '<ui-view />',
     })
     .state('faq.general', {
       url: '',
