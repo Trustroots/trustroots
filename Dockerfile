@@ -20,11 +20,6 @@ RUN apt-get -qq update && apt-get -q install -y \
 RUN wget https://github.com/Yelp/dumb-init/releases/download/v1.0.0/dumb-init_1.0.0_amd64.deb
 RUN dpkg -i dumb-init_*.deb
 
-# Install global node modules
-RUN npm install -g -y gulp --quiet
-RUN npm install -g -y faker --quiet
-RUN npm install -g -y migrate --quiet
-
 # Create working directory
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
