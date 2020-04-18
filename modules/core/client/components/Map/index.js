@@ -5,16 +5,20 @@ import React, { useState } from 'react';
 import ReactMapGL, { NavigationControl, ScaleControl } from 'react-map-gl';
 
 // Internal dependencies
-import osmStyle from './osm.json';
+import MapStyleControl from './MapStyleControl';
 import '@/modules/core/client/components/Map/map.less';
+import {
+  getMapboxToken,
+  MAP_STYLE_MAPBOX_STREETS,
+  MAP_STYLE_OSM,
+} from './constants';
 
 export default function Map(props) {
-  const MAPBOX_TOKEN = window.settings?.mapbox?.publicKey;
-  const MAP_STYLE_MAPBOX_STREETS = 'mapbox://styles/mapbox/streets-v11';
-  const MAP_STYLE_OSM = osmStyle;
-  const MAP_STYLE_DEFAULT = MAPBOX_TOKEN
-    ? MAP_STYLE_MAPBOX_STREETS
-    : MAP_STYLE_OSM;
+  const mapboxToken = getMapboxToken();
+  const defaultStyle = mapboxToken ? MAP_STYLE_MAPBOX_STREETS : MAP_STYLE_OSM;
+  const showMapStyles =
+    props.showMapStyles &&
+    (!!mapboxToken || process.env.NODE_ENV !== 'production');
 
   const {
     children,
@@ -25,6 +29,7 @@ export default function Map(props) {
 
   const { t } = useTranslation('core');
 
+  const [mapStyle, setMapstyle] = useState(defaultStyle);
   const [viewport, setViewport] = useState({
     latitude: location[0],
     longitude: location[1],
@@ -35,8 +40,8 @@ export default function Map(props) {
     <ReactMapGL
       dragRotate={false}
       height={320}
-      mapboxApiAccessToken={MAPBOX_TOKEN}
-      mapStyle={MAP_STYLE_DEFAULT}
+      mapboxApiAccessToken={mapboxToken}
+      mapStyle={mapStyle}
       onViewportChange={setViewport}
       touchRotate={false}
       {...viewport}
@@ -55,6 +60,11 @@ export default function Map(props) {
       <div className="map-scale-control-container">
         <ScaleControl />
       </div>
+      {showMapStyles && (
+        <div className="map-style-control-container">
+          <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
+        </div>
+      )}
       {children}
     </ReactMapGL>
   );
@@ -63,5 +73,6 @@ export default function Map(props) {
 Map.propTypes = {
   children: PropTypes.node,
   location: PropTypes.arrayOf(PropTypes.number),
+  showMapStyles: PropTypes.bool,
   zoom: PropTypes.number,
 };
