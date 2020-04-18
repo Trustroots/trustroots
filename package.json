@@ -105,7 +105,7 @@
     "expo-server-sdk": "2.4.0",
     "express": "4.17.1",
     "express-paginate": "1.0.0",
-    "express-session": "1.17.0",
+    "express-session": "1.17.1",
     "fbgraph": "1.4.4",
     "firebase": "3.9.0",
     "firebase-admin": "4.2.1",
