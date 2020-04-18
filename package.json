@@ -223,7 +223,7 @@
     "jasmine-core": "3.5.0",
     "jest": "25.2.7",
     "jest-environment-jsdom-sixteen": "1.0.3",
-    "jquery": "3.4.1",
+    "jquery": "3.5.0",
     "less-loader": "5.0.0",
     "lolex": "5.1.2",
     "maildev": "1.1.0",
