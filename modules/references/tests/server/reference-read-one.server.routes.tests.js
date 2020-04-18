@@ -102,7 +102,6 @@ describe('Read a single reference by reference id', () => {
           hostedMe: references[3].interactions.hostedMe,
           hostedThem: references[3].interactions.hostedThem,
         },
-        recommend: references[3].recommend,
       });
     });
 
