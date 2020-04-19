@@ -6,7 +6,7 @@ import '@/config/client/i18n';
 import * as references from '../api/references.api';
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import Interaction from './create-reference/Interaction';
-import Recommend from './create-reference/Recommend';
+import Experience from './create-reference/Experience';
 import {
   ReferenceToSelfInfo,
   LoadingInfo,
@@ -87,7 +87,7 @@ export default function CreateReference({ userFrom, userTo }) {
       interactions={{ hostedMe, hostedThem, met }}
       onChange={handleChangeInteraction}
     />,
-    <Recommend
+    <Experience
       key="recommend"
       primaryInteraction={primaryInteraction}
       recommend={recommend}
@@ -150,7 +150,7 @@ export default function CreateReference({ userFrom, userTo }) {
         onSelect={() => {}}
         id="create-reference-tabs"
       >
-        <Tab eventKey={0} title={t('How do you know them')} disabled>
+        <Tab eventKey={0} title={t('How do you know $username')} disabled>
           {tabs[0]}
         </Tab>
         <Tab eventKey={1} title={t('Experience')} disabled>

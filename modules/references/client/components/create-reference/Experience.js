@@ -5,9 +5,9 @@ import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import Report from './Report';
 
-export default function Recommend({
+export default function Experience({
   primaryInteraction,
-  recommend,
+  comfortable,
   report,
   reportMessage,
   onChangeRecommend,
@@ -17,9 +17,9 @@ export default function Recommend({
   const { t } = useTranslation('references');
 
   const recommendQuestions = {
-    hostedMe: t('Did you feel comfortable being hosted by them?'),
-    hostedThem: t('Did you feel comfortable hosting them?'),
-    met: t('Did you feel comfortable meeting them?'),
+    hostedMe: t('Did you feel comfortable being hosted by $username?'),
+    hostedThem: t('Did you feel comfortable hosting $username?'),
+    met: t('Did you feel comfortable meeting $username?'),
   };
 
   const question = recommendQuestions[primaryInteraction];
@@ -32,14 +32,14 @@ export default function Recommend({
       <div className="panel-body">
         <ToggleButtonGroup
           type="radio"
-          name="recommend"
+          name="comfortable"
           onChange={onChangeRecommend}
-          value={recommend}
+          value={comfortable}
           aria-labelledby="did-you-feel-comfortable-question"
         >
           <ToggleButton
-            className="btn btn-lg recommend-reply-button"
-            aria-checked={recommend === 'yes'}
+            className="btn btn-lg comfortable-reply-button"
+            aria-checked={comfortable === 'yes'}
             value="yes"
             bsStyle="default"
             bsSize="large"
@@ -47,8 +47,8 @@ export default function Recommend({
             {t('Yes')}
           </ToggleButton>
           <ToggleButton
-            className="btn btn-lg recommend-reply-button"
-            aria-checked={recommend === 'no'}
+            className="btn btn-lg comfortable-reply-button"
+            aria-checked={comfortable === 'no'}
             value="no"
             bsStyle="default"
             bsSize="large"
@@ -56,8 +56,8 @@ export default function Recommend({
             {t('No')}
           </ToggleButton>
           <ToggleButton
-            className="btn btn-lg recommend-reply-button"
-            aria-checked={recommend === 'unknown'}
+            className="btn btn-lg comfortable-reply-button"
+            aria-checked={comfortable === 'unknown'}
             value="unknown"
             bsStyle="default"
             bsSize="large"
@@ -66,7 +66,7 @@ export default function Recommend({
           </ToggleButton>
         </ToggleButtonGroup>
 
-        {recommend === 'no' && (
+        {comfortable === 'no' && (
           <Report
             onChangeReport={onChangeReport}
             onChangeReportMessage={onChangeReportMessage}
@@ -76,18 +76,18 @@ export default function Recommend({
         )}
         <span className="help-block">
           {
-            "This answer won't be public and is collected only for safety reasons and to make aggregated analysis."
+            "This answer won't be shared with $username and is collected for safety reasons and aggregated analysis only. "
           }
-          {/* <a>Read more</a> */}
+          <a>Read more</a>
         </span>
       </div>
     </div>
   );
 }
 
-Recommend.propTypes = {
+Experience.propTypes = {
   primaryInteraction: PropTypes.string.isRequired,
-  recommend: PropTypes.string,
+  comfortable: PropTypes.string,
   report: PropTypes.bool.isRequired,
   reportMessage: PropTypes.string.isRequired,
   onChangeRecommend: PropTypes.func.isRequired,
