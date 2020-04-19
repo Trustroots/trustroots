@@ -28,7 +28,7 @@ export default function Feedback({ feedback, onChangeFeedback }) {
           value={feedback}
         ></textarea>
         <span className="help-block">
-          {t('Were they were they great at cooking? or singing?')}
+          {t('Were they great at cooking? singing? dancing?')}
           <br />
         </span>
       </div>
