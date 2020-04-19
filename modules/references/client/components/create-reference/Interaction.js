@@ -6,13 +6,19 @@ import { useTranslation } from 'react-i18next';
 /**
  * Presentational component for picking an interaction
  */
-export default function Interaction({ interactions, onChange }) {
+export default function Interaction({
+  interactions,
+  onChange,
+  referencedUserName,
+}) {
   const { t } = useTranslation('references');
 
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
-        <h4 id="how-do-you-know-them-question">{t('How do you know them?')}</h4>
+        <h4 id="how-do-you-know-them-question">
+          {t(`How do you know ${referencedUserName}?`)}
+        </h4>
       </div>
       <div className="panel-body">
         <div role="group" aria-labelledby="how-do-you-know-them-question">
@@ -55,4 +61,5 @@ export default function Interaction({ interactions, onChange }) {
 Interaction.propTypes = {
   onChange: PropTypes.func.isRequired,
   interactions: PropTypes.object.isRequired,
+  referencedUserName: PropTypes.string.isRequired,
 };

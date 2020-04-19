@@ -81,14 +81,18 @@ export default function CreateReference({ userFrom, userTo }) {
   const primaryInteraction =
     (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
 
+  const referencedUserName = userTo.displayName || userTo.username;
+
   const tabs = [
     <Interaction
       key="interaction"
       interactions={{ hostedMe, hostedThem, met }}
       onChange={handleChangeInteraction}
+      referencedUserName={referencedUserName}
     />,
     <Experience
       key="recommend"
+      referencedUserName={referencedUserName}
       primaryInteraction={primaryInteraction}
       recommend={recommend}
       report={report}
@@ -142,6 +146,8 @@ export default function CreateReference({ userFrom, userTo }) {
     );
   }
 
+  const userToName = userTo.displayName || userTo.username;
+
   return (
     <div>
       <Tabs
@@ -150,7 +156,7 @@ export default function CreateReference({ userFrom, userTo }) {
         onSelect={() => {}}
         id="create-reference-tabs"
       >
-        <Tab eventKey={0} title={t('How do you know $username')} disabled>
+        <Tab eventKey={0} title={t(`How do you know ${userToName}`)} disabled>
           {tabs[0]}
         </Tab>
         <Tab eventKey={1} title={t('Experience')} disabled>

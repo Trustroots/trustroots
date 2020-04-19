@@ -7,6 +7,7 @@ import Report from './Report';
 
 export default function Experience({
   primaryInteraction,
+  referencedUserName,
   comfortable,
   report,
   reportMessage,
@@ -17,9 +18,11 @@ export default function Experience({
   const { t } = useTranslation('references');
 
   const recommendQuestions = {
-    hostedMe: t('Did you feel comfortable being hosted by $username?'),
-    hostedThem: t('Did you feel comfortable hosting $username?'),
-    met: t('Did you feel comfortable meeting $username?'),
+    hostedMe: t(
+      `Did you feel comfortable being hosted by ${referencedUserName}?`,
+    ),
+    hostedThem: t(`Did you feel comfortable hosting ${referencedUserName}?`),
+    met: t(`Did you feel comfortable meeting ${referencedUserName}?`),
   };
 
   const question = recommendQuestions[primaryInteraction];
@@ -76,9 +79,9 @@ export default function Experience({
         )}
         <span className="help-block">
           {
-            "This answer won't be shared with $username and is collected for safety reasons and aggregated analysis only. "
+            "This answer won't be shared with them and is collected for safety reasons and aggregated analysis only. "
           }
-          <a>Read more</a>
+          {/* <a>Read more</a> */}
         </span>
       </div>
     </div>
@@ -87,6 +90,7 @@ export default function Experience({
 
 Experience.propTypes = {
   primaryInteraction: PropTypes.string.isRequired,
+  referencedUserName: PropTypes.string.isRequired,
   comfortable: PropTypes.string,
   report: PropTypes.bool.isRequired,
   reportMessage: PropTypes.string.isRequired,
