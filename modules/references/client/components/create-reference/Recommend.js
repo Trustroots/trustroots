@@ -74,6 +74,12 @@ export default function Recommend({
             reportMessage={reportMessage}
           />
         )}
+        <span className="help-block">
+          {
+            "This answer won't be public and is collected only for safety reasons and to make aggregated analysis."
+          }
+          {/* <a>Read more</a> */}
+        </span>
       </div>
     </div>
   );
