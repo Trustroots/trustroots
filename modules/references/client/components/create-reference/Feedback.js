@@ -8,9 +8,15 @@ export default function Feedback({ feedback, onChangeFeedback }) {
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
-        <h4>{t('Would you like to describe something about them?')}</h4>
+        <h4 id="feedback-public-question">
+          {t('Would you like to describe something about them?')}
+        </h4>
       </div>
-      <div className="panel-body">
+      <div
+        className="panel-body"
+        role="group"
+        aria-labelledby="feedback-public-question"
+      >
         <label htmlFor="feedback-message" className="control-label">
           {t('Public feedback')}
         </label>
