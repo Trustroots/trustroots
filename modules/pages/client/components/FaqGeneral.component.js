@@ -31,7 +31,6 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
           introduce it to new communities. <br />
         </Trans>
         <br />
-        {/* TODO ui-sref="faq.tribes" */}
         <a href="/faq/tribes">{t('Read more about tribes')}</a>.
       </div>
 
@@ -74,7 +73,7 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
             rel="noopener"
           >
             Android (Chrome)
-          </a>
+          </a>{' '}
           and{' '}
           <a
             href="https://www.wikihow.com/Set-a-Bookmark-Shortcut-in-Your-Home-Screen-on-Android#Using_Firefox_sub"
@@ -95,7 +94,7 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
         </Trans>
         <br />
         <em>
-          {t('See also')}
+          {t('See also')}{' '}
           <a href="/faq/technology#f-droid">
             {t('Could you offer mobile app at F-Droid store?')}
           </a>
@@ -186,7 +185,7 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
               If you know that you should&apos;ve received invite code from the
               waiting list, check first your email spam folder. If you
               don&apos;t find the email there, please{' '}
-              <a ui-sref="support">contact us</a>.
+              <a href="/support">contact us</a>.
             </Trans>
           </div>
         </div>
@@ -196,7 +195,7 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
         <h3>{t('Why is there Facebook connection?')}</h3>
         {t(
           'So that people who have their data, photos and connections on Facebook can release their information to Trustroots. Using Facebook from Trustroots is optional.',
-        )}
+        )}{' '}
         <Trans t={t} ns="pages">
           <a href="https://ideas.trustroots.org/2014/12/29/life-outside-big-blue-box/">
             Read our blog post
@@ -266,7 +265,7 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
         <Trans t={t} ns="pages">
           If you navigate to the profile of a user, you will find a link that
           says &quot;Report member&quot; that will lead you to a report form.
-          Also, at any point, you can <a ui-sref="support">contact us</a> with
+          Also, at any point, you can <a href="/support">contact us</a> with
           your report.
         </Trans>
       </div>

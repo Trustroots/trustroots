@@ -1,12 +1,3 @@
-import navigationTemplateUrl from '@/modules/pages/client/views/navigation.client.view.html';
-import rulesTemplateUrl from '@/modules/pages/client/views/rules.client.view.html';
-import privacyTemplateUrl from '@/modules/pages/client/views/privacy.client.view.html';
-import donateTemplateUrl from '@/modules/pages/client/views/donate.client.view.html';
-import donateHelpTemplateUrl from '@/modules/pages/client/views/donate-help.client.view.html';
-import donatePolicyTemplateUrl from '@/modules/pages/client/views/donate-policy.client.view.html';
-import mediaTemplateUrl from '@/modules/pages/client/views/media.client.view.html';
-import guideTemplateUrl from '@/modules/pages/client/views/guide.client.view.html';
-
 angular.module('pages').config(PagesRoutes);
 
 /* @ngInject */
@@ -16,7 +7,12 @@ function PagesRoutes($stateProvider) {
   $stateProvider
     .state('navigation', {
       url: '/navigation',
-      templateUrl: navigationTemplateUrl,
+      template: `
+        <navigation
+          user="app.user"
+          isNativeMobileApp="app.isNativeMobileApp"
+          onSignout="app.signout"
+        />`,
       requiresAuth: true,
       footerHidden: true,
       data: {
@@ -25,42 +21,45 @@ function PagesRoutes($stateProvider) {
     })
     .state('rules', {
       url: '/rules',
-      templateUrl: rulesTemplateUrl,
+      template: '<rules />',
       data: {
         pageTitle: 'Rules',
       },
     })
     .state('team', {
       url: '/team',
-      template: '<team/>',
+      template: '<team />',
       data: {
         pageTitle: 'Team',
       },
     })
     .state('privacy', {
       url: '/privacy',
-      templateUrl: privacyTemplateUrl,
+      template: `
+        <privacy
+          user="app.user"
+        />`,
       data: {
         pageTitle: 'Privacy policy',
       },
     })
     .state('donate', {
       url: '/donate',
-      templateUrl: donateTemplateUrl,
+      template: '<donate />',
       data: {
         pageTitle: 'Donate',
       },
     })
     .state('donate-help', {
       url: '/donate/help',
-      templateUrl: donateHelpTemplateUrl,
+      template: '<donate-help />',
       data: {
         pageTitle: 'Donation help',
       },
     })
     .state('donate-policy', {
       url: '/donate/policy',
-      templateUrl: donatePolicyTemplateUrl,
+      template: '<donate-policy />',
       data: {
         pageTitle: 'Donation policy',
       },
@@ -106,35 +105,38 @@ function PagesRoutes($stateProvider) {
       template: `
         <faq-technology
           invitationsEnabled="app.appSettings.invitationsEnabled"
-        ></faq-technology>`,
+        />`,
       data: {
         pageTitle: 'FAQ - Technology',
       },
     })
     .state('foundation', {
       url: '/foundation',
-      template: '</foundation>',
+      template: `
+        <foundation
+          user="app.user"
+        />`,
       data: {
         pageTitle: 'Foundation',
       },
     })
     .state('media', {
       url: '/media',
-      templateUrl: mediaTemplateUrl,
+      template: '<media />',
       data: {
         pageTitle: 'Media',
       },
     })
     .state('volunteering', {
       url: '/volunteering',
-      template: '<volunteering/>',
+      template: '<volunteering />',
       data: {
         pageTitle: 'Volunteering',
       },
     })
     .state('guide', {
       url: '/guide',
-      templateUrl: guideTemplateUrl,
+      template: '<guide />',
       data: {
         pageTitle: 'Guide',
       },

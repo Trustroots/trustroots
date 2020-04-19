@@ -104,12 +104,14 @@ export default function FaqFoundation({ invitationsEnabled }) {
         )}
         <br />
         <br />
-        {t(
-          'Additionally our by-laws (articles of association) specifically prohibit selling the users database and specify that the company code will be licensed under an',
-        )}
-        <a href="https://github.com/trustroots/trustroots/#license">
-          {t('open source license')}
-        </a>
+        <Trans t={t} ns="pages">
+          Additionally our by-laws (articles of association) specifically
+          prohibit selling the users database and specify that the company code
+          will be licensed under an
+          <a href="https://github.com/trustroots/trustroots/#license">
+            open source license
+          </a>
+        </Trans>
         .
       </div>
 

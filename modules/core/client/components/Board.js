@@ -50,7 +50,6 @@ export default function Board({
     $broadcast('photoCreditsUpdated', photoObject);
 
     // inform the parent that the photo is not displayed anymore
-    // TODO return () => onHidePhoto(photoObject);
     return () => {
       onHidePhoto(photoObject);
       $broadcast('photoCreditsRemoved', photoObject);

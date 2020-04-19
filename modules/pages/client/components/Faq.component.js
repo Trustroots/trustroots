@@ -7,19 +7,6 @@ import classnames from 'classnames';
 export default function Faq({ category, invitationsEnabled, children }) {
   const { t } = useTranslation('pages');
 
-  // TODO connect to the API and remove mock data
-  const faq = {
-    allowStickySidebar: true,
-    waypoints: {
-      flags: {
-        on: true,
-      },
-    },
-  };
-
-  // eslint-disable-next-line no-console
-  console.log('category ' + category);
-
   return (
     <>
       <Board className="faq-header" names={['happyhippies', 'guitarcamper']}>
@@ -47,12 +34,12 @@ export default function Faq({ category, invitationsEnabled, children }) {
             <div
               id="faq-sidebar"
               className={classnames('sidebar', {
-                'sidebar-sticky':
-                  faq.waypoints.flags.on && faq.allowStickySidebar,
+                'sidebar-sticky': false,
+                // TODO implement waypoint and sticky sidebar feature by setting sidebar-sticky to: faq.waypoints.flags.on && faq.allowStickySidebar,
               })}
-              // zum-waypoint="faq.waypoints" // TODO
-              // down="flags.on" // TODO
-              // up="flags.off" // TODO
+              // TODO zum-waypoint="faq.waypoints"
+              // TODO down="flags.on"
+              // TODO up="flags.off"
             >
               {/* <Site & Community */}
               <div className="panel panel-default">

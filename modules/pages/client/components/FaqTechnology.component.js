@@ -33,16 +33,16 @@ export default function FaqTechnology({ invitationsEnabled }) {
 
       <div className="faq-question" id="are-you-planning-to-do-x-feature">
         <h3>{t('Are you planning to do X feature?')}</h3>
-        <Trans t={t} ns="module">
-          See
+        <Trans t={t} ns="pages">
+          See{' '}
           <a href="https://github.com/Trustroots/trustroots/projects/1">
             our roadmap
           </a>{' '}
-          for our current todolist. Feel free to{' '}
-          <a ui-sref="support">tell us</a> about your ideas! The current version
-          of Trustroots is the most limited software you can imagine that still
-          works for hospitality. We simply haven&apos;t had time to build most
-          of the features yet. Please be patient and be mindful about
+          for our current todolist. Feel free to <a href="/support">tell us</a>{' '}
+          about your ideas! The current version of Trustroots is the most
+          limited software you can imagine that still works for hospitality. We
+          simply haven&apos;t had time to build most of the features yet. Please
+          be patient and be mindful about{' '}
           <a href="http://www.productstrategymeanssayingno.com/">
             feature creep
           </a>

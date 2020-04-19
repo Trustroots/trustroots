@@ -16,8 +16,8 @@ export default function FaqTribes({ invitationsEnabled }) {
         <br />
         <br />
         <Trans t={t} ns="pages">
-          You can start now by joining <a ui-sref="tribes.list">Tribes</a> that
-          you identify yourself with.
+          You can start now by joining <a href="/tribes">Tribes</a> that you
+          identify yourself with.
         </Trans>
         <br />
         <br />

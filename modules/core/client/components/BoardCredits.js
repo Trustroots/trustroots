@@ -25,7 +25,7 @@ export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
       $on('photoCreditsUpdated', (scope, photo) => {
         setPhotoCredits({ ...photoCredits, ...photo });
       });
-      // TODO implement removing credit
+
       $on('photoCreditsRemoved', (scope, photo) => {
         setPhotoCredits({ ...photoCredits, ...photo });
       });

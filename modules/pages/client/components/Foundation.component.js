@@ -1,20 +1,15 @@
 import React from 'react';
+import { userType } from '@/modules/users/client/users.prop-types';
 import ManifestoText from './ManifestoText.component.js';
-import { useTranslation } from 'react-i18next';
-import '@/config/client/i18n';
 import Board from '@/modules/core/client/components/Board.js';
+import { useTranslation } from 'react-i18next';
 
-export default function Foundation() {
+export default function Foundation({ user }) {
   const { t } = useTranslation('pages');
-
-  // mock data for testing
-  const app = {
-    user: true,
-  };
 
   return (
     <>
-      <Board className="board" names="nordiclights">
+      <Board names="nordiclights">
         <div className="container">
           <div className="row">
             <div className="col-xs-12 text-center">
@@ -47,7 +42,7 @@ export default function Foundation() {
               <li>
                 <a href="https://ideas.trustroots.org/wordpress/wp-content/uploads/2015/03/Trustroots-Articles-2015.pdf">
                   {t('Foundation’s Articles')}
-                </a>
+                </a>{' '}
                 <small className="text-muted">(pdf)</small>
               </li>
               <li>
@@ -59,7 +54,7 @@ export default function Foundation() {
               <li>
                 <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
                   {t('Announcement')}
-                </a>
+                </a>{' '}
                 <small className="text-muted">{t('(March, 2015)')}</small>
               </li>
               <li>
@@ -120,7 +115,7 @@ export default function Foundation() {
 
       {/* Manifesto */}
       <Board
-        className="board board-primary board-inset"
+        className="board-primary board-inset"
         names="jungleroad"
         id="manifesto"
       >
@@ -128,7 +123,7 @@ export default function Foundation() {
           <div className="row">
             <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
               <ManifestoText></ManifestoText>
-              {!app.user && (
+              {!user && (
                 <p>
                   <br />
                   <br />
@@ -148,4 +143,6 @@ export default function Foundation() {
   );
 }
 
-Foundation.propTypes = {};
+Foundation.propTypes = {
+  user: userType,
+};

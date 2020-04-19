@@ -1,6 +1,7 @@
 import React from 'react';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
 import { Trans, useTranslation } from 'react-i18next';
+
 export default function Team() {
   const { t } = useTranslation('pages');
 
@@ -11,7 +12,7 @@ export default function Team() {
         <div className="col-xs-12 col-sm-6 col-sm-offset-3 col-md-4 col-md-offset-4 text-center">
           <img
             className="hidden-xs"
-            src="/img/tree-color.svg" // TODO
+            src="/img/tree-color.svg"
             alt="Trustroots"
             width="120"
             height="120"
@@ -71,7 +72,7 @@ export default function Team() {
               backgrounds in some notable projects. The same people who also
               brought you <a href="http://hitchwiki.org/">Hitchwiki</a>,{' '}
               <a href="http://trashwiki.org/">Trashwiki</a>,{' '}
-              <a href="http://nomadwihki.org/">Nomadwiki</a> & more.
+              <a href="http://nomadwihki.org/">Nomadwiki</a> &amp; more.
             </Trans>
           </p>
           <p>

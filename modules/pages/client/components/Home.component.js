@@ -19,7 +19,14 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { t } = useTranslation('pages');
   const { tribe: tribeRoute } = getRouteParams();
 
-  const boardHeight = 700;
+  // TODO get header height instead of magic number 56
+  // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
+  const headerHeight = 56;
+
+  const boardHeight =
+    window.innerWidth <= 480 && window.innerHeight < 700
+      ? 400
+      : window.innerHeight - headerHeight + 14;
 
   const boards =
     tribeRoute &&
@@ -48,8 +55,15 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
   useEffect(() => {
     async function fetchData() {
       const tribes = await api.tribes.read({ limit: 3 });
-      // TODO: consider adding logic to fetch one more tribe if we have the param specified
-      // ... see the angular HomeController ...
+      const tribeIsLoaded = tribes.some(t => t.slug === tribeRoute);
+
+      if (tribeRoute && !tribeIsLoaded) {
+        const extraTribe = await api.tribes.get(tribeRoute);
+
+        if (extraTribe && extraTribe._id) {
+          tribes.unshift(extraTribe);
+        }
+      }
       setTribes(tribes);
     }
     fetchData();
@@ -430,9 +444,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
               </li>
             </ul>
 
-            {/* {photoCreditsCount > 0 && ( */}
             <BoardCredits photoCredits={photoCredits} />
-            {/* // )} */}
           </div>
           {/* .row */}
         </div>
