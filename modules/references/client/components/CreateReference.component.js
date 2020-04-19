@@ -153,7 +153,7 @@ export default function CreateReference({ userFrom, userTo }) {
         <Tab eventKey={0} title={t('How do you know them')} disabled>
           {tabs[0]}
         </Tab>
-        <Tab eventKey={1} title={t('Recommendation')} disabled>
+        <Tab eventKey={1} title={t('Experience')} disabled>
           {tabs[1]}
         </Tab>
       </Tabs>
