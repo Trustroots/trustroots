@@ -3,6 +3,7 @@ const request = require('supertest');
 const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
+const faker = require('faker');
 const Reference = mongoose.model('Reference');
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
@@ -62,6 +63,7 @@ describe('Create a reference', () => {
     context('valid request', () => {
       context('every reference', () => {
         it('respond with 201 Created and the new reference in body', async () => {
+          const feedbackPublic = 'they were very nice and good at cooking';
           const { body } = await agent
             .post('/api/references')
             .send({
@@ -72,6 +74,7 @@ describe('Create a reference', () => {
                 hostedThem: true,
               },
               recommend: 'yes',
+              feedbackPublic,
             })
             .expect(201);
 
@@ -85,7 +88,7 @@ describe('Create a reference', () => {
               hostedMe: true,
               hostedThem: true,
             },
-            recommend: 'yes',
+            feedbackPublic,
             _id: /^[0-9a-f]{24}$/,
           });
         });
@@ -601,6 +604,28 @@ describe('Create a reference', () => {
           message: 'Bad request.',
           details: {
             fields: 'unexpected',
+          },
+        });
+      });
+
+      it('[too long public feedback] 400', async () => {
+        const { body } = await agent
+          .post('/api/references')
+          .send({
+            userTo: user2._id,
+            met: false,
+            interactions: {
+              hostedMe: true,
+            },
+            recommend: 'yes',
+            feedbackPublic: faker.lorem.words(2000), // probably longer than the limit
+          })
+          .expect(400);
+
+        should(body).match({
+          message: 'Bad request.',
+          details: {
+            feedbackPublic: 'toolong',
           },
         });
       });

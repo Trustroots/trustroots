@@ -89,7 +89,8 @@ module.exports = {
       }
     },
     user: 'trustroots',
-    publicKey: 'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJVWFFGa19BIn0.4e59q4-7e8yvgvcd1jzF4g'
+    publicKey:
+      'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJjanhydWF3bDkwYnd0M2JtanB2amg1NWVpIn0.a8XP1jMeVFBsScDI3oV1BA',
   }
   */
   /*
