@@ -97,7 +97,7 @@ describe('<CreateReference />', () => {
     fireEvent.click(getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText('Would you recommend others to stay with them?'),
+      queryByLabelText('Did you feel comfortable being hosted by them?'),
     ).toBeInTheDocument();
     fireEvent.click(getByText('Yes'));
 
@@ -137,7 +137,7 @@ describe('<CreateReference />', () => {
     fireEvent.click(getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText('Would you recommend others to stay with them?'),
+      queryByLabelText('Did you feel comfortable being hosted by them?'),
     ).toBeInTheDocument();
     fireEvent.click(getByText('No'));
 

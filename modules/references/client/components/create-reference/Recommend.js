@@ -27,7 +27,7 @@ export default function Recommend({
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
-        <h4 id="would-you-recommend-them-question">{question}</h4>
+        <h4 id="did-you-feel-comfortable-question">{question}</h4>
       </div>
       <div className="panel-body">
         <ToggleButtonGroup
@@ -35,7 +35,7 @@ export default function Recommend({
           name="recommend"
           onChange={onChangeRecommend}
           value={recommend}
-          aria-labelledby="would-you-recommend-them-question"
+          aria-labelledby="did-you-feel-comfortable-question"
         >
           <ToggleButton
             className="btn btn-lg recommend-reply-button"
