@@ -81,6 +81,8 @@ describe('<CreateReference />', () => {
     api.references.read.mockResolvedValueOnce([]);
     api.references.create.mockResolvedValueOnce({ public: false });
 
+    const name = userTo.displayName || userTo.username;
+
     const {
       getByText,
       getAllByText,
@@ -91,13 +93,13 @@ describe('<CreateReference />', () => {
 
     await waitForLoader();
 
-    expect(queryByLabelText('How do you know them?')).toBeInTheDocument();
+    expect(queryByLabelText(`How do you know ${name}?`)).toBeInTheDocument();
     fireEvent.click(getByLabelText('They hosted me'));
 
     fireEvent.click(getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText('Did you feel comfortable being hosted by them?'),
+      queryByLabelText(`Did you feel comfortable being hosted by ${name}?`),
     ).toBeInTheDocument();
     fireEvent.click(getByText('Yes'));
 
@@ -121,6 +123,8 @@ describe('<CreateReference />', () => {
     api.references.read.mockResolvedValueOnce([]);
     api.references.create.mockResolvedValueOnce({ public: false });
 
+    const name = userTo.displayName || userTo.username;
+
     const {
       getByText,
       getAllByText,
@@ -131,13 +135,13 @@ describe('<CreateReference />', () => {
 
     await waitForLoader();
 
-    expect(queryByLabelText('How do you know them?')).toBeInTheDocument();
+    expect(queryByLabelText(`How do you know ${name}?`)).toBeInTheDocument();
     fireEvent.click(getByLabelText('They hosted me'));
 
     fireEvent.click(getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText('Did you feel comfortable being hosted by them?'),
+      queryByLabelText(`Did you feel comfortable being hosted by ${name}?`),
     ).toBeInTheDocument();
     fireEvent.click(getByText('No'));
 
