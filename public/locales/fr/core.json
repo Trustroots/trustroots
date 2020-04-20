@@ -1,12 +1,12 @@
 {
-  "Back": "",
-  "Finish": "",
-  "Finish editing and save": "",
-  "Next": "",
-  "Next section": "",
-  "Previous section": "",
-  "Read more…": "",
-  "Wait a moment…": "",
-  "Zoom in": "",
-  "Zoom out": ""
+    "Back": "Retour",
+    "Finish": "Terminer",
+    "Finish editing and save": "Terminer les modifications et enregistrer",
+    "Next": "Suivant",
+    "Next section": "Section suivante",
+    "Previous section": "Section précédente",
+    "Read more…": "En savoir plus…",
+    "Wait a moment…": "Un instant s'il vous plaît…",
+    "Zoom in": "Zoom avant",
+    "Zoom out": "Zoom arrière"
 }
