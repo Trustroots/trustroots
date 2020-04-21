@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const _ = require('lodash');
 const path = require('path');
 const util = require('util');
+const config = require(path.resolve('./config/config'));
+const textService = require(path.resolve(
+  './modules/core/server/services/text.server.service',
+));
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
@@ -72,8 +76,24 @@ function validateCreate(req) {
     details.userTo = 'userId expected';
   }
 
+  if (_.has(req, ['body', 'feedbackPublic'])) {
+    req.body.feedbackPublic = textService.plainText(req.body.feedbackPublic);
+    const { feedbackPublic } = req.body;
+    if (
+      feedbackPublic.length > config.limits.maximumReferenceFeedbackPublicLength
+    ) {
+      valid = false;
+      details.feedbackPublic = 'toolong';
+    }
+  }
+
   // No unexpected fields
-  const allowedFields = ['userTo', 'interactions', 'recommend'];
+  const allowedFields = [
+    'userTo',
+    'interactions',
+    'recommend',
+    'feedbackPublic',
+  ];
   const fields = Object.keys(req.body);
   const unexpectedFields = _.difference(fields, allowedFields);
   const allowedInteractions = ['met', 'hostedMe', 'hostedThem'];
@@ -112,7 +132,7 @@ const referenceFields = nonpublicReferenceFields.concat([
   'interactions.met',
   'interactions.hostedMe',
   'interactions.hostedThem',
-  'recommend',
+  'feedbackPublic',
 ]);
 
 /**
