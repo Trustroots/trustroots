@@ -11,6 +11,10 @@ export function $broadcast(...args) {
   return get('$rootScope').$broadcast(...args);
 }
 
+export function $on(...args) {
+  return get('$rootScope').$on(...args);
+}
+
 export function eventTrack(...args) {
   return get('$analytics').eventTrack(...args);
 }
@@ -21,4 +25,8 @@ export function getRouteParams() {
 
 export function go(...args) {
   return get('$state').go(...args);
+}
+
+export function getUser() {
+  return get('Authentication').user;
 }
