@@ -9,7 +9,8 @@ export default function Feedback({ feedback, onChangeFeedback }) {
     <div className="panel panel-default">
       <div className="panel-heading">
         <h4 id="feedback-public-question">
-          {t('Would you like to describe something about them?')}
+          {t('Would you like to describe something about them?')}&nbsp; (
+          {t('Optional')})
         </h4>
       </div>
       <div
@@ -17,6 +18,8 @@ export default function Feedback({ feedback, onChangeFeedback }) {
         role="group"
         aria-labelledby="feedback-public-question"
       >
+        <p>{t('Did you enjoy their cooking? singing?')}</p>
+        <br />
         <label htmlFor="feedback-message" className="control-label">
           {t('Public feedback')}
         </label>
@@ -28,7 +31,9 @@ export default function Feedback({ feedback, onChangeFeedback }) {
           value={feedback}
         ></textarea>
         <span className="help-block">
-          {t('Were they great at cooking? singing? dancing?')}
+          {t(
+            'The answer you write will be publicaly available on their profile',
+          )}
           <br />
         </span>
       </div>

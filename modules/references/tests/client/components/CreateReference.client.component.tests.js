@@ -104,7 +104,9 @@ describe('<CreateReference />', () => {
     fireEvent.click(getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText('Would you like to describe something about them?'),
+      queryByLabelText(
+        'Would you like to describe something about them? (Optional)',
+      ),
     ).toBeInTheDocument();
     fireEvent.change(getByLabelText('Public feedback'), {
       target: { value: 'they made a tasty pie' },
