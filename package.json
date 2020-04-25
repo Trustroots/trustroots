@@ -198,7 +198,7 @@
     "babel-loader": "8.1.0",
     "babel-plugin-angularjs-annotate": "0.10.0",
     "babel-plugin-i18next-extract": "0.7.2",
-    "concurrently": "5.1.0",
+    "concurrently": "5.2.0",
     "css-loader": "3.5.3",
     "eslint": "6.8.0",
     "eslint-config-prettier": "6.10.1",
