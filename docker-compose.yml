@@ -33,7 +33,7 @@ trustroots:
 ## SMTP Server + Web Interface for viewing and testing emails during development.
 ## http://djfarrelly.github.io/MailDev/
 maildev:
-  image: djfarrelly/maildev
+  image: maildev/maildev
   container_name: maildev
   restart: always
   ports:
