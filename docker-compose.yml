@@ -13,7 +13,7 @@ trustroots:
     - /trustroots/node_modules
     - /trustroots/public
     - /trustroots/uploads
-  command: npm run start:docker
+  command: npm run start
   links:
     - mongodb:mongodb
     - maildev:maildev

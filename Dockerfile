@@ -30,7 +30,7 @@ WORKDIR /trustroots
 # when the local package.json file changes.
 # Install npm packages
 COPY package.json /trustroots/
-RUN npm install --quiet
+RUN npm ci --quiet
 
 # Set environment variables
 ENV NODE_ENV development
@@ -50,4 +50,4 @@ EXPOSE 80
 EXPOSE 3000
 EXPOSE 5858
 EXPOSE 27017
-CMD ["dumb-init", "npm", "start:docker"]
+CMD ["dumb-init", "npm", "start"]
