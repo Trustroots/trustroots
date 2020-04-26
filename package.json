@@ -254,7 +254,7 @@
     "yargs": "15.3.1"
   },
   "optionalDependencies": {
-    "chokidar": "3.3.1"
+    "chokidar": "3.4.0"
   },
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"
