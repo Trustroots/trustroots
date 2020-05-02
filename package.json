@@ -176,7 +176,7 @@
     "stathat": "0.0.8",
     "styled-components": "5.1.0",
     "ui-leaflet": "2.0.0",
-    "uuid": "7.0.3",
+    "uuid": "8.0.0",
     "validator": "13.0.0",
     "winston": "2.4.4",
     "winston-papertrail": "1.0.5"
