@@ -4,10 +4,10 @@
     "Confirm Request": "Conferma Richiesta",
     "Connected since {{created, MMM D, YYYY}}": "",
     "Contact request sent and pending": {
-        "": ""
+        "": "Richieste di contatto inviate e in attesa."
     },
     "Decline Request": "Rifiuta Richiesta",
-    "Decline contact request?": "",
+    "Decline contact request?": "Rifiutare la richiesta di contatto?",
     "From <2>{{locationFrom}}</2>": "",
     "Lives in <2>{{locationLiving}}</2>": "Vive a <2>{{locationLiving}}</2>",
     "No contacts yet": {
@@ -26,13 +26,13 @@
             }
         }
     },
-    "Yes, decline request": "",
-    "Yes, remove contact": "",
-    "Yes, revoke request": "",
+    "Yes, decline request": "Sì, rifiutare la richiesta",
+    "Yes, remove contact": "Sì, rimuovi il contatto",
+    "Yes, revoke request": "Sì, annulla la richiesta",
     "You received a contact request": {
-        "": ""
+        "": "Hai ricevuto una richiesta di contatto."
     },
-    "{{amount}} contacts": "",
-    "{{count}} contacts in common": "",
-    "{{count}} contacts in common_plural": ""
+    "{{amount}} contacts": "{{amount}} contatti",
+    "{{count}} contacts in common": "{{count}} contatto in comune",
+    "{{count}} contacts in common_plural": "{{count}} contatti in comune"
 }
