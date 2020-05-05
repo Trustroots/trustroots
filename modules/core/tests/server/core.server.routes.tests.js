@@ -4,6 +4,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const express = require(path.resolve('./config/lib/express'));
 const config = require(path.resolve('./config/config'));
+const should = require('should');
 
 /**
  * Globals
@@ -173,6 +174,27 @@ describe('Core CRUD tests', function () {
 
           return done();
         });
+    });
+  });
+
+  describe('Mobile app wrapper detection Tests:', function() {
+    it('Mobile app state should be false without "app" query argument', function(done) {
+      agent.get('/').end(function(err, res) {
+        should.not.exist(err);
+        res.text.should.containEql('isNativeMobileApp = false');
+
+        return done();
+      });
+    });
+
+    it('Mobile app state should be true with "app" query argument', function(done) {
+      agent.get('/?app').end(function(err, res) {
+        should.not.exist(err);
+
+        res.text.should.containEql('isNativeMobileApp = true');
+
+        return done();
+      });
     });
   });
 });
