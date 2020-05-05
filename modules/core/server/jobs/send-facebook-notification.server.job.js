@@ -3,7 +3,7 @@ const path = require('path');
 const facebook = require(path.resolve('./config/lib/facebook-api.js'));
 const log = require(path.resolve('./config/lib/logger'));
 
-module.exports = function(job, done) {
+module.exports = function (job, done) {
   // Get job id from Agenda job attributes
   // Agenda stores Mongo `ObjectId` so turning that into a string here
   const jobId = _.get(job, 'attrs._id').toString();
@@ -42,7 +42,7 @@ module.exports = function(job, done) {
   facebook.post(
     '/' + job.attrs.data.toUserFacebookId + '/notifications',
     notification,
-    function(err) {
+    function (err) {
       if (err) {
         // Log the failure to send the notification
         log('error', 'The `send facebook notification` job failed #38hgsj', {

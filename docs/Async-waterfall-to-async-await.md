@@ -12,16 +12,16 @@ _Remember:_ [Awaiting](https://developer.mozilla.org/en-US/docs/Web/JavaScript/R
 /**
  * Confirm email POST from email token
  */
-exports.confirmEmail = function(req, res) {
+exports.confirmEmail = function (req, res) {
   async.waterfall(
     [
-      function(done) {
+      function (done) {
         // Check if user exists with this token
         User.findOne(
           {
             emailToken: req.params.token,
           },
-          function(err, user) {
+          function (err, user) {
             if (!err && user) {
               // Will be the returned object when no errors
               var result = {};
@@ -42,7 +42,7 @@ exports.confirmEmail = function(req, res) {
       // Update user
       // We can't do regular `user.save()` here because we've got user document with password and we'd just override it:
       // Instead we'll do normal Mongoose update with previously fetched user ID
-      function(result, user, done) {
+      function (result, user, done) {
         User.findOneAndUpdate(
           { _id: user._id },
           {
@@ -73,19 +73,19 @@ exports.confirmEmail = function(req, res) {
             // Return the document after updates if `new = true`
             new: true,
           },
-          function(err, modifiedUser) {
+          function (err, modifiedUser) {
             done(err, result, modifiedUser);
           },
         );
       },
 
-      function(result, user, done) {
-        req.login(user, function(err) {
+      function (result, user, done) {
+        req.login(user, function (err) {
           done(err, result, user);
         });
       },
 
-      function(result, user) {
+      function (result, user) {
         // Return authenticated user
         // Remove sensitive data befor sending user
         result.user = userProfile.sanitizeProfile(user);
@@ -93,7 +93,7 @@ exports.confirmEmail = function(req, res) {
         return res.json(result);
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -110,7 +110,7 @@ exports.confirmEmail = function(req, res) {
 /**
  * Confirm email POST from email token
  */
-exports.confirmEmail = async function(req, res) {
+exports.confirmEmail = async function (req, res) {
   // Check if user exists with this token
   // ***** We await Promise instead of using callback ***** //
   let user;

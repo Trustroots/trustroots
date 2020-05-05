@@ -34,7 +34,7 @@ function UsersRoutes($stateProvider) {
       url: '/invite',
       controller:
         /* @ngInject */
-        function($state) {
+        function ($state) {
           $state.go('signup');
         },
       controllerAs: 'invite',
@@ -79,7 +79,7 @@ function UsersRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
-        appSettings: function(SettingsService) {
+        appSettings: function (SettingsService) {
           return SettingsService.get();
         },
       },
@@ -96,7 +96,7 @@ function UsersRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
-        appSettings: function(SettingsService) {
+        appSettings: function (SettingsService) {
           return SettingsService.get();
         },
       },
@@ -138,14 +138,14 @@ function UsersRoutes($stateProvider) {
         SettingsService: 'SettingsService',
         ContactsListService: 'ContactsListService',
 
-        appSettings: function(SettingsService) {
+        appSettings: function (SettingsService) {
           return SettingsService.get();
         },
 
-        profile: function(UserProfilesService, $stateParams, $q) {
+        profile: function (UserProfilesService, $stateParams, $q) {
           return UserProfilesService.get({
             username: $stateParams.username,
-          }).$promise.catch(function(e) {
+          }).$promise.catch(function (e) {
             if (e.status === 404) {
               // when user was not found, resolving with empty user profile, in order to display the User Not Found error.
               return { $promise: $q.resolve({}), $resolved: true };
@@ -156,9 +156,9 @@ function UsersRoutes($stateProvider) {
         },
 
         // Contact is loaded only after profile is loaded, because we need the profile ID
-        contact: function(ContactByService, profile, Authentication) {
+        contact: function (ContactByService, profile, Authentication) {
           return profile.$promise.then(
-            function(profile) {
+            function (profile) {
               // when user doesn't exist, no need to load contact
               if (!profile._id) {
                 return;
@@ -176,15 +176,15 @@ function UsersRoutes($stateProvider) {
               }
             },
             // Fetch failures
-            function() {
+            function () {
               return;
             },
           );
         },
 
         // Contacts list is loaded only after profile is loaded, because we need the profile ID
-        contacts: function(ContactsListService, profile) {
-          return profile.$promise.then(function(profile) {
+        contacts: function (ContactsListService, profile) {
+          return profile.$promise.then(function (profile) {
             // when user doesn't exist, no need to load contacts
             if (!profile._id) {
               return;
@@ -272,7 +272,7 @@ function UsersRoutes($stateProvider) {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
 
-        appSettings: function(SettingsService) {
+        appSettings: function (SettingsService) {
           return SettingsService.get();
         },
       },
@@ -291,7 +291,7 @@ function UsersRoutes($stateProvider) {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
 
-        appSettings: function(SettingsService) {
+        appSettings: function (SettingsService) {
           return SettingsService.get();
         },
       },

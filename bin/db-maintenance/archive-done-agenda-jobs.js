@@ -44,18 +44,18 @@ function countTotals(done) {
     .find()
     .count()
     .then(
-      function(sourceCount) {
+      function (sourceCount) {
         console.log('\nSource count: ' + sourceCount);
         targetCollection
           .find()
           .count()
           .then(
-            function(targetCount) {
+            function (targetCount) {
               console.log('Target count: ' + targetCount);
               console.log('Total: ' + (sourceCount + targetCount) + '\n');
               done();
             },
-            function(err) {
+            function (err) {
               console.log(
                 'Could not get count of documents in target collection: ' +
                   targetCollectionName,
@@ -64,7 +64,7 @@ function countTotals(done) {
             },
           );
       },
-      function(err) {
+      function (err) {
         console.log(
           'Could not get count of documents in source collection: ' +
             sourceCollectionName,
@@ -77,11 +77,11 @@ function countTotals(done) {
 function moveDoc(doc, callback) {
   if (doc) {
     // Process doc
-    insertDocument(doc, function(err) {
+    insertDocument(doc, function (err) {
       if (err) {
         return callback(err);
       }
-      removeDocument(doc, function(err) {
+      removeDocument(doc, function (err) {
         if (err) {
           return callback(err);
         }
@@ -102,9 +102,9 @@ function removeDocument(doc, callback) {
 async.waterfall(
   [
     // Connect
-    function(done) {
+    function (done) {
       // Use connect method to connect to the server
-      MongoClient.connect(config.db.uri, function(err, db) {
+      MongoClient.connect(config.db.uri, function (err, db) {
         if (err) {
           console.log(chalk.red('Could not connect to MongoDB!'));
           return done(err);
@@ -122,12 +122,12 @@ async.waterfall(
     },
 
     // Count total
-    function(done) {
+    function (done) {
       console.log('Counting docs...');
       sourceCollection
         .find(filter)
         .count()
-        .then(function(count) {
+        .then(function (count) {
           total = count;
           if (total <= 0) {
             console.log('No documents to transfer.');
@@ -149,7 +149,7 @@ async.waterfall(
     },
 
     // Show how many docs each collection has currently
-    function(done) {
+    function (done) {
       if (total <= 0) {
         return done();
       }
@@ -157,20 +157,20 @@ async.waterfall(
     },
 
     // Fetch docs and get the cursor
-    function(done) {
+    function (done) {
       if (total <= 0) {
         return done(null, null);
       }
 
       console.log('Fetching docs for transfer...\n');
       // cursor for streaming from mongoDB
-      sourceCollection.find(filter, function(err, cursor) {
+      sourceCollection.find(filter, function (err, cursor) {
         done(null, cursor);
       });
     },
 
     // process docs
-    function(cursor, done) {
+    function (cursor, done) {
       // preparation for async.doWhilst function
       //
       // settings how often the progress will be printed to console
@@ -180,14 +180,14 @@ async.waterfall(
       let progress = 1; // progress counter
 
       // this is the test for async.doWhilst
-      const testKeepGoing = function() {
+      const testKeepGoing = function () {
         return keepGoing;
       };
 
       // here we process the doc and print progress sometimes
       function saveMessageAndRunCounter(doc, callback) {
         // updating the message stat
-        moveDoc(doc, function(err) {
+        moveDoc(doc, function (err) {
           if (err) {
             return callback(err);
           }
@@ -211,7 +211,7 @@ async.waterfall(
       // the iteratee (function to run in each step) of async.doWhilst
       function processNext(callback) {
         // getting the next message from mongodb
-        cursor.next(function(err, msg) {
+        cursor.next(function (err, msg) {
           // We've passed the end of the cursor
           if (!msg) {
             console.log('\nDone with the queue');
@@ -236,11 +236,11 @@ async.waterfall(
         }
 
         cursor.close().then(
-          function() {
+          function () {
             console.log('\nCursor closed.');
             done(null, progress);
           },
-          function(err) {
+          function (err) {
             console.log('\nFailed to close cursor at the end of the script:');
             console.error(err);
             done(null, progress);
@@ -261,16 +261,16 @@ async.waterfall(
     },
 
     // Show how many docs each collection has currently
-    function(progress, done) {
+    function (progress, done) {
       if (total <= 0) {
         return done();
       }
-      countTotals(function() {
+      countTotals(function () {
         done(null, progress);
       });
     },
   ],
-  function(err, totalProcessed) {
+  function (err, totalProcessed) {
     if (err) {
       console.log('\nFinal error:');
       console.error(err);
@@ -288,11 +288,11 @@ async.waterfall(
     if (dbConnection) {
       console.log('Closing db...');
       dbConnection.close().then(
-        function() {
+        function () {
           console.log('\nDisconnected from MongoDB');
           process.exit(0);
         },
-        function(err) {
+        function (err) {
           console.log('\nFailed to disconnect DB:');
           console.error(err);
           process.exit(0);

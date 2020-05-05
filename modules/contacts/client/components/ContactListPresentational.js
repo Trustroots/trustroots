@@ -51,46 +51,50 @@ export default function ContactListPresentational({
           </h4>
         </div>
 
-        {/**
-         * When there are 6+ users, provide a field for filtering contacts
-         */
-        contacts.length >= 6 && (
-          <div className="col-xs-12 col-sm-4 text-right">
-            <div className="form-group">
-              <label htmlFor="contacts-search" className="sr-only">
-                Search contacts
-              </label>
-              <input
-                id="contacts-search"
-                type="text"
-                className="form-control"
-                onChange={event => onFilterChange(event.target.value)}
-                placeholder="Search contacts..."
-              />
+        {
+          /**
+           * When there are 6+ users, provide a field for filtering contacts
+           */
+          contacts.length >= 6 && (
+            <div className="col-xs-12 col-sm-4 text-right">
+              <div className="form-group">
+                <label htmlFor="contacts-search" className="sr-only">
+                  Search contacts
+                </label>
+                <input
+                  id="contacts-search"
+                  type="text"
+                  className="form-control"
+                  onChange={event => onFilterChange(event.target.value)}
+                  placeholder="Search contacts..."
+                />
+              </div>
             </div>
-          </div>
-        )}
+          )
+        }
       </div>
 
-      {// Produce two rows, one for unconfirmed contacts and another for confirmed contacts
-      [unconfirmedFiltered, confirmedFiltered].map(
-        (filteredContacts, index) =>
-          filteredContacts.length > 0 && (
-            <div className="row" key={index}>
-              {filteredContacts.map(contact => (
-                <div className="col-xs-12 col-sm-6" key={contact._id}>
-                  <Contact
-                    className="contacts-contact panel panel-default"
-                    contact={contact}
-                    avatarSize={128}
-                    selfId={selfId}
-                    onContactRemoved={() => onContactRemoved(contact)}
-                  />
-                </div>
-              ))}
-            </div>
-          ),
-      )}
+      {
+        // Produce two rows, one for unconfirmed contacts and another for confirmed contacts
+        [unconfirmedFiltered, confirmedFiltered].map(
+          (filteredContacts, index) =>
+            filteredContacts.length > 0 && (
+              <div className="row" key={index}>
+                {filteredContacts.map(contact => (
+                  <div className="col-xs-12 col-sm-6" key={contact._id}>
+                    <Contact
+                      className="contacts-contact panel panel-default"
+                      contact={contact}
+                      avatarSize={128}
+                      selfId={selfId}
+                      onContactRemoved={() => onContactRemoved(contact)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ),
+        )
+      }
     </div>
   );
 }

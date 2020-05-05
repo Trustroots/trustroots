@@ -12,21 +12,21 @@ const influx = require('influx');
 const stathat = require('stathat');
 const sinon = require('sinon');
 
-describe('Stat API integration tests', function() {
+describe('Stat API integration tests', function () {
   // restoring stubs
-  afterEach(function() {
+  afterEach(function () {
     // restore the stubbed services
     sinon.restore();
   });
 
   // stub the influx and stathat endpoints
-  beforeEach(function() {
+  beforeEach(function () {
     // stub the influx endpoint(s)
     sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
 
     // and writeMeasurement returns a Promise
     influx.InfluxDB.prototype.writeMeasurement.returns(
-      new Promise(function(resolve) {
+      new Promise(function (resolve) {
         process.nextTick(resolve());
       }),
     );
@@ -53,8 +53,8 @@ describe('Stat API integration tests', function() {
     stathat.trackEZValueWithTime.callsArgWithAsync(4, 200, null);
   });
 
-  context('endpoints enabled', function() {
-    beforeEach(function() {
+  context('endpoints enabled', function () {
+    beforeEach(function () {
       // stub the config.stathat.key
       sinon.stub(config.stathat, 'key').value('stathatkey');
 
@@ -65,8 +65,8 @@ describe('Stat API integration tests', function() {
       sinon.stub(config.influxdb, 'enabled').value(true);
     });
 
-    context('valid data', function() {
-      it('correct data arrive to the endpoints', function(done) {
+    context('valid data', function () {
+      it('correct data arrive to the endpoints', function (done) {
         // the testing data
         const data = {
           namespace: 'test',
@@ -81,7 +81,7 @@ describe('Stat API integration tests', function() {
         };
 
         // call the stat api with the testing data
-        statsService.stat(data, function(e) {
+        statsService.stat(data, function (e) {
           if (e) return done(e);
 
           try {
@@ -96,18 +96,10 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('test');
-            should(point)
-              .have.propertyByPath('fields', 'count1')
-              .eql(1);
-            should(point)
-              .have.propertyByPath('fields', 'count2')
-              .eql(2);
-            should(point)
-              .have.propertyByPath('fields', 'value1')
-              .eql(3);
-            should(point)
-              .have.propertyByPath('fields', 'value2')
-              .eql(4);
+            should(point).have.propertyByPath('fields', 'count1').eql(1);
+            should(point).have.propertyByPath('fields', 'count2').eql(2);
+            should(point).have.propertyByPath('fields', 'value1').eql(3);
+            should(point).have.propertyByPath('fields', 'value2').eql(4);
             should(point).not.have.property('timestamp');
 
             // test stathat endpoint
@@ -148,7 +140,7 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[with time] correct data arrive to the endpoints', function(done) {
+      it('[with time] correct data arrive to the endpoints', function (done) {
         // the testing data
         const data = {
           namespace: 'test',
@@ -164,7 +156,7 @@ describe('Stat API integration tests', function() {
         };
 
         // call the stat api with the testing data
-        statsService.stat(data, function(e) {
+        statsService.stat(data, function (e) {
           if (e) return done(e);
 
           try {
@@ -179,22 +171,12 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('test');
-            should(point)
-              .have.propertyByPath('fields', 'count1')
-              .eql(1);
-            should(point)
-              .have.propertyByPath('fields', 'count2')
-              .eql(2);
-            should(point)
-              .have.propertyByPath('fields', 'value1')
-              .eql(3);
-            should(point)
-              .have.propertyByPath('fields', 'value2')
-              .eql(4);
+            should(point).have.propertyByPath('fields', 'count1').eql(1);
+            should(point).have.propertyByPath('fields', 'count2').eql(2);
+            should(point).have.propertyByPath('fields', 'value1').eql(3);
+            should(point).have.propertyByPath('fields', 'value2').eql(4);
             // the timestamp should be also present
-            should(point)
-              .have.property('timestamp')
-              .eql(data.time);
+            should(point).have.property('timestamp').eql(data.time);
 
             // test stathat endpoint
             sinon.assert.callCount(stathat.trackEZCountWithTime, 2);
@@ -241,7 +223,7 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[with tags] correct data arrive to the endpoints', function(done) {
+      it('[with tags] correct data arrive to the endpoints', function (done) {
         // the testing data
         const data = {
           namespace: 'test',
@@ -258,7 +240,7 @@ describe('Stat API integration tests', function() {
         };
 
         // call the stat api with the testing data
-        statsService.stat(data, function(e) {
+        statsService.stat(data, function (e) {
           if (e) return done(e);
 
           try {
@@ -273,12 +255,8 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('test');
-            should(point)
-              .have.propertyByPath('fields', 'count')
-              .eql(1);
-            should(point)
-              .have.propertyByPath('fields', 'value')
-              .eql(2);
+            should(point).have.propertyByPath('fields', 'count').eql(1);
+            should(point).have.propertyByPath('fields', 'value').eql(2);
             should(point).not.have.property('timestamp');
 
             // test stathat endpoint
@@ -288,10 +266,10 @@ describe('Stat API integration tests', function() {
             sinon.assert.callCount(stathat.trackEZValue, 3);
 
             // collect the output from the stubbed stathat functions
-            const countsCalledWith = _.map(_.range(3), function(i) {
+            const countsCalledWith = _.map(_.range(3), function (i) {
               return stathat.trackEZCount.getCall(i).args;
             });
-            const valuesCalledWith = _.map(_.range(3), function(i) {
+            const valuesCalledWith = _.map(_.range(3), function (i) {
               return stathat.trackEZValue.getCall(i).args;
             });
 
@@ -299,7 +277,7 @@ describe('Stat API integration tests', function() {
 
             // the first argument to the endpoint should be the stathat key
             // the 4th argument should be a callback function
-            _.forEach(calledWith, function(args) {
+            _.forEach(calledWith, function (args) {
               should(args[0]).equal(config.stathat.key);
               should(args[3]).be.Function();
             });
@@ -321,7 +299,7 @@ describe('Stat API integration tests', function() {
                 'test.count.tag1.string1',
                 'test.count.tag2.string2',
               ],
-              function(value) {
+              function (value) {
                 // the 2nd arguments of the countsCalledWith
                 should(countGroupArgs[1]).containEql(value);
               },
@@ -339,7 +317,7 @@ describe('Stat API integration tests', function() {
                 'test.value.tag1.string1',
                 'test.value.tag2.string2',
               ],
-              function(value) {
+              function (value) {
                 // the 2nd arguments of the countsCalledWith
                 should(valueGroupArgs[1]).containEql(value);
               },
@@ -356,7 +334,7 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[with metadata] correct data arrive to the endpoints', function(done) {
+      it('[with metadata] correct data arrive to the endpoints', function (done) {
         // the testing data
         const data = {
           namespace: 'test',
@@ -373,7 +351,7 @@ describe('Stat API integration tests', function() {
         };
 
         // call the stat api with the testing data
-        statsService.stat(data, function(e) {
+        statsService.stat(data, function (e) {
           if (e) return done(e);
 
           try {
@@ -388,18 +366,12 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('test');
-            should(point)
-              .have.propertyByPath('fields', 'count')
-              .eql(1);
-            should(point)
-              .have.propertyByPath('fields', 'value')
-              .eql(2);
+            should(point).have.propertyByPath('fields', 'count').eql(1);
+            should(point).have.propertyByPath('fields', 'value').eql(2);
             should(point)
               .have.propertyByPath('fields', 'meta1')
               .eql('meta string');
-            should(point)
-              .have.propertyByPath('fields', 'meta2')
-              .eql(3);
+            should(point).have.propertyByPath('fields', 'meta2').eql(3);
             should(point).not.have.property('timestamp');
 
             // test stathat endpoint
@@ -422,9 +394,9 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[count] correct data arrive to the endpoints', function(done) {
+      it('[count] correct data arrive to the endpoints', function (done) {
         // call the stat api count
-        statsService.count('testCount', 3.5, function(e) {
+        statsService.count('testCount', 3.5, function (e) {
           if (e) return done(e);
 
           try {
@@ -439,9 +411,7 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('testCount');
-            should(point)
-              .have.propertyByPath('fields', 'count')
-              .eql(3.5);
+            should(point).have.propertyByPath('fields', 'count').eql(3.5);
             should(point).not.have.propertyByPath('fields', 'value');
             // the timestamp should not be present
             should(point).not.have.property('timestamp');
@@ -471,10 +441,10 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[count with time] correct data arrive to the endpoints', function(done) {
+      it('[count with time] correct data arrive to the endpoints', function (done) {
         // call the stat api count(namespace, number, date, callback)
         const testDate = new Date('2016-01-31 5:31:01.221');
-        statsService.count('testCountWithTime', 2.6, testDate, function(e) {
+        statsService.count('testCountWithTime', 2.6, testDate, function (e) {
           if (e) return done(e);
 
           try {
@@ -489,9 +459,7 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('testCountWithTime');
-            should(point)
-              .have.propertyByPath('fields', 'count')
-              .eql(2.6);
+            should(point).have.propertyByPath('fields', 'count').eql(2.6);
             should(point).not.have.propertyByPath('fields', 'value');
             // the timestamp should be also present
             should(point).have.property('timestamp', testDate);
@@ -524,9 +492,9 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[value] correct data arrive to the endpoints', function(done) {
+      it('[value] correct data arrive to the endpoints', function (done) {
         // call the stat api count
-        statsService.value('testValue', 13.31, function(e) {
+        statsService.value('testValue', 13.31, function (e) {
           if (e) return done(e);
 
           try {
@@ -541,9 +509,7 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('testValue');
-            should(point)
-              .have.propertyByPath('fields', 'value')
-              .eql(13.31);
+            should(point).have.propertyByPath('fields', 'value').eql(13.31);
             should(point).not.have.propertyByPath('fields', 'count');
             // the timestamp should not be present
             should(point).not.have.property('timestamp');
@@ -572,10 +538,10 @@ describe('Stat API integration tests', function() {
           }
         });
       });
-      it('[value with time] correct data arrive to the endpoints', function(done) {
+      it('[value with time] correct data arrive to the endpoints', function (done) {
         // call the stat api value(namespace, number, date, callback)
         const testDate = new Date('2016-01-30 5:32:01.221');
-        statsService.value('testValueWithTime', -3.78, testDate, function(e) {
+        statsService.value('testValueWithTime', -3.78, testDate, function (e) {
           if (e) return done(e);
 
           try {
@@ -590,9 +556,7 @@ describe('Stat API integration tests', function() {
             const point = points[0];
 
             should(measurement).eql('testValueWithTime');
-            should(point)
-              .have.propertyByPath('fields', 'value')
-              .eql(-3.78);
+            should(point).have.propertyByPath('fields', 'value').eql(-3.78);
             should(point).not.have.propertyByPath('fields', 'count');
             // the timestamp should be also present
             should(point).have.property('timestamp', testDate);
@@ -626,8 +590,8 @@ describe('Stat API integration tests', function() {
       });
     });
 
-    context('invalid data', function() {
-      it('[duplicate property] should call callback with error', function(done) {
+    context('invalid data', function () {
+      it('[duplicate property] should call callback with error', function (done) {
         const invalidData = {
           namespace: 'test',
           counts: {
@@ -639,7 +603,7 @@ describe('Stat API integration tests', function() {
         };
 
         // call the stat api with the testing data
-        statsService.stat(invalidData, function(e) {
+        statsService.stat(invalidData, function (e) {
           try {
             should(e).be.Error();
             should(e).have.property(
@@ -660,7 +624,7 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[missing count or value] should call callback with error', function(done) {
+      it('[missing count or value] should call callback with error', function (done) {
         const invalidData = {
           namespace: 'test',
           counts: {},
@@ -670,7 +634,7 @@ describe('Stat API integration tests', function() {
         };
 
         // call the stat api with the testing data
-        statsService.stat(invalidData, function(e) {
+        statsService.stat(invalidData, function (e) {
           try {
             should(e).be.Error();
             should(e).have.property(
@@ -691,7 +655,7 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[invalid datatype] should call callback with error', function(done) {
+      it('[invalid datatype] should call callback with error', function (done) {
         const invalidData = {
           namespace: 'test',
           counts: {
@@ -700,7 +664,7 @@ describe('Stat API integration tests', function() {
         };
 
         // call the stat api with the testing data
-        statsService.stat(invalidData, function(e) {
+        statsService.stat(invalidData, function (e) {
           try {
             should(e).be.Error();
             should(e).have.property(
@@ -721,7 +685,7 @@ describe('Stat API integration tests', function() {
         });
       });
 
-      it('[invalid time format] should call callback with error', function(done) {
+      it('[invalid time format] should call callback with error', function (done) {
         const data = {
           namespace: 'invalidTime',
           values: {
@@ -730,7 +694,7 @@ describe('Stat API integration tests', function() {
           time: 123456,
         };
         // call the stat api with the testing data
-        statsService.stat(data, function(e) {
+        statsService.stat(data, function (e) {
           try {
             should(e).be.Error();
             should(e).have.property(
@@ -753,8 +717,8 @@ describe('Stat API integration tests', function() {
     });
   });
 
-  context('influx disabled', function() {
-    beforeEach(function() {
+  context('influx disabled', function () {
+    beforeEach(function () {
       // stub the config.stathat.key
       sinon.stub(config.stathat, 'key').value('stathatkey');
 
@@ -765,7 +729,7 @@ describe('Stat API integration tests', function() {
       sinon.stub(config.influxdb, 'enabled').value(false);
     });
 
-    it('send only to stathat, influx ignored without error', function(done) {
+    it('send only to stathat, influx ignored without error', function (done) {
       statsService.stat(
         {
           namespace: 'test',
@@ -773,7 +737,7 @@ describe('Stat API integration tests', function() {
             c: 1,
           },
         },
-        function(e) {
+        function (e) {
           if (e) return done(e);
           try {
             sinon.assert.callCount(
@@ -791,8 +755,8 @@ describe('Stat API integration tests', function() {
     });
   });
 
-  context('stathat disabled', function() {
-    beforeEach(function() {
+  context('stathat disabled', function () {
+    beforeEach(function () {
       // stub the config.stathat.key
       sinon.stub(config.stathat, 'key').value('stathatkey');
 
@@ -803,7 +767,7 @@ describe('Stat API integration tests', function() {
       sinon.stub(config.influxdb, 'enabled').value(true);
     });
 
-    it('send only to influx, stathat ignored without error', function(done) {
+    it('send only to influx, stathat ignored without error', function (done) {
       statsService.stat(
         {
           namespace: 'test',
@@ -811,7 +775,7 @@ describe('Stat API integration tests', function() {
             c: 1,
           },
         },
-        function(e) {
+        function (e) {
           if (e) return done(e);
           try {
             sinon.assert.callCount(

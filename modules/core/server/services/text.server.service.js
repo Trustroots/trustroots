@@ -43,7 +43,7 @@ exports.sanitizeOptions = {
     strong: 'b',
     em: 'i',
   },
-  exclusiveFilter: function(frame) {
+  exclusiveFilter: function (frame) {
     // Don't allow empty <a> tags, such as:
     // - `<a href="http://trustroots.org"></a>`
     // - `<a>http://trustroots.org</a>`
@@ -85,7 +85,7 @@ exports.sanitizeOptions = {
  * @param {String} content - String to be sanitized
  * @returns {String}
  */
-exports.html = function(content) {
+exports.html = function (content) {
   // @link https://lodash.com/docs/4.17.4#toString
   content = _.toString(content);
 
@@ -159,7 +159,7 @@ exports.html = function(content) {
  * @param {String} value - String to be evaluated
  * @return {Boolean} `true` when empty, `false` when it has content.
  */
-exports.isEmpty = function(value) {
+exports.isEmpty = function (value) {
   return _.isEmpty(exports.plainText(value));
 };
 
@@ -171,7 +171,7 @@ exports.isEmpty = function(value) {
  * @param {Boolean} cleanWhitespace
  * @returns {String}
  */
-exports.plainText = function(content, cleanWhitespace) {
+exports.plainText = function (content, cleanWhitespace) {
   // Force string
   // @link https://lodash.com/docs/4.17.4#toString
   content = _.toString(content);

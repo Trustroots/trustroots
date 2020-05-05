@@ -29,7 +29,7 @@ function getSupportVolunteerName() {
   return _.sample(config.supportVolunteerNames);
 }
 
-exports.sendMessagesUnread = function(
+exports.sendMessagesUnread = function (
   userFrom,
   userTo,
   notification,
@@ -80,7 +80,7 @@ exports.sendMessagesUnread = function(
   exports.renderEmailAndSend('messages-unread', params, callback);
 };
 
-exports.sendConfirmContact = function(
+exports.sendConfirmContact = function (
   user,
   friend,
   contact,
@@ -123,7 +123,7 @@ exports.sendConfirmContact = function(
 /**
  * Email with a token to initialize removing a user
  */
-exports.sendRemoveProfile = function(user, callback) {
+exports.sendRemoveProfile = function (user, callback) {
   const urlConfirm = url + '/remove/' + user.removeProfileToken;
   const campaign = 'remove-profile';
 
@@ -146,7 +146,7 @@ exports.sendRemoveProfile = function(user, callback) {
 /**
  * Email confirmation that user was removed
  */
-exports.sendRemoveProfileConfirmed = function(user, callback) {
+exports.sendRemoveProfileConfirmed = function (user, callback) {
   const campaign = 'remove-profile-confirmed';
 
   const params = exports.addEmailBaseTemplateParams({
@@ -159,7 +159,7 @@ exports.sendRemoveProfileConfirmed = function(user, callback) {
   exports.renderEmailAndSend('remove-profile-confirmed', params, callback);
 };
 
-exports.sendResetPassword = function(user, callback) {
+exports.sendResetPassword = function (user, callback) {
   const urlConfirm = url + '/api/auth/reset/' + user.resetPasswordToken;
   const campaign = 'reset-password';
 
@@ -179,7 +179,7 @@ exports.sendResetPassword = function(user, callback) {
   exports.renderEmailAndSend('reset-password', params, callback);
 };
 
-exports.sendResetPasswordConfirm = function(user, callback) {
+exports.sendResetPasswordConfirm = function (user, callback) {
   const urlResetPassword = url + '/password/forgot';
   const campaign = 'reset-password-confirm';
 
@@ -199,7 +199,7 @@ exports.sendResetPasswordConfirm = function(user, callback) {
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
 };
 
-exports.sendChangeEmailConfirmation = function(user, callback) {
+exports.sendChangeEmailConfirmation = function (user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken;
   const campaign = 'confirm-email';
 
@@ -220,7 +220,7 @@ exports.sendChangeEmailConfirmation = function(user, callback) {
   exports.renderEmailAndSend('email-confirmation', params, callback);
 };
 
-exports.sendSignupEmailConfirmation = function(user, callback) {
+exports.sendSignupEmailConfirmation = function (user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
   const campaign = 'confirm-email';
 
@@ -241,7 +241,7 @@ exports.sendSignupEmailConfirmation = function(user, callback) {
   exports.renderEmailAndSend('signup', params, callback);
 };
 
-exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
+exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
   let subject = 'Support request';
 
   // I miss CoffeeSscript
@@ -266,7 +266,7 @@ exports.sendSupportRequest = function(replyTo, supportRequest, callback) {
   exports.renderEmailAndSend('support-request', params, callback);
 };
 
-exports.sendSignupEmailReminder = function(user, callback) {
+exports.sendSignupEmailReminder = function (user, callback) {
   const urlConfirm = url + '/confirm-email/' + user.emailToken + '?signup=true';
   const campaign = 'signup-reminder';
 
@@ -302,7 +302,7 @@ exports.sendSignupEmailReminder = function(user, callback) {
   exports.renderEmailAndSend('signup-reminder', params, callback);
 };
 
-exports.sendReactivateHosts = function(user, callback) {
+exports.sendReactivateHosts = function (user, callback) {
   const urlOffer = url + '/offer';
   const campaign = 'reactivate-hosts';
   const utmParams = {
@@ -335,7 +335,7 @@ exports.sendReactivateHosts = function(user, callback) {
 /**
  * 1/3 welcome sequence email
  */
-exports.sendWelcomeSequenceFirst = function(user, callback) {
+exports.sendWelcomeSequenceFirst = function (user, callback) {
   const urlEditProfile = url + '/profile/edit';
   const urlFAQ = url + '/faq';
   const campaign = 'welcome-sequence-first';
@@ -368,7 +368,7 @@ exports.sendWelcomeSequenceFirst = function(user, callback) {
 /**
  * 2/3 welcome sequence email
  */
-exports.sendWelcomeSequenceSecond = function(user, callback) {
+exports.sendWelcomeSequenceSecond = function (user, callback) {
   const urlMeet = url + '/offer/meet';
   const campaign = 'welcome-sequence-second';
   const utmParams = {
@@ -399,7 +399,7 @@ exports.sendWelcomeSequenceSecond = function(user, callback) {
 /**
  * 3/3 welcome sequence email
  */
-exports.sendWelcomeSequenceThird = function(user, callback) {
+exports.sendWelcomeSequenceThird = function (user, callback) {
   // For members with empty profiles,
   // remind them how important it is to fill their profile.
   // Ask for feedback from the rest.
@@ -441,7 +441,7 @@ exports.sendWelcomeSequenceThird = function(user, callback) {
 /**
  * Reference Notification (First between users)
  */
-exports.sendReferenceNotificationFirst = function(userFrom, userTo, callback) {
+exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
   const params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
@@ -458,7 +458,7 @@ exports.sendReferenceNotificationFirst = function(userFrom, userTo, callback) {
 /**
  * Reference Notification (Second reference between users)
  */
-exports.sendReferenceNotificationSecond = function(
+exports.sendReferenceNotificationSecond = function (
   userFrom,
   userTo,
   reference,
@@ -486,7 +486,7 @@ exports.sendReferenceNotificationSecond = function(
  * @param {Object[]} params - Parameters used for rendering emails
  * @returns {Object[]} - Returns object with supportUrl, footerUrl and headerUrl parameters.
  */
-exports.addEmailBaseTemplateParams = function(params) {
+exports.addEmailBaseTemplateParams = function (params) {
   if (params === null || typeof params !== 'object') {
     log(
       'error',
@@ -501,7 +501,7 @@ exports.addEmailBaseTemplateParams = function(params) {
   params.urlSupportPlainText = baseUrl + '/support';
   params.footerUrlPlainText = baseUrl;
 
-  const buildAnalyticsUrl = function(url, content) {
+  const buildAnalyticsUrl = function (url, content) {
     return analyticsHandler.appendUTMParams(url, {
       source: 'transactional-email',
       medium: 'email',
@@ -525,7 +525,7 @@ exports.addEmailBaseTemplateParams = function(params) {
   return params;
 };
 
-exports.renderEmail = function(templateName, params, callback) {
+exports.renderEmail = function (templateName, params, callback) {
   const templatePaths = {};
 
   // `./modules/core/server/views/email-templates-text`
@@ -546,17 +546,17 @@ exports.renderEmail = function(templateName, params, callback) {
   // swig is unmaintained now https://github.com/paularmstrong/swig)
   async.mapValuesSeries(
     templatePaths,
-    function(templatePath, key, done) {
-      render(templatePath, params, function(err, rendered) {
+    function (templatePath, key, done) {
+      render(templatePath, params, function (err, rendered) {
         // there are promises inside render(), need to execute callback in
         // nextTick() so callback can safely throw exceptions
         // see https://github.com/caolan/async/issues/1150
-        async.nextTick(function() {
+        async.nextTick(function () {
           done(err, rendered);
         });
       });
     },
-    function(err, result) {
+    function (err, result) {
       if (err) return callback(err);
 
       // Clean out html entities (like &gt;) from plain text emails
@@ -570,7 +570,7 @@ exports.renderEmail = function(templateName, params, callback) {
         mention: false,
         hashtag: false,
         stripPrefix: false,
-        replaceFn: function(match) {
+        replaceFn: function (match) {
           return '<' + match.getAnchorHref() + '>';
         },
       });
@@ -605,8 +605,8 @@ exports.renderEmail = function(templateName, params, callback) {
   );
 };
 
-exports.renderEmailAndSend = function(templateName, params, callback) {
-  exports.renderEmail(templateName, params, function(err, email) {
+exports.renderEmailAndSend = function (templateName, params, callback) {
+  exports.renderEmail(templateName, params, function (err, email) {
     if (err) return callback(err);
     agenda.now('send email', email, callback);
   });

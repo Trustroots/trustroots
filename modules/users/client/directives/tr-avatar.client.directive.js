@@ -24,7 +24,7 @@
  */
 angular.module('users').directive('trAvatar', [
   '$location',
-  function($location) {
+  function ($location) {
     // Options
     const defaultSize = 256;
     const defaultAvatar = '/img/avatar.png';
@@ -54,7 +54,7 @@ angular.module('users').directive('trAvatar', [
       },
       controller: [
         '$scope',
-        function($scope) {
+        function ($scope) {
           $scope.avatar = defaultAvatar;
           $scope.size = defaultSize;
 
@@ -144,16 +144,16 @@ angular.module('users').directive('trAvatar', [
             }
           } // determineSource()
 
-          $scope.$watch('user.avatarSource', function() {
+          $scope.$watch('user.avatarSource', function () {
             determineSource();
           });
 
-          $scope.$watch('user.updated', function() {
+          $scope.$watch('user.updated', function () {
             determineSource();
           });
         },
       ],
-      link: function(scope, element, attr) {
+      link: function (scope, element, attr) {
         // Make sure source won't change dynamicly when user changes
         if (attr.source) {
           scope.source = attr.source;

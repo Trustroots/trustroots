@@ -5,7 +5,7 @@ angular.module('core').config(CoreRoutes);
 /* @ngInject */
 function CoreRoutes($stateProvider, $urlRouterProvider) {
   // Remove trailing slash from routes
-  $urlRouterProvider.rule(function($injector, $location) {
+  $urlRouterProvider.rule(function ($injector, $location) {
     const path = $location.path();
     const hasTrailingSlash = path.length > 1 && path[path.length - 1] === '/';
 

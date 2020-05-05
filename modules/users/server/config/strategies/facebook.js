@@ -8,7 +8,7 @@ const FacebookStrategy = require('passport-facebook').Strategy;
 const usersAuthentication = require('../../controllers/users.authentication.server.controller');
 const log = require(path.resolve('./config/lib/logger'));
 
-module.exports = function(config) {
+module.exports = function (config) {
   // Get config parameters for the strategy
   const clientID = _.get(config, 'facebook.clientID');
   const clientSecret = _.get(config, 'facebook.clientSecret');
@@ -57,7 +57,7 @@ module.exports = function(config) {
         passReqToCallback: true,
         enableProof: false,
       },
-      function(req, accessToken, refreshToken, profile, done) {
+      function (req, accessToken, refreshToken, profile, done) {
         // Set the provider data and include tokens
         const providerData = profile._json;
         providerData.accessToken = accessToken;

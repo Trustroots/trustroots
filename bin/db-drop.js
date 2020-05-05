@@ -8,8 +8,8 @@ if (process.env.NODE_ENV === 'production') {
 // Use mongoose configuration
 const mongooseService = require('../config/lib/mongoose.js');
 
-mongooseService.connect(function(db) {
-  mongooseService.dropDatabase(db, function() {
+mongooseService.connect(function (db) {
+  mongooseService.dropDatabase(db, function () {
     mongooseService.disconnect();
   });
 });

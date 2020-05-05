@@ -25,7 +25,7 @@ function SearchMapService($q, $log, Authentication, LocationService, locker) {
    * Return map location from cache or fallback to default location
    */
   function getMapCenter() {
-    return $q(function(resolve) {
+    return $q(function (resolve) {
       // Is local/sessionStorage supported? This might fail in browser's incognito mode
       if (locker.supported()) {
         // Get location from cache, return `false` if it doesn't exist in locker

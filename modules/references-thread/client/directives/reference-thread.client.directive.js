@@ -61,14 +61,14 @@ function trReferenceThreadDirectiveController(
       {
         userToId: vm.userTo,
       },
-      function(referenceThread) {
+      function (referenceThread) {
         vm.isLoading = false;
         if (referenceThread) {
           vm.allowCreatingReference = true;
           vm.reference = referenceThread;
         }
       },
-      function(referenceThreadErr) {
+      function (referenceThreadErr) {
         vm.isLoading = false;
         // In case of 404, API will tell us if we are allowed to send references to this user
         vm.allowCreatingReference =
@@ -92,7 +92,7 @@ function trReferenceThreadDirectiveController(
     vm.reference = newReference;
 
     newReference.$save(
-      function(response) {
+      function (response) {
         vm.reference = response;
         messageCenterService.add('success', 'Thank you!');
         $analytics.eventTrack('reference-thread-give-' + String(reference), {
@@ -100,7 +100,7 @@ function trReferenceThreadDirectiveController(
           label: 'Give ' + String(reference) + ' thread reference',
         });
       },
-      function() {
+      function () {
         vm.reference = false;
         messageCenterService.add(
           'danger',

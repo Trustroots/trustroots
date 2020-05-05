@@ -4,11 +4,8 @@
 const contactsPolicy = require('../policies/contacts.server.policy');
 const contacts = require('../controllers/contacts.server.controller');
 
-module.exports = function(app) {
-  app
-    .route('/api/contact')
-    .all(contactsPolicy.isAllowed)
-    .post(contacts.add);
+module.exports = function (app) {
+  app.route('/api/contact').all(contactsPolicy.isAllowed).post(contacts.add);
 
   app
     .route('/api/contact-by/:contactUserId')

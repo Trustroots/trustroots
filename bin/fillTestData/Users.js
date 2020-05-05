@@ -20,7 +20,7 @@ require(path.resolve('./modules/offers/server/models/offer.server.model'));
 const argv = yargs.usage(
   '$0 <numberOfUsers>',
   'Seed database with number of tribes',
-  function(yargs) {
+  function (yargs) {
     return yargs
       .positional('numberOfUsers', {
         describe: 'Number of users to add',
@@ -51,7 +51,7 @@ const argv = yargs.usage(
         'node $0 100 --limit',
         'Adds up to 100 randomly seeded users to the database (eg. If 20 users already exist, 80 users will be added)',
       )
-      .check(function(argv) {
+      .check(function (argv) {
         if (argv.numberOfUsers < 1) {
           throw new Error('Error: Number of users should be greater than 0');
         }
@@ -212,7 +212,7 @@ function addUsers() {
           .then(results => {
             [userCount, tribes] = results;
           })
-          .catch(function(err) {
+          .catch(function (err) {
             console.log(err);
           });
       } // getUsersAndTribes()
@@ -308,7 +308,7 @@ function addUsers() {
               }
 
               // Save the user
-              user.save(function(err) {
+              user.save(function (err) {
                 savedUsers++;
                 process.stdout.write('.');
 

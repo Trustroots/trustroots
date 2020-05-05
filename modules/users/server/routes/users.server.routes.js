@@ -6,7 +6,7 @@ const userProfile = require('../controllers/users.profile.server.controller');
 const userPassword = require('../controllers/users.password.server.controller');
 const userAuthentication = require('../controllers/users.authentication.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
   // Setting up the users profile api
   app
     .route('/api/users')

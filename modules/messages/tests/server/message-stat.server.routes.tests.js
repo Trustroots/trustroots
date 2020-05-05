@@ -7,7 +7,7 @@ const User = mongoose.model('User');
 const MessageStat = mongoose.model('MessageStat');
 const express = require(path.resolve('./config/lib/express'));
 
-describe('Display Message Statistics in User Route', function() {
+describe('Display Message Statistics in User Route', function () {
   let agent;
 
   const NOW = Date.now(); // a current timestamp
@@ -17,7 +17,7 @@ describe('Display Message Statistics in User Route', function() {
 
   const password = 'password123';
 
-  before(function(done) {
+  before(function (done) {
     // Get application
     const app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -26,7 +26,7 @@ describe('Display Message Statistics in User Route', function() {
   });
 
   // create testing users
-  before(function(done) {
+  before(function (done) {
     for (let i = 0; i < 23; ++i) {
       users.push(
         new User({
@@ -45,7 +45,7 @@ describe('Display Message Statistics in User Route', function() {
     // Save the users to database
     async.each(
       users,
-      function(user, callback) {
+      function (user, callback) {
         user.save(callback);
       },
       done,
@@ -53,7 +53,7 @@ describe('Display Message Statistics in User Route', function() {
   });
 
   // create testing messageStats
-  before(function(done) {
+  before(function (done) {
     // every thread is initiated by different user (user 0 is the receiver of all)
 
     let userno = 3; // the index of user who sent the first message
@@ -105,7 +105,7 @@ describe('Display Message Statistics in User Route', function() {
     // Save the messageStats to database
     async.each(
       messageStats,
-      function(messageStat, callback) {
+      function (messageStat, callback) {
         messageStat.save(callback);
       },
       done,
@@ -113,14 +113,14 @@ describe('Display Message Statistics in User Route', function() {
   });
 
   // clean the database after the tests
-  after(function(done) {
+  after(function (done) {
     // remove all User, MessageStat
     async.parallel(
       [
-        function(cb) {
+        function (cb) {
           User.deleteMany().exec(cb);
         },
-        function(cb) {
+        function (cb) {
           MessageStat.deleteMany().exec(cb);
         },
       ],
@@ -129,36 +129,36 @@ describe('Display Message Statistics in User Route', function() {
   });
 
   // Sign in
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     const credentials = { username: users[4].username, password: password };
 
     agent
       .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(err) {
+      .end(function (err) {
         if (err) return done(err);
         return done();
       });
   });
 
   // Sign out
-  afterEach(function(done) {
+  afterEach(function (done) {
     agent
       .get('/api/auth/signout')
       .expect(302)
-      .end(function(err) {
+      .end(function (err) {
         if (err) return done(err);
         return done();
       });
   });
 
-  it("should show replyRate and replyTime in user's profile", function(done) {
+  it("should show replyRate and replyTime in user's profile", function (done) {
     // request a random user
     agent
       .get('/api/users/' + users[5].username)
       .expect(200)
-      .end(function(err, resp) {
+      .end(function (err, resp) {
         if (err) return done(err);
         try {
           const response = resp.body;
@@ -173,12 +173,12 @@ describe('Display Message Statistics in User Route', function() {
       });
   });
 
-  it("[no messages] replyRate and replyTime should be ''", function(done) {
+  it("[no messages] replyRate and replyTime should be ''", function (done) {
     // user username2 has no MessageStats
     agent
       .get('/api/users/' + users[2].username)
       .expect(200)
-      .end(function(err, resp) {
+      .end(function (err, resp) {
         if (err) return done(err);
         try {
           const response = resp.body;
@@ -193,12 +193,12 @@ describe('Display Message Statistics in User Route', function() {
       });
   });
 
-  it("[no replied messages] replyRate should be '0%' and replyTime ''", function(done) {
+  it("[no replied messages] replyRate should be '0%' and replyTime ''", function (done) {
     // user username1 has only unreplied MessageStats
     agent
       .get('/api/users/' + users[1].username)
       .expect(200)
-      .end(function(err, resp) {
+      .end(function (err, resp) {
         if (err) return done(err);
         try {
           const response = resp.body;
@@ -213,12 +213,12 @@ describe('Display Message Statistics in User Route', function() {
       });
   });
 
-  it('[some replied messages] replyRate and replyTime should be strings with specific values', function(done) {
+  it('[some replied messages] replyRate and replyTime should be strings with specific values', function (done) {
     // user username0 has both replied and unreplied MessageStats
     agent
       .get('/api/users/' + users[0].username)
       .expect(200)
-      .end(function(err, resp) {
+      .end(function (err, resp) {
         if (err) return done(err);
         try {
           const response = resp.body;

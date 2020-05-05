@@ -11,8 +11,8 @@ function OfferController($timeout, MapLayersFactory) {
    * @param {Object} leafletData - Service for Leaflet
    */
   function invalidateMapSize(leafletData) {
-    $timeout(function() {
-      leafletData.getMap().then(function(map) {
+    $timeout(function () {
+      leafletData.getMap().then(function (map) {
         // @link http://leafletjs.com/reference-1.2.0.html#map-invalidatesize
         map.invalidateSize(false);
       });

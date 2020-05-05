@@ -13,7 +13,7 @@ acl = new acl(new acl.memoryBackend());
 /**
  * Invoke References Permissions
  */
-exports.invokeRolesPolicies = function() {
+exports.invokeRolesPolicies = function () {
   acl.allow([
     {
       roles: ['admin'],
@@ -47,7 +47,7 @@ exports.invokeRolesPolicies = function() {
 /**
  * Check If References Policy Allows
  */
-exports.isAllowed = function(req, res, next) {
+exports.isAllowed = function (req, res, next) {
   // No references for non-authenticated users
   // No reference writing for authenticated but un-published users, except if they're reading existing reference
   if (
@@ -74,7 +74,7 @@ exports.isAllowed = function(req, res, next) {
     roles,
     req.route.path,
     req.method.toLowerCase(),
-    function(err, isAllowed) {
+    function (err, isAllowed) {
       if (err) {
         // An authorization error occurred.
         return res.status(500).send({

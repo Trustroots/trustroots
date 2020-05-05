@@ -50,11 +50,13 @@ export default function UserState({ user }) {
       {/* Has email been confirmed */}
       {emailTemporary && (
         <span className="label label-warning admin-label">
-          {// On initial signup both `email` and `emailTemporary` are the same, when email is confirmed
-          // `emailTemporary` is set empty. When user changes email, these values are different.
-          emailTemporary === email
-            ? 'Unconfirmed signup'
-            : 'Unconfirmed email change'}
+          {
+            // On initial signup both `email` and `emailTemporary` are the same, when email is confirmed
+            // `emailTemporary` is set empty. When user changes email, these values are different.
+            emailTemporary === email
+              ? 'Unconfirmed signup'
+              : 'Unconfirmed email change'
+          }
         </span>
       )}
 

@@ -3,7 +3,7 @@ import AppConfig from '@/modules/core/client/app/config';
 /**
  * App client controller tests
  */
-describe('App Controller Tests', function() {
+describe('App Controller Tests', function () {
   // Initialize global variables
   let $scope;
   let $state;
@@ -14,7 +14,7 @@ describe('App Controller Tests', function() {
   // Load the main application module
   beforeEach(angular.mock.module(AppConfig.appModuleName));
 
-  beforeEach(inject(function(
+  beforeEach(inject(function (
     $controller,
     $rootScope,
     _$state_,
@@ -37,7 +37,7 @@ describe('App Controller Tests', function() {
 
     // Mock settings
     SettingsFactory = {
-      get: function() {
+      get: function () {
         return {};
       },
     };
@@ -45,7 +45,7 @@ describe('App Controller Tests', function() {
 
     // Mock languages
     Languages = {
-      get: function() {
+      get: function () {
         return {};
       },
     };
@@ -62,22 +62,22 @@ describe('App Controller Tests', function() {
     });
   }));
 
-  it('should expose app settings', function() {
+  it('should expose app settings', function () {
     expect(SettingsFactory.get).toHaveBeenCalled();
     // expect($scope.vm.appSettings).toBeTruthy();
   });
 
-  it('should expose languages', function() {
+  it('should expose languages', function () {
     expect(Languages.get).toHaveBeenCalledWith('object');
     // expect($scope.vm.languageNames).toBeTruthy();
   });
 
-  it('should expose photo credits', function() {
+  it('should expose photo credits', function () {
     expect($scope.vm.photoCredits).toBeTruthy();
     expect($scope.vm.photoCreditsCount).toEqual(0);
   });
 
-  it('should expose the user', function() {
+  it('should expose the user', function () {
     expect($scope.vm.user).toBeTruthy();
   });
 });

@@ -103,10 +103,7 @@ async function clearDatabase() {
  */
 async function signIn(user, agent) {
   const { username, password } = user;
-  await agent
-    .post('/api/auth/signin')
-    .send({ username, password })
-    .expect(200);
+  await agent.post('/api/auth/signin').send({ username, password }).expect(200);
 }
 
 /**

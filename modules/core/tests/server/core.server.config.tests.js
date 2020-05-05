@@ -18,16 +18,16 @@ let user;
 let userId;
 let credentials;
 
-describe('Configuration Tests:', function() {
-  describe('Exposing authenticated user to pages', function() {
-    beforeEach(function(done) {
+describe('Configuration Tests:', function () {
+  describe('Exposing authenticated user to pages', function () {
+    beforeEach(function (done) {
       // Get application
       app = express.init(mongoose.connection);
       agent = request.agent(app);
       done();
     });
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       credentials = {
         username: 'helloworld',
         password: 'M3@n.jsI$Aw3$0m3',
@@ -48,7 +48,7 @@ describe('Configuration Tests:', function() {
       user = new User(_user);
 
       // Save a user to the test db
-      user.save(function(saveErr, saveRes) {
+      user.save(function (saveErr, saveRes) {
         // Handle save error
         if (saveErr) {
           return done(saveErr);
@@ -60,13 +60,13 @@ describe('Configuration Tests:', function() {
       });
     });
 
-    it('should have user set to "null" if not authenticated and loading index page', function(done) {
+    it('should have user set to "null" if not authenticated and loading index page', function (done) {
       // Get rendered layout
       agent
         .get('/')
         .expect('Content-Type', 'text/html; charset=utf-8')
         .expect(200)
-        .end(function(err, res) {
+        .end(function (err, res) {
           // Handle errors
           if (err) {
             return done(err);
@@ -76,13 +76,13 @@ describe('Configuration Tests:', function() {
         });
     });
 
-    it('should have user set to user object when authenticated and loading index page', function(done) {
+    it('should have user set to user object when authenticated and loading index page', function (done) {
       // Authenticate user
       agent
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -93,7 +93,7 @@ describe('Configuration Tests:', function() {
             .get('/')
             .expect('Content-Type', 'text/html; charset=utf-8')
             .expect(200)
-            .end(function(err, res) {
+            .end(function (err, res) {
               // Handle errors
               if (err) {
                 return done(err);
@@ -109,7 +109,7 @@ describe('Configuration Tests:', function() {
         });
     });
 
-    it('should have user set to user object when authenticated and loading tribe page', function(done) {
+    it('should have user set to user object when authenticated and loading tribe page', function (done) {
       // Create a new tribe
       const _tribe = {
         slug: 'testers',
@@ -120,7 +120,7 @@ describe('Configuration Tests:', function() {
       const tribe = new Tribe(_tribe);
 
       // Save a user to the test db
-      tribe.save(function(saveErr) {
+      tribe.save(function (saveErr) {
         // Handle save error
         if (saveErr) {
           return done(saveErr);
@@ -131,7 +131,7 @@ describe('Configuration Tests:', function() {
           .post('/api/auth/signin')
           .send(credentials)
           .expect(200)
-          .end(function(signinErr) {
+          .end(function (signinErr) {
             // Handle signin error
             if (signinErr) {
               return done(signinErr);
@@ -142,7 +142,7 @@ describe('Configuration Tests:', function() {
               .get('/tribes/testers')
               .expect('Content-Type', 'text/html; charset=utf-8')
               .expect(200)
-              .end(function(err, res) {
+              .end(function (err, res) {
                 // Handle errors
                 if (err) {
                   return done(err);
@@ -159,14 +159,14 @@ describe('Configuration Tests:', function() {
       });
     });
 
-    afterEach(function(done) {
+    afterEach(function (done) {
       User.deleteMany().exec(done);
     });
   });
 
-  describe('Exposing environment as a variable to layout', function() {
-    ['development', 'production', 'test'].forEach(function(env) {
-      it('should expose environment set to ' + env, function(done) {
+  describe('Exposing environment as a variable to layout', function () {
+    ['development', 'production', 'test'].forEach(function (env) {
+      it('should expose environment set to ' + env, function (done) {
         // Set env to development for this test
         process.env.NODE_ENV = env;
 
@@ -179,7 +179,7 @@ describe('Configuration Tests:', function() {
           .get('/')
           .expect('Content-Type', 'text/html; charset=utf-8')
           .expect(200)
-          .end(function(err, res) {
+          .end(function (err, res) {
             // Handle errors
             if (err) {
               return done(err);
@@ -190,7 +190,7 @@ describe('Configuration Tests:', function() {
       });
     });
 
-    afterEach(function() {
+    afterEach(function () {
       // Set env back to test
       process.env.NODE_ENV = 'test';
     });

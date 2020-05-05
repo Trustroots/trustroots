@@ -21,14 +21,14 @@ const passwordMinLength = 8;
 /**
  * A Validation function for local strategy properties
  */
-const validateLocalStrategyProperty = function(property) {
+const validateLocalStrategyProperty = function (property) {
   return (this.provider !== 'local' && !this.updated) || property.length;
 };
 
 /**
  * A Validation function for local strategy email
  */
-const validateLocalStrategyEmail = function(email) {
+const validateLocalStrategyEmail = function (email) {
   return (
     (this.provider !== 'local' && !this.updated) || validator.isEmail(email)
   );
@@ -37,26 +37,26 @@ const validateLocalStrategyEmail = function(email) {
 /**
  * A Validation function for password
  */
-const validatePassword = function(password) {
+const validatePassword = function (password) {
   return password && validator.isLength(password, passwordMinLength);
 };
 
 /**
  * A Validation function for username
  */
-const validateUsername = function(username) {
+const validateUsername = function (username) {
   return (
     this.provider !== 'local' ||
     authenticationService.validateUsername(username)
   );
 };
 
-const setPlainTextField = function(value) {
+const setPlainTextField = function (value) {
   return textService.plainText(value, true);
 };
 
-const setPlainTextFieldAndLimit = function(limit) {
-  return function(value) {
+const setPlainTextFieldAndLimit = function (limit) {
+  return function (value) {
     return setPlainTextField(value).substring(0, limit);
   };
 };
@@ -338,7 +338,7 @@ const UserSchema = new Schema({
 /**
  * Hook a pre save method to hash the password
  */
-UserSchema.pre('save', function(next) {
+UserSchema.pre('save', function (next) {
   if (
     this.password &&
     this.isModified('password') &&
@@ -367,7 +367,7 @@ UserSchema.pre('save', function(next) {
 /**
  * Create instance method for hashing a password
  */
-UserSchema.methods.hashPassword = function(password) {
+UserSchema.methods.hashPassword = function (password) {
   if (this.salt && password) {
     return crypto
       .pbkdf2Sync(password, Buffer.from(this.salt, 'base64'), 10000, 64, 'SHA1')
@@ -380,7 +380,7 @@ UserSchema.methods.hashPassword = function(password) {
 /**
  * Create instance method for authenticating user
  */
-UserSchema.methods.authenticate = function(password) {
+UserSchema.methods.authenticate = function (password) {
   return this.password === this.hashPassword(password);
 };
 

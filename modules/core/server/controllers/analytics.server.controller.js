@@ -49,7 +49,7 @@ const log = require(path.resolve('./config/lib/logger'));
  * @link http://nodejs.org/api/url.html#url_url_format_urlobj
  *
  */
-exports.appendUTMParams = function(trackUrl, utmParams) {
+exports.appendUTMParams = function (trackUrl, utmParams) {
   if (
     !trackUrl ||
     !utmParams ||

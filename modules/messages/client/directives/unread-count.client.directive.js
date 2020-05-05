@@ -39,7 +39,7 @@ function messagesUnreadCountDirective(PollMessagesCount, Authentication) {
     function activate() {
       if (!Authentication.user || !Authentication.user.public) {
         // If user wasn't authenticated or public, set up watch
-        const activationWatch = scope.$on('userUpdated', function() {
+        const activationWatch = scope.$on('userUpdated', function () {
           // Did user become public with that update?
           if (Authentication.user.public) {
             // Remove this watch
