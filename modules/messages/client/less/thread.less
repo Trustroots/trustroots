@@ -17,7 +17,8 @@
     background-clip: padding-box;
     -webkit-border-radius: 7px;
     background-color: rgba(0, 0, 0, 0.15);
-    -webkit-box-shadow: inset -1px -1px 0px rgba(0, 0, 0, 0.05), inset 1px 1px 0px rgba(0, 0, 0, 0.05);
+    -webkit-box-shadow: inset -1px -1px 0px rgba(0, 0, 0, 0.05),
+      inset 1px 1px 0px rgba(0, 0, 0, 0.05);
   }
   &::-webkit-scrollbar-button {
     width: 0;
@@ -51,7 +52,7 @@
   }
 
   // "Yes, I can host!" messages
-  &[data-hosting="yes"] {
+  &[data-hosting='yes'] {
     .panel-body {
       color: @offer-hosting-yes;
     }
@@ -64,7 +65,7 @@
   }
 
   // "Sorry, I can't host" messages
-  &[data-hosting="no"] {
+  &[data-hosting='no'] {
     .panel-body {
       color: @offer-hosting-no;
     }
@@ -141,7 +142,7 @@
       background: @gray-lighter;
     }
     #message-reply-content {
-      transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+      transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
       font-size: @font-size-base;
       line-height: @line-height-base;
       padding: @padding-base-vertical @padding-base-horizontal;

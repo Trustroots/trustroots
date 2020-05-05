@@ -13,35 +13,50 @@
 }
 
 @keyframes rotator {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(270deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(270deg);
+  }
 }
 
 .spinner-path {
   stroke-dasharray: @spinner-offset;
   stroke-dashoffset: 0;
   transform-origin: center;
-  animation:
-    spinnerDash @spinner-duration ease-in-out infinite,
+  animation: spinnerDash @spinner-duration ease-in-out infinite,
     spinnerColors (@spinner-duration * 4) ease-in-out infinite;
 }
 
 @keyframes spinnerColors {
-	0% { stroke: @color-reel-0; }
-	25% { stroke: @color-reel-1; }
-	50% { stroke: @color-reel-2; }
-	75% { stroke: @color-reel-3; }
-  100% { stroke: @color-reel-4; }
+  0% {
+    stroke: @color-reel-0;
+  }
+  25% {
+    stroke: @color-reel-1;
+  }
+  50% {
+    stroke: @color-reel-2;
+  }
+  75% {
+    stroke: @color-reel-3;
+  }
+  100% {
+    stroke: @color-reel-4;
+  }
 }
 
 @keyframes spinnerDash {
- 0% { stroke-dashoffset: @spinner-offset; }
- 50% {
-   stroke-dashoffset: @spinner-offset / 4;
-   transform: rotate(135deg);
- }
- 100% {
-   stroke-dashoffset: @spinner-offset;
-   transform: rotate(450deg);
- }
+  0% {
+    stroke-dashoffset: @spinner-offset;
+  }
+  50% {
+    stroke-dashoffset: @spinner-offset / 4;
+    transform: rotate(135deg);
+  }
+  100% {
+    stroke-dashoffset: @spinner-offset;
+    transform: rotate(450deg);
+  }
 }

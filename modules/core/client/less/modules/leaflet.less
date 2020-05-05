@@ -12,7 +12,6 @@
  * @link https://github.com/Leaflet/Leaflet/blob/master/dist/leaflet.css
  */
 
-
 /* zoom and fade animations */
 /*
 .leaflet-fade-anim .leaflet-tile,
@@ -51,7 +50,6 @@
   }
 
   a {
-
     &,
     &:hover {
       background: transparent;
@@ -78,7 +76,7 @@
     }
 
     &.leaflet-active {
-      background: rgba(0, 0, 0, .05);
+      background: rgba(0, 0, 0, 0.05);
     }
 
     &.leaflet-disabled {
@@ -149,7 +147,7 @@
     right: 10px;
     bottom: 50%;
     width: auto;
-    border: 10px solid rgba(0,0,0,0.35);
+    border: 10px solid rgba(0, 0, 0, 0.35);
     box-shadow: none;
     form:before {
       display: block;
@@ -170,7 +168,7 @@
       pointer-events: none;
     }
   }
-  @media (max-width: @screen-sm-max) and (orientation:landscape) {
+  @media (max-width: @screen-sm-max) and (orientation: landscape) {
     bottom: 110px;
   }
 }
@@ -205,7 +203,6 @@
     right: 5px;
     margin: 0;
   }
-
 }
 
 .leaflet-touch {
@@ -218,13 +215,12 @@
   }
 }
 
-
 /* Attribution  */
 
 @leaflet-attribution-size: 26px;
 .leaflet-container .leaflet-control-attribution {
   background: #fff;
-  border-radius: (@leaflet-attribution-size/2);
+  border-radius: (@leaflet-attribution-size / 2);
   padding: 0 31px 0 10px;
   height: @leaflet-attribution-size;
   line-height: @leaflet-attribution-size;
@@ -255,7 +251,7 @@
     // See icons.less for the rest
     color: @text-color;
     background-color: #fff;
-    background-color: rgba(255,255,255,0.5);
+    background-color: rgba(255, 255, 255, 0.5);
     border-radius: 50%;
     position: absolute;
     display: inline-block;
@@ -268,7 +264,7 @@
     z-index: 1;
     visibility: visible;
     cursor: pointer;
-    opacity: .75;
+    opacity: 0.75;
   }
 }
 

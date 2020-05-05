@@ -10,15 +10,15 @@
   .tribe-header-back {
     padding-top: (@navbar-height + 50px);
     margin-left: -30px;
-    [class^="icon-"]:before,
-    [class*=" icon-"]:before {
+    [class^='icon-']:before,
+    [class*=' icon-']:before {
       transition: all 0.2s ease-in-out;
       margin-right: 5px;
       margin-left: 5px;
     }
     &:hover {
-      [class^="icon-"]:before,
-      [class*=" icon-"]:before {
+      [class^='icon-']:before,
+      [class*=' icon-']:before {
         margin-right: 10px;
         margin-left: 0;
       }
@@ -30,7 +30,11 @@
   min-height: 680px;
   height: 100vh;
   overflow: auto;
-  background: linear-gradient(to right, rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%);
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.65) 0%,
+    rgba(0, 0, 0, 0) 100%
+  );
   .tribe-pre {
     margin-bottom: 0;
   }
@@ -55,12 +59,24 @@
 .is-guest {
   .tribe-header-info {
     text-align: center;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0, 0, 0, 0.6);
     @media (min-width: @screen-xs-min) {
-      background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.0) 70%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(0, 0, 0, 0.5) 40%,
+        rgba(0, 0, 0, 0) 70%,
+        rgba(0, 0, 0, 0) 100%
+      );
     }
     @media (min-width: @screen-md-min) {
-      background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.0) 70%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(0, 0, 0, 0.5) 40%,
+        rgba(0, 0, 0, 0) 70%,
+        rgba(0, 0, 0, 0) 100%
+      );
     }
     @media (min-width: @screen-xs-min) {
       text-align: left;
@@ -102,6 +118,6 @@
 }
 
 .tribe-share {
-  float:left;
+  float: left;
   margin: 0 15px 0 0;
 }
