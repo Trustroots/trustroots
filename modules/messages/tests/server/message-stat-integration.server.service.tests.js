@@ -14,24 +14,24 @@ const messageController = require(path.resolve(
   './modules/messages/server/controllers/messages.server.controller',
 ));
 
-describe('Integration of the MessageStat service', function() {
+describe('Integration of the MessageStat service', function () {
   // stubbing the updateMessageStat
   let reachEventEmitter;
 
-  before(function() {
+  before(function () {
     // this emitter will listen to reaching the updateMessageStat service
     reachEventEmitter = new EventEmitter();
   });
 
-  beforeEach(function() {
+  beforeEach(function () {
     // stub the updateMessageStat to emit an event which we could catch in a test
-    sinon.stub(messageStatService, 'updateMessageStat').callsFake(function() {
+    sinon.stub(messageStatService, 'updateMessageStat').callsFake(function () {
       reachEventEmitter.emit('reachedUpdateMessageStat', arguments);
     });
   });
 
   // reverting the stubbing of updateMessageStat
-  afterEach(function() {
+  afterEach(function () {
     sinon.restore();
   });
 
@@ -39,7 +39,7 @@ describe('Integration of the MessageStat service', function() {
   let user1;
   let user2;
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     user1 = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -66,9 +66,9 @@ describe('Integration of the MessageStat service', function() {
     });
 
     // save those users to mongoDB
-    user1.save(function(err) {
+    user1.save(function (err) {
       if (err) return done(err);
-      user2.save(function(err) {
+      user2.save(function (err) {
         if (err) return done(err);
         done();
       });
@@ -76,23 +76,23 @@ describe('Integration of the MessageStat service', function() {
   });
 
   // after each test removing all the messages and users (cleaning the database)
-  afterEach(function(done) {
-    Message.deleteMany().exec(function() {
+  afterEach(function (done) {
+    Message.deleteMany().exec(function () {
       User.deleteMany().exec(done);
     });
   });
 
-  it('should reach the service with correct data when sending a new message', function(done) {
+  it('should reach the service with correct data when sending a new message', function (done) {
     // we're stubbing the express.response here
     function Res() {}
     // eslint-disable-next-line no-unused-vars
-    Res.prototype.status = function(statusCode) {
+    Res.prototype.status = function (statusCode) {
       // this.statusCode = statusCode; // use for debug
       return this;
     };
     // we could do something on response, but we don't care
     // eslint-disable-next-line no-unused-vars
-    Res.prototype.send = function(response) {
+    Res.prototype.send = function (response) {
       // console.log(this.statusCode, response); // use for debug
     };
     Res.prototype.json = Res.prototype.send;
@@ -114,14 +114,14 @@ describe('Integration of the MessageStat service', function() {
     messageController.send(req, res);
 
     // check that updateMessageStat was reached with the expected data
-    reachEventEmitter.once('reachedUpdateMessageStat', function(args) {
+    reachEventEmitter.once('reachedUpdateMessageStat', function (args) {
       args[0].should.have.property('userFrom', user1._id);
       args[0].should.have.property('userTo', user2._id);
       args[0].should.have.property('_id');
 
       // check that the message is already saved to database
       // at the time of updating stats
-      Message.findById(args[0]._id).exec(function(err, msg) {
+      Message.findById(args[0]._id).exec(function (err, msg) {
         if (err) return done(err);
         try {
           should(msg).not.equal(null);

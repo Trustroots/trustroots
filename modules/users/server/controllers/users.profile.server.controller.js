@@ -113,7 +113,7 @@ exports.userSearchProfileFields =
 /**
  * Middleware to validate+process avatar upload field
  */
-exports.avatarUploadField = function(req, res, next) {
+exports.avatarUploadField = function (req, res, next) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -137,7 +137,7 @@ exports.avatarUploadField = function(req, res, next) {
  * Multer has placed uploaded the file in temp folder and path is now available
  * via `req.file.path`
  */
-exports.avatarUpload = function(req, res) {
+exports.avatarUpload = function (req, res) {
   // Each user has their own folder for avatars
   const uploadDir =
     path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
@@ -148,8 +148,8 @@ exports.avatarUpload = function(req, res) {
   async.waterfall(
     [
       // Ensure user's upload directory exists
-      function(done) {
-        mkdirRecursive.mkdir(uploadDir, function(err) {
+      function (done) {
+        mkdirRecursive.mkdir(uploadDir, function (err) {
           if (err && err.code !== 'EEXIST') {
             return done(err);
           }
@@ -158,12 +158,12 @@ exports.avatarUpload = function(req, res) {
       },
 
       // Make the thumbnails
-      function(done) {
+      function (done) {
         let asyncQueueErrorHappened;
 
         // Create a queue worker
         // @link https://github.com/caolan/async#queueworker-concurrency
-        const q = async.queue(function(thumbSize, callback) {
+        const q = async.queue(function (thumbSize, callback) {
           // Create thumbnail size
           // Images are resized following quality/size -optimization tips from this article:
           // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/
@@ -179,7 +179,7 @@ exports.avatarUpload = function(req, res) {
             .extent(thumbSize, thumbSize)
             .unsharp(0.25, 0.25, 8, 0.065) // radius [, sigma, amount, threshold] - @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#sharpening
             .quality(82) // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#quality-and-compression
-            .write(uploadDir + '/' + thumbSize + '.jpg', function(err) {
+            .write(uploadDir + '/' + thumbSize + '.jpg', function (err) {
               // Something's wrong with the file, stop here.
               if (err) {
                 log(
@@ -196,7 +196,7 @@ exports.avatarUpload = function(req, res) {
                   q.pause();
 
                   // Attempt to delete tmp file
-                  fs.unlink(req.file.path, function(err) {
+                  fs.unlink(req.file.path, function (err) {
                     if (err) {
                       log(
                         'error',
@@ -227,15 +227,15 @@ exports.avatarUpload = function(req, res) {
       },
 
       // Delete uploaded temp file
-      function(done) {
-        fs.unlink(req.file.path, function(err) {
+      function (done) {
+        fs.unlink(req.file.path, function (err) {
           done(err);
         });
       },
 
       // Catch errors
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message:
@@ -255,7 +255,7 @@ exports.avatarUpload = function(req, res) {
 /**
  * Update user profile
  */
-exports.update = function(req, res) {
+exports.update = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -264,7 +264,7 @@ exports.update = function(req, res) {
 
   // validate locale
   // @TODO validation framework
-  const localeCodes = locales.map(function(locale) {
+  const localeCodes = locales.map(function (locale) {
     return locale.code;
   });
   if (
@@ -279,7 +279,7 @@ exports.update = function(req, res) {
 
   async.waterfall(
     [
-      function(done) {
+      function (done) {
         // Email didn't change, just continue
         if (!req.body.email || req.body.email === req.user.email) {
           return done();
@@ -294,7 +294,7 @@ exports.update = function(req, res) {
             ],
           },
           'emailTemporary email',
-          function(err, emailUser) {
+          function (err, emailUser) {
             // Not available
             if (emailUser) {
               // If the user we found with this email is currently authenticated user,
@@ -317,10 +317,10 @@ exports.update = function(req, res) {
       },
 
       // Check if we should generate new email token
-      function(done) {
+      function (done) {
         // Generate only if email changed
         if (req.body.email && req.body.email !== req.user.email) {
-          crypto.randomBytes(20, function(err, buffer) {
+          crypto.randomBytes(20, function (err, buffer) {
             const token = buffer.toString('hex');
             done(err, token, req.body.email);
           });
@@ -331,7 +331,7 @@ exports.update = function(req, res) {
       },
 
       // User wants to change the username
-      function(token, email, done) {
+      function (token, email, done) {
         if (req.body.username && req.body.username !== req.user.username) {
           // They are not allowed to do so
           if (!isUsernameUpdateAllowed(req.user)) {
@@ -348,7 +348,7 @@ exports.update = function(req, res) {
       },
 
       // Update user
-      function(token, email, done) {
+      function (token, email, done) {
         // For security measurement do not use _id from the req.body object
         delete req.body._id;
 
@@ -390,9 +390,9 @@ exports.update = function(req, res) {
           user.emailTemporary = email;
         }
 
-        user.save(function(err) {
+        user.save(function (err) {
           if (!err) {
-            req.login(user, function(err) {
+            req.login(user, function (err) {
               if (err) {
                 done(err);
               } else {
@@ -406,9 +406,9 @@ exports.update = function(req, res) {
       },
 
       // Send email
-      function(token, user, done) {
+      function (token, user, done) {
         if (token) {
-          emailService.sendChangeEmailConfirmation(user, function(err) {
+          emailService.sendChangeEmailConfirmation(user, function (err) {
             done(err, user);
           });
         } else {
@@ -417,12 +417,12 @@ exports.update = function(req, res) {
       },
 
       // Return user
-      function(user) {
+      function (user) {
         user = exports.sanitizeProfile(user, req.user);
         return res.json(user);
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -435,7 +435,7 @@ exports.update = function(req, res) {
 /**
  * Initialize profile removal
  */
-exports.initializeRemoveProfile = function(req, res) {
+exports.initializeRemoveProfile = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -456,15 +456,15 @@ exports.initializeRemoveProfile = function(req, res) {
   async.waterfall(
     [
       // Generate random token
-      function(done) {
-        crypto.randomBytes(20, function(err, buffer) {
+      function (done) {
+        crypto.randomBytes(20, function (err, buffer) {
           const token = buffer.toString('hex');
           done(err, token);
         });
       },
 
       // Set token
-      function(token, done) {
+      function (token, done) {
         // Token expires in 24 hours
         const tokenExpires = Date.now() + 24 * 3600000;
 
@@ -480,15 +480,15 @@ exports.initializeRemoveProfile = function(req, res) {
             // Return updated user document
             new: true,
           },
-          function(err, user) {
+          function (err, user) {
             done(err, user);
           },
         );
       },
 
       // Send email
-      function(user) {
-        emailService.sendRemoveProfile(user, function(err) {
+      function (user) {
+        emailService.sendRemoveProfile(user, function (err) {
           // Stop on errors
           if (err) {
             return res.status(400).send({
@@ -508,7 +508,7 @@ exports.initializeRemoveProfile = function(req, res) {
                 status: 'emailSent',
               },
             },
-            function() {
+            function () {
               // Return success
               res.send({
                 message: 'We sent you an email with further instructions.',
@@ -518,7 +518,7 @@ exports.initializeRemoveProfile = function(req, res) {
         });
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: 'Removing your profile failed.',
@@ -531,7 +531,7 @@ exports.initializeRemoveProfile = function(req, res) {
 /**
  * Remove profile DELETE from email token
  */
-exports.removeProfile = function(req, res) {
+exports.removeProfile = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -541,7 +541,7 @@ exports.removeProfile = function(req, res) {
   async.waterfall(
     [
       // Validate token
-      function(done) {
+      function (done) {
         User.findOne(
           {
             _id: req.user._id,
@@ -550,7 +550,7 @@ exports.removeProfile = function(req, res) {
               $gt: Date.now(),
             },
           },
-          function(err, user) {
+          function (err, user) {
             // Can't find user (=invalid or expired token) or other error
             if (err || !user) {
               // Report failure to stats
@@ -564,7 +564,7 @@ exports.removeProfile = function(req, res) {
                     status: 'failed',
                   },
                 },
-                function() {
+                function () {
                   // Return failure
                   return res.status(400).send({
                     message: 'Profile remove token is invalid or has expired.',
@@ -579,20 +579,20 @@ exports.removeProfile = function(req, res) {
       },
 
       // Remove profile
-      function(user, done) {
+      function (user, done) {
         User.findOneAndRemove(
           {
             _id: user._id,
           },
-          function(err) {
+          function (err) {
             done(err, user);
           },
         );
       },
 
       // Remove offers
-      function(user, done) {
-        offerHandler.removeAllByUserId(user._id, function(err) {
+      function (user, done) {
+        offerHandler.removeAllByUserId(user._id, function (err) {
           if (err) {
             log('error', 'Error when removing all offers by user ID. #rj393', {
               error: err,
@@ -603,8 +603,8 @@ exports.removeProfile = function(req, res) {
       },
 
       // Remove contacts
-      function(user, done) {
-        contactHandler.removeAllByUserId(user._id, function(err) {
+      function (user, done) {
+        contactHandler.removeAllByUserId(user._id, function (err) {
           if (err) {
             log(
               'error',
@@ -619,42 +619,42 @@ exports.removeProfile = function(req, res) {
       },
 
       // Mark all messages sent _to_ that user as `notified:true` (so that unread-messages doesn't pick them up anymore). Leave messages _from_ that user as is.
-      function(user, done) {
-        messageHandler.markAllMessagesToUserNotified(user._id, function(err) {
+      function (user, done) {
+        messageHandler.markAllMessagesToUserNotified(user._id, function (err) {
           return done(err, user);
         });
       },
 
       // Subtract 1 from all the tribes.count of which user is member
-      function(user, done) {
+      function (user, done) {
         async.each(
           user.member,
-          function(membership, callback) {
+          function (membership, callback) {
             // Update the count of every tribe user is member of
             tribesHandler.updateCount(membership.tribe, -1, false, callback);
           },
-          function(err) {
+          function (err) {
             done(err, user);
           },
         );
       },
 
       // Remove uploaded images
-      function(user, done) {
+      function (user, done) {
         // All user's uploads are under their own folder
-        del(path.resolve(config.uploadDir) + '/' + user._id).then(function() {
+        del(path.resolve(config.uploadDir) + '/' + user._id).then(function () {
           done(null, user);
         });
       },
 
       // Send email
-      function(user, done) {
+      function (user, done) {
         emailService.sendRemoveProfileConfirmed(
           {
             displayName: user.displayName,
             email: user.email,
           },
-          function(err) {
+          function (err) {
             // Just log errors but don't mind about them as this is not critical step
             if (err) {
               // Log the failure to send the email
@@ -673,7 +673,7 @@ exports.removeProfile = function(req, res) {
       },
 
       // Done
-      function() {
+      function () {
         // Report successfull removal to stats
         return statService.stat(
           {
@@ -685,7 +685,7 @@ exports.removeProfile = function(req, res) {
               status: 'removed',
             },
           },
-          function() {
+          function () {
             // Return success
             return res.json({
               message: 'Your profile has been removed.',
@@ -694,7 +694,7 @@ exports.removeProfile = function(req, res) {
         );
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         // Report failure to stats
         return statService.stat(
@@ -707,7 +707,7 @@ exports.removeProfile = function(req, res) {
               status: 'failed',
             },
           },
-          function() {
+          function () {
             // Return failure
             return res.status(400).send({
               message: 'Removing your profile failed.',
@@ -722,7 +722,7 @@ exports.removeProfile = function(req, res) {
 /**
  * Show the profile of the user
  */
-exports.getUser = function(req, res) {
+exports.getUser = function (req, res) {
   // Not a profile of currently authenticated user:
   if (req.profile && !req.user._id.equals(req.profile._id)) {
     // 'public' isn't needed at frontend.
@@ -740,7 +740,7 @@ exports.getUser = function(req, res) {
 /**
  * Show the mini profile of the user
  */
-exports.getMiniUser = function(req, res) {
+exports.getMiniUser = function (req, res) {
   if (req.profile) {
     const profile = req.profile.toObject();
 
@@ -763,7 +763,7 @@ exports.getMiniUser = function(req, res) {
 /**
  * Mini profile middleware
  */
-exports.userMiniByID = function(req, res, next, userId) {
+exports.userMiniByID = function (req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
@@ -772,7 +772,7 @@ exports.userMiniByID = function(req, res, next, userId) {
   }
 
   User.findById(userId, exports.userMiniProfileFields + ' public roles').exec(
-    function(err, profile) {
+    function (err, profile) {
       // Something went wrong or no profile
       if (err || !profile) {
         return res.status(404).send({
@@ -808,7 +808,7 @@ exports.userMiniByID = function(req, res, next, userId) {
 /**
  * Profile middleware
  */
-exports.userByUsername = function(req, res, next, username) {
+exports.userByUsername = function (req, res, next, username) {
   // Require user
   if (!req.user) {
     return res.status(403).send({
@@ -830,7 +830,7 @@ exports.userByUsername = function(req, res, next, username) {
   async.waterfall(
     [
       // Find user
-      function(done) {
+      function (done) {
         User.findOne(
           {
             username: username.toLowerCase(),
@@ -846,7 +846,7 @@ exports.userByUsername = function(req, res, next, username) {
             // https://github.com/Automattic/mongoose/issues/2202
             // options: { sort: { count: -1 } }
           })
-          .exec(function(err, profile) {
+          .exec(function (err, profile) {
             if (err || !profile) {
               // No such user
               return res.status(404).send({
@@ -878,7 +878,7 @@ exports.userByUsername = function(req, res, next, username) {
       },
 
       // Sanitize profile
-      function(profile, done) {
+      function (profile, done) {
         req.profile = exports.sanitizeProfile(profile, req.user);
         return done(null, profile);
       },
@@ -886,12 +886,12 @@ exports.userByUsername = function(req, res, next, username) {
       // Read User's reply statistics and add them to req.profile
       // We need to add it to req.profile, because profile is mongoose object and
       // adding properties to it doesn't work
-      function(profile, done) {
+      function (profile, done) {
         // find the statistics
         messageStatService.readFormattedMessageStatsOfUser(
           profile._id,
           Date.now(),
-          function(err, stats) {
+          function (err, stats) {
             // If we receive error, let's just continue.
             // The stats are non-essential.
             if (!err) {
@@ -905,11 +905,11 @@ exports.userByUsername = function(req, res, next, username) {
       },
 
       // Next Route
-      function() {
+      function () {
         next();
       },
     ],
-    function(err) {
+    function (err) {
       if (err) return next(err);
     },
   );
@@ -939,7 +939,7 @@ function isUsernameUpdateAllowed(user) {
  * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
  * @return {Object} Sanitized profile.
  */
-exports.sanitizeProfile = function(profile, authenticatedUser) {
+exports.sanitizeProfile = function (profile, authenticatedUser) {
   if (!profile) {
     return;
   }
@@ -956,7 +956,7 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
 
   // Remove tribes without reference object (= they've been deleted from `tribes` table)
   if (profile.member && profile.member.length > 0) {
-    profile.member = _.reject(profile.member, function(o) {
+    profile.member = _.reject(profile.member, function (o) {
       return !o.tribe;
     });
   }
@@ -964,7 +964,7 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
   // Create simple arrays of tribe id's
   profile.memberIds = [];
   if (profile.member && profile.member.length > 0) {
-    profile.member.forEach(function(obj) {
+    profile.member.forEach(function (obj) {
       // If profile's `member.tribe` path was populated
       if (obj.tribe && obj.tribe._id) {
         profile.memberIds.push(obj.tribe._id.toString());
@@ -1021,7 +1021,7 @@ exports.sanitizeProfile = function(profile, authenticatedUser) {
 /**
  * Join tribe
  */
-exports.joinTribe = function(req, res) {
+exports.joinTribe = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -1040,7 +1040,7 @@ exports.joinTribe = function(req, res) {
   async.waterfall(
     [
       // Check user is a member of this tribe
-      function(done) {
+      function (done) {
         // Return if user is already a member
         if (isUserMemberOfTribe(req.user, tribeId)) {
           return res.status(409).send({
@@ -1052,8 +1052,8 @@ exports.joinTribe = function(req, res) {
       },
 
       // Update tribe counter
-      function(done) {
-        tribesHandler.updateCount(tribeId, 1, true, function(err, tribe) {
+      function (done) {
+        tribesHandler.updateCount(tribeId, 1, true, function (err, tribe) {
           // Tribe by id `req.body.id` didn't exist
           if (!tribe || !tribe._id) {
             return res.status(400).send({
@@ -1066,7 +1066,7 @@ exports.joinTribe = function(req, res) {
       },
 
       // Add tribe to user's object
-      function(tribe, done) {
+      function (tribe, done) {
         User.findByIdAndUpdate(
           req.user._id,
           {
@@ -1081,13 +1081,13 @@ exports.joinTribe = function(req, res) {
             safe: true, // @link http://stackoverflow.com/a/4975054/1984644
             new: true, // get the updated document in return
           },
-        ).exec(function(err, user) {
+        ).exec(function (err, user) {
           done(err, tribe, user);
         });
       },
 
       // Done, output new tribe + user objects
-      function(tribe, user, done) {
+      function (tribe, user, done) {
         // Preserver only public fields
         // Array of keys to preserve in tribe before sending it to the frontend
         const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
@@ -1108,7 +1108,7 @@ exports.joinTribe = function(req, res) {
               slug: tribe.slug,
             },
           },
-          function() {
+          function () {
             // Send response to API
             res.send({
               message: 'Joined tribe.',
@@ -1123,7 +1123,7 @@ exports.joinTribe = function(req, res) {
 
       // Catch errors
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: 'Failed to join tribe.',
@@ -1136,7 +1136,7 @@ exports.joinTribe = function(req, res) {
 /**
  * Leave tribe
  */
-exports.leaveTribe = function(req, res) {
+exports.leaveTribe = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -1155,7 +1155,7 @@ exports.leaveTribe = function(req, res) {
   async.waterfall(
     [
       // Check user is a member of this tribe
-      function(done) {
+      function (done) {
         // Return if isn't a member anymore
         if (!isUserMemberOfTribe(req.user, tribeId)) {
           return res.status(409).send({
@@ -1167,8 +1167,8 @@ exports.leaveTribe = function(req, res) {
       },
 
       // Update tribe counter
-      function(done) {
-        tribesHandler.updateCount(tribeId, -1, true, function(err, tribe) {
+      function (done) {
+        tribesHandler.updateCount(tribeId, -1, true, function (err, tribe) {
           // Tribe by id `req.body.id` didn't exist
           if (!tribe || !tribe._id) {
             return res.status(400).send({
@@ -1181,7 +1181,7 @@ exports.leaveTribe = function(req, res) {
       },
 
       // Remove tribe from user's object
-      function(tribe, done) {
+      function (tribe, done) {
         User.findByIdAndUpdate(
           req.user._id,
           {
@@ -1195,13 +1195,13 @@ exports.leaveTribe = function(req, res) {
             safe: true, // @link http://stackoverflow.com/a/4975054/1984644
             new: true, // get the updated document in return
           },
-        ).exec(function(err, user) {
+        ).exec(function (err, user) {
           done(err, tribe, user);
         });
       },
 
       // Done, output new tribe + user objects
-      function(tribe, user, done) {
+      function (tribe, user, done) {
         // Preserver only public fields
         // Array of keys to preserve in tribe before sending it to the frontend
         const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
@@ -1222,7 +1222,7 @@ exports.leaveTribe = function(req, res) {
               slug: tribe.slug,
             },
           },
-          function() {
+          function () {
             // Send response to API
             res.send({
               message: 'Left tribe.',
@@ -1237,7 +1237,7 @@ exports.leaveTribe = function(req, res) {
 
       // Catch errors
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: 'Failed to leave tribe.',
@@ -1250,7 +1250,7 @@ exports.leaveTribe = function(req, res) {
 /**
  * Get user's tribes
  */
-exports.getUserMemberships = function(req, res) {
+exports.getUserMemberships = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -1267,7 +1267,7 @@ exports.getUserMemberships = function(req, res) {
       // https://github.com/Automattic/mongoose/issues/2202
       // options: { sort: { count: -1 } }
     })
-    .exec(function(err, profile) {
+    .exec(function (err, profile) {
       // Something went wrong
       if (err) {
         return res.status(400).send({
@@ -1282,7 +1282,7 @@ exports.getUserMemberships = function(req, res) {
 /**
  * Remove push registration
  */
-exports.removePushRegistration = function(req, res) {
+exports.removePushRegistration = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -1303,7 +1303,7 @@ exports.removePushRegistration = function(req, res) {
   User.findByIdAndUpdate(user._id, query, {
     safe: true, // @link http://stackoverflow.com/a/4975054/1984644
     new: true, // get the updated document in return
-  }).exec(function(err, user) {
+  }).exec(function (err, user) {
     if (err) {
       return res.status(400).send({
         message:
@@ -1322,7 +1322,7 @@ exports.removePushRegistration = function(req, res) {
 /**
  * Add push registration
  */
-exports.addPushRegistration = function(req, res) {
+exports.addPushRegistration = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -1357,21 +1357,21 @@ exports.addPushRegistration = function(req, res) {
     [
       // Remove any existing registrations for this token
 
-      function(done) {
+      function (done) {
         User.findByIdAndUpdate(user._id, {
           $pull: {
             pushRegistration: {
               token: token,
             },
           },
-        }).exec(function(err) {
+        }).exec(function (err) {
           done(err);
         });
       },
 
       // Add new registration
 
-      function(done) {
+      function (done) {
         const registration = {
           platform: platform,
           token: token,
@@ -1392,7 +1392,7 @@ exports.addPushRegistration = function(req, res) {
           {
             new: true,
           },
-        ).exec(function(err, updatedUser) {
+        ).exec(function (err, updatedUser) {
           if (err) {
             return done(err);
           }
@@ -1403,13 +1403,13 @@ exports.addPushRegistration = function(req, res) {
 
       // Notify the user we just added a device
 
-      function(done) {
+      function (done) {
         // Don't notify if in request we asked to be silent
         if (doNotNotify) {
           return done();
         }
 
-        pushService.notifyPushDeviceAdded(user, platform, function(err) {
+        pushService.notifyPushDeviceAdded(user, platform, function (err) {
           if (err) {
             // don't stop on error, but log it
             log(
@@ -1424,14 +1424,14 @@ exports.addPushRegistration = function(req, res) {
         });
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message:
             errorService.getErrorMessage(err) || 'Failed, please try again.',
         });
       } else {
-        User.findById(user._id).exec(function(err, user) {
+        User.findById(user._id).exec(function (err, user) {
           if (err) {
             return res.status(400).send({
               message:
@@ -1452,14 +1452,14 @@ exports.addPushRegistration = function(req, res) {
 /**
  * Redirect invite short URLs
  */
-exports.redirectInviteShortUrl = function(req, res) {
+exports.redirectInviteShortUrl = function (req, res) {
   return res.redirect(301, '/signup?code=' + _.get(req, 'params.code', ''));
 };
 
 /**
  * Get invitation code
  */
-exports.getInviteCode = function(req, res) {
+exports.getInviteCode = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -1474,7 +1474,7 @@ exports.getInviteCode = function(req, res) {
 /**
  * Validate invitation code
  */
-exports.validateInviteCode = function(req, res) {
+exports.validateInviteCode = function (req, res) {
   const inviteCode = _.get(req.params, 'invitecode', false);
 
   // Is invite code valid
@@ -1504,7 +1504,7 @@ exports.validateInviteCode = function(req, res) {
   }
 
   // Send validation result to stats
-  statService.stat(stats, function() {
+  statService.stat(stats, function () {
     // Send validation out to API
     return res.send({
       valid: inviteCodeValid,
@@ -1527,7 +1527,7 @@ function isUserMemberOfTribe(user, tribeId) {
   // `_.find` iterates over elements of collection, returning the first element
   // predicate returns truthy for. Otherwise returns undefined.
   return Boolean(
-    _.find(user.member, function(membership) {
+    _.find(user.member, function (membership) {
       return membership.tribe.equals(tribeId);
     }),
   );
@@ -1537,7 +1537,7 @@ function isUserMemberOfTribe(user, tribeId) {
  * This middleware sends response with an array of found users
  * We assume that req.query.search exists
  */
-exports.search = function(req, res, next) {
+exports.search = function (req, res, next) {
   // check that the search string is provided
   if (!_.has(req.query, 'search')) {
     return next();
@@ -1573,7 +1573,7 @@ exports.search = function(req, res, next) {
     .limit(req.query.limit)
     // skip to the page, automatically handles invalid page number
     .skip(req.skip)
-    .exec(function(err, users) {
+    .exec(function (err, users) {
       if (err) return next(err);
       return res.send(users);
     });

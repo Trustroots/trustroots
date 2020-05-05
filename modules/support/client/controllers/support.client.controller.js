@@ -49,11 +49,11 @@ function SupportController(SupportService, messageCenterService, $stateParams) {
     const supportRequest = new SupportService(vm.request);
 
     supportRequest.$save(
-      function() {
+      function () {
         vm.success = true;
         vm.isLoading = false;
       },
-      function(err) {
+      function (err) {
         vm.isLoading = false;
         messageCenterService.add(
           'danger',

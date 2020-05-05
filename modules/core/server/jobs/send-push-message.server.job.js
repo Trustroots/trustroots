@@ -13,7 +13,7 @@ const log = require(path.resolve('./config/lib/logger'));
 const UNREGISTERED_TOKEN_ERROR_CODE =
   'messaging/registration-token-not-registered';
 
-module.exports = function(job, done) {
+module.exports = function (job, done) {
   const attrs = job.attrs;
   const data = attrs.data;
 
@@ -47,7 +47,7 @@ module.exports = function(job, done) {
   const exponentTokens = [];
 
   // Sort push tokens by cloud service
-  pushServices.forEach(function(pushService) {
+  pushServices.forEach(function (pushService) {
     switch (String(pushService.platform)) {
       case 'ios':
       case 'android':
@@ -70,7 +70,7 @@ module.exports = function(job, done) {
   });
 
   // push to Firebase
-  const firebasePushPromise = new Promise(function(resolve, reject) {
+  const firebasePushPromise = new Promise(function (resolve, reject) {
     // any Firebase tokens to push to?
     if (firebaseTokens.length === 0) {
       log(
@@ -85,9 +85,9 @@ module.exports = function(job, done) {
     // push to Firebase
     firebaseMessaging
       .sendToDevice(firebaseTokens, { notification: notification })
-      .then(function(response) {
+      .then(function (response) {
         const unregisteredTokens = [];
-        response.results.forEach(function(result, idx) {
+        response.results.forEach(function (result, idx) {
           if (result.error) {
             if (result.error.code === UNREGISTERED_TOKEN_ERROR_CODE) {
               unregisteredTokens.push(firebaseTokens[idx]);
@@ -95,14 +95,14 @@ module.exports = function(job, done) {
           }
         });
         if (unregisteredTokens.length > 0) {
-          removeUserPushTokens(userId, unregisteredTokens, function(error) {
+          removeUserPushTokens(userId, unregisteredTokens, function (error) {
             (error && reject(error)) || resolve();
           });
         } else {
           resolve();
         }
       })
-      .catch(function(err) {
+      .catch(function (err) {
         reject(err);
       });
   });
@@ -121,16 +121,16 @@ module.exports = function(job, done) {
     async.reflect(firebasePushPromise),
     async.reflect(exponentPushPromise),
   ])
-    .then(function() {
-      process.nextTick(function() {
+    .then(function () {
+      process.nextTick(function () {
         log('info', 'Successfully finished `send push message` job', {
           jobId: jobId,
         });
         return done();
       });
     })
-    .catch(function(err) {
-      process.nextTick(function() {
+    .catch(function (err) {
+      process.nextTick(function () {
         log('error', 'The `send push notification` job failed', {
           jobId: jobId,
           error: err,
@@ -155,7 +155,7 @@ function removeUserPushTokens(userId, tokens, callback) {
     },
   };
 
-  User.findByIdAndUpdate(userId, query).exec(function(err) {
+  User.findByIdAndUpdate(userId, query).exec(function (err) {
     if (err) {
       log(
         'error',

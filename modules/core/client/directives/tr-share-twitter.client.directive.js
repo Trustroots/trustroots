@@ -68,7 +68,7 @@ function trShareTwitterDirective($window, $document) {
      *    is available.
      */
     function initTwitterJS() {
-      $window.twttr = (function(d, s, id) {
+      $window.twttr = (function (d, s, id) {
         const fjs = d.getElementsByTagName(s)[0];
         const t = $window.twttr || {};
         if (d.getElementById(id)) return t;
@@ -78,7 +78,7 @@ function trShareTwitterDirective($window, $document) {
         fjs.parentNode.insertBefore(js, fjs);
 
         t._e = [];
-        t.ready = function(f) {
+        t.ready = function (f) {
           t._e.push(f);
         };
 

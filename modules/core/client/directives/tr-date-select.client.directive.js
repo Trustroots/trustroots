@@ -16,7 +16,7 @@ angular
 
   .run([
     '$templateCache',
-    function($templateCache) {
+    function ($templateCache) {
       const template = [
         '<div class="sb-date-select">',
         '  <select class="sb-date-select-day sb-date-select-select" ng-class="selectClass" ng-model="val.date" ng-options="d for d in dates track by d">',
@@ -36,11 +36,11 @@ angular
   ])
 
   .directive('trDateSelect', [
-    function() {
+    function () {
       return {
         restrict: 'A',
         replace: true,
-        templateUrl: function($element, $attrs) {
+        templateUrl: function ($element, $attrs) {
           return $attrs.templateUrl || 'tr-date-select.html';
         },
         require: 'ngModel',
@@ -49,7 +49,7 @@ angular
           selectClass: '@trSelectClass',
         },
 
-        link: function(scope, elem, attrs, ngModel) {
+        link: function (scope, elem, attrs, ngModel) {
           scope.val = {};
 
           const min = (scope.min = moment(attrs.min || '1900-01-01'));
@@ -61,15 +61,15 @@ angular
             scope.years.push(i);
           }
 
-          scope.$watch('val.year', function() {
+          scope.$watch('val.year', function () {
             updateMonthOptions();
           });
 
-          scope.$watchCollection('[val.month, val.year]', function() {
+          scope.$watchCollection('[val.month, val.year]', function () {
             updateDateOptions();
           });
 
-          scope.$watchCollection('[val.date, val.month, val.year]', function(
+          scope.$watchCollection('[val.date, val.month, val.year]', function (
             newDate,
             oldDate,
           ) {
@@ -157,7 +157,7 @@ angular
           }
 
           // ngModel -> view
-          ngModel.$render = function() {
+          ngModel.$render = function () {
             if (!ngModel.$viewValue) return;
 
             const m = moment(new Date(ngModel.$viewValue));

@@ -65,7 +65,7 @@ function getFuzzyLocation(location) {
  * @param {Array} coordinates - Expects location coordinates in an array: [lat, lon]
  * @returns {Boolean} true on success, false on failure.
  */
-const validateLocation = function(coordinates) {
+const validateLocation = function (coordinates) {
   if (!_.isArray(coordinates) || coordinates.length !== 2) {
     return false;
   }
@@ -89,7 +89,7 @@ const validateLocation = function(coordinates) {
  * When `location` is modified, set also `locationFuzzy`
  * Keeps `location` unaltered.
  */
-const setLocation = function(value) {
+const setLocation = function (value) {
   this.locationFuzzy = getFuzzyLocation(value);
   return value;
 };

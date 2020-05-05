@@ -33,7 +33,7 @@ function OfferHostViewController($scope, OffersByService) {
           userId: $scope.profileCtrl.profile._id,
           types: 'host',
         },
-        function(offers) {
+        function (offers) {
           if (!offers || !offers.length) {
             return;
           }

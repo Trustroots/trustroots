@@ -62,7 +62,7 @@ function SignupController(
    */
   function activate() {
     // If invitation code was passed to the page (via URL), validate it
-    validateInvitationCode().finally(function() {
+    validateInvitationCode().finally(function () {
       // Initialise waitinglist
       initWaitingList();
     });
@@ -120,7 +120,7 @@ function SignupController(
       // Fetch information about referred tribe
       TribeService.get({
         tribeSlug: $stateParams.tribe,
-      }).then(function(tribe) {
+      }).then(function (tribe) {
         // Got it
         if (tribe._id) {
           vm.tribe = tribe;
@@ -145,7 +145,7 @@ function SignupController(
       {
         limit: 20,
       },
-      function(tribes) {
+      function (tribes) {
         const suggestedTribes = [];
 
         // Make sure to remove referred tribe from suggested tribes so that we won't have dublicates
@@ -153,7 +153,7 @@ function SignupController(
         if (withoutTribeId) {
           angular.forEach(
             tribes,
-            function(suggestedTribe) {
+            function (suggestedTribe) {
               if (suggestedTribe._id !== withoutTribeId) {
                 // eslint-disable-next-line angular/controller-as-vm
                 this.push(suggestedTribe);
@@ -176,7 +176,7 @@ function SignupController(
     vm.isLoading = true;
 
     $http.post('/api/auth/signup', vm.credentials).then(
-      function(newUser) {
+      function (newUser) {
         // On success function
 
         // If there is referred tribe, add user to that next up
@@ -185,7 +185,7 @@ function SignupController(
             {
               tribeId: vm.tribe._id,
             },
-            function(data) {
+            function (data) {
               updateUser(data.user || newUser.data);
               vm.isLoading = false;
               vm.step = 2;
@@ -198,7 +198,7 @@ function SignupController(
           vm.step = 2;
         }
       },
-      function(error) {
+      function (error) {
         // On error function
         vm.isLoading = false;
         const errorMessage =
@@ -215,7 +215,7 @@ function SignupController(
    * Invite code has to be present at `vm.invitationCode`
    */
   function validateInvitationCode() {
-    return $q(function(resolve, reject) {
+    return $q(function (resolve, reject) {
       vm.invitationCodeError = false;
 
       if (vm.invitationCode) {
@@ -223,7 +223,7 @@ function SignupController(
         InvitationService.post({
           invitecode: vm.invitationCode,
         }).$promise.then(
-          function(data) {
+          function (data) {
             // UI
             vm.invitationCodeValid = data.valid;
             vm.invitationCodeError = !data.valid;
@@ -244,7 +244,7 @@ function SignupController(
               });
             }
           },
-          function() {
+          function () {
             vm.invitationCodeValid = false;
             vm.invitationCodeError = true;
 
@@ -340,7 +340,7 @@ function SignupController(
     // Initialize Maitre app by appending script to the page
     // Expects an element with `data-maitre` be present in DOM
     // https://api.jquery.com/jQuery.getScript/
-    jQuery.getScript('https://maitreapp.co/widget.js').fail(function() {
+    jQuery.getScript('https://maitreapp.co/widget.js').fail(function () {
       // If loading the script fails, hide waiting list feature
       vm.isWaitingListEnabled = false;
 

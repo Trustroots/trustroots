@@ -29,10 +29,10 @@ let _userB;
 /**
  * User routes tests
  */
-describe('User removal CRUD tests', function() {
+describe('User removal CRUD tests', function () {
   const jobs = testutils.catchJobs();
 
-  before(function(done) {
+  before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -41,17 +41,17 @@ describe('User removal CRUD tests', function() {
   });
 
   // initialize sinon
-  beforeEach(function() {
+  beforeEach(function () {
     sinon.useFakeTimers({ now: 1500 * 1000 * 1000 * 1000, toFake: ['Date'] });
   });
 
-  afterEach(function() {
+  afterEach(function () {
     sinon.restore();
   });
 
   // Create an user A
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Create user credentials for user A
     credentialsA = {
       username: 'user_a',
@@ -78,7 +78,7 @@ describe('User removal CRUD tests', function() {
 
   // Create user B
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Create user credentials for user B
     credentialsB = {
       username: 'user_b',
@@ -103,11 +103,11 @@ describe('User removal CRUD tests', function() {
     userB.save(done);
   });
 
-  it('should not be able to initiate removing profile when not logged in', function(done) {
+  it('should not be able to initiate removing profile when not logged in', function (done) {
     agent
       .del('/api/users')
       .expect(403)
-      .end(function(deleteErr) {
+      .end(function (deleteErr) {
         // Handle signup error
         if (deleteErr) {
           return done(deleteErr);
@@ -116,7 +116,7 @@ describe('User removal CRUD tests', function() {
         jobs.length.should.equal(0);
 
         // User should still exist
-        User.findOne({ username: userA.username }, function(
+        User.findOne({ username: userA.username }, function (
           findUsersErr,
           findUser,
         ) {
@@ -131,18 +131,18 @@ describe('User removal CRUD tests', function() {
       });
   });
 
-  it('Signin in should not reveal profile removal tokens', function(done) {
+  it('Signin in should not reveal profile removal tokens', function (done) {
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
     userA.removeProfileExpires = new Date();
 
-    userA.save(function(err) {
+    userA.save(function (err) {
       should.not.exist(err);
 
       agent
         .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function(signinErr, signinRes) {
+        .end(function (signinErr, signinRes) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -157,12 +157,12 @@ describe('User removal CRUD tests', function() {
     });
   });
 
-  it('should be able to initiate removing profile when signed in', function(done) {
+  it('should be able to initiate removing profile when signed in', function (done) {
     agent
       .post('/api/auth/signin')
       .send(credentialsA)
       .expect(200)
-      .end(function(signinErr, signedInUser) {
+      .end(function (signinErr, signedInUser) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -171,7 +171,7 @@ describe('User removal CRUD tests', function() {
         agent
           .del('/api/users')
           .expect(200)
-          .end(function(deleteErr, deleteRes) {
+          .end(function (deleteErr, deleteRes) {
             // Handle signup error
             if (deleteErr) {
               return done(deleteErr);
@@ -188,7 +188,7 @@ describe('User removal CRUD tests', function() {
             );
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function(
+            User.findById(signedInUser.body._id, function (
               findUsersErr,
               findUser,
             ) {
@@ -209,12 +209,12 @@ describe('User removal CRUD tests', function() {
       });
   });
 
-  it('should be able to initiate removing profile when already initiated once earlier', function(done) {
+  it('should be able to initiate removing profile when already initiated once earlier', function (done) {
     agent
       .post('/api/auth/signin')
       .send(credentialsA)
       .expect(200)
-      .end(function(signinErr, signedInUser) {
+      .end(function (signinErr, signedInUser) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -223,7 +223,7 @@ describe('User removal CRUD tests', function() {
         agent
           .del('/api/users')
           .expect(200)
-          .end(function(deleteErr1, deleteRes1) {
+          .end(function (deleteErr1, deleteRes1) {
             // Handle signup error
             if (deleteErr1) {
               return done(deleteErr1);
@@ -240,7 +240,7 @@ describe('User removal CRUD tests', function() {
             );
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function(
+            User.findById(signedInUser.body._id, function (
               findUsersErr1,
               findUser1,
             ) {
@@ -260,7 +260,7 @@ describe('User removal CRUD tests', function() {
               agent
                 .del('/api/users')
                 .expect(200)
-                .end(function(deleteErr2, deleteRes2) {
+                .end(function (deleteErr2, deleteRes2) {
                   // Handle signup error
                   if (deleteErr2) {
                     return done(deleteErr2);
@@ -277,7 +277,7 @@ describe('User removal CRUD tests', function() {
                   );
                   jobs[1].data.to.address.should.equal(_userA.email);
 
-                  User.findById(signedInUser.body._id, function(
+                  User.findById(signedInUser.body._id, function (
                     findUsersErr2,
                     findUser2,
                   ) {
@@ -300,18 +300,18 @@ describe('User removal CRUD tests', function() {
       });
   });
 
-  it('should be able to confirm removing profile when signed in', function(done) {
+  it('should be able to confirm removing profile when signed in', function (done) {
     userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function(err, savedUser) {
+    userA.save(function (err, savedUser) {
       should.not.exist(err);
 
       agent
         .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -320,7 +320,7 @@ describe('User removal CRUD tests', function() {
           agent
             .del('/api/users/remove/' + savedUser.removeProfileToken)
             .expect(200)
-            .end(function(deleteErr, deleteRes) {
+            .end(function (deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
@@ -340,7 +340,7 @@ describe('User removal CRUD tests', function() {
                 'Your Trustroots account has been removed.',
               );
 
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -354,23 +354,23 @@ describe('User removal CRUD tests', function() {
     });
   });
 
-  it('should not able to initiate removing profile with role "shadowban"', function(done) {
+  it('should not able to initiate removing profile with role "shadowban"', function (done) {
     userA.roles = ['user', 'shadowban'];
 
-    userA.save(function(err) {
+    userA.save(function (err) {
       should.not.exist(err);
 
       agent
         .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           should.not.exist(signinErr);
 
           agent
             .del('/api/users')
             .expect(403)
-            .end(function(deleteErr, deleteRes) {
+            .end(function (deleteErr, deleteRes) {
               should.not.exist(deleteErr);
 
               deleteRes.body.message.should.equal(
@@ -384,17 +384,17 @@ describe('User removal CRUD tests', function() {
     });
   });
 
-  it('should not be able to confirm removing profile when not signed in', function(done) {
+  it('should not be able to confirm removing profile when not signed in', function (done) {
     userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function(err, savedUser) {
+    userA.save(function (err, savedUser) {
       should.not.exist(err);
 
       agent
         .del('/api/users/remove/' + savedUser.removeProfileToken)
         .expect(403)
-        .end(function(deleteErr, deleteRes) {
+        .end(function (deleteErr, deleteRes) {
           // Handle signup error
           if (deleteErr) {
             return done(deleteErr);
@@ -405,7 +405,7 @@ describe('User removal CRUD tests', function() {
           jobs.length.should.equal(0);
 
           // User should still exist
-          User.findById(savedUser._id, function(findUsersErr, findUser) {
+          User.findById(savedUser._id, function (findUsersErr, findUser) {
             if (findUsersErr) {
               return done(findUsersErr);
             }
@@ -418,18 +418,18 @@ describe('User removal CRUD tests', function() {
     });
   });
 
-  it('should not be able to confirm removing profile with wrong token', function(done) {
+  it('should not be able to confirm removing profile with wrong token', function (done) {
     userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function(err, savedUser) {
+    userA.save(function (err, savedUser) {
       should.not.exist(err);
 
       agent
         .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -438,7 +438,7 @@ describe('User removal CRUD tests', function() {
           agent
             .del('/api/users/remove/wrongtoken')
             .expect(400)
-            .end(function(deleteErr, deleteRes) {
+            .end(function (deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
@@ -451,7 +451,7 @@ describe('User removal CRUD tests', function() {
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -467,18 +467,18 @@ describe('User removal CRUD tests', function() {
     });
   });
 
-  it('should not be able to confirm removing profile with expired token', function(done) {
+  it('should not be able to confirm removing profile with expired token', function (done) {
     userA.removeProfileExpires = Date.now() - 24 * 3600000; // 24h in the past
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function(err, savedUser) {
+    userA.save(function (err, savedUser) {
       should.not.exist(err);
 
       agent
         .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -487,7 +487,7 @@ describe('User removal CRUD tests', function() {
           agent
             .del('/api/users/remove/' + userA.removeProfileToken)
             .expect(400)
-            .end(function(deleteErr, deleteRes) {
+            .end(function (deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
@@ -500,7 +500,7 @@ describe('User removal CRUD tests', function() {
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -516,18 +516,18 @@ describe('User removal CRUD tests', function() {
     });
   });
 
-  it('should not be able to confirm removing profile when signed in as wrong user', function(done) {
+  it('should not be able to confirm removing profile when signed in as wrong user', function (done) {
     userA.removeProfileExpires = Date.now() + 24 * 3600000;
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
-    userA.save(function(err, savedUser) {
+    userA.save(function (err, savedUser) {
       should.not.exist(err);
 
       agent
         .post('/api/auth/signin')
         .send(credentialsB) // User B signs in insetead of user A
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -536,7 +536,7 @@ describe('User removal CRUD tests', function() {
           agent
             .del('/api/users/remove/' + userA.removeProfileToken)
             .expect(400)
-            .end(function(deleteErr, deleteRes) {
+            .end(function (deleteErr, deleteRes) {
               // Handle signup error
               if (deleteErr) {
                 return done(deleteErr);
@@ -549,7 +549,7 @@ describe('User removal CRUD tests', function() {
               jobs.length.should.equal(0);
 
               // User should still exist
-              User.findById(savedUser._id, function(findUsersErr, findUser) {
+              User.findById(savedUser._id, function (findUsersErr, findUser) {
                 if (findUsersErr) {
                   return done(findUsersErr);
                 }
@@ -559,7 +559,7 @@ describe('User removal CRUD tests', function() {
                 );
 
                 // Signed in user should still exist
-                User.findOne({ username: userB.username }, function(
+                User.findOne({ username: userB.username }, function (
                   findUsersErr,
                   findUser,
                 ) {
@@ -579,37 +579,37 @@ describe('User removal CRUD tests', function() {
     });
   });
 
-  context('logged in & valid token', function() {
+  context('logged in & valid token', function () {
     function sendDeleteRequest(cb) {
       agent
         .del('/api/users/remove/' + userA.removeProfileToken)
         .expect(200)
-        .end(function(deleteErr) {
+        .end(function (deleteErr) {
           cb(deleteErr);
         });
     }
 
     // sign in
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       agent
         .post('/api/auth/signin')
         .send(credentialsA)
         .expect(200)
-        .end(function(signinErr) {
+        .end(function (signinErr) {
           // Handle signin error
           return done(signinErr);
         });
     });
 
     // save removeToken for user a
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       userA.removeProfileExpires = Date.now() + 24 * 3600000;
       userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
 
       userA.save(done);
     });
 
-    it('should remove profile images', function(done) {
+    it('should remove profile images', function (done) {
       // Each user has their own folder for avatars
       const uploadDir =
         path.resolve(config.uploadDir) + '/' + userA._id + '/avatar'; // No trailing slash
@@ -631,12 +631,12 @@ describe('User removal CRUD tests', function() {
           checkAvatarExistence.bind(null, false),
 
           // Upload avatar image
-          function(cb) {
+          function (cb) {
             agent
               .post('/api/users-avatar')
               .attach('avatar', './modules/users/tests/server/img/avatar.png')
               .expect(200)
-              .end(function(err) {
+              .end(function (err) {
                 cb(err);
               });
           },
@@ -653,11 +653,11 @@ describe('User removal CRUD tests', function() {
       );
     });
 
-    it('should mark all messages to the removed user as notified and keep the ones from her untouched', function(done) {
+    it('should mark all messages to the removed user as notified and keep the ones from her untouched', function (done) {
       async.waterfall(
         [
           // create some unnotified messages between the users
-          function(cb) {
+          function (cb) {
             const messageAB = new Message({
               content: 'Message content',
               userFrom: userA._id,
@@ -674,7 +674,7 @@ describe('User removal CRUD tests', function() {
 
             async.each(
               [messageAB, messageBA],
-              function(msg, callback) {
+              function (msg, callback) {
                 msg.save(callback);
               },
               cb,
@@ -684,8 +684,8 @@ describe('User removal CRUD tests', function() {
           sendDeleteRequest,
 
           // check that the messages to the removed user are notificationCount: 2
-          function(cb) {
-            Message.findOne({ userTo: userA._id }, function(err, msg) {
+          function (cb) {
+            Message.findOne({ userTo: userA._id }, function (err, msg) {
               try {
                 should(msg.notificationCount).eql(2);
                 cb();
@@ -696,8 +696,8 @@ describe('User removal CRUD tests', function() {
           },
 
           // check that the messages from the removed user are left unchanged
-          function(cb) {
-            Message.findOne({ userFrom: userA._id }, function(err, msg) {
+          function (cb) {
+            Message.findOne({ userFrom: userA._id }, function (err, msg) {
               try {
                 should(msg.notificationCount).eql(0);
                 cb();
@@ -711,14 +711,14 @@ describe('User removal CRUD tests', function() {
       );
     });
 
-    it('should subtract 1 from tribes.count for each tribe user is member of', function(done) {
+    it('should subtract 1 from tribes.count for each tribe user is member of', function (done) {
       let tribeA;
       let tribeB;
 
       async.waterfall(
         [
           // Create some tribes
-          function(cb) {
+          function (cb) {
             tribeA = new Tribe({
               label: 'Tribe A',
               attribution: 'Photo credits',
@@ -739,7 +739,7 @@ describe('User removal CRUD tests', function() {
 
             async.each(
               [tribeA, tribeB],
-              function(tribe, callback) {
+              function (tribe, callback) {
                 tribe.save(callback);
               },
               cb,
@@ -747,19 +747,19 @@ describe('User removal CRUD tests', function() {
           },
 
           // join the tribeA with the removed user
-          function(cb) {
+          function (cb) {
             agent
               .post('/api/users/memberships/' + tribeA._id)
               .send()
               .expect(200)
-              .end(function(err) {
+              .end(function (err) {
                 cb(err);
               });
           },
 
           // now the tribeA should have count 6
-          function(cb) {
-            Tribe.findById(tribeA._id, function(err, tribe) {
+          function (cb) {
+            Tribe.findById(tribeA._id, function (err, tribe) {
               try {
                 should(tribe.count).eql(6);
                 cb();
@@ -772,8 +772,8 @@ describe('User removal CRUD tests', function() {
           sendDeleteRequest,
 
           // tribeA should have lower count by 1 (5 -> 6 -> 5 now)
-          function(cb) {
-            Tribe.findById(tribeA._id, function(err, tribe) {
+          function (cb) {
+            Tribe.findById(tribeA._id, function (err, tribe) {
               try {
                 should(tribe.count).eql(5);
                 cb();
@@ -784,8 +784,8 @@ describe('User removal CRUD tests', function() {
           },
 
           // tribeB should have count 5 all the time
-          function(cb) {
-            Tribe.findById(tribeB._id, function(err, tribe) {
+          function (cb) {
+            Tribe.findById(tribeB._id, function (err, tribe) {
               try {
                 should(tribe.count).eql(5);
                 cb();
@@ -799,24 +799,24 @@ describe('User removal CRUD tests', function() {
       );
     });
 
-    it('should remove hosting offer of the user', function(done) {
+    it('should remove hosting offer of the user', function (done) {
       async.waterfall(
         [
           // Create an offer for the user
-          function(cb) {
+          function (cb) {
             const offer = new Offer({
               user: userA._id,
               location: [0, 0],
             });
 
-            offer.save(function(err) {
+            offer.save(function (err) {
               cb(err);
             });
           },
 
           // at the beginning 1 offer should exist in database
-          function(cb) {
-            Offer.find({ user: userA._id }, function(err, offer) {
+          function (cb) {
+            Offer.find({ user: userA._id }, function (err, offer) {
               try {
                 should(offer).length(1);
                 cb();
@@ -829,8 +829,8 @@ describe('User removal CRUD tests', function() {
           sendDeleteRequest,
 
           // now the offer shouldn't be there
-          function(cb) {
-            Offer.find({ user: userA._id }, function(err, offers) {
+          function (cb) {
+            Offer.find({ user: userA._id }, function (err, offers) {
               try {
                 should(offers).length(0);
                 cb();
@@ -844,13 +844,13 @@ describe('User removal CRUD tests', function() {
       );
     });
 
-    it('should remove contacts of the user', function(done) {
+    it('should remove contacts of the user', function (done) {
       let userC;
 
       async.waterfall(
         [
           // create a 3rd user
-          function(cb) {
+          function (cb) {
             userC = new User({
               public: true,
               firstName: 'Full',
@@ -862,13 +862,13 @@ describe('User removal CRUD tests', function() {
               provider: 'local',
             });
 
-            userC.save(function(err) {
+            userC.save(function (err) {
               cb(err);
             });
           },
 
           // add contacts between the users
-          function(cb) {
+          function (cb) {
             const contactAB = new Contact({
               userFrom: userA._id,
               userTo: userB._id,
@@ -889,7 +889,7 @@ describe('User removal CRUD tests', function() {
 
             async.each(
               [contactAB, contactBC, contactCA],
-              function(contact, callback) {
+              function (contact, callback) {
                 contact.save(callback);
               },
               cb,
@@ -897,12 +897,12 @@ describe('User removal CRUD tests', function() {
           },
 
           // 3 contacts should exist
-          function(cb) {
-            Contact.find().exec(function(err, contacts) {
+          function (cb) {
+            Contact.find().exec(function (err, contacts) {
               cb(null, contacts);
             });
           },
-          function(contacts, cb) {
+          function (contacts, cb) {
             try {
               should(contacts).length(3);
               cb();
@@ -914,13 +914,13 @@ describe('User removal CRUD tests', function() {
           sendDeleteRequest,
 
           // only 1 contact should exist now (the one between users B and C)
-          function(cb) {
-            Contact.find().exec(function(err, contacts) {
+          function (cb) {
+            Contact.find().exec(function (err, contacts) {
               cb(null, contacts);
             });
           },
 
-          function(contacts, cb) {
+          function (contacts, cb) {
             try {
               should(contacts).length(1);
               cb();
@@ -935,12 +935,12 @@ describe('User removal CRUD tests', function() {
   });
 
   // clear database
-  afterEach(function(done) {
+  afterEach(function (done) {
     const collectionsToClear = [User, Contact, Message, Offer, Tribe];
 
     async.each(
       collectionsToClear,
-      function(collection, cb) {
+      function (collection, cb) {
         collection.deleteMany().exec(cb);
       },
       done,

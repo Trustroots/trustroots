@@ -68,7 +68,7 @@ function SearchController(
       angular.isString(vm.searchQuery) &&
       vm.searchQuery
     ) {
-      LocationService.suggestions(vm.searchQuery).then(function(suggestions) {
+      LocationService.suggestions(vm.searchQuery).then(function (suggestions) {
         if (suggestions.length) {
           const bounds = LocationService.getBounds(suggestions[0]);
           onPlaceSearch(bounds, 'bounds');
@@ -78,7 +78,7 @@ function SearchController(
     }
 
     // Watch for changes at types filters
-    $scope.$watchCollection('search.filters.types', function(
+    $scope.$watchCollection('search.filters.types', function (
       newTypesFilters,
       oldTypesFilters,
     ) {
@@ -90,7 +90,7 @@ function SearchController(
     });
 
     // Watch for changes at tribes filters
-    $scope.$watchCollection('search.filters.tribes', function(
+    $scope.$watchCollection('search.filters.tribes', function (
       newTribeFilters,
       oldTribeFilters,
     ) {
@@ -102,16 +102,16 @@ function SearchController(
     });
 
     // `SearchMap` controller sends these signals down to this controller
-    $scope.$on('search.loadingOffer', function() {
+    $scope.$on('search.loadingOffer', function () {
       vm.offer = false;
       vm.loadingOffer = true;
     });
-    $scope.$on('search.previewOffer', function(event, offer) {
+    $scope.$on('search.previewOffer', function (event, offer) {
       vm.offer = offer;
       vm.loadingOffer = false;
       openSidebar('results');
     });
-    $scope.$on('search.closeOffer', function() {
+    $scope.$on('search.closeOffer', function () {
       vm.offer = false;
       vm.loadingOffer = false;
     });
@@ -136,7 +136,7 @@ function SearchController(
   function onLanguageFiltersChange() {
     // `vm.filters.languages` is still out of sync at this point,
     // but in next cycle after `$timeout` we have updated version.
-    $timeout(function() {
+    $timeout(function () {
       // Save new value to cache
       FiltersService.set('languages', vm.filters.languages || []);
 
@@ -152,7 +152,7 @@ function SearchController(
 
     // `vm.filters.seen` is still out of sync at this point,
     // but in next cycle after `$timeout` we have updated version.
-    $timeout(function() {
+    $timeout(function () {
       // Save new value to cache
       FiltersService.set('seen', vm.filters.seen);
 
@@ -183,7 +183,7 @@ function SearchController(
 
     closeSidebar();
 
-    $timeout(function() {
+    $timeout(function () {
       // Focus to search input
       angular.element('#search-query').focus();
     });

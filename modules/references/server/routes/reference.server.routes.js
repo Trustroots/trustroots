@@ -3,7 +3,7 @@ const config = require(path.resolve('./config/config'));
 const referencePolicy = require('../policies/references.server.policy');
 const references = require('../controllers/reference.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
   if (config.featureFlags.reference) {
     app
       .route('/api/references')

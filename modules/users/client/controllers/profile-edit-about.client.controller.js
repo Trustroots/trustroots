@@ -34,12 +34,12 @@ function ProfileEditAboutController(
   function updateUserProfile(isValid) {
     if (isValid) {
       vm.user.$update(
-        function(response) {
+        function (response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
           messageCenterService.add('success', 'Profile updated.');
         },
-        function(response) {
+        function (response) {
           messageCenterService.add(
             'danger',
             response.data.message || 'Something went wrong. Please try again!',

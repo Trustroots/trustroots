@@ -21,10 +21,10 @@ let userWelcomeSequenceThirdJobHandler;
 let timeLimit;
 let timePast;
 
-describe('Job: welcome sequence, first email', function() {
+describe('Job: welcome sequence, first email', function () {
   const jobs = testutils.catchJobs();
 
-  before(function() {
+  before(function () {
     userWelcomeSequenceFirstJobHandler = require(path.resolve(
       './modules/users/server/jobs/user-welcome-sequence-first.server.job',
     ));
@@ -37,7 +37,7 @@ describe('Job: welcome sequence, first email', function() {
   });
 
   // Create time points to test that welcome sequence is sent in correct time
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Take limit from config and set timer to past
     timeLimit = moment().subtract(
       moment.duration(config.limits.welcomeSequence.first),
@@ -50,7 +50,7 @@ describe('Job: welcome sequence, first email', function() {
   });
 
   // Create an unconfirmed user
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Create a new user
     _unConfirmedUser = {
       public: false,
@@ -74,7 +74,7 @@ describe('Job: welcome sequence, first email', function() {
   });
 
   // Create a confirmed user
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     _confirmedUser = {
       public: true,
       firstName: 'Full',
@@ -95,8 +95,8 @@ describe('Job: welcome sequence, first email', function() {
     confirmedUser.save(done);
   });
 
-  it('Send first welcome sequence email to confirmed users only', function(done) {
-    userWelcomeSequenceFirstJobHandler({}, function(err) {
+  it('Send first welcome sequence email to confirmed users only', function (done) {
+    userWelcomeSequenceFirstJobHandler({}, function (err) {
       if (err) return done(err);
       // Confirmed user received welcome email, unconfirmed didn't
       jobs.length.should.equal(1);
@@ -111,11 +111,11 @@ describe('Job: welcome sequence, first email', function() {
     });
   });
 
-  it('Do not send welcome sequence emails to unconfirmed users', function(done) {
-    unConfirmedUser.save(function(err) {
+  it('Do not send welcome sequence emails to unconfirmed users', function (done) {
+    unConfirmedUser.save(function (err) {
       if (err) return done(err);
 
-      userWelcomeSequenceFirstJobHandler({}, function(err) {
+      userWelcomeSequenceFirstJobHandler({}, function (err) {
         if (err) return done(err);
         // Confirmed user received welcome email, unconfirmed didn't
         jobs.length.should.equal(1);
@@ -128,12 +128,12 @@ describe('Job: welcome sequence, first email', function() {
     });
   });
 
-  it('Do not send second and third welcome sequence email when everyone is on step 1', function(done) {
+  it('Do not send second and third welcome sequence email when everyone is on step 1', function (done) {
     // Run second welcome sequence email job
-    userWelcomeSequenceSecondJobHandler({}, function(err) {
+    userWelcomeSequenceSecondJobHandler({}, function (err) {
       if (err) return done(err);
       // Run third welcome sequence email job
-      userWelcomeSequenceThirdJobHandler({}, function(err) {
+      userWelcomeSequenceThirdJobHandler({}, function (err) {
         if (err) return done(err);
 
         // Nobody shouldn't received email
@@ -143,12 +143,12 @@ describe('Job: welcome sequence, first email', function() {
     });
   });
 
-  it('Do not send welcome sequence emails to suspended users', function(done) {
+  it('Do not send welcome sequence emails to suspended users', function (done) {
     confirmedUser.roles = ['suspended'];
-    confirmedUser.save(function(err) {
+    confirmedUser.save(function (err) {
       if (err) return done(err);
 
-      userWelcomeSequenceFirstJobHandler({}, function(err) {
+      userWelcomeSequenceFirstJobHandler({}, function (err) {
         if (err) return done(err);
         // Confirmed who is suspended, did not receive welcome email
         // Unconfirmed user didn't receive it neither
@@ -158,7 +158,7 @@ describe('Job: welcome sequence, first email', function() {
     });
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     User.remove().exec(done);
   });
 });

@@ -57,7 +57,7 @@ function validateCreate(req) {
   }
 
   // Values of interactions must be boolean
-  ['met', 'hostedMe', 'hostedThem'].forEach(function(interaction) {
+  ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
     if (
       _.has(req, ['body', 'interactions', interaction]) &&
       typeof req.body.interactions[interaction] !== 'boolean'
@@ -282,7 +282,7 @@ async function sendPushNotification(userFrom, userTo, { isFirst }) {
 /**
  * Create a reference - express middleware
  */
-exports.create = async function(req, res, next) {
+exports.create = async function (req, res, next) {
   // each of the following functions throws a special response error when it wants to respond
   // this special error gets processed within the catch {}
   try {
@@ -352,7 +352,7 @@ function validateReadMany(req) {
   }
 
   // check that userFrom and userTo is valid mongodb/mongoose ObjectId
-  ['userFrom', 'userTo'].forEach(function(param) {
+  ['userFrom', 'userTo'].forEach(function (param) {
     if (!req.query[param]) return;
 
     const isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);

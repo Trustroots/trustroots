@@ -64,8 +64,9 @@ function importComponents(r) {
     const name = extractComponentNameFromPath(path);
     if (name !== Component.name && process.env.NODE_ENV !== 'production') {
       throw new Error(
-        `Component filename and component name do not match: ${name ||
-          '<empty>'} vs ${Component.name || '<empty>'}`,
+        `Component filename and component name do not match: ${
+          name || '<empty>'
+        } vs ${Component.name || '<empty>'}`,
       );
     }
     if (!Component.propTypes) {

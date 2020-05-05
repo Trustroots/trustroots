@@ -41,7 +41,7 @@ const argv = yargs.usage(
         'node $0 100 --limit',
         'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)',
       )
-      .check(function(argv) {
+      .check(function (argv) {
         if (argv.numberOfTribes < 1) {
           throw new Error('Error: Number of tribes should be greater than 0');
         }

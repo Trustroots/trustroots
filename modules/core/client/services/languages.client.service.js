@@ -14,7 +14,7 @@ function LanguagesFactory($window) {
 
       angular.forEach(
         $window.languages,
-        function(value, key) {
+        function (value, key) {
           this.push({ key: key, name: value });
         },
         langsArr,

@@ -20,10 +20,7 @@ describe('Admin Audit Log CRUD tests', () => {
 
   describe('Search users', () => {
     it('non-authenticated users should not be allowed to read audit log', done => {
-      agent
-        .get('/api/admin/audit-log')
-        .expect(403)
-        .end(done);
+      agent.get('/api/admin/audit-log').expect(403).end(done);
     });
 
     it('non-admin users should not be allowed to read audit log', done => {
@@ -32,10 +29,7 @@ describe('Admin Audit Log CRUD tests', () => {
         .send(_users[1])
         .expect(200)
         .end(() => {
-          agent
-            .get('/api/admin/audit-log')
-            .expect(403)
-            .end(done);
+          agent.get('/api/admin/audit-log').expect(403).end(done);
         });
     });
 
@@ -45,10 +39,7 @@ describe('Admin Audit Log CRUD tests', () => {
         .send(_users[0])
         .expect(200)
         .end(() => {
-          agent
-            .get('/api/admin/audit-log')
-            .expect(200)
-            .end(done);
+          agent.get('/api/admin/audit-log').expect(200).end(done);
         });
     });
   });

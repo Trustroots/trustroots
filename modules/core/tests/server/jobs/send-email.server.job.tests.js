@@ -7,16 +7,16 @@ const testutils = require(path.resolve('./testutils/server/server.testutil'));
  */
 let sendEmailJobHandler;
 
-describe('job: send email', function() {
+describe('job: send email', function () {
   const sentEmails = testutils.catchEmails();
 
-  before(function() {
+  before(function () {
     sendEmailJobHandler = require(path.resolve(
       './modules/core/server/jobs/send-email.server.job',
     ));
   });
 
-  it('will send an email', function(done) {
+  it('will send an email', function (done) {
     const job = {
       attrs: {
         // eslint-disable-next-line new-cap
@@ -33,7 +33,7 @@ describe('job: send email', function() {
         },
       },
     };
-    sendEmailJobHandler(job, function(err) {
+    sendEmailJobHandler(job, function (err) {
       if (err) return done(err);
       sentEmails.length.should.equal(1);
       sentEmails[0].data.subject.should.equal(job.attrs.data.subject);

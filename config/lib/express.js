@@ -24,13 +24,13 @@ const paginate = require('express-paginate');
 const uuid = require('uuid');
 const Sentry = require('@sentry/node');
 
-module.exports.initSentryRequestHandler = function(app) {
+module.exports.initSentryRequestHandler = function (app) {
   if (config.sentry.enabled) {
     app.use(Sentry.Handlers.requestHandler());
   }
 };
 
-module.exports.initSentryErrorHandler = function(app) {
+module.exports.initSentryErrorHandler = function (app) {
   if (config.sentry.enabled) {
     app.use(Sentry.Handlers.errorHandler());
   }
@@ -39,7 +39,7 @@ module.exports.initSentryErrorHandler = function(app) {
 /**
  * Initialize local variables
  */
-module.exports.initLocalVariables = function(app) {
+module.exports.initLocalVariables = function (app) {
   // Setting application local variables
   app.locals.title = config.app.title;
   app.locals.description = config.app.description;
@@ -83,12 +83,12 @@ module.exports.initLocalVariables = function(app) {
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
   // @link https://www.npmjs.com/package/git-rev
-  git.short(function(str) {
+  git.short(function (str) {
     app.locals.appSettings.commit = str;
   });
 
   // Passing the request url to environment locals
-  app.use(function(req, res, next) {
+  app.use(function (req, res, next) {
     // Determine if to use https. When proxying (e.g. with Nginx) to localhost
     // from https front, req.protocol would end up being http when it should be https.
     // @todo: sniff if behind proxy and otherwise rely req.protocol.
@@ -108,7 +108,7 @@ module.exports.initLocalVariables = function(app) {
   // Dynamically generate nonces to allow inline `<script>` tags to
   // be safely evaluated with using ContentSecurityPolicy headers.
   // See `initHelmetHeaders()` for more.
-  app.use(function(req, res, next) {
+  app.use(function (req, res, next) {
     res.locals.nonce = uuid.v4();
     next();
   });
@@ -117,11 +117,11 @@ module.exports.initLocalVariables = function(app) {
 /**
  * Initialize application middleware
  */
-module.exports.initMiddleware = function(app) {
+module.exports.initMiddleware = function (app) {
   // Should be placed before express.static
   app.use(
     compress({
-      filter: function(req, res) {
+      filter: function (req, res) {
         return /json|text|javascript|css|font|svg/.test(
           res.getHeader('Content-Type'),
         );
@@ -176,7 +176,7 @@ module.exports.initMiddleware = function(app) {
 /**
  * Configure view engine
  */
-module.exports.initViewEngine = function(app) {
+module.exports.initViewEngine = function (app) {
   // Set Nunjucks as the template engine
   // https://mozilla.github.io/nunjucks/
   nunjucks.configure('./modules/core/server/views', {
@@ -193,7 +193,7 @@ module.exports.initViewEngine = function(app) {
 /**
  * Configure Express session
  */
-module.exports.initSession = function(app, connection) {
+module.exports.initSession = function (app, connection) {
   // Express MongoDB session storage
   // https://www.npmjs.com/package/express-session
   app.use(
@@ -225,7 +225,7 @@ module.exports.initSession = function(app, connection) {
 /**
  * Wire in user last seen middleware
  */
-module.exports.initLastSeen = function(app) {
+module.exports.initLastSeen = function (app) {
   const lastSeenController = require(path.resolve(
     './modules/users/server/controllers/users.lastseen.server.controller',
   ));
@@ -235,8 +235,8 @@ module.exports.initLastSeen = function(app) {
 /**
  * Invoke modules server configuration
  */
-module.exports.initModulesConfiguration = function(app, db) {
-  config.files.server.configs.forEach(function(configPath) {
+module.exports.initModulesConfiguration = function (app, db) {
+  config.files.server.configs.forEach(function (configPath) {
     require(path.resolve(configPath))(app, db);
   });
 };
@@ -245,7 +245,7 @@ module.exports.initModulesConfiguration = function(app, db) {
  * Configure Helmet headers configuration
  * https://helmetjs.github.io/docs/
  */
-module.exports.initHelmetHeaders = function(app) {
+module.exports.initHelmetHeaders = function (app) {
   /**
    * X-Frame protection ("frameguard") default options.
    * @link https://helmetjs.github.io/docs/frameguard/
@@ -327,7 +327,7 @@ module.exports.initHelmetHeaders = function(app) {
           // Use `nonce` for `<script>` tags
           // Nonce is generated above at `initLocalVariables()` middleware
           // @link https://helmetjs.github.io/docs/csp/#generating-nonces
-          function(req, res) {
+          function (req, res) {
             return "'nonce-" + res.locals.nonce + "'"; // 'nonce-614d9122-d5b0-4760-aecf-3a5d17cf0ac9'
           },
         ],
@@ -499,7 +499,7 @@ module.exports.initHelmetHeaders = function(app) {
 /**
  * Configure the modules static routes
  */
-module.exports.initModulesClientRoutes = function(app) {
+module.exports.initModulesClientRoutes = function (app) {
   // Setting the app router and static folder
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
@@ -508,9 +508,9 @@ module.exports.initModulesClientRoutes = function(app) {
 /**
  * Configure the modules ACL policies
  */
-module.exports.initModulesServerPolicies = function() {
+module.exports.initModulesServerPolicies = function () {
   // Globbing policy files
-  config.files.server.policies.forEach(function(policyPath) {
+  config.files.server.policies.forEach(function (policyPath) {
     require(path.resolve(policyPath)).invokeRolesPolicies();
   });
 };
@@ -518,9 +518,9 @@ module.exports.initModulesServerPolicies = function() {
 /**
  * Configure the modules server routes
  */
-module.exports.initModulesServerRoutes = function(app) {
+module.exports.initModulesServerRoutes = function (app) {
   // Globbing routing files
-  config.files.server.routes.forEach(function(routePath) {
+  config.files.server.routes.forEach(function (routePath) {
     require(path.resolve(routePath))(app);
   });
 };
@@ -528,14 +528,14 @@ module.exports.initModulesServerRoutes = function(app) {
 /**
  * Configure error handling
  */
-module.exports.initErrorRoutes = function(app) {
+module.exports.initErrorRoutes = function (app) {
   app.use(errorService.errorResponse);
 };
 
 /**
  * Initialize the Express application
  */
-module.exports.init = function(connection) {
+module.exports.init = function (connection) {
   // Initialize express app
   const app = express();
 

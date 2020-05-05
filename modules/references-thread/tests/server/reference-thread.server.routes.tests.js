@@ -32,8 +32,8 @@ let threadNonpublicId;
 /**
  * Message routes tests
  */
-describe('Reference Thread CRUD tests', function() {
-  before(function(done) {
+describe('Reference Thread CRUD tests', function () {
+  before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -41,7 +41,7 @@ describe('Reference Thread CRUD tests', function() {
     done();
   });
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Create userFrom credentials
     referenceUserFromCredentials = {
       username: 'user_from',
@@ -116,24 +116,24 @@ describe('Reference Thread CRUD tests', function() {
     async.waterfall(
       [
         // Create userNonPublic
-        function(stepDone) {
-          userNonPublic.save(function(err, res) {
+        function (stepDone) {
+          userNonPublic.save(function (err, res) {
             referenceUserNonPublicId = res._id;
             stepDone(err);
           });
         },
 
         // Create userFrom
-        function(stepDone) {
-          userFrom.save(function(err, res) {
+        function (stepDone) {
+          userFrom.save(function (err, res) {
             referenceUserFromId = res._id;
             stepDone(err);
           });
         },
 
         // Create userTo
-        function(stepDone) {
-          userTo.save(function(err, res) {
+        function (stepDone) {
+          userTo.save(function (err, res) {
             referenceUserToId = res._id;
             referenceThread.userTo = referenceUserToId;
             stepDone(err);
@@ -141,18 +141,18 @@ describe('Reference Thread CRUD tests', function() {
         },
 
         // Create message+thread between referenceUserTo and referenceUserFrom
-        function(stepDone) {
+        function (stepDone) {
           // Note that from/to are opposite in these by purpose
           // `referenceUserTo` is the receiver of messages, and thus that user can leave reference, not the other way around.
           message.userTo = referenceUserFromId;
           message.userFrom = referenceUserToId;
           thread.userTo = referenceUserFromId;
           thread.userFrom = referenceUserToId;
-          new Message(message).save(function(err, messageRes) {
+          new Message(message).save(function (err, messageRes) {
             if (err) return stepDone(err);
 
             thread.message = messageRes._id;
-            new Thread(thread).save(function(err, threadRes) {
+            new Thread(thread).save(function (err, threadRes) {
               threadId = threadRes._id;
               stepDone(err);
             });
@@ -160,25 +160,25 @@ describe('Reference Thread CRUD tests', function() {
         },
 
         // Create message+thread between userTo and userNonPublic
-        function(stepDone) {
+        function (stepDone) {
           // Note that from/to are opposite in these by purpose
           // `referenceUserTo` is the receiver of messages, and thus that user can leave reference, not the other way around.
           message.userTo = referenceUserNonPublicId;
           message.userFrom = referenceUserToId;
           thread.userTo = referenceUserNonPublicId;
           thread.userFrom = referenceUserToId;
-          new Message(message).save(function(err, messageRes) {
+          new Message(message).save(function (err, messageRes) {
             if (err) return stepDone(err);
 
             thread.message = messageRes._id;
-            new Thread(thread).save(function(err, threadRes) {
+            new Thread(thread).save(function (err, threadRes) {
               threadNonpublicId = threadRes._id;
               return done(err);
             });
           });
         },
       ],
-      function(err) {
+      function (err) {
         if (err) {
           done(err);
         }
@@ -186,11 +186,11 @@ describe('Reference Thread CRUD tests', function() {
     );
   });
 
-  it('should not be able to read references if not logged in', function(done) {
+  it('should not be able to read references if not logged in', function (done) {
     agent
       .get('/api/references-thread/' + referenceUserToId)
       .expect(403)
-      .end(function(referenceReadErr, referenceReadRes) {
+      .end(function (referenceReadErr, referenceReadRes) {
         referenceReadRes.body.message.should.equal('Forbidden.');
 
         // Call the assertion callback
@@ -198,19 +198,21 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should be able to read reference even if logged in as non-public user', function(done) {
+  it('should be able to read reference even if logged in as non-public user', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserNonpublicCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Save a new reference
         referenceThread.userFrom = referenceUserNonPublicId;
         referenceThread.thread = threadNonpublicId;
-        new ReferenceThread(referenceThread).save(function(referenceThreadErr) {
+        new ReferenceThread(referenceThread).save(function (
+          referenceThreadErr,
+        ) {
           // Handle error
           if (referenceThreadErr) return done(referenceThreadErr);
 
@@ -218,7 +220,7 @@ describe('Reference Thread CRUD tests', function() {
           agent
             .get('/api/references-thread/' + referenceUserToId)
             .expect(200)
-            .end(function(referenceReadErr, referenceReadRes) {
+            .end(function (referenceReadErr, referenceReadRes) {
               referenceReadRes.body.userFrom.should.equal(
                 referenceUserNonPublicId.toString(),
               );
@@ -238,19 +240,21 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should be able to read reference if logged in', function(done) {
+  it('should be able to read reference if logged in', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Save a new reference
         referenceThread.userFrom = referenceUserFromId;
         referenceThread.thread = threadId;
-        new ReferenceThread(referenceThread).save(function(referenceThreadErr) {
+        new ReferenceThread(referenceThread).save(function (
+          referenceThreadErr,
+        ) {
           // Handle error
           if (referenceThreadErr) return done(referenceThreadErr);
 
@@ -258,7 +262,7 @@ describe('Reference Thread CRUD tests', function() {
           agent
             .get('/api/references-thread/' + referenceUserToId)
             .expect(200)
-            .end(function(referenceReadErr, referenceReadRes) {
+            .end(function (referenceReadErr, referenceReadRes) {
               referenceReadRes.body.userFrom.should.equal(
                 referenceUserFromId.toString(),
               );
@@ -276,12 +280,12 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should be able to attempt reading non-existing reference and told she can create a reference', function(done) {
+  it('should be able to attempt reading non-existing reference and told she can create a reference', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -289,7 +293,7 @@ describe('Reference Thread CRUD tests', function() {
         agent
           .get('/api/references-thread/' + referenceUserToId)
           .expect(404)
-          .end(function(referenceReadErr, referenceReadRes) {
+          .end(function (referenceReadErr, referenceReadRes) {
             referenceReadRes.body.message.should.equal('Not found.');
 
             // Since authenticated user has received messages from the other user
@@ -302,23 +306,23 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should be able to attempt reading non-existing reference and told she cannot create a reference', function(done) {
+  it('should be able to attempt reading non-existing reference and told she cannot create a reference', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
         // Remove message threads completely
-        Message.deleteMany().exec(function() {
-          Thread.deleteMany().exec(function() {
+        Message.deleteMany().exec(function () {
+          Thread.deleteMany().exec(function () {
             // Read reference
             agent
               .get('/api/references-thread/' + referenceUserToId)
               .expect(404)
-              .end(function(referenceReadErr, referenceReadRes) {
+              .end(function (referenceReadErr, referenceReadRes) {
                 referenceReadRes.body.message.should.equal('Not found.');
 
                 // Since authenticated user has NOT received messages from the other user
@@ -335,12 +339,12 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should not be able to create reference if not logged in', function(done) {
+  it('should not be able to create reference if not logged in', function (done) {
     agent
       .post('/api/references-thread')
       .send(referenceThread)
       .expect(403)
-      .end(function(referenceSaveErr, referenceSaveRes) {
+      .end(function (referenceSaveErr, referenceSaveRes) {
         referenceSaveRes.body.message.should.equal('Forbidden.');
 
         // Call the assertion callback
@@ -348,12 +352,12 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should not be able to create reference if logged in as non-public user, even if there are messages', function(done) {
+  it('should not be able to create reference if logged in as non-public user, even if there are messages', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserNonpublicCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -362,7 +366,7 @@ describe('Reference Thread CRUD tests', function() {
           .post('/api/references-thread')
           .send(referenceThread)
           .expect(403)
-          .end(function(referenceSaveErr, referenceSaveRes) {
+          .end(function (referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
             if (referenceSaveErr) return done(referenceSaveErr);
 
@@ -373,12 +377,12 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should not be able to create reference for myself', function(done) {
+  it('should not be able to create reference for myself', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -389,7 +393,7 @@ describe('Reference Thread CRUD tests', function() {
           .post('/api/references-thread')
           .send(referenceThread)
           .expect(400)
-          .end(function(referenceSaveErr, referenceSaveRes) {
+          .end(function (referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
             if (referenceSaveErr) return done(referenceSaveErr);
 
@@ -402,12 +406,12 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should be able to create reference if logged in', function(done) {
+  it('should be able to create reference if logged in', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -416,7 +420,7 @@ describe('Reference Thread CRUD tests', function() {
           .post('/api/references-thread')
           .send(referenceThread)
           .expect(200)
-          .end(function(referenceSaveErr, referenceSaveRes) {
+          .end(function (referenceSaveErr, referenceSaveRes) {
             // Handle reference save error
             if (referenceSaveErr) return done(referenceSaveErr);
 
@@ -435,12 +439,12 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  it('should be able to create two references and receive only latest one when reading', function(done) {
+  it('should be able to create two references and receive only latest one when reading', function (done) {
     agent
       .post('/api/auth/signin')
       .send(referenceUserFromCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
@@ -454,7 +458,9 @@ describe('Reference Thread CRUD tests', function() {
           .toDate();
 
         // Save 1st new reference ("yes") directly to the DB:
-        new ReferenceThread(referenceThread).save(function(referenceThreadErr) {
+        new ReferenceThread(referenceThread).save(function (
+          referenceThreadErr,
+        ) {
           if (referenceThreadErr) return done(referenceThreadErr);
 
           // Save 2st new reference ("no") via API
@@ -463,14 +469,17 @@ describe('Reference Thread CRUD tests', function() {
             .post('/api/references-thread')
             .send(referenceThread)
             .expect(200)
-            .end(function(referenceSaveErr) {
+            .end(function (referenceSaveErr) {
               // Handle reference save error
               if (referenceSaveErr) return done(referenceSaveErr);
 
               // Check DB has two entries
               ReferenceThread.find({ userFrom: referenceUserFromId })
                 .sort('-created') // Latest first
-                .exec(function(referenceThreadFindErr, referenceThreadFindRes) {
+                .exec(function (
+                  referenceThreadFindErr,
+                  referenceThreadFindRes,
+                ) {
                   if (referenceThreadFindErr) return done(referenceSaveErr);
 
                   // We should have two references
@@ -502,7 +511,7 @@ describe('Reference Thread CRUD tests', function() {
                   agent
                     .get('/api/references-thread/' + referenceUserToId)
                     .expect(200)
-                    .end(function(referenceReadErr, referenceReadRes) {
+                    .end(function (referenceReadErr, referenceReadRes) {
                       if (referenceReadErr) return done(referenceReadErr);
 
                       referenceReadRes.body.userFrom.should.equal(
@@ -526,11 +535,11 @@ describe('Reference Thread CRUD tests', function() {
       });
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     // Uggggly pyramid revenge!
-    User.deleteMany().exec(function() {
-      Message.deleteMany().exec(function() {
-        Thread.deleteMany().exec(function() {
+    User.deleteMany().exec(function () {
+      Message.deleteMany().exec(function () {
+        Thread.deleteMany().exec(function () {
           ReferenceThread.deleteMany().exec(done);
         });
       });

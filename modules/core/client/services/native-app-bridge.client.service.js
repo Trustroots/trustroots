@@ -41,10 +41,10 @@ function trNativeAppBridgeFactory(
    * @returns {Promise}
    */
   function activate() {
-    return $q(function(resolve) {
+    return $q(function (resolve) {
       logToNativeApp('trNativeAppBridgeFactory activate');
       // eslint-disable-next-line angular/document-service
-      document.addEventListener('message', function(event) {
+      document.addEventListener('message', function (event) {
         // event = event.originalEvent || event;
         if (event && event.data === 'trMobileAppInit' && !isNativeMobileApp()) {
           // document.removeEventListener('message');
@@ -112,12 +112,12 @@ function trNativeAppBridgeFactory(
     ].join('');
 
     // $timetout makes sure we have DOM rendered by Angular
-    $timeout(function() {
-      angular.element(elementPattern).each(function() {
+    $timeout(function () {
+      angular.element(elementPattern).each(function () {
         angular
           .element(this)
           .addClass('tr-app-urlified')
-          .click(function(e) {
+          .click(function (e) {
             const url = angular.element(this).attr('href');
             if (url) {
               e.preventDefault();

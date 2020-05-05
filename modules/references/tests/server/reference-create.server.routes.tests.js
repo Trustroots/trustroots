@@ -661,19 +661,13 @@ describe('Create a reference', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent
-        .post('/api/references')
-        .send({})
-        .expect(403);
+      await agent.post('/api/references').send({}).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent
-        .post('/api/references')
-        .send({})
-        .expect(403);
+      await agent.post('/api/references').send({}).expect(403);
     });
   });
 });

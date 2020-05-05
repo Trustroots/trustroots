@@ -10,7 +10,7 @@ const config = require(path.resolve('config/config'));
 /**
  * When user is logged in, update her last seen to Now in database
  */
-module.exports = function(req, res, next) {
+module.exports = function (req, res, next) {
   // is user logged in?
   if (req.user) {
     // has enough time passed since the last update?
@@ -22,7 +22,7 @@ module.exports = function(req, res, next) {
       Date.now() - req.user.seen.getTime() > expectedTimeToPass;
     if (isTimePassed) {
       // update the User.seen to Now
-      User.findByIdAndUpdate(req.user.id, { seen: new Date() }, function(err) {
+      User.findByIdAndUpdate(req.user.id, { seen: new Date() }, function (err) {
         return next(err);
       });
     } else {

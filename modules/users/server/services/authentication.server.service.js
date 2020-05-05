@@ -1,7 +1,7 @@
 const path = require('path');
 const config = require(path.resolve('./config/config'));
 
-exports.generateEmailToken = function(user, saltBuffer) {
+exports.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;
   const buf = Buffer.concat([saltBuffer, Buffer.from(email)]);
   return buf.toString('hex');
@@ -19,7 +19,7 @@ exports.generateEmailToken = function(user, saltBuffer) {
  * - no consecutive dots: "." ok, ".." nope
  * - not begin or end with "."
  */
-exports.validateUsername = function(username) {
+exports.validateUsername = function (username) {
   username = String(username).toLowerCase();
   const usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
   const dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
@@ -40,6 +40,6 @@ exports.validateUsername = function(username) {
  * @param {String} username - username to check for
  * @returns {Boolean} true if found from list, false if not
  */
-exports.isUsernameReserved = function(username) {
+exports.isUsernameReserved = function (username) {
   return config.illegalStrings.indexOf(username.toLowerCase()) !== -1;
 };

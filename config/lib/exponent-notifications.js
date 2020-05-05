@@ -17,7 +17,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
   const notifications = [];
 
   // iterate over tokens
-  tokens.forEach(function(token) {
+  tokens.forEach(function (token) {
     if (!token || !Expo.isExpoPushToken(token)) {
       log('error', 'Invalid or missing Expo push notification token #mg9hwf', {
         token: token,
@@ -93,7 +93,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
 
   const promises = [];
 
-  chunks.forEach(function(chunk) {
+  chunks.forEach(function (chunk) {
     promises.push(expo.sendPushNotificationsAsync(chunk));
   });
 

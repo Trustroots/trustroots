@@ -52,11 +52,11 @@ function AvatarEditorController(
           avatar: fileAvatar,
         },
       })
-        .success(function() {
+        .success(function () {
           vm.avatarUploading = false;
           $uibModalInstance.close(vm.user);
         })
-        .error(function() {
+        .error(function () {
           messageCenterService.add(
             'danger',
             'Oops! Something went wrong. Try again later.',
@@ -109,9 +109,9 @@ function AvatarEditorController(
       // Show the local file as a preview
       const fileReader = new FileReader();
       fileReader.readAsDataURL(file);
-      fileReader.onloadend = function() {
+      fileReader.onloadend = function () {
         vm.avatarPreview = true;
-        $scope.$apply(function() {
+        $scope.$apply(function () {
           vm.previewStyle = fileReader.result;
           vm.avatarUploading = false;
         });

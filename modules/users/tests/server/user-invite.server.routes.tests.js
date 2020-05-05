@@ -21,8 +21,8 @@ let _user;
 /**
  * User routes tests
  */
-describe('User invites CRUD tests', function() {
-  before(function(done) {
+describe('User invites CRUD tests', function () {
+  before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -31,7 +31,7 @@ describe('User invites CRUD tests', function() {
   });
 
   // Create an user
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Create user credentials
     credentials = {
       username: 'TR_username',
@@ -56,12 +56,12 @@ describe('User invites CRUD tests', function() {
     user.save(done);
   });
 
-  it('should be able to receive invite code when authenticated', function(done) {
+  it('should be able to receive invite code when authenticated', function (done) {
     agent
       .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -70,7 +70,7 @@ describe('User invites CRUD tests', function() {
         agent
           .get('/api/users/invitecode')
           .expect(200)
-          .end(function(userInviteCodeErr, userInviteCodeRes) {
+          .end(function (userInviteCodeErr, userInviteCodeRes) {
             // Handle error
             if (userInviteCodeErr) {
               return done(userInviteCodeErr);
@@ -87,11 +87,11 @@ describe('User invites CRUD tests', function() {
       });
   });
 
-  it('should not able to receive invite code when not authenticated', function(done) {
+  it('should not able to receive invite code when not authenticated', function (done) {
     agent
       .get('/api/users/invitecode')
       .expect(403)
-      .end(function(userInviteCodeErr, userInviteCodeRes) {
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -103,13 +103,13 @@ describe('User invites CRUD tests', function() {
       });
   });
 
-  it('should be able to validate invite code when not authenticated', function(done) {
+  it('should be able to validate invite code when not authenticated', function (done) {
     const code = inviteCodeService.getCode();
 
     agent
       .post('/api/users/invitecode/' + code)
       .expect(200)
-      .end(function(userInviteCodeErr, userInviteCodeRes) {
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -121,13 +121,13 @@ describe('User invites CRUD tests', function() {
       });
   });
 
-  it('should be able to validate invite code in all caps', function(done) {
+  it('should be able to validate invite code in all caps', function (done) {
     const code = inviteCodeService.getCode();
 
     agent
       .post('/api/users/invitecode/' + code.toUpperCase())
       .expect(200)
-      .end(function(userInviteCodeErr, userInviteCodeRes) {
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -139,11 +139,11 @@ describe('User invites CRUD tests', function() {
       });
   });
 
-  it('should be able to return false for invalid code', function(done) {
+  it('should be able to return false for invalid code', function (done) {
     agent
       .post('/api/users/invitecode/INVALID')
       .expect(200)
-      .end(function(userInviteCodeErr, userInviteCodeRes) {
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -155,13 +155,13 @@ describe('User invites CRUD tests', function() {
       });
   });
 
-  it('should be able to validate invite code from predefined list', function(done) {
+  it('should be able to validate invite code from predefined list', function (done) {
     const code = 'trustroots'; // Defined at `./configs/env/default.js`
 
     agent
       .post('/api/users/invitecode/' + code)
       .expect(200)
-      .end(function(userInviteCodeErr, userInviteCodeRes) {
+      .end(function (userInviteCodeErr, userInviteCodeRes) {
         // Handle error
         if (userInviteCodeErr) {
           return done(userInviteCodeErr);
@@ -173,7 +173,7 @@ describe('User invites CRUD tests', function() {
       });
   });
 
-  it('should be able to redirect to correct page using short invite URL', function(done) {
+  it('should be able to redirect to correct page using short invite URL', function (done) {
     agent
       .get('/c/CODE')
       .expect(301)
@@ -181,7 +181,7 @@ describe('User invites CRUD tests', function() {
       .end(done);
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     User.deleteMany().exec(done);
   });
 });

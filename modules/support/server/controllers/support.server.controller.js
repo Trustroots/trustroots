@@ -20,7 +20,7 @@ const validator = require('validator');
 /**
  * Send support request to our support systems
  */
-exports.supportRequest = function(req, res) {
+exports.supportRequest = function (req, res) {
   // Prepare support request variables for the email template
   const supportRequestData = {
     /* eslint-disable key-spacing */
@@ -77,7 +77,7 @@ exports.supportRequest = function(req, res) {
   const supportRequest = new SupportRequest(storedSupportRequestData);
 
   // Save support request to db
-  supportRequest.save(function(dbErr) {
+  supportRequest.save(function (dbErr) {
     if (dbErr) {
       log('error', 'Failed storing support request to the DB. #39ghsa', {
         error: dbErr,
@@ -85,7 +85,7 @@ exports.supportRequest = function(req, res) {
     }
 
     // Send email
-    emailService.sendSupportRequest(replyTo, supportRequestData, function(
+    emailService.sendSupportRequest(replyTo, supportRequestData, function (
       emailServiceErr,
     ) {
       if (emailServiceErr) {
@@ -114,7 +114,7 @@ exports.supportRequest = function(req, res) {
         },
       };
 
-      statService.stat(statsObject, function() {
+      statService.stat(statsObject, function () {
         log('info', 'Support request processed and recorded to stats. #2hfsgh');
       });
     });

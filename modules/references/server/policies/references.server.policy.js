@@ -6,7 +6,7 @@ const errorService = require(path.resolve(
 
 acl = new acl(new acl.memoryBackend());
 
-exports.invokeRolesPolicies = function() {
+exports.invokeRolesPolicies = function () {
   acl.allow([
     {
       roles: ['user', 'admin'],
@@ -24,7 +24,7 @@ exports.invokeRolesPolicies = function() {
   ]);
 };
 
-exports.isAllowed = async function(req, res, next) {
+exports.isAllowed = async function (req, res, next) {
   try {
     const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
 

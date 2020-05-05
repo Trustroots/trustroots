@@ -2,7 +2,7 @@ import '@/modules/contacts/client/contacts.client.module';
 
 import AppConfig from '@/modules/core/client/app/config';
 
-describe('ContactRemoveController', function() {
+describe('ContactRemoveController', function () {
   // Initialize global variables
   let $httpBackend;
   let Authentication;
@@ -24,7 +24,7 @@ describe('ContactRemoveController', function() {
   // Load the main application module
   beforeEach(angular.mock.module(AppConfig.appModuleName));
 
-  beforeEach(inject(function(
+  beforeEach(inject(function (
     _$httpBackend_,
     _Authentication_,
     _$rootScope_,
@@ -48,14 +48,14 @@ describe('ContactRemoveController', function() {
     $scope.contactToRemove = contactToRemove;
   }));
 
-  afterEach(function() {
+  afterEach(function () {
     $httpBackend.verifyNoOutstandingExpectation();
     $httpBackend.verifyNoOutstandingRequest();
   });
 
-  describe('logged in', function() {
-    beforeEach(function(done) {
-      inject(function($controller) {
+  describe('logged in', function () {
+    beforeEach(function (done) {
+      inject(function ($controller) {
         Authentication.user = user1;
         ContactRemoveController = $controller('ContactRemoveController', {
           $scope: $scope,
@@ -66,11 +66,11 @@ describe('ContactRemoveController', function() {
       });
     });
 
-    it('sets the contact', function() {
+    it('sets the contact', function () {
       expect(ContactRemoveController.contact).toBe(contactToRemove);
     });
 
-    it('can remove the contact', function() {
+    it('can remove the contact', function () {
       $httpBackend
         .expect('DELETE', '/api/contact/' + contactToRemove._id)
         .respond(200);
@@ -84,14 +84,14 @@ describe('ContactRemoveController', function() {
       );
     });
 
-    it('can be cancelled', function() {
+    it('can be cancelled', function () {
       expect(ContactRemoveController.cancelContactRemoval).toBeDefined();
       ContactRemoveController.cancelContactRemoval();
       expect($uibModalInstance.dismiss).toHaveBeenCalledWith('cancel');
       expect($rootScope.$broadcast).not.toHaveBeenCalled();
     });
 
-    it('handles backend errors gracefully', function() {
+    it('handles backend errors gracefully', function () {
       $httpBackend
         .expect('DELETE', '/api/contact/' + contactToRemove._id)
         .respond(400);

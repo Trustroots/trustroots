@@ -26,14 +26,14 @@ const User = mongoose.model('User');
 /**
  * Add a contact
  */
-exports.add = function(req, res) {
+exports.add = function (req, res) {
   // Defined in this scope so we can remove it in in the case of an error
   let contact;
 
   async.waterfall(
     [
       // Validate
-      function(done) {
+      function (done) {
         // Not a valid ObjectId
         if (!mongoose.Types.ObjectId.isValid(req.body.friendUserId)) {
           return res.status(400).json({
@@ -53,7 +53,7 @@ exports.add = function(req, res) {
               userFrom: req.body.friendUserId,
             },
           ],
-        }).exec(function(err, existingContact) {
+        }).exec(function (err, existingContact) {
           if (err) return done(err);
 
           if (existingContact) {
@@ -69,7 +69,7 @@ exports.add = function(req, res) {
       },
 
       // Sanitize message
-      function(done) {
+      function (done) {
         // Catch message separately
         let messageHTML = false;
         let messagePlain = false;
@@ -88,7 +88,7 @@ exports.add = function(req, res) {
       },
 
       // Create Contact
-      function(messageHTML, messagePlain, done) {
+      function (messageHTML, messagePlain, done) {
         contact = new Contact(req.body);
         contact.confirmed = false;
         contact.userFrom = req.user._id;
@@ -98,36 +98,35 @@ exports.add = function(req, res) {
       },
 
       // Find friend
-      function(messageHTML, messagePlain, done) {
-        User.findById(req.body.friendUserId, 'email displayName').exec(function(
-          err,
-          friend,
-        ) {
-          if (!friend)
-            return done(
-              new Error('Failed to load user ' + req.body.friendUserId),
-            );
+      function (messageHTML, messagePlain, done) {
+        User.findById(req.body.friendUserId, 'email displayName').exec(
+          function (err, friend) {
+            if (!friend)
+              return done(
+                new Error('Failed to load user ' + req.body.friendUserId),
+              );
 
-          done(err, messageHTML, messagePlain, friend);
-        });
+            done(err, messageHTML, messagePlain, friend);
+          },
+        );
       },
 
       // Save contact
-      function(messageHTML, messagePlain, friend, done) {
-        contact.save(function(err) {
+      function (messageHTML, messagePlain, friend, done) {
+        contact.save(function (err) {
           done(err, messageHTML, messagePlain, friend);
         });
       },
 
       // Send email
-      function(messageHTML, messagePlain, friend, done) {
+      function (messageHTML, messagePlain, friend, done) {
         emailService.sendConfirmContact(
           req.user,
           friend,
           contact,
           messageHTML,
           messagePlain,
-          function(err) {
+          function (err) {
             if (err) return done(err);
             return res.send({
               message: 'An email was sent to your contact.',
@@ -136,10 +135,10 @@ exports.add = function(req, res) {
         );
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         if (contact) {
-          contact.remove(function() {
+          contact.remove(function () {
             return res.status(400).send({
               message: errorService.getErrorMessage(err),
             });
@@ -157,10 +156,10 @@ exports.add = function(req, res) {
 /**
  * Disconnect contact
  */
-exports.remove = function(req, res) {
+exports.remove = function (req, res) {
   const contact = req.contact;
 
-  contact.remove(function(err) {
+  contact.remove(function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err),
@@ -174,12 +173,12 @@ exports.remove = function(req, res) {
 /**
  * Clear all contacts by user id
  */
-exports.removeAllByUserId = function(userId, callback) {
+exports.removeAllByUserId = function (userId, callback) {
   Contact.deleteMany(
     {
       $or: [{ userTo: userId }, { userFrom: userId }],
     },
-    function(err) {
+    function (err) {
       if (callback) {
         callback(err);
       }
@@ -190,7 +189,7 @@ exports.removeAllByUserId = function(userId, callback) {
 /**
  * Confirm (i.e. update) contact
  */
-exports.confirm = function(req, res) {
+exports.confirm = function (req, res) {
   // Only receiving user can confirm user connections
   if (!req.contact || !req.contact.userTo._id.equals(req.user._id.valueOf())) {
     return res.status(403).json({
@@ -202,7 +201,7 @@ exports.confirm = function(req, res) {
   const contact = req.contact;
   contact.confirmed = true;
 
-  contact.save(function(err) {
+  contact.save(function (err) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err),
@@ -216,14 +215,14 @@ exports.confirm = function(req, res) {
 /**
  * Contacts list
  */
-exports.list = function(req, res) {
+exports.list = function (req, res) {
   res.json(req.contacts || {});
 };
 
 /**
  * Single contact
  */
-exports.get = function(req, res) {
+exports.get = function (req, res) {
   res.json(req.contact || {});
 };
 
@@ -232,7 +231,7 @@ exports.get = function(req, res) {
  *
  * - Find contact record where logged in user is a friend of given userId
  */
-exports.contactByUserId = function(req, res, next, userId) {
+exports.contactByUserId = function (req, res, next, userId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).json({
@@ -261,7 +260,7 @@ exports.contactByUserId = function(req, res, next, userId) {
       ],
     })
       .populate('userTo userFrom', userProfile.userMiniProfileFields)
-      .exec(function(err, contact) {
+      .exec(function (err, contact) {
         if (err) return next(err);
         if (!contact) {
           return res.status(404).json({
@@ -280,7 +279,7 @@ exports.contactByUserId = function(req, res, next, userId) {
 /**
  * Single contact by contactId
  */
-exports.contactById = function(req, res, next, contactId) {
+exports.contactById = function (req, res, next, contactId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(contactId)) {
     return res.status(400).json({
@@ -291,7 +290,7 @@ exports.contactById = function(req, res, next, contactId) {
   if (req.user && req.user.public) {
     Contact.findById(contactId)
       .populate('userTo userFrom', userProfile.userMiniProfileFields)
-      .exec(function(err, contact) {
+      .exec(function (err, contact) {
         if (err) return next(err);
 
         // If nothing was found or neither of the user ID's match currently authenticated user's id, return 404
@@ -319,7 +318,7 @@ exports.contactById = function(req, res, next, contactId) {
  * Takes already formed contact list and drops out contacts which aren't
  * on currently authenticated user's contact list
  */
-exports.filterByCommon = function(req, res, next) {
+exports.filterByCommon = function (req, res, next) {
   // No contacts to match, just continue
   if (!req.contacts.length) {
     return next();
@@ -341,7 +340,7 @@ exports.filterByCommon = function(req, res, next) {
       userTo: 1,
       test: '$userTo',
     },
-  ).exec(function(err, authUserContacts) {
+  ).exec(function (err, authUserContacts) {
     if (err) {
       return next(err);
     }
@@ -354,7 +353,7 @@ exports.filterByCommon = function(req, res, next) {
 
     // Remodel authenticated user's contact list to array of user ids
     const authUserContactUsers = [];
-    _.map(authUserContacts, function(contact) {
+    _.map(authUserContacts, function (contact) {
       // Pick user id which isn't authenticated user themself
       const userId = contact.userFrom.equals(req.user._id.valueOf())
         ? contact.userTo
@@ -372,7 +371,7 @@ exports.filterByCommon = function(req, res, next) {
 
     // We have both contact lists, do the matching
     // @link https://lodash.com/docs/#filter
-    req.contacts = _.filter(req.contacts, function(contact) {
+    req.contacts = _.filter(req.contacts, function (contact) {
       // Check if `contact.user._id` is also on list of authenticated user's
       // contacts list. Returning truthy will let it trough to `req.contacts`,
       // returning falsy will hold it back.
@@ -386,7 +385,7 @@ exports.filterByCommon = function(req, res, next) {
 /**
  * Contact list middleware
  */
-exports.contactListByUser = function(req, res, next, listUserId) {
+exports.contactListByUser = function (req, res, next, listUserId) {
   // Not a valid ObjectId
   if (!mongoose.Types.ObjectId.isValid(listUserId)) {
     return res.status(400).json({
@@ -478,7 +477,7 @@ exports.contactListByUser = function(req, res, next, listUserId) {
         },
       },
     },
-  ]).exec(function(err, contacts) {
+  ]).exec(function (err, contacts) {
     if (err) return next(err);
     if (!contacts) return next(new Error('Failed to load contacts.'));
 

@@ -3,7 +3,7 @@ const { join, resolve } = require('path');
 const basedir = resolve(join(__dirname, '../..'));
 
 // MUST use it with html-loader first
-module.exports = function(source) {
+module.exports = function (source) {
   const templateName = this.resourcePath
     .substring(basedir.length) // makes it relative to project root directory
     .replace(/\/client\//, '/') // give our templates the expected name
