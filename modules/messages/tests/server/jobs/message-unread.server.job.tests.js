@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 const path = require('path');
-// should = require('should'),
+const should = require('should');
 const moment = require('moment');
 const sinon = require('sinon');
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
@@ -44,6 +44,7 @@ describe('Job: message unread', function() {
       username: 'userfrom',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local',
+      roles: ['user'],
     };
 
     userFrom = new User(_userFrom);
@@ -66,6 +67,7 @@ describe('Job: message unread', function() {
       username: 'userto',
       password: 'M3@n.jsI$Aw3$0m4',
       provider: 'local',
+      roles: ['user'],
     };
 
     userTo = new User(_userTo);
@@ -508,6 +510,30 @@ describe('Job: message unread', function() {
             jobs.length.should.equal(1);
 
             return done();
+          });
+        });
+      });
+    });
+
+    ['suspended', 'shadowban'].forEach(function(role) {
+      it(`Don't send notifications from users with role "${role}".`, function(done) {
+        message.created = moment().subtract(
+          moment.duration({ minutes: 10, seconds: 1 }),
+        );
+        message.save(function(err) {
+          should.not.exist(err);
+
+          userFrom.roles = ['user', role];
+          userFrom.save(function(err) {
+            should.not.exist(err);
+
+            messageUnreadJobHandler({}, function(err) {
+              should.not.exist(err);
+
+              jobs.length.should.equal(0);
+
+              return done();
+            });
           });
         });
       });
