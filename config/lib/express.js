@@ -102,6 +102,12 @@ module.exports.initLocalVariables = function (app) {
     // https://expressjs.com/en/api.html#req.path
     res.locals.canonicalUrl = res.locals.hostPort + req.path;
 
+    // Native mobile app wrapper loads the site with `?app` URL query argument.
+    res.locals.isNativeMobileApp = Object.prototype.hasOwnProperty.call(
+      req.query,
+      'app',
+    );
+
     next();
   });
 
