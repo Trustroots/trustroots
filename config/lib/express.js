@@ -1,6 +1,7 @@
 /**
  * Module dependencies.
  */
+const _ = require('lodash');
 const config = require('../config');
 const errorService = require('../../modules/core/server/services/error.server.service');
 const facebookNotificationService = require('../../modules/core/server/services/facebook-notification.server.service');
@@ -103,10 +104,7 @@ module.exports.initLocalVariables = function (app) {
     res.locals.canonicalUrl = res.locals.hostPort + req.path;
 
     // Native mobile app wrapper loads the site with `?app` URL query argument.
-    res.locals.isNativeMobileApp = Object.prototype.hasOwnProperty.call(
-      req.query,
-      'app',
-    );
+    res.locals.isNativeMobileApp = _.has(req, ['query', 'app']);
 
     next();
   });
