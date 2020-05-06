@@ -9,19 +9,19 @@ trustroots:
   #  that they won't get overwritten by app directory
   #  Read more: http://stackoverflow.com/a/32785014/1984644
   volumes:
-   - ./:/trustroots
-   - /trustroots/node_modules
-   - /trustroots/public
-   - /trustroots/uploads
+    - ./:/trustroots
+    - /trustroots/node_modules
+    - /trustroots/public
+    - /trustroots/uploads
   command: npm run start:docker
   links:
     - mongodb:mongodb
     - maildev:maildev
     - influxdb:influxdb
   ports:
-    - "3000:3000"
-    - "5858:5858"
-    - "35729:35729"
+    - '3000:3000'
+    - '5858:5858'
+    - '35729:35729'
   environment:
     - NODE_ENV=development
     - DB_1_PORT_27017_TCP_ADDR=mongodb
@@ -37,16 +37,16 @@ maildev:
   container_name: maildev
   restart: always
   ports:
-    - "1080:1080"
+    - '1080:1080'
 
 ## Database container
 mongodb:
   image: mongo:3.6
   container_name: db_1
   restart: always
-  command: "--smallfiles --logpath=/dev/null"
+  command: '--smallfiles --logpath=/dev/null'
   ports:
-    - "27017:27017"
+    - '27017:27017'
 
 ## InfluxDB container
 ## https://github.com/tutumcloud/influxdb
@@ -55,8 +55,8 @@ influxdb:
   container_name: influxdb
   restart: always
   ports:
-    - "8083:8083"
-    - "8086:8086"
+    - '8083:8083'
+    - '8086:8086'
   environment:
     - ADMIN_USER=root
     - INFLUXDB_INIT_PWD=root
@@ -76,4 +76,4 @@ nginx:
     - ./scripts/docker/nginx/trustroots.dev:/etc/nginx/vhost.d/trustroots.dev
     - ./scripts/docker/nginx/trustroots.dev_location:/etc/nginx/vhost.d/trustroots.dev_location
   ports:
-    - "3080:80"
+    - '3080:80'

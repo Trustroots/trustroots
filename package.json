@@ -270,7 +270,7 @@
       "npm run reformat-files",
       "eslint"
     ],
-    "*.{json,md,html}": [
+    "*.{json,md,html,less,yml}": [
       "npm run reformat-files"
     ]
   }

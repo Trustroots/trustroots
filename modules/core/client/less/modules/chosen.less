@@ -47,7 +47,7 @@
     border: 1px solid @input-border;
     border-top: 0;
     background: #fff;
-    box-shadow: 0 4px 5px rgba(0, 0, 0, .15);
+    box-shadow: 0 4px 5px rgba(0, 0, 0, 0.15);
   }
   &.chosen-with-drop .chosen-drop {
     left: 0;
@@ -55,7 +55,8 @@
   a {
     cursor: pointer;
   }
-  .search-choice, .chosen-single {
+  .search-choice,
+  .chosen-single {
     .group-name {
       margin-right: 4px;
       overflow: hidden;
@@ -64,7 +65,7 @@
       font-weight: normal;
       color: #999999;
       &:after {
-        content: ":";
+        content: ':';
         padding-left: 2px;
         vertical-align: top;
       }
@@ -85,7 +86,7 @@
     border-radius: 5px;
     background-color: #fff;
     background-clip: padding-box;
-    box-shadow: 0 0 3px #fff inset, 0 1px 1px rgba(0, 0, 0, .1);
+    box-shadow: 0 0 3px #fff inset, 0 1px 1px rgba(0, 0, 0, 0.1);
     color: @input-color;
     text-decoration: none;
     white-space: nowrap;
@@ -140,7 +141,7 @@
     margin: 0;
     padding: 3px 4px;
     white-space: nowrap;
-    input[type="text"] {
+    input[type='text'] {
       margin: 1px 0;
       padding: 4px 20px 4px 5px;
       width: 100%;
@@ -240,7 +241,7 @@
       margin: 0;
       padding: 0;
       white-space: nowrap;
-      input[type="text"] {
+      input[type='text'] {
         margin: 1px 0;
         padding: 0;
         height: 25px;
@@ -312,12 +313,12 @@
 
 /* @group Active  */
 /* @todo Use .form-control-focus(); here instead? */
-.chosen-container-active{
+.chosen-container-active {
   .chosen-single {
     border: 1px solid @input-border-focus;
-    box-shadow: 0 0 5px rgba(0, 0, 0, .3);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
   }
-  &.chosen-with-drop{
+  &.chosen-with-drop {
     .chosen-single {
       border: 1px solid @input-border;
       border-bottom-right-radius: 0;
@@ -334,7 +335,7 @@
   }
   .chosen-choices {
     border: 1px solid @input-border-focus;
-    li.search-field input[type="text"] {
+    li.search-field input[type='text'] {
       color: @input-color !important;
     }
   }
@@ -379,7 +380,7 @@
   }
   .chosen-choices li {
     float: right;
-    &.search-field input[type="text"] {
+    &.search-field input[type='text'] {
       direction: rtl;
     }
     &.search-choice {
@@ -406,7 +407,7 @@
   &.chosen-container-active.chosen-with-drop .chosen-single div {
     border-right: none;
   }
-  .chosen-search input[type="text"] {
+  .chosen-search input[type='text'] {
     padding: 4px 5px 4px 20px;
     background: #fff @chosen-sprite no-repeat -30px -20px;
     direction: rtl;
@@ -425,11 +426,13 @@
 /* @end */
 
 /* @group Retina compatibility */
-@media only screen and (-webkit-min-device-pixel-ratio: 1.5), only screen and (min-resolution: 144dpi), only screen and (min-resolution: 1.5dppx) {
-  .chosen-rtl .chosen-search input[type="text"],
+@media only screen and (-webkit-min-device-pixel-ratio: 1.5),
+  only screen and (min-resolution: 144dpi),
+  only screen and (min-resolution: 1.5dppx) {
+  .chosen-rtl .chosen-search input[type='text'],
   .chosen-container-single .chosen-single abbr,
   .chosen-container-single .chosen-single div b,
-  .chosen-container-single .chosen-search input[type="text"],
+  .chosen-container-single .chosen-search input[type='text'],
   .chosen-container-multi .chosen-choices .search-choice .search-choice-close,
   .chosen-container .chosen-results-scroll-down span,
   .chosen-container .chosen-results-scroll-up span {

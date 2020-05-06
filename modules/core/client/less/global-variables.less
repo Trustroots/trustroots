@@ -8,12 +8,12 @@
 
 // Color theme
 // ---------------------------------------
-@body-bg:                   #f9f9f9;
-@brand-primary:             #12b591; // "Trustroots Green"
-@brand-secondary:           #cd771b; // "Trustroots Brown"
+@body-bg: #f9f9f9;
+@brand-primary: #12b591; // "Trustroots Green"
+@brand-secondary: #cd771b; // "Trustroots Brown"
 
-@brand-gradient-from:        #19e6df;
-@brand-gradient-to:          #e0a70e;
+@brand-gradient-from: #19e6df;
+@brand-gradient-to: #e0a70e;
 
 // Reel is used at:
 // <hr>'s: ./modules/core/client/less/layout/layout.less
@@ -24,185 +24,186 @@
 @color-reel-3: #e49a00;
 @color-reel-4: #e0b521;
 
-@gray-darker:               lighten(#000, 13.5%); // #222
-@gray-dark:                 lighten(#000, 20%);   // #333
-@gray:                      lighten(#000, 33.5%); // #555
-@gray-light:                lighten(#000, 60%);   // #999
-@gray-lighter:              lighten(#000, 93.5%); // #eee
+@gray-darker: lighten(#000, 13.5%); // #222
+@gray-dark: lighten(#000, 20%); // #333
+@gray: lighten(#000, 33.5%); // #555
+@gray-light: lighten(#000, 60%); // #999
+@gray-lighter: lighten(#000, 93.5%); // #eee
 
-@btn-default-color:         @brand-primary;
-@btn-default-bg:            #fff;
-@btn-default-border:        @btn-default-bg;
+@btn-default-color: @brand-primary;
+@btn-default-bg: #fff;
+@btn-default-border: @btn-default-bg;
 
-@btn-primary-color:         #fff;
-@btn-primary-bg:            @brand-primary;
-@btn-primary-border:        @btn-primary-bg;
+@btn-primary-color: #fff;
+@btn-primary-bg: @brand-primary;
+@btn-primary-border: @btn-primary-bg;
 
-@btn-inverse-color:         #fff;
-@btn-inverse-bg:            transparent;
-@btn-inverse-border:        @btn-inverse-color;
+@btn-inverse-color: #fff;
+@btn-inverse-bg: transparent;
+@btn-inverse-border: @btn-inverse-color;
 
-@btn-inverse-primary-color:  @brand-primary;
-@btn-inverse-primary-bg:     transparent;
+@btn-inverse-primary-color: @brand-primary;
+@btn-inverse-primary-bg: transparent;
 @btn-inverse-primary-border: @btn-inverse-primary-color;
 
-@text-color:                @gray-dark;
-@link-color:                @brand-secondary;
-@link-hover-color:          darken(@link-color, 15%);
+@text-color: @gray-dark;
+@link-color: @brand-secondary;
+@link-hover-color: darken(@link-color, 15%);
 
 // Site wide announcement header
 @site-announcement-height: 53px;
 
 // Notification badge directive
-@notification-badge-bg:     #d9534f;
-@notification-badge-text:   #fff;
+@notification-badge-bg: #d9534f;
+@notification-badge-text: #fff;
 
 // Leaflet marker cluster bubbles
 // ---------------------------------------
-@prunecluster-color:           @brand-primary;
-@prunecluster-transparency:    0.4;
+@prunecluster-color: @brand-primary;
+@prunecluster-transparency: 0.4;
 @prunecluster-border-contrast: 10%;
 
 // Medium editor
 // https://raw.githubusercontent.com/daviferreira/medium-editor/master/src/sass/themes/bootstrap.scss
 // See ./modules/core/client/less/directives/editor.less
 // ---------------------------------------
-@medium_editor_bgcolor:                  @brand-primary;
-@medium_editor_border_color:             @medium_editor_bgcolor;
-@medium_editor_border_radius:            0;
-@medium_editor_button_size:              45px;
-@medium_editor_link_color:               #fff;
+@medium_editor_bgcolor: @brand-primary;
+@medium_editor_border_color: @medium_editor_bgcolor;
+@medium_editor_border_radius: 0;
+@medium_editor_button_size: 45px;
+@medium_editor_link_color: #fff;
 @medium_editor_button_active_text_color: #fff;
-@medium_editor_placeholder_color:        @gray-light;
-@medium_editor_hover_color:              lighten(@medium_editor_bgcolor, 5%);
+@medium_editor_placeholder_color: @gray-light;
+@medium_editor_hover_color: lighten(@medium_editor_bgcolor, 5%);
 
 // Trustpass
 // ---------------------------------------
-@trustpass-done-color:        @text-muted;
-@trustpass-done-background:   rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .05);
-@trustpass-done-radius:       @border-radius-base;
-@trustpass-done-text-size:    @font-size-small;
-@trustpass-text-size:         @font-size-small;
-@trustpass-line-height:       @line-height-base;
-@trustpass-columns:           1;
-@trustpass-guide-color:       @text-muted;
-@trustpass-guide-text-size:   @font-size-small;
+@trustpass-done-color: @text-muted;
+@trustpass-done-background: rgba(
+  red(@brand-primary),
+  green(@brand-primary),
+  blue(@brand-primary),
+  0.05
+);
+@trustpass-done-radius: @border-radius-base;
+@trustpass-done-text-size: @font-size-small;
+@trustpass-text-size: @font-size-small;
+@trustpass-line-height: @line-height-base;
+@trustpass-columns: 1;
+@trustpass-guide-color: @text-muted;
+@trustpass-guide-text-size: @font-size-small;
 
 // Loading bar
 // See ./modules/core/client/less/modules/loading-bar.less
 // ---------------------------------------
-@loading-bar-color:  rgba(255, 255, 255, 0.5);
+@loading-bar-color: rgba(255, 255, 255, 0.5);
 @loading-bar-height: 3px;
-
 
 // Navbar
 // ---------------------------------------
 
 // Basics of a navbar
-@navbar-height:                    43px;
-@navbar-border-radius:             0;
+@navbar-height: 43px;
+@navbar-border-radius: 0;
 
-@navbar-default-color:             #fff;
-@navbar-default-bg:                @brand-primary;
-@navbar-default-border:            @navbar-default-bg;
+@navbar-default-color: #fff;
+@navbar-default-bg: @brand-primary;
+@navbar-default-border: @navbar-default-bg;
 
-@navbar-default-link-color:                #fff;
-@navbar-default-link-hover-color:          #fff;
-@navbar-default-link-hover-bg:             darken(@navbar-default-bg, 3%);
-@navbar-default-link-active-color:         #fff;
-@navbar-default-link-active-bg:            darken(@navbar-default-bg, 6.5%);
-@navbar-default-link-disabled-color:       darken(@navbar-default-bg, 50%);
-@navbar-default-link-disabled-bg:          transparent;
+@navbar-default-link-color: #fff;
+@navbar-default-link-hover-color: #fff;
+@navbar-default-link-hover-bg: darken(@navbar-default-bg, 3%);
+@navbar-default-link-active-color: #fff;
+@navbar-default-link-active-bg: darken(@navbar-default-bg, 6.5%);
+@navbar-default-link-disabled-color: darken(@navbar-default-bg, 50%);
+@navbar-default-link-disabled-bg: transparent;
 
-@navbar-default-toggle-hover-bg:           darken(@navbar-default-bg, 3%);
-@navbar-default-toggle-icon-bar-bg:        #fff;
-@navbar-default-toggle-border-color:       darken(@navbar-default-bg, 3%);
-
+@navbar-default-toggle-hover-bg: darken(@navbar-default-bg, 3%);
+@navbar-default-toggle-icon-bar-bg: #fff;
+@navbar-default-toggle-border-color: darken(@navbar-default-bg, 3%);
 
 // Components
 // ---------------------------------------
 // Based on 14px font-size and 1.428 line-height (~20px to start)
-@padding-base-vertical:          6px;
-@padding-base-horizontal:        12px;
+@padding-base-vertical: 6px;
+@padding-base-horizontal: 12px;
 
-@padding-large-vertical:         10px;
-@padding-large-horizontal:       16px;
+@padding-large-vertical: 10px;
+@padding-large-horizontal: 16px;
 
-@padding-small-vertical:         5px;
-@padding-small-horizontal:       10px;
-
+@padding-small-vertical: 5px;
+@padding-small-horizontal: 10px;
 
 // Popovers
 // ---------------------------------------
-@popover-max-width:              476px;
-
+@popover-max-width: 476px;
 
 // Forms
 // ---------------------------------------
-@input-border-focus:             @brand-primary;
-
+@input-border-focus: @brand-primary;
 
 // Typography
 // ---------------------------------------
-@font-size-base:          14px;
-@font-size-large:         ceil(@font-size-base * 1.25); // ~18px
-@font-size-small:         ceil(@font-size-base * 0.85); // ~12px
+@font-size-base: 14px;
+@font-size-large: ceil(@font-size-base * 1.25); // ~18px
+@font-size-small: ceil(@font-size-base * 0.85); // ~12px
 
-@font-family-sans-serif:  -apple-system,BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen-Sans", "Ubuntu", "Cantarell", "Helvetica Neue", sans-serif;
-@font-family-base:        @font-family-sans-serif;
+@font-family-sans-serif: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+  'Oxygen-Sans', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
+@font-family-base: @font-family-sans-serif;
 
-@font-family-brand-light:     @font-family-sans-serif;
-@font-weight-brand-light:     300;
-@font-family-brand-regular:   @font-family-sans-serif;
-@font-weight-brand-regular:   400;
-@font-family-brand-semibold:  @font-family-sans-serif;
-@font-weight-brand-semibold:  500;
+@font-family-brand-light: @font-family-sans-serif;
+@font-weight-brand-light: 300;
+@font-family-brand-regular: @font-family-sans-serif;
+@font-weight-brand-regular: 400;
+@font-family-brand-semibold: @font-family-sans-serif;
+@font-weight-brand-semibold: 500;
 
-@text-highlight:          lighten(@brand-primary, 40%);
-@text-highlight-color:    @text-color;
+@text-highlight: lighten(@brand-primary, 40%);
+@text-highlight-color: @text-color;
 
 // Reference colors
 // ---------------------------------------
-@reference-recommend-yes-bg:         #5cb85c;
-@reference-recommend-yes-color:      #fff;
-@reference-recommend-no-bg:          #d9534f;
-@reference-recommend-no-color:       #fff;
-@reference-recommend-unknown-bg:     lighten(#000, 98%);
-@reference-recommend-unknown-color:  @btn-default-color;
+@reference-recommend-yes-bg: #5cb85c;
+@reference-recommend-yes-color: #fff;
+@reference-recommend-no-bg: #d9534f;
+@reference-recommend-no-color: #fff;
+@reference-recommend-unknown-bg: lighten(#000, 98%);
+@reference-recommend-unknown-color: @btn-default-color;
 
 // Offer colors
 // ---------------------------------------
-@offer-hosting-yes:               #5cb85c;
-@offer-hosting-maybe:             #f0ad4e;
-@offer-hosting-no:                #d9534f;
-@offer-meet:                      #0081a1;
+@offer-hosting-yes: #5cb85c;
+@offer-hosting-maybe: #f0ad4e;
+@offer-hosting-no: #d9534f;
+@offer-meet: #0081a1;
 
 // Theme basic styles
 // ---------------------------------------
-@border-radius-base:        2px;
-@border-radius-large:       2px;
-@border-radius-small:       2px;
+@border-radius-base: 2px;
+@border-radius-large: 2px;
+@border-radius-small: 2px;
 
 // File drop areas
-@filedrop-rejected:             #d9534f;
-@filedrop-accepted:             #5cb85c;
+@filedrop-rejected: #d9534f;
+@filedrop-accepted: #5cb85c;
 
 // Panels
 // ---------------------------------------
-@panel-bg:                  #fff;
-@panel-border:              #dfdfdf;
-@panel-border-radius:       @border-radius-base;
-@panel-heading-bg:          transparent;
-@panel-footer-bg:           #f5f5f5;
+@panel-bg: #fff;
+@panel-border: #dfdfdf;
+@panel-border-radius: @border-radius-base;
+@panel-heading-bg: transparent;
+@panel-footer-bg: #f5f5f5;
 
 // Maps
 // ---------------------------------------
-@map-toolbar-background:       rgba(255, 255, 255, 0.95);
+@map-toolbar-background: rgba(255, 255, 255, 0.95);
 @map-toolbar-background-hover: rgba(255, 255, 255, 1);
-@map-toolbar-shadow:           0 1px 5px rgba(0, 0, 0, 0.35);
-@map-zoom-transition:          0.25s cubic-bezier(0,0,0.25,1);
+@map-toolbar-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+@map-zoom-transition: 0.25s cubic-bezier(0, 0, 0.25, 1);
 
 // Other
 // ---------------------------------------
-@article-padding-bottom:    30px;
+@article-padding-bottom: 30px;
 @article-padding-bottom-xs: 30px;

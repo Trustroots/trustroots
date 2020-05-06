@@ -17,7 +17,8 @@
   background-position: 50% 50%;
   background-repeat: no-repeat;
   background-size: cover;
-  &, label {
+  &,
+  label {
     color: #fff;
   }
   a:not(.btn),
@@ -55,13 +56,23 @@
     text-shadow: none;
     margin: 0;
     &.board-highlight-primary {
-      background: rgba(red(@brand-primary), green(@brand-primary), blue(@brand-primary), .9);
+      background: rgba(
+        red(@brand-primary),
+        green(@brand-primary),
+        blue(@brand-primary),
+        0.9
+      );
     }
     &.board-highlight-secondary {
-      background: rgba(red(@brand-secondary), green(@brand-secondary), blue(@brand-secondary), .9);
+      background: rgba(
+        red(@brand-secondary),
+        green(@brand-secondary),
+        blue(@brand-secondary),
+        0.9
+      );
     }
     &.board-highlight-transparent {
-      text-shadow: 0 1px 10px rgba(0,0,0,1);
+      text-shadow: 0 1px 10px rgba(0, 0, 0, 1);
       font-size: 36px;
       font-weight: bold;
       letter-spacing: -1px;
@@ -72,7 +83,8 @@
   &.board-primary {
     background-color: @brand-primary;
     .page-header {
-      h1, h2 {
+      h1,
+      h2 {
         background: @brand-primary;
       }
     }
@@ -80,7 +92,7 @@
 
   // Add inset shadow
   &.board-inset {
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
   }
 
   .page-header {
@@ -112,5 +124,4 @@
     // @link https://creativecommons.org/licenses/by-nc-nd/4.0/
     background-image: url(~img/board/error.jpg);
   }
-
 }

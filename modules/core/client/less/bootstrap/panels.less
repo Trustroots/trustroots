@@ -14,7 +14,7 @@
   background-color: @panel-bg;
   border: 1px solid @panel-border;
   border-radius: @panel-border-radius;
-  box-shadow: 0 1px 1px rgba(0,0,0,.05);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
   // https://developer.mozilla.org/en-US/docs/Web/CSS/word-wrap
   word-wrap: break-word;
   h3 {
@@ -58,7 +58,7 @@
       // Vertical gradient, from top to bottom
       #gradient.vertical(rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0); rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0.96); 0%; 80%);
       &:hover {
-        transition: color .4s;
+        transition: color 0.4s;
         color: lighten(@text-color, 40%);
       }
     }
@@ -66,7 +66,7 @@
 }
 
 .panel-disabled {
-  background-color: rgba(255, 255, 255, .4);
+  background-color: rgba(255, 255, 255, 0.4);
   .panel-body,
   .panel-footer,
   .panel-heading {
@@ -80,17 +80,17 @@
 }
 
 .panel-loading {
-  &, * {
+  &,
+  * {
     color: lighten(@gray-lighter, 2%) !important;
   }
 }
 
 // Slightly transcluent white panel
 .panel-glass {
-  background: rgba(255,255,255, .9);
+  background: rgba(255, 255, 255, 0.9);
   border-color: transparent;
 }
-
 
 /**
  * Extending Bootstrap panels

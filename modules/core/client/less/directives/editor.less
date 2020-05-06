@@ -65,7 +65,7 @@
       padding: 0 5px;
       font-size: 20px;
       box-sizing: border-box;
-      transition: background-color .2s ease-in, color .2s ease-in;
+      transition: background-color 0.2s ease-in, color 0.2s ease-in;
       &:hover {
         background-color: @medium_editor_hover_color;
         color: @medium_editor_button_active_text_color;
@@ -105,19 +105,41 @@
 
     &::-webkit-input-placeholder {
       color: @medium_editor_link_color;
-      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
+      color: rgba(
+        red(@medium_editor_link_color),
+        green(@medium_editor_link_color),
+        blue(@medium_editor_link_color),
+        0.8
+      );
     }
-    &:-moz-placeholder { /* Firefox 18- */
+    &:-moz-placeholder {
+      /* Firefox 18- */
       color: @medium_editor_placeholder_color;
-      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
+      color: rgba(
+        red(@medium_editor_link_color),
+        green(@medium_editor_link_color),
+        blue(@medium_editor_link_color),
+        0.8
+      );
     }
-    &::-moz-placeholder {  /* Firefox 19+ */
+    &::-moz-placeholder {
+      /* Firefox 19+ */
       color: @medium_editor_placeholder_color;
-      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
+      color: rgba(
+        red(@medium_editor_link_color),
+        green(@medium_editor_link_color),
+        blue(@medium_editor_link_color),
+        0.8
+      );
     }
     &:-ms-input-placeholder {
       color: @medium_editor_placeholder_color;
-      color: rgba(red(@medium_editor_link_color), green(@medium_editor_link_color), blue(@medium_editor_link_color), .8);
+      color: rgba(
+        red(@medium_editor_link_color),
+        green(@medium_editor_link_color),
+        blue(@medium_editor_link_color),
+        0.8
+      );
     }
   }
 
