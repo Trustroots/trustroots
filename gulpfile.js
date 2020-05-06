@@ -46,10 +46,10 @@ function runNodemon(done) {
       defaultAssets.server.config,
     ),
   })
-    .on('crash', function() {
+    .on('crash', function () {
       console.error('[Server] Script crashed.');
     })
-    .on('exit', function() {
+    .on('exit', function () {
       console.log('[Server] Script exited.');
     });
   done();
@@ -71,10 +71,10 @@ function runNodemonWorker(done) {
       defaultAssets.server.config,
     ),
   })
-    .on('crash', function() {
+    .on('crash', function () {
       console.error('[Worker] Script crashed.');
     })
-    .on('exit', function() {
+    .on('exit', function () {
       console.log('[Worker] Script exited.');
     });
   done();
@@ -83,7 +83,7 @@ function runNodemonWorker(done) {
 // Set NODE_ENV to 'development' and prepare environment
 gulp.task(
   'env:dev',
-  gulp.series(function(done) {
+  gulp.series(function (done) {
     process.env.NODE_ENV = 'development';
     done();
   }),
@@ -92,7 +92,7 @@ gulp.task(
 // Set NODE_ENV to 'production' and prepare environment
 gulp.task(
   'env:prod',
-  gulp.series(function(done) {
+  gulp.series(function (done) {
     process.env.NODE_ENV = 'production';
     done();
   }),
@@ -110,7 +110,7 @@ gulp.task('watch:server:run-tests', function watchServerRunTests() {
       ],
       gulp.series('test:server'),
     )
-    .on('change', function(changedFile) {
+    .on('change', function (changedFile) {
       changedTestFiles = [];
       // determine if the changed (watched) file is a server test
       if (minimatch(changedFile, 'modules/*/tests/server/**/*.js')) {
@@ -150,9 +150,9 @@ function mocha(done) {
   let error;
 
   // Connect mongoose
-  mongooseService.connect(function(db) {
+  mongooseService.connect(function (db) {
     // Clean out test database to have clean base
-    mongooseService.dropDatabase(db, function() {
+    mongooseService.dropDatabase(db, function () {
       mongooseService.loadModels();
 
       // Run the tests
@@ -164,18 +164,18 @@ function mocha(done) {
             timeout: 10000,
           }),
         )
-        .on('error', function(err) {
+        .on('error', function (err) {
           // If an error occurs, save it
           error = err;
           console.error(err);
         })
-        .on('end', function() {
+        .on('end', function () {
           // When the tests are done, disconnect agenda/mongoose
           // and pass the error state back to gulp
           // @TODO: https://github.com/Trustroots/trustroots/issues/438
           // @link https://github.com/agenda/agenda/pull/450
-          agenda._mdb.close(function() {
-            mongooseService.disconnect(function() {
+          agenda._mdb.close(function () {
+            mongooseService.disconnect(function () {
               done(error);
             });
           });

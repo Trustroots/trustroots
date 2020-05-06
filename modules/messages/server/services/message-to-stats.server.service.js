@@ -73,13 +73,13 @@ const Message = mongoose.model('Message');
  * @param {object} message - a message object (as returned by mongoDB)
  * @param {statsCallback} callback - a callback that handles the response
  */
-module.exports.save = function(message, callback) {
+module.exports.save = function (message, callback) {
   async.waterfall(
     [
       // Check whether at least one of statistics services (influxdb, stathat)
       // is enabled.
       // Quit if all are disabled. The further computation is not necessary.
-      function(done) {
+      function (done) {
         const areSomeStatsEnabled =
           _.get(config, 'influxdb.enabled') || _.get(config, 'stathat.enabled');
         if (areSomeStatsEnabled !== true) {
@@ -93,20 +93,20 @@ module.exports.save = function(message, callback) {
       },
 
       // Process the message provided
-      function(done) {
-        module.exports.process(message, function(err, statObject) {
+      function (done) {
+        module.exports.process(message, function (err, statObject) {
           return done(err, statObject);
         });
       },
 
       // Send the message provided to influxService
-      function(statObject, done) {
-        module.exports.send(statObject, function(err) {
+      function (statObject, done) {
+        module.exports.send(statObject, function (err) {
           return done(err);
         });
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         log('error', 'Saving message stats failed.', err);
       }
@@ -128,7 +128,7 @@ module.exports.save = function(message, callback) {
  * @param {object} message - a message object as returned by mongoDB
  * @param {processMessageCallback} callback
  */
-module.exports.process = function(message, callback) {
+module.exports.process = function (message, callback) {
   // declare some variables needed in multiple scopes of async.waterfall
   let isFirstMessage;
   let isFirstReply;
@@ -185,7 +185,7 @@ module.exports.process = function(message, callback) {
             userFrom: firstMessage.userTo,
           })
             .sort({ created: 1 })
-            .exec(function(err, firstReply) {
+            .exec(function (err, firstReply) {
               return done(err, firstMessage, firstReply);
             });
         } else {
@@ -261,6 +261,6 @@ module.exports.process = function(message, callback) {
  * @param {StatObject} statObject - data object to be sent to Stats API
  * @param {statsCallback} callback - a callback that handles the response
  */
-module.exports.send = function(statObject, callback) {
+module.exports.send = function (statObject, callback) {
   return statService.stat(statObject, callback);
 };

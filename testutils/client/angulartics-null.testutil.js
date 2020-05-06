@@ -4,19 +4,19 @@
  * Based on:
  * https://github.com/angulartics/angulartics/blob/master/src/angulartics-debug.js
  */
-(function(angular) {
+(function (angular) {
   /**
    * @ngdoc overview
    * @name angulartics.null
    */
   angular.module('angulartics.null', ['angulartics']).config([
     '$analyticsProvider',
-    function($analyticsProvider) {
-      $analyticsProvider.registerPageTrack(function() {
+    function ($analyticsProvider) {
+      $analyticsProvider.registerPageTrack(function () {
         // Do nothing, don't even pollute console.log
       });
 
-      $analyticsProvider.registerEventTrack(function() {
+      $analyticsProvider.registerEventTrack(function () {
         // Do nothing, don't even pollute console.log
       });
     },

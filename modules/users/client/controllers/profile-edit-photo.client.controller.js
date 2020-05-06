@@ -31,26 +31,26 @@ function ProfileEditPhotoController(
   activate();
 
   function activate() {
-    $window.addEventListener('dragenter', function() {
+    $window.addEventListener('dragenter', function () {
       showDropZone();
     });
-    $window.addEventListener('drop', function() {
+    $window.addEventListener('drop', function () {
       hideDropZone();
     });
     angular
       .element('#profile-edit-avatar-drop')[0]
-      .addEventListener('dragleave', function() {
+      .addEventListener('dragleave', function () {
         hideDropZone();
       });
   }
 
   function showDropZone() {
-    $scope.$apply(function() {
+    $scope.$apply(function () {
       vm.showDropzone = true;
     });
   }
   function hideDropZone() {
-    $scope.$apply(function() {
+    $scope.$apply(function () {
       vm.showDropzone = false;
     });
   }
@@ -76,11 +76,11 @@ function ProfileEditPhotoController(
           avatar: fileAvatar,
         },
       })
-        .success(function() {
+        .success(function () {
           vm.avatarUploading = false;
           updateUserProfile();
         })
-        .error(function(data, status) {
+        .error(function (data, status) {
           // Default error
           let saveAvatarErr = 'Oops! Something went wrong. Try again later.';
 
@@ -145,9 +145,9 @@ function ProfileEditPhotoController(
       // Show the local file as a preview
       const fileReader = new FileReader();
       fileReader.readAsDataURL(file);
-      fileReader.onloadend = function() {
+      fileReader.onloadend = function () {
         vm.avatarPreview = true;
-        $scope.$apply(function() {
+        $scope.$apply(function () {
           vm.previewStyle = fileReader.result;
           vm.avatarUploading = false;
           saveAvatar();
@@ -164,13 +164,13 @@ function ProfileEditPhotoController(
     vm.user.updated = new Date();
 
     vm.user.$update(
-      function(updatedUser) {
+      function (updatedUser) {
         vm.user = Authentication.user = updatedUser;
         // Notify AppController
         $scope.$emit('userUpdated', updatedUser);
         messageCenterService.add('success', 'Profile photo updated.');
       },
-      function(err) {
+      function (err) {
         messageCenterService.add(
           'danger',
           err.data.message || 'Oops! Something went wrong.',

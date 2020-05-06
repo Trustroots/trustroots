@@ -1,6 +1,6 @@
 # Accessibility guide
 
-**Accessibility** is important. We want Trustroots to be inclusive and hence our websites have to be accessible to people who's abilities are limited in some way.
+**Accessibility** is important. We want Trustroots to be inclusive and hence our websites have to be accessible to people whose abilities are limited in some way.
 
 Generally speaking the status of the accessibility of Trustroots is currently unknown and should probably be assumed to be at bad state.
 

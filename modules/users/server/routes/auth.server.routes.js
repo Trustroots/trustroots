@@ -6,7 +6,7 @@ const userAuthentication = require('../controllers/users.authentication.server.c
 const userPassword = require('../controllers/users.password.server.controller');
 const passport = require('passport');
 
-module.exports = function(app) {
+module.exports = function (app) {
   // Confirm users email
   app
     .route('/api/auth/confirm-email/:token')

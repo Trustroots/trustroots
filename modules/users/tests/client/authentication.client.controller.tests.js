@@ -3,7 +3,7 @@ import '@/modules/search/client/search.client.module';
 import AppConfig from '@/modules/core/client/app/config';
 
 // Authentication controller Spec
-describe('AuthenticationController', function() {
+describe('AuthenticationController', function () {
   // Initialize global variables
   let AuthenticationController;
   let $httpBackend;
@@ -13,7 +13,7 @@ describe('AuthenticationController', function() {
   // Load the main application module
   beforeEach(angular.mock.module(AppConfig.appModuleName));
 
-  describe('Logged out user', function() {
+  describe('Logged out user', function () {
     let $scope;
     const appSettings = {
       flashTimeout: 0,
@@ -22,7 +22,7 @@ describe('AuthenticationController', function() {
     // The injector ignores leading and trailing underscores here (i.e. _$httpBackend_).
     // This allows us to inject a service but then attach it to a variable
     // with the same name as the service.
-    beforeEach(inject(function(
+    beforeEach(inject(function (
       $controller,
       $injector,
       $rootScope,
@@ -47,8 +47,8 @@ describe('AuthenticationController', function() {
       $scope.vm = AuthenticationController;
     }));
 
-    describe('AuthenticationController.signin()', function() {
-      it('should login with a correct user and password', function() {
+    describe('AuthenticationController.signin()', function () {
+      it('should login with a correct user and password', function () {
         // Test expected GET request
         $httpBackend.when('POST', '/api/auth/signin').respond(200, 'Fred');
         $httpBackend
@@ -71,7 +71,7 @@ describe('AuthenticationController', function() {
         expect(Authentication.user).toEqual('Fred');
       });
 
-      it('should fail to log in with nothing', function() {
+      it('should fail to log in with nothing', function () {
         // Test expected POST request
         $httpBackend.expectPOST('/api/auth/signin').respond(400, {
           message: 'Missing credentials',
@@ -92,8 +92,8 @@ describe('AuthenticationController', function() {
       });
     });
 
-    describe('Logged in user', function() {
-      beforeEach(inject(function(
+    describe('Logged in user', function () {
+      beforeEach(inject(function (
         $controller,
         $rootScope,
         _$state_,
@@ -116,7 +116,7 @@ describe('AuthenticationController', function() {
         });
       }));
 
-      it('should be redirected to home', function() {
+      it('should be redirected to home', function () {
         expect($state.go).toHaveBeenCalledWith('search.map');
       });
     });

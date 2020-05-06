@@ -76,7 +76,7 @@ function generateUsers(
  * @param {object} referenceData[][2] - object of property: value to override default reference properties
  */
 function generateReferences(users, referenceData) {
-  return referenceData.map(function(data) {
+  return referenceData.map(function (data) {
     const defaultReference = {
       userFrom: users[data[0]]._id,
       userTo: users[data[1]]._id,

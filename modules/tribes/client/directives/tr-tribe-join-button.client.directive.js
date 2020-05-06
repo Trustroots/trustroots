@@ -89,7 +89,7 @@ function trTribeJoinButtonDirective() {
       // Join tribe
       if (!vm.isMember) {
         return join()
-          .then(function(data) {
+          .then(function (data) {
             vm.isMember = true;
 
             applyChangedData(data);
@@ -100,20 +100,20 @@ function trTribeJoinButtonDirective() {
               value: $scope.tribe.slug,
             });
           })
-          .catch(function() {
+          .catch(function () {
             messageCenterService.add(
               'danger',
               'Failed to join the tribe. Try again!',
             );
           })
-          .finally(function() {
+          .finally(function () {
             vm.isLoading = false;
           });
       }
 
       // Leave tribe
       leave()
-        .then(function(data) {
+        .then(function (data) {
           vm.isMember = false;
 
           applyChangedData(data);
@@ -124,7 +124,7 @@ function trTribeJoinButtonDirective() {
             value: $scope.tribe.slug,
           });
         })
-        .catch(function(err) {
+        .catch(function (err) {
           if (err === 'cancelled') {
             $analytics.eventTrack('leave-tribe-cancelled', {
               category: 'tribes.membership',
@@ -140,7 +140,7 @@ function trTribeJoinButtonDirective() {
               : 'Failed to leave the tribe. Try again!';
           messageCenterService.add('danger', errorMessage);
         })
-        .finally(function() {
+        .finally(function () {
           vm.isLoading = false;
         });
     }
@@ -149,12 +149,12 @@ function trTribeJoinButtonDirective() {
      * Join Tribe
      */
     function join() {
-      return $q(function(resolve, reject) {
+      return $q(function (resolve, reject) {
         UserMembershipsService.post(
           {
             tribeId: $scope.tribe._id,
           },
-          function(data) {
+          function (data) {
             if (data.tribe && data.user) {
               data.tribe.$resolved = true;
 
@@ -163,7 +163,7 @@ function trTribeJoinButtonDirective() {
               reject();
             }
           },
-          function(err) {
+          function (err) {
             reject(err);
           },
         );
@@ -174,7 +174,7 @@ function trTribeJoinButtonDirective() {
      * Leave tribe
      */
     function leave() {
-      return $q(function(resolve, reject) {
+      return $q(function (resolve, reject) {
         // Ask user for confirmation
         $confirm({
           title: 'Leave this Tribe?',
@@ -182,12 +182,12 @@ function trTribeJoinButtonDirective() {
           ok: 'Leave Tribe',
           cancel: 'Cancel',
         }).then(
-          function() {
+          function () {
             UserMembershipsService.delete(
               {
                 tribeId: $scope.tribe._id,
               },
-              function(data) {
+              function (data) {
                 if (data.tribe && data.user) {
                   // API success
                   data.tribe.$resolved = true;
@@ -198,14 +198,14 @@ function trTribeJoinButtonDirective() {
                   reject();
                 }
               },
-              function(err) {
+              function (err) {
                 // API returned error
                 reject(err);
               },
             );
           },
           // `Cancel` button from confirm dialog
-          function() {
+          function () {
             reject('cancelled');
           },
         );

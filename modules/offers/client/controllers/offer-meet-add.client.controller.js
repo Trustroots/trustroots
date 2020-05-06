@@ -47,7 +47,7 @@ function OfferMeetAddController(
     });
 
     newOffer.$save(
-      function() {
+      function () {
         // Done!
         vm.isLoading = false;
         $analytics.eventTrack('offer-modified', {
@@ -56,7 +56,7 @@ function OfferMeetAddController(
         });
         $state.go('offer.meet.list');
       },
-      function(err) {
+      function (err) {
         vm.isLoading = false;
         const errorMessage = err.data.message
           ? err.data.message

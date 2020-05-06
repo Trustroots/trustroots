@@ -4,7 +4,7 @@
 const messagesPolicy = require('../policies/messages.server.policy');
 const messages = require('../controllers/messages.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
   app
     .route('/api/messages')
     .all(messagesPolicy.isAllowed)

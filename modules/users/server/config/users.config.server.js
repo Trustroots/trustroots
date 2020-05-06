@@ -9,20 +9,20 @@ const usersSuspended = require(path.resolve(
   './modules/users/server/controllers/users.suspended.server.controller',
 ));
 
-module.exports = function(app) {
+module.exports = function (app) {
   // Serialize sessions
-  passport.serializeUser(function(user, done) {
+  passport.serializeUser(function (user, done) {
     done(null, user.id);
   });
 
   // Deserialize sessions
-  passport.deserializeUser(function(id, done) {
+  passport.deserializeUser(function (id, done) {
     User.findOne(
       {
         _id: id,
       },
       '-salt -password',
-      function(err, user) {
+      function (err, user) {
         done(err, user);
       },
     );
@@ -31,7 +31,7 @@ module.exports = function(app) {
   // Initialize strategies
   config.utils
     .getGlobbedPaths(path.join(__dirname, './strategies/**/*.js'))
-    .forEach(function(strategy) {
+    .forEach(function (strategy) {
       require(path.resolve(strategy))(config);
     });
 

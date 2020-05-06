@@ -3,18 +3,18 @@ import AppConfig from '@/modules/core/client/app/config';
 /**
  * PlainTextLength filter tests
  */
-describe('PlainTextLength Filter Tests', function() {
+describe('PlainTextLength Filter Tests', function () {
   // Load the main application module
   beforeEach(angular.mock.module(AppConfig.appModuleName));
 
-  it('should return length for a string', inject(function(
+  it('should return length for a string', inject(function (
     plainTextLengthFilter,
   ) {
     expect(plainTextLengthFilter('test')).toBe(4);
     expect(plainTextLengthFilter('')).toBe(0);
   }));
 
-  it('should return length for a string after stripping out html', inject(function(
+  it('should return length for a string after stripping out html', inject(function (
     plainTextLengthFilter,
   ) {
     expect(
@@ -22,7 +22,7 @@ describe('PlainTextLength Filter Tests', function() {
     ).toBe(14);
   }));
 
-  it('should return 0 length for non string values', inject(function(
+  it('should return 0 length for non string values', inject(function (
     plainTextLengthFilter,
   ) {
     expect(plainTextLengthFilter(false)).toBe(0);
@@ -32,7 +32,7 @@ describe('PlainTextLength Filter Tests', function() {
     expect(plainTextLengthFilter(1 + 2)).toBe(0);
   }));
 
-  it('should return length for a string after stripping white space', inject(function(
+  it('should return length for a string after stripping white space', inject(function (
     plainTextLengthFilter,
   ) {
     expect(plainTextLengthFilter('   test   ')).toBe(4);

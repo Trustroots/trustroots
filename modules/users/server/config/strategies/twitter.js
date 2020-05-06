@@ -6,7 +6,7 @@ const passport = require('passport');
 const TwitterStrategy = require('passport-twitter').Strategy;
 const usersAuthentication = require('../../controllers/users.authentication.server.controller');
 
-module.exports = function(config) {
+module.exports = function (config) {
   // Get config parameters for the strategy
   const clientID = _.get(config, 'twitter.clientID');
   const clientSecret = _.get(config, 'twitter.clientSecret');
@@ -26,7 +26,7 @@ module.exports = function(config) {
         callbackURL: callbackURL,
         passReqToCallback: true,
       },
-      function(req, token, tokenSecret, profile, done) {
+      function (req, token, tokenSecret, profile, done) {
         // Set the provider data and include tokens
         const providerData = profile._json || {};
         providerData.token = token;

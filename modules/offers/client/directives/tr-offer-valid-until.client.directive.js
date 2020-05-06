@@ -73,7 +73,7 @@ function trOfferValidUntilDirective() {
         setValidUntilDays(vm.offerValidityInDays);
       }
 
-      $scope.$watch('trOfferValidUntil.offerValidityInDays', function(
+      $scope.$watch('trOfferValidUntil.offerValidityInDays', function (
         newValue,
         oldValue,
       ) {
@@ -83,7 +83,7 @@ function trOfferValidUntilDirective() {
       });
 
       // Update $scope when view model updates
-      $scope.$watch('trOfferValidUntil.validUntil', function(date) {
+      $scope.$watch('trOfferValidUntil.validUntil', function (date) {
         $scope.validUntil = date;
       });
     }
@@ -102,10 +102,7 @@ function trOfferValidUntilDirective() {
         ? { days: days }
         : appSettings.limits.maxOfferValidFromNow;
 
-      vm.validUntil = moment()
-        .endOf('day')
-        .add(add)
-        .toDate();
+      vm.validUntil = moment().endOf('day').add(add).toDate();
     }
   }
 }

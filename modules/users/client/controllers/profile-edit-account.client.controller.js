@@ -84,10 +84,10 @@ function ProfileEditAccountController(
   // Activate controller
   function activate() {
     $scope.$watch(
-      function() {
+      function () {
         return push.isEnabled;
       },
-      function(val) {
+      function (val) {
         vm.pushEnabled = val;
       },
     );
@@ -117,12 +117,12 @@ function ProfileEditAccountController(
     delete user.email;
 
     user.$update(
-      function(response) {
+      function (response) {
         messageCenterService.add('success', 'Username updated.');
         vm.usernameSuccess = '';
         vm.user = Authentication.user = response;
       },
-      function(response) {
+      function (response) {
         vm.usernameError =
           (response.data && response.data.message) || 'Something went wrong';
       },
@@ -138,7 +138,7 @@ function ProfileEditAccountController(
     delete user.username;
 
     user.$update(
-      function(response) {
+      function (response) {
         messageCenterService.add(
           'success',
           'Check your email for further instructions.',
@@ -151,7 +151,7 @@ function ProfileEditAccountController(
           'If you don\'t see this email in your inbox within 15 minutes, look for it in your junk mail folder. If you find it there, please mark it as "Not Junk".';
         vm.user = Authentication.user = response;
       },
-      function(response) {
+      function (response) {
         vm.emailError =
           (response.data && response.data.message) || 'Something went wrong.';
       },
@@ -168,10 +168,10 @@ function ProfileEditAccountController(
     if (vm.user.emailTemporary) {
       $http
         .post('/api/auth/resend-confirmation')
-        .then(function() {
+        .then(function () {
           messageCenterService.add('success', 'Confirmation email resent.');
         })
-        .catch(function(response) {
+        .catch(function (response) {
           let errorMessage;
           if (response) {
             errorMessage =
@@ -193,12 +193,12 @@ function ProfileEditAccountController(
     vm.updatingUserSubscriptions = true;
     const user = new Users(Authentication.user);
     user.$update(
-      function(response) {
+      function (response) {
         messageCenterService.add('success', 'Subscriptions updated.');
         vm.user = Authentication.user = response;
         vm.updatingUserSubscriptions = false;
       },
-      function(response) {
+      function (response) {
         vm.updatingUserSubscriptions = false;
         messageCenterService.add('error', 'Error: ' + response.data.message);
       },
@@ -218,7 +218,7 @@ function ProfileEditAccountController(
         verifyPassword: vm.verifyPassword,
       })
       .then(
-        function(response) {
+        function (response) {
           // On success function
           vm.currentPassword = '';
           vm.newPassword = '';
@@ -231,7 +231,7 @@ function ProfileEditAccountController(
             'Your password is now changed. Have a nice day!',
           );
         },
-        function(response) {
+        function (response) {
           // On error function
           vm.changeUserPasswordLoading = false;
           messageCenterService.add(
@@ -254,10 +254,10 @@ function ProfileEditAccountController(
 
     new Users(Authentication.user)
       .$delete()
-      .then(function(response) {
+      .then(function (response) {
         vm.removeProfileInitialized = response.message || 'Success.';
       })
-      .catch(function(response) {
+      .catch(function (response) {
         vm.removeProfileLoading = false;
         messageCenterService.add(
           'danger',

@@ -8,9 +8,9 @@ function UsersConfig($httpProvider) {
     '$q',
     '$location',
     'Authentication',
-    function($q, $location, Authentication) {
+    function ($q, $location, Authentication) {
       return {
-        responseError: function(rejection) {
+        responseError: function (rejection) {
           if (rejection.config.url.startsWith('/api/')) {
             switch (rejection.status) {
               case 401:

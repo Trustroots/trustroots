@@ -46,14 +46,14 @@ const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
 const User = mongoose.model('User');
 
-module.exports = function(job, agendaDone) {
+module.exports = function (job, agendaDone) {
   // read timing of notifications from config
   // we expect an array of momentjs objects
   // i.e. [{ minutes: 10 }, { hours: 24 }]
   const remindersConfig = config.limits.unreadMessageReminders;
 
   // sort the config from the earliest to the latest
-  const sortedConfig = _.sortBy(remindersConfig, function(timeSinceMessage) {
+  const sortedConfig = _.sortBy(remindersConfig, function (timeSinceMessage) {
     return moment.duration(timeSinceMessage).asMilliseconds();
   });
 
@@ -70,7 +70,7 @@ module.exports = function(job, agendaDone) {
    * this case shouldn't happen too often
    */
   const remappedConfig = _.reverse(
-    _.map(sortedConfig, function(value, index) {
+    _.map(sortedConfig, function (value, index) {
       // remapped config for nth notifications, more comfortable for further use
       return {
         order: index, // nth notification
@@ -99,7 +99,7 @@ function sendUnreadMessageReminders(reminder, callback) {
   async.waterfall(
     [
       // Aggregate unread messages
-      function(done) {
+      function (done) {
         // We want to remind user about messages, which remain unread for more than `timePassed`
         // Has to be a JS Date object, not a Moment object
         const createdTimeAgo = moment()
@@ -146,7 +146,7 @@ function sendUnreadMessageReminders(reminder, callback) {
               },
             },
           ],
-          function(err, notifications) {
+          function (err, notifications) {
             done(err, notifications);
           },
         );
@@ -160,10 +160,10 @@ function sendUnreadMessageReminders(reminder, callback) {
        *
        * We also don't want to send it when it is too late (config.limits.unreadMessageRemindersTooLate)
        */
-      function(notifications, done) {
+      function (notifications, done) {
         // we pick only notifications which already have count > 0
         // the first ones we want to send for sure, so we keep `notification.dontSend` undefined
-        const furtherNotifications = _.filter(notifications, function(
+        const furtherNotifications = _.filter(notifications, function (
           notification,
         ) {
           return notification.notificationCount > 0;
@@ -172,20 +172,20 @@ function sendUnreadMessageReminders(reminder, callback) {
         // check whether the thread is non-replied
         async.eachSeries(
           furtherNotifications,
-          function(notification, checkDone) {
+          function (notification, checkDone) {
             // count messages in the other direction
             Message.countDocuments(
               {
                 userFrom: notification._id.userTo,
                 userTo: notification._id.userFrom,
               },
-              function(err, count) {
+              function (err, count) {
                 const isThreadReplied = count > 0;
 
                 // find out whether it is too late to send the further notification
                 // we just wrap it to function for clearer organisation
-                const isTooLate = (function() {
-                  const lastMessage = _.maxBy(notification.messages, function(
+                const isTooLate = (function () {
+                  const lastMessage = _.maxBy(notification.messages, function (
                     msg,
                   ) {
                     return msg.created;
@@ -205,18 +205,18 @@ function sendUnreadMessageReminders(reminder, callback) {
               },
             );
           },
-          function(err) {
+          function (err) {
             return done(err, notifications);
           },
         );
       },
 
       // Fetch details for `userTo` and `userFrom`
-      function(notifications, done) {
+      function (notifications, done) {
         let userIds = [];
 
         // Collect all user ids from notifications
-        notifications.forEach(function(notification) {
+        notifications.forEach(function (notification) {
           userIds.push(notification._id.userTo, notification._id.userFrom);
         });
 
@@ -242,11 +242,11 @@ function sendUnreadMessageReminders(reminder, callback) {
               'additionalProvidersData.facebook.accessToken',
               'additionalProvidersData.facebook.accessTokenExpires',
             ].join(' '),
-          ).exec(function(err, users) {
+          ).exec(function (err, users) {
             // Re-organise users into more handy array (`collectedUsers`)
             const collectedUsers = {};
             if (users) {
-              users.forEach(function(user) {
+              users.forEach(function (user) {
                 // @link https://lodash.com/docs/#set
                 // _.set(object, path, value)
                 _.set(collectedUsers, user._id.toString(), user);
@@ -261,7 +261,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       },
 
       // Send Notifications
-      function(users, notifications, done) {
+      function (users, notifications, done) {
         // No notifications
         if (!notifications.length) {
           return done(null, []);
@@ -270,7 +270,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         // Create a queue worker to send notifications in parallel
         // Process at most 3 notifications at the same time
         // @link https://github.com/caolan/async#queueworker-concurrency
-        const notificationsQueue = async.queue(function(
+        const notificationsQueue = async.queue(function (
           notification,
           notificationCallback,
         ) {
@@ -307,7 +307,7 @@ function sendUnreadMessageReminders(reminder, callback) {
           // After both are done, calls `notificationCallback(err, res)`
           async.series(
             {
-              email: function(callback) {
+              email: function (callback) {
                 emailService.sendMessagesUnread(
                   userFrom,
                   userTo,
@@ -315,7 +315,7 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
-              facebook: function(callback) {
+              facebook: function (callback) {
                 facebookNotificationService.notifyMessagesUnread(
                   userFrom,
                   userTo,
@@ -323,7 +323,7 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
-              push: function(callback) {
+              push: function (callback) {
                 pushService.notifyMessagesUnread(
                   userFrom,
                   userTo,
@@ -342,7 +342,7 @@ function sendUnreadMessageReminders(reminder, callback) {
 
         // Assign a final callback to work queue
         // All notification jobs done, continue
-        notificationsQueue.drain = function(err) {
+        notificationsQueue.drain = function (err) {
           // Log detected error but don't stop processing this job because of it
           // Otherwise this job might get stuck infinitely for some notification
           if (err) {
@@ -360,7 +360,7 @@ function sendUnreadMessageReminders(reminder, callback) {
       },
 
       // Update notificationCount of messages
-      function(notifications, done) {
+      function (notifications, done) {
         // No notifications
         if (!notifications.length) {
           return done(null);
@@ -372,7 +372,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         // Collect message ids for updating documents to `notified:true` later
         for (let i = 0, len = notifications.length; i < len; i++) {
           if (notifications[i].messages) {
-            notifications[i].messages.forEach(function(message) {
+            notifications[i].messages.forEach(function (message) {
               messageIds.push(message.id);
             });
           }
@@ -397,7 +397,7 @@ function sendUnreadMessageReminders(reminder, callback) {
           { _id: { $in: messageIds } },
           { $set: { notificationCount: reminderOrder + 1 } },
           { multi: true },
-          function(err) {
+          function (err) {
             if (err) {
               // Log the failure to send the notification
               log(
@@ -414,7 +414,7 @@ function sendUnreadMessageReminders(reminder, callback) {
         );
       },
     ],
-    function(err) {
+    function (err) {
       // Wrap it up
       //
       return callback(err);

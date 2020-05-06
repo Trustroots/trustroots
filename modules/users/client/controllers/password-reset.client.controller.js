@@ -27,7 +27,7 @@ function ResetPasswordController(
     $http
       .post('/api/auth/reset/' + $stateParams.token, vm.passwordDetails)
       .then(
-        function(response) {
+        function (response) {
           // On success function
           // Clear form
           vm.passwordDetails = null;
@@ -41,7 +41,7 @@ function ResetPasswordController(
           // And redirect to the success page
           $state.go('reset-success');
         },
-        function(response) {
+        function (response) {
           // On error function
           vm.error = response.data.message;
           vm.isLoading = false;

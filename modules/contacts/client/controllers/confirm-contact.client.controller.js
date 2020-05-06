@@ -20,7 +20,7 @@ function ContactConfirmController($stateParams, Authentication, contact) {
   // First fetch contact object, just to make it sure it exists
   vm.contact.$promise.then(
     // Got contact
-    function() {
+    function () {
       vm.isLoading = false;
       if (vm.contact.confirmed === true) {
         vm.isConnected = true;
@@ -30,7 +30,7 @@ function ContactConfirmController($stateParams, Authentication, contact) {
       }
     },
     // Error getting contact
-    function(errorResponse) {
+    function (errorResponse) {
       vm.isWrongCode = true;
       vm.error =
         errorResponse.status === 404
@@ -43,12 +43,12 @@ function ContactConfirmController($stateParams, Authentication, contact) {
     vm.isLoading = true;
     vm.contact.confirm = true;
     vm.contact.$update(
-      function() {
+      function () {
         vm.isLoading = false;
         vm.isConnected = true;
         vm.success = 'You two are now connected!';
       },
-      function(errorResponse) {
+      function (errorResponse) {
         vm.isLoading = false;
         vm.error =
           errorResponse.data.message || 'Something went wrong. Try again.';

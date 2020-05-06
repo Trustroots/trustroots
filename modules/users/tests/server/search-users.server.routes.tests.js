@@ -11,13 +11,13 @@ const userHandler = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));
 
-describe('Search users: GET /users?search=string', function() {
+describe('Search users: GET /users?search=string', function () {
   let agent;
 
   const limit = 9;
 
   // initialize the testing environment
-  before(function() {
+  before(function () {
     // Stub the limit value
     sinon.stub(config.limits, 'paginationLimit').value(limit);
 
@@ -29,22 +29,22 @@ describe('Search users: GET /users?search=string', function() {
   });
 
   // rebuild indexes before tests
-  before(function(done) {
+  before(function (done) {
     User.ensureIndexes(done);
   });
 
   // clear the database
-  afterEach(function(done) {
+  afterEach(function (done) {
     async.each(
       [User],
-      function(collection, cb) {
+      function (collection, cb) {
         collection.remove().exec(cb);
       },
       done,
     );
   });
 
-  after(function() {
+  after(function () {
     sinon.restore();
   });
 
@@ -52,7 +52,7 @@ describe('Search users: GET /users?search=string', function() {
     const createdUsers = [];
     async.eachOfSeries(
       users,
-      function(user, index, cb) {
+      function (user, index, cb) {
         const createdUser = new User({
           username: user.username || 'user' + index,
           firstName: user.firstName || 'firstName' + index,
@@ -78,29 +78,26 @@ describe('Search users: GET /users?search=string', function() {
         createdUsers.push(createdUser);
         createdUser.save(cb);
       },
-      function(err) {
+      function (err) {
         callback(err, createdUsers);
       },
     );
   }
 
-  context('not logged in', function() {
-    it('Forbidden 403', function(done) {
-      agent
-        .get('/api/users?search=aaaBc')
-        .expect(403)
-        .end(done);
+  context('not logged in', function () {
+    it('Forbidden 403', function (done) {
+      agent.get('/api/users?search=aaaBc').expect(403).end(done);
     });
   });
 
-  context('logged in', function() {
+  context('logged in', function () {
     let loggedUser;
 
     // create logged user
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       createUsers(
         [{ username: 'loggedUser', password: 'somepassword' }],
-        function(err, users) {
+        function (err, users) {
           loggedUser = users[0];
           done(err);
         },
@@ -108,7 +105,7 @@ describe('Search users: GET /users?search=string', function() {
     });
 
     // sign in
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       agent
         .post('/api/auth/signin')
         .send({ username: loggedUser.username, password: 'somepassword' })
@@ -117,19 +114,16 @@ describe('Search users: GET /users?search=string', function() {
     });
 
     // sign out
-    afterEach(function(done) {
-      agent
-        .get('/api/auth/signout')
-        .expect(302)
-        .end(done);
+    afterEach(function (done) {
+      agent.get('/api/auth/signout').expect(302).end(done);
     });
 
-    context('valid request', function() {
-      it('[a username matched] return array of users', function(done) {
+    context('valid request', function () {
+      it('[a username matched] return array of users', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers(
                 [
                   { username: 'asdf' },
@@ -142,17 +136,17 @@ describe('Search users: GET /users?search=string', function() {
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=asdia')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(1);
 
               cb();
@@ -162,11 +156,11 @@ describe('Search users: GET /users?search=string', function() {
         );
       });
 
-      it('[some given names matched] return array of users', function(done) {
+      it('[some given names matched] return array of users', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers(
                 [
                   { firstName: 'qwer' },
@@ -181,17 +175,17 @@ describe('Search users: GET /users?search=string', function() {
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=qwer')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(2);
 
               cb();
@@ -201,11 +195,11 @@ describe('Search users: GET /users?search=string', function() {
         );
       });
 
-      it('[some family names matched] return array of users', function(done) {
+      it('[some family names matched] return array of users', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers(
                 [
                   { lastName: 'zxcvbna' },
@@ -223,17 +217,17 @@ describe('Search users: GET /users?search=string', function() {
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=zxcvb')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(2);
 
               cb();
@@ -243,11 +237,11 @@ describe('Search users: GET /users?search=string', function() {
         );
       });
 
-      it('[full names matched] return array of users', function(done) {
+      it('[full names matched] return array of users', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers(
                 [
                   { firstName: 'jacob', lastName: 'alia' },
@@ -263,17 +257,17 @@ describe('Search users: GET /users?search=string', function() {
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=jacob+aLia')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(6);
 
               cb();
@@ -283,11 +277,11 @@ describe('Search users: GET /users?search=string', function() {
         );
       });
 
-      it('[none matched] return empty array', function(done) {
+      it('[none matched] return empty array', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers(
                 [
                   { lastName: 'zxcvbna' },
@@ -301,17 +295,17 @@ describe('Search users: GET /users?search=string', function() {
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=aeiou')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(0);
 
               cb();
@@ -321,26 +315,26 @@ describe('Search users: GET /users?search=string', function() {
         );
       });
 
-      it('the user data should have only fields from searchProfile, and score', function(done) {
+      it('the user data should have only fields from searchProfile, and score', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers([{ username: 'aaa' }], cb);
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=aaa')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(1);
 
               // _id is not specified in userSearchProfileFields, but gets included anyways
@@ -364,7 +358,7 @@ describe('Search users: GET /users?search=string', function() {
         );
       });
 
-      context('limit the amount of results and pagination', function() {
+      context('limit the amount of results and pagination', function () {
         // create some users
         const testUsers = [
           { username: 'aaaaaa' },
@@ -381,8 +375,8 @@ describe('Search users: GET /users?search=string', function() {
           { lastName: 'aaaaaa' },
         ];
 
-        beforeEach(function(done) {
-          createUsers(testUsers, function(err) {
+        beforeEach(function (done) {
+          createUsers(testUsers, function (err) {
             done(err);
           });
         });
@@ -396,27 +390,27 @@ describe('Search users: GET /users?search=string', function() {
           { params: '&page=2&limit=11', expected: testUsers.length - 11 },
         ];
 
-        pageTests.forEach(function(test) {
+        pageTests.forEach(function (test) {
           it(
             'should limit results to ' +
               test.expected +
               ', when param is ' +
               test.params,
-            function(done) {
+            function (done) {
               async.waterfall(
                 [
                   // search
-                  function(cb) {
+                  function (cb) {
                     agent
                       .get('/api/users?search=aaaaaa' + test.params)
                       .expect(200)
-                      .end(function(err, response) {
+                      .end(function (err, response) {
                         cb(err, response.body);
                       });
                   },
 
                   // check that we found the users
-                  function(foundUsers, cb) {
+                  function (foundUsers, cb) {
                     should(foundUsers).length(test.expected);
                     cb();
                   },
@@ -428,11 +422,11 @@ describe('Search users: GET /users?search=string', function() {
         });
       });
 
-      it('search is case insensitive', function(done) {
+      it('search is case insensitive', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers(
                 [
                   { username: 'abcdef' },
@@ -445,17 +439,17 @@ describe('Search users: GET /users?search=string', function() {
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=abcdEf')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(3);
 
               cb();
@@ -465,11 +459,11 @@ describe('Search users: GET /users?search=string', function() {
         );
       });
 
-      it('return only public users', function(done) {
+      it('return only public users', function (done) {
         async.waterfall(
           [
             // create some users
-            function(cb) {
+            function (cb) {
               createUsers(
                 [
                   { username: 'aabcdef', public: true },
@@ -483,17 +477,17 @@ describe('Search users: GET /users?search=string', function() {
             },
 
             // search
-            function(users, cb) {
+            function (users, cb) {
               agent
                 .get('/api/users?search=aabcdef')
                 .expect(200)
-                .end(function(err, response) {
+                .end(function (err, response) {
                   cb(err, response.body);
                 });
             },
 
             // check that we found the users
-            function(foundUsers, cb) {
+            function (foundUsers, cb) {
               should(foundUsers).length(2);
 
               cb();
@@ -504,12 +498,12 @@ describe('Search users: GET /users?search=string', function() {
       });
     });
 
-    context('invalid request', function() {
-      it('[query string is less than 3 characters long] respond with 400', function(done) {
+    context('invalid request', function () {
+      it('[query string is less than 3 characters long] respond with 400', function (done) {
         agent
           .get('/api/users?search=aa')
           .expect(400)
-          .end(function(err, res) {
+          .end(function (err, res) {
             should(res.body.message).eql('Bad request.');
             should(res.body.detail).eql(
               'Query string should be at least 3 characters long.',

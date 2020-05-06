@@ -27,7 +27,7 @@ if (!key) {
  * @param {Date} time
  * @returns {number} - the given time converted to unix timestamp [seconds]
  */
-const formatTime = function(time) {
+const formatTime = function (time) {
   if (_.isDate(time)) {
     return time.getTime() / 1000;
   } else {
@@ -40,7 +40,7 @@ const formatTime = function(time) {
  * @param {string} arguments - function accepts one or multiple strings
  * @returns {string} - the built name (arguments separated by SEPARATOR)
  */
-const buildName = function() {
+const buildName = function () {
   return Array.prototype.slice.call(arguments).join(SEPARATOR);
 };
 
@@ -53,7 +53,7 @@ const buildName = function() {
  * @param {Function} callback
  * @returns void
  */
-const send = function(type, name, value, time, callback) {
+const send = function (type, name, value, time, callback) {
   // Get a fresh stathat key from `config` (maybe it was stubbed since the instantiation of this module)
   const key = _.get(config, 'stathat.key', false);
   // If we don't have a stathat key, silently drop this stat
@@ -114,7 +114,7 @@ const send = function(type, name, value, time, callback) {
  * @returns {stathatCallback}
  */
 function processResponse(callback) {
-  return function(code) {
+  return function (code) {
     const argLen = arguments.length;
 
     // response body
@@ -176,16 +176,16 @@ function processResponse(callback) {
  * @param {Date|undefined} time - time of the metric
  * @param {Function} callback
  */
-const sendStats = function(type, statName, statValue, tags, time, callback) {
+const sendStats = function (type, statName, statValue, tags, time, callback) {
   // collect the statNames (the default one and the ones created from tags)
   const statNames = [[statName]];
-  _.forOwn(tags, function(tagValue, tagName) {
+  _.forOwn(tags, function (tagValue, tagName) {
     statNames.push([buildName(statName, tagName, tagValue)]);
   });
 
   asyncEachFinish(
     statNames,
-    function(statName, done) {
+    function (statName, done) {
       send(type, statName, statValue, time, done);
     },
     callback,
@@ -203,7 +203,7 @@ const sendStats = function(type, statName, statValue, tags, time, callback) {
  * @param {Date} [stat.time] - time of the data point
  * @param {Function} callback
  */
-const stat = function(stat, callback) {
+const stat = function (stat, callback) {
   // if stathat is disabled, log the info and quit without failing
   const isEnabled = _.get(config, 'stathat.enabled', false);
   if (!isEnabled) {
@@ -218,7 +218,7 @@ const stat = function(stat, callback) {
 
   // Iterate over the `counts`
   const sendStatsParams = [];
-  _.forOwn(counts, function(value, countName) {
+  _.forOwn(counts, function (value, countName) {
     // Process this counter
     sendStatsParams.push([
       'count',
@@ -230,7 +230,7 @@ const stat = function(stat, callback) {
   });
 
   // Iterate over the `values`
-  _.forOwn(values, function(value, valueName) {
+  _.forOwn(values, function (value, valueName) {
     // Process this value
     sendStatsParams.push([
       'value',
@@ -275,7 +275,7 @@ function asyncEachFinish(coll, iteratee, callback) {
     // bind the iteratee's arguments to iteratee
     const toRun = iteratee.bind.apply(iteratee, [null].concat(args));
 
-    toRun(function(e) {
+    toRun(function (e) {
       // collect any errors to sendErrors array
       if (e) {
         e.args = args;

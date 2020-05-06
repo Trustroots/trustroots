@@ -21,7 +21,7 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
-module.exports = function(job, agendaDone) {
+module.exports = function (job, agendaDone) {
   // Ignore very recently confirmed (i.e. signed up) users
   const emailConfirmedTimeAgo = moment().subtract(
     moment.duration(config.limits.welcomeSequence.first),
@@ -30,7 +30,7 @@ module.exports = function(job, agendaDone) {
   async.waterfall(
     [
       // Find un-welcomed users
-      function(done) {
+      function (done) {
         User.find({
           // User has confirmed their email
           public: true,
@@ -52,13 +52,13 @@ module.exports = function(job, agendaDone) {
           // Limit stops any crazy amounts of emails being processed at once
           // the rest would be processed in next round.
           .limit(50)
-          .exec(function(err, users) {
+          .exec(function (err, users) {
             done(err, users);
           });
       },
 
       // Send emails
-      function(users, done) {
+      function (users, done) {
         // No users to send emails to
         if (!users.length) {
           return done();
@@ -66,8 +66,8 @@ module.exports = function(job, agendaDone) {
 
         async.eachSeries(
           users,
-          function(user, callback) {
-            emailService.sendWelcomeSequenceFirst(user, function(err) {
+          function (user, callback) {
+            emailService.sendWelcomeSequenceFirst(user, function (err) {
               if (err) {
                 return callback(err);
               }
@@ -85,19 +85,19 @@ module.exports = function(job, agendaDone) {
                     welcomeSequenceStep: 1,
                   },
                 },
-                function(err) {
+                function (err) {
                   callback(err);
                 },
               );
             });
           },
-          function(err) {
+          function (err) {
             done(err);
           },
         );
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         log('error', 'Failure in first welcome sequence background job.', {
           error: err,

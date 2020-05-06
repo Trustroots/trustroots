@@ -12,7 +12,7 @@ const defaultErrorMessage =
  * @param key String Message key
  * @return String Error message
  */
-exports.getErrorMessageByKey = function(key) {
+exports.getErrorMessageByKey = function (key) {
   const errorMessages = {
     'not-found': 'Not found.',
     forbidden: 'Forbidden.',
@@ -35,7 +35,7 @@ exports.getErrorMessageByKey = function(key) {
  * @param status Int Valid HTTP status code
  * @return Error
  */
-exports.getNewError = function(key, status) {
+exports.getNewError = function (key, status) {
   const message = this.getErrorMessageByKey(key);
   const err = new Error(message);
 
@@ -49,7 +49,7 @@ exports.getNewError = function(key, status) {
  * @param err Error
  * @return String Error message
  */
-exports.getErrorMessage = function(err) {
+exports.getErrorMessage = function (err) {
   let message = false;
 
   for (const errName in err.errors) {
@@ -62,7 +62,7 @@ exports.getErrorMessage = function(err) {
 /**
  * Error responses middleware
  */
-exports.errorResponse = function(err, req, res, next) {
+exports.errorResponse = function (err, req, res, next) {
   // If the error object doesn't exists
   if (!err) return next();
 
@@ -81,13 +81,13 @@ exports.errorResponse = function(err, req, res, next) {
 
   // Do content negotiation and return a message
   return res.status(err.status || 500).format({
-    'text/html': function() {
+    'text/html': function () {
       res.render('500.server.view.html');
     },
-    'application/json': function() {
+    'application/json': function () {
       res.json(errorResponse);
     },
-    default: function() {
+    default: function () {
       res.send(errorResponse.message);
     },
   });

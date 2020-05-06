@@ -29,13 +29,13 @@ const mongoConnectionOptions = {
 };
 
 // Load the mongoose models
-module.exports.loadModels = function(callback) {
+module.exports.loadModels = function (callback) {
   log('info', 'Loading Mongoose Schemas.', {
     autoIndex: mongoConnectionOptions.autoIndex,
   });
 
   // Globbing model files
-  config.files.server.models.forEach(function(modelPath) {
+  config.files.server.models.forEach(function (modelPath) {
     require(path.resolve(modelPath));
   });
 
@@ -43,8 +43,8 @@ module.exports.loadModels = function(callback) {
   const models = mongoose.connection.modelNames();
 
   // Logging for indexing events in models
-  models.forEach(function(model) {
-    mongoose.model(model).on('index', function(error) {
+  models.forEach(function (model) {
+    mongoose.model(model).on('index', function (error) {
       if (error) {
         log('error', 'Calling createIndex failed for Mongoose Schema.', {
           error: error,
@@ -64,7 +64,7 @@ module.exports.loadModels = function(callback) {
 };
 
 // Initialize Mongoose
-module.exports.connect = function(callback) {
+module.exports.connect = function (callback) {
   const _this = this;
 
   // Use native promises
@@ -77,8 +77,8 @@ module.exports.connect = function(callback) {
   async.waterfall(
     [
       // Connect
-      function(done) {
-        mongoose.connect(config.db.uri, mongoConnectionOptions, function(err) {
+      function (done) {
+        mongoose.connect(config.db.uri, mongoConnectionOptions, function (err) {
           if (err) {
             log('error', 'Could not connect to MongoDB!', {
               error: err,
@@ -88,7 +88,7 @@ module.exports.connect = function(callback) {
         });
       },
       // Confirm compatibility with MongoDB version
-      function(done) {
+      function (done) {
         // Skip if not check isn't required
         if (!config.db.checkCompatibility) {
           return done();
@@ -96,7 +96,7 @@ module.exports.connect = function(callback) {
 
         const engines = require(path.resolve('./package.json')).engines;
         const admin = new mongoose.mongo.Admin(mongoose.connection.db);
-        admin.buildInfo(function(err, info) {
+        admin.buildInfo(function (err, info) {
           log('info', 'MongoDB', {
             version: info.version,
           });
@@ -116,13 +116,13 @@ module.exports.connect = function(callback) {
         });
       },
       // Load models
-      function(done) {
-        _this.loadModels(function() {
+      function (done) {
+        _this.loadModels(function () {
           done();
         });
       },
     ],
-    function() {
+    function () {
       if (callback) {
         callback(mongoose.connection);
       }
@@ -130,8 +130,8 @@ module.exports.connect = function(callback) {
   );
 };
 
-module.exports.disconnect = function(callback) {
-  mongoose.disconnect(function(err) {
+module.exports.disconnect = function (callback) {
+  mongoose.disconnect(function (err) {
     log('info', 'Disconnected from MongoDB.');
     if (callback) {
       callback(err);
@@ -139,13 +139,13 @@ module.exports.disconnect = function(callback) {
   });
 };
 
-module.exports.dropDatabase = function(connection, callback) {
+module.exports.dropDatabase = function (connection, callback) {
   if (process.env.NODE_ENV === 'production') {
     log('error', 'You cannot drop database in production mode!');
     return process.exit(1);
   }
 
-  connection.dropDatabase(function(err) {
+  connection.dropDatabase(function (err) {
     if (err) {
       log('error', 'Failed to drop database', {
         error: err,
@@ -163,13 +163,13 @@ module.exports.dropDatabase = function(connection, callback) {
   });
 };
 
-module.exports.ensureIndexes = function(modelNames) {
-  return new Promise(function(resolve, reject) {
+module.exports.ensureIndexes = function (modelNames) {
+  return new Promise(function (resolve, reject) {
     // assuming openFiles is an array of file names
     async.each(
       modelNames,
-      function(modelName, callback) {
-        mongoose.connection.model(modelName).ensureIndexes(function(error) {
+      function (modelName, callback) {
+        mongoose.connection.model(modelName).ensureIndexes(function (error) {
           if (error) {
             log('error', 'Indexing Mongoose Schema failed', {
               model: modelName,
@@ -182,7 +182,7 @@ module.exports.ensureIndexes = function(modelNames) {
           }
         });
       },
-      function(error) {
+      function (error) {
         // if any of the file processing produced an error
         if (error) {
           // One of the iterations produced an error.

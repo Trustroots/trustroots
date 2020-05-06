@@ -14,7 +14,7 @@ function TribeController($scope, $state, tribe, Facebook) {
   vm.facebookIsActibe = Facebook.isActive;
 
   // Ensure tribe in view updates when directives modify it
-  $scope.$on('tribeUpdated', function(event, tribe) {
+  $scope.$on('tribeUpdated', function (event, tribe) {
     vm.tribe = tribe;
   });
 

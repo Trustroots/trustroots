@@ -17,7 +17,7 @@ function trMonkeyboxDirective() {
     controller: [
       '$scope',
       'Languages',
-      function($scope, Languages) {
+      function ($scope, Languages) {
         $scope.languageNames = Languages.get('object');
       },
     ],

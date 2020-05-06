@@ -191,7 +191,7 @@ function isValidUntil(validUntil) {
 /**
  * Create offer
  */
-exports.create = function(req, res) {
+exports.create = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -240,7 +240,7 @@ exports.create = function(req, res) {
   // Update timestamp
   offer.updated = new Date();
 
-  offer.save(function(err) {
+  offer.save(function (err) {
     if (err) {
       return res.status(400).send({
         message: 'Failed to save offer.',
@@ -256,11 +256,11 @@ exports.create = function(req, res) {
 /**
  * Update an Offer
  */
-exports.update = function(req, res) {
+exports.update = function (req, res) {
   async.waterfall(
     [
       // Validate
-      function(done) {
+      function (done) {
         // User can modify only their own offers
         if (!req.user || !req.offer.user._id.equals(req.user._id)) {
           return res.status(403).send({
@@ -286,7 +286,7 @@ exports.update = function(req, res) {
       },
 
       // Create offer object and modify it
-      function(done) {
+      function (done) {
         // Host offers don't expire
         if (req.offer.type === 'host') {
           delete req.body.validUntil;
@@ -321,20 +321,20 @@ exports.update = function(req, res) {
       },
 
       // Save offer
-      function(offer, done) {
-        offer.save(function(err) {
+      function (offer, done) {
+        offer.save(function (err) {
           done(err);
         });
       },
 
       // Done!
-      function() {
+      function () {
         return res.json({
           message: 'Offer updated.',
         });
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -347,7 +347,7 @@ exports.update = function(req, res) {
 /**
  * Delete an Offer
  */
-exports.delete = function(req, res) {
+exports.delete = function (req, res) {
   // User can remove only their own offers
   if (!req.user || !req.offer.user._id.equals(req.user._id)) {
     return res.status(403).send({
@@ -360,7 +360,7 @@ exports.delete = function(req, res) {
       _id: req.offer._id,
       user: req.user._id,
     },
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -377,7 +377,7 @@ exports.delete = function(req, res) {
 /**
  * List of Offers
  */
-exports.list = function(req, res) {
+exports.list = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -391,7 +391,7 @@ exports.list = function(req, res) {
     'northEastLat',
     'northEastLng',
   ];
-  const isCoordinatesValid = _.every(coordinateKeys, function(coordinateKey) {
+  const isCoordinatesValid = _.every(coordinateKeys, function (coordinateKey) {
     // Get query string from query
     // If there is no query string (`req.query`), it is the empty object, `{}`.
     let coordinate = _.get(req.query, coordinateKey, false);
@@ -432,7 +432,7 @@ exports.list = function(req, res) {
     }
   }
 
-  filters.hasArrayFilter = function(filterType) {
+  filters.hasArrayFilter = function (filterType) {
     return (
       _.has(this, filterType) &&
       _.isArray(this[filterType]) &&
@@ -440,7 +440,7 @@ exports.list = function(req, res) {
     );
   };
 
-  filters.hasObjectFilter = function(filterType) {
+  filters.hasObjectFilter = function (filterType) {
     return (
       _.has(this, filterType) &&
       _.isPlainObject(this[filterType]) &&
@@ -499,7 +499,7 @@ exports.list = function(req, res) {
   if (filters.hasArrayFilter('types')) {
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
-    const filterTypes = _.filter(filters.types, function(type) {
+    const filterTypes = _.filter(filters.types, function (type) {
       return isValidOfferType(type);
     });
 
@@ -541,9 +541,7 @@ exports.list = function(req, res) {
     query.push({
       $match: {
         'user.seen': {
-          $gte: moment()
-            .subtract(filters.seen)
-            .toDate(),
+          $gte: moment().subtract(filters.seen).toDate(),
         },
       },
     });
@@ -558,7 +556,7 @@ exports.list = function(req, res) {
 
     // Accept only valid language codes, ignore the rest
     // @link https://lodash.com/docs/#filter
-    const filterLanguages = _.filter(filters.languages, function(language) {
+    const filterLanguages = _.filter(filters.languages, function (language) {
       return _.indexOf(languages, language) > -1;
     });
 
@@ -578,7 +576,7 @@ exports.list = function(req, res) {
   if (filters.hasArrayFilter('tribes')) {
     const tribeQueries = [];
 
-    const isTribeFilterValid = filters.tribes.every(function(tribeId) {
+    const isTribeFilterValid = filters.tribes.every(function (tribeId) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return (
         mongoose.Types.ObjectId.isValid(tribeId) &&
@@ -623,10 +621,10 @@ exports.list = function(req, res) {
   Offer.aggregate(query)
     .exec()
     .then(
-      function(offers) {
+      function (offers) {
         res.json(offers);
       },
-      function(err) {
+      function (err) {
         // Log the failure
         log('error', 'Querying for offers caused an error. #g28fb1', {
           error: err,
@@ -641,17 +639,17 @@ exports.list = function(req, res) {
 /**
  * Return offers
  */
-exports.listOffersByUser = function(req, res) {
+exports.listOffersByUser = function (req, res) {
   res.json(req.offers || []);
 };
 
 /**
  * Return an offer
  */
-exports.getOffer = function(req, res) {
+exports.getOffer = function (req, res) {
   async.waterfall(
     [
-      function(done) {
+      function (done) {
         // Don't proceed if offer doesn't have user
         if (!req.offer || !req.offer.user || !req.offer.location) {
           return res.status(404).send({
@@ -663,7 +661,7 @@ exports.getOffer = function(req, res) {
       },
 
       // Populate `tribe` fields from objects at `offer.user.member` array
-      function(offer, done) {
+      function (offer, done) {
         // Nothing to populate
         if (!offer.user.member && offer.user.member.length === 0) {
           return done(null, offer);
@@ -680,7 +678,7 @@ exports.getOffer = function(req, res) {
             // https://github.com/Automattic/mongoose/issues/2202
             // options: { sort: { count: -1 } }
           },
-          function(err, user) {
+          function (err, user) {
             // Overwrite old `offer.user` with new `user` object
             // containing populated `member.tribe` to `offer`
             offer.user = user;
@@ -689,14 +687,14 @@ exports.getOffer = function(req, res) {
         );
       },
 
-      function(offer) {
+      function (offer) {
         // Sanitize offer before returning it
         offer = sanitizeOffer(offer, req.user._id);
 
         res.json(offer);
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         // Something's wrong and we weren't prepared for itx
         log('error', 'Failed to load offer. #g34gss', {
@@ -711,7 +709,7 @@ exports.getOffer = function(req, res) {
 };
 
 // Offer reading middleware
-exports.offersByUserId = function(req, res, next, userId) {
+exports.offersByUserId = function (req, res, next, userId) {
   // Authenticated user required
   if (!req.user) {
     return res.status(403).send({
@@ -745,7 +743,7 @@ exports.offersByUserId = function(req, res, next, userId) {
     // ensuring users can't send insanely long arrays for our queries
     const queryTypes = _.split(req.query.types, ',', validOfferTypes.length);
 
-    queryTypes.forEach(function(paramType) {
+    queryTypes.forEach(function (paramType) {
       // Return failure if type is invalid, otherwise add type to query array
       if (paramType && validOfferTypes.indexOf(paramType) > -1) {
         // Returns array length if other types exist already in db query,
@@ -770,7 +768,7 @@ exports.offersByUserId = function(req, res, next, userId) {
   }
 
   // Get offers
-  Offer.find(query, function(err, offers) {
+  Offer.find(query, function (err, offers) {
     // Errors
     if (err) {
       return next(err);
@@ -783,7 +781,7 @@ exports.offersByUserId = function(req, res, next, userId) {
     }
 
     // Sanitize offers
-    req.offers = _.map(offers, function(offer) {
+    req.offers = _.map(offers, function (offer) {
       return sanitizeOffer(offer, req.user._id);
     });
 
@@ -792,7 +790,7 @@ exports.offersByUserId = function(req, res, next, userId) {
 };
 
 // Offer reading middleware
-exports.offerById = function(req, res, next, offerId) {
+exports.offerById = function (req, res, next, offerId) {
   // Require user
   if (!req.user) {
     return res.status(403).send({
@@ -810,10 +808,10 @@ exports.offerById = function(req, res, next, offerId) {
   async.waterfall(
     [
       // Find offer
-      function(done) {
+      function (done) {
         Offer.findById(offerId)
           .populate('user', userProfile.userListingProfileFields)
-          .exec(function(err, offer) {
+          .exec(function (err, offer) {
             // No offer
             if (err) {
               log('error', 'Getting offer by id caused an error. #2kg3g3', {
@@ -832,13 +830,13 @@ exports.offerById = function(req, res, next, offerId) {
       },
 
       // Continue
-      function(offer, done) {
+      function (offer, done) {
         req.offer = offer;
 
         done();
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         log('error', 'Getting offer by id caused an error. #g34gj3', {
           error: err,
@@ -852,12 +850,12 @@ exports.offerById = function(req, res, next, offerId) {
 /**
  * Clear all offers by user id
  */
-exports.removeAllByUserId = function(userId, callback) {
+exports.removeAllByUserId = function (userId, callback) {
   Offer.deleteMany(
     {
       user: userId,
     },
-    function(err) {
+    function (err) {
       if (callback) {
         callback(err);
       }

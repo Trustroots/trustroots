@@ -18,8 +18,8 @@ let contact;
 /**
  * Unit tests
  */
-describe('Contact Model Unit Tests:', function() {
-  beforeEach(function(done) {
+describe('Contact Model Unit Tests:', function () {
+  beforeEach(function (done) {
     user1 = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -41,10 +41,10 @@ describe('Contact Model Unit Tests:', function() {
     });
 
     // Create users
-    user1.save(function() {
+    user1.save(function () {
       user1Id = user1._id;
 
-      user2.save(function() {
+      user2.save(function () {
         user2Id = user2._id;
 
         // Create connection between users
@@ -60,35 +60,35 @@ describe('Contact Model Unit Tests:', function() {
     });
   });
 
-  describe('Method Save', function() {
-    it('should be able to save without problems', function(done) {
-      contact.save(function(err) {
+  describe('Method Save', function () {
+    it('should be able to save without problems', function (done) {
+      contact.save(function (err) {
         should.not.exist(err);
         return done();
       });
     });
 
-    it('should be able to show an error when try to save without `userFrom`', function(done) {
+    it('should be able to show an error when try to save without `userFrom`', function (done) {
       contact.userFrom = '';
 
-      contact.save(function(err) {
+      contact.save(function (err) {
         should.exist(err);
         return done();
       });
     });
 
-    it('should be able to show an error when try to save without `userTo`', function(done) {
+    it('should be able to show an error when try to save without `userTo`', function (done) {
       contact.userTo = '';
 
-      contact.save(function(err) {
+      contact.save(function (err) {
         should.exist(err);
         return done();
       });
     });
   });
 
-  afterEach(function(done) {
-    Contact.deleteMany().exec(function() {
+  afterEach(function (done) {
+    Contact.deleteMany().exec(function () {
       User.deleteMany().exec(done);
     });
   });

@@ -80,10 +80,7 @@ describe('Admin User CRUD tests', () => {
 
   describe('As non-authenticated user...', () => {
     it('Non-authenticated users should not be allowed to search users', async () => {
-      await agent
-        .post('/api/admin/users')
-        .send({ search: 'Name' })
-        .expect(403);
+      await agent.post('/api/admin/users').send({ search: 'Name' }).expect(403);
     });
 
     it('Non-authenticated users should not be allowed to list users by role', async () => {

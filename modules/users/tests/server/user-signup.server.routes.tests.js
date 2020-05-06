@@ -21,10 +21,10 @@ let _unConfirmedUser;
 /**
  * User routes tests
  */
-describe('User signup and authentication CRUD tests', function() {
+describe('User signup and authentication CRUD tests', function () {
   const jobs = testutils.catchJobs();
 
-  before(function(done) {
+  before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
     agent = request.agent(app);
@@ -34,7 +34,7 @@ describe('User signup and authentication CRUD tests', function() {
 
   // Create an user
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     // Create user credentials
     confirmedCredentials = {
       username: 'TR_username',
@@ -61,7 +61,7 @@ describe('User signup and authentication CRUD tests', function() {
   });
 
   // Create an unconfirmed user
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     unConfirmedCredentials = {
       username: 'TR_username_unconfirmed',
       password: 'TR-I$Aw3$0m4',
@@ -86,7 +86,7 @@ describe('User signup and authentication CRUD tests', function() {
     unConfirmedUser.save(done);
   });
 
-  it('should be able to register a new user', function(done) {
+  it('should be able to register a new user', function (done) {
     _unConfirmedUser.username = 'Register_New_User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
 
@@ -94,7 +94,7 @@ describe('User signup and authentication CRUD tests', function() {
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
       .expect(200)
-      .end(function(signupErr, signupRes) {
+      .end(function (signupErr, signupRes) {
         // Handle signup error
         if (signupErr) {
           return done(signupErr);
@@ -127,7 +127,7 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  it('should be able to register a new user but not inject additional roles', function(done) {
+  it('should be able to register a new user but not inject additional roles', function (done) {
     _unConfirmedUser.username = 'Register_New_User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
     _unConfirmedUser.roles = ['user', 'admin'];
@@ -136,11 +136,11 @@ describe('User signup and authentication CRUD tests', function() {
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
       .expect(200)
-      .end(function(err, signupRes) {
+      .end(function (err, signupRes) {
         should.not.exist(err);
         should.not.exist(signupRes.body.roles);
 
-        User.findById(signupRes.body._id, function(err, userFindRes) {
+        User.findById(signupRes.body._id, function (err, userFindRes) {
           should.not.exist(err);
           userFindRes.roles.should.be.instanceof(Array).and.have.lengthOf(1);
           userFindRes.roles.indexOf('user').should.equal(0);
@@ -149,7 +149,7 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  it('should be able to register a new user and confirm email with token and user should become public', function(done) {
+  it('should be able to register a new user and confirm email with token and user should become public', function (done) {
     _unConfirmedUser.username = 'Register_New_User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
 
@@ -157,7 +157,7 @@ describe('User signup and authentication CRUD tests', function() {
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
       .expect(200)
-      .end(function(signupErr, signupRes) {
+      .end(function (signupErr, signupRes) {
         // Handle signup error
         if (signupErr) {
           return done(signupErr);
@@ -176,7 +176,7 @@ describe('User signup and authentication CRUD tests', function() {
 
         User.findOne(
           { username: _unConfirmedUser.username.toLowerCase() },
-          function(err, userRes1) {
+          function (err, userRes1) {
             if (err) {
               return done(err);
             }
@@ -189,7 +189,7 @@ describe('User signup and authentication CRUD tests', function() {
             agent
               .get('/api/auth/confirm-email/' + userRes1.emailToken)
               .expect(302)
-              .end(function(confirmEmailPostErr, confirmEmailGetRes) {
+              .end(function (confirmEmailPostErr, confirmEmailGetRes) {
                 if (confirmEmailPostErr) {
                   return done(confirmEmailPostErr);
                 }
@@ -202,7 +202,7 @@ describe('User signup and authentication CRUD tests', function() {
                 agent
                   .post('/api/auth/confirm-email/' + userRes1.emailToken)
                   .expect(200)
-                  .end(function(confirmEmailPostErr, confirmEmailPostRes) {
+                  .end(function (confirmEmailPostErr, confirmEmailPostRes) {
                     if (confirmEmailPostErr) {
                       return done(confirmEmailPostErr);
                     }
@@ -230,7 +230,7 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  it('should be able to register a new user and confirming email with wrong token should redirect error and yeld an error and user should not be public', function(done) {
+  it('should be able to register a new user and confirming email with wrong token should redirect error and yeld an error and user should not be public', function (done) {
     _unConfirmedUser.username = 'Register_New_User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
 
@@ -238,7 +238,7 @@ describe('User signup and authentication CRUD tests', function() {
       .post('/api/auth/signup')
       .send(_unConfirmedUser)
       .expect(200)
-      .end(function(signupErr, signupRes) {
+      .end(function (signupErr, signupRes) {
         // Handle signup error
         if (signupErr) {
           return done(signupErr);
@@ -252,7 +252,7 @@ describe('User signup and authentication CRUD tests', function() {
 
         User.findOne(
           { username: _unConfirmedUser.username.toLowerCase() },
-          function(err, userRes1) {
+          function (err, userRes1) {
             if (err) {
               return done(err);
             }
@@ -265,7 +265,7 @@ describe('User signup and authentication CRUD tests', function() {
             agent
               .get('/api/auth/confirm-email/WRONG_TOKEN')
               .expect(302)
-              .end(function(confirmEmailPostErr, confirmEmailGetRes) {
+              .end(function (confirmEmailPostErr, confirmEmailGetRes) {
                 if (confirmEmailPostErr) {
                   return done(confirmEmailPostErr);
                 }
@@ -278,7 +278,7 @@ describe('User signup and authentication CRUD tests', function() {
                 agent
                   .post('/api/auth/confirm-email/WRONG_TOKEN')
                   .expect(400)
-                  .end(function(confirmEmailPostErr, confirmEmailPostRes) {
+                  .end(function (confirmEmailPostErr, confirmEmailPostRes) {
                     if (confirmEmailPostErr) {
                       return done(confirmEmailPostErr);
                     }
@@ -295,12 +295,12 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  it('should be able to login successfully using username and logout successfully', function(done) {
+  it('should be able to login successfully using username and logout successfully', function (done) {
     agent
       .post('/api/auth/signin')
       .send(confirmedCredentials)
       .expect(200)
-      .end(function(signinErr, signinRes) {
+      .end(function (signinErr, signinRes) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -315,7 +315,7 @@ describe('User signup and authentication CRUD tests', function() {
         agent
           .get('/api/auth/signout')
           .expect(302)
-          .end(function(signoutErr, signoutRes) {
+          .end(function (signoutErr, signoutRes) {
             if (signoutErr) {
               return done(signoutErr);
             }
@@ -328,7 +328,7 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  it('should be able to login successfully using email and logout successfully', function(done) {
+  it('should be able to login successfully using email and logout successfully', function (done) {
     agent
       .post('/api/auth/signin')
       .send({
@@ -336,7 +336,7 @@ describe('User signup and authentication CRUD tests', function() {
         password: confirmedCredentials.password,
       })
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -346,7 +346,7 @@ describe('User signup and authentication CRUD tests', function() {
         agent
           .get('/api/auth/signout')
           .expect(302)
-          .end(function(signoutErr, signoutRes) {
+          .end(function (signoutErr, signoutRes) {
             if (signoutErr) {
               return done(signoutErr);
             }
@@ -359,16 +359,16 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  it('should not be able to login successfully if user has "suspended" role', function(done) {
+  it('should not be able to login successfully if user has "suspended" role', function (done) {
     confirmedUser.roles = ['user', 'suspended'];
 
-    confirmedUser.save(function(err) {
+    confirmedUser.save(function (err) {
       should.not.exist(err);
       agent
         .post('/api/auth/signin')
         .send(confirmedCredentials)
         .expect(403)
-        .end(function(signinErr, signinRes) {
+        .end(function (signinErr, signinRes) {
           // Handle signin error
           if (signinErr) {
             return done(signinErr);
@@ -383,12 +383,12 @@ describe('User signup and authentication CRUD tests', function() {
     });
   });
 
-  it('should invalidate sessions of authenticated user with "suspended" role and return error for json requests', function(done) {
+  it('should invalidate sessions of authenticated user with "suspended" role and return error for json requests', function (done) {
     agent
       .post('/api/auth/signin')
       .send(confirmedCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -396,7 +396,7 @@ describe('User signup and authentication CRUD tests', function() {
 
         // Suspend user
         confirmedUser.roles = ['user', 'suspended'];
-        confirmedUser.save(function(userSaveErr) {
+        confirmedUser.save(function (userSaveErr) {
           if (userSaveErr) {
             return done(userSaveErr);
           }
@@ -407,7 +407,7 @@ describe('User signup and authentication CRUD tests', function() {
             .set('Accept', 'application/json')
             .expect('Content-Type', /json/)
             .expect(403)
-            .end(function(err, res) {
+            .end(function (err, res) {
               // Handle error
               if (err) {
                 return done(err);
@@ -420,7 +420,7 @@ describe('User signup and authentication CRUD tests', function() {
               agent
                 .get('/api/users/' + confirmedUser.username)
                 .expect(403)
-                .end(function(err, res) {
+                .end(function (err, res) {
                   // Handle error
                   if (err) {
                     return done(err);
@@ -435,12 +435,12 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  it('should invalidate sessions of authenticated user with "suspended" role and return error page for text/html requests', function(done) {
+  it('should invalidate sessions of authenticated user with "suspended" role and return error page for text/html requests', function (done) {
     agent
       .post('/api/auth/signin')
       .send(confirmedCredentials)
       .expect(200)
-      .end(function(signinErr) {
+      .end(function (signinErr) {
         // Handle signin error
         if (signinErr) {
           return done(signinErr);
@@ -448,7 +448,7 @@ describe('User signup and authentication CRUD tests', function() {
 
         // Suspend user
         confirmedUser.roles = ['user', 'suspended'];
-        confirmedUser.save(function(userSaveErr) {
+        confirmedUser.save(function (userSaveErr) {
           if (userSaveErr) {
             return done(userSaveErr);
           }
@@ -459,7 +459,7 @@ describe('User signup and authentication CRUD tests', function() {
             .set('Accept', 'text/html')
             .expect('Content-Type', 'text/html; charset=utf-8')
             .expect(403)
-            .end(function(err, res) {
+            .end(function (err, res) {
               // Handle error
               if (err) {
                 return done(err);
@@ -474,7 +474,7 @@ describe('User signup and authentication CRUD tests', function() {
                 .get('/')
                 .set('Accept', 'text/html')
                 .expect(200)
-                .end(function(err) {
+                .end(function (err) {
                   // Handle error
                   if (err) {
                     return done(err);
@@ -487,13 +487,13 @@ describe('User signup and authentication CRUD tests', function() {
       });
   });
 
-  context('logged in as a confirmed user', function() {
-    beforeEach(function(done) {
+  context('logged in as a confirmed user', function () {
+    beforeEach(function (done) {
       agent
         .post('/api/auth/signin')
         .send(confirmedCredentials)
         .expect(200)
-        .end(function(err, signinRes) {
+        .end(function (err, signinRes) {
           if (err) return done(err);
           // Sanity check they are confirmed
           signinRes.body.public.should.equal(true);
@@ -501,28 +501,28 @@ describe('User signup and authentication CRUD tests', function() {
         });
     });
 
-    it('should not resend confirmation token', function(done) {
+    it('should not resend confirmation token', function (done) {
       agent
         .post('/api/auth/resend-confirmation')
         .expect(400)
-        .end(function(err, resendRes) {
+        .end(function (err, resendRes) {
           if (err) return done(err);
           resendRes.body.message.should.equal('Already confirmed.');
           done();
         });
     });
 
-    context('with changed email address', function() {
-      beforeEach(function(done) {
+    context('with changed email address', function () {
+      beforeEach(function (done) {
         confirmedUser.emailTemporary = 'confirmed-test-changed@example.org';
         confirmedUser.save(done);
       });
 
-      it('should resend confirmation token for email change', function(done) {
+      it('should resend confirmation token for email change', function (done) {
         agent
           .post('/api/auth/resend-confirmation')
           .expect(200)
-          .end(function(err, resendRes) {
+          .end(function (err, resendRes) {
             if (err) return done(err);
             resendRes.body.message.should.equal('Sent confirmation email.');
             jobs.length.should.equal(1);
@@ -537,13 +537,13 @@ describe('User signup and authentication CRUD tests', function() {
     });
   });
 
-  context('logged in as un-confirmed user', function() {
-    beforeEach(function(done) {
+  context('logged in as un-confirmed user', function () {
+    beforeEach(function (done) {
       agent
         .post('/api/auth/signin')
         .send(unConfirmedCredentials)
         .expect(200)
-        .end(function(err, signinRes) {
+        .end(function (err, signinRes) {
           if (err) return done(err);
           // Sanity check they are unconfirmed
           signinRes.body.public.should.equal(false);
@@ -551,17 +551,17 @@ describe('User signup and authentication CRUD tests', function() {
         });
     });
 
-    it('should resend confirmation token', function(done) {
+    it('should resend confirmation token', function (done) {
       agent
         .post('/api/auth/resend-confirmation')
         .expect(200)
-        .end(function(err, resendRes) {
+        .end(function (err, resendRes) {
           if (err) return done(err);
           resendRes.body.message.should.equal('Sent confirmation email.');
           User.findOne(
             { username: _unConfirmedUser.username.toLowerCase() },
             'emailToken',
-            function(err, userRes) {
+            function (err, userRes) {
               if (err) return done(err);
               should.exist(userRes);
               should.exist(userRes.emailToken);
@@ -580,7 +580,7 @@ describe('User signup and authentication CRUD tests', function() {
     });
   });
 
-  afterEach(function(done) {
+  afterEach(function (done) {
     User.deleteMany().exec(done);
   });
 });

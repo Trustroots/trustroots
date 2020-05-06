@@ -10,7 +10,7 @@ const errorService = require(path.resolve(
 /**
  * Handle invalidating sessions of suspended users
  */
-exports.invalidateSuspendedSessions = function(req, res, next) {
+exports.invalidateSuspendedSessions = function (req, res, next) {
   // User is suspended
   if (
     req.user &&
@@ -22,7 +22,7 @@ exports.invalidateSuspendedSessions = function(req, res, next) {
 
     // Express session middleware way of removing the session
     // https://github.com/expressjs/session#sessiondestroycallback
-    return req.session.destroy(function() {
+    return req.session.destroy(function () {
       // A short one-liner
       const suspendedMessage = errorService.getErrorMessageByKey('suspended');
 
@@ -30,13 +30,13 @@ exports.invalidateSuspendedSessions = function(req, res, next) {
       // https://expressjs.com/en/api.html#res.format
       res.status(403).format({
         // For HTML calls send "suspended" html view
-        'text/html': function() {
+        'text/html': function () {
           res.render('suspended.server.view.html', {
             message: suspendedMessage,
           });
         },
         // For API calls send "suspended" json message
-        'application/json': function() {
+        'application/json': function () {
           res.json({
             message: suspendedMessage,
           });

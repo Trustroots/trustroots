@@ -41,7 +41,7 @@ function ConfirmEmailController(
     vm.success = vm.error = null;
 
     $http.post('/api/auth/confirm-email/' + $stateParams.token).then(
-      function(response) {
+      function (response) {
         // On success function
 
         // Attach user profile
@@ -56,7 +56,7 @@ function ConfirmEmailController(
           vm.success = true;
         }
       },
-      function() {
+      function () {
         // On error function
         vm.error = true;
       },

@@ -97,7 +97,7 @@ function count(name, count, time, callback) {
 
   // set the defaults
   count = count || 1;
-  callback = callback || function() {};
+  callback = callback || function () {};
 
   const statObject = {
     namespace: name,
@@ -128,7 +128,7 @@ function value(name, value, time, callback) {
   }
 
   // set default callback
-  callback = callback || function() {};
+  callback = callback || function () {};
 
   // construct and send the stat
   const statObject = {
@@ -285,14 +285,14 @@ function stat(stat, callback) {
   // errors after all have finished or errored.
   //
   function influxServiceStatWrap(stat, done) {
-    influxService.stat(stat, function(e) {
+    influxService.stat(stat, function (e) {
       if (e) influxErr = e;
       return done();
     });
   }
 
   function stathatServiceStatWrap(stat, done) {
-    stathatService.stat(stat, function(e) {
+    stathatService.stat(stat, function (e) {
       if (e) stathatErr = e;
       return done();
     });
@@ -301,7 +301,7 @@ function stat(stat, callback) {
   async.applyEach(
     [stathatServiceStatWrap, influxServiceStatWrap],
     stat,
-    function(e) {
+    function (e) {
       if (e) return callback(e); // this should not happen
 
       if (influxErr || stathatErr) {

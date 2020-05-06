@@ -38,7 +38,7 @@ function AuthenticationController(
     vm.isLoading = true;
 
     $http.post('/api/auth/signin', vm.credentials).then(
-      function(response) {
+      function (response) {
         // On success function
         vm.isLoading = false;
 
@@ -78,7 +78,7 @@ function AuthenticationController(
           $state.go('search.map');
         }
       },
-      function(error) {
+      function (error) {
         // On error function
         vm.isLoading = false;
         vm.authError = true;

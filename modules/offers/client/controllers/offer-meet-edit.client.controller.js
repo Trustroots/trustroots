@@ -31,7 +31,7 @@ function OfferMeetEditController(
   function activate() {
     // Make sure offer is there
     offer.$promise.then(
-      function() {
+      function () {
         // Turn string date into a date object so that we can modify it
         if (offer.validUntil) {
           offer.validUntil = moment(offer.validUntil).toDate();
@@ -47,7 +47,7 @@ function OfferMeetEditController(
         }
       },
       // Could not load offer
-      function() {
+      function () {
         vm.offer = false;
       },
     );
@@ -71,7 +71,7 @@ function OfferMeetEditController(
 
     offer
       .$update(
-        function() {
+        function () {
           // Done!
           $analytics.eventTrack('offer-modified', {
             category: 'offer.meet.update',
@@ -87,14 +87,14 @@ function OfferMeetEditController(
             $state.go('offer.meet.list');
           }
         },
-        function(err) {
+        function (err) {
           const errorMessage = err.data.message
             ? err.data.message
             : 'Error occured. Please try again.';
           messageCenterService.add('danger', errorMessage);
         },
       )
-      .finally(function() {
+      .finally(function () {
         vm.isLoading = false;
       });
   }
