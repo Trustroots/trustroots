@@ -7,16 +7,20 @@
  */
 
 // Cache buster
-@icon-version: "2017-08-16";
+@icon-version: '2017-08-16';
 @icon-li-width: (30em / 14);
 
 @font-face {
   font-family: 'tricons';
   src: url('~modules/core/client/fonts/fontello/font/tricons.eot?v=@{icon-version}');
-  src: url('~modules/core/client/fonts/fontello/font/tricons.eot?v=@{icon-version}#iefix') format('embedded-opentype'),
-       url('~modules/core/client/fonts/fontello/font/tricons.woff?v=@{icon-version}') format('woff'),
-       url('~modules/core/client/fonts/fontello/font/tricons.ttf?v=@{icon-version}') format('truetype'),
-       url('~modules/core/client/fonts/fontello/font/tricons.svg?v=@{icon-version}#tricons') format('svg');
+  src: url('~modules/core/client/fonts/fontello/font/tricons.eot?v=@{icon-version}#iefix')
+      format('embedded-opentype'),
+    url('~modules/core/client/fonts/fontello/font/tricons.woff?v=@{icon-version}')
+      format('woff'),
+    url('~modules/core/client/fonts/fontello/font/tricons.ttf?v=@{icon-version}')
+      format('truetype'),
+    url('~modules/core/client/fonts/fontello/font/tricons.svg?v=@{icon-version}#tricons')
+      format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -36,7 +40,7 @@
 .leaflet-container .leaflet-control-attribution:after,
 // Original Fontello CSS
 [class^="icon-"]:before, [class*=" icon-"]:before {
-  font-family: "tricons";
+  font-family: 'tricons';
   font-style: normal;
   font-weight: normal;
   speak: none;
@@ -44,7 +48,7 @@
   display: inline-block;
   text-decoration: inherit;
   width: 1em;
-  margin-right: .2em;
+  margin-right: 0.2em;
   text-align: center;
   /* opacity: .8; */
 
@@ -60,7 +64,7 @@
 
   /* Animation center compensation - margins should be symmetric */
   /* remove if not needed */
-  margin-left: .2em;
+  margin-left: 0.2em;
 
   /* you can be more comfortable with increased icons size */
   /* font-size: 120%; */
@@ -88,11 +92,18 @@
   line-height: (3em / 4);
   vertical-align: -15%;
 }
-.icon-2x { font-size: 2em; }
-.icon-3x { font-size: 3em; }
-.icon-4x { font-size: 4em; }
-.icon-5x { font-size: 5em; }
-
+.icon-2x {
+  font-size: 2em;
+}
+.icon-3x {
+  font-size: 3em;
+}
+.icon-4x {
+  font-size: 4em;
+}
+.icon-5x {
+  font-size: 5em;
+}
 
 // List Icons
 // CSS adapted from FontAwesome - MIT licensed
@@ -104,7 +115,9 @@
   padding-left: 0;
   margin-left: @icon-li-width;
   list-style-type: none;
-  > li { position: relative; }
+  > li {
+    position: relative;
+  }
 }
 .icon-li {
   position: absolute;
@@ -127,10 +140,10 @@
   text-align: center;
 }
 
-
 // Leaflet attribution i-symbol
-.leaflet-container .leaflet-control-attribution:after { content: '\e82d'; }
-
+.leaflet-container .leaflet-control-attribution:after {
+  content: '\e82d';
+}
 
 // Colorful hospitality network icons (nothing to do with fonts otherwise but we use the same .icon- base class).
 .icon-bw,
@@ -145,5 +158,9 @@
   }
 }
 
-.icon-bw:before { .img-retina('~img/external/icon-bw.png', '~img/external/icon-bw@2x.png', 16px, 16px); }
-.icon-cs:before { .img-retina('~img/external/icon-cs.png', '~img/external/icon-cs@2x.png', 16px, 16px); }
+.icon-bw:before {
+  .img-retina('~img/external/icon-bw.png', '~img/external/icon-bw@2x.png', 16px, 16px);
+}
+.icon-cs:before {
+  .img-retina('~img/external/icon-cs.png', '~img/external/icon-cs@2x.png', 16px, 16px);
+}

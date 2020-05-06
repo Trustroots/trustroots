@@ -11,7 +11,6 @@
 }
 
 .threadlist-thread {
-
   &.threadlist-thread-unread {
     font-weight: bold;
     time {
@@ -19,12 +18,15 @@
     }
   }
 
-  a, a:hover, a:active {
+  a,
+  a:hover,
+  a:active {
     text-decoration: none;
     color: @text-color;
   }
 
-  &, * {
+  &,
+  * {
     .cursor-pointer();
   }
 }

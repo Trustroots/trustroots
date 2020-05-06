@@ -24,7 +24,9 @@
     transition: width 350ms;
     background: @loading-bar-color;
     position: fixed;
-    z-index: (@zindex-modal + 10); // https://github.com/twbs/bootstrap/blob/master/less/variables.less#L278
+    z-index: (
+      @zindex-modal + 10
+    ); // https://github.com/twbs/bootstrap/blob/master/less/variables.less#L278
     top: 0;
     left: 0;
     width: 100%;
@@ -47,5 +49,4 @@
     border-radius: 100%;
     */
   }
-
 }

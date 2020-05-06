@@ -42,7 +42,6 @@
   }
 }
 
-
 .offers-edit {
   @media (max-width: @screen-xs) {
     // At footer we'll place fixed navigation,
@@ -69,20 +68,20 @@
     // @link https://github.com/Leaflet/Leaflet/blob/master/dist/leaflet.css#L93
     z-index: 600;
     // Vignetting shadow, darker from sides and bright from the middle:
-    box-shadow: inset 0 0 (@offer-map-height * 0.45) rgba(0,0,0,0.45);
+    box-shadow: inset 0 0 (@offer-map-height * 0.45) rgba(0, 0, 0, 0.45);
     // Allows dragging the map trough element:
     pointer-events: none;
     // Position icon to half the container minus distance to the icon's pointer
     // 38px = marker's heigh
-    background-position-y: calc(~"50% - "(38px/2));
+    background-position-y: calc(~'50% - ' (38px / 2));
     background-position-x: 50%;
     background-repeat: no-repeat;
-    .img-retina("~img/map/marker-locator.png", "~img/map/marker-locator@2x.png", 56px, 41px);
+    .img-retina('~img/map/marker-locator.png', '~img/map/marker-locator@2x.png', 56px, 41px);
     &.offer-hosting-yes {
-      .img-retina("~img/map/marker-locator-yes.png", "~img/map/marker-locator-yes@2x.png", 56px, 41px);
+      .img-retina('~img/map/marker-locator-yes.png', '~img/map/marker-locator-yes@2x.png', 56px, 41px);
     }
     &.offer-hosting-maybe {
-      .img-retina("~img/map/marker-locator-maybe.png", "~img/map/marker-locator-maybe@2x.png", 56px, 41px);
+      .img-retina('~img/map/marker-locator-maybe.png', '~img/map/marker-locator-maybe@2x.png', 56px, 41px);
     }
   }
   // Mobile improvements on above elements
@@ -94,7 +93,9 @@
       left: 0;
       right: 0;
       height: @offer-map-height-xs; // fallback for browsers without support for calc()
-      height: calc(~"100% - "(@navbar-height + @navbar-height + @navbar-height));
+      height: calc(
+        ~'100% - ' (@navbar-height + @navbar-height + @navbar-height)
+      );
     }
     .offer-map-location-search {
       position: fixed;
@@ -115,7 +116,8 @@
         background-color: rgba(255, 255, 255, 0.95);
         width: 46px;
         color: transparent;
-        &:focus, &:active {
+        &:focus,
+        &:active {
           padding-left: 46px; // makes space for the icon
           color: @text-color;
           background-color: rgba(255, 255, 255, 1);
@@ -142,7 +144,8 @@
     font-size: @font-size-large;
   }
   .btn-group > .btn-offer-hosting {
-    &, &:hover {
+    &,
+    &:hover {
       border-color: transparent;
     }
     span {
