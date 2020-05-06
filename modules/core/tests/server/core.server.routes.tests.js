@@ -177,9 +177,9 @@ describe('Core CRUD tests', function () {
     });
   });
 
-  describe('Mobile app wrapper detection Tests:', function() {
-    it('Mobile app state should be false without "app" query argument', function(done) {
-      agent.get('/').end(function(err, res) {
+  describe('Mobile app wrapper detection Tests:', function () {
+    it('Mobile app state should be false without "app" query argument', function (done) {
+      agent.get('/').end(function (err, res) {
         should.not.exist(err);
         res.text.should.containEql('isNativeMobileApp = false');
 
@@ -187,8 +187,8 @@ describe('Core CRUD tests', function () {
       });
     });
 
-    it('Mobile app state should be true with "app" query argument', function(done) {
-      agent.get('/?app').end(function(err, res) {
+    it('Mobile app state should be true with "app" query argument', function (done) {
+      agent.get('/?app').end(function (err, res) {
         should.not.exist(err);
 
         res.text.should.containEql('isNativeMobileApp = true');
