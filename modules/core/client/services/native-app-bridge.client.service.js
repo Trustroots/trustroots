@@ -70,10 +70,6 @@ function trNativeAppBridgeFactory(
       return;
     }
 
-    // This line has to be before any internal functions of this service,
-    // as those functions check this Boolean is truthy.
-    $window.isNativeMobileApp = true;
-
     // Signal Native app it can stop polling us with `trMobileAppInit` message
     postMessageToApp('trNativeAppBridgeInitialized');
 
