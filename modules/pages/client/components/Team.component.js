@@ -448,15 +448,6 @@ export default function Team() {
       <div className="row">
         <div className="col-xs-12 text-center">
           <hr />
-          <a
-            className="btn btn-xs btn-primary pull-right"
-            href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/views/team.client.view.html"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {t('Edit this page')}
-            <i className="icon-github icon-lg"></i>
-          </a>
           <br />
           <br />
           <p className="text-muted">{t('Follow Trustroots')}</p>

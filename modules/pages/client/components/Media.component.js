@@ -338,15 +338,6 @@ export default function Media() {
           </div>
         </div>
         {/* /.row */}
-        <a
-          className="btn btn-xs btn-primary pull-right"
-          href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/views/media.client.view.html"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          {t('Edit this page')}
-          <i className="icon-github icon-lg"></i>
-        </a>
       </section>
       {/* /.container */}
     </>

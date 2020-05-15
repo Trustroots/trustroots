@@ -107,16 +107,6 @@ export default function Guide() {
                 </a>
               </li>
             </ul>
-
-            <a
-              className="btn btn-xs btn-primary pull-right"
-              href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/views/guide.client.view.html"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              {t('Edit this page')}
-              <i className="icon-github icon-lg"></i>
-            </a>
           </div>
         </div>
         {/* /.row */}

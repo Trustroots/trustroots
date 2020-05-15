@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { $on } from '@/modules/core/client/services/angular-compat';
+import omit from 'lodash/omit';
 
 /**
  * Board Credits component Print out credits for photos used at the page.
@@ -27,7 +28,8 @@ export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
       });
 
       $on('photoCreditsRemoved', (scope, photo) => {
-        setPhotoCredits({ ...photoCredits, ...photo });
+        // setPhotoCredits({ ...photoCredits, ...photo });
+        setPhotoCredits(omit(photoCredits, Object.keys(photo)));
       });
     };
   }, []);

@@ -48,14 +48,6 @@ export default function Volunteering() {
               <a href="https://team.trustroots.org/">{t('Team Guide')}</a>
             </p>
           </div>
-          <a
-            className="btn btn-xs btn-primary pull-right"
-            href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/components/Volunteering.component.js"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            Edit this page<i className="icon-github icon-lg"></i>
-          </a>
         </div>
       </section>
     </>

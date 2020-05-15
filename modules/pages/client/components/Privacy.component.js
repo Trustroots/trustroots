@@ -211,25 +211,12 @@ export default function Privacy({ user }) {
                 <a href="/statistics">statistics page</a> for more information.
               </Trans>
             </div>
-
             <hr />
-
             <p className="lead">
               <Trans t={t} ns="pages">
                 Questions? <a href="/support">Drop us a line!</a>
               </Trans>
             </p>
-
-            <a
-              className="btn btn-xs btn-primary pull-right"
-              href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/views/team.client.view.html"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              {t('Edit this page')}
-              <i className="icon-github icon-lg"></i>
-            </a>
-
             <p>
               <small className="text-muted">
                 <Trans t={t} ns="pages">

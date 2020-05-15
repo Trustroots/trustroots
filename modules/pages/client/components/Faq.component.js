@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Board from '@/modules/core/client/components/Board.js';
 import { Trans, useTranslation } from 'react-i18next';
-import classnames from 'classnames';
 
 export default function Faq({ category, invitationsEnabled, children }) {
   const { t } = useTranslation('pages');
@@ -33,13 +32,8 @@ export default function Faq({ category, invitationsEnabled, children }) {
           <div className="col-xs-12 col-sm-4 col-md-4">
             <div
               id="faq-sidebar"
-              className={classnames('sidebar', {
-                'sidebar-sticky': false,
-                // TODO implement waypoint and sticky sidebar feature by setting sidebar-sticky to: faq.waypoints.flags.on && faq.allowStickySidebar,
-              })}
-              // TODO zum-waypoint="faq.waypoints"
-              // TODO down="flags.on"
-              // TODO up="flags.off"
+              className="sidebar"
+              // TODO make CSS 'position: sticky' work or toggle 'sidebar-sticky' class
             >
               {/* <Site & Community */}
               <div className="panel panel-default">
@@ -323,16 +317,6 @@ export default function Faq({ category, invitationsEnabled, children }) {
           </div>
         </div>
         {/* /.row */}
-
-        <a
-          className="btn btn-xs btn-primary pull-right"
-          href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/views/faq.client.view.html"
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          {t('Edit this page')}
-          <i className="icon-github icon-lg"></i>
-        </a>
       </section>
       {/* /.container */}
     </>

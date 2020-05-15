@@ -140,15 +140,6 @@ export default function Donate() {
               </small>
             </p>
           </div>
-          <a
-            className="btn btn-xs btn-primary pull-right"
-            href="https://github.com/Trustroots/trustroots/edit/master/modules/pages/client/views/donate.client.view.html"
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {t('Edit this page')}
-            <i className="icon-github icon-lg"></i>
-          </a>
         </div>
         {/* /.row */}
       </section>
