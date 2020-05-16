@@ -1,5 +1,7 @@
 import '@/modules/pages/client/pages.client.module';
 import AppConfig from '@/modules/core/client/app/config';
+// TODO import { $broadcast } from '@/modules/core/client/services/angular-compat';
+// TODO jest.mock('@/modules/core/client/services/angular-compat');
 
 describe('Pages Route Tests', function() {
   // We can start by loading the main application module

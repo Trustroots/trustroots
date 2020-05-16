@@ -27,8 +27,6 @@ export default function Board({
   names = 'bokeh',
   style = null,
   children,
-  onDisplayPhoto = () => {},
-  onHidePhoto = () => {},
   className,
   ...rest
 }) {
@@ -46,15 +44,13 @@ export default function Board({
 
     // inform the parent that the photo is displayed
     // ...useful e.g. for displaying photo credits elsewere
-    onDisplayPhoto(photoObject);
     $broadcast('photoCreditsUpdated', photoObject);
 
     // inform the parent that the photo is not displayed anymore
     return () => {
-      onHidePhoto(photoObject);
       $broadcast('photoCreditsRemoved', photoObject);
     };
-  }, []);
+  }, [names]);
 
   if (photo) {
     style
@@ -80,6 +76,4 @@ Board.propTypes = {
   style: PropTypes.object,
   className: PropTypes.string,
   children: PropTypes.node,
-  onDisplayPhoto: PropTypes.func,
-  onHidePhoto: PropTypes.func,
 };

@@ -28,7 +28,6 @@ export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
       });
 
       $on('photoCreditsRemoved', (scope, photo) => {
-        // setPhotoCredits({ ...photoCredits, ...photo });
         setPhotoCredits(omit(photoCredits, Object.keys(photo)));
       });
     };

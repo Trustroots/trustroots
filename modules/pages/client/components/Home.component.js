@@ -73,7 +73,6 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
     <>
       {!user && (
         // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.js controller
-        // TODO check if onDisplayPhoto/onHidePhoto should be applied here and implement functionality in the Board.js controller
         <Board
           className="board-primary container home-intro"
           names={boards}
