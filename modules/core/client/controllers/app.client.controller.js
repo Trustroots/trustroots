@@ -37,7 +37,7 @@ function AppController(
   vm.isFooterHidden = false;
   vm.isHeaderHidden = false;
   vm.isAboutPage = false;
-  vm.isNativeMobileApp = $window.isNativeMobileApp;
+  vm.isNativeMobileApp = trNativeAppBridge.isNativeMobileApp();
 
   // Default options for Medium-Editor directive used site wide
   // @link https://github.com/yabwe/medium-editor/blob/master/OPTIONS.md
