@@ -7,6 +7,7 @@ import * as references from '../api/references.api';
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
+import Feedback from './create-reference/Feedback';
 import {
   ReferenceToSelfInfo,
   LoadingInfo,
@@ -26,6 +27,7 @@ export default function CreateReference({ userFrom, userTo }) {
   const [recommend, setRecommend] = useState(null);
   const [report, setReport] = useState(false);
   const [reportMessage, setReportMessage] = useState('');
+  const [feedbackPublic, setFeedbackPublic] = useState('');
   const [step, setStep] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,7 +65,7 @@ export default function CreateReference({ userFrom, userTo }) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const reference = { met, hostedThem, hostedMe, recommend };
+    const reference = { met, hostedThem, hostedMe, recommend, feedbackPublic };
 
     // save the reference
     const [savedReference] = await Promise.all([
@@ -96,6 +98,11 @@ export default function CreateReference({ userFrom, userTo }) {
       onChangeRecommend={recommend => setRecommend(recommend)}
       onChangeReport={() => setReport(report => !report)}
       onChangeReportMessage={message => setReportMessage(message)}
+    />,
+    <Feedback
+      key="feedback"
+      feedback={feedbackPublic}
+      onChangeFeedback={setFeedbackPublic}
     />,
   ];
 
@@ -155,6 +162,9 @@ export default function CreateReference({ userFrom, userTo }) {
         </Tab>
         <Tab eventKey={1} title={t('Recommendation')} disabled>
           {tabs[1]}
+        </Tab>
+        <Tab eventKey={2} title={t('Feedback')} disabled>
+          {tabs[2]}
         </Tab>
       </Tabs>
       <StepNavigation
