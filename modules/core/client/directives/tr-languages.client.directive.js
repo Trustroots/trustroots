@@ -67,7 +67,7 @@ function trLanguagesDirective() {
       decodeSelectedLanguages();
 
       // Watch for changes in select and encode to array on changes
-      $scope.$watch('trLanguages.selectedLanguages', function(
+      $scope.$watch('trLanguages.selectedLanguages', function (
         newValue,
         oldValue,
       ) {
@@ -86,7 +86,7 @@ function trLanguagesDirective() {
     function decodeSelectedLanguages() {
       const selections = [];
       if ($scope.output.length > 0) {
-        $scope.output.forEach(function(key) {
+        $scope.output.forEach(function (key) {
           if (angular.isString(key)) {
             this.push({
               key: key,
@@ -108,7 +108,7 @@ function trLanguagesDirective() {
       const keys = [];
       angular.forEach(
         vm.selectedLanguages,
-        function(language) {
+        function (language) {
           this.push(String(language.key));
         },
         keys,

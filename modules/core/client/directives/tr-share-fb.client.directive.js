@@ -33,7 +33,7 @@ function trShareFbDirective($rootScope, $window, Authentication) {
       activate();
     } else {
       // FB API was not ready, wait for the ready event
-      const watch = $rootScope.$on('facebookReady', function() {
+      const watch = $rootScope.$on('facebookReady', function () {
         activate();
         // Removes watch:
         watch();

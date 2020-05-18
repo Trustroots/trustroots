@@ -26,7 +26,7 @@ exports.tribeFields = [
 /**
  * Constructs link headers for pagination
  */
-const setLinkHeader = function(req, res, pageCount) {
+const setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
     const nextPage = { page: req.query.page + 1 };
     const linkHead =
@@ -43,7 +43,7 @@ const setLinkHeader = function(req, res, pageCount) {
 /**
  * List all tribes
  */
-exports.listTribes = function(req, res) {
+exports.listTribes = function (req, res) {
   Tribe.paginate(
     {
       public: true,
@@ -56,7 +56,7 @@ exports.listTribes = function(req, res) {
       },
       select: exports.tribeFields,
     },
-    function(err, data) {
+    function (err, data) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -74,21 +74,21 @@ exports.listTribes = function(req, res) {
 /**
  * Return tribe
  */
-exports.getTribe = function(req, res) {
+exports.getTribe = function (req, res) {
   res.json(req.tribe || {});
 };
 
 /**
  * Tribe middleware
  */
-exports.tribeBySlug = function(req, res, next, slug) {
+exports.tribeBySlug = function (req, res, next, slug) {
   Tribe.findOne(
     {
       public: true,
       slug: slug,
     },
     exports.tribeFields,
-  ).exec(function(err, tribe) {
+  ).exec(function (err, tribe) {
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err),
@@ -108,7 +108,7 @@ exports.tribeBySlug = function(req, res, next, slug) {
  * @param {int} difference - how much to add or remove (negative) from the tribe.count?
  * @param {function} callback
  */
-exports.updateCount = function(id, difference, returnUpdated, callback) {
+exports.updateCount = function (id, difference, returnUpdated, callback) {
   Tribe.findByIdAndUpdate(
     id,
     { $inc: { count: parseInt(difference) } },

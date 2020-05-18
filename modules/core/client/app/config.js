@@ -96,7 +96,7 @@ if (appEnv === 'production') {
 }
 
 // Add a new vertical module
-const registerModule = function(moduleName, dependencies) {
+const registerModule = function (moduleName, dependencies) {
   // Create angular module
   angular.module(moduleName, dependencies || []);
 

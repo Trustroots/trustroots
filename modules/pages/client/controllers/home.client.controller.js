@@ -65,7 +65,7 @@ function HomeController($stateParams, $window, TribesService, TribeService) {
   }
 
   function isTribeLoaded(tribeSlug) {
-    angular.forEach(vm.tribes, function(tribe) {
+    angular.forEach(vm.tribes, function (tribe) {
       if (tribe.slug === tribeSlug) {
         return true;
       }
@@ -79,12 +79,12 @@ function HomeController($stateParams, $window, TribesService, TribeService) {
     {
       limit: 3,
     },
-    function() {
+    function () {
       // Got those three tribes, now fetch one more if requested
       if ($stateParams.tribe && !isTribeLoaded($stateParams.tribe)) {
         TribeService.get({
           tribeSlug: $stateParams.tribe,
-        }).then(function(tribe) {
+        }).then(function (tribe) {
           // If tribe was found, put it to the beginning of `vm.tribes` array
           if (tribe && tribe._id) {
             vm.tribes.unshift(tribe);

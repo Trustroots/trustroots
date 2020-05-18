@@ -18,25 +18,25 @@ if (config.sentry.enabled) {
 async.waterfall(
   [
     // Bootstrap db connection
-    function(done) {
-      mongooseService.connect(function() {
+    function (done) {
+      mongooseService.connect(function () {
         done();
       });
     },
 
     // Load models
-    function(done) {
+    function (done) {
       mongooseService.loadModels(done);
     },
 
     // Clean out database
-    function(done) {
+    function (done) {
       // Attempt to unlock jobs that were stuck due server restart
       // See https://github.com/agenda/agenda/issues/410
       worker.unlockAgendaJobs(done);
     },
 
-    function() {
+    function () {
       // Start the worker
       worker.start({
         maxAttempts: 10,
@@ -44,7 +44,7 @@ async.waterfall(
       });
     },
   ],
-  function(err) {
+  function (err) {
     if (err) {
       log(
         'error',

@@ -61,7 +61,7 @@ function ProfileEditNetworksController(
    */
   function removeUserSocialAccount(provider) {
     $http.delete('/api/users/accounts/' + provider).then(
-      function(response) {
+      function (response) {
         // On success function
         messageCenterService.add(
           'success',
@@ -70,7 +70,7 @@ function ProfileEditNetworksController(
         vm.user = Authentication.user = response.data;
         $scope.$emit('userUpdated');
       },
-      function(response) {
+      function (response) {
         // On error function
         messageCenterService.add(
           'danger',
@@ -88,12 +88,12 @@ function ProfileEditNetworksController(
   function updateUserProfile(isValid) {
     if (isValid) {
       vm.user.$update(
-        function(response) {
+        function (response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
           messageCenterService.add('success', 'Hospitality networks updated.');
         },
-        function(response) {
+        function (response) {
           messageCenterService.add(
             'danger',
             response.data.message || 'Something went wrong. Please try again!',

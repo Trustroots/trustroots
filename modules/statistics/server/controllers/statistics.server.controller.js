@@ -19,8 +19,8 @@ const User = mongoose.model('User');
 /**
  * Get count of all public users
  */
-exports.getUsersCount = function(callback) {
-  User.countDocuments({ public: true }, function(err, count) {
+exports.getUsersCount = function (callback) {
+  User.countDocuments({ public: true }, function (err, count) {
     if (err) {
       return callback(err);
     }
@@ -31,7 +31,7 @@ exports.getUsersCount = function(callback) {
 /**
  * Get count of all public users
  */
-exports.getExternalSiteCount = function(site, callback) {
+exports.getExternalSiteCount = function (site, callback) {
   const validSites = [
     'bewelcome',
     'couchsurfing',
@@ -70,7 +70,7 @@ exports.getExternalSiteCount = function(site, callback) {
       break;
   }
 
-  User.countDocuments(query, function(err, count) {
+  User.countDocuments(query, function (err, count) {
     if (err) {
       return callback(err);
     }
@@ -81,7 +81,7 @@ exports.getExternalSiteCount = function(site, callback) {
 /**
  * Get count of all public users
  */
-exports.getMeetOffersCount = function(callback) {
+exports.getMeetOffersCount = function (callback) {
   Offer.countDocuments(
     {
       type: 'meet',
@@ -90,7 +90,7 @@ exports.getMeetOffersCount = function(callback) {
         { validUntil: { $exists: false } },
       ],
     },
-    function(err, count) {
+    function (err, count) {
       if (err) {
         return callback(err);
       }
@@ -103,7 +103,7 @@ exports.getMeetOffersCount = function(callback) {
  * Get count of hosting offers
  * Callback will be called with Object `{ yes: Int, maybe: Int, no: Int }`
  */
-exports.getHostOffersCount = function(callback) {
+exports.getHostOffersCount = function (callback) {
   Offer.aggregate(
     [
       {
@@ -120,7 +120,7 @@ exports.getHostOffersCount = function(callback) {
         },
       },
     ],
-    function(err, counters) {
+    function (err, counters) {
       if (err) {
         return callback(err);
       }
@@ -148,7 +148,7 @@ exports.getHostOffersCount = function(callback) {
       };
 
       if (counters && counters.length > 0) {
-        counters.forEach(function(counter) {
+        counters.forEach(function (counter) {
           if (['yes', 'maybe', 'no'].indexOf(counter._id) !== -1) {
             values[counter._id] = parseInt(counter.count, 10) || 0;
           }
@@ -163,13 +163,13 @@ exports.getHostOffersCount = function(callback) {
 /**
  * Get count of newsletter subscriptions
  */
-exports.getNewsletterSubscriptionsCount = function(callback) {
+exports.getNewsletterSubscriptionsCount = function (callback) {
   User.countDocuments(
     {
       newsletter: true,
       public: true,
     },
-    function(err, count) {
+    function (err, count) {
       if (err) {
         return callback(err);
       }
@@ -181,7 +181,7 @@ exports.getNewsletterSubscriptionsCount = function(callback) {
 /**
  * Get count of registered push notifications
  */
-exports.getPushRegistrationCount = function(callback) {
+exports.getPushRegistrationCount = function (callback) {
   User.countDocuments(
     {
       public: true,
@@ -191,7 +191,7 @@ exports.getPushRegistrationCount = function(callback) {
         $not: { $size: 0 },
       },
     },
-    function(err, count) {
+    function (err, count) {
       if (err) {
         return callback(err);
       }
@@ -203,16 +203,14 @@ exports.getPushRegistrationCount = function(callback) {
 /**
  * Generate statistics based on the user last seen attribute
  */
-exports.getLastSeenStatistic = function(since, callback) {
+exports.getLastSeenStatistic = function (since, callback) {
   const query = {
     seen: {
-      $gte: moment()
-        .subtract(since)
-        .toDate(),
+      $gte: moment().subtract(since).toDate(),
     },
   };
 
-  User.countDocuments(query, function(err, count) {
+  User.countDocuments(query, function (err, count) {
     if (err) {
       return callback(err);
     }
@@ -223,7 +221,7 @@ exports.getLastSeenStatistic = function(since, callback) {
 /**
  * Get all statistics
  */
-exports.getPublicStatistics = function(req, res) {
+exports.getPublicStatistics = function (req, res) {
   req.statistics = {
     connected: {},
     hosting: {},
@@ -232,8 +230,8 @@ exports.getPublicStatistics = function(req, res) {
   async.waterfall(
     [
       // Total users
-      function(done) {
-        exports.getUsersCount(function(err, count) {
+      function (done) {
+        exports.getUsersCount(function (err, count) {
           if (err) {
             return done(err);
           }
@@ -243,8 +241,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // External sites - BeWelcome
-      function(done) {
-        exports.getExternalSiteCount('bewelcome', function(err, count) {
+      function (done) {
+        exports.getExternalSiteCount('bewelcome', function (err, count) {
           if (err) {
             return done(err);
           }
@@ -254,8 +252,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // External sites - Couchsurfing
-      function(done) {
-        exports.getExternalSiteCount('couchsurfing', function(err, count) {
+      function (done) {
+        exports.getExternalSiteCount('couchsurfing', function (err, count) {
           if (err) {
             return done(err);
           }
@@ -265,8 +263,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // External sites - Warmshowers
-      function(done) {
-        exports.getExternalSiteCount('warmshowers', function(err, count) {
+      function (done) {
+        exports.getExternalSiteCount('warmshowers', function (err, count) {
           if (err) {
             return done(err);
           }
@@ -276,8 +274,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // External sites - Facebook
-      function(done) {
-        exports.getExternalSiteCount('facebook', function(err, count) {
+      function (done) {
+        exports.getExternalSiteCount('facebook', function (err, count) {
           if (err) {
             return done(err);
           }
@@ -287,8 +285,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // External sites - Twitter
-      function(done) {
-        exports.getExternalSiteCount('twitter', function(err, count) {
+      function (done) {
+        exports.getExternalSiteCount('twitter', function (err, count) {
           if (err) {
             return done(err);
           }
@@ -298,8 +296,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // External sites - GitHub
-      function(done) {
-        exports.getExternalSiteCount('github', function(err, count) {
+      function (done) {
+        exports.getExternalSiteCount('github', function (err, count) {
           if (err) {
             return done(err);
           }
@@ -309,8 +307,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // Newsletter subscribers
-      function(done) {
-        exports.getNewsletterSubscriptionsCount(function(err, count) {
+      function (done) {
+        exports.getNewsletterSubscriptionsCount(function (err, count) {
           if (err) {
             return done(err);
           }
@@ -320,8 +318,8 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // Hosting stats
-      function(done) {
-        exports.getHostOffersCount(function(err, counter) {
+      function (done) {
+        exports.getHostOffersCount(function (err, counter) {
           if (err) {
             return done(err);
           }
@@ -332,11 +330,11 @@ exports.getPublicStatistics = function(req, res) {
       },
 
       // Done!
-      function() {
+      function () {
         return res.json(req.statistics);
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -356,7 +354,7 @@ exports.getPublicStatistics = function(req, res) {
  * }
  * ```
  */
-exports.collectStatistics = function(req, res) {
+exports.collectStatistics = function (req, res) {
   const collection = String(_.get(req, 'body.collection', ''));
 
   const validCollections = ['mobileAppInit'];
@@ -365,21 +363,15 @@ exports.collectStatistics = function(req, res) {
     'You should update Trustroots app or otherwise it will not continue functioning.';
 
   if (!_.has(req, 'body.stats') || !_.isObject(req.body.stats)) {
-    res
-      .header('x-tr-update-needed', updateMsg)
-      .status(400)
-      .send({
-        message: 'Missing or invalid `stats`.',
-      });
+    res.header('x-tr-update-needed', updateMsg).status(400).send({
+      message: 'Missing or invalid `stats`.',
+    });
   }
 
   if (!collection || validCollections.indexOf(collection) === -1) {
-    res
-      .header('x-tr-update-needed', updateMsg)
-      .status(400)
-      .send({
-        message: 'Missing or invalid `collection`.',
-      });
+    res.header('x-tr-update-needed', updateMsg).status(400).send({
+      message: 'Missing or invalid `collection`.',
+    });
   }
 
   if (collection === 'mobileAppInit') {
@@ -410,7 +402,7 @@ exports.collectStatistics = function(req, res) {
     };
 
     // Send validation result to stats
-    statService.stat(stats, function() {
+    statService.stat(stats, function () {
       // Add update header if app version so requires
       if (needsUpdate) {
         return res

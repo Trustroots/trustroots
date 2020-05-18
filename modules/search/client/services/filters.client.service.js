@@ -11,7 +11,7 @@ function FiltersService($log, Authentication, locker) {
     types: ['host', 'meet'],
     languages: [],
     seen: {
-      months: 24,
+      months: 6,
     },
   };
 

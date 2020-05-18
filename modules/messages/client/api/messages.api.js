@@ -55,3 +55,10 @@ export async function sendMessage(userToId, content) {
 export async function markRead(messageIds) {
   await axios.post('/api/messages-read', { messageIds });
 }
+
+export async function unreadCount() {
+  const {
+    data: { unread },
+  } = await axios.get('/api/messages-count');
+  return unread;
+}

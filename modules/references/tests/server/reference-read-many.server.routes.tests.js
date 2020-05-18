@@ -99,9 +99,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
         .expect(200);
 
       // user2 gave 3 public and 1 non-public references
-      should(body)
-        .be.Array()
-        .of.length(3);
+      should(body).be.Array().of.length(3);
     });
 
     it('the references in response have expected structure, userFrom & userTo have miniProfile', async () => {
@@ -124,20 +122,12 @@ describe('Read references by userFrom Id or userTo Id', () => {
             userProfile.userMiniProfileFields.split(' ').slice(2, -1),
           );
 
-        should(ref)
-          .have.propertyByPath('interactions', 'met')
-          .Boolean();
-        should(ref)
-          .have.propertyByPath('interactions', 'hostedMe')
-          .Boolean();
-        should(ref)
-          .have.propertyByPath('interactions', 'hostedThem')
-          .Boolean();
+        should(ref).have.propertyByPath('interactions', 'met').Boolean();
+        should(ref).have.propertyByPath('interactions', 'hostedMe').Boolean();
+        should(ref).have.propertyByPath('interactions', 'hostedThem').Boolean();
         should(ref).have.property('public', true);
         should(ref).have.property('created', new Date().toISOString());
-        should(ref)
-          .have.property('recommend')
-          .oneOf('yes', 'no', 'unknown');
+        should(ref).not.have.property('recommend');
         should(ref)
           .have.property('_id')
           .String()
@@ -151,9 +141,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
         .expect(200);
 
       // user2 has received 2 public and 1 non-public reference
-      should(body)
-        .be.Array()
-        .of.length(2);
+      should(body).be.Array().of.length(2);
     });
 
     it('[params userFrom and userTo] respond with 1 or 0 public reference from userFrom to userTo', async () => {
@@ -162,9 +150,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
         .expect(200);
 
       // there is 1 public reference from user2 to user5
-      should(body)
-        .be.Array()
-        .of.length(1);
+      should(body).be.Array().of.length(1);
     });
 
     it('[userFrom is self] display all public and private references from userFrom', async () => {
@@ -174,14 +160,14 @@ describe('Read references by userFrom Id or userTo Id', () => {
 
       // user0 has given 3 public and 2 non-public reference
       // and should see all 5 of them
-      should(body)
-        .be.Array()
-        .of.length(5);
+      should(body).be.Array().of.length(5);
 
       const nonpublic = body.filter(ref => !ref.public);
       should(nonpublic).length(2);
+      // the private fields are not present
+      should(nonpublic[0]).not.have.keys('recommend');
       // the reference details are also present
-      should(nonpublic[0]).have.keys('recommend', 'interactions');
+      should(nonpublic[0]).have.keys('interactions');
       should(nonpublic[0].interactions).have.keys(
         'met',
         'hostedMe',
@@ -197,14 +183,10 @@ describe('Read references by userFrom Id or userTo Id', () => {
       // user0 has received 4 public and 1 non-public reference
       // and should see all 5 of them
       // but the 1 non-public should have only fields userFrom, userTo, public, created
-      should(body)
-        .be.Array()
-        .of.length(5);
+      should(body).be.Array().of.length(5);
 
       const nonpublic = body.filter(ref => !ref.public);
-      should(nonpublic)
-        .be.Array()
-        .of.length(1);
+      should(nonpublic).be.Array().of.length(1);
       should(nonpublic[0]).match({
         public: false,
         created: new Date().toISOString(),

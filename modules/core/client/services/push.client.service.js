@@ -21,7 +21,7 @@ function push(
     isEnabled: loadEnabled(),
     isBlocked: getIsBlocked(),
 
-    init: function() {
+    init: function () {
       if (firebaseMessaging.shouldInitialize) {
         return setup();
       } else {
@@ -32,7 +32,7 @@ function push(
     /**
      * Enable local browser push notifications
      */
-    enable: function() {
+    enable: function () {
       if (!push.isSupported) return $q.reject(new Error('push is unsupported'));
       saveEnabled(true);
       return enable();
@@ -41,7 +41,7 @@ function push(
     /**
      * Disable local browser push notifications
      */
-    disable: function() {
+    disable: function () {
       if (!push.isSupported) return $q.reject(new Error('push is unsupported'));
       saveEnabled(false);
       return disable();
@@ -54,7 +54,7 @@ function push(
 
   firebaseMessaging.onTokenRefresh(setup);
 
-  firebaseMessaging.onMessage(function(payload) {
+  firebaseMessaging.onMessage(function (payload) {
     // eslint-disable-next-line no-new
     new $window.Notification(payload.notification.title, {
       body: payload.notification.body,
@@ -112,11 +112,11 @@ function push(
 
     $uibModal.open({
       templateUrl: questionModalTemplateUrl,
-      controller: function($scope, $uibModalInstance) {
+      controller: function ($scope, $uibModalInstance) {
         const vm = this;
 
         // Yes! Turn push notifications on
-        vm.yes = function() {
+        vm.yes = function () {
           // Enable push notifications
           enable();
 
@@ -125,7 +125,7 @@ function push(
         };
 
         // When modal is closed/dismissed
-        $scope.$on('modal.closing', function() {
+        $scope.$on('modal.closing', function () {
           // Store info that we've now asked and user reacted
           locker.put(pushAskedKey, 'yes');
         });
@@ -163,10 +163,10 @@ function push(
     push.isBusy = true;
     return firebaseMessaging
       .getToken()
-      .then(function(token) {
+      .then(function (token) {
         store.token = token;
         if (token) {
-          return receivedToken(token).then(function() {
+          return receivedToken(token).then(function () {
             push.isEnabled = true;
             push.isBusy = false;
           });
@@ -175,7 +175,7 @@ function push(
           return firebaseMessaging.requestPermission().then(enable);
         }
       })
-      .catch(function(err) {
+      .catch(function (err) {
         if (
           err.code === 'messaging/notifications-blocked' ||
           err.code === 'messaging/permission-blocked'
@@ -192,22 +192,22 @@ function push(
     push.isBusy = true;
     return firebaseMessaging
       .deleteToken(store.token)
-      .then(function() {
+      .then(function () {
         return removeTokenFromServer(store.token);
       })
-      .then(function() {
+      .then(function () {
         push.isBusy = false;
         store.token = null;
         push.isEnabled = false;
       })
-      .catch(function(err) {
+      .catch(function (err) {
         push.isBusy = false;
         return $q.reject(err);
       });
   }
 
   function userHasToken(token) {
-    return !!Authentication.user.pushRegistration.find(function(registration) {
+    return !!Authentication.user.pushRegistration.find(function (registration) {
       return registration.token === token;
     });
   }
@@ -215,7 +215,7 @@ function push(
   function addTokenToServer(token) {
     return $http
       .post('/api/users/push/registrations', { token: token, platform: 'web' })
-      .then(function(res) {
+      .then(function (res) {
         Authentication.user = res.data.user;
       })
       .catch(handleServerError);
@@ -224,7 +224,7 @@ function push(
   function removeTokenFromServer(token) {
     return $http
       .delete('/api/users/push/registrations/' + token)
-      .then(function(res) {
+      .then(function (res) {
         Authentication.user = res.data.user;
       })
       .catch(handleServerError);

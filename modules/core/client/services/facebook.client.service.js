@@ -45,7 +45,7 @@ function FacebookFactory(
     $window.fbAsyncInit = fbAsyncInit;
 
     // Initialize the `<script>`
-    (function(d) {
+    (function (d) {
       const id = 'facebook-jssdk';
       const fjs = d.getElementsByTagName('script')[0];
 

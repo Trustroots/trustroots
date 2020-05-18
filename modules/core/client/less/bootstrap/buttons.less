@@ -12,7 +12,8 @@
 .btn {
   .font-brand-regular();
   text-shadow: none;
-  &, &:hover {
+  &,
+  &:hover {
     box-shadow: none;
   }
 
@@ -26,15 +27,35 @@
   &.btn-inverse {
     .button-variant(@btn-inverse-color; @btn-inverse-bg; @btn-inverse-border);
     &:hover {
-      border-color: rgba(red(@btn-inverse-border), green(@btn-inverse-border), blue(@btn-inverse-border), .8);
-      background-color: rgba(red(@btn-inverse-border), green(@btn-inverse-border), blue(@btn-inverse-border), .1);
+      border-color: rgba(
+        red(@btn-inverse-border),
+        green(@btn-inverse-border),
+        blue(@btn-inverse-border),
+        0.8
+      );
+      background-color: rgba(
+        red(@btn-inverse-border),
+        green(@btn-inverse-border),
+        blue(@btn-inverse-border),
+        0.1
+      );
     }
   }
   &.btn-inverse-primary {
     .button-variant(@btn-inverse-primary-color; @btn-inverse-primary-bg; @btn-inverse-primary-border);
     &:hover {
-      border-color: rgba(red(@btn-inverse-primary-border), green(@btn-inverse-primary-border), blue(@btn-inverse-primary-border), .8);
-      background-color: rgba(red(@btn-inverse-primary-border), green(@btn-inverse-primary-border), blue(@btn-inverse-primary-border), .1);
+      border-color: rgba(
+        red(@btn-inverse-primary-border),
+        green(@btn-inverse-primary-border),
+        blue(@btn-inverse-primary-border),
+        0.8
+      );
+      background-color: rgba(
+        red(@btn-inverse-primary-border),
+        green(@btn-inverse-primary-border),
+        blue(@btn-inverse-primary-border),
+        0.1
+      );
     }
   }
 
@@ -75,7 +96,7 @@
   padding: 0;
   line-height: 1rem;
   border-radius: 4px;
-  box-shadow: 0 1px 7px rgba(0, 0, 0, .1);
+  box-shadow: 0 1px 7px rgba(0, 0, 0, 0.1);
 }
 
 /**
@@ -110,7 +131,7 @@
  * Button with slight shadow under it
  */
 .btn-raised {
-  box-shadow: 0 1px 4px rgba(0,0,0,0.2)
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /*

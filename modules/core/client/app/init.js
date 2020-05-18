@@ -76,7 +76,7 @@ function initConfig(
 }
 
 // Then define the init function for starting up the application
-angular.element(document).ready(function() {
+angular.element(document).ready(function () {
   /* eslint-disable angular/window-service */
 
   // Escape from iframes if ordered to do so from URL.

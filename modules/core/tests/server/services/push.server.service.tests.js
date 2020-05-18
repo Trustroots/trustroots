@@ -3,18 +3,18 @@ const config = require(path.resolve('./config/config'));
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
-describe('Service: push', function() {
+describe('Service: push', function () {
   const jobs = testutils.catchJobs();
 
   let pushService;
 
-  before(function() {
+  before(function () {
     pushService = require(path.resolve(
       './modules/core/server/services/push.server.service',
     ));
   });
 
-  it('can send a user notification', function(done) {
+  it('can send a user notification', function (done) {
     const user = {
       _id: 5,
       pushRegistration: [
@@ -33,7 +33,7 @@ describe('Service: push', function() {
       click_action: 'http://example.com',
     };
 
-    pushService.sendUserNotification(user, notification, function(err) {
+    pushService.sendUserNotification(user, notification, function (err) {
       jobs.length.should.equal(1);
       const job = jobs[0];
 
@@ -49,7 +49,7 @@ describe('Service: push', function() {
     });
   });
 
-  it('can send a new push device added notification', function(done) {
+  it('can send a new push device added notification', function (done) {
     const user = {
       _id: 15,
       pushRegistration: [
@@ -61,7 +61,7 @@ describe('Service: push', function() {
 
     const platform = 'web';
 
-    pushService.notifyPushDeviceAdded(user, platform, function(err) {
+    pushService.notifyPushDeviceAdded(user, platform, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       const job = jobs[0];
@@ -83,7 +83,7 @@ describe('Service: push', function() {
     });
   });
 
-  it('can send a messages unread notification', function(done) {
+  it('can send a messages unread notification', function (done) {
     const userFrom = {
       _id: 1,
     };
@@ -101,7 +101,7 @@ describe('Service: push', function() {
       messages: ['foo'],
     };
 
-    pushService.notifyMessagesUnread(userFrom, userTo, data, function(err) {
+    pushService.notifyMessagesUnread(userFrom, userTo, data, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       const job = jobs[0];
@@ -121,7 +121,7 @@ describe('Service: push', function() {
     });
   });
 
-  it('can have different text for a second messages unread notification', function(done) {
+  it('can have different text for a second messages unread notification', function (done) {
     const userFrom = {
       _id: 1,
       displayName: 'Albert Einstein',
@@ -141,7 +141,7 @@ describe('Service: push', function() {
       messages: ['foo'],
     };
 
-    pushService.notifyMessagesUnread(userFrom, userTo, data, function(err) {
+    pushService.notifyMessagesUnread(userFrom, userTo, data, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
       const job = jobs[0];

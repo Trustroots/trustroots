@@ -1,4 +1,4 @@
-module.exports = function(app) {
+module.exports = function (app) {
   const statistics = require('../controllers/statistics.server.controller');
 
   // Setting up the statistics api

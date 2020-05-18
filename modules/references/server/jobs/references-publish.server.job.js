@@ -9,7 +9,7 @@ const Reference = mongoose.model('Reference');
  * Make them public.
  * @TODO (maybe) Notify the affected users that a reference for them was published.
  */
-module.exports = function(job, agendaDone) {
+module.exports = function (job, agendaDone) {
   Reference.updateMany(
     {
       created: { $lt: moment().subtract(config.limits.timeToReplyReference) },

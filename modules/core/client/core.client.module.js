@@ -28,8 +28,6 @@ require('@/modules/core/client/directives/tr-share-twitter.client.directive');
 require('@/modules/core/client/directives/tr-spinner.client.directive');
 require('@/modules/core/client/directives/tr-switch.client.directive');
 require('@/modules/core/client/directives/tr-time.client.directive');
-require('@/modules/core/client/directives/tr-window-blur.client.directive');
-require('@/modules/core/client/directives/tr-window-focus.client.directive');
 
 // filters
 require('@/modules/core/client/filters/age.client.filter');

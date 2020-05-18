@@ -22,11 +22,11 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
   return {
     restrict: 'A',
     require: 'ngModel',
-    link: function(scope, elem, attr, ngModel) {
+    link: function (scope, elem, attr, ngModel) {
       const minlength = angular.isDefined(attr.minlength) ? attr.minlength : 1;
 
-      ngModel.$asyncValidators.username = function(modelValue) {
-        return $q(function(resolve, reject) {
+      ngModel.$asyncValidators.username = function (modelValue) {
+        return $q(function (resolve, reject) {
           ngModel.$setValidity('username', true);
 
           if (modelValue && modelValue.length >= minlength) {
@@ -34,7 +34,7 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
               $timeout.cancel(delayedUsernameValidation);
             }
 
-            delayedUsernameValidation = $timeout(function() {
+            delayedUsernameValidation = $timeout(function () {
               delayedUsernameValidation = false;
 
               // If current value is the same as initial input value, don't do anything
@@ -46,7 +46,7 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
               }
 
               SignupValidation.post({ username: modelValue }).$promise.then(
-                function(results) {
+                function (results) {
                   if (results && !results.valid) {
                     // Got result and it's negative
                     reject();

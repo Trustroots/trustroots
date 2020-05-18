@@ -55,10 +55,7 @@ describe('User account: change locale', () => {
 
     context('invalid value', () => {
       it('[number] 400', async () => {
-        await agent
-          .put('/api/users')
-          .send({ locale: 1111 })
-          .expect(400);
+        await agent.put('/api/users').send({ locale: 1111 }).expect(400);
       });
 
       it('[invalid string] 400', async () => {
@@ -85,10 +82,7 @@ describe('User account: change locale', () => {
       const userBefore = await User.findOne({ username }).lean();
       should(userBefore).have.property('locale', '');
 
-      await agent
-        .put('/api/users')
-        .send({ locale: 'en' })
-        .expect(200);
+      await agent.put('/api/users').send({ locale: 'en' }).expect(200);
 
       const userAfter = await User.findOne({ username }).lean();
       should(userAfter).have.property('locale', 'en');
@@ -97,10 +91,7 @@ describe('User account: change locale', () => {
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent
-        .put('/api/users')
-        .send({ locale: 'en' })
-        .expect(403);
+      await agent.put('/api/users').send({ locale: 'en' }).expect(403);
     });
   });
 });

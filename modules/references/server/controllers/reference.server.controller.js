@@ -2,6 +2,10 @@ const mongoose = require('mongoose');
 const _ = require('lodash');
 const path = require('path');
 const util = require('util');
+const config = require(path.resolve('./config/config'));
+const textService = require(path.resolve(
+  './modules/core/server/services/text.server.service',
+));
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
@@ -53,7 +57,7 @@ function validateCreate(req) {
   }
 
   // Values of interactions must be boolean
-  ['met', 'hostedMe', 'hostedThem'].forEach(function(interaction) {
+  ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
     if (
       _.has(req, ['body', 'interactions', interaction]) &&
       typeof req.body.interactions[interaction] !== 'boolean'
@@ -72,8 +76,24 @@ function validateCreate(req) {
     details.userTo = 'userId expected';
   }
 
+  if (_.has(req, ['body', 'feedbackPublic'])) {
+    req.body.feedbackPublic = textService.plainText(req.body.feedbackPublic);
+    const { feedbackPublic } = req.body;
+    if (
+      feedbackPublic.length > config.limits.maximumReferenceFeedbackPublicLength
+    ) {
+      valid = false;
+      details.feedbackPublic = 'toolong';
+    }
+  }
+
   // No unexpected fields
-  const allowedFields = ['userTo', 'interactions', 'recommend'];
+  const allowedFields = [
+    'userTo',
+    'interactions',
+    'recommend',
+    'feedbackPublic',
+  ];
   const fields = Object.keys(req.body);
   const unexpectedFields = _.difference(fields, allowedFields);
   const allowedInteractions = ['met', 'hostedMe', 'hostedThem'];
@@ -112,7 +132,7 @@ const referenceFields = nonpublicReferenceFields.concat([
   'interactions.met',
   'interactions.hostedMe',
   'interactions.hostedThem',
-  'recommend',
+  'feedbackPublic',
 ]);
 
 /**
@@ -262,7 +282,7 @@ async function sendPushNotification(userFrom, userTo, { isFirst }) {
 /**
  * Create a reference - express middleware
  */
-exports.create = async function(req, res, next) {
+exports.create = async function (req, res, next) {
   // each of the following functions throws a special response error when it wants to respond
   // this special error gets processed within the catch {}
   try {
@@ -332,7 +352,7 @@ function validateReadMany(req) {
   }
 
   // check that userFrom and userTo is valid mongodb/mongoose ObjectId
-  ['userFrom', 'userTo'].forEach(function(param) {
+  ['userFrom', 'userTo'].forEach(function (param) {
     if (!req.query[param]) return;
 
     const isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);

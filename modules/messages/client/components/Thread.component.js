@@ -5,7 +5,6 @@ import { useMediaQuery } from 'react-responsive';
 import { useTranslation } from 'react-i18next';
 
 import {
-  $broadcast,
   getRouteParams,
   go,
 } from '@/modules/core/client/services/angular-compat';
@@ -21,6 +20,7 @@ import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
+import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 
 const api = {
   messages: messagesAPI,
@@ -204,7 +204,7 @@ export default function Thread({ user, profileMinimumLength }) {
         setMessages(messages =>
           messages.map(message => ({ ...message, read: true })),
         );
-        $broadcast('syncUnreadMessagesCount');
+        updateUnreadMessageCount();
       }
     }
     markRead();

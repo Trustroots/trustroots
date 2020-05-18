@@ -41,7 +41,7 @@ function trTimeDirective($log, $rootScope, $parse, locker) {
       trTimeTooltipPlacement: '@',
       trTimeFormat: '=?', // `?` makes it optional
     },
-    link: function(scope, element, attrs) {
+    link: function (scope, element, attrs) {
       if (!scope.trTime) {
         $log.warn('No time passed for tr-time directive.');
         return;
@@ -73,7 +73,7 @@ function trTimeDirective($log, $rootScope, $parse, locker) {
 
       // Toggle viewing time between 'ago' and time format.
       // Saves setting to localStorage if it's available
-      scope.toggleMode = function($event) {
+      scope.toggleMode = function ($event) {
         $event.preventDefault();
         $event.stopPropagation();
 

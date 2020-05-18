@@ -3,12 +3,10 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
-import {
-  $broadcast,
-  eventTrack,
-} from '@/modules/core/client/services/angular-compat';
+import { eventTrack } from '@/modules/core/client/services/angular-compat';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
 import { userType } from '@/modules/users/client/users.prop-types';
+import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 
 export default function Inbox({ user }) {
   if (!user.public) {
@@ -47,8 +45,7 @@ export default function Inbox({ user }) {
   }
 
   useEffect(() => {
-    // Tell unread-messages directive to sync itself
-    $broadcast('syncUnreadMessagesCount');
+    updateUnreadMessageCount();
     fetchThreads();
   }, []);
 

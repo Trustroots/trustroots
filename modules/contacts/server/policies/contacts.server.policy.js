@@ -13,7 +13,7 @@ acl = new acl(new acl.memoryBackend());
 /**
  * Invoke Contacts Permissions
  */
-exports.invokeRolesPolicies = function() {
+exports.invokeRolesPolicies = function () {
   acl.allow([
     {
       roles: ['admin'],
@@ -71,7 +71,7 @@ exports.invokeRolesPolicies = function() {
 /**
  * Check If Contacts Policy Allows
  */
-exports.isAllowed = function(req, res, next) {
+exports.isAllowed = function (req, res, next) {
   // No contacts for un-published users
   if (req.user && req.user.public !== true) {
     return res.status(403).json({
@@ -97,7 +97,7 @@ exports.isAllowed = function(req, res, next) {
     roles,
     req.route.path,
     req.method.toLowerCase(),
-    function(err, isAllowed) {
+    function (err, isAllowed) {
       if (err) {
         // An authorization error occurred.
         return res.status(500).json({

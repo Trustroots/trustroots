@@ -18,7 +18,7 @@
   overflow: hidden;
   overflow-y: auto;
   background: @gray-lighter;
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 
   @media (min-width: @screen-sm-min) {
     background: @map-toolbar-background;
@@ -72,8 +72,8 @@ body.is-site-announcement-visible {
   width: auto;
   margin-right: 0;
   .btn,
-  input[type="text"],
-  input[type="search"] {
+  input[type='text'],
+  input[type='search'] {
     border-radius: 0;
     &,
     &:disabled,
@@ -86,8 +86,8 @@ body.is-site-announcement-visible {
       box-shadow: none;
     }
   }
-  input[type="text"],
-  input[type="search"] {
+  input[type='text'],
+  input[type='search'] {
     border-right: 0;
   }
   .btn {
@@ -106,7 +106,8 @@ body.is-site-announcement-visible {
   }
 }
 
-.search-result, .message-recipient {
+.search-result,
+.message-recipient {
   user-select: none;
   position: relative;
   cursor: pointer;
@@ -114,7 +115,7 @@ body.is-site-announcement-visible {
     display: block;
     border-left: 3px solid #fff;
     border-radius: @panel-border-radius;
-    transition: all .1s linear;
+    transition: all 0.1s linear;
     text-decoration: none;
     color: @text-color;
   }
@@ -157,7 +158,8 @@ body.is-site-announcement-visible {
 
 .search-result-languages {
   padding: 10px 0 0 0;
-  &, h4 {
+  &,
+  h4 {
     font-size: @font-size-small;
   }
 }

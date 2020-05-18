@@ -31,11 +31,11 @@ const User = mongoose.model('User');
 /**
  * Signup
  */
-exports.signup = function(req, res) {
+exports.signup = function (req, res) {
   async.waterfall(
     [
       // Check if we have the required data before hitting more strict validations at Mongo
-      function(done) {
+      function (done) {
         if (
           !req.body.firstName ||
           !req.body.lastName ||
@@ -50,15 +50,15 @@ exports.signup = function(req, res) {
       },
 
       // Generate random token
-      function(done) {
-        crypto.randomBytes(20, function(err, buffer) {
+      function (done) {
+        crypto.randomBytes(20, function (err, buffer) {
           const salt = buffer;
           done(err, salt);
         });
       },
 
       // Save user
-      function(salt, done) {
+      function (salt, done) {
         // For security measurement we remove the roles from the `req.body` object
         delete req.body.roles;
 
@@ -84,7 +84,7 @@ exports.signup = function(req, res) {
         user.emailToken = authenticationService.generateEmailToken(user, salt);
 
         // Then save the user
-        user.save(function(err) {
+        user.save(function (err) {
           // Remove sensitive data before login
           user.password = undefined;
           user.salt = undefined;
@@ -94,15 +94,15 @@ exports.signup = function(req, res) {
       },
 
       // Send email
-      function(user, done) {
-        emailService.sendSignupEmailConfirmation(user, function(err) {
+      function (user, done) {
+        emailService.sendSignupEmailConfirmation(user, function (err) {
           done(err, user);
         });
       },
 
       // Login
-      function(user, done) {
-        req.login(user, function(err) {
+      function (user, done) {
+        req.login(user, function (err) {
           // Remove sensitive data befor sending user
           user = userProfile.sanitizeProfile(user);
 
@@ -110,7 +110,7 @@ exports.signup = function(req, res) {
         });
       },
     ],
-    function(err, user) {
+    function (err, user) {
       const statsObject = {
         namespace: 'signup',
         counts: {
@@ -128,7 +128,7 @@ exports.signup = function(req, res) {
 
         // Send signup failure to stats servers
         statsObject.tags.status = 'failed';
-        statService.stat(statsObject, function() {
+        statService.stat(statsObject, function () {
           // Send error to the API
           res.status(400).send({
             message: errorService.getErrorMessage(err),
@@ -142,7 +142,7 @@ exports.signup = function(req, res) {
 
       // Send signup success to stats servers
       statsObject.tags.status = 'success';
-      statService.stat(statsObject, function() {
+      statService.stat(statsObject, function () {
         res.json(user || {});
       });
     },
@@ -152,13 +152,13 @@ exports.signup = function(req, res) {
 /**
  * Signup validation
  */
-exports.signupValidation = function(req, res) {
+exports.signupValidation = function (req, res) {
   const username = String(req.body.username || '').toLowerCase();
 
   async.waterfall(
     [
       // Validate username
-      function(done) {
+      function (done) {
         // Check if we have the required data before hitting more strict validations
         if (!username) {
           return done(
@@ -188,12 +188,12 @@ exports.signupValidation = function(req, res) {
       },
 
       // Check username availability against database
-      function(done) {
+      function (done) {
         User.findOne(
           {
             username: username,
           },
-          function(err, user) {
+          function (err, user) {
             if (user) {
               return done(
                 new Error('Username is not available.'),
@@ -206,7 +206,7 @@ exports.signupValidation = function(req, res) {
         );
       },
     ],
-    function(err, errorCode) {
+    function (err, errorCode) {
       const statsObject = {
         namespace: 'signup-validation',
         counts: {
@@ -220,7 +220,7 @@ exports.signupValidation = function(req, res) {
         // Send signup validation failure to stats servers
         statsObject.tags.status = 'failed';
         statsObject.tags.reason = errorCode || 'other';
-        statService.stat(statsObject, function() {
+        statService.stat(statsObject, function () {
           // Send error to the API
           // HTTP status "200 OK"
           res.status(200).send({
@@ -237,7 +237,7 @@ exports.signupValidation = function(req, res) {
 
       // Send signup validation success to stats servers
       statsObject.tags.status = 'success';
-      statService.stat(statsObject, function() {
+      statService.stat(statsObject, function () {
         res.status(200).send({
           valid: true,
         });
@@ -249,7 +249,7 @@ exports.signupValidation = function(req, res) {
 /**
  * Signin after passport authentication
  */
-exports.signin = function(req, res, next) {
+exports.signin = function (req, res, next) {
   const statsObject = {
     namespace: 'signin',
     counts: {
@@ -258,7 +258,7 @@ exports.signin = function(req, res, next) {
     tags: {},
   };
 
-  passport.authenticate('local', function(err, user, info) {
+  passport.authenticate('local', function (err, user, info) {
     if (err || !user) {
       // Log the failure to signin
       log('error', 'User signin failed. #3tfgbg-1', {
@@ -268,7 +268,7 @@ exports.signin = function(req, res, next) {
 
       // Send signin failure to stats servers
       statsObject.tags.status = 'failed:wrong-credentials';
-      statService.stat(statsObject, function() {
+      statService.stat(statsObject, function () {
         // Send error to the API
         res.status(400).send(info);
       });
@@ -285,7 +285,7 @@ exports.signin = function(req, res, next) {
 
       // Send signin failure to stats servers
       statsObject.tags.status = 'failed:suspended';
-      statService.stat(statsObject, function() {
+      statService.stat(statsObject, function () {
         // Send error to the API
         res.status(403).send({
           message: errorService.getErrorMessageByKey('suspended'),
@@ -295,7 +295,7 @@ exports.signin = function(req, res, next) {
       return;
     }
 
-    req.login(user, function(err) {
+    req.login(user, function (err) {
       if (err) {
         // Log the failure to signin
         log('error', 'User signin failed. #3tfgbg-3', {
@@ -305,7 +305,7 @@ exports.signin = function(req, res, next) {
 
         // Send signin failure to stats servers
         statsObject.tags.status = 'failed:other';
-        statService.stat(statsObject, function() {
+        statService.stat(statsObject, function () {
           // Send error to the API
           res.status(400).send(err);
         });
@@ -315,7 +315,7 @@ exports.signin = function(req, res, next) {
 
       // Send signin success to stats servers
       statsObject.tags.status = 'success';
-      statService.stat(statsObject, function() {
+      statService.stat(statsObject, function () {
         // Remove sensitive data before sending out
         user = userProfile.sanitizeProfile(user);
         res.json(user);
@@ -327,7 +327,7 @@ exports.signin = function(req, res, next) {
 /**
  * Signout
  */
-exports.signout = function(req, res) {
+exports.signout = function (req, res) {
   req.logout();
   res.redirect('/');
 };
@@ -335,11 +335,11 @@ exports.signout = function(req, res) {
 /**
  * OAuth callback
  */
-exports.oauthCallback = function(strategy) {
-  return function(req, res, next) {
+exports.oauthCallback = function (strategy) {
+  return function (req, res, next) {
     const defaultRedirectUrl = '/profile/edit/networks';
 
-    passport.authenticate(strategy, function(err, user, redirectURL) {
+    passport.authenticate(strategy, function (err, user, redirectURL) {
       if (err) {
         log('error', 'oAuth callback error #h3hg82', {
           strategy: strategy,
@@ -355,7 +355,7 @@ exports.oauthCallback = function(strategy) {
         return res.redirect('/signin');
       }
 
-      req.login(user, function(err) {
+      req.login(user, function (err) {
         if (err) {
           log('error', 'oAuth callback failed to login user #h2bgff', {
             strategy: strategy,
@@ -375,7 +375,7 @@ exports.oauthCallback = function(strategy) {
  * - They'll first sign up using local.js strategy
  * - Then they can connect their profiles to other networks using other strategies (eg. Twitter)
  */
-exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
+exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
   if (!req.user) {
     return done(
       new Error('You must be logged in to connect to other networks.'),
@@ -400,7 +400,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
       user.markModified('additionalProvidersData');
 
       // And save the user
-      user.save(function(err) {
+      user.save(function (err) {
         return done(err, user, '/profile/edit/networks');
       });
     } else {
@@ -415,7 +415,7 @@ exports.saveOAuthUserProfile = function(req, providerUserProfile, done) {
 /**
  * Remove OAuth provider
  */
-exports.removeOAuthProvider = function(req, res) {
+exports.removeOAuthProvider = function (req, res) {
   // Return error if no user
   if (!req.user) {
     return res.status(403).send({
@@ -445,13 +445,13 @@ exports.removeOAuthProvider = function(req, res) {
       user.markModified('additionalProvidersData');
     }
 
-    user.save(function(err) {
+    user.save(function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
         });
       } else {
-        req.login(user, function(err) {
+        req.login(user, function (err) {
           if (err) {
             return res.status(400).send(err);
           }
@@ -468,7 +468,7 @@ exports.removeOAuthProvider = function(req, res) {
 /**
  * Update Facebook oAuth token
  */
-exports.updateFacebookOAuthToken = function(req, res) {
+exports.updateFacebookOAuthToken = function (req, res) {
   // Return error if no accessToken or userID
   if (!req.body.accessToken || !req.body.userID) {
     return res.status(400).send({
@@ -520,12 +520,12 @@ exports.updateFacebookOAuthToken = function(req, res) {
   async.waterfall(
     [
       // Generate long lived token (60 days) out from short lived token (~hours)
-      function(done) {
+      function (done) {
         exports.extendFBAccessToken(req.body.accessToken, done);
       },
 
       // Save new token to user's profile
-      function(accessTokenResponse, done) {
+      function (accessTokenResponse, done) {
         // We can't use above `userObject` to perform Mongoose's `markModified` or `save` methods
         const user = req.user;
 
@@ -549,7 +549,7 @@ exports.updateFacebookOAuthToken = function(req, res) {
         user.save(done);
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -576,7 +576,7 @@ exports.updateFacebookOAuthToken = function(req, res) {
  * @param {String} shortAccessToken - short lived FB access token
  * @param {Function} callback - `function (err, result)`
  */
-exports.extendFBAccessToken = function(shortAccessToken, callback) {
+exports.extendFBAccessToken = function (shortAccessToken, callback) {
   const fbClientID = _.get(config, 'facebook.clientID');
   const fbClientSecret = _.get(config, 'facebook.clientSecret');
 
@@ -604,7 +604,7 @@ exports.extendFBAccessToken = function(shortAccessToken, callback) {
       client_id: fbClientID,
       client_secret: fbClientSecret,
     },
-    function(err, accessTokenResponse) {
+    function (err, accessTokenResponse) {
       if (err) {
         log('error', 'Failed to extend Facebook access token. #JG3jk3', {
           error: err,
@@ -638,9 +638,7 @@ exports.extendFBAccessToken = function(shortAccessToken, callback) {
       // Response from FB contains `expires_in` in seconds
       // Turn that into a date in future
       if (_.isNumber(accessTokenExpires)) {
-        response.expires = moment()
-          .add(accessTokenExpires, 'seconds')
-          .toDate();
+        response.expires = moment().add(accessTokenExpires, 'seconds').toDate();
       }
 
       return callback(err, response);
@@ -651,12 +649,12 @@ exports.extendFBAccessToken = function(shortAccessToken, callback) {
 /**
  * Confirm email GET from email token
  */
-exports.validateEmailToken = function(req, res) {
+exports.validateEmailToken = function (req, res) {
   User.findOne(
     {
       emailToken: req.params.token,
     },
-    function(err, user) {
+    function (err, user) {
       if (!user) {
         return res.redirect('/confirm-email-invalid');
       }
@@ -668,16 +666,16 @@ exports.validateEmailToken = function(req, res) {
 /**
  * Confirm email POST from email token
  */
-exports.confirmEmail = function(req, res) {
+exports.confirmEmail = function (req, res) {
   async.waterfall(
     [
-      function(done) {
+      function (done) {
         // Check if user exists with this token
         User.findOne(
           {
             emailToken: req.params.token,
           },
-          function(err, user) {
+          function (err, user) {
             if (!err && user) {
               // Will be the returned object when no errors
               const result = {};
@@ -698,7 +696,7 @@ exports.confirmEmail = function(req, res) {
       // Update user
       // We can't do regular `user.save()` here because we've got user document with password and we'd just override it:
       // Instead we'll do normal Mongoose update with previously fetched user ID
-      function(result, user, done) {
+      function (result, user, done) {
         User.findOneAndUpdate(
           { _id: user._id },
           {
@@ -729,19 +727,19 @@ exports.confirmEmail = function(req, res) {
             // Return the document after updates if `new = true`
             new: true,
           },
-          function(err, modifiedUser) {
+          function (err, modifiedUser) {
             done(err, result, modifiedUser);
           },
         );
       },
 
-      function(result, user, done) {
-        req.login(user, function(err) {
+      function (result, user, done) {
+        req.login(user, function (err) {
           done(err, result, user);
         });
       },
 
-      function(result, user) {
+      function (result, user) {
         // Return authenticated user
         // Remove sensitive data befor sending user
         result.user = userProfile.sanitizeProfile(user);
@@ -749,7 +747,7 @@ exports.confirmEmail = function(req, res) {
         return res.json(result);
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -762,7 +760,7 @@ exports.confirmEmail = function(req, res) {
 /**
  * Resend email confirmation token
  */
-exports.resendConfirmation = function(req, res) {
+exports.resendConfirmation = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -786,44 +784,44 @@ exports.resendConfirmation = function(req, res) {
   async.waterfall(
     [
       // Generate random token
-      function(done) {
-        crypto.randomBytes(20, function(err, buffer) {
+      function (done) {
+        crypto.randomBytes(20, function (err, buffer) {
           if (err) return done(err);
           done(null, buffer);
         });
       },
 
       // Save token
-      function(salt, done) {
+      function (salt, done) {
         const user = req.user;
         user.updated = Date.now();
         user.emailToken = authenticationService.generateEmailToken(user, salt);
-        user.save(function(err) {
+        user.save(function (err) {
           if (err) return done(err);
           done(null, user);
         });
       },
 
       // Send email
-      function(user, done) {
+      function (user, done) {
         if (isEmailChange) {
-          emailService.sendChangeEmailConfirmation(user, function(err) {
+          emailService.sendChangeEmailConfirmation(user, function (err) {
             done(err, user);
           });
         } else {
           // signup confirmation
-          emailService.sendSignupEmailConfirmation(user, function(err) {
+          emailService.sendSignupEmailConfirmation(user, function (err) {
             done(err, user);
           });
         }
       },
 
       // Return confirmation
-      function() {
+      function () {
         return res.json({ message: 'Sent confirmation email.' });
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),

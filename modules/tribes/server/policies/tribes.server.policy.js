@@ -13,7 +13,7 @@ acl = new acl(new acl.memoryBackend());
 /**
  * Invoke Tribes Permissions
  */
-exports.invokeRolesPolicies = function() {
+exports.invokeRolesPolicies = function () {
   acl.allow([
     {
       roles: ['admin'],
@@ -60,14 +60,14 @@ exports.invokeRolesPolicies = function() {
 /**
  * Check If Tribes Policy Allows
  */
-exports.isAllowed = function(req, res, next) {
+exports.isAllowed = function (req, res, next) {
   // Check for user roles
   const roles = req.user && req.user.roles ? req.user.roles : ['guest'];
   acl.areAnyRolesAllowed(
     roles,
     req.route.path,
     req.method.toLowerCase(),
-    function(err, isAllowed) {
+    function (err, isAllowed) {
       if (err) {
         // An authorization error occurred.
         return res.status(500).send({

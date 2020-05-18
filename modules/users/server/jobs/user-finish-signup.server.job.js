@@ -23,11 +23,11 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
-module.exports = function(job, agendaDone) {
+module.exports = function (job, agendaDone) {
   async.waterfall(
     [
       // Find un-confirmed users
-      function(done) {
+      function (done) {
         // Ignore very recently signed up users
         const createdTimeAgo = moment().subtract(moment.duration({ hours: 4 }));
 
@@ -65,13 +65,13 @@ module.exports = function(job, agendaDone) {
             },
           ])
           .limit(config.limits.maxProcessSignupReminders || 50)
-          .exec(function(err, users) {
+          .exec(function (err, users) {
             done(err, users);
           });
       },
 
       // Send emails
-      function(users, done) {
+      function (users, done) {
         // No users to send emails to
         if (!users.length) {
           return done();
@@ -79,8 +79,8 @@ module.exports = function(job, agendaDone) {
 
         async.eachSeries(
           users,
-          function(user, callback) {
-            emailService.sendSignupEmailReminder(user, function(err) {
+          function (user, callback) {
+            emailService.sendSignupEmailReminder(user, function (err) {
               if (err) {
                 return callback(err);
               } else {
@@ -97,20 +97,20 @@ module.exports = function(job, agendaDone) {
                       publicReminderCount: 1,
                     },
                   },
-                  function(err) {
+                  function (err) {
                     callback(err);
                   },
                 );
               }
             });
           },
-          function(err) {
+          function (err) {
             done(err);
           },
         );
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         // Get job id from Agenda job attributes
         // Agenda stores Mongo `ObjectId` so turning that into a string here

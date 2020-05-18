@@ -47,10 +47,10 @@ function ContactAddController(
 
     // If contact doesn't exist, stop here
     friend.$promise.then(
-      function() {
+      function () {
         // User exists
       },
-      function() {
+      function () {
         vm.isConnected = true;
         vm.error = 'User does not exist.';
       },
@@ -58,7 +58,7 @@ function ContactAddController(
 
     // If contact already exists, stop here
     existingContact.$promise.then(
-      function(response) {
+      function (response) {
         if (response) {
           vm.isConnected = true;
           vm.success = response.confirmed
@@ -66,7 +66,7 @@ function ContactAddController(
             : 'Connection already initiated; now it has to be confirmed.';
         }
       },
-      function() {
+      function () {
         vm.isConnected = false;
       },
     );
@@ -77,13 +77,13 @@ function ContactAddController(
     vm.isLoading = true;
 
     vm.contact.$save(
-      function() {
+      function () {
         vm.isLoading = false;
         vm.isConnected = true;
         vm.success =
           'Done! We sent an email to your contact and he/she still needs to confirm it.';
       },
-      function(error) {
+      function (error) {
         vm.isLoading = false;
         if (error.status === 409) {
           // 409 means contact already existed

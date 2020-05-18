@@ -88,15 +88,15 @@
     line-height: 128px;
     text-align: center;
     color: #fff;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-    transition: background .2s;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s;
     background: transparent;
     font-weight: bold;
   }
   &:hover,
   &:active {
     span {
-      background: rgba(0,0,0,0.1);
+      background: rgba(0, 0, 0, 0.1);
     }
   }
 }
@@ -128,7 +128,9 @@
   right: 0;
   left: 0;
   bottom: 0;
-  z-index: (@zindex-modal + 100); // `@zindex-modal` is the highest from Bootstrap
+  z-index: (
+    @zindex-modal + 100
+  ); // `@zindex-modal` is the highest from Bootstrap
   border: 10px solid transparent;
   text-align: center;
   visibility: hidden;

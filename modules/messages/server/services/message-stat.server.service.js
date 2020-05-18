@@ -16,7 +16,7 @@ function createMessageStat(message, done) {
     firstMessageLength: message.content.length,
   });
 
-  messageStat.save(function(err) {
+  messageStat.save(function (err) {
     if (err) return done(err);
     return done(null, messageStat);
   });
@@ -61,12 +61,12 @@ function addFirstReplyInfo(messageStat, message, done) {
  * @param {ObjectId} message.userTo
  * @param {updateStatCb} callback
  */
-exports.updateMessageStat = function(message, callback) {
+exports.updateMessageStat = function (message, callback) {
   async.waterfall(
     [
       // Get the MessageStat, we assume that only one MessageStat ever exists for
       // each pair of users.
-      function(done) {
+      function (done) {
         MessageStat.findOne({
           $or: [
             {
@@ -78,7 +78,7 @@ exports.updateMessageStat = function(message, callback) {
               firstMessageUserTo: message.userFrom,
             },
           ],
-        }).exec(function(err, messageStat) {
+        }).exec(function (err, messageStat) {
           done(err, messageStat);
         });
       },
@@ -87,7 +87,7 @@ exports.updateMessageStat = function(message, callback) {
       // - No MessageStat found, create a new one with the first message
       // - MessageStat found, no reply information saved, update the reply
       // - Both first and reply information already saved, do nothing, move on
-      function(messageStat, done) {
+      function (messageStat, done) {
         // If the MessageStat does already exist:
         if (messageStat) {
           // Does this MessageStat have a first reply?
@@ -105,7 +105,7 @@ exports.updateMessageStat = function(message, callback) {
         }
       },
     ],
-    function(err, response) {
+    function (err, response) {
       if (err) return callback(err);
       callback(null, response);
     },
@@ -118,7 +118,7 @@ exports.updateMessageStat = function(message, callback) {
     async.waterfall(
       [
         // Find the first message between these two users
-        function(done) {
+        function (done) {
           Message.findOne({
             $or: [
               {
@@ -134,13 +134,13 @@ exports.updateMessageStat = function(message, callback) {
             // Sort by the `created` field to find the first message
             // sent or received between these two users
             .sort({ created: 1 })
-            .exec(function(err, firstMessage) {
+            .exec(function (err, firstMessage) {
               return done(err, firstMessage);
             });
         },
 
         // Create the MessageStat filling only the first message part
-        function(firstMessage, done) {
+        function (firstMessage, done) {
           if (firstMessage) {
             return createMessageStat(firstMessage, done);
           } else {
@@ -152,11 +152,11 @@ exports.updateMessageStat = function(message, callback) {
         // We do this because we can't be sure that this process has been run on
         // the first message between two users, so we check here if there is
         // already a reply to fill in the missing data if it exists.
-        function(messageStat, done) {
+        function (messageStat, done) {
           findMessagesUpdateMessageStat(messageStat, done);
         },
 
-        function(response, done) {
+        function (response, done) {
           if (response === 'other') {
             response = 'first';
           }
@@ -174,7 +174,7 @@ exports.updateMessageStat = function(message, callback) {
   function findMessagesUpdateMessageStat(messageStat, cb) {
     async.waterfall(
       [
-        function(done) {
+        function (done) {
           // Scan the list of messages to see if we find a firstReply
           // We do that by searching for the first message that was from the
           // recipient and to the sender, that will be the first reply.
@@ -184,16 +184,16 @@ exports.updateMessageStat = function(message, callback) {
           })
             // Sort by `created` to get the *first* reply
             .sort({ created: 1 })
-            .exec(function(err, firstReply) {
+            .exec(function (err, firstReply) {
               return done(err, firstReply);
             });
         },
 
-        function(firstReply, done) {
+        function (firstReply, done) {
           // If we do:
           if (firstReply) {
             // Update the MessageStat with the timeToFirstReply etc
-            addFirstReplyInfo(messageStat, firstReply, function(err) {
+            addFirstReplyInfo(messageStat, firstReply, function (err) {
               if (err) return done(err);
               return done(null, 'firstReply');
             });
@@ -229,7 +229,7 @@ exports.updateMessageStat = function(message, callback) {
  * @param {number} timeNow - timestamp to which we count the statistics
  * @param {readStatsCb} callback
  */
-exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
+exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
   const DAY = 24 * 3600 * 1000;
 
   async.waterfall(
@@ -238,7 +238,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
        * Get the data from the database
        * get all MessageStat documents between timeNow and timeNow - 90 days
        */
-      function(done) {
+      function (done) {
         MessageStat.find({
           firstMessageUserTo: userId,
           firstMessageCreated: {
@@ -247,7 +247,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
           },
         })
           .sort({ firstMessageCreated: -1 })
-          .exec(function(err, resp) {
+          .exec(function (err, resp) {
             return done(err, resp);
           });
       },
@@ -255,7 +255,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
       /**
        * Count the statistics
        */
-      function(messageStats, done) {
+      function (messageStats, done) {
         /**
          * Choose the MessageStats to use (as described above)
          * if we have less than 10 stats in last 90 days since timeNow,
@@ -265,7 +265,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
          * if we have more than 10 messages in last 30 days,
          *    use all from last 30 days
          */
-        const chosenStats = (function(messageStats) {
+        const chosenStats = (function (messageStats) {
           // less than 10 in 90 days
           if (messageStats.length < 10) {
             return messageStats;
@@ -279,7 +279,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
 
             // otherwise we use all the messageStats within 30 days
           } else {
-            return messageStats.filter(function(stat) {
+            return messageStats.filter(function (stat) {
               return stat.firstMessageCreated.getTime() >= timeNow - 30 * DAY;
             });
           }
@@ -294,7 +294,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
          *    replyRate is replied stats/all stats
          *    replyTime is average (mean) reply time of replied stats [milliseconds]
          */
-        const stats = (function(chosenStats) {
+        const stats = (function (chosenStats) {
           let repliedCount = 0; // amount of replies
           const allCount = chosenStats.length; // amount of first messages received
           let replyTimeCumulated = 0; // sum of the timeToFirstReply
@@ -332,7 +332,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
         return done(null, stats);
       },
     ],
-    function(err, stats) {
+    function (err, stats) {
       if (err) return callback(err);
       callback(null, stats);
     },
@@ -358,7 +358,7 @@ exports.readMessageStatsOfUser = function(userId, timeNow, callback) {
  * @param {?number} stats.replyTime
  * @returns {Object}
  */
-exports.formatStats = function(stats) {
+exports.formatStats = function (stats) {
   // if reply rate is a well-behaved number, we convert the fraction to %
   const replyRate = _.isFinite(stats.replyRate)
     ? Math.round(stats.replyRate * 100) + '%'
@@ -387,16 +387,16 @@ exports.formatStats = function(stats) {
  * @param {number} timeNow - timestamp to which we count the statistics
  * @param {readFormattedStatsCb} callback
  */
-exports.readFormattedMessageStatsOfUser = function(userId, timeNow, callback) {
+exports.readFormattedMessageStatsOfUser = function (userId, timeNow, callback) {
   async.waterfall(
     [
       // read message stats
-      function(done) {
+      function (done) {
         exports.readMessageStatsOfUser(userId, timeNow, done);
       },
 
       // format message stats (this one is synchronous)
-      function(stats, done) {
+      function (stats, done) {
         const formatted = exports.formatStats(stats);
         return done(null, formatted);
       },

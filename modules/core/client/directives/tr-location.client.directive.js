@@ -36,9 +36,9 @@ function trLocationDirective($compile, $timeout, LocationService) {
       trLocationBounds: '=?',
     },
     replace: false,
-    link: function(scope, element, attr, ngModel) {
+    link: function (scope, element, attr, ngModel) {
       // Event handler to stop submitting the surrounding form
-      element.bind('keydown keypress focus', function($event) {
+      element.bind('keydown keypress focus', function ($event) {
         scope.trLocationNotfound = false;
 
         // On enter
@@ -85,13 +85,13 @@ function trLocationDirective($compile, $timeout, LocationService) {
 
       // Without this input value would be left empty due $compile
       // @todo: any better way of handling this?
-      $timeout(function() {
+      $timeout(function () {
         ngModel.$setViewValue(scope.value);
         ngModel.$render();
       });
     },
     controllerAs: 'trLocation',
-    controller: function($scope, $timeout) {
+    controller: function ($scope, $timeout) {
       // View Model
       const vm = this;
 
@@ -103,7 +103,7 @@ function trLocationDirective($compile, $timeout, LocationService) {
        */
       function searchSuggestions(query, types) {
         $scope.trLocationNotfound = false;
-        return LocationService.suggestions(query, types).then(function(
+        return LocationService.suggestions(query, types).then(function (
           suggestions,
         ) {
           // Enter was pressed before we got these results, thus just pick first
@@ -129,7 +129,7 @@ function trLocationDirective($compile, $timeout, LocationService) {
        * When selecting autosuggested location
        */
       function onSelect($item, $model, $label) {
-        $timeout(function() {
+        $timeout(function () {
           $scope.value = $label;
         });
         locate($item);

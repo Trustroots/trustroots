@@ -13,9 +13,9 @@ const tribes = require(path.resolve(
   './modules/tribes/server/controllers/tribes.server.controller',
 ));
 
-module.exports = function(app) {
-  const redirect = function(src, dst) {
-    app.route(src).get(function(req, res) {
+module.exports = function (app) {
+  const redirect = function (src, dst) {
+    app.route(src).get(function (req, res) {
       res.redirect(301, dst);
     });
   };

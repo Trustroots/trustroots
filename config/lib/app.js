@@ -15,7 +15,7 @@ if (config.sentry.enabled) {
 mongoose.loadModels();
 
 module.exports.init = function init(callback) {
-  mongoose.connect(function(connection) {
+  mongoose.connect(function (connection) {
     // Initialize express
     const app = express.init(connection);
     if (callback) callback(app, connection, config);
@@ -25,7 +25,7 @@ module.exports.init = function init(callback) {
 module.exports.start = function start(callback) {
   const _this = this;
 
-  _this.init(function(app, db, config) {
+  _this.init(function (app, db, config) {
     const listenArgs = [];
     if (config.fd) {
       // Start the app by listening on a file descriptor (useful for systemd socket activation)
@@ -34,7 +34,7 @@ module.exports.start = function start(callback) {
       // Start the app by listening on <port> at <host>
       listenArgs.push(config.port, config.host);
     }
-    app.listen(...listenArgs, function() {
+    app.listen(...listenArgs, function () {
       // Check in case mailer config is still set to default values (a common problem)
       if (
         config.mailer.service &&

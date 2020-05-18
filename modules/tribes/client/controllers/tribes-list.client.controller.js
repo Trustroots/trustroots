@@ -15,7 +15,7 @@ function TribesListController(Authentication, $rootScope, $scope) {
   /**
    * Update the Authentication.user with updated tribe membership
    */
-  vm.broadcastUpdatedUser = function(data) {
+  vm.broadcastUpdatedUser = function (data) {
     if (data.user) {
       Authentication.user = data.user;
       $rootScope.$broadcast('userUpdated');

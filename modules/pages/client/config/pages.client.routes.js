@@ -145,7 +145,7 @@ function PagesRoutes($stateProvider) {
       footerHidden: true,
       controller:
         /* @ngInject */
-        function($state) {
+        function ($state) {
           $state.go('home');
         },
       controllerAs: 'about',

@@ -44,7 +44,7 @@ function trTribesInCommonDirective(Authentication, TribeService) {
         Authentication.user.memberIds &&
         Authentication.user.memberIds.length > 0
       ) {
-        angular.forEach($scope.trTribesInCommon, function(membership) {
+        angular.forEach($scope.trTribesInCommon, function (membership) {
           // If authenticated user has it as well, add to list
           if (
             membership.tribe &&

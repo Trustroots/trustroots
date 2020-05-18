@@ -1,6 +1,6 @@
 {
   "version": 8,
-  "name": "OpenStreetMap",
+  "name": "OSM",
   "metadata": {},
   "sources": {
     "osm": {

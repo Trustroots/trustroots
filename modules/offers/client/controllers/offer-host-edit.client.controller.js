@@ -51,7 +51,7 @@ function OfferHostEditController(
     // Make sure offer is there
     offers.$promise
       .then(
-        function() {
+        function () {
           if (angular.isArray(offers) && offers.length) {
             vm.offer = new OffersService(
               angular.extend(defaultOfferConfig, offers[0]),
@@ -68,7 +68,7 @@ function OfferHostEditController(
             }
           }
         },
-        function(err) {
+        function (err) {
           // No previous offer, fill in defaults
           if (err && err.status === 404) {
             // Creating new hosting offer, set defaults
@@ -95,13 +95,13 @@ function OfferHostEditController(
         },
       )
       // Always execute this on both error and success
-      .finally(function() {
+      .finally(function () {
         setStatusByURL();
         vm.isLoading = false;
       });
   }
 
-  $scope.$watch('offerHostEdit.offer.description', function(newValue) {
+  $scope.$watch('offerHostEdit.offer.description', function (newValue) {
     vm.isDescriptionTooShort = $filter('plainTextLength')(newValue) < 5;
   });
 
@@ -111,8 +111,8 @@ function OfferHostEditController(
    * tile positions properly until it's visible in DOM
    */
   function invalidateMapSize() {
-    $timeout(function() {
-      leafletData.getMap().then(function(map) {
+    $timeout(function () {
+      leafletData.getMap().then(function (map) {
         // @link http://leafletjs.com/reference-1.2.0.html#map-invalidatesize
         map.invalidateSize(false);
       });
@@ -148,10 +148,7 @@ function OfferHostEditController(
       parseFloat(vm.mapCenter.lng),
     ];
 
-    vm.offer
-      .createOrUpdate()
-      .then(successCallback)
-      .catch(errorCallback);
+    vm.offer.createOrUpdate().then(successCallback).catch(errorCallback);
 
     function successCallback() {
       vm.isLoading = false;

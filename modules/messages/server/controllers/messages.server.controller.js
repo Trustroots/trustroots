@@ -61,7 +61,7 @@ function sanitizeMessages(messages) {
   const messagesCleaned = [];
 
   // Sanitize each outgoing message's contents
-  messages.forEach(function(message) {
+  messages.forEach(function (message) {
     message.content = sanitizeHtml(
       message.content,
       textService.sanitizeOptions,
@@ -87,7 +87,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
   // Sanitize each outgoing thread
   const threadsCleaned = [];
 
-  threads.forEach(function(thread) {
+  threads.forEach(function (thread) {
     // Threads need just excerpt
     thread = thread.toObject();
 
@@ -132,7 +132,7 @@ function sanitizeThreads(threads, authenticatedUserId) {
 /**
  * Constructs link headers for pagination
  */
-const setLinkHeader = function(req, res, pageCount) {
+const setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
     const url = (config.https ? 'https' : 'http') + '://' + config.domain;
     const nextPage =
@@ -147,7 +147,7 @@ const setLinkHeader = function(req, res, pageCount) {
 /**
  * List of threads aka inbox
  */
-exports.inbox = function(req, res) {
+exports.inbox = function (req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
@@ -170,7 +170,7 @@ exports.inbox = function(req, res) {
         select: 'content ' + userProfile.userMiniProfileFields,
       },
     },
-    function(err, data) {
+    function (err, data) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -190,7 +190,7 @@ exports.inbox = function(req, res) {
 /**
  * Send a message
  */
-exports.send = function(req, res) {
+exports.send = function (req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
@@ -240,11 +240,11 @@ exports.send = function(req, res) {
       // Check that receiving user is legitimate:
       // - Has to be confirmed their email (hence be public)
       // - Not suspended profile
-      function(done) {
+      function (done) {
         User.findOne({
           _id: req.body.userTo,
           ...publicityLimit,
-        }).exec(function(err, receiver) {
+        }).exec(function (err, receiver) {
           // If we were unable to find the receiver, return the error and stop here
           if (err || !receiver) {
             return res.status(404).send({
@@ -256,7 +256,7 @@ exports.send = function(req, res) {
       },
 
       // Check if this is first message to this thread (=does the thread object exist?)
-      function(done) {
+      function (done) {
         Thread.findOne(
           {
             // User id's can be either way around in thread handle, so we gotta test for both situations
@@ -271,7 +271,7 @@ exports.send = function(req, res) {
               },
             ],
           },
-          function(err, thread) {
+          function (err, thread) {
             done(err, thread);
           },
         );
@@ -279,10 +279,10 @@ exports.send = function(req, res) {
 
       // Check sender's profile isn't empty If it was first message
       // If the sending user has an empty profile, reject the message
-      function(thread, done) {
+      function (thread, done) {
         // If this was first message to the thread
         if (!thread) {
-          User.findById(req.user._id, 'description').exec(function(
+          User.findById(req.user._id, 'description').exec(function (
             err,
             sender,
           ) {
@@ -317,7 +317,7 @@ exports.send = function(req, res) {
       },
 
       // Save message
-      function(done) {
+      function (done) {
         const message = new Message(req.body);
 
         // Allow some HTML
@@ -327,13 +327,13 @@ exports.send = function(req, res) {
         message.read = false;
         message.notified = false;
 
-        message.save(function(err, message) {
+        message.save(function (err, message) {
           done(err, message);
         });
       },
 
       // Create/upgrade Thread handle between these two users
-      function(message, done) {
+      function (message, done) {
         const thread = new Thread();
         thread.updated = Date.now();
         thread.userFrom = message.userFrom;
@@ -368,7 +368,7 @@ exports.send = function(req, res) {
           },
           upsertData,
           { upsert: true },
-          function(err) {
+          function (err) {
             done(err, message);
           },
         );
@@ -376,8 +376,8 @@ exports.send = function(req, res) {
 
       // Here we send some metrics to Stats API to measure how many messages
       // are sent, what type of messages, etc.
-      function(message, done) {
-        messageToStatsService.save(message, function() {
+      function (message, done) {
+        messageToStatsService.save(message, function () {
           // do nothing
         });
 
@@ -386,8 +386,8 @@ exports.send = function(req, res) {
 
       // Here we create or update the related MessageStat document in mongodb
       // It serves to count the user's reply rate and reply time
-      function(message, done) {
-        messageStatService.updateMessageStat(message, function() {
+      function (message, done) {
+        messageStatService.updateMessageStat(message, function () {
           // do nothing
         });
 
@@ -395,7 +395,7 @@ exports.send = function(req, res) {
       },
 
       // We'll need some info about related users, populate some fields
-      function(message, done) {
+      function (message, done) {
         message
           .populate({
             path: 'userFrom',
@@ -406,7 +406,7 @@ exports.send = function(req, res) {
               path: 'userTo',
               select: userProfile.userMiniProfileFields,
             },
-            function(err, message) {
+            function (err, message) {
               if (err) {
                 return done(err);
               }
@@ -423,7 +423,7 @@ exports.send = function(req, res) {
           );
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -436,7 +436,7 @@ exports.send = function(req, res) {
 /**
  * Thread of messages
  */
-exports.thread = function(req, res) {
+exports.thread = function (req, res) {
   // Sanitize messages
   const messages =
     req.messages && req.messages.length ? sanitizeMessages(req.messages) : [];
@@ -447,7 +447,7 @@ exports.thread = function(req, res) {
 /**
  * Thread middleware
  */
-exports.threadByUser = function(req, res, next, userId) {
+exports.threadByUser = function (req, res, next, userId) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -475,11 +475,11 @@ exports.threadByUser = function(req, res, next, userId) {
       // Check that other user is legitimate:
       // - Has to be confirmed their email (hence be public)
       // - Not suspended profile
-      function(done) {
+      function (done) {
         User.findOne({
           _id: userId,
           ...publicityLimit,
-        }).exec(function(err, receiver) {
+        }).exec(function (err, receiver) {
           // If we were unable to find the receiver, return the error and stop here
           if (err || !receiver) {
             return res.status(404).send({
@@ -491,7 +491,7 @@ exports.threadByUser = function(req, res, next, userId) {
       },
 
       // Find messages
-      function(done) {
+      function (done) {
         Message.paginate(
           {
             $or: [
@@ -509,7 +509,7 @@ exports.threadByUser = function(req, res, next, userId) {
               select: userProfile.userMiniProfileFields,
             },
           },
-          function(err, data) {
+          function (err, data) {
             if (err) {
               return done(err);
             }
@@ -533,7 +533,7 @@ exports.threadByUser = function(req, res, next, userId) {
        * @todo: mark it read:true only when it was read:false,
        * now it performs write each time thread is opened
        */
-      function(messages, done) {
+      function (messages, done) {
         if (!messages || messages.length === 0) {
           return done();
         }
@@ -559,7 +559,7 @@ exports.threadByUser = function(req, res, next, userId) {
         }
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -575,7 +575,7 @@ exports.threadByUser = function(req, res, next, userId) {
  * Mark set of messages as read
  * Works only for currently logged in user's messages
  */
-exports.markRead = function(req, res) {
+exports.markRead = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -585,7 +585,7 @@ exports.markRead = function(req, res) {
   const messages = [];
 
   // Produce an array of messages to be updated
-  req.body.messageIds.forEach(function(messageId) {
+  req.body.messageIds.forEach(function (messageId) {
     messages.push({
       _id: messageId,
       // read: false,
@@ -607,7 +607,7 @@ exports.markRead = function(req, res) {
     {
       multi: true,
     },
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -622,7 +622,7 @@ exports.markRead = function(req, res) {
 /**
  * Get unread message count for currently logged in user
  */
-exports.messagesCount = function(req, res) {
+exports.messagesCount = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -634,7 +634,7 @@ exports.messagesCount = function(req, res) {
       read: false,
       userTo: req.user._id,
     },
-    function(err, unreadCount) {
+    function (err, unreadCount) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -648,7 +648,7 @@ exports.messagesCount = function(req, res) {
 /**
  * Sync endpoint used by mobile messenger
  */
-exports.sync = function(req, res) {
+exports.sync = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -664,7 +664,7 @@ exports.sync = function(req, res) {
   async.waterfall(
     [
       // Find messages
-      function(done) {
+      function (done) {
         // Validate and construct date filters
         let dateFrom;
         let dateTo;
@@ -727,7 +727,7 @@ exports.sync = function(req, res) {
         Message.find(query)
           .sort({ created: -1 })
           .select(messageFields)
-          .exec(function(err, messages) {
+          .exec(function (err, messages) {
             if (err) {
               return done(err);
             }
@@ -739,7 +739,7 @@ exports.sync = function(req, res) {
             let userIds = [];
 
             // Re-group messages by users
-            data.messages = _.groupBy(messages, function(row) {
+            data.messages = _.groupBy(messages, function (row) {
               // Collect user id
               userIds.push(row.userTo.toString());
               userIds.push(row.userFrom.toString());
@@ -759,7 +759,7 @@ exports.sync = function(req, res) {
       },
 
       // Collect users
-      function(userIds, done) {
+      function (userIds, done) {
         // Get objects for users based on above user ids
         User.find({
           _id: {
@@ -767,18 +767,18 @@ exports.sync = function(req, res) {
           },
         })
           .select(userProfile.userMiniProfileFields)
-          .exec(function(err, users) {
+          .exec(function (err, users) {
             data.users = users;
             done(err);
           });
       },
 
       // Return the package
-      function() {
+      function () {
         return res.json(data);
       },
     ],
-    function(err) {
+    function (err) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -793,8 +793,8 @@ exports.sync = function(req, res) {
  * @param {string} userId
  * @param {function} callback - function (?error) {}
  */
-exports.markAllMessagesToUserNotified = function(userId, callback) {
-  Message.update({ userTo: userId }, { notificationCount: 2 }, function(err) {
+exports.markAllMessagesToUserNotified = function (userId, callback) {
+  Message.update({ userTo: userId }, { notificationCount: 2 }, function (err) {
     callback(err);
   });
 };

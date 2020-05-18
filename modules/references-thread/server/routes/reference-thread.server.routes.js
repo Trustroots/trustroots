@@ -4,7 +4,7 @@
 const referenceThreadPolicy = require('../policies/reference-thread.server.policy');
 const referenceThread = require('../controllers/reference-thread.server.controller');
 
-module.exports = function(app) {
+module.exports = function (app) {
   app
     .route('/api/references-thread/:referenceThreadUserToId')
     .all(referenceThreadPolicy.isAllowed)

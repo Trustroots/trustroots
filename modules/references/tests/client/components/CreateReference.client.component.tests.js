@@ -101,6 +101,17 @@ describe('<CreateReference />', () => {
     ).toBeInTheDocument();
     fireEvent.click(getByText('Yes'));
 
+    fireEvent.click(getAllByText('Next')[0]);
+
+    expect(
+      queryByLabelText(
+        'Would you like to describe something about them? (Optional)',
+      ),
+    ).toBeInTheDocument();
+    fireEvent.change(getByLabelText('Public feedback'), {
+      target: { value: 'they made a tasty pie' },
+    });
+
     fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
@@ -108,6 +119,7 @@ describe('<CreateReference />', () => {
       hostedMe: true,
       hostedThem: false,
       recommend: 'yes',
+      feedbackPublic: 'they made a tasty pie',
       userTo: userTo._id,
     });
 
@@ -146,6 +158,8 @@ describe('<CreateReference />', () => {
       target: { value: 'they were mean to me' },
     });
 
+    fireEvent.click(getAllByText('Next')[0]);
+
     fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
@@ -153,6 +167,7 @@ describe('<CreateReference />', () => {
       hostedMe: true,
       hostedThem: false,
       recommend: 'no',
+      feedbackPublic: '',
       userTo: userTo._id,
     });
 

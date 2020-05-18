@@ -30,7 +30,7 @@ function randomHex() {
  * - not in list of illegal labels
  * - not begin or end with "."
  */
-const validateLabel = function(label) {
+const validateLabel = function (label) {
   return (
     label &&
     label.match(/[a-zA-Z]/) && // Should have at least one a-zA-Z (non case-insensitive regex)
@@ -44,7 +44,7 @@ const validateLabel = function(label) {
  * Validation function for `TribeSchema.attribution_url`
  * @link https://www.npmjs.com/package/validator#validators
  */
-const validateURL = function(url) {
+const validateURL = function (url) {
   return (
     !url ||
     validator.isURL(url, {
@@ -65,7 +65,7 @@ const validateURL = function(url) {
  * @link https://en.wikipedia.org/wiki/Universally_unique_identifier#Variants_and_Versions
  * @link https://www.npmjs.com/package/validator#validators
  */
-const validateUUID = function(uuid) {
+const validateUUID = function (uuid) {
   return !uuid || validator.isUUID(uuid, 4);
 };
 
@@ -154,7 +154,7 @@ TribeSchema.set('toJSON', { getters: true });
  *
  * @link http://mongoosejs.com/docs/guide.html#virtuals
  */
-TribeSchema.virtual('new').get(function() {
+TribeSchema.virtual('new').get(function () {
   // Set comparison date to 30 days ago from now
   const newLimit = moment().subtract(60, 'day');
 
@@ -176,7 +176,7 @@ TribeSchema.virtual('new').get(function() {
 TribeSchema.plugin(
   urlslugs('label', {
     field: 'slug',
-    generator: function(string) {
+    generator: function (string) {
       return speakingurl(string, {
         separator: '-', // char that replaces the whitespaces
         maintainCase: false, // maintain case (true, convert all chars to lower case (false)

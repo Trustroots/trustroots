@@ -54,7 +54,7 @@ function trOfferHostViewDirective() {
        * @todo: move to route resolve
        * @note: profileCtrl is a reference to parent "ControllerAs" (see users module)
        */
-      $scope.profile.$promise.then(function(profile) {
+      $scope.profile.$promise.then(function (profile) {
         if (profile && profile._id) {
           vm.profile = profile;
           vm.isOwnOffer =
@@ -68,7 +68,7 @@ function trOfferHostViewDirective() {
               userId: String(profile._id),
               types: 'host',
             },
-            function(offers) {
+            function (offers) {
               if (!offers || !offers.length) {
                 vm.isLoading = false;
                 return;
@@ -77,7 +77,7 @@ function trOfferHostViewDirective() {
               vm.offer = offers[0];
               vm.isLoading = false;
             },
-            function() {
+            function () {
               // No offer(s) found
               vm.isLoading = false;
             },
