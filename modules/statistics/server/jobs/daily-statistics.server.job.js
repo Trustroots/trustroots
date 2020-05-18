@@ -230,6 +230,36 @@ module.exports = function (job, agendaDone) {
           done,
         );
       },
+
+      // Get number of languages spoken
+      function (done) {
+        statistics.getUserLanguagesCount(40, function (err, counts) {
+          if (err) {
+            log(
+              'error',
+              'Daily statistics: failed fetching languages spoken counts.',
+              err,
+            );
+            return done();
+          }
+
+          // Write numbers to stats
+          counts.map(({ _id, count }) => {
+            writeDailyStat(
+              {
+                namespace: 'language',
+                values: {
+                  count,
+                },
+                tags: {
+                  language: _id,
+                },
+              },
+              done,
+            );
+          });
+        });
+      },
     ],
     function (err) {
       if (err) {
