@@ -201,12 +201,12 @@ exports.getUser = async (req, res) => {
     }).count();
 
     const threadReferencesReceivedYes = await ReferenceThread.find({
-      userFrom: userId,
+      userTo: userId,
       reference: 'yes',
     }).count();
 
     const threadReferencesSentYes = await ReferenceThread.find({
-      userto: userId,
+      userFrom: userId,
       reference: 'yes',
     }).count();
 
