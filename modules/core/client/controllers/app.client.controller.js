@@ -305,14 +305,14 @@ function AppController(
      */
     $scope.$on('photoCreditsUpdated', function (scope, photo) {
       angular.extend(vm.photoCredits, photo);
-      vm.photoCreditsCount++;
+      vm.photoCreditsCount = Object.keys(vm.photoCredits).length;
     });
 
     $scope.$on('photoCreditsRemoved', function (scope, photo) {
       const photoName = Object.keys(photo)[0];
       // @TODO inconsistent results when there is the same photo displayed multiple times
       delete vm.photoCredits[photoName];
-      vm.photoCreditsCount--;
+      vm.photoCreditsCount = Object.keys(vm.photoCredits).length;
     });
   }
 
