@@ -11,15 +11,10 @@ import omit from 'lodash/omit';
  *
  * @param {object} photos - object containing photo objects accessible by their keys
  */
-
-/**
- * @TODO think about transforming photoCredits object structure to JSON
- */
-
 export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
   const { t } = useTranslation('messages');
 
-  const [photoCredits, setPhotoCredits] = useState(initialPhotoCredits); // TODO: get initial value from app.photoCredits
+  const [photoCredits, setPhotoCredits] = useState(initialPhotoCredits);
 
   useEffect(
     () =>

@@ -15,7 +15,6 @@ export async function read({ limit = 50 } = {}) {
   return data;
 }
 
-// experiment
 export async function get(slug) {
   const { data } = await axios.get(`/api/tribes/${slug}`);
   return data;
