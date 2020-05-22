@@ -12,6 +12,7 @@ import {
   generateTribes,
 } from '@/testutils/common/data.common.testutil';
 
+import { $broadcast } from '@/modules/core/client/services/angular-compat';
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 
@@ -125,6 +126,17 @@ describe('TribesPage', () => {
       // during the test the api should be called only once
       expect(api.tribes.read).toHaveBeenCalledTimes(1);
       expect(api.tribes.read).toHaveBeenCalledWith();
+
+      // it should broadcast photo credit changes
+      expect($broadcast).toHaveBeenCalledTimes(2);
+      expect($broadcast).toHaveBeenCalledWith(
+        'photoCreditsRemoved',
+        expect.anything(),
+      );
+      expect($broadcast).toHaveBeenCalledWith(
+        'photoCreditsUpdated',
+        expect.anything(),
+      );
     });
 
     it('user is member of some tribes and not member of others', async () => {
