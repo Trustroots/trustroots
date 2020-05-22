@@ -21,17 +21,21 @@ export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
 
   const [photoCredits, setPhotoCredits] = useState(initialPhotoCredits); // TODO: get initial value from app.photoCredits
 
-  useEffect(() => {
-    return () => {
-      $on('photoCreditsUpdated', (scope, photo) => {
-        setPhotoCredits({ ...photoCredits, ...photo });
-      });
+  useEffect(
+    () =>
+      $on('photoCreditsUpdated', (scope, photo) =>
+        setPhotoCredits({ ...photoCredits, ...photo }),
+      ),
+    [],
+  );
 
-      $on('photoCreditsRemoved', (scope, photo) => {
-        setPhotoCredits(omit(photoCredits, Object.keys(photo)));
-      });
-    };
-  }, []);
+  useEffect(
+    () =>
+      $on('photoCreditsRemoved', (scope, photo) =>
+        setPhotoCredits(omit(photoCredits, Object.keys(photo))),
+      ),
+    [],
+  );
 
   const credits = Object.keys(photoCredits).map(key => {
     return { key, ...photoCredits[key] };
