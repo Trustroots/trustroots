@@ -45,10 +45,12 @@ if (SENTRY_DSN) {
   require('@/config/client/sentry').init(SENTRY_DSN);
 }
 
-// Init the application configuration module for AngularJS application
-// Init module configuration options
-// When testing, `window.env` is undefined, thus default to 'test'
-// eslint-disable-next-line angular/window-service
+/** 
+*Init the application configuration module for AngularJS application
+*Init module configuration options
+*When testing, `window.env` is undefined, thus default to 'test'
+*eslint-disable-next-line angular/window-service
+*/
 const appEnv = process.env.NODE_ENV || 'test';
 
 const appModuleName = 'trustroots';
