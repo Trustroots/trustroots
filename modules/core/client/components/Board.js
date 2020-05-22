@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
+import isArray from 'lodash/isArray';
+
 import { selectPhoto } from '../services/photos.service';
 import { $broadcast } from '@/modules/core/client/services/angular-compat';
 
@@ -50,7 +52,7 @@ export default function Board({
     return () => {
       $broadcast('photoCreditsRemoved', photoObject);
     };
-  }, [names]);
+  }, [isArray(names) ? names.join(' ') : names]);
 
   if (photo) {
     style
