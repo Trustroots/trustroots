@@ -18,6 +18,7 @@ import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 const api = { tribes: tribesApi };
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
+jest.mock('@/modules/core/client/services/angular-compat');
 
 const onMembershipUpdated = jest.fn();
 
