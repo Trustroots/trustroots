@@ -231,7 +231,7 @@ module.exports = function (job, agendaDone) {
         );
       },
 
-      // Get number of spoken languages
+      // Get statistics for top 40 spoken languages
       function (done) {
         statistics.getUserLanguagesCount(40, function (err, languageCounts) {
           if (err) {
