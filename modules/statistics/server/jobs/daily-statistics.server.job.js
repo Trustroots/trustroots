@@ -231,33 +231,38 @@ module.exports = function (job, agendaDone) {
         );
       },
 
-      // Get number of languages spoken
+      // Get number of spoken languages
       function (done) {
-        statistics.getUserLanguagesCount(40, function (err, counts) {
+        statistics.getUserLanguagesCount(40, function (err, languageCounts) {
           if (err) {
             log(
               'error',
-              'Daily statistics: failed fetching languages spoken counts.',
+              'Daily statistics: failed fetching spoken languages counts.',
               err,
             );
             return done();
           }
 
           // Write numbers to stats
-          counts.map(({ _id, count }) => {
-            writeDailyStat(
-              {
-                namespace: 'language',
-                values: {
-                  count,
+          async.eachOfSeries(
+            languageCounts,
+            function ({ _id, count }, index, doneLanguage) {
+              writeDailyStat(
+                {
+                  namespace: 'language',
+                  values: {
+                    count,
+                    percentage: (count / totalUserCount) * 100,
+                  },
+                  tags: {
+                    language: _id,
+                  },
                 },
-                tags: {
-                  language: _id,
-                },
-              },
-              done,
-            );
-          });
+                doneLanguage,
+              );
+            },
+            done,
+          );
         });
       },
     ],
