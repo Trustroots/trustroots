@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
+import isArray from 'lodash/isArray';
+
 import { selectPhoto } from '../services/photos.service';
+import { $broadcast } from '@/modules/core/client/services/angular-compat';
 
 /**
  * @param {string[]|string} names - array of names or a single name
@@ -24,9 +27,8 @@ function selectName(names) {
  */
 export default function Board({
   names = 'bokeh',
+  style = null,
   children,
-  onDisplayPhoto = () => {},
-  onHidePhoto = () => {},
   className,
   ...rest
 }) {
@@ -44,15 +46,25 @@ export default function Board({
 
     // inform the parent that the photo is displayed
     // ...useful e.g. for displaying photo credits elsewere
-    onDisplayPhoto(photoObject);
+    $broadcast('photoCreditsUpdated', photoObject);
 
     // inform the parent that the photo is not displayed anymore
-    return () => onHidePhoto(photoObject);
-  }, []);
+    return () => {
+      $broadcast('photoCreditsRemoved', photoObject);
+    };
+  }, [isArray(names) ? names.join(' ') : names]);
 
-  const style = photo ? { backgroundImage: `url("${photo.imageUrl}")` } : null;
+  if (photo) {
+    style
+      ? (style.backgroundImage = `url("${photo.imageUrl}")`)
+      : (style = { backgroundImage: `url("${photo.imageUrl}")` });
+  }
   return (
-    <section style={style} className={classNames('board', className)} {...rest}>
+    <section
+      style={{ ...style }}
+      className={classNames('board', className)}
+      {...rest}
+    >
       {children}
     </section>
   );
@@ -63,8 +75,7 @@ Board.propTypes = {
     PropTypes.string,
     PropTypes.arrayOf(PropTypes.string),
   ]).isRequired,
+  style: PropTypes.object,
   className: PropTypes.string,
   children: PropTypes.node,
-  onDisplayPhoto: PropTypes.func,
-  onHidePhoto: PropTypes.func,
 };

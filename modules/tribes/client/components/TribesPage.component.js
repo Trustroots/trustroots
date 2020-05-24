@@ -7,12 +7,7 @@ import TribesJoinTrustroots from './TribesJoinTrustroots';
 
 import * as api from '../api/tribes.api';
 
-export default function TribesPage({
-  user,
-  onDisplayPhoto,
-  onHidePhoto,
-  onMembershipUpdated,
-}) {
+export default function TribesPage({ user, onMembershipUpdated }) {
   const [tribes, setTribes] = useState([]);
 
   const handleMembershipUpdated = data => {
@@ -43,11 +38,7 @@ export default function TribesPage({
 
   return (
     <>
-      <TribesHeader
-        isLoggedIn={!!user}
-        onDisplayPhoto={onDisplayPhoto}
-        onHidePhoto={onHidePhoto}
-      />
+      <TribesHeader isLoggedIn={!!user} />
 
       <section className="container container-spacer">
         <div className="row">
@@ -69,6 +60,4 @@ export default function TribesPage({
 TribesPage.propTypes = {
   user: PropTypes.object,
   onMembershipUpdated: PropTypes.func.isRequired,
-  onDisplayPhoto: PropTypes.func,
-  onHidePhoto: PropTypes.func,
 };

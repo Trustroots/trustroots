@@ -10,7 +10,12 @@ export async function leave(tribeId) {
   return data;
 }
 
-export async function read() {
-  const { data } = await axios.get('/api/tribes?limit=50');
+export async function read({ limit = 50 } = {}) {
+  const { data } = await axios.get('/api/tribes', { params: { limit } });
+  return data;
+}
+
+export async function get(slug) {
+  const { data } = await axios.get(`/api/tribes/${slug}`);
   return data;
 }
