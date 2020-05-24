@@ -12,7 +12,7 @@ var lines = fs.readFileSync("data/users.json", { encoding: "utf-8" });
 // Split the whole thing into an array, one JSON text string for every document
 var jsons = lines.split("\n");
 
-// Rip off the ast element of the array because it's an empty string
+// Rip off the last element of the array because it's an empty string
 if (_.last(jsons) === "") {
   jsons.pop();
 }

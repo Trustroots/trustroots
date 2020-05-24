@@ -3,20 +3,11 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import Board from '@/modules/core/client/components/Board';
 
-export default function TribesHeader({
-  isLoggedIn,
-  onDisplayPhoto,
-  onHidePhoto,
-}) {
+export default function TribesHeader({ isLoggedIn }) {
   const { t } = useTranslation('tribes');
 
   return (
-    <Board
-      names="tribes-1"
-      className="tribes-header"
-      onDisplayPhoto={onDisplayPhoto}
-      onHidePhoto={onHidePhoto}
-    >
+    <Board names="tribes-1" className="tribes-header">
       <div className="container">
         <div className="row">
           <div className="col-xs-12 text-center">
@@ -46,6 +37,4 @@ export default function TribesHeader({
 
 TribesHeader.propTypes = {
   isLoggedIn: PropTypes.bool.isRequired,
-  onDisplayPhoto: PropTypes.func,
-  onHidePhoto: PropTypes.func,
 };

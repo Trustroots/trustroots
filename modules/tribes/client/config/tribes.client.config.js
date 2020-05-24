@@ -15,8 +15,6 @@ function TribesRoutes($stateProvider) {
       template: `
         <tribes-page
           user="app.user"
-          onDisplayPhoto="tribesList.addPhotoCredits"
-          onHidePhoto="tribesList.removePhotoCredits"
           onMembershipUpdated="tribesList.broadcastUpdatedUser"
         ></tribes-page>
       `,
