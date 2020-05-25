@@ -1,38 +1,38 @@
 {
     "(additional {{amount}} pending)": "",
     "Cancel": "Cancelar",
-    "Confirm Request": "Confirmar Solicitud",
-    "Connected since {{created, MMM D, YYYY}}": "",
+    "Confirm Request": "Confirmar solicitud",
+    "Connected since {{created, MMM D, YYYY}}": "Conectado desde {{created, D MMM, YYYY}}",
     "Contact request sent and pending": {
-        "": ""
+        "": "Solicitud de contacto enviada y pendiente de respuesta."
     },
-    "Decline Request": "",
-    "Decline contact request?": "",
-    "From <2>{{locationFrom}}</2>": "",
+    "Decline Request": "Rechazar solicitud",
+    "Decline contact request?": "¿Rechazar solicitud de contacto?",
+    "From <2>{{locationFrom}}</2>": "Desde <2>{{locationFrom}}</2>",
     "Lives in <2>{{locationLiving}}</2>": "Vive en <2>{{locationLiving}}</2>",
     "No contacts yet": {
-        "": ""
+        "": "Todavía no hay contactos."
     },
-    "One contact": "",
-    "Remove contact?": "",
-    "Requested {{created, MMM D, YYYY}}": "",
-    "Revoke Request": "",
-    "Revoke contact request?": "",
+    "One contact": "Un contacto",
+    "Remove contact?": "¿Eliminar contacto?",
+    "Requested {{created, MMM D, YYYY}}": "Solicitado {{created, MMM D, YYYY}}",
+    "Revoke Request": "Anular solicitud",
+    "Revoke contact request?": "¿Anular solicitud de contacto?",
     "Since {{created, MMM D, YYYY}}": "",
     "Wait a moment": {
         "": {
             "": {
-                "": ""
+                "": "Espera un momento..."
             }
         }
     },
-    "Yes, decline request": "",
-    "Yes, remove contact": "",
-    "Yes, revoke request": "",
+    "Yes, decline request": "Sí, rechazar solicitud",
+    "Yes, remove contact": "Sí, eliminar contacto",
+    "Yes, revoke request": "Sí, anular solicitud",
     "You received a contact request": {
-        "": ""
+        "": "Has recibido una solicitud de contacto."
     },
-    "{{amount}} contacts": "",
-    "{{count}} contacts in common": "",
-    "{{count}} contacts in common_plural": ""
+    "{{amount}} contacts": "{{amount}} contactos",
+    "{{count}} contacts in common": "{{count}} contacto en común",
+    "{{count}} contacts in common_plural": "{{count}} contactos en común"
 }
