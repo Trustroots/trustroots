@@ -83,6 +83,20 @@ const UserMemberSchema = new Schema(
 );
 
 /**
+ * SubSchema for `User` schema's `member` array
+ * This could be defined directly under `UserSchema` as well,
+ * but then we'd have extra `_id`'s hanging around.
+ */
+const BlockedSchema = new Schema(
+  {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  { _id: false },
+);
+
+/**
  * SubSchema for `User` schema's `pushRegistration` array
  */
 const UserPushRegistrationSchema = new Schema(
@@ -326,6 +340,10 @@ const UserSchema = new Schema({
   },
   pushRegistration: {
     type: [UserPushRegistrationSchema],
+    default: [],
+  },
+  blocked: {
+    type: [BlockedSchema],
     default: [],
   },
   acquisitionStory: {

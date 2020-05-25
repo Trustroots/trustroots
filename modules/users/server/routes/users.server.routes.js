@@ -5,6 +5,7 @@ const usersPolicy = require('../policies/users.server.policy');
 const userProfile = require('../controllers/users.profile.server.controller');
 const userPassword = require('../controllers/users.password.server.controller');
 const userAuthentication = require('../controllers/users.authentication.server.controller');
+const userBlock = require('../controllers/users.block.server.controller');
 
 module.exports = function (app) {
   // Setting up the users profile api
@@ -25,6 +26,17 @@ module.exports = function (app) {
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)
     .post(userProfile.avatarUploadField, userProfile.avatarUpload);
+
+  app
+    .route('/api/users/blocked-users')
+    .all(usersPolicy.isAllowed)
+    .get(userBlock.getBlockedUsers);
+
+  app
+    .route('/api/users/blocked-users/:userId')
+    .all(usersPolicy.isAllowed)
+    .post(userBlock.blockUser)
+    .delete(userBlock.unblockUser);
 
   app
     .route('/api/users/memberships')
