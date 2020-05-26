@@ -1,0 +1,45 @@
+#!/bin/sh
+
+fix() {
+  # We have an issue with weblate, see https://github.com/Trustroots/trustroots/issues/1487
+  # This is a sort of hacky fix for now...
+  ./scripts/ci/fix-weblate public/locales/*/*.json
+  npx prettier --write public/locales/*/*.json
+  git add public/locales/*/*.json
+  if ! git diff --staged --exit-code -- public/locales >/dev/null; then
+    git commit -F - <<EOF
+[CI] Fix locales
+
+[ci skip]
+EOF
+  fi
+}
+
+extract() {
+  # extracts new locales
+  npm run i18n:extract
+  git add public/locales/*/*.json
+  if ! git diff --staged --exit-code -- public/locales >/dev/null; then
+    git commit -F - <<EOF
+[CI] Extract locales
+
+[ci skip]
+EOF
+  fi
+}
+
+push_changes() {
+  if [ ! -z "$TRAVIS_BRANCH" ]; then
+    echo "Pushing changes!"
+    git config --global user.email "trustroots-ci@nicksellen.co.uk" # TODO: move this to @trustroots.org account...
+    git config --global user.name "Trustroots CI"
+    git push \
+      --quiet \
+      https://trustroots-ci:${GH_TOKEN}@github.com/Trustroots/trustroots.git \
+      HEAD:$TRAVIS_BRANCH
+  fi
+}
+
+fix
+extract
+push_changes
