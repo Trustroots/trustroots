@@ -1,0 +1,39 @@
+#!/bin/sh
+
+fix() {
+  ./scripts/ci/fix-weblate public/locales/*/*.json
+  npx prettier --write public/locales/*/*.json
+}
+
+add_changes() {
+  git add public/locales/*/*.json
+}
+
+push_changes() {
+  if [ "$GH_TOKENx" != "x" ]; then
+    git config --global user.email "trustroots-ci@nicksellen.co.uk" # TODO: move this to @trustroots.org account...
+    git config --global user.name "Trustroots CI"
+    git push \
+      --quiet \
+      https://trustroots-ci:${GH_TOKEN}@github.com/Trustroots/trustroots.git \
+      HEAD:$TRAVIS_BRANCH
+  fi
+}
+
+commit_and_push_changes_if_any() {
+  if ! git diff --staged --exit-code -- public/locales >/dev/null; then
+    echo changes
+    git commit -F - <<EOF
+[CI] Fix locales
+
+[ci skip]
+EOF
+  else
+    echo no changes
+  fi
+}
+
+
+fix
+add_changes
+commit_and_push_changes_if_any
