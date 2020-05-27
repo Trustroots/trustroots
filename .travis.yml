@@ -30,7 +30,7 @@ before_script:
   - mongod --version
   # Ensure stable NPM version (avoids `-next.0` tags)
   - npm install -g npm
-  - /scripts/ci/update-locales
+  - ./scripts/ci/update-locales
 cache:
   directories:
     - '$HOME/.node-gyp'
