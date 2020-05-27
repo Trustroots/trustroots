@@ -1,5 +1,12 @@
 #!/bin/sh
 
+check() {
+ if [ ! "$TRAVIS_BRANCH" = "master" ] || [ ! "$TRAVIS_EVENT_TYPE" = "push" ]; then
+   echo "Not updating locales as this is not a push to master"
+   exit 0
+ fi
+}
+
 fix() {
   # We have an issue with weblate, see https://github.com/Trustroots/trustroots/issues/1487
   # This is a sort of hacky fix for now...
@@ -28,17 +35,16 @@ EOF
 }
 
 push_changes() {
-  if [ ! -z "$TRAVIS_BRANCH" ]; then
-    echo "Pushing changes!"
-    git config --global user.email "trustroots-ci@nicksellen.co.uk" # TODO: move this to @trustroots.org account...
-    git config --global user.name "Trustroots CI"
-    git push \
-      --quiet \
-      https://trustroots-ci:${GH_TOKEN}@github.com/Trustroots/trustroots.git \
-      HEAD:$TRAVIS_BRANCH
-  fi
+  echo "Pushing changes!"
+  git config --global user.email "trustroots-ci@nicksellen.co.uk" # TODO: move this to @trustroots.org account...
+  git config --global user.name "Trustroots CI"
+  git push \
+    --quiet \
+    https://trustroots-ci:${GH_TOKEN}@github.com/Trustroots/trustroots.git \
+    HEAD:master
 }
 
+check
 fix
 extract
 push_changes
