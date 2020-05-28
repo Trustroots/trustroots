@@ -1,10 +1,8 @@
 {
   "Accommodation": "Mój dom",
-  "At most {{count}} guests": {
-    "At most {{count}} guests._0": "Maksymalnie {{count}} gość.",
-    "At most {{count}} guests._1": "Maksymalnie {{count}} gości.",
-    "At most {{count}} guests._2": ""
-  },
+  "At most {{count}} guests._0": "",
+  "At most {{count}} guests._1": "",
+  "At most {{count}} guests._2": "",
   "Bigger map": "Większa mapa",
   "Can host": "Przyjmuje gości",
   "Cannot host currently": "Nie przyjmuje gości",

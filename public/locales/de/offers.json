@@ -1,9 +1,7 @@
 {
   "Accommodation": "Unterkunft",
-  "At most {{count}} guests": {
-    "At most {{count}} guests.": "Höchstens {{count}} Gast.",
-    "At most {{count}} guests._plural": "Höchstens {{count}} Gäste."
-  },
+  "At most {{count}} guests.": "",
+  "At most {{count}} guests._plural": "",
   "Bigger map": "Größere Karte",
   "Can host": "Kann hosten",
   "Cannot host currently": "Kann derzeit nicht hosten",

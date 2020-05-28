@@ -1,10 +1,11 @@
 {
-  "explaining that you are interested in meeting them, not just looking for free accommodation.": "expliquant en quoi vous êtes intéressé pour les rencontrer, pas uniquement pour un hébergement gratuit.",
+  "...explaining that you are interested in meeting them, not just looking for free accommodation.": "",
   "Conversation started {{ date }}": "Conversation lancée le {{ date }}",
   "Don't write to people 2 months ahead.": "N'écrivez pas aux gens 2 mois à l'avance.",
   "Edit your profile": "Modifier votre profil",
   "Explain to them why you are choosing them": "Expliquez-leur pourquoi vous les choisissez",
   "Highlight text to add links or change its appearance. Ctrl+Enter to send.": "Sélectionnez le texte pour ajouter des liens ou modifier le style. Appuyez sur Ctrl + Entrée pour envoyer.",
+  "License": "",
   "Make sure your profile is complete": "Assurez-vous que votre profil soit complet",
   "More messages": "Plus de messages",
   "No conversations yet.": "Aucune conversation pour l'instant.",
@@ -24,5 +25,7 @@
   "You haven't been talking yet.": "Vous n'avez pas encore parlé.",
   "You replied": "Vous avez répondu",
   "You're much more likely to get a positive response if you have written a bit about yourself.": "Vous aurez beaucoup plus de chances d'obtenir une réponse positive si vous en avez dit un peu sur vous.",
-  "Your profile seems quite empty.": "Votre profil semble bien vide."
+  "Your profile seems quite empty.": "Votre profil semble bien vide.",
+  "{{count}} unread messages": "",
+  "{{count}} unread messages_plural": ""
 }

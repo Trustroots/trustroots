@@ -1,9 +1,7 @@
 {
   "Accommodation": "Logement",
-  "At most {{count}} guests": {
-    "At most {{count}} guests.": "Maximum {{count}} invité.",
-    "At most {{count}} guests._plural": "Maximum {{count}} invités."
-  },
+  "At most {{count}} guests.": "",
+  "At most {{count}} guests._plural": "",
   "Bigger map": "Carte agrandie",
   "Can host": "Peut héberger",
   "Cannot host currently": "Ne peut pas héberger actuellement",

@@ -1,9 +1,7 @@
 {
   "Accommodation": "Husrum",
-  "At most {{count}} guests": {
-    "At most {{count}} guests.": "Högst {{count}} gäst.",
-    "At most {{count}} guests._plural": "Högst {{count}} gäster."
-  },
+  "At most {{count}} guests.": "",
+  "At most {{count}} guests._plural": "",
   "Bigger map": "Större karta",
   "Can host": "Kan ta emot",
   "Cannot host currently": "Kan inte ta emot för tillfället",

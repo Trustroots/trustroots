@@ -1,9 +1,7 @@
 {
   "Accommodation": "Sistemazione",
-  "At most {{count}} guests": {
-    "At most {{count}} guests.": "Massimo{{count}}ospite.",
-    "At most {{count}} guests._plural": "Massimo{{count}}ospiti."
-  },
+  "At most {{count}} guests.": "",
+  "At most {{count}} guests._plural": "",
   "Bigger map": "",
   "Can host": "Posso ospitare",
   "Cannot host currently": "Non posso ospitare",
