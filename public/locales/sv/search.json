@@ -1,10 +1,8 @@
 {
-    "Clear members search": "Rensa medlemssök",
-    "No members found by this name": {
-        "": "Inga medlemmar med det namnet hittades."
-    },
-    "Search members": "Sök efter medlemmar",
-    "Type name, username…": "Skriv namn, användarnamn…",
-    "{{count}} members found": "Hittade {{count}} medlem",
-    "{{count}} members found_plural": "Hittade {{count}} medlemmar"
+  "Clear members search": "Rensa medlemssök",
+  "No members found by this name.": "Inga medlemmar med det namnet hittades.",
+  "Search members": "Sök efter medlemmar",
+  "Type name, username…": "Skriv namn, användarnamn…",
+  "{{count}} members found": "Hittade {{count}} medlem",
+  "{{count}} members found_plural": "Hittade {{count}} medlemmar"
 }

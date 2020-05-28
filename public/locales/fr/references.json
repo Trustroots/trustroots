@@ -1,48 +1,28 @@
 {
-    "<0>Your reference</0> for <3></3> is public now": {
-        "": "<0>Votre recommandation</0> pour <3></3> est désormais publique."
-    },
-    "Also, <1></1> was reported": {
-        "": "De plus, <1></1> a été signalé."
-    },
-    "Choose your interaction": "Choisissez votre interaction",
-    "Choose your recommendation": "Choisissez votre recommandation",
-    "Done!": "Terminé !",
-    "How do you know them": "Comment vous les connaissez",
-    "How do you know them?": "Comment les connaissez-vous ?",
-    "I don't know": "Je ne sais pas",
-    "I hosted them": "Je les ait hébergés",
-    "Message to moderators": "Écrire aux modérateurs",
-    "Met in person": "Rencontré en personne",
-    "No": "Non",
-    "Please write in English if possible": {
-        "": "Veuillez écrire en anglais si possible."
-    },
-    "Recommendation": "Recommandation",
-    "Report this person to moderators": "Signaler cette personne aux modérateurs",
-    "See the reference from {{name}} to you": {
-        "": "Consulter la recommandation de {{name}} envers vous."
-    },
-    "Sorry, you can't give a reference to yourself": {
-        "": "Désolé, vous ne pouvez pas vous recommander vous-même."
-    },
-    "They hosted me": "Ils m'ont hébergé",
-    "Wait a moment": {
-        "": {
-            "": {
-                "": "Un instant s'il vous plaît…"
-            }
-        }
-    },
-    "We're sad to hear you didn't have a great experience using Trustroots!": "Nous sommes désolés d'apprendre que vous n'avez pas eu une bonne expérience avec Trustroots !",
-    "Would you recommend others to host them?": "Recommanderiez-vous à d'autres de les héberger ?",
-    "Would you recommend others to meet them?": "Recommanderiez-vous à d'autres de les rencontrer ?",
-    "Would you recommend others to stay with them?": "Recommanderiez-vous à d'autres de rester avec eux ?",
-    "Yes": "Oui",
-    "You've already given a reference to <1></1>": {
-        "": "Vous avez déjà recommandé <1></1>."
-    },
-    "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
-        "": "Votre recommandation deviendra publique lorsque <1></1> vous recommandera en retour, ou bien dans {{daysToReply}} jours."
-    }
+  "<0>Your reference</0> for <3></3> is public now.": "<0>Votre recommandation</0> pour <3></3> est désormais publique.",
+  "Also, <1></1> was reported.": "De plus, <1></1> a été signalé.",
+  "Choose your interaction": "Choisissez votre interaction",
+  "Choose your recommendation": "Choisissez votre recommandation",
+  "Done!": "Terminé !",
+  "How do you know them": "Comment vous les connaissez",
+  "How do you know them?": "Comment les connaissez-vous ?",
+  "I don't know": "Je ne sais pas",
+  "I hosted them": "Je les ait hébergés",
+  "Message to moderators": "Écrire aux modérateurs",
+  "Met in person": "Rencontré en personne",
+  "No": "Non",
+  "Please write in English if possible.": "Veuillez écrire en anglais si possible.",
+  "Recommendation": "Recommandation",
+  "Report this person to moderators": "Signaler cette personne aux modérateurs",
+  "See the reference from {{name}} to you.": "Consulter la recommandation de {{name}} envers vous.",
+  "Sorry, you can't give a reference to yourself.": "Désolé, vous ne pouvez pas vous recommander vous-même.",
+  "They hosted me": "Ils m'ont hébergé",
+  "Wait a moment...": "Un instant s'il vous plaît…",
+  "We're sad to hear you didn't have a great experience using Trustroots!": "Nous sommes désolés d'apprendre que vous n'avez pas eu une bonne expérience avec Trustroots !",
+  "Would you recommend others to host them?": "Recommanderiez-vous à d'autres de les héberger ?",
+  "Would you recommend others to meet them?": "Recommanderiez-vous à d'autres de les rencontrer ?",
+  "Would you recommend others to stay with them?": "Recommanderiez-vous à d'autres de rester avec eux ?",
+  "Yes": "Oui",
+  "You've already given a reference to <1></1>.": "Vous avez déjà recommandé <1></1>.",
+  "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days.": "Votre recommandation deviendra publique lorsque <1></1> vous recommandera en retour, ou bien dans {{daysToReply}} jours."
 }

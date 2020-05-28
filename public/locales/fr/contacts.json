@@ -1,38 +1,26 @@
 {
-    "(additional {{amount}} pending)": "({{amount}} supplémentaire(s) en attente)",
-    "Cancel": "Annuler",
-    "Confirm Request": "Confirmer la demande",
-    "Connected since {{created, MMM D, YYYY}}": "Connecté depuis {{created, MMM D, YYYY}}",
-    "Contact request sent and pending": {
-        "": "Demande de contact envoyée et en attente."
-    },
-    "Decline Request": "Décliner la demande",
-    "Decline contact request?": "Décliner la demande de contact ?",
-    "From <2>{{locationFrom}}</2>": "De <2>{{locationFrom}}</2>",
-    "Lives in <2>{{locationLiving}}</2>": "Habite à <2>{{locationLiving}}</2>",
-    "No contacts yet": {
-        "": "Aucun contact pour l'instant."
-    },
-    "One contact": "Un contact",
-    "Remove contact?": "Supprimer le contact ?",
-    "Requested {{created, MMM D, YYYY}}": "Demandé le {{created, MMM D, YYYY}}",
-    "Revoke Request": "Annuler la demande",
-    "Revoke contact request?": "Annuler la demande de contact ?",
-    "Since {{created, MMM D, YYYY}}": "Depuis {{created, MMM D, YYYY}}",
-    "Wait a moment": {
-        "": {
-            "": {
-                "": "Un instant s'il vous plaît…"
-            }
-        }
-    },
-    "Yes, decline request": "Oui, décliner la demande",
-    "Yes, remove contact": "Oui, supprimer le contact",
-    "Yes, revoke request": "Oui, annuler la demande",
-    "You received a contact request": {
-        "": "Vous avez reçu une demande de contact."
-    },
-    "{{amount}} contacts": "{{amount}} contacts",
-    "{{count}} contacts in common": "{{count}} contact en commun",
-    "{{count}} contacts in common_plural": "{{count}} contacts en commun"
+  "(additional {{amount}} pending)": "({{amount}} supplémentaire(s) en attente)",
+  "Cancel": "Annuler",
+  "Confirm Request": "Confirmer la demande",
+  "Connected since {{created, MMM D, YYYY}}": "Connecté depuis {{created, MMM D, YYYY}}",
+  "Contact request sent and pending.": "Demande de contact envoyée et en attente.",
+  "Decline Request": "Décliner la demande",
+  "Decline contact request?": "Décliner la demande de contact ?",
+  "From <2>{{locationFrom}}</2>": "De <2>{{locationFrom}}</2>",
+  "Lives in <2>{{locationLiving}}</2>": "Habite à <2>{{locationLiving}}</2>",
+  "No contacts yet.": "Aucun contact pour l'instant.",
+  "One contact": "Un contact",
+  "Remove contact?": "Supprimer le contact ?",
+  "Requested {{created, MMM D, YYYY}}": "Demandé le {{created, MMM D, YYYY}}",
+  "Revoke Request": "Annuler la demande",
+  "Revoke contact request?": "Annuler la demande de contact ?",
+  "Since {{created, MMM D, YYYY}}": "Depuis {{created, MMM D, YYYY}}",
+  "Wait a moment...": "Un instant s'il vous plaît…",
+  "Yes, decline request": "Oui, décliner la demande",
+  "Yes, remove contact": "Oui, supprimer le contact",
+  "Yes, revoke request": "Oui, annuler la demande",
+  "You received a contact request.": "Vous avez reçu une demande de contact.",
+  "{{amount}} contacts": "{{amount}} contacts",
+  "{{count}} contacts in common": "{{count}} contact en commun",
+  "{{count}} contacts in common_plural": "{{count}} contacts en commun"
 }

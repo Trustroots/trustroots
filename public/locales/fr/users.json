@@ -1,59 +1,43 @@
 {
-    "About": "À propos",
-    "About me": "À propos de moi",
-    "Add contact": "Ajouter le contact",
-    "Change language": "Modifier la langue",
-    "Contacts": "Contacts",
-    "Delete contact request": "Supprimer la demande de contact",
-    "Don't panic!": "Ne paniquez pas !",
-    "Edit your profile": "Modifier votre profil",
-    "Elsewhere": "Ailleurs",
-    "Fill your profile": "Complétez votre profil",
-    "From <1>{{locationFrom}}</1>": "De <1>{{locationFrom}}</1>",
-    "Help!": "À l'aide !",
-    "Hosting": "Héberger",
-    "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>": {
-        "": "Si vous n'avez pas reçu le message, veuillez vérifier dans vos spams ou le renvoyer depuis les <1>paramètres d'e-mail</1>."
-    },
-    "Interface language": "Langue de l'interface",
-    "Languages": "Langues",
-    "Lives in <2>{{locationLiving}}</2>": "Habite à <2>{{locationLiving}}</2>",
-    "Member has not written description about themself": {
-        "": "Le membre n'a pas rédigé de description à propos de lui."
-    },
-    "Member since {{date, MMM Do, YYYY}}": "Membre depuis le {{date, MMM Do, YYYY}}",
-    "Online long ago": "En ligne depuis un moment",
-    "Online {{ date, fromNow }}": "En ligne il y a {{ date, fromNow }}",
-    "Open user profile for {{name}}": "Ouvrir le profil utilisateur de {{name}}",
-    "Overview": "Aperçu",
-    "Remove contact": "Supprimer le contact",
-    "Replies within {{replyTime, fromNow}}": {
-        "": "Réponses depuis {{replyTime, fromNow}}."
-    },
-    "Reply rate {{replyRate}}": {
-        "": "Taux de réponse de {{replyRate}}."
-    },
-    "Send a message": "Envoyer un message",
-    "Sorry, you need to first activate your profile by confirming your email": {
-        "": "Désolé, vous devez d'abord activer votre profil en confirmant votre adresse e-mail."
-    },
-    "Support": "Assistance",
-    "Thanks to all our community members who helped translate!": "Merci à tous nos membres de la communauté qui ont aidé aux traductions !",
-    "This is the language of the interface you see across the site": {
-        "": "Il s'agit de la langue de l'interface que vous voyez à travers le site."
-    },
-    "Tribes in common": "Tribus en commun",
-    "Write a reference": "Rédiger une recommandation",
-    "You can help us out!": "Vous pouvez nous aider !",
-    "Your profile description should be longer so that you can send messages": {
-        "": "La description de votre profil doit être plus longue afin que vous puissiez envoyer des messages."
-    },
-    "female": "femme",
-    "male": "homme",
-    "non-binary": "non-binaire",
-    "other": "autre",
-    "{{birthdate, age}} years": "{{birthdate, age}} ans",
-    "“Everyone is necessarily the hero of their own life story": {
-        "”": "« Chacun est nécessairement le héros de l'histoire de sa propre vie. »"
-    }
+  "About": "À propos",
+  "About me": "À propos de moi",
+  "Add contact": "Ajouter le contact",
+  "Change language": "Modifier la langue",
+  "Contacts": "Contacts",
+  "Delete contact request": "Supprimer la demande de contact",
+  "Don't panic!": "Ne paniquez pas !",
+  "Edit your profile": "Modifier votre profil",
+  "Elsewhere": "Ailleurs",
+  "Fill your profile": "Complétez votre profil",
+  "From <1>{{locationFrom}}</1>": "De <1>{{locationFrom}}</1>",
+  "Help!": "À l'aide !",
+  "Hosting": "Héberger",
+  "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>.": "Si vous n'avez pas reçu le message, veuillez vérifier dans vos spams ou le renvoyer depuis les <1>paramètres d'e-mail</1>.",
+  "Interface language": "Langue de l'interface",
+  "Languages": "Langues",
+  "Lives in <2>{{locationLiving}}</2>": "Habite à <2>{{locationLiving}}</2>",
+  "Member has not written description about themself.": "Le membre n'a pas rédigé de description à propos de lui.",
+  "Member since {{date, MMM Do, YYYY}}": "Membre depuis le {{date, MMM Do, YYYY}}",
+  "Online long ago": "En ligne depuis un moment",
+  "Online {{ date, fromNow }}": "En ligne il y a {{ date, fromNow }}",
+  "Open user profile for {{name}}": "Ouvrir le profil utilisateur de {{name}}",
+  "Overview": "Aperçu",
+  "Remove contact": "Supprimer le contact",
+  "Replies within {{replyTime, fromNow}}.": "Réponses depuis {{replyTime, fromNow}}.",
+  "Reply rate {{replyRate}}.": "Taux de réponse de {{replyRate}}.",
+  "Send a message": "Envoyer un message",
+  "Sorry, you need to first activate your profile by confirming your email.": "Désolé, vous devez d'abord activer votre profil en confirmant votre adresse e-mail.",
+  "Support": "Assistance",
+  "Thanks to all our community members who helped translate!": "Merci à tous nos membres de la communauté qui ont aidé aux traductions !",
+  "This is the language of the interface you see across the site.": "Il s'agit de la langue de l'interface que vous voyez à travers le site.",
+  "Tribes in common": "Tribus en commun",
+  "Write a reference": "Rédiger une recommandation",
+  "You can help us out!": "Vous pouvez nous aider !",
+  "Your profile description should be longer so that you can send messages.": "La description de votre profil doit être plus longue afin que vous puissiez envoyer des messages.",
+  "female": "femme",
+  "male": "homme",
+  "non-binary": "non-binaire",
+  "other": "autre",
+  "{{birthdate, age}} years": "{{birthdate, age}} ans",
+  "“Everyone is necessarily the hero of their own life story.”": "« Chacun est nécessairement le héros de l'histoire de sa propre vie. »"
 }

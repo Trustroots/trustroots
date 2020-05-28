@@ -1,29 +1,23 @@
 {
-    "Accommodation": "Sistemazione",
-    "At most {{count}} guests": {
-        "At most {{count}} guests.": "Massimo{{count}}ospite.",
-        "At most {{count}} guests._plural": "Massimo{{count}}ospiti."
-    },
-    "Bigger map": "",
-    "Can host": "Posso ospitare",
-    "Cannot host currently": "Non posso ospitare",
-    "Change": "Cambia",
-    "Hosting status: {{statusLabel}}": "",
-    "I can host": "Posso ospitare",
-    "I can't host currently": "Ora non posso ospitare",
-    "I might be able to host": "Forse posso ospitare",
-    "Meet people": "",
-    "Might be able to host": "Potrebbe accettare ospiti",
-    "Modify hosting offer": "Modifica offerta di ospitalità",
-    "No guests": {
-        "": "Nessun ospite."
-    },
-    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
-        "": "Offrire ospitalità e accogliere \"stranieri\" a casa nostra rafforza la nostra fede negli altri."
-    },
-    "Open on device": "",
-    "Sorry, user is not hosting currently": {
-        "": "Spiacenti, l'utente non accetta ospiti al momento."
-    },
-    "Start hosting travellers": "Inizia ad ospitare!"
+  "Accommodation": "Sistemazione",
+  "At most {{count}} guests": {
+    "At most {{count}} guests.": "Massimo{{count}}ospite.",
+    "At most {{count}} guests._plural": "Massimo{{count}}ospiti."
+  },
+  "Bigger map": "",
+  "Can host": "Posso ospitare",
+  "Cannot host currently": "Non posso ospitare",
+  "Change": "Cambia",
+  "Hosting status: {{statusLabel}}": "",
+  "I can host": "Posso ospitare",
+  "I can't host currently": "Ora non posso ospitare",
+  "I might be able to host": "Forse posso ospitare",
+  "Meet people": "",
+  "Might be able to host": "Potrebbe accettare ospiti",
+  "Modify hosting offer": "Modifica offerta di ospitalità",
+  "No guests.": "Nessun ospite.",
+  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "Offrire ospitalità e accogliere \"stranieri\" a casa nostra rafforza la nostra fede negli altri.",
+  "Open on device": "",
+  "Sorry, user is not hosting currently.": "Spiacenti, l'utente non accetta ospiti al momento.",
+  "Start hosting travellers": "Inizia ad ospitare!"
 }

@@ -1,29 +1,23 @@
 {
-    "Accommodation": "Unterkunft",
-    "At most {{count}} guests": {
-        "At most {{count}} guests.": "Höchstens {{count}} Gast.",
-        "At most {{count}} guests._plural": "Höchstens {{count}} Gäste."
-    },
-    "Bigger map": "Größere Karte",
-    "Can host": "Kann hosten",
-    "Cannot host currently": "Kann derzeit nicht hosten",
-    "Change": "Ändern",
-    "Hosting status: {{statusLabel}}": "Hosting-Status: {{statusLabel}}",
-    "I can host": "Ich kann hosten",
-    "I can't host currently": "Ich kann derzeit nicht hosten",
-    "I might be able to host": "Ich kann eventuell hosten",
-    "Meet people": "Leute treffen",
-    "Might be able to host": "Kann eventuell hosten",
-    "Modify hosting offer": "Hosting-Angebot ändern",
-    "No guests": {
-        "": "Keine Gäste."
-    },
-    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
-        "": "Gastfreundschaft anzubieten und „Fremde“ in unserem zu Hause wilkommen zu heißen, stärkt unser gegenseitiges Vertrauen."
-    },
-    "Open on device": "Auf Gerät öffnen",
-    "Sorry, user is not hosting currently": {
-        "": "Sorry, der Nutzer hosted derzeit nicht."
-    },
-    "Start hosting travellers": "Beginne mit dem Hosten von Reisenden"
+  "Accommodation": "Unterkunft",
+  "At most {{count}} guests": {
+    "At most {{count}} guests.": "Höchstens {{count}} Gast.",
+    "At most {{count}} guests._plural": "Höchstens {{count}} Gäste."
+  },
+  "Bigger map": "Größere Karte",
+  "Can host": "Kann hosten",
+  "Cannot host currently": "Kann derzeit nicht hosten",
+  "Change": "Ändern",
+  "Hosting status: {{statusLabel}}": "Hosting-Status: {{statusLabel}}",
+  "I can host": "Ich kann hosten",
+  "I can't host currently": "Ich kann derzeit nicht hosten",
+  "I might be able to host": "Ich kann eventuell hosten",
+  "Meet people": "Leute treffen",
+  "Might be able to host": "Kann eventuell hosten",
+  "Modify hosting offer": "Hosting-Angebot ändern",
+  "No guests.": "Keine Gäste.",
+  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "Gastfreundschaft anzubieten und „Fremde“ in unserem zu Hause wilkommen zu heißen, stärkt unser gegenseitiges Vertrauen.",
+  "Open on device": "Auf Gerät öffnen",
+  "Sorry, user is not hosting currently.": "Sorry, der Nutzer hosted derzeit nicht.",
+  "Start hosting travellers": "Beginne mit dem Hosten von Reisenden"
 }

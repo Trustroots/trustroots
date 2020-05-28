@@ -1,48 +1,28 @@
 {
-    "explaining that you are interested in meeting them, not just looking for free accommodation": {
-        "": "specificando che sei interessato a conoscerli e non cerchi soltanto un posto gratis per dormire."
-    },
-    "Conversation started {{ date }}": "Conversazione iniziata{{ date }}",
-    "Don't write to people 2 months ahead": {
-        "": "Non scrivere alle persone con 2 mesi di anticipo."
-    },
-    "Edit your profile": "Modifica il tuo profilo",
-    "Explain to them why you are choosing them": "Spiega loro perché li hai scelti",
-    "Highlight text to add links or change its appearance": {
-        " Ctrl+Enter to send": {
-            "": "Evidenzia il testo per aggiungere links o cambiarne lo stile. Ctrl+Enter per inviare."
-        }
-    },
-    "Make sure your profile is complete": "Assicurati di aver completato il tuo profilo",
-    "More messages": "Altri messaggi",
-    "No conversations yet": {
-        "": "Ancora nessuna conversazione."
-    },
-    "Please write longer profile description before sending messages": {
-        "": ""
-    },
-    "Send": "Invia",
-    "Sorry I can't host": "Mi dispiace, non posso ospitare",
-    "Tell a little bit about yourself": "Scrivi qualcosa di te",
-    "Tell your host why you're on a trip": "Spiega a chi ti ospita perché sei in viaggio",
-    "This user isn't a member anymore": {
-        "": "Questo utente non è più un membro."
-    },
-    "Tip": "Suggerimento",
-    "Trustroots is very much about spontaneous travel": "",
-    "Unknown member": "membro sconosciuto",
-    "What are your expectations in regards with going through their town?": "",
-    "Write back": "Rispondi",
-    "Yes, I can host!": "Sì, posso ospitare!",
-    "You": "Tu",
-    "You haven't been talking yet": {
-        "": "Non vi siete ancora scambiati messaggi."
-    },
-    "You replied": "Tu hai risposto",
-    "You're much more likely to get a positive response if you have written a bit about yourself": {
-        "": "È più probabile che tu ottenga una risposta positiva se hai raccontato un po' di te."
-    },
-    "Your profile seems quite empty": {
-        "": "Il tuo profilo risulta un po' vuoto."
-    }
+  "explaining that you are interested in meeting them, not just looking for free accommodation.": "specificando che sei interessato a conoscerli e non cerchi soltanto un posto gratis per dormire.",
+  "Conversation started {{ date }}": "Conversazione iniziata{{ date }}",
+  "Don't write to people 2 months ahead.": "Non scrivere alle persone con 2 mesi di anticipo.",
+  "Edit your profile": "Modifica il tuo profilo",
+  "Explain to them why you are choosing them": "Spiega loro perché li hai scelti",
+  "Highlight text to add links or change its appearance. Ctrl+Enter to send.": "Evidenzia il testo per aggiungere links o cambiarne lo stile. Ctrl+Enter per inviare.",
+  "Make sure your profile is complete": "Assicurati di aver completato il tuo profilo",
+  "More messages": "Altri messaggi",
+  "No conversations yet.": "Ancora nessuna conversazione.",
+  "Please write longer profile description before sending messages.": "",
+  "Send": "Invia",
+  "Sorry I can't host": "Mi dispiace, non posso ospitare",
+  "Tell a little bit about yourself": "Scrivi qualcosa di te",
+  "Tell your host why you're on a trip": "Spiega a chi ti ospita perché sei in viaggio",
+  "This user isn't a member anymore.": "Questo utente non è più un membro.",
+  "Tip": "Suggerimento",
+  "Trustroots is very much about spontaneous travel": "",
+  "Unknown member": "membro sconosciuto",
+  "What are your expectations in regards with going through their town?": "",
+  "Write back": "Rispondi",
+  "Yes, I can host!": "Sì, posso ospitare!",
+  "You": "Tu",
+  "You haven't been talking yet.": "Non vi siete ancora scambiati messaggi.",
+  "You replied": "Tu hai risposto",
+  "You're much more likely to get a positive response if you have written a bit about yourself.": "È più probabile che tu ottenga una risposta positiva se hai raccontato un po' di te.",
+  "Your profile seems quite empty.": "Il tuo profilo risulta un po' vuoto."
 }

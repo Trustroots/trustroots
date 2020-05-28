@@ -1,23 +1,19 @@
 {
-    "Cancel": "Avbryt",
-    "Discover Tribes": "Oppdag gemenskap",
-    "Do you want to leave \"{{label}}\"?": "Ønsker du å forlate \"{{label}}\"?",
-    "Join": "Ta del",
-    "Join ({{label}})": "Ta del i {{label}}",
-    "Join Trustroots to find members behind Tribes": {
-        "": "Registrer deg på Trustroots for å finne medlemmene bak gemenskapene."
-    },
-    "Joined": "Tok del",
-    "Joining Tribes helps you find likeminded Trustroots members": {
-        "": "Å ta del i gemenskap hjelper deg å finne likesinnede Trustroot-medlemmer."
-    },
-    "Leave Tribe": "Forlat gemenskap",
-    "Leave this Tribe?": "Forlat dette gemenskapet",
-    "Missing your Tribe?": "Mangler ditt gemenskap?",
-    "New tribe!": "Nytt gemenskap?",
-    "No members yet": "Ingen medlemmer enda",
-    "Send us suggestions!": "Send oss forslag.",
-    "Sign up with Trustroots": "Registrer deg på Trustroots",
-    "{{count, number}} members": "{{count, number}} medlem",
-    "{{count, number}} members_plural": "{{count, number}} medlemmer"
+  "Cancel": "Avbryt",
+  "Discover Tribes": "Oppdag gemenskap",
+  "Do you want to leave \"{{label}}\"?": "Ønsker du å forlate \"{{label}}\"?",
+  "Join": "Ta del",
+  "Join ({{label}})": "Ta del i {{label}}",
+  "Join Trustroots to find members behind Tribes.": "Registrer deg på Trustroots for å finne medlemmene bak gemenskapene.",
+  "Joined": "Tok del",
+  "Joining Tribes helps you find likeminded Trustroots members.": "Å ta del i gemenskap hjelper deg å finne likesinnede Trustroot-medlemmer.",
+  "Leave Tribe": "Forlat gemenskap",
+  "Leave this Tribe?": "Forlat dette gemenskapet",
+  "Missing your Tribe?": "Mangler ditt gemenskap?",
+  "New tribe!": "Nytt gemenskap?",
+  "No members yet": "Ingen medlemmer enda",
+  "Send us suggestions!": "Send oss forslag.",
+  "Sign up with Trustroots": "Registrer deg på Trustroots",
+  "{{count, number}} members": "{{count, number}} medlem",
+  "{{count, number}} members_plural": "{{count, number}} medlemmer"
 }
