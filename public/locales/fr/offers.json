@@ -1,21 +1,29 @@
 {
-  "Accommodation": "",
-  "At most {{count}} guests.": "",
-  "At most {{count}} guests._plural": "",
-  "Bigger map": "",
-  "Can host": "",
-  "Cannot host currently": "",
-  "Change": "",
-  "Hosting status: {{statusLabel}}": "",
-  "I can host": "",
-  "I can't host currently": "",
-  "I might be able to host": "",
-  "Meet people": "",
-  "Might be able to host": "",
-  "Modify hosting offer": "",
-  "No guests.": "",
-  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "",
-  "Open on device": "",
-  "Sorry, user is not hosting currently.": "",
-  "Start hosting travellers": ""
+    "Accommodation": "Logement",
+    "At most {{count}} guests": {
+        "At most {{count}} guests.": "Maximum {{count}} invité.",
+        "At most {{count}} guests._plural": "Maximum {{count}} invités."
+    },
+    "Bigger map": "Carte agrandie",
+    "Can host": "Peut héberger",
+    "Cannot host currently": "Ne peut pas héberger actuellement",
+    "Change": "Modifier",
+    "Hosting status: {{statusLabel}}": "Statut d'hébergement : {{statusLabel}}",
+    "I can host": "Je peux héberger",
+    "I can't host currently": "Je ne peux pas héberger actuellement",
+    "I might be able to host": "Je devrai pouvoir héberger",
+    "Meet people": "Rencontrer des gens",
+    "Might be able to host": "Devrait pouvoir héberger",
+    "Modify hosting offer": "Modifier l'offre d'hébergement",
+    "No guests": {
+        "": "Aucun invité."
+    },
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
+        "": "Offrir l'hospitalité et accueillir des « étrangers » dans nos maisons renforce notre confiance mutuelle."
+    },
+    "Open on device": "Ouvrir sur l'appareil",
+    "Sorry, user is not hosting currently": {
+        "": "Désolé, l'utilisateur n'héberge pas actuellement."
+    },
+    "Start hosting travellers": "Commencer à accueillir des voyageurs"
 }

@@ -1,16 +1,12 @@
 {
-  "Back": "",
-  "Finish": "",
-  "Finish editing and save": "",
-  "Map style": "",
-  "Next": "",
-  "Next section": "",
-  "Outdoors": "",
-  "Previous section": "",
-  "Read more…": "",
-  "Satellite": "",
-  "Streets": "",
-  "Wait a moment…": "",
-  "Zoom in": "",
-  "Zoom out": ""
+    "Back": "Tillbaka",
+    "Finish": "Slutför",
+    "Finish editing and save": "Avsluta redigering och spara",
+    "Next": "Nästa",
+    "Next section": "Nästa avsnitt",
+    "Previous section": "Föregående avsnitt",
+    "Read more…": "Läs mer…",
+    "Wait a moment…": "Vänta…",
+    "Zoom in": "Förstora",
+    "Zoom out": "Förminska"
 }

@@ -1,21 +1,29 @@
 {
-  "Accommodation": "",
-  "At most {{count}} guests.": "",
-  "At most {{count}} guests._plural": "",
-  "Bigger map": "",
-  "Can host": "",
-  "Cannot host currently": "",
-  "Change": "",
-  "Hosting status: {{statusLabel}}": "",
-  "I can host": "",
-  "I can't host currently": "",
-  "I might be able to host": "",
-  "Meet people": "",
-  "Might be able to host": "",
-  "Modify hosting offer": "",
-  "No guests.": "",
-  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "",
-  "Open on device": "",
-  "Sorry, user is not hosting currently.": "",
-  "Start hosting travellers": ""
+    "Accommodation": "Husrum",
+    "At most {{count}} guests": {
+        "At most {{count}} guests.": "Högst {{count}} gäst.",
+        "At most {{count}} guests._plural": "Högst {{count}} gäster."
+    },
+    "Bigger map": "Större karta",
+    "Can host": "Kan ta emot",
+    "Cannot host currently": "Kan inte ta emot för tillfället",
+    "Change": "Ändra",
+    "Hosting status: {{statusLabel}}": "Värdstatus: {{statusLabel}}",
+    "I can host": "Jag kan erbjuda husrum",
+    "I can't host currently": "Jag kan inte erbjuda husrum",
+    "I might be able to host": "Jag kan kanske erbjuda husrum",
+    "Meet people": "Möt folk",
+    "Might be able to host": "Kan kanske erbjuda husrum",
+    "Modify hosting offer": "Ändra tillgänglighet för husrum",
+    "No guests": {
+        "": "Inga gäster."
+    },
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
+        "": "Att visa gästfrihet och välkomna \"främlingar\" till våra hem stärker vår tillit till varandra."
+    },
+    "Open on device": "Öppna på enhet",
+    "Sorry, user is not hosting currently": {
+        "": "Tyvärr har inte användaren husrum tillgängligt för tillfället."
+    },
+    "Start hosting travellers": "Börja ta emot resande"
 }

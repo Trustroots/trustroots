@@ -1,34 +1,48 @@
 {
-  "<0>Your reference</0> for <3></3> is public now.": "",
-  "Also, <1></1> was reported.": "",
-  "Choose your interaction": "",
-  "Choose your recommendation": "",
-  "Did you enjoy their cooking? singing?": "",
-  "Done!": "",
-  "Feedback": "",
-  "How do you know them": "",
-  "How do you know them?": "",
-  "I don't know": "",
-  "I hosted them": "",
-  "Message to moderators": "",
-  "Met in person": "",
-  "No": "",
-  "Optional": "",
-  "Please write in English if possible.": "",
-  "Public feedback": "",
-  "Recommendation": "",
-  "Report this person to moderators": "",
-  "See the reference from {{name}} to you.": "",
-  "Sorry, you can't give a reference to yourself.": "",
-  "The answer you write will be publicaly available on their profile": "",
-  "They hosted me": "",
-  "Wait a moment...": "",
-  "We're sad to hear you didn't have a great experience using Trustroots!": "",
-  "Would you like to describe something about them?": "",
-  "Would you recommend others to host them?": "",
-  "Would you recommend others to meet them?": "",
-  "Would you recommend others to stay with them?": "",
-  "Yes": "",
-  "You've already given a reference to <1></1>.": "",
-  "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days.": ""
+    "<0>Your reference</0> for <3></3> is public now": {
+        "": "La tua referenza è ora pubblica."
+    },
+    "Also, <1></1> was reported": {
+        "": ""
+    },
+    "Choose your interaction": "",
+    "Choose your recommendation": "",
+    "Done!": "Fatto!",
+    "How do you know them": "Come vi conoscete",
+    "How do you know them?": "Come vi conoscete?",
+    "I don't know": "Non lo so",
+    "I hosted them": "Li ho ospitati",
+    "Message to moderators": "Messaggio ai moderatori",
+    "Met in person": "Incontrati di persona",
+    "No": "No",
+    "Please write in English if possible": {
+        "": "Se possibile, scrivi in inglese."
+    },
+    "Recommendation": "",
+    "Report this person to moderators": "Segnala questa persona ai moderatori",
+    "See the reference from {{name}} to you": {
+        "": "Leggi la referenza da parte di {{name}}."
+    },
+    "Sorry, you can't give a reference to yourself": {
+        "": "Non puoi scrivere una referenza a te stesso."
+    },
+    "They hosted me": "Mi hanno ospitato",
+    "Wait a moment": {
+        "": {
+            "": {
+                "": "Aspetta un momento..."
+            }
+        }
+    },
+    "We're sad to hear you didn't have a great experience using Trustroots!": "Ci spiace sapere che la tua esperienza usando Trustroots non sia stata positiva!",
+    "Would you recommend others to host them?": "Consiglieresti ad altri di ospitarli?",
+    "Would you recommend others to meet them?": "Consiglieresti ad altri di incontrarli?",
+    "Would you recommend others to stay with them?": "Consiglieresti ad altri di averli come ospiti?",
+    "Yes": "Sì",
+    "You've already given a reference to <1></1>": {
+        "": "Hai già scritto una referenza a <1></1>."
+    },
+    "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
+        "": "La tua referenza sarà pubblicata quando <1></1> scriverà la sua, oppure tra{{daysToReply}} giorni."
+    }
 }
