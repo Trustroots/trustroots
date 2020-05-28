@@ -18,7 +18,7 @@ jobs:
           stale-issue-message: |
             This issue is marked as unloved because it has not had any activity for 180 days.
 
-            It doesn't mean it's not important, so please remove the unloved label if you like it, or add a comment saying what it means to you :)
+            It doesn't mean it's not important, so please remove the unloved label if you like it, or add a comment saying what it means to you :) If this was a bug, maybe you can test to see if this is still an issue?
 
             However, if you just leave it like this, I'll close it in 14 days to help keep your issues tidy!
 
