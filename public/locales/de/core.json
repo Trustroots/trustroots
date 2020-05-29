@@ -1,16 +1,12 @@
 {
-  "Back": "Zurück",
-  "Finish": "Beenden",
-  "Finish editing and save": "Bearbeitung beenden und speichern",
-  "Map style": "",
-  "Next": "Weiter",
-  "Next section": "Nächster Abschnitt",
-  "Outdoors": "",
-  "Previous section": "Vorheriger Abschnitt",
-  "Read more…": "Weiterlesen…",
-  "Satellite": "",
-  "Streets": "",
-  "Wait a moment…": "Warte einen Moment …",
-  "Zoom in": "Vergrößern",
-  "Zoom out": "Verkleinern"
+    "Back": "Zurück",
+    "Finish": "Beenden",
+    "Finish editing and save": "Bearbeitung beenden und speichern",
+    "Next": "Weiter",
+    "Next section": "Nächster Abschnitt",
+    "Previous section": "Vorheriger Abschnitt",
+    "Read more…": "Weiterlesen…",
+    "Wait a moment…": "Warte einen Moment …",
+    "Zoom in": "Vergrößern",
+    "Zoom out": "Verkleinern"
 }

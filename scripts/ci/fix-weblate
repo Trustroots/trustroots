@@ -21,14 +21,37 @@ function convert(obj) {
   const result = {};
   for (let key of Object.keys(obj)) {
     let value = obj[key];
-    while (isObject(value)) {
-      const keys = Object.keys(value);
-      if (keys.length > 1) break; // nested data is valid for plural stuff, so we assume that if there is >1 key it is for that use case, kinda crude ;)
-      const firstKey = first(keys);
-      value = value[firstKey];
-      key = `${key}.${firstKey}`;
+    if (isObject(value) && Object.keys(value).length > 1) {
+      /* for plurals we receive something like:
+           {
+             "foo": {
+               "foo._0": "No foos",
+               "foo._1": "1 foo",
+               "foo._plural": "{{count}} foos"
+             }
+           }
+
+        and we need to turn it into
+
+           {
+             "foo._0": "No foos",
+             "foo._1": "1 foo",
+             "foo._plural": "{{count}} foos"
+           }
+      */
+      for (let key2 of Object.keys(value)) {
+        result[key2] = value[key2];
+      }
+    } else {
+      // For the rest we just de-nest all the keys all the way down
+      while (isObject(value)) {
+        const keys = Object.keys(value);
+        const firstKey = first(keys);
+        value = value[firstKey];
+        key = `${key}.${firstKey}`;
+      }
+      result[key] = value;
     }
-    result[key] = value;
   }
   return result;
 }

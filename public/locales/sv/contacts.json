@@ -1,26 +1,38 @@
 {
-  "(additional {{amount}} pending)": "(ytterligare {{amount}} saknas)",
-  "Cancel": "Avbryt",
-  "Confirm Request": "Bekräfta förfrågan",
-  "Connected since {{created, MMM D, YYYY}}": "Ansluten sedan {{created, MMM D, YYYY}}",
-  "Contact request sent and pending.": "Kontaktförfrågan skickad. Väntar på svar.",
-  "Decline Request": "Avböj förfrågan",
-  "Decline contact request?": "Vill du avböja kontaktförfrågan?",
-  "From <2>{{locationFrom}}</2>": "Från <2>{{locationFrom}}</2>",
-  "Lives in <2>{{locationLiving}}</2>": "Bor i <2>{{locationLiving}}</2>",
-  "No contacts yet.": "Inga kontakter än.",
-  "One contact": "En kontakt",
-  "Remove contact?": "Ta bort kontakt?",
-  "Requested {{created, MMM D, YYYY}}": "Förfrågan skickad {{created, MMM D, YYYY}}",
-  "Revoke Request": "Dra tillbaka förfrågan",
-  "Revoke contact request?": "Dra tillbaka kontaktförfrågan?",
-  "Since {{created, MMM D, YYYY}}": "Sedan {{created, MMM D, YYYY}}",
-  "Wait a moment...": "Vänta...",
-  "Yes, decline request": "Ja, avböj förfrågan",
-  "Yes, remove contact": "Ja, ta bort kontakt",
-  "Yes, revoke request": "Ja, dra tillbaka förfrågan",
-  "You received a contact request.": "Du har mottagit en kontaktförfrågan.",
-  "{{amount}} contacts": "{{amount}} kontakter",
-  "{{count}} contacts in common": "{{count}} kontakt gemensamt",
-  "{{count}} contacts in common_plural": "{{count}} gemensamma kontakter"
+    "(additional {{amount}} pending)": "(ytterligare {{amount}} saknas)",
+    "Cancel": "Avbryt",
+    "Confirm Request": "Bekräfta förfrågan",
+    "Connected since {{created, MMM D, YYYY}}": "Ansluten sedan {{created, MMM D, YYYY}}",
+    "Contact request sent and pending": {
+        "": "Kontaktförfrågan skickad. Väntar på svar."
+    },
+    "Decline Request": "Avböj förfrågan",
+    "Decline contact request?": "Vill du avböja kontaktförfrågan?",
+    "From <2>{{locationFrom}}</2>": "Från <2>{{locationFrom}}</2>",
+    "Lives in <2>{{locationLiving}}</2>": "Bor i <2>{{locationLiving}}</2>",
+    "No contacts yet": {
+        "": "Inga kontakter än."
+    },
+    "One contact": "En kontakt",
+    "Remove contact?": "Ta bort kontakt?",
+    "Requested {{created, MMM D, YYYY}}": "Förfrågan skickad {{created, MMM D, YYYY}}",
+    "Revoke Request": "Dra tillbaka förfrågan",
+    "Revoke contact request?": "Dra tillbaka kontaktförfrågan?",
+    "Since {{created, MMM D, YYYY}}": "Sedan {{created, MMM D, YYYY}}",
+    "Wait a moment": {
+        "": {
+            "": {
+                "": "Vänta..."
+            }
+        }
+    },
+    "Yes, decline request": "Ja, avböj förfrågan",
+    "Yes, remove contact": "Ja, ta bort kontakt",
+    "Yes, revoke request": "Ja, dra tillbaka förfrågan",
+    "You received a contact request": {
+        "": "Du har mottagit en kontaktförfrågan."
+    },
+    "{{amount}} contacts": "{{amount}} kontakter",
+    "{{count}} contacts in common": "{{count}} kontakt gemensamt",
+    "{{count}} contacts in common_plural": "{{count}} gemensamma kontakter"
 }

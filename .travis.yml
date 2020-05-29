@@ -31,6 +31,7 @@ before_script:
   # Ensure stable NPM version (avoids `-next.0` tags)
   - npm install -g npm
   - ./scripts/ci/update-locales
+  - './scripts/ci/fix-weblate public/locales/*/*.json'
 cache:
   directories:
     - '$HOME/.node-gyp'

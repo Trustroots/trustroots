@@ -3,8 +3,7 @@
 bin/admin
 deploy
 migrations/archived
-public/*
-!public/locales
+public
 scripts
 modules/core/server/views/email-templates/
 modules/core/server/views/email-templates-text/
