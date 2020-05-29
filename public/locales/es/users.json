@@ -1,43 +1,59 @@
 {
-  "About": "",
-  "About me": "Sobre mí",
-  "Add contact": "Añadir contacto",
-  "Change language": "Cambiar idioma",
-  "Contacts": "Contactos",
-  "Delete contact request": "Cancelar solicitud de contacto",
-  "Don't panic!": "¡Qué no cunda el pánico!",
-  "Edit your profile": "Editar tu perfil",
-  "Elsewhere": "En otros sitios",
-  "Fill your profile": "Rellena tu perfil",
-  "From <1>{{locationFrom}}</1>": "De <1>{{locationFrom}}</1>",
-  "Help!": "¡Ayuda!",
-  "Hosting": "Alojando",
-  "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>.": "Si no has recibido un mensaje, comprueba tu carpeta de spam or pide que se vuelva a enviar via <1>preferencias de email</1>.",
-  "Interface language": "Idioma de la interfaz",
-  "Languages": "Idiomas",
-  "Lives in <2>{{locationLiving}}</2>": "Vive en <2>{{locationLiving}}</2>",
-  "Member has not written description about themself.": "Este miembro no ha escrito ninguna descripción sobre sí mismo.",
-  "Member since {{date, MMM Do, YYYY}}": "",
-  "Online long ago": "Conectado por última vez hace mucho",
-  "Online {{ date, fromNow }}": "",
-  "Open user profile for {{name}}": "Abrir el perfil del usuario de {{name}}",
-  "Overview": "",
-  "Remove contact": "Borrar contacto",
-  "Replies within {{replyTime, fromNow}}.": "Responde entre {{replyTime, fromNow}}.",
-  "Reply rate {{replyRate}}.": "Tasa de respuesta {{replyRate}}.",
-  "Send a message": "Enviar un mensaje",
-  "Sorry, you need to first activate your profile by confirming your email.": "Lo siento, primero necesitas activar tu perfil confirmando tu correo electrónico.",
-  "Support": "Soporte",
-  "Thanks to all our community members who helped translate!": "",
-  "This is the language of the interface you see across the site.": "",
-  "Tribes in common": "Tribus en común",
-  "Write a reference": "Escribir una referencia",
-  "You can help us out!": "",
-  "Your profile description should be longer so that you can send messages.": "",
-  "female": "mujer",
-  "male": "hombre",
-  "non-binary": "",
-  "other": "",
-  "{{birthdate, age}} years": "",
-  "“Everyone is necessarily the hero of their own life story.”": ""
+    "About": "",
+    "About me": "Sobre mí",
+    "Add contact": "Añadir contacto",
+    "Change language": "Cambiar idioma",
+    "Contacts": "Contactos",
+    "Delete contact request": "Cancelar solicitud de contacto",
+    "Don't panic!": "¡Qué no cunda el pánico!",
+    "Edit your profile": "Editar tu perfil",
+    "Elsewhere": "En otros sitios",
+    "Fill your profile": "Rellena tu perfil",
+    "From <1>{{locationFrom}}</1>": "De <1>{{locationFrom}}</1>",
+    "Help!": "¡Ayuda!",
+    "Hosting": "Alojando",
+    "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>": {
+        "": "Si no has recibido un mensaje, comprueba tu carpeta de spam or pide que se vuelva a enviar via <1>preferencias de email</1>."
+    },
+    "Interface language": "Idioma de la interfaz",
+    "Languages": "Idiomas",
+    "Lives in <2>{{locationLiving}}</2>": "Vive en <2>{{locationLiving}}</2>",
+    "Member has not written description about themself": {
+        "": "Este miembro no ha escrito ninguna descripción sobre sí mismo."
+    },
+    "Member since {{date, MMM Do, YYYY}}": "",
+    "Online long ago": "Conectado por última vez hace mucho",
+    "Online {{ date, fromNow }}": "",
+    "Open user profile for {{name}}": "Abrir el perfil del usuario de {{name}}",
+    "Overview": "",
+    "Remove contact": "Borrar contacto",
+    "Replies within {{replyTime, fromNow}}": {
+        "": "Responde entre {{replyTime, fromNow}}."
+    },
+    "Reply rate {{replyRate}}": {
+        "": "Tasa de respuesta {{replyRate}}."
+    },
+    "Send a message": "Enviar un mensaje",
+    "Sorry, you need to first activate your profile by confirming your email": {
+        "": "Lo siento, primero necesitas activar tu perfil confirmando tu correo electrónico."
+    },
+    "Support": "Soporte",
+    "Thanks to all our community members who helped translate!": "",
+    "This is the language of the interface you see across the site": {
+        "": ""
+    },
+    "Tribes in common": "Tribus en común",
+    "Write a reference": "Escribir una referencia",
+    "You can help us out!": "",
+    "Your profile description should be longer so that you can send messages": {
+        "": ""
+    },
+    "female": "mujer",
+    "male": "hombre",
+    "non-binary": "",
+    "other": "",
+    "{{birthdate, age}} years": "",
+    "“Everyone is necessarily the hero of their own life story": {
+        "”": ""
+    }
 }

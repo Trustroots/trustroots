@@ -1,19 +1,23 @@
 {
-  "Cancel": "Avbryt",
-  "Discover Tribes": "Upptäck grupper",
-  "Do you want to leave \"{{label}}\"?": "Vill du lämna \"{{label}}\"?",
-  "Join": "Gå med",
-  "Join ({{label}})": "Gå med i ({{label}})",
-  "Join Trustroots to find members behind Tribes.": "Registrera dig på Trustroots för att se gruppernas medlemmar.",
-  "Joined": "Gick med",
-  "Joining Tribes helps you find likeminded Trustroots members.": "Genom att gå med i grupper hittar du enklare andra Trustroots-medlemmar med samma intressen.",
-  "Leave Tribe": "Lämna grupp",
-  "Leave this Tribe?": "Vill du lämna denna grupp?",
-  "Missing your Tribe?": "Saknar du din grupp?",
-  "New tribe!": "Ny grupp!",
-  "No members yet": "Inga medlemmar än",
-  "Send us suggestions!": "Skicka förslag till oss!",
-  "Sign up with Trustroots": "Registrera dig på Trustroots",
-  "{{count, number}} members": "{{count, number}} medlem",
-  "{{count, number}} members_plural": "{{count, number}} medlemmar"
+    "Cancel": "Avbryt",
+    "Discover Tribes": "Upptäck grupper",
+    "Do you want to leave \"{{label}}\"?": "Vill du lämna \"{{label}}\"?",
+    "Join": "Gå med",
+    "Join ({{label}})": "Gå med i ({{label}})",
+    "Join Trustroots to find members behind Tribes": {
+        "": "Registrera dig på Trustroots för att se gruppernas medlemmar."
+    },
+    "Joined": "Gick med",
+    "Joining Tribes helps you find likeminded Trustroots members": {
+        "": "Genom att gå med i grupper hittar du enklare andra Trustroots-medlemmar med samma intressen."
+    },
+    "Leave Tribe": "Lämna grupp",
+    "Leave this Tribe?": "Vill du lämna denna grupp?",
+    "Missing your Tribe?": "Saknar du din grupp?",
+    "New tribe!": "Ny grupp!",
+    "No members yet": "Inga medlemmar än",
+    "Send us suggestions!": "Skicka förslag till oss!",
+    "Sign up with Trustroots": "Registrera dig på Trustroots",
+    "{{count, number}} members": "{{count, number}} medlem",
+    "{{count, number}} members_plural": "{{count, number}} medlemmar"
 }

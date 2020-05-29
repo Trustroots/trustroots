@@ -1,26 +1,38 @@
 {
-  "(additional {{amount}} pending)": "(ytterligere {{amount}} venter)",
-  "Cancel": "Avbryt",
-  "Confirm Request": "Bekreft forespørsel",
-  "Connected since {{created, MMM D, YYYY}}": "Tilkoblet siden {{created, MMM D, YYYY}}",
-  "Contact request sent and pending.": "Kontaktforespørsel sendt og i påvente av å bli godtatt.",
-  "Decline Request": "Avslå forespørsel",
-  "Decline contact request?": "Trekk kontaktforespørsel",
-  "From <2>{{locationFrom}}</2>": "Fra <2>{{locationFrom}}</2>",
-  "Lives in <2>{{locationLiving}}</2>": "Bor i <2>{{locationLiving}}</2>",
-  "No contacts yet.": "Ingen kontakter enda.",
-  "One contact": "Én kontakt",
-  "Remove contact?": "Fjern kontakt?",
-  "Requested {{created, MMM D, YYYY}}": "Forespurt {{created, MMM D, YYYY}}",
-  "Revoke Request": "Trekk forespørsel",
-  "Revoke contact request?": "Trekk kontaktforespørsel?",
-  "Since {{created, MMM D, YYYY}}": "Siden {{created, MMM D, YYYY}}",
-  "Wait a moment...": "Vent…",
-  "Yes, decline request": "Ja, avslå forespørsel",
-  "Yes, remove contact": "Ja, fjern kontakt",
-  "Yes, revoke request": "Ja, trekk forespørsel",
-  "You received a contact request.": "Du har mottatt en kontaktforespørsel.",
-  "{{amount}} contacts": "{{amount}} kontakter",
-  "{{count}} contacts in common": "{{count}} kontakt til felles",
-  "{{count}} contacts in common_plural": "{{count}} felles kontakter"
+    "(additional {{amount}} pending)": "(ytterligere {{amount}} venter)",
+    "Cancel": "Avbryt",
+    "Confirm Request": "Bekreft forespørsel",
+    "Connected since {{created, MMM D, YYYY}}": "Tilkoblet siden {{created, MMM D, YYYY}}",
+    "Contact request sent and pending": {
+        "": "Kontaktforespørsel sendt og i påvente av å bli godtatt."
+    },
+    "Decline Request": "Avslå forespørsel",
+    "Decline contact request?": "Trekk kontaktforespørsel",
+    "From <2>{{locationFrom}}</2>": "Fra <2>{{locationFrom}}</2>",
+    "Lives in <2>{{locationLiving}}</2>": "Bor i <2>{{locationLiving}}</2>",
+    "No contacts yet": {
+        "": "Ingen kontakter enda."
+    },
+    "One contact": "Én kontakt",
+    "Remove contact?": "Fjern kontakt?",
+    "Requested {{created, MMM D, YYYY}}": "Forespurt {{created, MMM D, YYYY}}",
+    "Revoke Request": "Trekk forespørsel",
+    "Revoke contact request?": "Trekk kontaktforespørsel?",
+    "Since {{created, MMM D, YYYY}}": "Siden {{created, MMM D, YYYY}}",
+    "Wait a moment": {
+        "": {
+            "": {
+                "": "Vent…"
+            }
+        }
+    },
+    "Yes, decline request": "Ja, avslå forespørsel",
+    "Yes, remove contact": "Ja, fjern kontakt",
+    "Yes, revoke request": "Ja, trekk forespørsel",
+    "You received a contact request": {
+        "": "Du har mottatt en kontaktforespørsel."
+    },
+    "{{amount}} contacts": "{{amount}} kontakter",
+    "{{count}} contacts in common": "{{count}} kontakt til felles",
+    "{{count}} contacts in common_plural": "{{count}} felles kontakter"
 }
