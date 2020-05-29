@@ -10,24 +10,11 @@ check() {
  fi
 }
 
-fix() {
-  # We have an issue with weblate, see https://github.com/Trustroots/trustroots/issues/1487
-  # This is a sort of hacky fix for now...
-  ./scripts/ci/fix-weblate public/locales/*/*.json
-  git add public/locales/*/*.json
-  if ! git diff --staged --exit-code -- public/locales >/dev/null; then
-    git commit -F - <<EOF
-[CI] Fix locales
-
-[ci skip]
-EOF
-  fi
-}
-
 extract() {
   # extracts new locales
   npm run i18n:extract
-  git add public/locales/*/*.json
+  # we only add the en ones, as that is the source language, and weblate effectively _owns_ the others
+  git add public/locales/en/*.json
   if ! git diff --staged --exit-code -- public/locales >/dev/null; then
     git commit -F - <<EOF
 [CI] Extract locales
@@ -48,6 +35,5 @@ push_changes() {
 }
 
 check
-fix
 extract
 push_changes

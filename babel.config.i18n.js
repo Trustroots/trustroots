@@ -1,6 +1,3 @@
-const path = require('path');
-const locales = require(path.resolve('./config/shared/locales'));
-
 const config = require('./babel.config');
 
 config.plugins.push([
@@ -8,7 +5,7 @@ config.plugins.push([
   'i18next-extract',
   {
     nsSeparator: false,
-    locales: locales.map(locale => locale.code),
+    locales: ['en'], // only extract for source language
     keySeparator: false,
     outputPath: 'public/locales/{{locale}}/{{ns}}.json',
     keyAsDefaultValue: ['en'],
