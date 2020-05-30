@@ -1,32 +1,32 @@
 {
     "<0>Your reference</0> for <3></3> is public now": {
-        "": ""
+        "": "<0>Tu referencia</0> para <3></3> es pública ahora."
     },
     "Also, <1></1> was reported": {
-        "": ""
+        "": "También, <1></1> fue reportado."
     },
-    "Choose your interaction": "",
-    "Choose your recommendation": "",
-    "Done!": "",
-    "How do you know them": "",
-    "How do you know them?": "",
-    "I don't know": "",
-    "I hosted them": "",
-    "Message to moderators": "",
-    "Met in person": "",
-    "No": "",
+    "Choose your interaction": "Elige tu interacción",
+    "Choose your recommendation": "Elige tu recomendación",
+    "Done!": "¡Listo!",
+    "How do you know them": "Cómo les conoces",
+    "How do you know them?": "¿Cómo les conoces?",
+    "I don't know": "No lo sé",
+    "I hosted them": "Los alojé",
+    "Message to moderators": "Mensaje a los moderadores",
+    "Met in person": "Nos conocimos en persona",
+    "No": "No",
     "Please write in English if possible": {
-        "": ""
+        "": "Por favor escribe en ingles si es posible."
     },
-    "Recommendation": "",
-    "Report this person to moderators": "",
+    "Recommendation": "Recomendación",
+    "Report this person to moderators": "Reportar esta persona a los moderadores",
     "See the reference from {{name}} to you": {
-        "": ""
+        "": "Mira la referencia de {{name}} a tí."
     },
     "Sorry, you can't give a reference to yourself": {
-        "": ""
+        "": "Disculpa, no puedes darte una referencia a tí mismo."
     },
-    "They hosted me": "",
+    "They hosted me": "Me alojaron",
     "Wait a moment": {
         "": {
             "": {
@@ -34,15 +34,15 @@
             }
         }
     },
-    "We're sad to hear you didn't have a great experience using Trustroots!": "",
-    "Would you recommend others to host them?": "",
-    "Would you recommend others to meet them?": "",
-    "Would you recommend others to stay with them?": "",
-    "Yes": "",
+    "We're sad to hear you didn't have a great experience using Trustroots!": "Nos entristece enterarnos que no has tenido una buena experiencia usando Trustroots!",
+    "Would you recommend others to host them?": "¿Les recomendarías a otros que los alojaran?",
+    "Would you recommend others to meet them?": "¿Les recomendarías a otros que los conozcan?",
+    "Would you recommend others to stay with them?": "¿Les recomendarías a otros que se queden con ellos?",
+    "Yes": "Sí",
     "You've already given a reference to <1></1>": {
-        "": ""
+        "": "Ya le has dejado una referencia a <1></1>."
     },
     "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
-        "": ""
+        "": "Tu referencia se hará pública cuando <1></1> te deje una referencia a tí, o en {{daysToReply}} días."
     }
 }
