@@ -1,22 +1,30 @@
 {
-  "Accommodation": "Mój dom",
-  "At most {{count}} guests._0": "Maksymalnie jeden gość.",
-  "At most {{count}} guests._1": "Maksymalnie {{count}} gości.",
-  "At most {{count}} guests._2": "",
-  "Bigger map": "Większa mapa",
-  "Can host": "Przyjmuje gości",
-  "Cannot host currently": "Nie przyjmuje gości",
-  "Change": "",
-  "Hosting status: {{statusLabel}}": "Hosting status: {{statusLabel}}",
-  "I can host": "Przyjmuję gości",
-  "I can't host currently": "Nie mogę gościć",
-  "I might be able to host": "Może przyjmuję gości",
-  "Meet people": "",
-  "Might be able to host": "Może przyjmuje  gości",
-  "Modify hosting offer": "",
-  "No guests.": "Nie przyjmuje gości",
-  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "",
-  "Open on device": "",
-  "Sorry, user is not hosting currently.": "Niestety użytkownik nie przyjmuje teraz gości",
-  "Start hosting travellers": ""
+    "Accommodation": "Mój dom",
+    "At most {{count}} guests": {
+        "At most {{count}} guests._0": "Maksymalnie {{count}} gość.",
+        "At most {{count}} guests._1": "Maksymalnie {{count}} gości.",
+        "At most {{count}} guests._2": ""
+    },
+    "Bigger map": "Większa mapa",
+    "Can host": "Przyjmuje gości",
+    "Cannot host currently": "Nie przyjmuje gości",
+    "Change": "",
+    "Hosting status: {{statusLabel}}": "Hosting status: {{statusLabel}}",
+    "I can host": "Przyjmuję gości",
+    "I can't host currently": "Nie mogę gościć",
+    "I might be able to host": "Może przyjmuję gości",
+    "Meet people": "",
+    "Might be able to host": "Może przyjmuje gości",
+    "Modify hosting offer": "",
+    "No guests": {
+        "": "Nie przyjmuje gości."
+    },
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
+        "": ""
+    },
+    "Open on device": "",
+    "Sorry, user is not hosting currently": {
+        "": "Niestety użytkownik nie przyjmuje teraz gości."
+    },
+    "Start hosting travellers": ""
 }

@@ -1,12 +1,12 @@
 {
-  "Back": "",
-  "Finish": "",
-  "Finish editing and save": "",
-  "Next": "",
-  "Next section": "",
-  "Previous section": "",
-  "Read more…": "",
-  "Wait a moment…": "",
-  "Zoom in": "",
-  "Zoom out": ""
+    "Back": "Tilbake",
+    "Finish": "Fullfør",
+    "Finish editing and save": "Fullfør redigering og lagre",
+    "Next": "Neste",
+    "Next section": "Neste del",
+    "Previous section": "Forrige del",
+    "Read more…": "Les mer…",
+    "Wait a moment…": "Vent…",
+    "Zoom in": "Forstørr",
+    "Zoom out": "Forminsk"
 }
