@@ -89,9 +89,16 @@ const UserMemberSchema = new Schema(
  */
 const BlockedSchema = new Schema(
   {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: false,
+    },
+    since: {
+      type: Date,
+      default: Date.now,
+      required: true,
+    },
   },
   { _id: false },
 );

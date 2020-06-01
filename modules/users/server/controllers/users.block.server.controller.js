@@ -7,6 +7,7 @@ const errorService = require(path.resolve(
 ));
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
+const log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Get the list of blocked users by the logged in user
@@ -29,13 +30,15 @@ exports.blockUser = async function (req, res) {
   }
   const idToBeBlocked = req.profile._id;
   let loggedUser;
+
+  log('info', `${req.user._id} blocking ${idToBeBlocked}`);
   try {
     // get logged user and update
     loggedUser = await User.updateOne(
-      { username: req.user._id },
+      { _id: req.user._id },
       {
         $addToSet: {
-          blocked: idToBeBlocked,
+          blocked: { userId: idToBeBlocked },
         },
       },
     );
@@ -47,7 +50,7 @@ exports.blockUser = async function (req, res) {
       });
     }
 
-    res.send({ message: '{usernameToBeBlocked} added to block list.' });
+    res.send({ message: `${req.profile.username} added to block list. ` });
   } catch (err) {
     return res.status(500).send({
       message: 'invalid error',

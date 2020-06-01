@@ -33,9 +33,9 @@ module.exports = function (app) {
     .get(userBlock.getBlockedUsers);
 
   app
-    .route('/api/users/blocked-users/:userId')
+    .route('/api/users/blocked-users/:username')
     .all(usersPolicy.isAllowed)
-    .post(userBlock.blockUser)
+    .put(userBlock.blockUser)
     .delete(userBlock.unblockUser);
 
   app
