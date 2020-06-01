@@ -94,11 +94,6 @@ const BlockedSchema = new Schema(
       ref: 'User',
       required: false,
     },
-    since: {
-      type: Date,
-      default: Date.now,
-      required: true,
-    },
   },
   { _id: false },
 );

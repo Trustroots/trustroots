@@ -71,26 +71,26 @@ exports.unblockUser = async function (req, res) {
     });
   }
   const idToBeUnBlocked = req.profile._id;
-  let loggedUser;
+  log('info', `${req.user._id} unblocking ${idToBeUnBlocked}`);
   try {
     // get logged user and update
-    loggedUser = await User.updateOne(
-      { username: req.user._id },
+    const result = await User.updateOne(
+      { _id: req.user._id },
       {
         $pullAll: {
-          blocked: idToBeUnBlocked,
+          blocked: [{ userId: idToBeUnBlocked }],
         },
       },
     );
 
     // No documents were updated
-    if (!loggedUser.n) {
+    if (!result.n || !result.nModified) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
 
-    res.send({ message: '{usernameToBeBlocked} added to block list.' });
+    res.send({ message: `${req.profile.username} removed from block list.` });
   } catch (err) {
     return res.status(500).send({
       message: 'invalid error',
