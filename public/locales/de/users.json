@@ -1,43 +1,59 @@
 {
-  "About": "",
-  "About me": "",
-  "Add contact": "",
-  "Change language": "",
-  "Contacts": "",
-  "Delete contact request": "",
-  "Don't panic!": "",
-  "Edit your profile": "",
-  "Elsewhere": "",
-  "Fill your profile": "",
-  "From <1>{{locationFrom}}</1>": "",
-  "Help!": "",
-  "Hosting": "",
-  "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>.": "",
-  "Interface language": "",
-  "Languages": "",
-  "Lives in <2>{{locationLiving}}</2>": "",
-  "Member has not written description about themself.": "",
-  "Member since {{date, MMM Do, YYYY}}": "",
-  "Online long ago": "",
-  "Online {{ date, fromNow }}": "",
-  "Open user profile for {{name}}": "",
-  "Overview": "",
-  "Remove contact": "",
-  "Replies within {{replyTime, fromNow}}.": "",
-  "Reply rate {{replyRate}}.": "",
-  "Send a message": "",
-  "Sorry, you need to first activate your profile by confirming your email.": "",
-  "Support": "",
-  "Thanks to all our community members who helped translate!": "",
-  "This is the language of the interface you see across the site.": "",
-  "Tribes in common": "",
-  "Write a reference": "",
-  "You can help us out!": "",
-  "Your profile description should be longer so that you can send messages.": "",
-  "female": "",
-  "male": "",
-  "non-binary": "",
-  "other": "",
-  "{{birthdate, age}} years": "",
-  "“Everyone is necessarily the hero of their own life story.”": ""
+    "About": "",
+    "About me": "",
+    "Add contact": "",
+    "Change language": "",
+    "Contacts": "",
+    "Delete contact request": "",
+    "Don't panic!": "",
+    "Edit your profile": "",
+    "Elsewhere": "",
+    "Fill your profile": "",
+    "From <1>{{locationFrom}}</1>": "",
+    "Help!": "",
+    "Hosting": "",
+    "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>": {
+        "": ""
+    },
+    "Interface language": "",
+    "Languages": "",
+    "Lives in <2>{{locationLiving}}</2>": "Lebt in <2>{{locationLiving}}</2>",
+    "Member has not written description about themself": {
+        "": ""
+    },
+    "Member since {{date, MMM Do, YYYY}}": "",
+    "Online long ago": "",
+    "Online {{ date, fromNow }}": "",
+    "Open user profile for {{name}}": "",
+    "Overview": "",
+    "Remove contact": "",
+    "Replies within {{replyTime, fromNow}}": {
+        "": ""
+    },
+    "Reply rate {{replyRate}}": {
+        "": ""
+    },
+    "Send a message": "",
+    "Sorry, you need to first activate your profile by confirming your email": {
+        "": ""
+    },
+    "Support": "",
+    "Thanks to all our community members who helped translate!": "",
+    "This is the language of the interface you see across the site": {
+        "": ""
+    },
+    "Tribes in common": "",
+    "Write a reference": "",
+    "You can help us out!": "",
+    "Your profile description should be longer so that you can send messages": {
+        "": ""
+    },
+    "female": "",
+    "male": "",
+    "non-binary": "",
+    "other": "",
+    "{{birthdate, age}} years": "",
+    "“Everyone is necessarily the hero of their own life story": {
+        "”": ""
+    }
 }

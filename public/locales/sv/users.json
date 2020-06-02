@@ -1,43 +1,59 @@
 {
-  "About": "",
-  "About me": "",
-  "Add contact": "",
-  "Change language": "",
-  "Contacts": "",
-  "Delete contact request": "",
-  "Don't panic!": "",
-  "Edit your profile": "",
-  "Elsewhere": "",
-  "Fill your profile": "",
-  "From <1>{{locationFrom}}</1>": "",
-  "Help!": "",
-  "Hosting": "",
-  "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>.": "",
-  "Interface language": "",
-  "Languages": "",
-  "Lives in <2>{{locationLiving}}</2>": "",
-  "Member has not written description about themself.": "",
-  "Member since {{date, MMM Do, YYYY}}": "",
-  "Online long ago": "",
-  "Online {{ date, fromNow }}": "",
-  "Open user profile for {{name}}": "",
-  "Overview": "",
-  "Remove contact": "",
-  "Replies within {{replyTime, fromNow}}.": "",
-  "Reply rate {{replyRate}}.": "",
-  "Send a message": "",
-  "Sorry, you need to first activate your profile by confirming your email.": "",
-  "Support": "",
-  "Thanks to all our community members who helped translate!": "",
-  "This is the language of the interface you see across the site.": "",
-  "Tribes in common": "",
-  "Write a reference": "",
-  "You can help us out!": "",
-  "Your profile description should be longer so that you can send messages.": "",
-  "female": "",
-  "male": "",
-  "non-binary": "",
-  "other": "",
-  "{{birthdate, age}} years": "",
-  "“Everyone is necessarily the hero of their own life story.”": ""
+    "About": "Om",
+    "About me": "Om mig",
+    "Add contact": "Lägg till kontakt",
+    "Change language": "Ändra språk",
+    "Contacts": "Kontakter",
+    "Delete contact request": "Ta bort kontaktförfrågan",
+    "Don't panic!": "Ta det lugnt!",
+    "Edit your profile": "Redigera din profil",
+    "Elsewhere": "Någon annanstans",
+    "Fill your profile": "Fyll i din profil",
+    "From <1>{{locationFrom}}</1>": "Från <1>{{locationFrom}}</1>",
+    "Help!": "Hjälp!",
+    "Hosting": "Husrum",
+    "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>": {
+        "": "Om du inte fick meddelandet, kontrollera din skräppostmapp eller skicka igen från <1>e-postinställningarna</1>."
+    },
+    "Interface language": "Gränssnittsspråk",
+    "Languages": "Språk",
+    "Lives in <2>{{locationLiving}}</2>": "Bor i <2>{{locationLiving}}</2>",
+    "Member has not written description about themself": {
+        "": "Medlemmen har inte skrivit en beskrivning om sig själv."
+    },
+    "Member since {{date, MMM Do, YYYY}}": "Medlem sedan {{date, MMM Do, YYYY}}",
+    "Online long ago": "Senast inloggad för länge sedan",
+    "Online {{ date, fromNow }}": "Inloggad {{ date, fromNow }}",
+    "Open user profile for {{name}}": "Öppna användarprofil för {{name}}",
+    "Overview": "Översikt",
+    "Remove contact": "Ta bort kontakt",
+    "Replies within {{replyTime, fromNow}}": {
+        "": "Svarar inom {{replyTime, fromNow}}."
+    },
+    "Reply rate {{replyRate}}": {
+        "": "Svarsfrekvens {{replyRate}}."
+    },
+    "Send a message": "Skicka ett meddelande",
+    "Sorry, you need to first activate your profile by confirming your email": {
+        "": "Du måste först aktivera din profil genom att bekräfta din e-postadress."
+    },
+    "Support": "Support",
+    "Thanks to all our community members who helped translate!": "Tack till alla våra medlemmar som hjälpte till med översättningarna!",
+    "This is the language of the interface you see across the site": {
+        "": "Det här är det språk som sidan kommer att visas på."
+    },
+    "Tribes in common": "Gemensamma grupper",
+    "Write a reference": "Skriv en referens",
+    "You can help us out!": "Du kan hjälpa oss!",
+    "Your profile description should be longer so that you can send messages": {
+        "": "Din profilbeskrivning måste vara längre för att du ska kunna skicka meddelanden."
+    },
+    "female": "kvinna",
+    "male": "man",
+    "non-binary": "icke-binär",
+    "other": "annat",
+    "{{birthdate, age}} years": "{{birthdate, age}} år",
+    "“Everyone is necessarily the hero of their own life story": {
+        "”": "\"Alla är oundvikligen hjälten i sin egen livshistoria.\""
+    }
 }

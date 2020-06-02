@@ -1,21 +1,31 @@
 {
-  "Accommodation": "",
-  "At most {{count}} guests.": "",
-  "At most {{count}} guests._plural": "",
-  "Bigger map": "",
-  "Can host": "",
-  "Cannot host currently": "",
-  "Change": "",
-  "Hosting status: {{statusLabel}}": "",
-  "I can host": "",
-  "I can't host currently": "",
-  "I might be able to host": "",
-  "Meet people": "",
-  "Might be able to host": "",
-  "Modify hosting offer": "",
-  "No guests.": "",
-  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "",
-  "Open on device": "",
-  "Sorry, user is not hosting currently.": "",
-  "Start hosting travellers": ""
+    "Accommodation": "Husvære",
+    "At most {{count}} guests": {
+        "At most {{count}} guests": {
+            "At most {{count}} guests.": "Kun én gjest.",
+            "At most {{count}} guests._plural": "Kun {{count}} gjester."
+        }
+    },
+    "Bigger map": "Større kart",
+    "Can host": "Kan huse",
+    "Cannot host currently": "Kan ikke huse for øyeblikket",
+    "Change": "Endre",
+    "Hosting status: {{statusLabel}}": "Vertsstatus: {{statusLabel}}",
+    "I can host": "Jeg kan tilby husvære",
+    "I can't host currently": "Jeg kan ikke tilby husvære",
+    "I might be able to host": "Det kan hende jeg kan tilby husvære",
+    "Meet people": "Møt folk",
+    "Might be able to host": "Kan kanskje tilby husvære",
+    "Modify hosting offer": "Endre vertsskapstilbud",
+    "No guests": {
+        "": "Ingen gjester."
+    },
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
+        "": "Å tilby husvære og ta imot \"fremmede\" til våre hjem styrker troen på hverandre."
+    },
+    "Open on device": "Åpne på enhet",
+    "Sorry, user is not hosting currently": {
+        "": "Beklager, brukeren tilbyr ikke husvære for øyeblikket."
+    },
+    "Start hosting travellers": "Begynn å huse reisende"
 }

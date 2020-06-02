@@ -1,0 +1,39 @@
+#!/bin/sh
+
+check() {
+ if \
+  [ ! "$TRAVIS_BRANCH" = "master" ] || \
+  [ ! "$TRAVIS_EVENT_TYPE" = "push" ] || \
+  [ ! "$DEPLOY" = "true" ]; then
+   echo "Not updating locales as this is not a deploy push to master job"
+   exit 0
+ fi
+}
+
+extract() {
+  # extracts new locales
+  npm run i18n:extract
+  # we only add the en ones, as that is the source language, and weblate effectively _owns_ the others
+  git add public/locales/en/*.json
+  if ! git diff --staged --exit-code -- public/locales >/dev/null; then
+    git commit -F - <<EOF
+[CI] Extract locales
+
+[ci skip]
+EOF
+  fi
+}
+
+push_changes() {
+  echo "Pushing changes!"
+  git config --global user.email "trustroots-ci@nicksellen.co.uk" # TODO: move this to @trustroots.org account...
+  git config --global user.name "Trustroots CI"
+  git push \
+    --quiet \
+    https://trustroots-ci:${GH_TOKEN}@github.com/Trustroots/trustroots.git \
+    HEAD:master
+}
+
+check
+extract
+push_changes

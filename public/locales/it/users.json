@@ -1,43 +1,59 @@
 {
-  "About": "",
-  "About me": "",
-  "Add contact": "",
-  "Change language": "",
-  "Contacts": "",
-  "Delete contact request": "",
-  "Don't panic!": "",
-  "Edit your profile": "",
-  "Elsewhere": "",
-  "Fill your profile": "",
-  "From <1>{{locationFrom}}</1>": "",
-  "Help!": "",
-  "Hosting": "",
-  "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>.": "",
-  "Interface language": "",
-  "Languages": "",
-  "Lives in <2>{{locationLiving}}</2>": "",
-  "Member has not written description about themself.": "",
-  "Member since {{date, MMM Do, YYYY}}": "",
-  "Online long ago": "",
-  "Online {{ date, fromNow }}": "",
-  "Open user profile for {{name}}": "",
-  "Overview": "",
-  "Remove contact": "",
-  "Replies within {{replyTime, fromNow}}.": "",
-  "Reply rate {{replyRate}}.": "",
-  "Send a message": "",
-  "Sorry, you need to first activate your profile by confirming your email.": "",
-  "Support": "",
-  "Thanks to all our community members who helped translate!": "",
-  "This is the language of the interface you see across the site.": "",
-  "Tribes in common": "",
-  "Write a reference": "",
-  "You can help us out!": "",
-  "Your profile description should be longer so that you can send messages.": "",
-  "female": "",
-  "male": "",
-  "non-binary": "",
-  "other": "",
-  "{{birthdate, age}} years": "",
-  "“Everyone is necessarily the hero of their own life story.”": ""
+    "About": "",
+    "About me": "Su di me",
+    "Add contact": "Aggiungi contatto",
+    "Change language": "Cambia lingua",
+    "Contacts": "Contatti",
+    "Delete contact request": "Cancella richiesta di amicizia",
+    "Don't panic!": "Niente panico!",
+    "Edit your profile": "Modifica il tuo profilo",
+    "Elsewhere": "Altrove",
+    "Fill your profile": "Completa il tuo profilo",
+    "From <1>{{locationFrom}}</1>": "Da <1>{{locationFrom}}</1>",
+    "Help!": "Aiuto!",
+    "Hosting": "",
+    "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>": {
+        "": "Se non hai ricevuto il messaggio, controlla nello spam o invia di nuovo attraverso<1>impostazione dell'email</1>."
+    },
+    "Interface language": "Lingua dell'interfaccia",
+    "Languages": "lingue",
+    "Lives in <2>{{locationLiving}}</2>": "Vive a <2>{{locationLiving}}</2>",
+    "Member has not written description about themself": {
+        "": "Questo membro non ha scritto descrizione di se stesso."
+    },
+    "Member since {{date, MMM Do, YYYY}}": "Membro dal{{date, MMM Do, YYYY}}",
+    "Online long ago": "",
+    "Online {{ date, fromNow }}": "Ultima connessione {{ date, fromNow }}",
+    "Open user profile for {{name}}": "Apri il profilo del membro {{name}}",
+    "Overview": "",
+    "Remove contact": "Cancellare contatto",
+    "Replies within {{replyTime, fromNow}}": {
+        "": "Risponde in{{replyTime, fromNow}}."
+    },
+    "Reply rate {{replyRate}}": {
+        "": "Tasso di risposta{{replyRate}}."
+    },
+    "Send a message": "Invia un messaggio",
+    "Sorry, you need to first activate your profile by confirming your email": {
+        "": "Devi prima attivare il tuo profilo confermando la tua email."
+    },
+    "Support": "Assistenza",
+    "Thanks to all our community members who helped translate!": "Grazie a tutti i membri della comunità che ci hanno aiutato con le traduzioni!",
+    "This is the language of the interface you see across the site": {
+        "": "Questa è la lingua dell'interfaccia che vedi nel sito."
+    },
+    "Tribes in common": "Tribes in comune",
+    "Write a reference": "Scrivi una referenza",
+    "You can help us out!": "Puoi aiutarci!",
+    "Your profile description should be longer so that you can send messages": {
+        "": "La tua descrizione del profilo dev'essere più lunga se vuoi inviare messaggi."
+    },
+    "female": "Femmina",
+    "male": "maschio",
+    "non-binary": "non-binario",
+    "other": "altro",
+    "{{birthdate, age}} years": "{{birthdate, age}} anni",
+    "“Everyone is necessarily the hero of their own life story": {
+        "”": "\"Ognuno è necessariamente l'eroe della storia della propria vita\""
+    }
 }

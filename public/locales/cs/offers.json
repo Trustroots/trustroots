@@ -1,22 +1,30 @@
 {
-  "Accommodation": "Můj dům",
-  "At most {{count}} guests._0": "Nejvíce jeden host.",
-  "At most {{count}} guests._1": "Nejvíce {{count}} hosté.",
-  "At most {{count}} guests._2": "Nejvíce {{count}} hostů.",
-  "Bigger map": "Větší mapa",
-  "Can host": "Hostí",
-  "Cannot host currently": "Nemůže teď hostit",
-  "Change": "",
-  "Hosting status: {{statusLabel}}": "Status hostitele: {{statusLabel}}",
-  "I can host": "Můžu hostit",
-  "I can't host currently": "Nemůžu teď hostit",
-  "I might be able to host": "Možná můžu hostit",
-  "Meet people": "",
-  "Might be able to host": "Možná hostí",
-  "Modify hosting offer": "",
-  "No guests.": "Žádní hosté.",
-  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "",
-  "Open on device": "",
-  "Sorry, user is not hosting currently.": "Bohužel uživatel teď nehostí.",
-  "Start hosting travellers": ""
+    "Accommodation": "Můj dům",
+    "At most {{count}} guests": {
+        "At most {{count}} guests._0": "Nejvíce jeden host.",
+        "At most {{count}} guests._1": "Nejvíce {{count}} hosté.",
+        "At most {{count}} guests._2": "Nejvíce {{count}} hostů."
+    },
+    "Bigger map": "Větší mapa",
+    "Can host": "Hostí",
+    "Cannot host currently": "Nemůže teď hostit",
+    "Change": "Změnit",
+    "Hosting status: {{statusLabel}}": "Status hostitele: {{statusLabel}}",
+    "I can host": "Můžu hostit",
+    "I can't host currently": "Nemůžu teď hostit",
+    "I might be able to host": "Možná můžu hostit",
+    "Meet people": "Setkat se s lidmi",
+    "Might be able to host": "Možná hostí",
+    "Modify hosting offer": "Upravit nabídku hostování",
+    "No guests": {
+        "": "Žádní hosté."
+    },
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
+        "": "Když poskytujeme pohostinnost a vítáme doma “cizince”, posilujeme svoji vzájemnou důvěru."
+    },
+    "Open on device": "Otevřít v zařízení",
+    "Sorry, user is not hosting currently": {
+        "": "Bohužel uživatel teď nehostí."
+    },
+    "Start hosting travellers": "Začni hostit cestovatele"
 }

@@ -1,8 +1,10 @@
 {
-  "Clear members search": "",
-  "No members found by this name.": "",
-  "Search members": "",
-  "Type name, username…": "",
-  "{{count}} members found": "",
-  "{{count}} members found_plural": ""
+    "Clear members search": "",
+    "No members found by this name": {
+        "": "Nessun membro trovato a questo nome."
+    },
+    "Search members": "Cerca membri",
+    "Type name, username…": "Digita nome, username…",
+    "{{count}} members found": "{{count}} membro trovato",
+    "{{count}} members found_plural": "{{count}} membri trovati"
 }
