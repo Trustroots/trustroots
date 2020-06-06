@@ -3,6 +3,7 @@
  */
 const usersPolicy = require('../policies/users.server.policy');
 const userProfile = require('../controllers/users.profile.server.controller');
+const userAvatar = require('../controllers/users.avatar.server.controller');
 const userPassword = require('../controllers/users.password.server.controller');
 const userAuthentication = require('../controllers/users.authentication.server.controller');
 
@@ -24,7 +25,7 @@ module.exports = function (app) {
   app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)
-    .post(userProfile.avatarUploadField, userProfile.avatarUpload);
+    .post(userAvatar.avatarUploadField, userAvatar.avatarUpload);
 
   app
     .route('/api/users/memberships')
