@@ -5,7 +5,7 @@ import '@/modules/core/client/core.client.module';
 AppConfig.registerModule('tribes', ['core']);
 
 // config
-require('@/modules/tribes/client/config/tribes.client.config');
+require('@/modules/tribes/client/config/tribes.client.routes');
 
 // controllers
 require('@/modules/tribes/client/controllers/tribe.client.controller');
