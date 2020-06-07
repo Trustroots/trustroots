@@ -239,6 +239,31 @@ describe('User block - user', function () {
       .catch(checkError('uncatched error - improve the test', done));
   });
 
+  it('should not appear in search if has been blocked the searcher', function (done) {
+    const aliceUsername = { username: alice.credentials.username };
+    login(bob.credentials)
+      .catch(checkError('bob login', done))
+      .then(() => searchUser('Alice'))
+      .then(resultUsers => {
+        /** not blocked yet. should appear in search */
+        should(resultUsers).matchAny(aliceUsername);
+      })
+      .then(() => login(alice.credentials))
+      .catch(checkError('alice login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => searchUser('Alice'))
+      .catch(checkError('bob search Alice', done))
+      .then(resultUsers => {
+        /** not blocked yet. should appear in search */
+        should(resultUsers).not.matchAny(aliceUsername);
+        done();
+      })
+      .catch(checkError('uncatched error', done));
+  });
+
   it('should not see a user if blocked her', function (done) {
     const bobUsername = { username: bob.credentials.username };
     login(alice.credentials)

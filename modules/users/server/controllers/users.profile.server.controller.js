@@ -777,6 +777,26 @@ function classifyPermission(user, profile) {
   };
 }
 
+/** Filter out users that has blocked the logged */
+function createBlockingUserFilter(loggedUser) {
+  /** check if blocked, a bit tricky because are mongoose ObjectID */
+  const isBlocked = blockedList =>
+    !!blockedList && blockedList.some(blc => blc.equals(loggedUser.id));
+  return users => {
+    const res = [];
+    users.reduce((acc, cur) => {
+      /** remove blocked field */
+      const { blocked, ...rest } = cur.toObject();
+      /** check if blocked*/
+      if (!isBlocked(blocked)) {
+        acc.push(rest); // not blocked
+      }
+      return acc;
+    }, res);
+    return res;
+  };
+}
+
 /**
  * Mini profile middleware
  */
@@ -1566,13 +1586,14 @@ exports.search = function (req, res, next) {
       detail: 'Query string should be at least 3 characters long.',
     });
   }
+
   const blocked = req.user.blocked || [];
   // perform the search
   User.find(
     {
       $and: [
         { public: true }, // only public users
-        { _id: { $nin: blocked } }, // remove blocked
+        { _id: { $nin: blocked } }, // remove ones that I blocked
         {
           $text: {
             $search: req.query.search,
@@ -1583,7 +1604,7 @@ exports.search = function (req, res, next) {
     { score: { $meta: 'textScore' } },
   )
     // select only the right profile properties
-    .select(exports.userSearchProfileFields)
+    .select(exports.userSearchProfileFields + ' blocked')
     .sort({ score: { $meta: 'textScore' } })
     // limit the amount of found users
     .limit(req.query.limit)
@@ -1591,6 +1612,8 @@ exports.search = function (req, res, next) {
     .skip(req.skip)
     .exec(function (err, users) {
       if (err) return next(err);
-      return res.send(users);
+      /** filter ones that have blocked me */
+      const filterFnc = createBlockingUserFilter(req.user);
+      return res.send(filterFnc(users));
     });
 };
