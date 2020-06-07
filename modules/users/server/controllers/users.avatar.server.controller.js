@@ -1,7 +1,9 @@
+const _ = require('lodash');
 const async = require('async');
-const path = require('path');
 const fs = require('fs');
 const mkdirRecursive = require('mkdir-recursive');
+const mongoose = require('mongoose');
+const path = require('path');
 
 const log = require(path.resolve('./config/lib/logger'));
 const config = require(path.resolve('./config/config'));
@@ -11,6 +13,8 @@ const fileUpload = require(path.resolve(
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
+
+const User = mongoose.model('User');
 
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
@@ -23,7 +27,7 @@ const imageProcessor =
 /**
  * Middleware to validate+process avatar upload field
  */
-exports.avatarUploadField = function (req, res, next) {
+const avatarUploadField = (req, res, next) => {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -47,7 +51,7 @@ exports.avatarUploadField = function (req, res, next) {
  * Multer has placed uploaded the file in temp folder and path is now available
  * via `req.file.path`
  */
-exports.avatarUpload = function (req, res) {
+const avatarUpload = (req, res) => {
   // Each user has their own folder for avatars
   const uploadDir =
     path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
@@ -160,4 +164,204 @@ exports.avatarUpload = function (req, res) {
       }
     },
   );
+};
+
+/**
+ * Generate avatar url from facebook
+ * @link https://developers.facebook.com/docs/graph-api/reference/user/picture/
+ * @param {object} user - user object
+ * @param {string} user.additionalProvidersData.facebook.id - user's facebook id
+ * @param {number} size - size of the image
+ * @returns {string} - the url
+ */
+function getFacebookAvatarUrl(user, size) {
+  const isValid = _.has(user, ['additionalProvidersData', 'facebook', 'id']);
+
+  return (
+    isValid &&
+    `https://graph.facebook.com/${user.additionalProvidersData.facebook.id}/picture/?width=${size}&height=${size}`
+  );
+}
+
+/**
+ * Generate url to avatar image that user uploaded
+ * @param {object} user - user object
+ * @param {number} size - size of the image
+ * @returns {string} - the url
+ */
+function getLocalAvatarUrl(user, size) {
+  const isValid = user && user.avatarUploaded && user._id;
+
+  if (isValid) {
+    // Cache buster
+    const timestamp = user.updated ? new Date(user.updated).getTime() : '';
+
+    // 32 is the smallest and 2048 biggest file size we're generating.
+    const fileSize = Math.min(Math.max(size, 32), 2048);
+
+    const domain = `${config.https ? 'https' : 'http'}://${config.domain}`;
+
+    return `${domain}/uploads-profile/${user._id}/avatar/${fileSize}.jpg?${timestamp}`;
+  }
+}
+
+/**
+ * Generate avatar url from Gravatar
+ * @link https://en.gravatar.com/site/implement/images/
+ * @param {object} user - user object
+ * @param {string} user.emailHash - gravatar identifies users by their email hashes
+ * @param {number} size - size of the image
+ * @returns {string} - the url
+ *
+ * @todo fallback image is provided from trustroots.org; it should rather come from config
+ */
+function getGravatarUrl(user, size) {
+  const isValid = user.emailHash;
+
+  // This fallback image has to be online one and not from localhost, since Gravatar needs to see it.
+  const fallbackImage = getDefaultAvatarUrl(size, false);
+
+  return (
+    isValid &&
+    `https://gravatar.com/avatar/${
+      user.emailHash
+    }?s=${size}&d=${encodeURIComponent(fallbackImage)}`
+  );
+}
+
+/**
+ * Generate avatar url
+ * @param {object} user - user object
+ * @param {integer} size - size of the image. Supported values are 2048, 1024, 512, 256, 128, 64, 36, 32, 24, 16.
+ * @param {string} source - avatar source. One of ['' (user's selected source), 'none', 'facebook', 'gravatar', 'local']
+ * @returns {string} - the url
+ */
+function getAvatarUrl(profile, size, source) {
+  return (
+    (source === 'local' && getLocalAvatarUrl(profile, size)) ||
+    (source === 'gravatar' && getGravatarUrl(profile, size)) ||
+    (source === 'facebook' && getFacebookAvatarUrl(profile, size)) ||
+    getDefaultAvatarUrl(size)
+  );
+}
+
+function getDefaultAvatarUrl(size = 1024, local = true) {
+  const domain = local
+    ? `${config.https ? 'https' : 'http'}://${config.domain}`
+    : 'https://trustroots.org';
+
+  return `${domain}/img/avatar-${size}.png`;
+}
+
+/**
+ * Serve avatar URL via redirect
+ *
+ * @TODO: serve by streaming instead of redirect and add caching layer.
+ *
+ * @param  {Object} res
+ * @param  {String} url
+ */
+function serveAvatarUrl(res, url) {
+  res
+    .status(302) // https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/302
+    // .setHeader('Cache-Control', 'public, max-age=0')
+    .redirect(url);
+}
+
+/**
+ * Return avatar file URL
+ */
+const getAvatar = (req, res) => {
+  const validSizes = [2048, 1024, 512, 256, 128, 64, 36, 32, 24, 16];
+  const defaultSize = 1024;
+
+  if (req.query.size && !validSizes.includes(parseInt(req.query.size, 10))) {
+    return res.status(400).send({
+      message: `Invalid size. Please use one of these: ${validSizes.join(
+        ', ',
+      )}`,
+    });
+  }
+
+  const size = parseInt(req.query.size, 10) || defaultSize;
+  const defaultAvatarUrl = getDefaultAvatarUrl(size);
+
+  if (!req.profile) {
+    return serveAvatarUrl(res, defaultAvatarUrl);
+  }
+
+  const isOwnProfile = req.user._id.equals(req.profile._id);
+  const isBannedProfile =
+    req.profile.roles.includes('suspended') ||
+    req.profile.roles.includes('shadowban');
+  const isAdminOrModerator =
+    req.user.roles.includes('moderator') || req.user.roles.includes('admin');
+
+  if (
+    !isAdminOrModerator &&
+    !isOwnProfile &&
+    (!req.profile.public || isBannedProfile)
+  ) {
+    return serveAvatarUrl(res, defaultAvatarUrl);
+  }
+
+  let source = req.profile.avatarSource;
+
+  // Only authenticated user can define custom source
+  if (req.query.source && isOwnProfile) {
+    const validSources = User.schema.path('avatarSource').enumValues;
+
+    if (!validSources.includes(req.query.source)) {
+      return res.status(400).send({
+        message: `Invalid source. Please use one of these: ${validSources.join(
+          ', ',
+        )}`,
+      });
+    }
+    source = req.query.source;
+  }
+
+  const avatarUrl = getAvatarUrl(req.profile, size, source);
+
+  serveAvatarUrl(res, avatarUrl);
+};
+
+/**
+ * Middleware to find user for avatar
+ */
+const userForAvatarByUserId = async (req, res, next, userId) => {
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+
+  // Not a valid ObjectId
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('invalid-id'),
+    });
+  }
+
+  const fields = [
+    'additionalProvidersData.facebook.id', // For FB avatars
+    'avatarSource',
+    'avatarUploaded',
+    'emailHash', // MD5 hashed email to use with Gravatars
+    'id',
+    'public',
+    'roles',
+    'updated',
+  ].join(' ');
+
+  req.profile = await User.findById(userId, fields);
+
+  next();
+};
+
+module.exports = {
+  avatarUpload,
+  avatarUploadField,
+  getAvatar,
+  userForAvatarByUserId,
 };

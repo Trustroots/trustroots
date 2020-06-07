@@ -28,6 +28,11 @@ module.exports = function (app) {
     .post(userAvatar.avatarUploadField, userAvatar.avatarUpload);
 
   app
+    .route('/api/users/:avatarUserId/avatar')
+    .all(usersPolicy.isAllowed)
+    .get(userAvatar.getAvatar);
+
+  app
     .route('/api/users/memberships')
     .all(usersPolicy.isAllowed)
     .get(userProfile.getUserMemberships);
@@ -77,4 +82,5 @@ module.exports = function (app) {
   // Finish by binding the user middleware
   app.param('userId', userProfile.userMiniByID);
   app.param('username', userProfile.userByUsername);
+  app.param('avatarUserId', userAvatar.userForAvatarByUserId);
 };
