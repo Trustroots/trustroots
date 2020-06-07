@@ -87,14 +87,17 @@ exports.unblockUser = async function (req, res) {
     });
   }
   const idToBeUnBlocked = req.profile._id;
-  log('info', `${req.user._id} unblocking ${idToBeUnBlocked}`);
+  log(
+    'info',
+    `${req.user._id} unblocking ${req.params.username}:${idToBeUnBlocked}`,
+  );
   try {
     // get logged user and update
     const result = await User.updateOne(
       { _id: req.user._id },
       {
         $pullAll: {
-          blocked: [{ userId: idToBeUnBlocked }],
+          blocked: [idToBeUnBlocked],
         },
       },
     );
@@ -108,6 +111,7 @@ exports.unblockUser = async function (req, res) {
 
     res.send({ message: `${req.profile.username} removed from block list.` });
   } catch (err) {
+    log('error', err);
     return res.status(500).send({
       message: 'invalid error',
     });

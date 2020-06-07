@@ -15,31 +15,36 @@ let agent;
 /* users of the test */
 let alice;
 let bob;
-let carol;
 
 function checkError(message, done) {
   return err => {
     log('error', `Error while >> ${message}`);
+    log('error', err);
     done(err);
-    throw err;
   };
 }
 
 const login = credentials =>
-  new Promise((resolve, reject) =>
+  new Promise((resolve, reject) => {
+    agent = request.agent(app);
     agent
       .post('/api/auth/signin')
       .send(credentials)
       .expect(200)
       .end((err, resp) => {
         if (err) {
+          log('error', `${credentials.username} login`);
+          log('error', err);
           reject(err);
         }
         log('info', `${credentials.username} login`);
         resolve(resp);
-      }),
-  );
+      });
+  });
 
+/**
+ * Requests reused during tests
+ */
 const block = username =>
   new Promise((resolve, reject) =>
     agent
@@ -47,9 +52,26 @@ const block = username =>
       .expect(200)
       .end((err, resp) => {
         if (err) {
+          log('error', `blocking ${username}`);
+          log('error', err);
           reject(err);
         }
         log('info', `blocked ${username}`);
+        resolve(resp);
+      }),
+  );
+const unblock = username =>
+  new Promise((resolve, reject) =>
+    agent
+      .delete(`/api/blocked-users/${username}`)
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          log('error', `unblocking ${username}`);
+          log('error', err);
+          reject(err);
+        }
+        log('info', `unblocked ${username}`);
         resolve(resp);
       }),
   );
@@ -60,12 +82,15 @@ const getUser = username =>
       .expect(200)
       .end((err, resp) => {
         if (err) {
+          log('error', `get ${username}`);
+          log('error', err);
           reject(err);
         }
         log('info', `got ${username}`);
         resolve(resp);
       }),
   );
+
 /**
  * User routes tests
  */
@@ -122,31 +147,8 @@ describe.only('User block - user', function () {
     const bobUser = new User(bobProfile);
     bob = { credentials: bobCredentials, user: bobUser, profile: bobProfile };
 
-    // Carol user
-    const carolCredentials = {
-      username: 'carol_the_blocker',
-      password: 'TR-I$Aw3$0m4',
-    };
-    const carolProfile = {
-      public: true,
-      firstName: 'Carol',
-      lastName: 'Doe',
-      displayName: 'Carol Doe',
-      email: 'carol@example.org',
-      emailToken: 'initial email token',
-      username: carolCredentials.username.toLowerCase(),
-      password: carolCredentials.password,
-      provider: 'local',
-    };
-    const carolUser = new User(carolProfile);
-    carol = {
-      credentials: carolCredentials,
-      user: carolUser,
-      profile: carolProfile,
-    };
-
     // Save alice and bob to test db
-    Promise.all([aliceUser.save(), bobUser.save(), carolUser.save()])
+    Promise.all([aliceUser.save(), bobUser.save()])
       .then(() => done())
       .catch(done);
   });
@@ -176,7 +178,7 @@ describe.only('User block - user', function () {
       .catch(checkError('alice list blocked users: login', done))
       .then(() => block(bob.credentials.username))
       .catch(checkError('alice list blocked users: block bob', done))
-      .then((resp) => {
+      .then(resp => {
         /* alice see bob in blocked list */
         log('info', `block response ${JSON.stringify(resp.body)}`);
         agent
@@ -196,7 +198,6 @@ describe.only('User block - user', function () {
   });
 
   it('should not see a user if blocked by her', function (done) {
-    /* alice blocks bob */
     login(alice.credentials)
       .catch(checkError('alice login', done))
       .then(() => block(bob.credentials.username))
@@ -213,79 +214,54 @@ describe.only('User block - user', function () {
             if (err) {
               log('error', err);
               done(err);
-              throw err;
+              return;
             }
             log('info', "bob can't see alice");
             done();
           });
-      });
+      })
+      .catch(checkError('uncatched error - improve the test', done));
   });
 
   it('should see a user if unblocked by her', function (done) {
-    /* alice login */
-    agent
-      .post('/api/auth/signin')
-      .send(alice.credentials)
-      .expect(200)
-      .end(function (err) {
-        // Handle signin error
-        if (err) {
-          return done(err);
-        }
-        /* alice cant see carol */
-        agent
-          .get('/api/users/' + carol.credentials.username)
-          .expect(404)
-          .end(function (err) {
-            if (err) {
-              return done(err);
-            }
-            /* carol login */
-            agent
-              .post('/api/auth/signin')
-              .send(carol.credentials)
-              .expect(200)
-              .end(function (err) {
-                if (err) {
-                  return done(err);
-                }
-                /* carol unblock alice */
-                agent
-                  .post(
-                    '/api/users/blocked-users/' + alice.credentials.username,
-                  )
-                  .send(alice.credentials)
-                  .expect(200)
-                  .end(function (err) {
-                    if (err) {
-                      return done(err);
-                    }
-                    /* alice login */
-                    agent
-                      .post('/api/auth/signin')
-                      .send(alice.credentials)
-                      .expect(200)
-                      .end(function (err) {
-                        // Handle signin error
-                        if (err) {
-                          return done(err);
-                        }
-                        /* alice can see carol now! */
-                        agent
-                          .get('/api/users/' + carol.credentials.username)
-                          .expect(200)
-                          .end(function (err, res) {
-                            if (err) {
-                              return done(err);
-                            }
-                            const response = res.body;
-                            should(response.displayName).be.equal('Alice Doe');
-                            done();
-                          });
-                      });
-                  });
-              });
+    login(alice.credentials)
+      .catch(checkError('alice login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => {
+        const url = `/api/users/${alice.credentials.username}`;
+        log('info', 'bob tryies to get alice profile');
+        return agent
+          .get(url)
+          .expect(404) // not found!
+          .then(function () {
+            log('info', "bob can't see alice");
+          })
+          .catch(err => {
+            log('error', err);
+            done(err);
           });
-      });
+      })
+      .then(() => login(alice.credentials))
+      .catch(checkError('alice login', done))
+      .then(() => unblock(bob.credentials.username))
+      .catch(checkError('alice unblocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => {
+        const url = `/api/users/${alice.credentials.username}`;
+        log('info', 'bob tryies to get alice profile');
+        return agent
+          .get(url)
+          .expect(200) // found now!
+          .then(function () {
+            log('info', 'bob sees alice now');
+            done();
+          })
+          .catch(checkError('geting alice profile', done));
+      })
+      .catch(checkError('uncatched error - improve the test', done));
   });
 });
