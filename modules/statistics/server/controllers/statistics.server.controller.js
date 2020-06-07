@@ -219,6 +219,29 @@ exports.getLastSeenStatistic = function (since, callback) {
 };
 
 /**
+ * Get count of languages users speak
+ *
+ * @param limit {int} Limit returned number of languages
+ * @param callback {function}
+ */
+exports.getUserLanguagesCount = function (limit, callback) {
+  User.aggregate(
+    [
+      { $unwind: '$languages' },
+      {
+        $group: {
+          _id: '$languages',
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: limit },
+    ],
+    callback,
+  );
+};
+
+/**
  * Get all statistics
  */
 exports.getPublicStatistics = function (req, res) {

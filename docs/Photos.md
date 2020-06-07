@@ -16,6 +16,7 @@ Trustroots needs fresh photos every now and then. Would be great if you could **
 - [Andrea](https://www.flickr.com/photos/andreanieblas/sets/72157651420097125/) ([contact](https://www.trustroots.org/#!/profile/alenieblas))
 - [Jess Hunt](https://instagram.com/fortysixxandtwo)
 - [@thetravellersjournal](https://instagram.com/thetravellersjournal/)
+- [@serialhikers](https://www.instagram.com/serialhikers/) (contact them for higher resolution)
 
 ##### Submission threads at FB:
 
