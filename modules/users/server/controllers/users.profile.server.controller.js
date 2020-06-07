@@ -767,8 +767,14 @@ function classifyPermission(user, profile) {
   const isAdminOrModerator =
     user.roles.includes('moderator') || user.roles.includes('admin');
   const isBlocked = !!profile.blocked && profile.blocked.indexOf(user._id) >= 0;
-
-  return { isOwnProfile, isBannedProfile, isAdminOrModerator, isBlocked };
+  const hasBlocked = !!user.blocked && user.blocked.indexOf(profile._id) >= 0;
+  return {
+    isOwnProfile,
+    isBannedProfile,
+    isAdminOrModerator,
+    isBlocked,
+    hasBlocked,
+  };
 }
 
 /**
@@ -797,12 +803,13 @@ exports.userMiniByID = function (req, res, next, userId) {
       isOwnProfile,
       isBannedProfile,
       isBlocked,
+      hasBlocked,
     } = classifyPermission(req.user, profile);
     // Not own profile, and not public, or suspended, or shadowbanned user
     if (
       !isAdminOrModerator &&
       !isOwnProfile &&
-      (!profile.public || isBannedProfile || isBlocked)
+      (!profile.public || isBannedProfile || isBlocked || hasBlocked)
     ) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
@@ -1559,12 +1566,13 @@ exports.search = function (req, res, next) {
       detail: 'Query string should be at least 3 characters long.',
     });
   }
-
+  const blocked = req.user.blocked || [];
   // perform the search
   User.find(
     {
       $and: [
         { public: true }, // only public users
+        { _id: { $nin: blocked } }, // remove blocked
         {
           $text: {
             $search: req.query.search,

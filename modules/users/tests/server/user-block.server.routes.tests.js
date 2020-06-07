@@ -91,6 +91,22 @@ const getUser = username =>
       }),
   );
 
+const searchUser = (searchStr, expectedStatus = 200) =>
+  new Promise((resolve, reject) =>
+    agent
+      .get(`/api/users/?search=${searchStr}`)
+      .expect(expectedStatus)
+      .end((err, resp) => {
+        if (err) {
+          log('error', `search ${searchStr}`);
+          log('error', err);
+          reject(err);
+        }
+        log('info', `searched for ${searchStr}`);
+        resolve(resp.body);
+      }),
+  );
+
 /**
  * User routes tests
  */
@@ -219,6 +235,26 @@ describe('User block - user', function () {
             log('info', "bob can't see alice");
             done();
           });
+      })
+      .catch(checkError('uncatched error - improve the test', done));
+  });
+
+  it('should not see a user if blocked her', function (done) {
+    const bobUsername = { username: bob.credentials.username };
+    login(alice.credentials)
+      .catch(checkError('alice login', done))
+      .then(() => searchUser('Bob'))
+      .then(resultUsers => {
+        should(resultUsers).matchAny(bobUsername);
+      })
+      .catch(checkError('alice can see bob', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => searchUser('Bob'))
+      .catch(checkError('search bob', done))
+      .then(resultUsers => {
+        should(resultUsers).not.matchAny(bobUsername);
+        done();
       })
       .catch(checkError('uncatched error - improve the test', done));
   });
