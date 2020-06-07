@@ -1,7 +1,11 @@
 {
-  "Help us build Trustroots! Nobody can do everything, but everyone can do something…": "",
-  "Please head over to our Team Guide to learn how to get started.": "",
-  "Team Guide": "",
-  "Trustroots needs developers, designers, people handling support queue, copywriting and much more.": "",
-  "Volunteering": ""
+    "Help us build Trustroots! Nobody can do everything, but everyone can do something…": "Hjelp oss å bygge Trustroots. Ingen kan gjøre alt, men alle kan gjøre noe…",
+    "Please head over to our Team Guide to learn how to get started": {
+        "": "Ta turen til vår lagguide for å begynne."
+    },
+    "Team Guide": "Lagguide",
+    "Trustroots needs developers, designers, people handling support queue, copywriting and much more": {
+        "": "Trustroots trenger utviklere, designere, folk som håndterer brukerstøttekøen, korrekturlesere og mye mer."
+    },
+    "Volunteering": "Frivillighet"
 }

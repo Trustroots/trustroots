@@ -8,5 +8,7 @@
   { "code": "pl", "label": "polski" },
   { "code": "fi", "label": "suomi" },
   { "code": "sv", "label": "svenska" },
-  { "code": "cs", "label": "česky" }
+  { "code": "cs", "label": "česky" },
+  { "code": "pt", "label": "português" },
+  { "code": "ru", "label": "русский" }
 ]

@@ -162,7 +162,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 <br />
                 {/* @TODO remove ns (issue #1368) */}
                 <Trans t={t} ns="pages">
-                  Trustroots is over <a href="/statistics">36,000 members</a>{' '}
+                  Trustroots is over <a href="/statistics">44,000 members</a>{' '}
                   strong!
                 </Trans>
               </p>
