@@ -760,6 +760,17 @@ exports.getMiniUser = function (req, res) {
   res.json({});
 };
 
+function classifyPermission(user, profile) {
+  const isOwnProfile = user._id.equals(profile._id);
+  const isBannedProfile =
+    profile.roles.includes('suspended') || profile.roles.includes('shadowban');
+  const isAdminOrModerator =
+    user.roles.includes('moderator') || user.roles.includes('admin');
+  const isBlocked = !!profile.blocked && profile.blocked.indexOf(user._id) >= 0;
+
+  return { isOwnProfile, isBannedProfile, isAdminOrModerator, isBlocked };
+}
+
 /**
  * Mini profile middleware
  */
@@ -771,38 +782,36 @@ exports.userMiniByID = function (req, res, next, userId) {
     });
   }
 
-  User.findById(userId, exports.userMiniProfileFields + ' public roles').exec(
-    function (err, profile) {
-      // Something went wrong or no profile
-      if (err || !profile) {
-        return res.status(404).send({
-          message: errorService.getErrorMessageByKey('not-found'),
-        });
-      }
+  User.findById(
+    userId,
+    exports.userMiniProfileFields + ' public roles blocked',
+  ).exec(function (err, profile) {
+    // Something went wrong or no profile
+    if (err || !profile) {
+      return res.status(404).send({
+        message: errorService.getErrorMessageByKey('not-found'),
+      });
+    }
+    const {
+      isAdminOrModerator,
+      isOwnProfile,
+      isBannedProfile,
+      isBlocked,
+    } = classifyPermission(req.user, profile);
+    // Not own profile, and not public, or suspended, or shadowbanned user
+    if (
+      !isAdminOrModerator &&
+      !isOwnProfile &&
+      (!profile.public || isBannedProfile || isBlocked)
+    ) {
+      return res.status(404).send({
+        message: errorService.getErrorMessageByKey('not-found'),
+      });
+    }
 
-      const isOwnProfile = req.user._id.equals(profile._id);
-      const isBannedProfile =
-        profile.roles.includes('suspended') ||
-        profile.roles.includes('shadowban');
-      const isAdminOrModerator =
-        req.user.roles.includes('moderator') ||
-        req.user.roles.includes('admin');
-
-      // Not own profile, and not public, or suspended, or shadowbanned user
-      if (
-        !isAdminOrModerator &&
-        !isOwnProfile &&
-        (!profile.public || isBannedProfile)
-      ) {
-        return res.status(404).send({
-          message: errorService.getErrorMessageByKey('not-found'),
-        });
-      }
-
-      req.profile = profile;
-      next();
-    },
-  );
+    req.profile = profile;
+    next();
+  });
 };
 
 /**
@@ -835,7 +844,7 @@ exports.userByUsername = function (req, res, next, username) {
           {
             username: username.toLowerCase(),
           },
-          exports.userProfileFields + ' roles public',
+          exports.userProfileFields + ' roles public blocked',
         )
           .populate({
             path: 'member.tribe',
@@ -854,19 +863,18 @@ exports.userByUsername = function (req, res, next, username) {
               });
             }
 
-            const isOwnProfile = req.user._id.equals(profile._id);
-            const isBannedProfile =
-              profile.roles.includes('suspended') ||
-              profile.roles.includes('shadowban');
-            const isAdminOrModerator =
-              req.user.roles.includes('moderator') ||
-              req.user.roles.includes('admin');
+            const {
+              isAdminOrModerator,
+              isOwnProfile,
+              isBannedProfile,
+              isBlocked,
+            } = classifyPermission(req.user, profile);
 
             // Not own profile, and not public, or suspended, or shadowbanned user
             if (
               !isAdminOrModerator &&
               !isOwnProfile &&
-              (!profile.public || isBannedProfile)
+              (!profile.public || isBannedProfile || isBlocked)
             ) {
               return res.status(404).send({
                 message: errorService.getErrorMessageByKey('not-found'),

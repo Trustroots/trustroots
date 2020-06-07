@@ -94,7 +94,7 @@ const getUser = username =>
 /**
  * User routes tests
  */
-describe.only('User block - user', function () {
+describe('User block - user', function () {
   before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
