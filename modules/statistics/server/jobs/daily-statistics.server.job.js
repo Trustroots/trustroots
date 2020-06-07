@@ -230,6 +230,41 @@ module.exports = function (job, agendaDone) {
           done,
         );
       },
+
+      // Get statistics for top 40 spoken languages
+      function (done) {
+        statistics.getUserLanguagesCount(40, function (err, languageCounts) {
+          if (err) {
+            log(
+              'error',
+              'Daily statistics: failed fetching spoken languages counts.',
+              err,
+            );
+            return done();
+          }
+
+          // Write numbers to stats
+          async.eachOfSeries(
+            languageCounts,
+            function ({ _id, count }, index, doneLanguage) {
+              writeDailyStat(
+                {
+                  namespace: 'language',
+                  values: {
+                    count,
+                    percentage: (count / totalUserCount) * 100,
+                  },
+                  tags: {
+                    language: _id,
+                  },
+                },
+                doneLanguage,
+              );
+            },
+            done,
+          );
+        });
+      },
     ],
     function (err) {
       if (err) {
