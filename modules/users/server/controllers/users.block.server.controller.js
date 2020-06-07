@@ -12,8 +12,23 @@ const log = require(path.resolve('./config/lib/logger'));
 /**
  * Get the list of blocked users by the logged in user
  */
-exports.getBlockedUsers = function (req, res) {
-  res.json(req.user.blocked || []);
+exports.getBlockedUsers = async function (req, res) {
+  try {
+    const user = await User.findById(req.user._id)
+      // Avoid pulling in sensitive fields from Mongoose
+      .select('-password -salt')
+      .populate({
+        path: 'blocked',
+        select: 'username displayName',
+        model: 'User',
+      });
+    res.send(user.blocked);
+  } catch (err) {
+    log('error', err);
+    return res.status(500).send({
+      message: 'invalid error',
+    });
+  }
 };
 
 /**
@@ -38,7 +53,7 @@ exports.blockUser = async function (req, res) {
       { _id: req.user._id },
       {
         $addToSet: {
-          blocked: { userId: idToBeBlocked },
+          blocked: idToBeBlocked,
         },
       },
     );
@@ -50,8 +65,9 @@ exports.blockUser = async function (req, res) {
       });
     }
 
-    res.send({ message: `${req.profile.username} added to block list. ` });
+    res.send(`${req.profile.username} added to block list.`);
   } catch (err) {
+    log('error', err);
     return res.status(500).send({
       message: 'invalid error',
     });

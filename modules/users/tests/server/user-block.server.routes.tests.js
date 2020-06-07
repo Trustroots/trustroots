@@ -4,6 +4,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const express = require(path.resolve('./config/lib/express'));
+const log = require(path.resolve('./config/lib/logger'));
 
 /**
  * Globals
@@ -16,10 +17,59 @@ let alice;
 let bob;
 let carol;
 
+function checkError(message, done) {
+  return err => {
+    log('error', `Error while >> ${message}`);
+    done(err);
+    throw err;
+  };
+}
+
+const login = credentials =>
+  new Promise((resolve, reject) =>
+    agent
+      .post('/api/auth/signin')
+      .send(credentials)
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          reject(err);
+        }
+        log('info', `${credentials.username} login`);
+        resolve(resp);
+      }),
+  );
+
+const block = username =>
+  new Promise((resolve, reject) =>
+    agent
+      .put(`/api/blocked-users/${username}`)
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          reject(err);
+        }
+        log('info', `blocked ${username}`);
+        resolve(resp);
+      }),
+  );
+const getUser = username =>
+  new Promise((resolve, reject) =>
+    agent
+      .get(`/api/users/${username}`)
+      .expect(200)
+      .end((err, resp) => {
+        if (err) {
+          reject(err);
+        }
+        log('info', `got ${username}`);
+        resolve(resp);
+      }),
+  );
 /**
  * User routes tests
  */
-describe('User block - user', function () {
+describe.only('User block - user', function () {
   before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
@@ -107,129 +157,66 @@ describe('User block - user', function () {
 
   it('should be able to see a user if not blocked by her', function (done) {
     /* bob login */
-    agent
-      .post('/api/auth/signin')
-      .send(bob.credentials)
-      .expect(200)
-      .end(function (err) {
-        // Handle signin error
-        if (err) {
-          return done(err);
-        }
-        /* bob can see alice */
+    login(bob.credentials)
+      .catch(checkError('bob sees alice: bob login', done))
+      .then(() => getUser(alice.credentials.username) /* bob can see alice */)
+      .catch(checkError('bob sees alice: get', done))
+      .then(resp => {
+        const response = resp.body;
+        log('info', `bob sees ${response.displayName}`);
+        should(response).have.property('displayName');
+        should(response.displayName).equal('Alice Doe');
+        return done();
+      });
+  });
+
+  it('should get the list of the usernames of her blocked peers', function (done) {
+    /* alice login */
+    login(alice.credentials)
+      .catch(checkError('alice list blocked users: login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice list blocked users: block bob', done))
+      .then((resp) => {
+        /* alice see bob in blocked list */
+        log('info', `block response ${JSON.stringify(resp.body)}`);
         agent
-          .get('/api/users/' + alice.credentials.username)
-          .expect(200)
+          .get('/api/blocked-users')
+          .expect(200) // not found!
           .end(function (err, resp) {
             if (err) {
               return done(err);
             }
-            const response = resp.body;
-            should(response).have.property('displayName');
-            should(response.displayName).be.equal('Alice Doe');
+            const blocked = resp.body;
+            const bobUsername = { username: bob.credentials.username };
+            log('info', `alice blocked: ${JSON.stringify(bobUsername)}`);
+            should(blocked).matchAny(bobUsername);
             return done();
           });
       });
   });
 
   it('should not see a user if blocked by her', function (done) {
-    /* alice login */
-    let aliceAgent = agent
-      .post('/api/auth/signin')
-      .send(alice.credentials)
-      .expect(200)
-      .end(function (err) {
-        // Handle signin error
-        if (err) {
-          return done(err);
-        }
-      });
-
-    /* bob login */
-    let bobAgent = agent
-      .post('/api/auth/signin')
-      .send(bob.credentials)
-      .expect(200)
-      .end(function (err) {
-        // Handle signin error
-        if (err) {
-          return done(err);
-        }
-      });
-
-    // console.debug('alice login');
-    // agent
-    //   .post('/api/auth/signin')
-    //   .send(alice.credentials)
-    //   .expect(200)
-    //   .end(function (err) {
-    //     // Handle signin error
-    //     if (err) {
-    //       return done(err);
-    //     }
-    //     /* alice blocks bob */
-    //     console.error('alice blocks bob');
-    //     agent
-    //       .put('/api/users/blocked-users/' + bob.credentials.username)
-    //       .expect(200)
-    //       .end(function (err) {
-    //         if (err) {
-    //           return done(err);
-    //         }
-    //         /* bob login */
-    //         agent
-    //           .post('/api/auth/signin')
-    //           .send(bob.credentials)
-    //           .expect(200)
-    //           .end(function (err) {
-    //             if (err) {
-    //               return done(err);
-    //             }
-    //             /* bob cant see alice */
-    //             agent
-    //               .get('/api/users/' + alice.credentials.username)
-    //               .expect(404) // not found!
-    //               .end(function (err) {
-    //                 if (err) {
-    //                   return done(err);
-    //                 }
-    //                 return done();
-    //               });
-    //           });
-    //       });
-  });
-
-  it('should get the list of his blocked peers', function (done) {
-    /* alice login */
-    agent
-      .post('/api/auth/signin')
-      .send(alice.credentials)
-      .expect(200)
-      .end(function (err) {
-        // Handle signin error
-        if (err) {
-          return done(err);
-        }
-        /* alice blocks bob */
+    /* alice blocks bob */
+    login(alice.credentials)
+      .catch(checkError('alice login', done))
+      .then(() => block(bob.credentials.username))
+      .catch(checkError('alice blocks bob', done))
+      .then(() => login(bob.credentials))
+      .catch(checkError('bob login', done))
+      .then(() => {
+        const url = `/api/users/${alice.credentials.username}`;
+        log('info', url);
         agent
-          .put('/api/users/blocked-users/' + bob.credentials.username)
-          .expect(200)
+          .get(url)
+          .expect(404) // not found!
           .end(function (err) {
             if (err) {
-              return done(err);
+              log('error', err);
+              done(err);
+              throw err;
             }
-            /* alice see bob in blocked list */
-            agent
-              .get('/api/users/blocked-users')
-              .expect(200) // not found!
-              .end(function (err, resp) {
-                if (err) {
-                  return done(err);
-                }
-                const blocked = resp.body;
-                should(bob.credentials.username).be.in(blocked);
-                return done();
-              });
+            log('info', "bob can't see alice");
+            done();
           });
       });
   });
