@@ -257,7 +257,7 @@ describe('User block - user', function () {
       .then(() => searchUser('Alice'))
       .catch(checkError('bob search Alice', done))
       .then(resultUsers => {
-        /** not blocked yet. should appear in search */
+        /** blocked. should not appear in search */
         should(resultUsers).not.matchAny(aliceUsername);
         done();
       })
