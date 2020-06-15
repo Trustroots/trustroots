@@ -376,6 +376,8 @@ module.exports.initHelmetHeaders = function (app) {
         // If not allowed the browser emulates a 400 HTTP status code.
         connectSrc: [
           "'self'",
+          `ws://${config.websocket.domain}:${config.websocket.port}`,
+          `wss://${config.websocket.domain}:${config.websocket.port}`,
           'https://api.mapbox.com',
           'https://events.mapbox.com',
           'https://tile.openstreetmap.org',
@@ -537,6 +539,14 @@ module.exports.initErrorRoutes = function (app) {
 };
 
 /**
+ * Configure WebSockets server
+ */
+module.exports.initWebSockets = (app, connection) => {
+  const webSocketServer = require('./websocket');
+  webSocketServer.start(app, connection);
+};
+
+/**
  * Initialize the Express application
  */
 module.exports.init = function (connection) {
@@ -575,6 +585,9 @@ module.exports.init = function (connection) {
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);
+
+  // Initialize WebSocket server
+  this.initWebSockets(app, connection);
 
   // Initialize sentry error handler, must be after routes, but before error handlers
   this.initSentryErrorHandler(app);
