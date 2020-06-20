@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
-import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import MediumEditor from 'react-medium-editor';
+import PropTypes from 'prop-types';
+import React, { useEffect } from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
 
-const options = {
+const baseOptions = {
   disableReturn: false,
   disableDoubleReturn: false,
   disableExtraSpaces: false,
@@ -164,8 +165,15 @@ function removeTrailingBr(value) {
   return value.replace(/<br><\/p>$/, '</p>');
 }
 
-export default function TrEditor({ id, text, onChange, onCtrlEnter }) {
+export default function TrEditor({
+  id,
+  onChange,
+  onCtrlEnter,
+  placeholder,
+  text,
+}) {
   const ref = React.createRef();
+  const { t } = useTranslation('core');
 
   useEffect(() => {
     const { medium } = ref.current;
@@ -180,12 +188,21 @@ export default function TrEditor({ id, text, onChange, onCtrlEnter }) {
     };
   }, [onCtrlEnter]);
 
-  const props = { id, text, options, className: 'tr-editor' };
+  const options = {
+    // https://github.com/yabwe/medium-editor#placeholder-options
+    placeholder: {
+      hideOnClick: true,
+      text: placeholder ? placeholder : t('Type your text'),
+    },
+    ...baseOptions,
+  };
+
+  const editorProps = { id, text, options, className: 'tr-editor' };
   return (
     <MediumEditor
       ref={ref}
       onChange={value => onChange(removeTrailingBr(value))}
-      {...props}
+      {...editorProps}
     />
   );
 }
@@ -196,7 +213,8 @@ TrEditor.defaultProps = {
 
 TrEditor.propTypes = {
   id: PropTypes.string,
-  text: PropTypes.string.isRequired,
   onChange: PropTypes.func.isRequired,
   onCtrlEnter: PropTypes.func.isRequired,
+  placeholder: PropTypes.string,
+  text: PropTypes.string.isRequired,
 };
