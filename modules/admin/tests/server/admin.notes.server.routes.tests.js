@@ -16,10 +16,6 @@ describe('Admin Notes Log CRUD tests', () => {
     '<p>test https://trustroots.org <script>alert()</script></p>';
   const noteOutputHtml =
     '<p>test <a href="https://trustroots.org">trustroots.org</a> </p>';
-  const testNote = {
-    userId: notesUserId,
-    note: 'test',
-  };
 
   const _usersRaw = utils.generateUsers(3);
   _usersRaw[0].roles = ['user', 'admin'];
@@ -60,7 +56,10 @@ describe('Admin Notes Log CRUD tests', () => {
 
       const { body } = await agent
         .post('/api/admin/notes')
-        .send(testNote)
+        .send({
+          userId: notesUserId,
+          note: 'test',
+        })
         .expect(403);
 
       body.message.should.equal('Forbidden.');
@@ -86,7 +85,10 @@ describe('Admin Notes Log CRUD tests', () => {
 
         const { body } = await agent
           .post('/api/admin/notes')
-          .send(testNote)
+          .send({
+            userId: notesUserId,
+            note: 'test',
+          })
           .expect(403);
 
         body.message.should.equal('Forbidden.');
@@ -107,7 +109,10 @@ describe('Admin Notes Log CRUD tests', () => {
 
         const { body } = await agent
           .post('/api/admin/notes')
-          .send(testNote)
+          .send({
+            userId: notesUserId,
+            note: 'test',
+          })
           .expect(200);
 
         body.message.should.equal('Note saved.');
@@ -119,7 +124,7 @@ describe('Admin Notes Log CRUD tests', () => {
         const { body } = await agent
           .post('/api/admin/notes')
           .send({
-            ...testNote,
+            userId: notesUserId,
             note: '',
           })
           .expect(400);
