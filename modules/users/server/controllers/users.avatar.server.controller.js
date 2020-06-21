@@ -175,11 +175,11 @@ const avatarUpload = (req, res) => {
  * @returns {string} - the url
  */
 function getFacebookAvatarUrl(user, size) {
-  const isValid = _.has(user, ['additionalProvidersData', 'facebook', 'id']);
+  const id = _.get(user, ['additionalProvidersData', 'facebook', 'id'], false);
 
   return (
-    isValid &&
-    `https://graph.facebook.com/${user.additionalProvidersData.facebook.id}/picture/?width=${size}&height=${size}`
+    id &&
+    `https://graph.facebook.com/${id}/picture/?width=${size}&height=${size}`
   );
 }
 
@@ -294,13 +294,14 @@ const getAvatar = (req, res) => {
   const isBannedProfile =
     req.profile.roles.includes('suspended') ||
     req.profile.roles.includes('shadowban');
+  const isPublicProfile = req.profile.public;
   const isAdminOrModerator =
     req.user.roles.includes('moderator') || req.user.roles.includes('admin');
 
   if (
     !isAdminOrModerator &&
     !isOwnProfile &&
-    (!req.profile.public || isBannedProfile)
+    (!isPublicProfile || isBannedProfile)
   ) {
     return serveAvatarUrl(res, defaultAvatarUrl);
   }
@@ -354,6 +355,7 @@ const userForAvatarByUserId = async (req, res, next, userId) => {
     'updated',
   ].join(' ');
 
+  // We could limit search here to only public and non-suspended users, but that's more complex and slower query.
   req.profile = await User.findById(userId, fields);
 
   next();
