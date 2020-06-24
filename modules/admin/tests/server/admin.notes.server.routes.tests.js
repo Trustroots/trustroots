@@ -52,8 +52,6 @@ describe('Admin Notes Log CRUD tests', () => {
       agent.get(`/api/admin/notes?userId=${notesUserId}`).expect(403));
 
     it('non-authenticated users should not be allowed to write notes', async () => {
-      await utils.signIn(credentialsAdmin, agent);
-
       const { body } = await agent
         .post('/api/admin/notes')
         .send({
