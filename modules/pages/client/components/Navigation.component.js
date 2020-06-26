@@ -40,8 +40,8 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
           {t('Contacts')}
         </a>
 
-        <a href="/tribes" className="list-group-item">
-          {t('Tribes')}
+        <a href="/circles" className="list-group-item">
+          {t('Circles')}
         </a>
 
         <a href="/account" className="list-group-item">

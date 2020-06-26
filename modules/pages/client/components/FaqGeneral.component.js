@@ -31,7 +31,7 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
           introduce it to new communities. <br />
         </Trans>
         <br />
-        <a href="/faq/tribes">{t('Read more about tribes')}</a>.
+        <a href="/faq/tribes">{t('Read more about circles')}</a>.
       </div>
 
       <div className="faq-question" id="what-is-your-long-term-vision">
@@ -143,7 +143,7 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
             <br />
             <br />
             {t(
-              'Right now we simply don’t have the features to support a diverse audience of people with differing values. We want to build on the tribes feature, and add a whole lot more to help with this. But for the time being, we feel that it’s better to keep our growth more focused.',
+              'Right now we simply don’t have the features to support a diverse audience of people with differing values. We want to build on the circles feature, and add a whole lot more to help with this. But for the time being, we feel that it’s better to keep our growth more focused.',
             )}
             <br />
             <br />
