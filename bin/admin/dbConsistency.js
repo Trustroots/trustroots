@@ -7,7 +7,7 @@ var trshell = require('./trshell'),
 console.log ('Trustroots admin shell: check database consistency');
 
 User.find( {}, async function(err, docs) {
-  console.log("MEMBERS WHO CAN'T JOIN ANY TRIBES");
+  console.log("MEMBERS WHO CAN'T JOIN ANY CIRCLES");
   await _.map(docs, function(d) {
     _.map(d.member, function(m) {
       if (!m.tribe) {
