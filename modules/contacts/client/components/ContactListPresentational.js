@@ -1,3 +1,4 @@
+import classnames from 'classnames';
 import React from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
@@ -23,28 +24,25 @@ export default function ContactListPresentational({
   const confirmedFiltered = filterContacts(confirmed, filter);
   const unconfirmedFiltered = filterContacts(unconfirmed, filter);
 
-  const overviewClassNames = [
-    'col-xs-12',
-    contacts.length >= 6 ? 'col-sm-8' : 'text-center',
-  ];
-
   return (
     <div className="contacts-list">
       <div className="row">
-        <div className={overviewClassNames.join(' ')}>
+        <div
+          className={classnames('col-xs-12', {
+            'col-sm-8': contacts.length >= 6,
+            'text-center': contacts.length < 6,
+          })}
+        >
           <h4 className="text-muted">
             {/* Confirmed contacts */}
-            {confirmed.length === 1 && <span>{t('One contact')}</span>}
-            {confirmed.length > 1 && (
-              <span>
-                {t('{{amount}} contacts', { amount: confirmed.length })}
-              </span>
-            )}{' '}
+            <span>
+              {t('{{count}} contacts', { count: confirmed.length })}
+            </span>{' '}
             {/* Pending contacts */}
             {unconfirmed.length > 0 && (
               <small>
-                {t('(additional {{amount}} pending)', {
-                  amount: unconfirmed.length,
+                {t('(additional {{count}} pending)', {
+                  count: unconfirmed.length,
                 })}
               </small>
             )}
@@ -59,7 +57,7 @@ export default function ContactListPresentational({
             <div className="col-xs-12 col-sm-4 text-right">
               <div className="form-group">
                 <label htmlFor="contacts-search" className="sr-only">
-                  Search contacts
+                  {t('Search contacts')}
                 </label>
                 <input
                   id="contacts-search"
