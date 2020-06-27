@@ -53,6 +53,10 @@ module.exports = {
   sessionSecret: 'MEAN',
   sessionCollection: 'sessions',
   domain: 'localhost:3000',
+  websocket: {
+    domain: 'localhost',
+    port: 3030,
+  },
   supportEmail: 'support@trustroots.org', // TO-address for support requests
   supportVolunteerNames: ['Dario', 'Noah'], // Used as "from" name to send some automated emails
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302', // Survey to send with host reactivation emails

@@ -13,5 +13,6 @@ module.exports = {
     policies: 'modules/*/server/policies/*.js',
     views: 'modules/*/server/views/*.html',
     migrations: 'migrations/*.js',
+    sockets: 'modules/*/server/sockets/**/*.js',
   },
 };
