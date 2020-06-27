@@ -1,5 +1,6 @@
 {
-  "(additional {{amount}} pending)": "(additional {{amount}} pending)",
+  "(additional {{count}} pending)": "(additional {{count}} pending)",
+  "(additional {{count}} pending)_plural": "(additional {{count}} pending)_plural",
   "Cancel": "Cancel",
   "Confirm Request": "Confirm Request",
   "Connected since {{created, MMM D, YYYY}}": "Connected since {{created, MMM D, YYYY}}",
@@ -9,18 +10,19 @@
   "From <2>{{locationFrom}}</2>": "From <2>{{locationFrom}}</2>",
   "Lives in <2>{{locationLiving}}</2>": "Lives in <2>{{locationLiving}}</2>",
   "No contacts yet.": "No contacts yet.",
-  "One contact": "One contact",
   "Remove contact?": "Remove contact?",
   "Requested {{created, MMM D, YYYY}}": "Requested {{created, MMM D, YYYY}}",
   "Revoke Request": "Revoke Request",
   "Revoke contact request?": "Revoke contact request?",
+  "Search contacts": "Search contacts",
   "Since {{created, MMM D, YYYY}}": "Since {{created, MMM D, YYYY}}",
   "Wait a moment...": "Wait a moment...",
   "Yes, decline request": "Yes, decline request",
   "Yes, remove contact": "Yes, remove contact",
   "Yes, revoke request": "Yes, revoke request",
   "You received a contact request.": "You received a contact request.",
-  "{{amount}} contacts": "{{amount}} contacts",
+  "{{count}} contacts": "{{count}} contacts",
   "{{count}} contacts in common": "One contact in common",
-  "{{count}} contacts in common_plural": "{{count}} contacts in common"
+  "{{count}} contacts in common_plural": "{{count}} contacts in common",
+  "{{count}} contacts_plural": "{{count}} contacts_plural"
 }

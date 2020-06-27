@@ -1,3 +1,5 @@
+@import '~less/global-variables';
+
 .admin-search-users__actions {
   max-width: 30%;
 }
@@ -33,4 +35,19 @@ td:hover .admin-hidden-until-hover {
       margin-left: 0;
     }
   }
+}
+
+.admin-notes .tr-editor {
+  min-height: 100px;
+  margin: 5px 0;
+  padding: 10px;
+  &,
+  &:focus {
+    border: 1px solid @gray-lighter;
+  }
+}
+.admin-note {
+  padding-top: 20px;
+  margin-top: 20px;
+  border-top: 1px solid @gray-lighter;
 }

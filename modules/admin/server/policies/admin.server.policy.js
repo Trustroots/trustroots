@@ -23,6 +23,7 @@ exports.invokeRolesPolicies = () => {
         { resources: '/api/admin/audit-log', permissions: ['get'] },
         { resources: '/api/admin/messages', permissions: ['post'] },
         { resources: '/api/admin/threads', permissions: ['post'] },
+        { resources: '/api/admin/notes', permissions: ['get', 'post'] },
         { resources: '/api/admin/user', permissions: ['post'] },
         { resources: '/api/admin/user/change-role', permissions: ['post'] },
         { resources: '/api/admin/users', permissions: ['post'] },
