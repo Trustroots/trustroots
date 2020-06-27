@@ -1,6 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
@@ -16,18 +16,32 @@ export default function SearchUsers() {
   const [hasSearched, setHasSearched] = useState(false);
   const [users, setUsers] = useState([]);
 
-  async function fetchUsers() {
+  async function fetchUsers(query) {
     setIsSearching(true);
     setHasSearched(true);
     setUsers([]);
     try {
-      const { data: users } = await searchUsers(searchQuery);
+      const { data: users } = await searchUsers(query);
       setUsers(users || []);
       setIsSearching(false);
+    } catch {
+      // Do nothing
     } finally {
       setIsSearching(false);
     }
   }
+
+  useEffect(() => {
+    const urlSearchQuery = new URL(window.location).searchParams.get('search');
+
+    if (urlSearchQuery) {
+      setHasSearched(true);
+      setSearchQuery(urlSearchQuery);
+      if (urlSearchQuery.length >= MINIMUM_QUERY_LENGTH) {
+        fetchUsers(urlSearchQuery);
+      }
+    }
+  }, []);
 
   const searchForm = (
     <form
@@ -35,7 +49,7 @@ export default function SearchUsers() {
       id="search-users-form"
       onSubmit={event => {
         event.preventDefault();
-        fetchUsers();
+        fetchUsers(searchQuery);
       }}
     >
       <div className="input-group">
@@ -76,6 +90,7 @@ export default function SearchUsers() {
               type="submit"
             >
               <i className="icon-search"></i>
+              <span className="hidden-xs">{t('Search')}</span>
             </button>
           </span>
         </span>
