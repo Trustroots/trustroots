@@ -5,6 +5,7 @@ import React, { Component } from 'react';
 // Internal dependencies
 import { getUser, setUserRole } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
+import AdminNotes from './AdminNotes';
 import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
@@ -212,6 +213,8 @@ export default class AdminUser extends Component {
                   <UserEmailConfirmLink user={user.profile} />
                 </div>
               </div>
+
+              <AdminNotes id={this.state.id} />
 
               <h4 id="profile">
                 Profile
