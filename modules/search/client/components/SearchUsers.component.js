@@ -90,7 +90,7 @@ export default function SearchUsers() {
               type="submit"
             >
               <i className="icon-search"></i>
-              <span className="visible-md-inline">{t('Search')}</span>
+              <span className="hidden-xs">{t('Search')}</span>
             </button>
           </span>
         </span>
