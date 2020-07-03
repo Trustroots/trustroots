@@ -99,7 +99,7 @@ _(Selenium tests are currently out of date.)_
 
 ## Folder layout
 
-You might want to read the [folder structure](http://meanjs.org/docs.html#folder-structure) to get a handle on how things are laid out. A quick summary:
+You might want to read the [folder structure](http://meanjs.org/docs.html#folder-structure) to get a handle on how things are laid out, although we've started deviating from it with Angular.js to [React migration](./React.md). A quick summary:
 
 - `modules/` contains one folder for each "component" of the site, this is where most of the interesting stuff lives
 - `modules/**/server/` contains all the backend, server side stuff
@@ -113,16 +113,29 @@ You might want to read the [folder structure](http://meanjs.org/docs.html#folder
   - `modules/core/client/app`
   - `modules/core/client/app/less` contains the site wide style variables and `application.less` file which includes rest of the modules.
   - `/less` is where you'll find **CSS styles** in [LESS format](http://lesscss.org/). Each module should have .less file with the module name, which then includes rest of the less files from the same folder. E.g.: `modules/core/client/app/less/application.less` includes `modules/messages/client/app/less/messages.less` which then includes `inbox.less` and `thread.less` from the same directory.
-  - `/views` is where you'll find templates
-  - `/services` is where you'll find [Angular service](https://docs.angularjs.org/guide/services), mostly for connecting to REST API points
+  - `/views` is where you'll find Angular.js templates
+  - `/api` functions for communicating with REST API points, used in React components and not with Angular.js stuff; Angular uses `/services` insteead.
+  - `/services` is where you'll find [Angular service](https://docs.angularjs.org/guide/services), mostly for connecting to REST API points. Not used in React components; those use `/api` instead.
   - `/config` contains the client side routes and other configs
   - `/directives` contains the [Angular directives](https://docs.angularjs.org/guide/directive)
   - `/controllers` contains the angular client side [controllers](https://docs.angularjs.org/guide/controller)
+  - `/components` contains React components. [Read more about our React migration](./React.md)
+  - `/utils` containts utility functions used mostly with React components. 
+  - `/images` Images for the module.
 - `config/` ta-da, configs! Server side.
   - `/assets` Defines paths for assets (serverside JS, frontend CSS/JS/LESS, lib files etc)
   - `/lib/env` primary config files. Don't modify anything else here except `local.js`.
   - `/lib/env/local.js` file overriding other `env/*` files. Put here your adjustments you don't want have publicly at the repo (it's git-ignored).
   - `/lib/agenda.js` [Agenda](https://www.npmjs.com/package/agenda) job scheduler (kinda like cron)
-- `bower.js` frontend packages, managed with [Bower](http://bower.io/)
-- `package.js` backend packages, managed with [NPM](https://www.npmjs.com/)
-- `fontello.conf.js` config for icon font. Drag it to [Fontello](http://fontello.com/) to edit.
+  - `/lib/worker.js` Configures all cron jobs with above Agenda
+  - `/lib/express.js` Sets up the server side application and routes
+  - `/lib/app.js` Boot up function for the serverside app.
+  - `/lib/facebook-api.js` Sets up Facebook Graph API client
+  - `/lib/firebase-messaging.js` Sets up Firebase for push notifications
+  - `/lib/mongoose.js` Sets up database connection and related utilities.
+  - `/lib/render.js` Configuration for Nunjucs, a serverside template renderer
+  - `/lib/logger.js` Configures error logging service 
+  - `/lib/exponent-notifications.js` Expo.io based mobile app push notifications 
+- `server.js` server entrypoint; for APIs and serving the fontend client 
+- `worker.js` background job runner entrypoint, for running Agenda
+- `package.js` dependencies, managed with [NPM](https://www.npmjs.com/)
