@@ -2,36 +2,35 @@
 
 # The application
 
-- **MEAN** stack, seeded originally with [MEAN.js](http://meanjs.org/) boilerplate: [MongoDB](www.mongodb.org), [ExpressJS](http://expressjs.com/), [AngularJS](https://angularjs.org/) v1, [NodeJS](http://nodejs.org/). Additionally stuff like [Bootstrap](http://getbootstrap.com/), [Leaflet](http://leafletjs.com/) etc.
-- [[Database]] scheme (look for `*.server.model.js` project files to check most up to date info)
+- **MEAN** stack, seeded originally with [MEAN.js](http://meanjs.org/) boilerplate: [MongoDB](www.mongodb.org), [ExpressJS](http://expressjs.com/), [AngularJS](https://angularjs.org/) v1 ([we're migrating](./React.md) to [React](https://reactjs.org/)), [NodeJS](http://nodejs.org/). Additionally stuff like [Bootstrap](http://getbootstrap.com/) v3 for component styles, [Leaflet](http://leafletjs.com/) for the map, etc.
+- Database scheme (look for `*.server.model.js` project files to check most up to date info)
 - We're migrating the client to React. Read a [migration guide](React.md).
 
 # The mobile app
 
-We have a React Native app for Android written in ClojureScript: https://github.com/Trustroots/Trustroots-React-Native
+- We have [a basic Webview app](https://github.com/Trustroots/trustroots-expo-mobile/) written in React Native and Expo.io which mostly just gets you push notifications and an icon on phone's screen. :-)
+- We have [in-the-works React Native app](https://github.com/Trustroots/trustroots-mobile/).
 
 ## Coding conventions
 
 - Project has [.editorconfig](https://github.com/Trustroots/trustroots/blob/master/.editorconfig) file, we recommend to [download extension for your IDE](http://editorconfig.org/#download).
-- Build script checks all the files against our [ESLint rules](https://github.com/Trustroots/trustroots/blob/master/.eslintrc.js). Fix errors before submitting PR.
+- Build script checks all the files against our [ESLint rules](https://github.com/Trustroots/trustroots/blob/master/.eslintrc.js). Fix errors before submitting PR and add integration for your IDE.
+- [Prettier](https://prettier.io/) codeformatter is configured so you might want to install integration for your IDE.
 
-### Most important
+### Other conventions
 
-- Indentation with 2 spaces
-- Beginning brace on the same line as the beginning statement
-- File names use dash to separate words. For example: foo-bar.js
+- File names use dash to separate words. For example: foo-bar.js (except for React Components `CamelCase.jd`)
 - Use camelCase for identifiers. Functions and variable names should be named like `doAThing`, not `do_a_thing`.
 
 ### JS
 
 - See [Angular 1 Style Guide](https://github.com/johnpapa/angular-styleguide/blob/master/a1/README.md)
-- Somewhat along the lines of [AirBnb JavaScript style guide](https://github.com/airbnb/javascript) (ESLint enforces these, too)
 - We're migrating to ES2018. Write your code in modern JavaScript. Read a [migration manual](ES2018.md).
 
 ### CSS/LESS
 
 - We use [LESS CSS](http://lesscss.org/) for CSS.
-- Build as generic modules as possible. Rather `.panel` than `.about-box`.
+- Build as generic and re-usable components as possible. Rather `.panel` than `.about-box`.
 
 #### CSS class names
 
@@ -81,13 +80,9 @@ Slowly getting there. Any help/experiences appreciated! [#228](https://github.co
 
 ... mainly for the API routes ([example](https://github.com/Trustroots/trustroots/blob/master/modules/messages/tests/server/message.server.routes.tests.js)).
 
-##### End-to-end tests with Selenium
-
-We have a free [Automate account](https://www.browserstack.com/automate) with Browserstack ([#199](https://github.com/Trustroots/trustroots/issues/199), [blog](http://ideas.trustroots.org/2015/04/07/selenium-browserstack-testing/)) — this is offered to us for free since we're an open source project. This makes it very easy for us to test the project on tons of different browsers on various platforms, including [MSIE](https://github.com/Trustroots/trustroots/issues/45).
-
-Written in Python, using Selenium ([#225](https://github.com/Trustroots/trustroots/issues/225)).
-
-_(Selenium tests are currently out of date.)_
+##### Clientside Component tests
+- Look for `modules/*/tests/client/components`
+- Written with [React Testing Library](https://www.npmjs.com/package/@testing-library/react)
 
 #### Run tests
 
@@ -95,7 +90,7 @@ _(Selenium tests are currently out of date.)_
 - `npm run test:server` for Mocha tests,
 - `npm run test:server:watch` same with watching,
 - `npm run test:client` for testing Karma-unit tests and
-- `npm run test:selenium` to run Selenium tests. Requires Python. Make sure Trustroots is running already as this task won't spin it up first. This task isn't included in the main test task. If you want to pass custom domain to test for Selenium you can do so by running: `python ./scripts/selenium/test.py http://dev.trustroots.org/`
+- `npm run test:selenium` to run old outdated Selenium tests. Requires Python. Make sure Trustroots is running already as this task won't spin it up first. This task isn't included in the main test task. If you want to pass custom domain to test for Selenium you can do so by running: `python ./scripts/selenium/test.py https://dev2.trustroots.org/`
 
 ## Folder layout
 
