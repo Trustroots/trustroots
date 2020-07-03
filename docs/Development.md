@@ -19,7 +19,7 @@
 
 ### Other conventions
 
-- File names use dash to separate words. For example: foo-bar.js (except for React Components `CamelCase.jd`)
+- File names use dash to separate words. For example: foo-bar.js (except for React Components `CamelCase.js`)
 - Use camelCase for identifiers. Functions and variable names should be named like `doAThing`, not `do_a_thing`.
 
 ### JS
