@@ -44,9 +44,9 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
           {t('Tribes')}
         </a>
 
-        <a href="/account" className="list-group-item">
+        <a href="/profile/edit/account" className="list-group-item">
           {t('Account')}
-        </a>
+        </a>vvv
 
         <a
           onClick={event => onSignout(event)}
