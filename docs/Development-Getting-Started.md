@@ -7,7 +7,8 @@ Technical conversations often happen either on our GitHub repository or at [#tec
 Source code:
 
 - [Website source code](https://github.com/trustroots/trustroots)
-- [Mobile app source code](https://github.com/trustroots/trustroots-expo-mobile)
+- [Mobile app source code](https://github.com/trustroots/trustroots-expo-mobile) (a simple, webview based app)
+- [Mobile app source code](https://github.com/Trustroots/trustroots-mobile) (our future, fully native app with React Native)
 
 ## Stack
 

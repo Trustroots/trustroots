@@ -68,6 +68,10 @@ exports.invokeRolesPolicies = function () {
           permissions: ['get'],
         },
         {
+          resources: '/api/users/:avatarUserId/avatar',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/users-avatar',
           permissions: ['post'],
         },
