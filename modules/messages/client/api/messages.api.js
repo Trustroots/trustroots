@@ -44,11 +44,16 @@ export async function fetchMessages(userId, params = {}) {
 }
 
 export async function sendMessage(userToId, content) {
-  const { data: message } = await axios.post('/api/messages', {
-    userTo: userToId,
-    content,
-    read: false,
-  });
+  const { data: message } = await axios
+    .post('/api/messages', {
+      userTo: userToId,
+      content,
+      read: false,
+    })
+    .catch(error => {
+      console.log('send API error:', error); //eslint-disable-line
+      return {};
+    });
   return message;
 }
 
