@@ -58,7 +58,7 @@ You can now access these from your browser:
 - To read and debug emails, open Maildev [http://localhost:1080](http://localhost:1080) in your browser. Mails won't leave your Docker container unless you configure mailer settings from `config/env/local.js` to use e.g. [SparkPost](https://www.sparkpost.com/) or [Gmail](https://support.google.com/a/answer/176600?hl=en).
 - To read and debug MongoDB use e.g. [Robomongo](https://robomongo.org/) to connect to `localhost` on port `27017`.
 
-Refer to regular Install documentations for how to seed content, how to run tests etc.
+Refer to regular Install documentations for how to seed content, [how to run tests](https://team.trustroots.org/Install.html#running-tests) etc.
 
 Just prepend `docker-compose run trustroots` to each command instructed at the documentation, for example:
 
