@@ -123,14 +123,14 @@ module.exports = {
     // Messages shorter than this will be tagged 'short' in influxdb,
     // otherwise 'long'
     longMessageMinimumLength: 170,
-    messagesToIndividuals: [
-      {
-        duration: {
-          minutes: 60,
-        },
-        count: 2,
+    messagesToIndividuals: {
+      // Moment.js `duration` object literal http://momentjs.com/docs/#/durations/
+      duration: {
+        minutes: 60,
       },
-    ],
+      // How many individuals users are allowed to message within duration window
+      count: 2,
+    },
     // How many signup reminders to send before giving up
     maxSignupReminders: 3,
     // How many signup reminders to process at once

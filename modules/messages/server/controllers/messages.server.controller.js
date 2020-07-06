@@ -270,43 +270,6 @@ exports.send = function (req, res) {
     });
   }
 
-  // Throttle
-  /*
-  newThreadLimits: [
-    {
-      duration: {
-        minutes: 1,
-      },
-      count: 2,
-    },
-  ],
-   */
-  config.limits.messagesToIndividuals.forEach(
-    async ({ duration: limitDuration, count: limitCount }) => {
-      console.log('Testing limit: ', limitDuration, limitCount); //eslint-disable-line
-      const timeLimit = moment()
-        .subtract(moment.duration(limitDuration))
-        .toDate();
-      const writtenTo = await Message.distinct('userTo', {
-        created: {
-          $gte: timeLimit,
-        },
-        userFrom: req.user,
-      });
-
-      console.log('Written to:', writtenTo, '...since:', timeLimit); //eslint-disable-line
-
-      if (writtenTo.length > limitCount) {
-        console.log('Limit hit!', writtenTo.length, limitCount); //eslint-disable-line
-        return res.status(429).send({
-          message: 'You are writing too many messages.',
-        });
-      } else {
-        console.log('Limit pass!', writtenTo.length, limitCount); //eslint-disable-line
-      }
-    },
-  );
-
   // No content or test if content is actually empty (when html is stripped out)
   if (!req.body.content || textService.isEmpty(req.body.content)) {
     return res.status(400).send({
@@ -325,6 +288,39 @@ exports.send = function (req, res) {
 
   async.waterfall(
     [
+      async function (done) {
+        // Throttle
+        const { duration, count } = config.limits.messagesToIndividuals;
+        console.log('Testing limit: ', duration, count); //eslint-disable-line
+        const timeLimit = moment().subtract(moment.duration(duration)).toDate();
+        const writtenTo = await Message.distinct('userTo', {
+          created: {
+            $gte: timeLimit,
+          },
+          userFrom: req.user,
+        });
+
+        // eslint-disable-next-line
+        console.log(
+          'Written to:',
+          writtenTo,
+          '...since:',
+          timeLimit,
+          'Time now: ',
+          moment().toDate(),
+        );
+
+        if (writtenTo.length > count) {
+          console.log('🛑 Limit hit!', writtenTo.length, count); //eslint-disable-line
+          return res.status(429).send({
+            message: 'You are writing too many messages.',
+          });
+        } else {
+          console.log('🚩 Limit pass!', writtenTo.length, count); //eslint-disable-line
+        }
+        done();
+      },
+
       // Check that receiving user is legitimate:
       // - Has to be confirmed their email (hence be public)
       // - Not suspended profile
