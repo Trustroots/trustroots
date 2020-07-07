@@ -129,7 +129,7 @@ export class OffersPresentational extends Component {
             className="btn btn-inverse-primary btn-round btn-raised pull-right"
             href="/offer/host"
           >
-            <span className="icon-edit"></span>
+            <span className="icon-edit"/>
           </a>
         )}
         <ReadMorePanel content={offer.description} id="offer-yes-description" />
@@ -154,7 +154,7 @@ export class OffersPresentational extends Component {
             className="btn btn-inverse-primary btn-round btn-raised pull-right"
             href="/offer/host"
           >
-            <span className="icon-edit"></span>
+            <span className="icon-edit"/>
           </a>
         )}
 
@@ -168,7 +168,7 @@ export class OffersPresentational extends Component {
         {/* Default "sorry nope" */}
         {!offer.noOfferDescription && (
           <div className="content-empty text-muted">
-            <div className="icon-sofa icon-3x text-muted"></div>
+            <div className="icon-sofa icon-3x text-muted"/>
 
             {/* Show for others */}
             {!isOwnOffer && (

@@ -79,7 +79,7 @@ export default function SearchUsers() {
               }}
               type="button"
             >
-              <i className="icon-close"></i>
+              <i className="icon-close" />
             </button>
           </span>
           <span>
@@ -89,7 +89,7 @@ export default function SearchUsers() {
               disabled={searchQuery.length < MINIMUM_QUERY_LENGTH}
               type="submit"
             >
-              <i className="icon-search"></i>
+              <i className="icon-search" />
               <span className="hidden-xs">{t('Search')}</span>
             </button>
           </span>

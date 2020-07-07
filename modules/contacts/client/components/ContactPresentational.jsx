@@ -23,7 +23,7 @@ export default function ContactPresentational({
       </h4>
       {locationLiving && (
         <div>
-          <i className="icon-fw icon-building text-muted"></i>
+          <i className="icon-fw icon-building text-muted"/>
           <small>
             {/* @TODO remove ns (issue #1368) */}
             <Trans t={t} ns="contacts" locationLiving={locationLiving}>
@@ -37,7 +37,7 @@ export default function ContactPresentational({
       )}
       {locationFrom && (
         <div>
-          <i className="icon-fw icon-home text-muted"></i>
+          <i className="icon-fw icon-home text-muted"/>
           <small>
             {/* @TODO remove ns (issue #1368) */}
             <Trans t={t} ns="contacts" locationFrom={locationFrom}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { useTranslation } from 'react-i18next';
 
 export default function Volunteering() {
@@ -16,14 +16,14 @@ export default function Volunteering() {
             <div className="col-xs-12 text-center">
               <br />
               <br />
-              <i className="icon-3x icon-heart-o"></i>
+              <i className="icon-3x icon-heart-o"/>
               <br />
               <br />
               <h2>{t('Volunteering')}</h2>
             </div>
           </div>
         </div>
-        <div></div>
+        <div/>
       </Board>
 
       <section className="container container-spacer">

@@ -23,7 +23,7 @@ export default function RulesText() {
       </p>
 
       {/* @TODO the following paragraph makes spacing; maybe it should be applied to the list instead */}
-      <p className="lead"></p>
+      <p className="lead"/>
       <ul>
         <li>{t('Be friendly and know when to stop messaging someone.')}</li>
         <li>{t('Keep our community clean from spam and ads.')}</li>

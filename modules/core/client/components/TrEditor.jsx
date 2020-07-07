@@ -134,27 +134,27 @@ const baseOptions = {
     buttons: [
       {
         name: 'bold',
-        contentDefault: '<span class="icon-bold"></span>',
+        contentDefault: '<span class="icon-bold"/>',
       },
       {
         name: 'italic',
-        contentDefault: '<span class="icon-italic"></span>',
+        contentDefault: '<span class="icon-italic"/>',
       },
       {
         name: 'underline',
-        contentDefault: '<span class="icon-underline"></span>',
+        contentDefault: '<span class="icon-underline"/>',
       },
       {
         name: 'anchor',
-        contentDefault: '<span class="icon-link"></span>',
+        contentDefault: '<span class="icon-link"/>',
       },
       {
         name: 'quote',
-        contentDefault: '<span class="icon-quote"></span>',
+        contentDefault: '<span class="icon-quote"/>',
       },
       {
         name: 'unorderedlist',
-        contentDefault: '<span class="icon-list"></span>',
+        contentDefault: '<span class="icon-list"/>',
       },
     ],
   },

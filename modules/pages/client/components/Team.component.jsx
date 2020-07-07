@@ -1,5 +1,5 @@
 import React from 'react';
-import Tooltip from '@/modules/core/client/components/Tooltip.js';
+import Tooltip from '@/modules/core/client/components/Tooltip.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Team() {
@@ -123,7 +123,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="/profile/mikael">
-                    <i className="text-muted icon-fw icon-lg icon-tree"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-tree"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -132,7 +132,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://twitter.com/simison">
-                    <i className="text-muted icon-fw icon-lg icon-twitter"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-twitter"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -141,7 +141,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://github.com/simison">
-                    <i className="text-muted icon-fw icon-lg icon-github"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-github"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -150,7 +150,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://www.linkedin.com/in/mikaelkorpela">
-                    <i className="text-muted icon-fw icon-lg icon-linkedin"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-linkedin"/>{' '}
                   </a>
                 </Tooltip>
               </p>
@@ -182,7 +182,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="/profile/natalia_sevilla">
-                    <i className="text-muted icon-fw icon-lg icon-tree"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-tree"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -191,7 +191,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://www.linkedin.com/in/natalia-s%C3%A1enz-alban%C3%A9s-38469227/">
-                    <i className="text-muted icon-fw icon-lg icon-linkedin"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-linkedin"/>{' '}
                   </a>
                 </Tooltip>
               </p>
@@ -233,7 +233,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="/profile/guaka">
-                    <i className="text-muted icon-fw icon-lg icon-tree"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-tree"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -242,7 +242,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://github.com/guaka">
-                    <i className="text-muted icon-fw icon-lg icon-github"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-github"/>{' '}
                   </a>
                 </Tooltip>
                 <a href="https://guaka.org/" className="text-muted">
@@ -288,7 +288,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="/profile/noah_my_noah">
-                    <i className="text-muted icon-fw icon-lg icon-tree"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-tree"/>{' '}
                   </a>
                 </Tooltip>
               </p>
@@ -318,7 +318,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="/profile/rumwerfer">
-                    <i className="text-muted icon-fw icon-lg icon-tree"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-tree"/>{' '}
                   </a>
                 </Tooltip>
               </p>
@@ -370,7 +370,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="/profile/chmac">
-                    <i className="text-muted icon-fw icon-lg icon-tree"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-tree"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -379,7 +379,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://twitter.com/chmac">
-                    <i className="text-muted icon-fw icon-lg icon-twitter"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-twitter"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -388,7 +388,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://github.com/chmac">
-                    <i className="text-muted icon-fw icon-lg icon-github"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-github"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -397,7 +397,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://www.linkedin.com/in/chmac">
-                    <i className="text-muted icon-fw icon-lg icon-linkedin"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-linkedin"/>{' '}
                   </a>
                 </Tooltip>
               </p>
@@ -427,7 +427,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="/profile/carlos">
-                    <i className="text-muted icon-fw icon-lg icon-tree"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-tree"/>{' '}
                   </a>
                 </Tooltip>
                 <Tooltip
@@ -436,7 +436,7 @@ export default function Team() {
                   placement="bottom"
                 >
                   <a href="https://www.linkedin.com/in/carlosmcardenas/">
-                    <i className="text-muted icon-fw icon-lg icon-linkedin"></i>{' '}
+                    <i className="text-muted icon-fw icon-lg icon-linkedin"/>{' '}
                   </a>
                 </Tooltip>
               </p>

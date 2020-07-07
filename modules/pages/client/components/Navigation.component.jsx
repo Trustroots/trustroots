@@ -1,5 +1,5 @@
 import React from 'react';
-import Avatar from '@/modules/users/client/components/Avatar.component.js';
+import Avatar from '@/modules/users/client/components/Avatar.component.jsx';
 import PropTypes from 'prop-types';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { useTranslation } from 'react-i18next';
@@ -54,7 +54,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
           target="_top"
           className="list-group-item"
         >
-          <i className="icon-sign-out icon-fw icon-lg"></i> {t('Sign out')}
+          <i className="icon-sign-out icon-fw icon-lg"/> {t('Sign out')}
         </a>
       </div>
 

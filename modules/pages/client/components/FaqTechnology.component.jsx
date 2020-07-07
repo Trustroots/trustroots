@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Faq from '@/modules/pages/client/components/Faq.component.js';
+import Faq from '@/modules/pages/client/components/Faq.component.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function FaqTechnology({ invitationsEnabled }) {

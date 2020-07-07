@@ -100,7 +100,7 @@ export default function ProfileViewBasics({ profile }) {
 
   const renderLocationFrom = locationFrom => (
     <div className="profile-sidebar-section">
-      <i className="icon-fw icon-home text-muted"></i>
+      <i className="icon-fw icon-home text-muted"/>
       {/* @TODO remove ns (issue #1368) */}
       <Trans t={t} ns="users">
         From <a href={`/search?location=${locationFrom}`}>{{ locationFrom }}</a>
@@ -158,7 +158,7 @@ export default function ProfileViewBasics({ profile }) {
         {/* BeWelcome */}
         {profile.extSitesBW && (
           <li className="social-profile">
-            <i className="social-profile-icon icon-fw icon-lg icon-bw"></i>
+            <i className="social-profile-icon icon-fw icon-lg icon-bw"/>
             <a
               rel="noopener"
               className="social-profile-handle"
@@ -172,7 +172,7 @@ export default function ProfileViewBasics({ profile }) {
         {/* Couchsurfing */}
         {profile.extSitesCS && (
           <li className="social-profile">
-            <i className="social-profile-icon icon-fw icon-lg icon-cs"></i>
+            <i className="social-profile-icon icon-fw icon-lg icon-cs"/>
             {/*
             Link here has `noreferrer` because;
             https://github.com/Trustroots/trustroots/issues/464
@@ -189,7 +189,7 @@ export default function ProfileViewBasics({ profile }) {
         {/* WarmShowers */}
         {profile.extSitesWS && (
           <li className="social-profile">
-            <i className="social-profile-icon icon-fw icon-lg icon-warmshowers"></i>
+            <i className="social-profile-icon icon-fw icon-lg icon-warmshowers"/>
             <a
               className="social-profile-handle"
               href={`https://www.warmshowers.org/${

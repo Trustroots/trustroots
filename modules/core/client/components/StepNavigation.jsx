@@ -36,7 +36,7 @@ const BackButton = ({ small, ...props }) => {
       aria-label={t('Previous section')}
       {...props}
     >
-      <span className="icon-left" aria-hidden="true"></span>
+      <span className="icon-left" aria-hidden="true"/>
       {t('Back')}
     </button>
   );
@@ -59,7 +59,7 @@ const NextButton = ({ small, ...props }) => {
       {...props}
     >
       {t('Next')}
-      {small && <span className="icon-right" aria-hidden="true"></span>}
+      {small && <span className="icon-right" aria-hidden="true"/>}
     </button>
   );
 };
@@ -80,7 +80,7 @@ const SubmitButton = ({ small, ...props }) => {
       {...props}
     >
       {t('Finish')}
-      {small && <span className="icon-ok" aria-hidden="true"></span>}
+      {small && <span className="icon-ok" aria-hidden="true"/>}
     </button>
   );
 };

@@ -7,7 +7,7 @@ export default function SuggestTribe() {
   return (
     <div className="panel tribe text-center flex-centered">
       <p className="lead">
-        <span className="icon-tribes icon-lg"></span>
+        <span className="icon-tribes icon-lg"/>
         <br />
         {t('Missing your Tribe?')}
         <br />
@@ -18,7 +18,7 @@ export default function SuggestTribe() {
           rel="noreferrer noopener"
           className="btn btn-md btn-default"
         >
-          {t('Send us suggestions!')} <i className="icon-link-ext"></i>
+          {t('Send us suggestions!')} <i className="icon-link-ext"/>
         </a>
       </p>
     </div>

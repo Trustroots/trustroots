@@ -20,7 +20,7 @@ const User = mongoose.model('User');
 const SEARCH_USERS_LIMIT = 50;
 const SEARCH_STRING_LIMIT = 3;
 
-// Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
+// Everything that's needed for `AdminSearchUsers.component.jsx` and `UserState.component.jsx`
 const USER_LIST_FIELDS = [
   '_id',
   'created',

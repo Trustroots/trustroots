@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Faq from '@/modules/pages/client/components/Faq.component.js';
+import Faq from '@/modules/pages/client/components/Faq.component.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function FaqFoundation({ invitationsEnabled }) {
@@ -26,7 +26,7 @@ export default function FaqFoundation({ invitationsEnabled }) {
             {t(
               'It’s possible to apply for CIC status, which is a special form recently created for social enterprises',
             )}
-            <del></del>.
+            <del/>.
           </li>
           <li>
             {t(

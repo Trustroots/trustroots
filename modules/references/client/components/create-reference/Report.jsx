@@ -38,7 +38,7 @@ export default function Report({
             id="report-message"
             onChange={event => onChangeReportMessage(event.target.value)}
             value={reportMessage}
-          ></textarea>
+          />
           <span className="help-block">
             {t('Please write in English if possible.')}
             <br />

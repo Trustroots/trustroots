@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { userType } from '@/modules/users/client/users.prop-types';
-import ManifestoText from './ManifestoText.component.js';
-import Tooltip from '@/modules/core/client/components/Tooltip.js';
-import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
+import ManifestoText from './ManifestoText.component.jsx';
+import Tooltip from '@/modules/core/client/components/Tooltip.jsx';
+import BoardCredits from '@/modules/core/client/components/BoardCredits.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import getTribeBackgroundStyle from '@/modules/tribes/client/components/helpers/getTribeBackgroundStyle';
 import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
@@ -72,7 +72,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
   return (
     <>
       {!user && (
-        // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.js controller
+        // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.jsx controller
         <Board
           className="board-primary container home-intro"
           names={boards}
@@ -118,7 +118,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                         rel="noopener"
                         className="btn btn-lg btn-default"
                       >
-                        <i className="icon-android"></i>
+                        <i className="icon-android"/>
                         {t('Play Store')}
                       </a>
                       <a
@@ -126,13 +126,13 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                         rel="noopener"
                         className="btn btn-lg btn-default"
                       >
-                        <i className="icon-apple"></i>
+                        <i className="icon-apple"/>
                         {t('App Store')}
                       </a>
                     </div>
                   )}
                   <div className="home-down hidden-xs">
-                    <i className="icon-down"></i>
+                    <i className="icon-down"/>
                   </div>
                 </div>
               </div>
@@ -147,7 +147,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
         <div className="container">
           <div className="row">
             <div className="col-md-5 text-center lead">
-              <div className="icon-sofa icon-3x text-muted"></div>
+              <div className="icon-sofa icon-3x text-muted"/>
               <br />
               <h2 className="font-brand-light">{t('How does it work?')}</h2>
               <br />
@@ -169,10 +169,10 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
             </div>
             <div className="col-md-7">
               <div className="home-browser">
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-screenshot home-browser-screenshot-search"></div>
+                <div className="home-browser-circle"/>
+                <div className="home-browser-circle"/>
+                <div className="home-browser-circle"/>
+                <div className="home-browser-screenshot home-browser-screenshot-search"/>
               </div>
             </div>
           </div>
@@ -185,14 +185,14 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
           <div className="row">
             <div className="col-xs-12 col-md-7 hidden-xs hidden-sm">
               <div className="home-browser">
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-screenshot home-browser-screenshot-profile"></div>
+                <div className="home-browser-circle"/>
+                <div className="home-browser-circle"/>
+                <div className="home-browser-circle"/>
+                <div className="home-browser-screenshot home-browser-screenshot-profile"/>
               </div>
             </div>
             <div className="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-0 col-md-5 text-center lead">
-              <div className="home-wohoo center-block hidden-xs hidden-sm"></div>
+              <div className="home-wohoo center-block hidden-xs hidden-sm"/>
               <p className="font-brand-light">
                 <br className="hidden-xs hidden-sm" />
                 {t('Share the beautiful you with the world.')}
@@ -275,7 +275,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
         <div className="container">
           <div className="row">
             <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
-              <ManifestoText></ManifestoText>
+              <ManifestoText/>
               {!user && (
                 <p>
                   <br />
@@ -304,7 +304,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 in the United Kingdom since March 2015.`)}
               </p>
               <p>
-                <i className="icon-right"></i>
+                <i className="icon-right"/>
                 <a
                   href="/foundation"
                   className="home-footer-more font-brand-semibold"
@@ -328,7 +328,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 </Trans>
               </p>
               <p>
-                <i className="icon-right"></i>
+                <i className="icon-right"/>
                 <a
                   href="/team"
                   className="home-footer-more font-brand-semibold"
@@ -345,7 +345,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 projects for a decade now and we hope our deeds so far speak for us.`)}
               </p>
               <p>
-                <i className="icon-right"></i>
+                <i className="icon-right"/>
                 <a
                   href="http://team.trustroots.org/"
                   className="home-footer-more font-brand-semibold"
@@ -387,7 +387,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   rel="noopener"
                   className="btn btn-lg btn-default"
                 >
-                  <i className="icon-android"></i>
+                  <i className="icon-android"/>
                   {t('Play Store')}
                 </a>
                 <a
@@ -395,7 +395,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   rel="noopener"
                   className="btn btn-lg btn-default"
                 >
-                  <i className="icon-apple"></i>
+                  <i className="icon-apple"/>
                   {t('App Store')}
                 </a>
               </div>
@@ -407,7 +407,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     href="https://www.facebook.com/trustroots.org"
                     aria-label={t('Trustroots at Facebook')}
                   >
-                    <i className="icon-facebook icon-lg"></i>
+                    <i className="icon-facebook icon-lg"/>
                   </a>
                 </Tooltip>
               </li>
@@ -417,7 +417,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     href="https://twitter.com/trustroots"
                     aria-label={t('Trustroots at Twitter')}
                   >
-                    <i className="icon-twitter icon-lg"></i>
+                    <i className="icon-twitter icon-lg"/>
                   </a>
                 </Tooltip>
               </li>
@@ -427,7 +427,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     href="https://www.instagram.com/trustroots_org/"
                     aria-label={t('Trustroots at Instagram')}
                   >
-                    <i className="icon-instagram icon-lg"></i>
+                    <i className="icon-instagram icon-lg"/>
                   </a>
                 </Tooltip>
               </li>
@@ -437,7 +437,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     href="https://github.com/Trustroots/trustroots"
                     aria-label={t('Trustroots at GitHub')}
                   >
-                    <i className="icon-github icon-lg"></i>
+                    <i className="icon-github icon-lg"/>
                   </a>
                 </Tooltip>
               </li>

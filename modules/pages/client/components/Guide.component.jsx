@@ -1,5 +1,5 @@
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { useTranslation } from 'react-i18next';
 
 export default function Guide() {

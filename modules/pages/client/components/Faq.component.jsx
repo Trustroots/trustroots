@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Faq({ category, invitationsEnabled, children }) {

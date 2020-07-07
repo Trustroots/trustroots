@@ -1,5 +1,5 @@
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 

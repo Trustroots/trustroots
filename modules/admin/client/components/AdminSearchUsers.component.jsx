@@ -3,10 +3,10 @@ import React, { Component } from 'react';
 
 // Internal dependencies
 import { searchUsers, listUsersByRole } from '../api/users.api';
-import AdminHeader from './AdminHeader.component.js';
-import UserLink from './UserLink.component.js';
-import UserState from './UserState.component.js';
-import ZendeskInboxSearch from './ZendeskInboxSearch.component.js';
+import AdminHeader from './AdminHeader.component.jsx';
+import UserLink from './UserLink.component.jsx';
+import UserState from './UserState.component.jsx';
+import ZendeskInboxSearch from './ZendeskInboxSearch.component.jsx';
 
 // Limitations set in the API
 const SEARCH_USERS_LIMIT = 50;

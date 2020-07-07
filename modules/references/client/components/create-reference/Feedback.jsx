@@ -29,7 +29,7 @@ export default function Feedback({ feedback, onChangeFeedback }) {
           id="feedback-message"
           onChange={event => onChangeFeedback(event.target.value)}
           value={feedback}
-        ></textarea>
+        />
         <span className="help-block">
           {t(
             'The answer you write will be publicaly available on their profile',

@@ -1,7 +1,7 @@
 import React from 'react';
 import { userType } from '@/modules/users/client/users.prop-types';
-import ManifestoText from './ManifestoText.component.js';
-import Board from '@/modules/core/client/components/Board.js';
+import ManifestoText from './ManifestoText.component.jsx';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { useTranslation } from 'react-i18next';
 
 export default function Foundation({ user }) {
@@ -15,7 +15,7 @@ export default function Foundation({ user }) {
             <div className="col-xs-12 text-center">
               <br />
               <br />
-              <i className="icon-3x icon-heart-o"></i>
+              <i className="icon-3x icon-heart-o"/>
               <br />
               <br />
               <h2>{t('Trustroots Foundation')}</h2>
@@ -122,7 +122,7 @@ export default function Foundation({ user }) {
         <div className="container">
           <div className="row">
             <div className="col-md-offset-3 col-md-6 text-center lead font-brand-light">
-              <ManifestoText></ManifestoText>
+              <ManifestoText/>
               {!user && (
                 <p>
                   <br />

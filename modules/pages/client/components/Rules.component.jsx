@@ -1,6 +1,6 @@
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
-import RulesText from '@/modules/pages/client/components/RulesText.component.js';
+import Board from '@/modules/core/client/components/Board.jsx';
+import RulesText from '@/modules/pages/client/components/RulesText.component.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Rules() {

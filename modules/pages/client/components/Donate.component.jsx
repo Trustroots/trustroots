@@ -1,5 +1,5 @@
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Donate() {
@@ -13,7 +13,7 @@ export default function Donate() {
             <div className="col-xs-12 text-center">
               <br />
               <br />
-              <i className="icon-3x icon-heart-alt"></i>
+              <i className="icon-3x icon-heart-alt"/>
               <br />
               <br />
               <h2>{t('Support Trustroots')}</h2>

@@ -1,5 +1,5 @@
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from '@/modules/core/client/components/Board.jsx';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function DonateHelp() {
@@ -101,7 +101,7 @@ export default function DonateHelp() {
             <p>
               <br />
               <a href="/donate" className="btn btn-lg btn-primary">
-                <i className="icon-heart-alt"></i> {t('Support Trustroots')}
+                <i className="icon-heart-alt"/> {t('Support Trustroots')}
               </a>
               <br />
             </p>
