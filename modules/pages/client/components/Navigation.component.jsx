@@ -44,7 +44,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
           {t('Tribes')}
         </a>
 
-        <a href="/account" className="list-group-item">
+        <a href="/profile/edit/account" className="list-group-item">
           {t('Account')}
         </a>
 
@@ -69,7 +69,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
         <a className="list-group-item" href="/faq">
           {t('FAQ')}
         </a>
-        <a className="list-group-item" href="/home">
+        <a className="list-group-item" href="/about">
           {t('About')}
         </a>
         <a className="list-group-item" href="https://ideas.trustroots.org/">
