@@ -29,11 +29,12 @@ services:
       - ./:/trustroots
       - node-modules:/trustroots/node_modules
       - public:/trustroots/public
-    command: npm start
     depends_on:
       - mongodb
     ports:
+      - '1080:1080'
       - '3000:3000'
+      - '3001:3001'
       - '5858:5858'
       - '35729:35729'
     environment:

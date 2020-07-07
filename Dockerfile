@@ -7,7 +7,6 @@ FROM node:12
 # - `unzip` & `wget` are required by API docs generator
 RUN apt-get -qq update && apt-get -q install -y \
     build-essential \
-    dumb-init \
     graphicsmagick \
     openssl \
     unzip \
@@ -36,10 +35,14 @@ ENV DB_1_PORT_27017_TCP_ADDR mongodb
 COPY . /trustroots
 
 # Expose ports
-# - Nodemon server  3000
-# - Node debug      5858
-# - MongoDB         27017
+# - Maildev            1080
+# - Webpack-dev-server 3000
+# - Nodemon server     3001
+# - Node debug         5858
+# - MongoDB            27017
+EXPOSE 1080
 EXPOSE 3000
+EXPOSE 3001
 EXPOSE 5858
 EXPOSE 27017
-CMD ["dumb-init", "npm", "start"]
+CMD ["npm", "start"]
