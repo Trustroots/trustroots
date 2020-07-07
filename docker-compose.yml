@@ -1,18 +1,17 @@
 version: '3'
 
 networks:
-  trustroots:
-
-volumes:
-  node-modules:
-  public:
-  uploads:
+  trustroots-network:
+    driver: bridge
 
 services:
   trustroots:
+    image: node:12
     container_name: trustroots
-    restart: always
-    build: .
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
     # Mount the app dir in the container so our changes
     #  to the app code are also changed in the container
     #
@@ -20,63 +19,31 @@ services:
     #  that they won't get overwritten by app directory
     #  Read more: http://stackoverflow.com/a/32785014/1984644
     networks:
-      - trustroots
+      - trustroots-network
     volumes:
       - ./:/trustroots
       - node-modules:/trustroots/node_modules
       - public:/trustroots/public
-      - uploads:/trustroots/uploads
-    command: npm run start
+    command: npm start
     depends_on:
       - mongodb
-      - maildev
       - influxdb
     ports:
       - '3000:3000'
       - '5858:5858'
       - '35729:35729'
     environment:
-      - NODE_ENV=development
       - DB_1_PORT_27017_TCP_ADDR=mongodb
-      - PORT=3000
-      - DOMAIN=trustroots.dev
-      - VIRTUAL_HOST=localhost,trustroots.dev
-      - VIRTUAL_PORT=3000
-
-  ## SMTP Server + Web Interface for viewing and testing emails during development.
-  ## http://djfarrelly.github.io/MailDev/
-  maildev:
-    image: maildev/maildev
-    container_name: maildev
-    restart: always
-    ports:
-      - '1080:80'
-    networks:
-      - trustroots
 
   ## Database container
   mongodb:
-    image: mongo:3.6
+    image: mongo:4.2
     container_name: db_1
-    restart: always
+    volumes:
+      - dbdata:/data/db
+    restart: unless-stopped
     command: '--smallfiles --logpath=/dev/null'
     ports:
       - '27017:27017'
     networks:
-      - trustroots
-
-  ## InfluxDB container
-  ## https://github.com/tutumcloud/influxdb
-  influxdb:
-    image: tutum/influxdb:latest
-    container_name: influxdb
-    restart: always
-    ports:
-      - '8083:8083'
-      - '8086:8086'
-    networks:
-      - trustroots
-    environment:
-      - ADMIN_USER=root
-      - INFLUXDB_INIT_PWD=root
-      - PRE_CREATE_DB=trustroots
+      - trustroots-network
