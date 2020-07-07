@@ -7,29 +7,24 @@ FROM node:12
 # - `unzip` & `wget` are required by API docs generator
 RUN apt-get -qq update && apt-get -q install -y \
     build-essential \
+    dumb-init \
+    graphicsmagick \
+    openssl \
     unzip \
     wget \
-    graphicsmagick \
-    imagemagick \
-    openssl \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Install Dump-init
-# https://github.com/Yelp/dumb-init
-RUN wget https://github.com/Yelp/dumb-init/releases/download/v1.0.0/dumb-init_1.0.0_amd64.deb
-RUN dpkg -i dumb-init_*.deb
 
 # Create working directory
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
 
-# Copies the local package.json file to the container
+# Copies the local package.json and package-lock.json files to the container
 # and utilities docker container cache to not needing to rebuild
 # and install node_modules/ every time we build the docker, but only
 # when the local package.json file changes.
 # Install npm packages
-COPY package.json /trustroots/
+COPY package*.json ./
 RUN npm ci --quiet
 
 # Set environment variables

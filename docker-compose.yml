@@ -4,6 +4,11 @@ networks:
   trustroots-network:
     driver: bridge
 
+volumes:
+  node-modules:
+  public:
+  dbdata:
+
 services:
   trustroots:
     image: node:12
@@ -27,7 +32,6 @@ services:
     command: npm start
     depends_on:
       - mongodb
-      - influxdb
     ports:
       - '3000:3000'
       - '5858:5858'
@@ -42,7 +46,6 @@ services:
     volumes:
       - dbdata:/data/db
     restart: unless-stopped
-    command: '--smallfiles --logpath=/dev/null'
     ports:
       - '27017:27017'
     networks:
