@@ -22,6 +22,7 @@ const nodemonIgnores = [
   'migrations/**',
   'modules/*/client/**',
   'modules/*/tests/client/**/*.js',
+  'modules/*/tests/client/**/*.jsx',
   'modules/*/tests/server/**/*.js',
   'node_modules/**',
   'public/**',

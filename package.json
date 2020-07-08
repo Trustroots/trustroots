@@ -268,7 +268,7 @@
     }
   },
   "lint-staged": {
-    "*.js": [
+    "*.{js,jsx}": [
       "npm run reformat-files",
       "eslint"
     ],
