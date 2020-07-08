@@ -76,11 +76,11 @@ module.exports = merge(shims, {
       {
         enforce: 'pre',
         exclude: /node_modules/,
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         loader: 'eslint-loader',
       },
       {
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         exclude: /node_modules/,
         use: 'babel-loader',
       },
