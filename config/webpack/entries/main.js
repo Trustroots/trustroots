@@ -55,7 +55,7 @@ function importAll(r) {
  *  See https://webpack.js.org/guides/dependency-management/#require-context
  */
 importComponents(
-  require.context('../../../modules/', true, /\.component\.js$/),
+  require.context('../../../modules/', true, /\.component\.(js|jsx)$/),
 );
 
 function importComponents(r) {
