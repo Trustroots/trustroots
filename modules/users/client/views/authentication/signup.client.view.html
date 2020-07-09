@@ -21,7 +21,7 @@
           class="font-brand-light signup-tribe"
           ng-show="signup.tribe && signup.tribe._id && signup.step < 3"
         >
-          + Tribe {{::signup.tribe.label}}
+          + Circle {{::signup.tribe.label}}
         </p>
         <div class="signup-steps">
           <div
@@ -41,7 +41,7 @@
                  }"
           >
             <div class="signup-step-indicator">2</div>
-            Tribes
+            Circles
           </div>
           <div class="signup-step-line"></div>
           <div
@@ -349,14 +349,14 @@
             class="lead text-center"
             ng-if="signup.suggestedTribes && signup.suggestedTribes.length && tribe && tribe._id"
           >
-            Other suggested Tribes for you
+            Other suggested Circles for you
           </p>
 
           <p
             class="lead text-center"
             ng-if="signup.suggestedTribes && signup.suggestedTribes.length && !tribe"
           >
-            Join these popular Tribes?
+            Join these popular Circles?
           </p>
 
           <ul
@@ -404,13 +404,13 @@
             ng-disabled="signup.suggestedTribesLimit >= signup.suggestedTribes.length"
             ng-click="signup.suggestedTribesLimit = signup.suggestedTribesLimit + 3"
           >
-            Show more tribes
+            Show more circles
           </button>
 
           <br />
 
           <p class="lead text-center">
-            Joining Tribes helps you find likeminded Trustroots members and
+            Joining Circles helps you find likeminded Trustroots members and
             tells others what you're interested in.
           </p>
 
