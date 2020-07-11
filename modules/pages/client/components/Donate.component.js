@@ -124,7 +124,7 @@ export default function Donate() {
                 this link
               </a>{' '}
               and when you start using their VPS service, we get 25$ to cover
-              our hosting, you get 10$.
+              our hosting, you get 100$.
             </Trans>
             <hr />
             <p>
