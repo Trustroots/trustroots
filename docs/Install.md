@@ -9,7 +9,7 @@ Make sure you have installed all these prerequisites:
 - Unix operating system, like Linux or MacOS. If you use Windows, please look into installing via Docker instead.
 - [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
 - [Node.js](https://nodejs.org/en/download/):
-  - See "engines" from `package.json` for supported versions
+  - See "engines" from [`package.json`](https://github.com/Trustroots/trustroots/blob/master/package.json) for supported versions
   - Use `node --version && npm --version` to check your current version.
   - We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
 - [MongoDB](http://www.mongodb.org/downloads)
