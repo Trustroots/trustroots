@@ -49,7 +49,7 @@ export default function Foundation({ user }) {
                 <a href="/team">{t('Board')}</a>
               </li>
               <li>
-                <a href="/foundation">{t('FAQ')}</a>
+                <a href="/faq/foundation">{t('FAQ')}</a>
               </li>
               <li>
                 <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
