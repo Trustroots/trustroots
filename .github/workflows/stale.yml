@@ -33,7 +33,7 @@ jobs:
 
             Thanks!
 
-          days-before-stale: 180
+          days-before-stale: 365
           days-before-close: 14
 
           # don't overwhelm us with loads of things to look at
