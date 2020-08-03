@@ -53,10 +53,12 @@ export default function FaqTribes({ invitationsEnabled }) {
 
       <div className="faq-question" id="tribes-rename-to-circles">
         <h3>{t('Why did you rename "tribes" to "circles"?')}</h3>
-        {t('We found the term be problematic for TODO TODO TODO')}
+        {t(
+          'We found the term be problematic for having connotations of colonialism and wanted to switch to a more inclusive term in August 2020.',
+        )}
         <br />
         <br />
-        <a href="#">{t('Read more')}</a>
+        <a href="https://ideas.trustroots.org/?p=3599">{t('Read more')}</a>
       </div>
     </Faq>
   );
