@@ -96,14 +96,14 @@ function trTribeJoinButtonDirective() {
 
             $analytics.eventTrack('join-tribe', {
               category: 'tribes.membership',
-              label: 'Join tribe',
+              label: 'Join circle',
               value: $scope.tribe.slug,
             });
           })
           .catch(function () {
             messageCenterService.add(
               'danger',
-              'Failed to join the tribe. Try again!',
+              'Failed to join the circle. Try again!',
             );
           })
           .finally(function () {
@@ -120,7 +120,7 @@ function trTribeJoinButtonDirective() {
 
           $analytics.eventTrack('leave-tribe', {
             category: 'tribes.membership',
-            label: 'Leave tribe',
+            label: 'Leave circle',
             value: $scope.tribe.slug,
           });
         })
@@ -128,7 +128,7 @@ function trTribeJoinButtonDirective() {
           if (err === 'cancelled') {
             $analytics.eventTrack('leave-tribe-cancelled', {
               category: 'tribes.membership',
-              label: 'Leaving tribe cancelled',
+              label: 'Leaving circle cancelled',
               value: $scope.tribe.slug,
             });
             return;
@@ -137,7 +137,7 @@ function trTribeJoinButtonDirective() {
           const errorMessage =
             err && err.data && err.data.message
               ? err.data.message
-              : 'Failed to leave the tribe. Try again!';
+              : 'Failed to leave the circle. Try again!';
           messageCenterService.add('danger', errorMessage);
         })
         .finally(function () {
@@ -177,9 +177,9 @@ function trTribeJoinButtonDirective() {
       return $q(function (resolve, reject) {
         // Ask user for confirmation
         $confirm({
-          title: 'Leave this Tribe?',
+          title: 'Leave this circle?',
           text: 'Do you want to leave "' + $scope.tribe.label + '"?',
-          ok: 'Leave Tribe',
+          ok: 'Leave circle',
           cancel: 'Cancel',
         }).then(
           function () {

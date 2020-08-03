@@ -25,7 +25,7 @@ function TribesRoutes($stateProvider) {
       },
     })
     .state('circles.circle', {
-      url: '/:tribe',
+      url: '/:circle',
       footerHidden: true,
       templateUrl: showTemplateUrl,
       controller: 'TribeController',
@@ -35,43 +35,10 @@ function TribesRoutes($stateProvider) {
         TribeService: 'TribeService',
         tribe: function (TribeService, $stateParams) {
           return TribeService.get({
-            tribeSlug: $stateParams.tribe,
+            tribeSlug: $stateParams.circle,
           });
         },
       },
-      data: {
-        pageTitle: 'Circle',
-      },
-    });
-
-  // Deprecated June 2020
-  $stateProvider
-    .state('tribes', {
-      url: '/tribes',
-      abstract: true,
-    })
-    .state('tribes', {
-      url: '/tribes',
-      controller:
-        /* @ngInject */
-        function ($state) {
-          $state.go('circles');
-        },
-      controllerAs: 'circles',
-      requiresAuth: false,
-      data: {
-        pageTitle: 'Circles',
-      },
-    })
-    .state('tribes.tribe', {
-      url: '/:tribe',
-      controller:
-        /* @ngInject */
-        function ($state, $stateParams) {
-          $state.go('circles.circle', $stateParams);
-        },
-      controllerAs: 'circle',
-      requiresAuth: false,
       data: {
         pageTitle: 'Circle',
       },

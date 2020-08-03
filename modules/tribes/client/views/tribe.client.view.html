@@ -16,7 +16,8 @@
       <div class="col-xs-12">
         <h2>This circle is not here...</h2>
         <p class="lead">
-          The circle you're seeking isn't here. Check if your address is correct.
+          The circle you're seeking isn't here. Check if your address is
+          correct.
         </p>
         <a ng-click="tribeCtrl.goBack()" class="btn btn-primary">
           See other circles
@@ -54,7 +55,7 @@
             class="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
             ng-if="app.user"
           >
-            <p class="lead tribe-pre">circle</p>
+            <p class="lead tribe-pre">Circle</p>
             <h2
               class="font-brand-regular tribe-title"
               ng-bind="::tribeCtrl.tribe.label"
@@ -139,14 +140,14 @@
               <br /><br />
               <a
                 class="btn btn-lg btn-primary btn-action tribe-join"
-                ui-sref="signup({'tribe': tribeCtrl.tribe.slug})"
+                ui-sref="signup({'circle': tribeCtrl.tribe.slug})"
               >
                 Join {{::tribeCtrl.tribe.label}} on Trustroots
               </a>
               <br />
               <a
                 class="btn btn-lg btn-link tribe-readmore"
-                ui-sref="home({'tribe': tribeCtrl.tribe.slug})"
+                ui-sref="home({'circle': tribeCtrl.tribe.slug})"
               >
                 <i class="icon-right"></i>
                 How does it work?

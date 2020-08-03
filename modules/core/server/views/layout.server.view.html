@@ -10,8 +10,8 @@
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <title tr-page-title>
-      {% if tribe %}{{ tribe.label | striptags }} - Trustroots Circle{% else %}{{
-      title }}{% endif %}
+      {% if tribe %}{{ tribe.label | striptags }} - Trustroots Circle{% else
+      %}{{ title }}{% endif %}
     </title>
     <base href="/" />
     <meta name="fragment" content="!" />
@@ -150,7 +150,7 @@
     Trustroots Circle {{tribe.label | striptags | replace('"', '\'')}}.
     Trustroots is a travellers' community for sharing, hosting and getting
     people together.">
-    <meta property="og:url" content="{{hostPort}}/tribes/{{tribe.slug}}" />
+    <meta property="og:url" content="{{hostPort}}/circles/{{tribe.slug}}" />
     {% if tribe.image_UUID %} {#
     https://developers.facebook.com/docs/sharing/best-practices#images #}
     <meta
@@ -178,10 +178,10 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Join {{tribe.label | striptags |
     replace('"', '\'')}} on Trustroots"> <meta name="twitter:description"
-    content="Join to meet, host and get hosted by Trustroots Circle {{tribe.label
-    | striptags | replace('"', '\'')}}. Trustroots is a travellers' community
-    for sharing, hosting and getting people together.">
-    <meta name="twitter:url" content="{{hostPort}}/tribes/{{tribe.slug}}" />
+    content="Join to meet, host and get hosted by Trustroots circle
+    {{tribe.label | striptags | replace('"', '\'')}}. Trustroots is a
+    travellers' community for sharing, hosting and getting people together.">
+    <meta name="twitter:url" content="{{hostPort}}/circles/{{tribe.slug}}" />
     {% if tribe.image_UUID %}
     <meta
       name="twitter:image"
