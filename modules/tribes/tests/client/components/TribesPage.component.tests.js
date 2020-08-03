@@ -171,13 +171,13 @@ describe('CirclesPage', () => {
 
           // Confirmation modal should open...
           const modal = await waitForElement(() =>
-            page.getByText(nestedTextMatch('Leave this Circle?'), {
+            page.getByText(nestedTextMatch('Leave this circle?'), {
               selector: '.modal-dialog',
             }),
           );
 
           // ...and we click Leave Tribe button within it.
-          const confirm = within(modal).getByText('Leave Circle', {
+          const confirm = within(modal).getByText('Leave circle', {
             selector: 'button',
           });
           fireEvent.click(confirm);
