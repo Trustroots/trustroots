@@ -33,7 +33,7 @@ export default function ThreadMessages({
       {isExtraSmall && (
         <div className="message">
           <div className="message-recipient panel panel-default">
-            <a className="panel-body" href={`/profile/${user.username}`}>
+            <a className="panel-body" href={`/profile/${otherUser.username}`}>
               <Avatar user={otherUser} size={32} link={false} />
               <h4>{otherUser.displayName}</h4>
               <small className="text-muted">@{otherUser.username}</small>
