@@ -1,0 +1,36 @@
+@import '~less/global-variables';
+
+.team-volunteers {
+  column-gap: 30px;
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0 0 40px;
+  row-gap: 30px;
+
+  @media (min-width: @screen-xs-min) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (min-width: @screen-sm-min) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  @media (min-width: @screen-md-min) {
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+  }
+
+  @media (min-width: @screen-lg-min) {
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+  }
+}
+
+.team-volunteer {
+  text-align: center;
+  align-self: center;
+  img {
+    margin: 20px;
+  }
+  a {
+    color: @text-color;
+  }
+}

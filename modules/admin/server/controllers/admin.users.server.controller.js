@@ -119,7 +119,9 @@ exports.listUsersByRole = (req, res) => {
   // Allowed roles to query
   if (
     !role ||
-    !['shadowban', 'suspended', 'admin', 'moderator'].includes(role)
+    !['shadowban', 'suspended', 'admin', 'moderator', 'volunteer'].includes(
+      role,
+    )
   ) {
     return res.status(400).send({
       message: 'Invalid role.',
@@ -255,7 +257,10 @@ exports.changeRole = async (req, res) => {
   const role = _.get(req, ['body', 'role']);
 
   // Allowed new roles — for security reasons never allow `admin` role to be changed programmatically.
-  if (!role || !['shadowban', 'suspended', 'moderator'].includes(role)) {
+  if (
+    !role ||
+    !['shadowban', 'suspended', 'moderator', 'volunteer'].includes(role)
+  ) {
     return res.status(400).send({
       message: 'Invalid role.',
     });

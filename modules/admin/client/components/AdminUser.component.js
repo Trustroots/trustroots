@@ -155,6 +155,16 @@ export default class AdminUser extends Component {
                     >
                       Make moderator
                     </button>
+                    <button
+                      className="btn btn-success"
+                      disabled={
+                        user.profile.roles.includes('volunteer') ||
+                        isSettingUserRole
+                      }
+                      onClick={() => this.handleUserRoleChange('volunteer')}
+                    >
+                      Make volunteer
+                    </button>
                   </div>
                 </div>
               </div>
