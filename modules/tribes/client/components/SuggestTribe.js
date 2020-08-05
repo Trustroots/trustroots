@@ -9,7 +9,7 @@ export default function SuggestTribe() {
       <p className="lead">
         <span className="icon-tribes icon-lg"></span>
         <br />
-        {t('Missing your Tribe?')}
+        {t('Missing your circle?')}
         <br />
         <br />
         <a

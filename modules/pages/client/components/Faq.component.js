@@ -17,7 +17,7 @@ export default function Faq({ category, invitationsEnabled, children }) {
               {category === 'general' && (
                 <h3>{t('about the site & community')}</h3>
               )}
-              {category === 'tribes' && <h3>{t('about tribes')}</h3>}
+              {category === 'tribes' && <h3>{t('about circles')}</h3>}
               {category === 'foundation' && (
                 <h3>{t('about the foundation')}</h3>
               )}
@@ -213,7 +213,7 @@ export default function Faq({ category, invitationsEnabled, children }) {
                 )}
               </div>
 
-              {/* Tribes */}
+              {/* Tribes/circles */}
               <div className="panel panel-default">
                 <div className="panel-heading">
                   <h3 className="panel-title">
@@ -221,7 +221,7 @@ export default function Faq({ category, invitationsEnabled, children }) {
                       href="/faq/tribes"
                       className="undecorated-link text-color"
                     >
-                      {t('Tribes')}
+                      {t('Circles')}
                     </a>
                   </h3>
                 </div>
@@ -232,13 +232,19 @@ export default function Faq({ category, invitationsEnabled, children }) {
                         href="/faq/tribes#what-are-tribes"
                         className="list-group-item"
                       >
-                        {t('What are Tribes?')}
+                        {t('What are circles?')}
                       </a>
                       <a
                         href="/faq/tribes#no-suitable-tribes"
                         className="list-group-item"
                       >
-                        {t("I don't find a tribe that suits me")}
+                        {t("I don't find a circle that suits me")}
+                      </a>
+                      <a
+                        href="/faq/tribes#tribes-rename-to-circles"
+                        className="list-group-item"
+                      >
+                        {t('Why did you rename "tribes" to "circles"?')}
                       </a>
                     </div>
                   </div>

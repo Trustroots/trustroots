@@ -242,7 +242,14 @@ const UserSchema = new Schema({
     type: [
       {
         type: String,
-        enum: ['user', 'admin', 'suspended', 'shadowban', 'moderator'],
+        enum: [
+          'admin',
+          'moderator',
+          'shadowban',
+          'suspended',
+          'user',
+          'volunteer',
+        ],
       },
     ],
     default: ['user'],

@@ -28,7 +28,10 @@ function PagesRoutes($stateProvider) {
     })
     .state('team', {
       url: '/team',
-      template: '<team />',
+      template: `
+        <team
+          user="app.user"
+        />`,
       data: {
         pageTitle: 'Team',
       },
@@ -87,7 +90,7 @@ function PagesRoutes($stateProvider) {
           invitationsEnabled="app.appSettings.invitationsEnabled"
         />`,
       data: {
-        pageTitle: 'FAQ - Tribes',
+        pageTitle: 'FAQ - Circles',
       },
     })
     .state('faq.foundation', {

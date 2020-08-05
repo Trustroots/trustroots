@@ -14,12 +14,13 @@
   <section class="container container-spacer" ng-if="!tribeCtrl.tribe._id">
     <div class="row">
       <div class="col-xs-12">
-        <h2>This tribe is not here...</h2>
+        <h2>This circle is not here...</h2>
         <p class="lead">
-          The tribe you're seeking isn't here. Check if your address is correct.
+          The circle you're seeking isn't here. Check if your address is
+          correct.
         </p>
         <a ng-click="tribeCtrl.goBack()" class="btn btn-primary">
-          See other tribes
+          See other circles
         </a>
       </div>
     </div>
@@ -44,7 +45,7 @@
               ng-click="tribeCtrl.goBack()"
               class="btn btn-lg btn-link tribe-header-back"
             >
-              <i class="icon-left"></i> More tribes
+              <i class="icon-left"></i> More circles
             </a>
           </div>
         </div>
@@ -54,7 +55,7 @@
             class="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
             ng-if="app.user"
           >
-            <p class="lead tribe-pre">Tribe</p>
+            <p class="lead tribe-pre">Circle</p>
             <h2
               class="font-brand-regular tribe-title"
               ng-bind="::tribeCtrl.tribe.label"
@@ -78,7 +79,7 @@
               class="btn btn-lg btn-primary tribe-join"
               tribe="tribeCtrl.tribe"
               joined-label="'You\'re a member'"
-              join-label="'Join this tribe'"
+              join-label="'Join this circle'"
               icon="false"
             >
             </tr-tribe-join-button>
@@ -100,7 +101,7 @@
               class="tribe-share"
               ng-if="tribeCtrl.tribe.label"
               tr-share-twitter
-              data-text="Join to meet, host and get hosted by Trustroots Tribe {{::tribeCtrl.tribe.label}} — I'm in!"
+              data-text="Join to meet, host and get hosted by Trustroots circle {{::tribeCtrl.tribe.label}} — I'm in!"
             ></div>
 
             <!-- FB share button -->
@@ -116,7 +117,7 @@
             class="col-xs-12 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
             ng-if="!app.user"
           >
-            <p class="lead tribe-pre">Trustroots Tribe</p>
+            <p class="lead tribe-pre">Trustroots circle</p>
             <h2
               class="font-brand-regular tribe-title"
               ng-bind="::tribeCtrl.tribe.label"
@@ -139,14 +140,14 @@
               <br /><br />
               <a
                 class="btn btn-lg btn-primary btn-action tribe-join"
-                ui-sref="signup({'tribe': tribeCtrl.tribe.slug})"
+                ui-sref="signup({'circle': tribeCtrl.tribe.slug})"
               >
                 Join {{::tribeCtrl.tribe.label}} on Trustroots
               </a>
               <br />
               <a
                 class="btn btn-lg btn-link tribe-readmore"
-                ui-sref="home({'tribe': tribeCtrl.tribe.slug})"
+                ui-sref="home({'circle': tribeCtrl.tribe.slug})"
               >
                 <i class="icon-right"></i>
                 How does it work?

@@ -5,12 +5,12 @@ angular.module('tribes').config(TribesRoutes);
 /* @ngInject */
 function TribesRoutes($stateProvider) {
   $stateProvider
-    .state('tribes', {
-      url: '/tribes',
+    .state('circles', {
+      url: '/circles',
       abstract: true,
       template: '<ui-view/>',
     })
-    .state('tribes.list', {
+    .state('circles.list', {
       url: '',
       template: `
         <tribes-page
@@ -21,11 +21,11 @@ function TribesRoutes($stateProvider) {
       controller: 'TribesListController',
       controllerAs: 'tribesList',
       data: {
-        pageTitle: 'Tribes',
+        pageTitle: 'Circles',
       },
     })
-    .state('tribes.tribe', {
-      url: '/:tribe',
+    .state('circles.circle', {
+      url: '/:circle',
       footerHidden: true,
       templateUrl: showTemplateUrl,
       controller: 'TribeController',
@@ -35,12 +35,12 @@ function TribesRoutes($stateProvider) {
         TribeService: 'TribeService',
         tribe: function (TribeService, $stateParams) {
           return TribeService.get({
-            tribeSlug: $stateParams.tribe,
+            tribeSlug: $stateParams.circle,
           });
         },
       },
       data: {
-        pageTitle: 'Tribe',
+        pageTitle: 'Circle',
       },
     });
 }

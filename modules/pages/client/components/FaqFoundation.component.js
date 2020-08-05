@@ -118,7 +118,7 @@ export default function FaqFoundation({ invitationsEnabled }) {
       <div className="faq-question" id="who-are-the-board">
         <h3>{t('Who are the board?')}</h3>
         <Trans t={t} ns="pages">
-          <a href="/team">We</a>: Mikael, Kasper, and Natalia.
+          <a href="/foundation#board">We</a>: Mikael, Kasper, and Natalia.
         </Trans>
       </div>
 

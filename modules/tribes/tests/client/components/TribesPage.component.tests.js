@@ -48,7 +48,7 @@ const renderAndWaitForTribes = async ({ user }) => {
   return page;
 };
 
-describe('TribesPage', () => {
+describe('CirclesPage', () => {
   const fake = (() => {
     const tribes = generateTribes(5);
     return {
@@ -78,7 +78,7 @@ describe('TribesPage', () => {
       page = await renderAndWaitForTribes({ user: null });
     });
 
-    it('fetch tribes from api and show tribes on page', async () => {
+    it('fetch circles from api and show circles on page', async () => {
       // get tribes and omit the last one, which is "Missing your Tribe?"
       const tribes = page.getAllByRole('listitem').slice(0, -1);
 
@@ -93,7 +93,7 @@ describe('TribesPage', () => {
       expect(api.tribes.read).toHaveBeenCalledWith();
     });
 
-    it('the join button should be a link to tribe page', async () => {
+    it('the join button should be a link to circle page', async () => {
       // get tribes and omit the last one, which is "Missing your Tribe?"
       const buttons = page.getAllByText('Join', { selector: 'a' });
 
@@ -113,7 +113,7 @@ describe('TribesPage', () => {
       page = await renderAndWaitForTribes({ user: fake.users[0] });
     });
 
-    it('show tribes on page', async () => {
+    it('show circles on page', async () => {
       // get tribes and omit the last one, which is "Missing your Tribe?"
       const tribes = page.getAllByRole('listitem').slice(0, -1);
 
@@ -139,7 +139,7 @@ describe('TribesPage', () => {
       );
     });
 
-    it('user is member of some tribes and not member of others', async () => {
+    it('user is member of some circles and not member of others', async () => {
       fake.tribes.forEach(tribeData => {
         const tribe = page.getByText(nestedTextMatch(tribeData.label), {
           selector: 'li',
@@ -171,13 +171,13 @@ describe('TribesPage', () => {
 
           // Confirmation modal should open...
           const modal = await waitForElement(() =>
-            page.getByText(nestedTextMatch('Leave this Tribe?'), {
+            page.getByText(nestedTextMatch('Leave this circle?'), {
               selector: '.modal-dialog',
             }),
           );
 
           // ...and we click Leave Tribe button within it.
-          const confirm = within(modal).getByText('Leave Tribe', {
+          const confirm = within(modal).getByText('Leave circle', {
             selector: 'button',
           });
           fireEvent.click(confirm);

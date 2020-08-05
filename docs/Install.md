@@ -9,11 +9,11 @@ Make sure you have installed all these prerequisites:
 - Unix operating system, like Linux or MacOS. If you use Windows, please look into installing via Docker instead.
 - [Git](https://git-scm.com/) (`git --version`, preinstalled on MacOS)
 - [Node.js](https://nodejs.org/en/download/):
-  - See "engines" from `package.json` for supported versions
+  - See "engines" from [`package.json`](https://github.com/Trustroots/trustroots/blob/master/package.json#L11) for supported versions
   - Use `node --version && npm --version` to check your current version.
   - We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
 - [MongoDB](http://www.mongodb.org/downloads)
-  - See "engines" from `package.json` for supported versions
+  - See "engines" from [`package.json`](https://github.com/Trustroots/trustroots/blob/master/package.json#L11) for supported versions
   - Use `mongod --version` to check your current version.
 - Some of the NPM modules require compiling native code, which might require installing:
   - MacOS: X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html). You can install or confirm they're installed by running `xcode-select --install`
