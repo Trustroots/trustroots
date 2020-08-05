@@ -31,7 +31,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const boards =
     tribeRoute &&
     ['hitchhikers', 'dumpster-divers', 'punks'].indexOf(tribeRoute) > -1
-      ? // Photos for these 3 tribes
+      ? // Photos for these 3 circles
         [
           'rainbowpeople',
           'hitchroad',
@@ -216,14 +216,14 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
             <div className="row">
               <div className="col-xs-10 col-xs-push-1 col-sm-3 col-sm-push-6">
                 <div className="text-center tribe-intro">
-                  <h2 className="font-brand-light">{t('Tribes')}</h2>
+                  <h2 className="font-brand-light">{t('Circles')}</h2>
                   <p className="font-brand-light">
-                    {t(`Joining Tribes helps you find likeminded Trustroots members and
+                    {t(`Joining circles helps you find likeminded Trustroots members and
                   tells others what you're interested in.`)}
                     <br />
                     <br />
-                    <a href="/tribes" className="btn btn-default btn-lg">
-                      {t('More Tribes')}
+                    <a href="/circles" className="btn btn-default btn-lg">
+                      {t('More circles')}
                     </a>
                   </p>
                 </div>
@@ -232,7 +232,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 {tribes.slice(0, 3).map(tribe => (
                   <a
                     key={tribe._id}
-                    href={`/tribes/${tribe.slug}`}
+                    href={`/circles/${tribe.slug}`}
                     className="img-circle tribe-xs tribe-image"
                     style={getTribeBackgroundStyle(tribe, {
                       quality: 'lightest',
@@ -255,7 +255,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     className="img-circle tribe tribe-image"
                     style={getTribeBackgroundStyle(tribe)}
                   >
-                    <a href={`/tribes/${tribe.slug}`} className="tribe-link">
+                    <a href={`/circles/${tribe.slug}`} className="tribe-link">
                       <h3 className="tribe-label">{tribe.label}</h3>
                     </a>
                   </div>

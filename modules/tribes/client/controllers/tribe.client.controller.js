@@ -22,6 +22,6 @@ function TribeController($scope, $state, tribe, Facebook) {
    * Go to tribe grid
    */
   function goBack() {
-    $state.go('tribes.list');
+    $state.go('circles.list');
   }
 }

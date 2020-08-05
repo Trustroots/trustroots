@@ -3,8 +3,8 @@
   ng-class="{'btn-active': tribeJoinButton.isMember}"
   ng-click="tribeJoinButton.toggleMembership()"
   ng-disabled="tribeJoinButton.isLoading"
-  aria-label="{{ (tribeJoinButton.isMember ? 'Leave Tribe' : tribeJoinButton.joinLabel) +  ' (' + tribeJoinButton.tribe.label + ')' }}"
-  uib-tooltip="Leave Tribe"
+  aria-label="{{ (tribeJoinButton.isMember ? 'Leave circle' : tribeJoinButton.joinLabel) +  ' (' + tribeJoinButton.tribe.label + ')' }}"
+  uib-tooltip="Leave circle"
   tooltip-enable="tribeJoinButton.isMember"
   tooltip-placement="bottom"
 >

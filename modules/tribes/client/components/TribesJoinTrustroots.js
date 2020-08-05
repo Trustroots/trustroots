@@ -9,7 +9,7 @@ export default function TribesJoinTrustroots() {
       <div className="col-xs-12 text-center">
         <hr />
         <p className="lead">
-          {t('Join Trustroots to find members behind Tribes.')}
+          {t('Join Trustroots to find members behind circles.')}
         </p>
         <br />
         <br />

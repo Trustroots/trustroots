@@ -101,7 +101,7 @@ function seedThreads() {
   }
 
   console.log(chalk.white('--'));
-  console.log(chalk.green('Trustroots test tribes data'));
+  console.log(chalk.green('Trustroots test circles data'));
   console.log(chalk.white('--'));
 
   // Override debug mode to use the option set by the user

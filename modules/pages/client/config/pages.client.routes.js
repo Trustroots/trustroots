@@ -87,7 +87,7 @@ function PagesRoutes($stateProvider) {
           invitationsEnabled="app.appSettings.invitationsEnabled"
         />`,
       data: {
-        pageTitle: 'FAQ - Tribes',
+        pageTitle: 'FAQ - Circles',
       },
     })
     .state('faq.foundation', {

@@ -14,12 +14,12 @@ const config = require(path.resolve('./config/config'));
  * Configure the script usage using yargs to obtain parameters and enforce usage.
  */
 const argv = yargs.usage(
-  '$0 <numberOfTribes>',
-  'Seed database with number of tribes',
+  '$0 <numberOfCircles>',
+  'Seed database with number of circles',
   yargs => {
     return yargs
-      .positional('numberOfTribes', {
-        describe: 'Number of tribes to add',
+      .positional('numberOfCircles', {
+        describe: 'Number of circles to add',
         type: 'number',
       })
       .boolean('debug')
@@ -27,23 +27,23 @@ const argv = yargs.usage(
       .describe('debug', 'Enable extra database output (default=false)')
       .describe(
         'limit',
-        'If tribes already exist in the database, only add up to the number of tribes (default=false)',
+        'If circles already exist in the database, only add up to the number of circles (default=false)',
       )
       .example(
         'node $0 1000',
-        'Adds 1000 randomly seeded tribes to the database',
+        'Adds 1000 randomly seeded circles to the database',
       )
       .example(
         'node $0 100 --debug',
-        'Adds 100 randomly seeded tribes to the database with debug database output',
+        'Adds 100 randomly seeded circles to the database with debug database output',
       )
       .example(
         'node $0 100 --limit',
-        'Adds up to 100 randomly seeded tribes to the database (eg. If 20 tribes already exist, 80 tribes will be added)',
+        'Adds up to 100 randomly seeded circles to the database (eg. If 20 circles already exist, 80 circles will be added)',
       )
       .check(function (argv) {
-        if (argv.numberOfTribes < 1) {
-          throw new Error('Error: Number of tribes should be greater than 0');
+        if (argv.numberOfCircles < 1) {
+          throw new Error('Error: Number of circles should be greater than 0');
         }
         return true;
       })
@@ -52,10 +52,10 @@ const argv = yargs.usage(
 ).argv;
 
 /**
- * Hardcoded tribe image ids stored on the CDN used for seeding. These were
+ * Hardcoded circle image ids stored on the CDN used for seeding. These were
  * last updated 2018-10-20
  */
-const tribeImageUUIDs = [
+const circleImageUUIDs = [
   '171433b0-853b-4d19-a8b4-44def956696d',
   '22028fde-5302-4172-954d-f54949afd7e4',
   'e69eb05f-773f-423c-9246-43629b5a8baf',
@@ -85,49 +85,49 @@ const tribeImageUUIDs = [
 ];
 
 /**
- * Seeds an individual tribe with fake data. Tribe names are appended with tribeIndex
+ * Seeds an individual circle with fake data. Circle names are appended with circleIndex
  * to guarantee uniqueness.
  *
- * @param {object} tribe  The tribe to seed.
- * @param {number} tribeIndex - index to add to the tribe label
- * @returns {object} Returns the seeded tribe object
+ * @param {object} circle  The circle to seed.
+ * @param {number} circleIndex - index to add to the circle label
+ * @returns {object} Returns the seeded circle object
  */
-function seedTribe(tribe, tribeIndex) {
-  tribe.label = faker.lorem.word() + '_' + tribeIndex;
-  tribe.labelHistory = faker.random.words();
-  tribe.slugHistory = faker.random.words();
-  tribe.synonyms = faker.random.words();
-  tribe.color = faker.internet.color().slice(1);
-  tribe.count = 0;
-  tribe.created = Date.now();
-  tribe.modified = Date.now();
-  tribe.public = true;
-  tribe.image_UUID = _.sample(tribeImageUUIDs);
-  tribe.attribution = faker.name.findName();
-  tribe.attribution_url = faker.internet.url();
-  tribe.description = faker.lorem.sentences();
-  return tribe;
-} // seedTribe()
+function seedCircle(circle, circleIndex) {
+  circle.label = faker.lorem.word() + '_' + circleIndex;
+  circle.labelHistory = faker.random.words();
+  circle.slugHistory = faker.random.words();
+  circle.synonyms = faker.random.words();
+  circle.color = faker.internet.color().slice(1);
+  circle.count = 0;
+  circle.created = Date.now();
+  circle.modified = Date.now();
+  circle.public = true;
+  circle.image_UUID = _.sample(circleImageUUIDs);
+  circle.attribution = faker.name.findName();
+  circle.attribution_url = faker.internet.url();
+  circle.description = faker.lorem.sentences();
+  return circle;
+}
 
 /**
- * This the the main method that seeds all the tribes. Based on the limit
- * parameter it determines how many tribes to add. It adds the new tribes
+ * This the the main method that seeds all the circles. Based on the limit
+ * parameter it determines how many circles to add. It adds the new circles
  * and prints status accordingly.
  */
-function seedTribes() {
+function seedCircles() {
   let index = 0;
-  const max = argv.numberOfTribes;
+  const max = argv.numberOfCircles;
   const debug = argv.debug === true;
   const limit = argv.limit === true;
 
-  // Display number of tribes to add
-  console.log('Generating ' + max + ' tribes...');
+  // Display number of circles to add
+  console.log('Generating ' + max + ' circles...');
   if (max > 2000) {
     console.log('...this might really take a while... go grab some coffee!');
   }
 
   console.log(chalk.white('--'));
-  console.log(chalk.green('Trustroots test tribes data'));
+  console.log(chalk.green('Trustroots test circles data'));
   console.log(chalk.white('--'));
 
   // Override debug mode to use the option set by the user
@@ -139,70 +139,71 @@ function seedTribes() {
       const Tribe = mongoose.model('Tribe');
 
       /**
-       * Adds the number of tribes using the values and options specified
+       * Adds the number of circles using the values and options specified
        * by the user
        *
-       * @param {number} initialTribeCount - The number of tribes prior to adding
-       * any new tribes
-       * @returns {Promise} Promise that completes when all tribes have
+       * @param {number} initialCircleCount - The number of circles prior to adding
+       * any new circles
+       * @returns {Promise} Promise that completes when all circles have
        *  successfully been added.
        */
-      function addTribes(initialTribeCount) {
+      function addCircles(initialCircleCount) {
         return new Promise(resolve => {
-          let savedTribes = 0;
+          let savedCircles = 0;
 
           // handle the limit option
           if (limit) {
-            index = initialTribeCount;
+            index = initialCircleCount;
           }
 
           // if we already hit the limit
           if (index >= max) {
             console.log(
               chalk.green(
-                initialTribeCount + ' tribes already exist. No tribes created!',
+                initialCircleCount +
+                  ' circles already exist. No circles created!',
               ),
             );
             console.log(chalk.white('')); // Reset to white
             resolve();
           }
 
-          // Add tribes until we reach the total
+          // Add circles until we reach the total
           while (index < max) {
-            const tribe = new Tribe();
+            const circle = new Tribe();
 
-            // seed the tribe data
-            seedTribe(tribe, initialTribeCount + index);
+            // seed the circle data
+            seedCircle(circle, initialCircleCount + index);
 
-            // save the newly created tribe
-            tribe.save(err => {
+            // save the newly created circle
+            circle.save(err => {
               if (err != null) {
                 console.log(err);
               } else {
-                // Tribe was saved successfully
+                // Circle was saved successfully
                 process.stdout.write('.');
-                savedTribes += 1;
+                savedCircles += 1;
 
-                // If all tribes have been saved print a summary and
+                // If all circles have been saved print a summary and
                 // resolve the promise.
                 if (
-                  (limit && savedTribes + initialTribeCount >= max) ||
-                  (!limit && savedTribes >= max)
+                  (limit && savedCircles + initialCircleCount >= max) ||
+                  (!limit && savedCircles >= max)
                 ) {
                   console.log('');
                   console.log(
                     chalk.green(
-                      initialTribeCount + ' tribes existed in the database.',
+                      initialCircleCount + ' circles existed in the database.',
                     ),
                   );
                   console.log(
-                    chalk.green(savedTribes + ' tribes successfully added.'),
+                    chalk.green(savedCircles + ' circles successfully added.'),
                   );
                   console.log(
                     chalk.green(
                       'Database now contains ' +
-                        (initialTribeCount + savedTribes) +
-                        ' tribes.',
+                        (initialCircleCount + savedCircles) +
+                        ' circles.',
                     ),
                   );
                   console.log(chalk.white('')); // Reset to white
@@ -213,22 +214,22 @@ function seedTribes() {
             index += 1;
           }
         }); // Promise
-      } // addAllTribes()
+      }
 
-      // This is the main sequence to add the tribes.
-      //    * First get the current number of tribes from the database
-      //    * Then seed all the new tribes
+      // This is the main sequence to add the circles.
+      //    * First get the current number of circles from the database
+      //    * Then seed all the new circles
       try {
-        const tribeCount = await Tribe.countDocuments();
-        await addTribes(tribeCount);
+        const circleCount = await Tribe.countDocuments();
+        await addCircles(circleCount);
       } catch (err) {
         console.log(err);
       }
 
       // Disconnect from the database
       mongooseService.disconnect();
-    }); // monggooseService.loadModels
-  }); // mongooseService.connect
-} // seedTribes
+    });
+  });
+}
 
-seedTribes();
+seedCircles();

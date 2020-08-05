@@ -13,11 +13,11 @@ export default function TribesHeader({ isLoggedIn }) {
           <div className="col-xs-12 text-center">
             <br />
             <br />
-            <h2>{t('Discover Tribes')}</h2>
+            <h2>{t('Discover circles')}</h2>
             <br />
             <p className="lead">
               {t(
-                'Joining Tribes helps you find likeminded Trustroots members.',
+                'Joining circles helps you find likeminded Trustroots members.',
               )}
             </p>
             {!isLoggedIn && (

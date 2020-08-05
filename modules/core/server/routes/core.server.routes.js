@@ -1,6 +1,7 @@
 /**
  * Module dependencies.
  */
+const _ = require('lodash');
 const path = require('path');
 const facebookNotificationService = require(path.resolve(
   './modules/core/server/services/facebook-notification.server.service',
@@ -21,8 +22,17 @@ module.exports = function (app) {
   };
 
   redirect('/invite', '/signup');
-  redirect('/tribes/lgbt', '/tribes/lgbtq');
-  redirect('/tribes/vegans-vegetarians', '/tribes/veg');
+  redirect('/tribes/lgbt', '/circles/lgbtq');
+  redirect('/tribes/vegans-vegetarians', '/circles/veg');
+
+  // `/tribes/*` routes deprecated in August 2020
+  // https://ideas.trustroots.org/?p=3599
+  redirect('/tribes', '/circles');
+  app.route('/tribes/:tribe').get(function (req, res) {
+    const tribe = _.get(req, ['tribe', 'slug']);
+    const route = tribe ? '/circles/' + tribe : '/circles';
+    res.redirect(301, route);
+  });
 
   // Gives the service worker access to any config it needs
   app.route('/config/sw.js').get(core.renderServiceWorkerConfig);
@@ -48,7 +58,7 @@ module.exports = function (app) {
 
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
-  app.route('/tribes/:tribe').get(core.renderIndex);
+  app.route('/circles/:tribe').get(core.renderIndex);
 
   // Short URL for invite codes
   app.route('/c/:code').get(userProfile.redirectInviteShortUrl);

@@ -33,7 +33,7 @@ export default function Tribe({ tribe, user, onMembershipUpdated }) {
 
   return (
     <Container tribe={tribe}>
-      <a href={`/tribes/${tribe.slug}`} className="tribe-link">
+      <a href={`/circles/${tribe.slug}`} className="tribe-link">
         {tribe.new && (
           <span className="tribe-new" aria-hidden={true}>
             <span className="label label-primary">{t('New tribe!')}</span>

@@ -9,23 +9,23 @@ export default function FaqTribes({ invitationsEnabled }) {
   return (
     <Faq category="tribes" invitationsEnabled={invitationsEnabled}>
       <div className="faq-question" id="what-are-tribes">
-        <h3>{t('What are Tribes?')}</h3>
+        <h3>{t('What are circles?')}</h3>
         {t(
-          'Trustroots Tribes are a way for you to immediately find the people you will easily connect with.',
+          'Trustroots circles (previously known as "tribes") are a way for you to immediately find the people you will easily connect with.',
         )}
         <br />
         <br />
         <Trans t={t} ns="pages">
-          You can start now by joining <a href="/tribes">Tribes</a> that you
+          You can start now by joining <a href="/circles">circles</a> that you
           identify yourself with.
         </Trans>
         <br />
         <br />
-        {t('When searching for hosts, you can filter members by tribes.')}
+        {t('When searching for hosts, you can filter members by circles.')}
         <br />
         <br />
         {t(
-          'Your tribes will also show up in your profile, telling others more about you.',
+          'Your circles will also show up in your profile, telling others more about you.',
         )}
         <br />
         <br />
@@ -39,16 +39,26 @@ export default function FaqTribes({ invitationsEnabled }) {
           <a href="https://ideas.trustroots.org/2016/05/09/introducing-trustroots-tribes/">
             the blog post
           </a>{' '}
-          introducing Tribes.
+          introducing circles.
         </Trans>
       </div>
 
       <div className="faq-question" id="no-suitable-tribes">
-        <h3>{t("I don't find a tribe that suits me")}</h3>
+        <h3>{t("I don't find a circle that suits me")}</h3>
         <Trans t={t} ns="pages">
-          <a href="/support">Send us</a> new tribe ideas! In the future you will
-          be able to create new tribes by yourself.
+          <a href="/support">Send us</a> new circle ideas! In the future you
+          will be able to create new circles by yourself.
         </Trans>
+      </div>
+
+      <div className="faq-question" id="tribes-rename-to-circles">
+        <h3>{t('Why did you rename "tribes" to "circles"?')}</h3>
+        {t(
+          'We found the term be problematic for having connotations of colonialism and wanted to switch to a more inclusive term in August 2020.',
+        )}
+        <br />
+        <br />
+        <a href="https://ideas.trustroots.org/?p=3599">{t('Read more')}</a>
       </div>
     </Faq>
   );

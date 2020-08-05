@@ -12,8 +12,8 @@
     <ng-pluralize
       count="myTribesToggle.userTribes.length"
       when="{
-                    'one': 'Show only members from my tribe',
-                    'other': 'Show only members from my tribes'
+                    'one': 'Show only members from my circle',
+                    'other': 'Show only members from my circles'
                   }"
     ></ng-pluralize>
   </label>
@@ -22,8 +22,8 @@
     ng-if="myTribesToggle.initialized && !myTribesToggle.userTribes.length"
   >
     <span class="icon-right"></span>
-    <a ui-sref="tribes.list" class="text-muted"
-      >Join tribes to find similar users</a
+    <a ui-sref="circles.list" class="text-muted"
+      >Join circles to find similar members</a
     >
   </p>
 </div>
