@@ -1,5 +1,5 @@
 // External dependencies
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -76,6 +76,12 @@ export default function Team({ user }) {
                   </div>
                 ))}
             </div>
+            <p className="text-center">
+              <Trans t={t} ns="pages">
+                <a href="/support">Contact support team</a> to get in touch with
+                us.
+              </Trans>
+            </p>
           </div>
         </div>
         <hr />
