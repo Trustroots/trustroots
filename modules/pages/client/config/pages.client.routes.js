@@ -28,7 +28,10 @@ function PagesRoutes($stateProvider) {
     })
     .state('team', {
       url: '/team',
-      template: '<team />',
+      template: `
+        <team
+          user="app.user"
+        />`,
       data: {
         pageTitle: 'Team',
       },

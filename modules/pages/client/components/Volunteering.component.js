@@ -45,7 +45,14 @@ export default function Volunteering() {
               )}
             </p>
             <p>
-              <a href="https://team.trustroots.org/">{t('Team Guide')}</a>
+              <ul className="list-inline">
+                <li>
+                  <a href="https://team.trustroots.org/">{t('Team Guide')}</a>
+                </li>
+                <li>
+                  <a href="/team">{t('Meet the team')}</a>
+                </li>
+              </ul>
             </p>
           </div>
         </div>
