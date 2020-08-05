@@ -30,7 +30,7 @@ export default function FaqTribes({ invitationsEnabled }) {
         <br />
         <br />
         {t(
-          "We'll aim to add ways to the site that will fill your trips and your life with adventure! Imagine walking around in a city you're visiting for the first time and suddently you start receiving invitations from people to stay with them or go to awesome or inspiring events, or just to a dumpster dive dinner. That's the adventure Trustroots wants to enable. And Tribes is a step towards this.",
+          "We'll aim to add ways to the site that will fill your trips and your life with adventure! Imagine walking around in a city you're visiting for the first time and suddently you start receiving invitations from people to stay with them or go to awesome or inspiring events, or just to a dumpster dive dinner. That's the adventure Trustroots wants to enable. And circles is a step towards this.",
         )}
         <br />
         <br />
