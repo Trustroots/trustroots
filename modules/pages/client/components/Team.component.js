@@ -13,12 +13,14 @@ export default function Team({ user }) {
   const { t } = useTranslation('pages');
   const [isFetching, setIsFetching] = useState(false);
   const [volunteers, setVolunteers] = useState([]);
+  const [alumni, setAlumni] = useState([]);
 
   async function fetchVolunteers() {
     setIsFetching(true);
     try {
-      const volunteers = await getVolunteers();
+      const { volunteers, alumni } = await getVolunteers();
       setVolunteers(volunteers);
+      setAlumni(alumni);
     } finally {
       setIsFetching(false);
     }
@@ -59,14 +61,14 @@ export default function Team({ user }) {
 
         <div className="row">
           <div className="col-xs-12">
-            <div className="team-volunteers">
-              {isFetching && <LoadingIndicator />}
-              {volunteers.length > 0 &&
-                volunteers.map(({ _id, username, firstName }) => (
+            {isFetching && <LoadingIndicator />}
+            {volunteers.length > 0 && (
+              <div className="team-volunteers">
+                {volunteers.map(({ _id, username, firstName }) => (
                   <div className="team-volunteer" key={_id}>
                     <a href={`/profile/${username}`}>
                       <img
-                        alt={firstName}
+                        alt={firstName || username}
                         className="img-circle"
                         src={
                           user
@@ -74,11 +76,12 @@ export default function Team({ user }) {
                             : '/img/avatar.png'
                         }
                       />
-                      <h4>{firstName}</h4>
+                      <h4>{firstName || username}</h4>
                     </a>
                   </div>
                 ))}
-            </div>
+              </div>
+            )}
             <p className="text-center">
               <Trans t={t} ns="pages">
                 <a href="/support">Contact us</a> if you have any questions.
@@ -106,6 +109,27 @@ export default function Team({ user }) {
               <br />
               <br />
             </p>
+          </div>
+        </div>
+        <hr />
+        <div className="row">
+          <div className="col-xs-12 text-center">
+            <h4>
+              {t(
+                'Thank you to everyone who has helped Trustroots over the years!',
+              )}
+            </h4>
+            {alumni.length > 0 && (
+              <ul className="list-inline">
+                {alumni.map(({ _id, username, firstName }) => (
+                  <li key={_id}>
+                    <a href={`/profile/${username}`}>{firstName || username}</a>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <br />
+            <br />
           </div>
         </div>
       </section>

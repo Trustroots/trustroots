@@ -10,14 +10,24 @@ const errorService = require(path.resolve(
 
 const User = mongoose.model('User');
 
+function filterAndCleanVolunteers(users, role) {
+  return users
+    .filter(user => user.roles.includes(role))
+    .map(user => ({
+      _id: user._id,
+      firstName: user.firstName,
+      username: user.username,
+    }));
+}
+
 /*
  * This middleware sends response with an array of users with volunteer role
  */
 exports.list = (req, res) => {
   User.find({
-    roles: { $in: ['volunteer'] },
+    roles: { $in: ['volunteer', 'volunteer-alumni'] },
   })
-    .select('username firstName')
+    .select('username firstName roles')
     .sort('firstName username')
     .limit(500)
     .exec((err, users) => {
@@ -27,6 +37,13 @@ exports.list = (req, res) => {
         });
       }
 
-      res.send(_.shuffle(users || []));
+      // Put to two groups based on role
+      const volunteers = filterAndCleanVolunteers(users, 'volunteer');
+      const alumni = filterAndCleanVolunteers(users, 'volunteer-alumni');
+
+      res.send({
+        volunteers: _.shuffle(volunteers),
+        alumni: _.shuffle(alumni),
+      });
     });
 };

@@ -110,17 +110,22 @@ export default class AdminSearchUsers extends Component {
                   className="form-control input-md"
                   onChange={this.onRoleChange}
                 >
-                  {['admin', 'moderator', 'suspended', 'shadowban'].map(
-                    role => (
-                      <option
-                        value={role}
-                        key={role}
-                        selected={role === this.state.role}
-                      >
-                        {role}
-                      </option>
-                    ),
-                  )}
+                  {[
+                    'admin',
+                    'moderator',
+                    'shadowban',
+                    'suspended',
+                    'volunteer-alumni',
+                    'volunteer',
+                  ].map(role => (
+                    <option
+                      value={role}
+                      key={role}
+                      selected={role === this.state.role}
+                    >
+                      {role}
+                    </option>
+                  ))}
                 </select>
                 <button className="btn btn-md btn-default" type="submit">
                   List users in role
