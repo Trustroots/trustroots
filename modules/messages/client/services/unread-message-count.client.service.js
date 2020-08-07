@@ -102,7 +102,7 @@ function setPollingInterval(interval) {
 
 export async function update() {
   const user = getUser();
-  if (!user) return;
+  if (!user || !user.public) return;
   const newCount = await unreadCount();
   if (newCount === count) return;
   count = newCount;
