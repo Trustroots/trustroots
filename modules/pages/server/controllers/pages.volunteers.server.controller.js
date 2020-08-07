@@ -14,14 +14,12 @@ const User = mongoose.model('User');
  * This middleware sends response with an array of users with volunteer role
  */
 exports.list = (req, res) => {
-  const VOLUNTEER_LIST_FIELDS = ['username', 'displayName'].join(' ');
-
   User.find({
     roles: { $in: ['volunteer'] },
   })
-    .select(VOLUNTEER_LIST_FIELDS)
-    .sort('username displayName volunteerStory')
-    .limit(1000)
+    .select('username firstName')
+    .sort('firstName username')
+    .limit(500)
     .exec((err, users) => {
       if (err) {
         return res.status(400).send({
