@@ -254,6 +254,7 @@ const UserSchema = new Schema({
           'shadowban',
           'suspended',
           'user',
+          'volunteer-alumni',
           'volunteer',
         ],
       },
