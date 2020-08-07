@@ -1,79 +1,53 @@
-trustroots:
-  container_name: trustroots
-  restart: always
-  build: .
-  # Mount the app dir in the container so our changes
-  #  to the app code are also changed in the container
-  #
-  # Mount node_modules separately as a data volume, so
-  #  that they won't get overwritten by app directory
-  #  Read more: http://stackoverflow.com/a/32785014/1984644
-  volumes:
-    - ./:/trustroots
-    - /trustroots/node_modules
-    - /trustroots/public
-    - /trustroots/uploads
-  command: npm run start:docker
-  links:
-    - mongodb:mongodb
-    - maildev:maildev
-    - influxdb:influxdb
-  ports:
-    - '3000:3000'
-    - '5858:5858'
-    - '35729:35729'
-  environment:
-    - NODE_ENV=development
-    - DB_1_PORT_27017_TCP_ADDR=mongodb
-    - PORT=3000
-    - DOMAIN=trustroots.dev
-    - VIRTUAL_HOST=localhost,trustroots.dev
-    - VIRTUAL_PORT=3000
+version: '3'
 
-## SMTP Server + Web Interface for viewing and testing emails during development.
-## http://djfarrelly.github.io/MailDev/
-maildev:
-  image: djfarrelly/maildev
-  container_name: maildev
-  restart: always
-  ports:
-    - '1080:1080'
+networks:
+  trustroots-network:
+    driver: bridge
 
-## Database container
-mongodb:
-  image: mongo:3.7
-  container_name: db_1
-  restart: always
-  command: '--smallfiles --logpath=/dev/null'
-  ports:
-    - '27017:27017'
+volumes:
+  node-modules:
+  public:
+  dbdata:
 
-## InfluxDB container
-## https://github.com/tutumcloud/influxdb
-influxdb:
-  image: tutum/influxdb:latest
-  container_name: influxdb
-  restart: always
-  ports:
-    - '8083:8083'
-    - '8086:8086'
-  environment:
-    - ADMIN_USER=root
-    - INFLUXDB_INIT_PWD=root
-    - PRE_CREATE_DB=trustroots
+services:
+  trustroots:
+    image: node:12
+    container_name: trustroots
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Mount the app dir in the container so our changes
+    #  to the app code are also changed in the container
+    #
+    # Mount node_modules separately as a data volume, so
+    #  that they won't get overwritten by app directory
+    #  Read more: http://stackoverflow.com/a/32785014/1984644
+    networks:
+      - trustroots-network
+    volumes:
+      - ./:/trustroots
+      - node-modules:/trustroots/node_modules
+      - public:/trustroots/public
+    depends_on:
+      - mongodb
+    ports:
+      - '1080:1080'
+      - '3000:3000'
+      - '3001:3001'
+      - '5858:5858'
+      - '35729:35729'
+    environment:
+      - DB_1_PORT_27017_TCP_ADDR=mongodb
 
-## Nginx proxy
-## See settings per host from ./scripts/docker/nginx/*
-## https://github.com/jwilder/nginx-proxy
-nginx:
-  image: jwilder/nginx-proxy
-  container_name: nginx
-  restart: always
-  links:
-    - trustroots
-  volumes:
-    - /var/run/docker.sock:/tmp/docker.sock:ro
-    - ./scripts/docker/nginx/trustroots.dev:/etc/nginx/vhost.d/trustroots.dev
-    - ./scripts/docker/nginx/trustroots.dev_location:/etc/nginx/vhost.d/trustroots.dev_location
-  ports:
-    - '3080:80'
+  ## Database container
+  mongodb:
+    image: mongo:4.2
+    container_name: db_1
+    volumes:
+      - dbdata:/data/db
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    networks:
+      - trustroots-network
