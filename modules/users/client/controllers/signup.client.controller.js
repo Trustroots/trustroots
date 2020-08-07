@@ -1,4 +1,5 @@
 import rulesModalTemplateUrl from '@/modules/users/client/views/authentication/rules-modal.client.view.html';
+import shuffle from 'lodash/shuffle';
 
 angular.module('users').controller('SignupController', SignupController);
 
@@ -143,7 +144,7 @@ function SignupController(
   function getSuggestedTribes(withoutTribeId) {
     TribesService.query(
       {
-        limit: 20,
+        limit: 40,
       },
       function (tribes) {
         const suggestedTribes = [];
@@ -152,7 +153,7 @@ function SignupController(
         // We'll always show 2 or 3 of these at the frontend depending on if referred tribe is shown.
         if (withoutTribeId) {
           angular.forEach(
-            tribes,
+            shuffle(tribes),
             function (suggestedTribe) {
               if (suggestedTribe._id !== withoutTribeId) {
                 // eslint-disable-next-line angular/controller-as-vm
@@ -163,7 +164,7 @@ function SignupController(
           );
           vm.suggestedTribes = suggestedTribes;
         } else {
-          vm.suggestedTribes = tribes;
+          vm.suggestedTribes = shuffle(tribes);
         }
       },
     );
