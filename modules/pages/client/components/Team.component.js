@@ -61,10 +61,10 @@ export default function Team({ user }) {
 
         <div className="row">
           <div className="col-xs-12">
-            <div className="team-volunteers">
-              {isFetching && <LoadingIndicator />}
-              {volunteers.length > 0 &&
-                volunteers.map(({ _id, username, firstName }) => (
+            {isFetching && <LoadingIndicator />}
+            {volunteers.length > 0 && (
+              <div className="team-volunteers">
+                {volunteers.map(({ _id, username, firstName }) => (
                   <div className="team-volunteer" key={_id}>
                     <a href={`/profile/${username}`}>
                       <img
@@ -80,7 +80,8 @@ export default function Team({ user }) {
                     </a>
                   </div>
                 ))}
-            </div>
+              </div>
+            )}
             <p className="text-center">
               <Trans t={t} ns="pages">
                 <a href="/support">Contact us</a> if you have any questions.
@@ -118,19 +119,15 @@ export default function Team({ user }) {
                 'Thank you to everyone who has helped Trustroots over the years!',
               )}
             </h4>
-            <ul className="list-inline">
-              {isFetching && (
-                <li>
-                  <LoadingIndicator />
-                </li>
-              )}
-              {alumni.length > 0 &&
-                alumni.map(({ _id, username, firstName }) => (
+            {alumni.length > 0 && (
+              <ul className="list-inline">
+                {alumni.map(({ _id, username, firstName }) => (
                   <li key={_id}>
                     <a href={`/profile/${username}`}>{firstName || username}</a>
                   </li>
                 ))}
-            </ul>
+              </ul>
+            )}
             <br />
             <br />
           </div>
