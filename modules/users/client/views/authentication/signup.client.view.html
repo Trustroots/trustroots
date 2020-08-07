@@ -105,6 +105,38 @@
           </div>
           <div
             class="form-group"
+            ng-class="{'has-error': userForm.email.$invalid && userForm.email.$dirty}"
+          >
+            <label for="email" class="col-sm-4 control-label">Email</label>
+            <div class="col-sm-8">
+              <input
+                type="email"
+                required
+                mailcheck
+                id="email"
+                name="email"
+                class="form-control input-lg"
+                ng-model="signup.credentials.email"
+                ng-disabled="signup.isLoading"
+                ng-change="signup.isEmailTaken = false"
+                uib-tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
+                tooltip-trigger="blur"
+                tooltip-placement="top"
+              />
+              <div
+                class="alert alert-danger"
+                role="alert"
+                ng-if="signup.isEmailTaken"
+              >
+                Account with this email exists already.
+                <a ui-sref="forgot({ userhandle: signup.credentials.email })"
+                  >Try recover password?</a
+                >
+              </div>
+            </div>
+          </div>
+          <div
+            class="form-group"
             ng-class="{'has-error': userForm.username.$invalid && userForm.username.$dirty}"
           >
             <label for="username" class="col-sm-4 control-label"
@@ -131,29 +163,6 @@
                 tooltip-trigger="'none'"
                 tooltip-placement="top"
               />
-            </div>
-          </div>
-          <div
-            class="form-group"
-            ng-class="{'has-error': userForm.email.$invalid && userForm.email.$dirty}"
-          >
-            <label for="email" class="col-sm-4 control-label">Email</label>
-            <div class="col-sm-8">
-              <input
-                type="email"
-                required
-                mailcheck
-                id="email"
-                name="email"
-                class="form-control input-lg"
-                ng-model="signup.credentials.email"
-                ng-disabled="signup.isLoading"
-                uib-tooltip="{{ (userForm.email.$error.email && userForm.email.$dirty) ? 'Please give a valid email.' : ''}}"
-                tooltip-trigger="blur"
-                tooltip-placement="top"
-              />
-              <!-- Temporarily disabled due isolate scope errors with mailcheck:
-                     tr-focustip="'We will not reveal this to anyone.'"> -->
             </div>
           </div>
           <div
@@ -194,35 +203,12 @@
                         'icon-eye': !showPassword,
                         'icon-eye-off': showPassword
                       }"
+                      uib-tooltip="{{ showPassword ? 'Hide password.' : 'Show password.'}}"
+                      tooltip-placement="top"
                     ></i>
                   </a>
                 </span>
               </div>
-            </div>
-          </div>
-          <div
-            class="form-group"
-            ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}"
-          >
-            <label for="verifyPassword" class="col-sm-4 control-label"
-              >Repeat password</label
-            >
-            <div class="col-sm-8">
-              <input
-                required
-                id="verifyPassword"
-                name="verifyPassword"
-                class="form-control input-lg"
-                tr-confirm-password="signup.credentials.password"
-                tooltip-is-open="!userForm.verifyPassword.$pending && userForm.verifyPassword.$dirty && !userForm.verifyPassword.$valid"
-                uib-tooltip="Passwords don't match."
-                tooltip-popup-delay="500"
-                tooltip-trigger="'none'"
-                tooltip-placement="top"
-                ng-attr-type="{{ showPassword ? 'text' : 'password' }}"
-                ng-model="verifyPassword"
-                ng-disabled="signup.isLoading"
-              />
             </div>
           </div>
           <div class="form-group checkbox">
@@ -464,7 +450,8 @@
         class="text-center col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4"
       >
         <br /><br />
-        <a ui-sref="signin" class="btn btn-link">Login</a>
+        Already have an account?
+        <a ui-sref="signin">Login</a>
         <br /><br />
         <p class="visible-xs-block">
           <a ui-sref="home" class="btn btn-link">About Trustroots</a>

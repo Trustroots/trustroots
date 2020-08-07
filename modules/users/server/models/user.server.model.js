@@ -117,13 +117,16 @@ const UserSchema = new Schema({
   firstName: {
     type: String,
     required: true,
-    validate: [validateLocalStrategyProperty, 'Please fill in your first name'],
+    validate: [
+      validateLocalStrategyProperty,
+      'Please fill in your first name.',
+    ],
     set: setPlainTextField,
   },
   lastName: {
     type: String,
     required: true,
-    validate: [validateLocalStrategyProperty, 'Please fill in your last name'],
+    validate: [validateLocalStrategyProperty, 'Please fill in your last name.'],
     set: setPlainTextField,
   },
   /* This is generated in Schema pre-save hook below */
@@ -133,10 +136,13 @@ const UserSchema = new Schema({
   email: {
     type: String,
     trim: true,
-    unique: 'Email exists already.',
+    unique: 'Account with this email exists already.',
     lowercase: true,
     required: true,
-    validate: [validateLocalStrategyEmail, 'Please fill a valid email address'],
+    validate: [
+      validateLocalStrategyEmail,
+      'Please fill a valid email address.',
+    ],
   },
   /* New email is stored here until it is confirmed */
   emailTemporary: {
@@ -144,7 +150,7 @@ const UserSchema = new Schema({
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+@.+\..+/, 'Please enter a valid email address'],
+    match: [/.+@.+\..+/, 'Please enter a valid email address.'],
   },
   tagline: {
     type: String,
