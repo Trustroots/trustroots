@@ -32,7 +32,12 @@ export default function UserState({ user }) {
           .map(role => {
             const classes = classnames('label admin-label', {
               'label-danger': ['suspended', 'shadowban'].includes(role),
-              'label-success': ['admin', 'moderator'].includes(role),
+              'label-success': [
+                'admin',
+                'moderator',
+                'volunteer',
+                'volunteer-alumni',
+              ].includes(role),
             });
 
             return (

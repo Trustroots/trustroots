@@ -116,13 +116,10 @@ exports.searchUsers = (req, res) => {
 exports.listUsersByRole = (req, res) => {
   const role = _.get(req, ['body', 'role']);
 
+  const validRoles = User.schema.path('roles').caster.enumValues || [];
+
   // Allowed roles to query
-  if (
-    !role ||
-    !['shadowban', 'suspended', 'admin', 'moderator', 'volunteer'].includes(
-      role,
-    )
-  ) {
+  if (!role || !validRoles.includes(role)) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
@@ -256,11 +253,10 @@ exports.changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
 
+  const validRoles = User.schema.path('roles').caster.enumValues || [];
+
   // Allowed new roles — for security reasons never allow `admin` role to be changed programmatically.
-  if (
-    !role ||
-    !['shadowban', 'suspended', 'moderator', 'volunteer'].includes(role)
-  ) {
+  if (!role || role === 'admin' || !validRoles.includes(role)) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
@@ -274,14 +270,14 @@ exports.changeRole = async (req, res) => {
   }
 
   // If switching role to 'suspended', change also these settings straight up
-  const additionalChanges =
+  const additionalChangesForSuspended =
     role === 'suspended' ? { $set: { newsletter: false, public: false } } : {};
 
   try {
     const user = await User.updateOne(
       { _id: userId },
       {
-        ...additionalChanges,
+        ...additionalChangesForSuspended,
         $addToSet: {
           roles: role,
         },
@@ -295,9 +291,32 @@ exports.changeRole = async (req, res) => {
       });
     }
 
+    // If adding role 'volunteer-alumni', remove 'volunteer' role
+    if (role === 'volunteer-alumni') {
+      await User.updateOne({ _id: userId }, { $pull: { roles: 'volunteer' } });
+    }
+
+    // If adding role 'volunteer', remove 'volunteer-alumni' role
+    if (role === 'volunteer') {
+      await User.updateOne(
+        { _id: userId },
+        { $pull: { roles: 'volunteer-alumni' } },
+      );
+    }
+
+    // If adding role 'shadowban', remove 'suspended' role
+    if (role === 'shadowban') {
+      await User.updateOne({ _id: userId }, { $pull: { roles: 'suspended' } });
+    }
+
+    // If adding role 'suspended', remove 'shadowban' role
+    if (role === 'suspended') {
+      await User.updateOne({ _id: userId }, { $pull: { roles: 'shadowban' } });
+    }
+
     res.send({ message: 'Role changed.' });
   } catch (err) {
-    log('error', 'Failed to load member in admin tool. #ggi323', {
+    log('error', 'Failed to update member in admin tool. #ggi323', {
       error: err,
     });
     handleAdminApiError(res, err);
