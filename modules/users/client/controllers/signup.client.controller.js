@@ -37,6 +37,7 @@ function SignupController(
   vm.credentials = {};
   vm.step = 1;
   vm.isLoading = false;
+  vm.isEmailTaken = false;
   vm.submitSignup = submitSignup;
   vm.getUsernameValidationError = getUsernameValidationError;
   vm.openRules = openRules;
@@ -174,6 +175,7 @@ function SignupController(
    */
   function submitSignup() {
     vm.isLoading = true;
+    vm.isEmailTaken = false;
 
     $http.post('/api/auth/signup', vm.credentials).then(
       function (newUser) {
@@ -201,11 +203,18 @@ function SignupController(
       function (error) {
         // On error function
         vm.isLoading = false;
-        const errorMessage =
-          error.data && error.data.message
-            ? error.data.message
-            : 'Something went wrong while signing you up. Try again!';
-        messageCenterService.add('danger', errorMessage);
+
+        const message =
+          error?.data?.message ??
+          'Something went wrong while signing you up. Try again!';
+
+        // Handle emaail errors
+        if (message === 'Account with this email exists already.') {
+          vm.isEmailTaken = true;
+          return;
+        }
+
+        messageCenterService.add('danger', message);
       },
     );
   }
