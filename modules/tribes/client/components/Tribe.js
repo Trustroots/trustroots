@@ -36,7 +36,7 @@ export default function Tribe({ tribe, user, onMembershipUpdated }) {
       <a href={`/circles/${tribe.slug}`} className="tribe-link">
         {tribe.new && (
           <span className="tribe-new" aria-hidden={true}>
-            <span className="label label-primary">{t('New tribe!')}</span>
+            <span className="label label-primary">{t('New circle!')}</span>
           </span>
         )}
         <div
