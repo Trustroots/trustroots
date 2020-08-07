@@ -62,24 +62,22 @@ export default function Team({ user }) {
             <div className="team-volunteers">
               {isFetching && <LoadingIndicator />}
               {volunteers.length > 0 &&
-                volunteers.map(({ _id, username, displayName }) => (
+                volunteers.map(({ _id, username, firstName }) => (
                   <div className="team-volunteer" key={_id}>
                     <a href={`/profile/${username}`}>
                       <img
+                        alt={firstName}
                         className="img-circle"
-                        src={`/api/users/${_id}/avatar?size=512`}
-                        width="100"
-                        alt={displayName}
+                        src={`/api/users/${_id}/avatar?size=256`}
                       />
-                      <h4 className="media-heading">{displayName}</h4>
+                      <h4>{firstName}</h4>
                     </a>
                   </div>
                 ))}
             </div>
             <p className="text-center">
               <Trans t={t} ns="pages">
-                <a href="/support">Contact support team</a> to get in touch with
-                us.
+                <a href="/support">Contact us</a> if you have any questions.
               </Trans>
             </p>
           </div>
