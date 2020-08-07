@@ -102,7 +102,7 @@ export default function Foundation({ user }) {
               <a className="pull-left" href="https://mikaelkorpela.fi/">
                 <img
                   className="media-object img-circle"
-                  src={`/api/users/544b7832f1bf94f007de9fe0/avatar?size=512`}
+                  src="//gravatar.com/avatar/d0229f23745d3c266f81c6b0cd014a38?s=200"
                   width="100"
                   alt="Mikael"
                 />
@@ -146,7 +146,7 @@ export default function Foundation({ user }) {
             <div className="media">
               <img
                 className="media-object img-circle pull-left"
-                src={`/api/users/549806aa484045191404ad0b/avatar?size=512`}
+                src="/img/team-natalia.jpg"
                 width="100"
                 alt="Natalia"
               />
@@ -178,7 +178,7 @@ export default function Foundation({ user }) {
               <a className="pull-left" href="https://guaka.org/">
                 <img
                   className="media-object img-circle"
-                  src={`/api/users/546dbde4b90879c125849c0c/avatar?size=512`}
+                  src="/img/team-kasper.png"
                   width="100"
                   alt="Kasper"
                 />
@@ -233,7 +233,7 @@ export default function Foundation({ user }) {
               <a className="pull-left" href="https://www.callum-macdonald.com/">
                 <img
                   className="media-object img-circle"
-                  src={`/api/users/54a13db94f09e7192a46c548/avatar?size=512`}
+                  src="//gravatar.com/avatar/1e2eebc68bae7e891391688ad1c331d1?s=100"
                   width="100"
                   alt=""
                 />
@@ -265,7 +265,7 @@ export default function Foundation({ user }) {
             <div className="media">
               <img
                 className="media-object img-circle pull-left"
-                src={`/api/users/54997f0681f11598701b7e4a/avatar?size=512`}
+                src="/img/team-carlos.jpg"
                 width="100"
                 alt="Carlos"
               />
