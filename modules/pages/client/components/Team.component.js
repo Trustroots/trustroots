@@ -68,7 +68,11 @@ export default function Team({ user }) {
                       <img
                         alt={firstName}
                         className="img-circle"
-                        src={`/api/users/${_id}/avatar?size=256`}
+                        src={
+                          user
+                            ? `/api/users/${_id}/avatar?size=256`
+                            : '/img/avatar.png'
+                        }
                       />
                       <h4>{firstName}</h4>
                     </a>
