@@ -1,4 +1,5 @@
 import rulesModalTemplateUrl from '@/modules/users/client/views/authentication/rules-modal.client.view.html';
+import shuffle from 'lodash/shuffle';
 
 angular.module('users').controller('SignupController', SignupController);
 
@@ -37,6 +38,7 @@ function SignupController(
   vm.credentials = {};
   vm.step = 1;
   vm.isLoading = false;
+  vm.isEmailTaken = false;
   vm.submitSignup = submitSignup;
   vm.getUsernameValidationError = getUsernameValidationError;
   vm.openRules = openRules;
@@ -143,7 +145,7 @@ function SignupController(
   function getSuggestedTribes(withoutTribeId) {
     TribesService.query(
       {
-        limit: 20,
+        limit: 40,
       },
       function (tribes) {
         const suggestedTribes = [];
@@ -152,7 +154,7 @@ function SignupController(
         // We'll always show 2 or 3 of these at the frontend depending on if referred tribe is shown.
         if (withoutTribeId) {
           angular.forEach(
-            tribes,
+            shuffle(tribes),
             function (suggestedTribe) {
               if (suggestedTribe._id !== withoutTribeId) {
                 // eslint-disable-next-line angular/controller-as-vm
@@ -163,7 +165,7 @@ function SignupController(
           );
           vm.suggestedTribes = suggestedTribes;
         } else {
-          vm.suggestedTribes = tribes;
+          vm.suggestedTribes = shuffle(tribes);
         }
       },
     );
@@ -174,6 +176,7 @@ function SignupController(
    */
   function submitSignup() {
     vm.isLoading = true;
+    vm.isEmailTaken = false;
 
     $http.post('/api/auth/signup', vm.credentials).then(
       function (newUser) {
@@ -201,11 +204,18 @@ function SignupController(
       function (error) {
         // On error function
         vm.isLoading = false;
-        const errorMessage =
-          error.data && error.data.message
-            ? error.data.message
-            : 'Something went wrong while signing you up. Try again!';
-        messageCenterService.add('danger', errorMessage);
+
+        const message =
+          error?.data?.message ??
+          'Something went wrong while signing you up. Try again!';
+
+        // Handle emaail errors
+        if (message === 'Account with this email exists already.') {
+          vm.isEmailTaken = true;
+          return;
+        }
+
+        messageCenterService.add('danger', message);
       },
     );
   }

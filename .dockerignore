@@ -5,12 +5,17 @@
 # App
 public/dist/
 public/lib/
+public/assets/
+public/push-messaging-sw.js
+public/uploads-profile/
 node_modules/
 .migrate
 .dockerignore
 .gitignore
 .travis.yml
-public/developers/api/
+maildev
+tmp
+uploads
 *.md
 *.log
 
