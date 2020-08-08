@@ -223,7 +223,7 @@
     "husky": "4.2.5",
     "imports-loader": "1.1.0",
     "jasmine-core": "3.6.0",
-    "jest": "26.1.0",
+    "jest": "26.2.2",
     "jest-environment-jsdom-sixteen": "1.0.3",
     "jquery": "3.5.1",
     "less-loader": "6.2.0",
