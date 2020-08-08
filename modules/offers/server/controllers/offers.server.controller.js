@@ -611,12 +611,13 @@ exports.list = function (req, res) {
   // Pick fields and convert to GeoJson Feature
   query.push({
     $project: {
-      // @TODO: remove extra _id in results?
+      _id: 0,
       type: 'Feature',
       properties: {
         _id: '$_id',
         status: '$status',
         type: '$type',
+        offer: { $concat: ['$type', '-', '$status'] },
       },
       geometry: {
         coordinates: '$locationFuzzy',

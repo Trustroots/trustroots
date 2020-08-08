@@ -23,49 +23,39 @@ export default function SearchMap(props) {
   const sourceRef = React.createRef();
   const { location } = props;
 
-  const [geojson, setGeojson] = useState({
-    type: 'FeatureCollection',
-    features: [
-      {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [
-            [
-              [-67.13734351262877, 45.137451890638886],
-              [-67.13734351262877, 45.137451890638886],
-            ],
-          ],
-        },
-      },
-    ],
-  });
+  const [geojson, setGeojson] = useState({});
 
   // https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
   const onClickMap = event => {
-    const mapboxSource = sourceRef.current.getSource(); //eslint-disable-line
+    const mapboxSource = sourceRef.current.getSource();
     console.log(event); //eslint-disable-line
 
-    /*
-    const clusterId = feature.properties.cluster_id;
+    if (!event.features?.length) {
+      return;
+    }
 
+    const clusterId = event.features[0]?.properties?.cluster_id;
 
+    if (!clusterId) {
+      return;
+    }
+
+    // eslint-disable-next-line
     mapboxSource.getClusterExpansionZoom(clusterId, (err, zoom) => {
       if (err) {
         return;
       }
-      console.log(longitude, latitude, zoom);//eslint-disable-line
-
+      // Do the map transition
       /*
-      this._onViewportChange({
+      _onViewportChange({
         ...this.state.viewport,
-        longitude: feature.geometry.coordinates[0],
-        latitude: feature.geometry.coordinates[1],
+        longitude: event.lngLat[0],
+        latitude: event.lngLat[1],
         zoom,
         transitionDuration: 500,
       });
+      */
     });
-    */
   };
 
   const [debouncedUpdateOffers] = useDebouncedCallback(
@@ -140,9 +130,9 @@ export default function SearchMap(props) {
       {isFetching && <h1>Loading...</h1>}
       <Source
         buffer={0} // 512
-        cluster={false}
-        // clusterMaxZoom={14}
-        // clusterRadius={50}
+        cluster={true}
+        clusterMaxZoom={14}
+        clusterRadius={50}
         data={offers}
         id="offers"
         ref={sourceRef}
