@@ -145,7 +145,7 @@
     "mkdir-recursive": "0.4.0",
     "mmmagic": "0.5.3",
     "moment": "2.27.0",
-    "mongodb": "3.5.9",
+    "mongodb": "3.6.0",
     "mongoose": "5.4.0",
     "mongoose-beautiful-unique-validation": "7.1.1",
     "mongoose-integer": "0.1.1",
