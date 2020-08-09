@@ -17,7 +17,6 @@
  */
 
 const webpack = require('webpack');
-
 const { join } = require('path');
 
 const basedir = join(__dirname, '../..');
@@ -27,15 +26,6 @@ function localResolve(name) {
 }
 
 module.exports = {
-  module: {
-    rules: [
-      // Allow access to PruneClusterForLeaflet PruneCluster from outside the module
-      {
-        test: require.resolve('prunecluster/dist/PruneCluster'),
-        loader: 'exports-loader?PruneClusterForLeaflet,PruneCluster',
-      },
-    ],
-  },
   plugins: [
     new webpack.ProvidePlugin({
       L: require.resolve('leaflet'),
@@ -44,14 +34,6 @@ module.exports = {
       'window.jQuery': require.resolve('jquery'),
       moment: require.resolve('moment'),
       AppConfig: localResolve('modules/core/client/app/config'),
-      PruneClusterForLeaflet: [
-        require.resolve('prunecluster/dist/PruneCluster'),
-        'PruneClusterForLeaflet',
-      ],
-      PruneCluster: [
-        require.resolve('prunecluster/dist/PruneCluster'),
-        'PruneCluster',
-      ],
     }),
   ],
 };

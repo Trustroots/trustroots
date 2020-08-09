@@ -27,7 +27,7 @@ function SearchMapController(
   const vm = this;
 
   // Exposed to the view
-  vm.pruneCluster = new PruneClusterForLeaflet(60, 60);
+  vm.pruneCluster = {}; // new PruneClusterForLeaflet(60, 60);
   vm.mapLayerstyle = 'street';
   vm.notFound = false;
   vm.mapCenter = false;
@@ -315,10 +315,10 @@ function SearchMapController(
           // Let's go through those markers
           // This loop might look weird but it's actually speed optimized :P
           for (let i = -1, len = offers.length; ++i < len; ) {
-            const marker = new PruneCluster.Marker(
+            const marker = {}; /* new PruneCluster.Marker(
               offers[i].location[0],
               offers[i].location[1],
-            );
+            );*/
 
             marker.data.icon = MapMarkersFactory.getIcon(offers[i]);
             marker.data.offerId = offers[i]._id;
