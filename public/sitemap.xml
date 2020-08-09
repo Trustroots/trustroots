@@ -18,7 +18,7 @@
 </url>
 
 <url>
-  <loc>https://www.trustroots.org/tribes</loc>
+  <loc>https://www.trustroots.org/circles</loc>
   <changefreq>daily</changefreq>
   <priority>0.90</priority>
 </url>
@@ -42,7 +42,7 @@
 </url>
 
 <url>
-  <loc>https://www.trustroots.org/faq/tribes</loc>
+  <loc>https://www.trustroots.org/faq/circles</loc>
   <changefreq>daily</changefreq>
   <priority>0.90</priority>
 </url>

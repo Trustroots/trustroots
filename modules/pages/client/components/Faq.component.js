@@ -213,35 +213,35 @@ export default function Faq({ category, invitationsEnabled, children }) {
                 )}
               </div>
 
-              {/* Tribes/circles */}
+              {/* Circles */}
               <div className="panel panel-default">
                 <div className="panel-heading">
                   <h3 className="panel-title">
                     <a
-                      href="/faq/tribes"
+                      href="/faq/circles"
                       className="undecorated-link text-color"
                     >
                       {t('Circles')}
                     </a>
                   </h3>
                 </div>
-                {category === 'tribes' && (
+                {category === 'circles' && (
                   <div className="panel-body">
                     <div className="list-group">
                       <a
-                        href="/faq/tribes#what-are-tribes"
+                        href="/faq/circles#what-are-circles"
                         className="list-group-item"
                       >
                         {t('What are circles?')}
                       </a>
                       <a
-                        href="/faq/tribes#no-suitable-tribes"
+                        href="/faq/circles#no-suitable-circles"
                         className="list-group-item"
                       >
                         {t("I don't find a circle that suits me")}
                       </a>
                       <a
-                        href="/faq/tribes#tribes-rename-to-circles"
+                        href="/faq/circles#tribes-rename-to-circles"
                         className="list-group-item"
                       >
                         {t('Why did you rename "tribes" to "circles"?')}
