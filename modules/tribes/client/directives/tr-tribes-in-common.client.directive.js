@@ -65,7 +65,7 @@ function trTribesInCommonDirective(Authentication, TribeService) {
       // Put tribe object to cache to be used after page transition has
       // finished, thus no need to reload tribe from the API
       TribeService.fillCache(angular.copy(tribe));
-      $state.go('tribes.tribe', { tribe: tribe.slug });
+      $state.go('circles.circle', { circle: tribe.slug });
     }
   }
 }
