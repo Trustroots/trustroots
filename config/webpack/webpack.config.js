@@ -83,6 +83,11 @@ module.exports = merge(shims, {
         test: /\.js$/,
         exclude: /node_modules/,
         use: 'babel-loader',
+        options: {
+          plugins: [
+            isDevelopment && require.resolve('react-refresh/babel'),
+          ].filter(Boolean),
+        },
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
@@ -144,9 +149,6 @@ module.exports = merge(shims, {
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
-    isDevelopment &&
-      new ReactRefreshWebpackPlugin({
-        disableRefreshCheck: true,
-      }),
+    isDevelopment && new ReactRefreshWebpackPlugin(),
   ]),
 });
