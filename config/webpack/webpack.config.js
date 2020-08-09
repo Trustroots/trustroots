@@ -1,5 +1,5 @@
 const webpack = require('webpack');
-const merge = require('webpack-merge');
+const webpackMerge = require('webpack-merge');
 const compact = require('lodash/compact');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
@@ -39,7 +39,7 @@ const styleLoaders = [
   },
 ];
 
-module.exports = merge(shims, {
+module.exports = webpackMerge.merge(shims, {
   mode: isProduction ? 'production' : 'development',
   devtool: isProduction ? 'source-map' : 'cheap-module-eval-source-map',
   entry: require.resolve('./entries/main'),
