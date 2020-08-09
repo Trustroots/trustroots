@@ -83,8 +83,8 @@ function PagesRoutes($stateProvider) {
         pageTitle: 'FAQ - Site & community',
       },
     })
-    .state('faq.tribes', {
-      url: '/tribes',
+    .state('faq.circles', {
+      url: '/circles',
       template: `
         <faq-tribes
           invitationsEnabled="app.appSettings.invitationsEnabled"
