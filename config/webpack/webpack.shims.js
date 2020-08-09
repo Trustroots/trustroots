@@ -32,7 +32,7 @@ module.exports = {
       // Allow access to PruneClusterForLeaflet PruneCluster from outside the module
       {
         test: require.resolve('prunecluster/dist/PruneCluster'),
-        loader: 'exports-loader?PruneClusterForLeaflet,PruneCluster',
+        loader: 'exports-loader?PruneClusterForLeaflet|PruneCluster',
       },
     ],
   },
