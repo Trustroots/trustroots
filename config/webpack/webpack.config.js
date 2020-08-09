@@ -82,12 +82,16 @@ module.exports = merge(shims, {
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: 'babel-loader',
-        options: {
-          plugins: [
-            isDevelopment && require.resolve('react-refresh/babel'),
-          ].filter(Boolean),
-        },
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              plugins: [
+                isDevelopment && require.resolve('react-refresh/babel'),
+              ].filter(Boolean),
+            },
+          },
+        ],
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
