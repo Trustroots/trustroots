@@ -14,6 +14,7 @@ import {
   clusterCountLayer,
   unclusteredPointLayer,
 } from './layers';
+import SearchMapLoading from './SearchMapLoading';
 
 // export default class SearchMap extends Component {
 export default function SearchMap(props) {
@@ -127,7 +128,7 @@ export default function SearchMap(props) {
       onClick={onClickMap}
       onViewStateChange={debouncedUpdateOffers}
     >
-      {isFetching && <h1>Loading...</h1>}
+      {isFetching && <SearchMapLoading />}
       <Source
         buffer={0} // 512
         cluster={true}
