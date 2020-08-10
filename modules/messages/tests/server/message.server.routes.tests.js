@@ -368,8 +368,8 @@ describe('Message CRUD tests', function () {
           '<u>underline</u><br />' +
           '</p>' +
           '<blockquote>blockquote</blockquote>' +
-          '<p><ul><li>list item</li></ul></p>' +
-          '<a href="https://www.trustroots.org/">link</a>';
+          '<ul><li>list item</li></ul>' +
+          '<p><a href="https://www.trustroots.org/">link</a></p>';
 
         // Save a new message
         agent
