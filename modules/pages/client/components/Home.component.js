@@ -294,7 +294,11 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
       </Board>
 
       {/* Footer */}
-      <Board className="board-primary board-inset home-footer" names="bokeh">
+      <Board
+        className="board-primary board-inset home-footer"
+        names="bokeh"
+        ignoreSmall={true}
+      >
         <div className="container">
           <div className="row">
             <div className="col-sm-6 col-md-3">

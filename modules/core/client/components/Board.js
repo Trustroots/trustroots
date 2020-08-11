@@ -21,12 +21,12 @@ function selectName(names) {
  * Partially migrated tr-boards directive
  * modules/core/client/directives/tr-boards.client.directive.js
  *
- * @TODO implement tr-boards-ignore-small directive
  * @TODO implement primary, inset, error and maybe other attributes, which are currently board classes
  *  and which could become attributes <Board primary inset error names="bokeh" />
  */
 export default function Board({
   names = 'bokeh',
+  ignoreSmall = false,
   style = null,
   children,
   className,
@@ -59,10 +59,14 @@ export default function Board({
       ? (style.backgroundImage = `url("${photo.imageUrl}")`)
       : (style = { backgroundImage: `url("${photo.imageUrl}")` });
   }
+  const addedClasses = ['board'];
+  if (ignoreSmall) {
+    addedClasses.push('small-screen-bad-background');
+  }
   return (
     <section
       style={{ ...style }}
-      className={classNames('board', className)}
+      className={classNames(addedClasses, className)}
       {...rest}
     >
       {children}
@@ -75,6 +79,7 @@ Board.propTypes = {
     PropTypes.string,
     PropTypes.arrayOf(PropTypes.string),
   ]).isRequired,
+  ignoreSmall: PropTypes.bool,
   style: PropTypes.object,
   className: PropTypes.string,
   children: PropTypes.node,
