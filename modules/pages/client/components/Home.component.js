@@ -297,7 +297,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
       <Board
         className="board-primary board-inset home-footer"
         names="bokeh"
-        ignoreBackgroundOnSmallScreen={true}
+        ignoreBackgroundOnSmallScreen
       >
         <div className="container">
           <div className="row">
