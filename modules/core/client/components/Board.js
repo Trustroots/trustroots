@@ -26,7 +26,7 @@ function selectName(names) {
  */
 export default function Board({
   names = 'bokeh',
-  ignoreSmall = false,
+  ignoreBackgroundOnSmallScreen = false,
   style = null,
   children,
   className,
@@ -60,7 +60,7 @@ export default function Board({
       : (style = { backgroundImage: `url("${photo.imageUrl}")` });
   }
   const addedClasses = ['board'];
-  if (ignoreSmall) {
+  if (ignoreBackgroundOnSmallScreen) {
     addedClasses.push('small-screen-bad-background');
   }
   return (
@@ -79,7 +79,7 @@ Board.propTypes = {
     PropTypes.string,
     PropTypes.arrayOf(PropTypes.string),
   ]).isRequired,
-  ignoreSmall: PropTypes.bool,
+  ignoreBackgroundOnSmallScreen: PropTypes.bool,
   style: PropTypes.object,
   className: PropTypes.string,
   children: PropTypes.node,
