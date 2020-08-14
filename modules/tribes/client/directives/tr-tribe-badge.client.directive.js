@@ -34,7 +34,7 @@ function trTribeBadgeDirective(TribeService) {
       // Put tribe object to cache to be used after page transition has
       // finished, thus no need to reload tribe from the API
       TribeService.fillCache(angular.copy(vm.tribe));
-      $state.go('tribes.tribe', { tribe: vm.tribe.slug });
+      $state.go('circles.circle', { circle: vm.tribe.slug });
     }
   }
 }

@@ -1,5 +1,5 @@
 const webpack = require('webpack');
-const merge = require('webpack-merge');
+const webpackMerge = require('webpack-merge');
 const compact = require('lodash/compact');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
@@ -39,7 +39,7 @@ const styleLoaders = [
   },
 ];
 
-module.exports = merge(shims, {
+module.exports = webpackMerge.merge(shims, {
   mode: isProduction ? 'production' : 'development',
   devtool: isProduction ? 'source-map' : 'cheap-module-eval-source-map',
   entry: require.resolve('./entries/main'),
@@ -82,7 +82,16 @@ module.exports = merge(shims, {
       {
         test: /\.js$/,
         exclude: /node_modules/,
-        use: 'babel-loader',
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              plugins: [
+                isDevelopment && require.resolve('react-refresh/babel'),
+              ].filter(Boolean),
+            },
+          },
+        ],
       },
       {
         test: /\.(woff2?|eot|ttf|otf)(\?.*)?$/,
@@ -144,9 +153,6 @@ module.exports = merge(shims, {
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
-    isDevelopment &&
-      new ReactRefreshWebpackPlugin({
-        disableRefreshCheck: true,
-      }),
+    isDevelopment && new ReactRefreshWebpackPlugin(),
   ]),
 });

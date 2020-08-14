@@ -7,8 +7,8 @@ export default function FaqTribes({ invitationsEnabled }) {
   const { t } = useTranslation('pages');
 
   return (
-    <Faq category="tribes" invitationsEnabled={invitationsEnabled}>
-      <div className="faq-question" id="what-are-tribes">
+    <Faq category="circles" invitationsEnabled={invitationsEnabled}>
+      <div className="faq-question" id="what-are-circles">
         <h3>{t('What are circles?')}</h3>
         {t(
           'Trustroots circles (previously known as "tribes") are a way for you to immediately find the people you will easily connect with.',
@@ -43,7 +43,7 @@ export default function FaqTribes({ invitationsEnabled }) {
         </Trans>
       </div>
 
-      <div className="faq-question" id="no-suitable-tribes">
+      <div className="faq-question" id="no-suitable-circles">
         <h3>{t("I don't find a circle that suits me")}</h3>
         <Trans t={t} ns="pages">
           <a href="/support">Send us</a> new circle ideas! In the future you
@@ -58,7 +58,9 @@ export default function FaqTribes({ invitationsEnabled }) {
         )}
         <br />
         <br />
-        <a href="https://ideas.trustroots.org/?p=3599">{t('Read more')}</a>
+        <a href="https://ideas.trustroots.org/2020/08/04/introducing-circles/">
+          {t('Read more')}
+        </a>
       </div>
     </Faq>
   );

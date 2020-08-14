@@ -27,11 +27,11 @@ function TribesInCommon({ user, otherUser }) {
   return (
     <div className="monkeybox-section">
       <div className="tribes-common">
-        <h4>{t('Tribes in common')}</h4>
+        <h4>{t('Circles in common')}</h4>
         <ul className="list-inline">
           {tribesInCommon.map(tribe => (
             <li key={tribe._id}>
-              <a className="tribe-link" href={`/tribes/${tribe.slug}`}>
+              <a className="tribe-link" href={`/circles/${tribe.slug}`}>
                 {tribe.label}
               </a>
             </li>

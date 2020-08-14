@@ -25,8 +25,9 @@ module.exports = function (app) {
   redirect('/tribes/lgbt', '/circles/lgbtq');
   redirect('/tribes/vegans-vegetarians', '/circles/veg');
 
-  // `/tribes/*` routes deprecated in August 2020
-  // https://ideas.trustroots.org/?p=3599
+  // `/tribes/*` and `/faq/tribes` routes deprecated in August 2020
+  // https://ideas.trustroots.org/2020/08/04/introducing-circles/
+  redirect('/faq/tribes', '/faq/circles');
   redirect('/tribes', '/circles');
   app.route('/tribes/:tribe').get(function (req, res) {
     const tribe = _.get(req, ['tribe', 'slug']);

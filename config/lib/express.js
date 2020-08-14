@@ -4,7 +4,6 @@
 const _ = require('lodash');
 const config = require('../config');
 const errorService = require('../../modules/core/server/services/error.server.service');
-const facebookNotificationService = require('../../modules/core/server/services/facebook-notification.server.service');
 const languages = require('../languages/languages.json');
 const express = require('express');
 const morgan = require('morgan');
@@ -106,14 +105,6 @@ module.exports.initLocalVariables = function (app) {
     // Native mobile app wrapper loads the site with `?app` URL query argument.
     res.locals.isNativeMobileApp = _.has(req, ['query', 'app']);
 
-    next();
-  });
-
-  // Dynamically generate nonces to allow inline `<script>` tags to
-  // be safely evaluated with using ContentSecurityPolicy headers.
-  // See `initHelmetHeaders()` for more.
-  app.use(function (req, res, next) {
-    res.locals.nonce = uuid.v4();
     next();
   });
 };
@@ -250,51 +241,6 @@ module.exports.initModulesConfiguration = function (app, db) {
  * https://helmetjs.github.io/docs/
  */
 module.exports.initHelmetHeaders = function (app) {
-  /**
-   * X-Frame protection ("frameguard") default options.
-   * @link https://helmetjs.github.io/docs/frameguard/
-   */
-  let frameguardOptions = {
-    // Action `sameorigin` will prevent anyone from putting this page in an
-    // iframe unless it’s on the same origin. That generally means that you can
-    // put your own pages in iframes, but nobody else can.
-    //
-    // action `deny` will prevent anyone from putting this page in an iframe.
-    action: 'sameorigin',
-  };
-
-  /**
-   * Content Security Policy (CSP) "frameAncestors" default value.
-   * @link https://helmetjs.github.io/docs/csp/
-   */
-  let cspFrameAncestors = ["'none'"];
-
-  /**
-   * If Facebook notifications are enabled, override default options for:
-   * - X-Frame protection
-   * - Content Security Policy (CSP) "frameAncestors" value
-   *
-   * This is required for FB canvas to work,
-   * which in turn is required for FB notifications only.
-   *
-   * X-Frame protection's `allow-from` will allow `https://apps.facebook.com`
-   * to put your page in an iframe, but nobody else.
-   * Unfortunately, you can only allow one domain and this doesn't work
-   * with Chrome as they use CSP FrameAncestors instead.
-   *
-   * @link https://helmetjs.github.io/docs/frameguard/
-   * @link https://canvas.facebook.com
-   * @link https://developers.facebook.com/docs/games/gamesonfacebook
-   * @link https://developers.facebook.com/docs/games/services/appnotifications
-   */
-  if (facebookNotificationService.isNotificationsEnabled()) {
-    frameguardOptions = {
-      action: 'allow-from',
-      domain: 'https://apps.facebook.com',
-    };
-    cspFrameAncestors = ['apps.facebook.com'];
-  }
-
   /*
    * Content Security Policy (CSP)
    *
@@ -307,8 +253,10 @@ module.exports.initHelmetHeaders = function (app) {
    * @link https://developers.google.com/web/fundamentals/security/csp/
    * @link https://content-security-policy.com/
    */
-  app.use(
-    helmet.contentSecurityPolicy({
+  app.use((req, res, next) => {
+    res.locals.nonce = uuid.v4();
+
+    const cspMiddleware = helmet.contentSecurityPolicy({
       directives: {
         defaultSrc: ["'self'"],
 
@@ -330,10 +278,8 @@ module.exports.initHelmetHeaders = function (app) {
           'ajax.googleapis.com', // Used by Maitre app
           // Use `nonce` for `<script>` tags
           // Nonce is generated above at `initLocalVariables()` middleware
-          // @link https://helmetjs.github.io/docs/csp/#generating-nonces
-          function (req, res) {
-            return "'nonce-" + res.locals.nonce + "'"; // 'nonce-614d9122-d5b0-4760-aecf-3a5d17cf0ac9'
-          },
+          // @link https://github.com/helmetjs/helmet/wiki/Conditionally-using-middleware
+          `'nonce-${res.locals.nonce}'`,
         ],
 
         // Specifies the origins that can serve web fonts.
@@ -397,7 +343,7 @@ module.exports.initHelmetHeaders = function (app) {
         // specifies the sources that can embed the current page.
         // This directive applies to these tags:
         // `<frame>`, `<iframe>`, `<embed>`, `<applet>`
-        frameAncestors: cspFrameAncestors,
+        frameAncestors: ["'none'"],
 
         // Defines valid sources for web workers and nested browsing contexts
         // loaded using elements such as `<frame>` and `<iframe>`
@@ -444,18 +390,19 @@ module.exports.initHelmetHeaders = function (app) {
       // You could also use function here:
       // `function (req, res) { return true; }`
       reportOnly: process.env.NODE_ENV === 'development',
-    }),
-  );
+    });
+
+    cspMiddleware(res, res, next);
+  });
 
   // X-Frame protection
   // @link https://helmetjs.github.io/docs/frameguard/
   // @link https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
-  app.use(helmet.frameguard(frameguardOptions));
+  app.use(helmet.frameguard());
 
   // Sets Expect-CT header
   // @link https://helmetjs.github.io/docs/expect-ct/
   // @link https://scotthelme.co.uk/a-new-security-header-expect-ct/
-
   app.use(
     expectCt({
       enforce: false,

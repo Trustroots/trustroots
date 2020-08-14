@@ -95,6 +95,13 @@
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
   }
 
+  &.small-screen-bad-background {
+    @media (max-width: @screen-sm-max) {
+      background-image: none !important;
+      box-shadow: none !important;
+    }
+  }
+
   .page-header {
     margin: 0;
     h1 {
