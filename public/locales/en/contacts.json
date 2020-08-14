@@ -1,6 +1,6 @@
 {
   "(additional {{count}} pending)": "(additional {{count}} pending)",
-  "(additional {{count}} pending)_plural": "(additional {{count}} pending)_plural",
+  "(additional {{count}} pending)_plural": "(additional {{count}} pending)",
   "Cancel": "Cancel",
   "Confirm Request": "Confirm Request",
   "Connected since {{created, MMM D, YYYY}}": "Connected since {{created, MMM D, YYYY}}",
