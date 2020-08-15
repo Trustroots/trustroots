@@ -17,7 +17,7 @@ jest.mock('@/modules/references/client/api/references.api');
 afterEach(() => jest.clearAllMocks());
 
 async function waitForLoader() {
-  await waitForElementToBeRemoved(() => screen.getByText('Wait a moment...'));
+  await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
 }
 
 describe('<CreateReference />', () => {

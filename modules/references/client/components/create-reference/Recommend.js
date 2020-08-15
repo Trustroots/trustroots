@@ -41,7 +41,7 @@ export default function Recommend({
             className="btn btn-lg"
             aria-checked={recommend === 'yes'}
             value="yes"
-            bsStyle="success"
+            bsStyle="default"
             bsSize="large"
           >
             {t('Yes')}
@@ -50,7 +50,7 @@ export default function Recommend({
             className="btn btn-lg"
             aria-checked={recommend === 'no'}
             value="no"
-            bsStyle="danger"
+            bsStyle="default"
             bsSize="large"
           >
             {t('No')}
