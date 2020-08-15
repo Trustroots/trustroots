@@ -33,8 +33,6 @@ export default function ListReferences({ profile }) {
         .filter(reference => !reference.public)
         .sort((a, b) => a.created > b.created);
 
-      console.log(filteredPublic, filteredPending); //eslint-disable-line
-
       setPublicReferences(filteredPublic);
       setPendingReferences(filteredPending);
     } finally {
