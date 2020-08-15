@@ -12,18 +12,17 @@ import ReferenceCounts from './read-references/ReferenceCounts';
 /**
  * List of user's references
  */
-export default function ListReferences({ user }) {
+export default function ListReferences({ profile }) {
   const { t } = useTranslation('references');
   const [publicReferences, setPublicReferences] = useState([]);
   const [pendingReferences, setPendingReferences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load references from api
-  useEffect(async () => {
+  async function fetchReferences() {
     setIsLoading(true);
     try {
       const references = await readReferences({
-        userTo: user._id,
+        userTo: profile._id,
       });
 
       const filteredPublic = references
@@ -34,12 +33,19 @@ export default function ListReferences({ user }) {
         .filter(reference => !reference.public)
         .sort((a, b) => a.created > b.created);
 
+      console.log(filteredPublic, filteredPending); //eslint-disable-line
+
       setPublicReferences(filteredPublic);
       setPendingReferences(filteredPending);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }
+
+  // Load references from api
+  useEffect(() => {
+    fetchReferences();
+  }, [profile]);
 
   if (isLoading) {
     return <LoadingIndicator />;
@@ -51,7 +57,7 @@ export default function ListReferences({ user }) {
       <div className="row content-empty">
         <i className="icon-3x icon-users"></i>
         <h4>{t('No references yet.')}</h4>
-        <a href={`/profile/${user.username}/references/new`}>
+        <a href={`/profile/${profile.username}/references/new`}>
           {t('Write one!')}
         </a>
       </div>
@@ -93,5 +99,5 @@ export default function ListReferences({ user }) {
 }
 
 ListReferences.propTypes = {
-  user: PropTypes.object.isRequired,
+  profile: PropTypes.object.isRequired,
 };
