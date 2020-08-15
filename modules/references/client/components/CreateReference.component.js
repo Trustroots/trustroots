@@ -10,10 +10,10 @@ import Recommend from './create-reference/Recommend';
 import Feedback from './create-reference/Feedback';
 import {
   ReferenceToSelfInfo,
-  LoadingInfo,
   DuplicateInfo,
   SubmittedInfo,
 } from './create-reference/Info';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createValidator } from '@/modules/core/client/utils/validation';
 
 const api = { references };
@@ -131,11 +131,17 @@ export default function CreateReference({ userFrom, userTo }) {
   const nextStepError =
     !isSubmitting && currentStepErrors.find(error => error.trim().length > 0);
 
-  if (userFrom._id === userTo._id) return <ReferenceToSelfInfo />;
+  if (userFrom._id === userTo._id) {
+    return <ReferenceToSelfInfo />;
+  }
 
-  if (isLoading) return <LoadingInfo />;
+  if (isLoading) {
+    return <LoadingIndicator />;
+  }
 
-  if (isDuplicate) return <DuplicateInfo userTo={userTo} />;
+  if (isDuplicate) {
+    return <DuplicateInfo userTo={userTo} />;
+  }
 
   if (isSubmitted) {
     const isReported = recommend === 'no' && report;

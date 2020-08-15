@@ -382,7 +382,8 @@ function UsersRoutes($stateProvider) {
       })
       .state('profile.references.list', {
         url: '',
-        template: '<list-references></list-references>',
+        template:
+          '<list-references user="profileCtrl.profile"></list-references>',
         requiresAuth: true,
         noScrollingTop: true,
         data: {
