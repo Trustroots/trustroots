@@ -9,7 +9,7 @@ export default function Feedback({ feedback, onChangeFeedback }) {
     <div className="panel panel-default">
       <div className="panel-heading">
         <h4 id="feedback-public-question">
-          {t('Would you like to describe something about them?')}&nbsp; (
+          {t('Would you like to describe something about them?')} (
           {t('Optional')})
         </h4>
       </div>

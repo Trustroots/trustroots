@@ -1,48 +1,94 @@
-import React, { useState, useEffect } from 'react';
+// External dependencies
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import ReferencesReadPresentational from './read-references/ReferencesReadPresentational';
-import * as referencesApi from '../api/references.api';
-import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import React, { useState, useEffect } from 'react';
 
-const api = { references: referencesApi };
+// Internal dependencies
+import { read as readReferences } from '../api/references.api';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import Reference from './read-references/Reference';
+import ReferenceCounts from './read-references/ReferenceCounts';
 
 /**
- * This is a container component for a list of user's References
+ * List of user's references
  */
 export default function ListReferences({ user }) {
-  const [references, setReferences] = useState([]);
+  const { t } = useTranslation('references');
+  const [publicReferences, setPublicReferences] = useState([]);
+  const [pendingReferences, setPendingReferences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // load references from api
-  useEffect(() => {
-    (async () => {
-      setIsLoading(true);
-      const references = await api.references.read({
+  // Load references from api
+  useEffect(async () => {
+    setIsLoading(true);
+    try {
+      const references = await readReferences({
         userTo: user._id,
       });
 
-      setReferences(references);
+      const filteredPublic = references
+        .filter(reference => reference.public)
+        .sort((a, b) => a.created < b.created);
+
+      const filteredPending = references
+        .filter(reference => !reference.public)
+        .sort((a, b) => a.created > b.created);
+
+      setPublicReferences(filteredPublic);
+      setPendingReferences(filteredPending);
+    } finally {
       setIsLoading(false);
-    })();
+    }
   }, [user]);
 
   if (isLoading) {
     return <LoadingIndicator />;
   }
 
-  const publicReferences = references
-    .filter(reference => reference.public)
-    .sort((a, b) => a.created < b.created);
-  const nonpublicReferences = references
-    .filter(reference => !reference.public)
-    .sort((a, b) => a.created > b.created);
+  // No references
+  if (pendingReferences.length === 0 && publicReferences.length === 0) {
+    return (
+      <div className="row content-empty">
+        <i className="icon-3x icon-users"></i>
+        <h4>{t('No references yet.')}</h4>
+        <a href={`/profile/${user.username}/references/new`}>
+          {t('Write one!')}
+        </a>
+      </div>
+    );
+  }
+
+  const renderReferencesSection = (sectionTitle, references) => (
+    <section>
+      <div className="row">
+        <div className="col-xs-12 col-sm-6">
+          <h4 className="text-muted">{sectionTitle}</h4>
+        </div>
+      </div>
+      <div className="row">
+        <div className="col-xs-12">
+          {references.map(reference => (
+            <Reference
+              id={reference._id}
+              key={reference._id}
+              reference={reference}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 
   return (
-    <ReferencesReadPresentational
-      user={user}
-      publicReferences={publicReferences}
-      nonpublicReferences={nonpublicReferences}
-    />
+    <>
+      {publicReferences.length > 0 && (
+        <ReferenceCounts publicReferences={publicReferences} />
+      )}
+      {pendingReferences.length > 0 &&
+        renderReferencesSection(t('Pending'), pendingReferences)}
+      {publicReferences.length > 0 &&
+        renderReferencesSection(t('Public'), publicReferences)}
+    </>
   );
 }
 

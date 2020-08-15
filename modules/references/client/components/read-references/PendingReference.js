@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-export default function NonpublicReference({ reference }) {
+export default function PendingReference({ reference }) {
   const { t } = useTranslation('references');
 
   const daysLeft =
@@ -10,24 +10,27 @@ export default function NonpublicReference({ reference }) {
     Math.round(
       (Date.now() - new Date(reference.created).getTime()) / 3600 / 24 / 1000,
     );
+
   return (
     <div>
       <div>
         <small>{t('pending')}</small>
       </div>
       <div>{t('{{daysLeft}} days left', { daysLeft })}</div>
-      <div>
-        <a
-          className="btn btn-xs btn-primary"
-          href={`/profile/${reference.userFrom.username}/references/new`}
-        >
-          {t('Give a reference')}
-        </a>
-      </div>
+      {reference.userFrom?.username && (
+        <div>
+          <a
+            className="btn btn-xs btn-primary"
+            href={`/profile/${reference.userFrom.username}/references/new`}
+          >
+            {t('Give a reference')}
+          </a>
+        </div>
+      )}
     </div>
   );
 }
 
-NonpublicReference.propTypes = {
+PendingReference.propTypes = {
   reference: PropTypes.object.isRequired,
 };

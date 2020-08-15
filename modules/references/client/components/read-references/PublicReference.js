@@ -5,15 +5,14 @@ import { useTranslation } from 'react-i18next';
 export default function PublicReference({ reference }) {
   const { t } = useTranslation('references');
   const created = new Date(reference.created);
+  const { hostedMe, hostedThem, met, recommend } = reference;
+
   return (
     <div>
       <div>
-        {reference.hostedMe && t('guest')} {reference.hostedThem && t('host')}{' '}
-        {reference.met && t('met')}
+        {hostedMe && t('guest')} {hostedThem && t('host')} {met && t('met')}
       </div>
-      <div>
-        {t('Recommends: {{recommend}}', { recommend: reference.recommend })}
-      </div>
+      <div>{t('Recommends: {{recommend}}', { recommend })}</div>
       <div>{t('Given {{created, MMM D YYYY}}', { created })}</div>
     </div>
   );

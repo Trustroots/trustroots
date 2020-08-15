@@ -8,11 +8,9 @@ import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import Interaction from './create-reference/Interaction';
 import Recommend from './create-reference/Recommend';
 import Feedback from './create-reference/Feedback';
-import {
-  ReferenceToSelfInfo,
-  DuplicateInfo,
-  SubmittedInfo,
-} from './create-reference/Info';
+import ReferenceToSelfInfo from './create-reference/ReferenceToSelfInfo';
+import DuplicateInfo from './create-reference/DuplicateInfo';
+import SubmittedInfo from './create-reference/SubmittedInfo';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createValidator } from '@/modules/core/client/utils/validation';
 
