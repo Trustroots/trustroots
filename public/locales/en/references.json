@@ -42,10 +42,10 @@
   "met": "met",
   "pending": "pending",
   "{{count}} not recommend": "{{count}} not recommend",
-  "{{count}} not recommend_plural": "{{count}} not recommend_plural",
+  "{{count}} not recommend_plural": "{{count}} not recommend",
   "{{count}} recommend": "{{count}} recommend",
-  "{{count}} recommend_plural": "{{count}} recommend_plural",
+  "{{count}} recommend_plural": "{{count}} recommend",
   "{{count}} unknown": "{{count}} unknown",
-  "{{count}} unknown_plural": "{{count}} unknown_plural",
+  "{{count}} unknown_plural": "{{count}} unknown",
   "{{daysLeft}} days left": "{{daysLeft}} days left"
 }
