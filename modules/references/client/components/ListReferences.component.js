@@ -72,11 +72,7 @@ export default function ListReferences({ profile }) {
       <div className="row">
         <div className="col-xs-12">
           {references.map(reference => (
-            <Reference
-              id={reference._id}
-              key={reference._id}
-              reference={reference}
-            />
+            <Reference key={reference._id} reference={reference} />
           ))}
         </div>
       </div>

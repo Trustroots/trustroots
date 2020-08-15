@@ -4,6 +4,9 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import UserLink from '@/modules/users/client/components/UserLink';
 
+// @TODO, pull from config
+const DAYS_TO_REPLY = 14;
+
 /**
  * Info after successful submitting of a new reference.
  */
@@ -16,9 +19,6 @@ export default function SubmittedInfo({
   const { t } = useTranslation('references');
 
   const name = userTo.displayName || userTo.username;
-
-  // @TODO provide the value from API config endpoint
-  const daysToReply = 14;
 
   const isPublicMessage = isPublic ? (
     <>
@@ -38,9 +38,9 @@ export default function SubmittedInfo({
   ) : (
     <div>
       {/* @TODO remove ns (issue #1368) */}
-      <Trans t={t} ns="references" daysToReply={daysToReply}>
+      <Trans t={t} ns="references" daysToReply={DAYS_TO_REPLY}>
         Your reference will become public when <UserLink user={userTo} /> gives
-        you a reference back, or in {{ daysToReply }} days.
+        you a reference back, or in {{ DAYS_TO_REPLY }} days.
       </Trans>
     </div>
   );

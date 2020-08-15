@@ -122,17 +122,18 @@ class ResponseError {
 
 const nonpublicReferenceFields = [
   '_id',
+  'created',
   'public',
   'userFrom',
   'userTo',
-  'created',
 ];
 
 const referenceFields = nonpublicReferenceFields.concat([
-  'interactions.met',
+  'feedbackPublic',
   'interactions.hostedMe',
   'interactions.hostedThem',
-  'feedbackPublic',
+  'interactions.met',
+  'recommend',
 ]);
 
 /**
@@ -409,7 +410,10 @@ exports.readMany = async function readMany(req, res, next) {
     // find references by query
     const references = await Reference.find(query)
       .select(referenceFields)
-      .populate('userFrom userTo', userProfile.userMiniProfileFields)
+      .populate(
+        'userFrom userTo',
+        userProfile.userMiniProfileFields + ' created',
+      )
       .exec();
 
     // is the logged user userFrom?
