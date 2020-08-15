@@ -378,7 +378,7 @@ function UsersRoutes($stateProvider) {
     .state('profile.references.list', {
       url: '',
       template:
-        '<list-references ng-if="app.appSettings.referencesEnabled"></list-references>',
+        '<list-references ng-if="app.appSettings.referencesEnabled" profile="profileCtrl.profile" authenticatedUser="app.user"></list-references>',
       requiresAuth: true,
       noScrollingTop: true,
       data: {
