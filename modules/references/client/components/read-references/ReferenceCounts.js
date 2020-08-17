@@ -1,11 +1,11 @@
-import React from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import React from 'react';
 import styled from 'styled-components';
 
 const Counts = styled.div`
   display: flex;
-  align-content: space-between;
+  justify-content: space-between;
 `;
 
 export default function ReferenceCounts({ publicReferences }) {

@@ -127,7 +127,9 @@ describe('Read references by userFrom Id or userTo Id', () => {
         should(ref).have.propertyByPath('interactions', 'hostedThem').Boolean();
         should(ref).have.property('public', true);
         should(ref).have.property('created', new Date().toISOString());
-        should(ref).not.have.property('recommend');
+        should(ref)
+          .have.property('recommend')
+          .which.is.equalOneOf(['no', 'yes', 'unknown']);
         should(ref)
           .have.property('_id')
           .String()
@@ -164,8 +166,9 @@ describe('Read references by userFrom Id or userTo Id', () => {
 
       const nonpublic = body.filter(ref => !ref.public);
       should(nonpublic).length(2);
-      // the private fields are not present
-      should(nonpublic[0]).not.have.keys('recommend');
+      should(nonpublic[0])
+        .have.property('recommend')
+        .which.is.equalOneOf(['no', 'yes', 'unknown']);
       // the reference details are also present
       should(nonpublic[0]).have.keys('interactions');
       should(nonpublic[0].interactions).have.keys(
