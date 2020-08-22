@@ -130,7 +130,7 @@
     "helmet": "4.0.0",
     "html-to-text": "5.1.1",
     "i18next": "19.6.3",
-    "i18next-browser-languagedetector": "6.0.0",
+    "i18next-browser-languagedetector": "6.0.1",
     "i18next-xhr-backend": "3.2.2",
     "imagesloaded": "4.1.4",
     "influx": "5.6.2",
