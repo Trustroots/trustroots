@@ -127,7 +127,7 @@
     "gulp-sourcemaps": "2.6.5",
     "gulp-uglify": "3.0.2",
     "he": "1.2.0",
-    "helmet": "4.0.0",
+    "helmet": "4.1.0",
     "html-to-text": "5.1.1",
     "i18next": "19.6.3",
     "i18next-browser-languagedetector": "6.0.0",
