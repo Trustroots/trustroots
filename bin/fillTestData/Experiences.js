@@ -31,9 +31,18 @@ const argv = yargs.usage(
       })
       .boolean('debug')
       .describe('debug', 'Enable extra database output (default=false)')
+      .boolean('force')
+      .describe(
+        'force',
+        'Remove existing experiences if there are any and create new ones',
+      )
       .example(
         '$0 10 0.8',
         'Adds on average 10 experiences (8 of them having replies) to each profile to the database ',
+      )
+      .example(
+        '$0 10 0.8 --force',
+        'Adds on average 10 experiences (8 of them having replies) to each profile to the database after removing all existing references from the db ',
       )
       .example(
         '$0 10 0.8 --debug',
@@ -309,7 +318,26 @@ function seedExperiences() {
             `At least ${profileType.minimumTestableUserNumber()} users must exist in the db to test experiences. Please create more users and run again`,
           ),
         );
+        mongooseService.disconnect();
+        return;
+      }
+
+      const experience = await Reference.findOne();
+      if (experience && !argv.force) {
+        console.log(
+          chalk.red(
+            'Experiences already exist in the db. Use --force option if you want to rewrite them',
+          ),
+        );
       } else {
+        if (experience) {
+          console.log(
+            chalk.yellow(
+              'Running with --force option. Removing existing Experiences ...',
+            ),
+          );
+          await Reference.deleteMany();
+        }
         console.log(
           `Profile with many experiences (username): ${
             users[profileType.SEQNUM_WITH_MANY_EXPERIENCES].username
