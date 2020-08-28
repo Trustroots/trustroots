@@ -1,6 +1,7 @@
 /**
  * Required dependencies
  */
+const _ = require('lodash');
 const path = require('path');
 const mongooseService = require(path.resolve('./config/lib/mongoose'));
 const chalk = require('chalk');
@@ -261,7 +262,7 @@ function seedExperiences() {
 
       function createExperience(userTo, userFrom, expSharing) {
         const experience = new Reference();
-        experience.created = util.addDays(Date.now(), -util.random(14));
+        experience.created = util.addDays(Date.now(), -_.random(14));
         experience.feedbackPublic = faker.lorem.sentences();
         experience.userTo = userTo;
         experience.userFrom = userFrom;

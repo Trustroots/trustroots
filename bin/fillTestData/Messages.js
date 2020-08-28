@@ -137,7 +137,7 @@ function seedThreads() {
 
           // Add threads until we reach the total
           while (index < numThreads) {
-            const messageCount = util.random(maxMessages) + 1;
+            const messageCount = _.random(maxMessages) + 1;
             let messageIndex = messageCount;
             let to;
             let from;
@@ -173,7 +173,7 @@ function seedThreads() {
                 }
 
                 // Assume 80% of messages are read
-                if (util.random(100) < 80) {
+                if (_.random(100) < 80) {
                   message.read = true;
                 } else {
                   message.read = false;
