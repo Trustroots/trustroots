@@ -117,7 +117,7 @@ const experienceGenerator = {
 };
 
 /**
- * This method generates an {nUsers} x {nUsers} matrix experience sharing matrix M.
+ * This method generates an {nUsers} x {nUsers} experience sharing matrix M.
  * M[i][j] === true if and only if an experience of user[j] shared with user[i] is to be added to the db.
  * In other words, the array M[i] defines experiences to be present in the profile of User i.
  *
@@ -140,7 +140,7 @@ function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
     .map(() => Array(nUsers).fill());
 
   // cannot share experience with myself
-  Array.from({ length: nUsers }, (x, i) => (matrix[i][i] = null));
+  Array.from({ length: nUsers }, (x, i) => (matrix[i][i] = false));
 
   prePopulate(matrix);
   populateOneProfileWithLotsOfExperiences(matrix, replyRate);
