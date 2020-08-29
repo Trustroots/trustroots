@@ -63,35 +63,22 @@ const argv = yargs.usage(
 ).argv;
 
 const profileType = {
-  noExperiences: function noExperiences(seqNum) {
-    return seqNum % 10 === 0;
-  },
+  noExperiences: seqNum => seqNum % 10 === 0,
 
-  receivedPublic: function receivedPublic(seqNum) {
-    return seqNum % 10 === 1;
-  },
+  receivedPublic: seqNum => seqNum % 10 === 1,
 
-  receivedPrivate: function receivedPrivate(seqNum) {
-    return seqNum % 10 === 2;
-  },
+  receivedPrivate: seqNum => seqNum % 10 === 2,
 
-  isWriter: function isWriter(seqNum) {
-    return seqNum % 10 === 3;
-  },
+  isWriter: seqNum => seqNum % 10 === 3,
 
-  isReplier: function isReplier(seqNum) {
-    return seqNum % 10 === 4;
-  },
+  isReplier: seqNum => seqNum % 10 === 4,
 
-  SEQNUM_WITH_MANY_EXPERIENCES: 5,
+  getSeqNumWithManyExperiences: () => 5,
 
-  prePopulatedProfilesRatio: function prePopulatedProfilesRatio() {
-    return 0.5; /* with last digit in [0, 4] */
-  },
+  prePopulatedProfilesRatio: () => 0.5 /* with last digit in [0, 4] */,
 
-  minimumTestableUserNumber: function minimumTestableUserNumber() {
-    return 5; /* at least to have all the categories above */
-  },
+  minimumTestableUserNumber: () =>
+    5 /* at least to have all the categories above */,
 
   isRecipient: function isRecipient(seqNum) {
     return (
@@ -110,49 +97,61 @@ const profileType = {
   },
 };
 
-function generateExperienceCharacteristics(to, from) {
-  function generateInteractions(to, from) {
-    return {
-      met: true,
-      hostedMe: to < from,
-      hostedThem: from < to,
-    };
-  }
+const experienceGenerator = {
+  interactions: (to, from) => ({
+    met: true,
+    hostedMe: to < from,
+    hostedThem: from < to,
+  }),
 
-  function generateRecommendation() {
-    if (Math.random() < 0.1) {
-      return 'no';
-    } else if (Math.random() < 0.2) {
-      return 'yes';
-    } else {
-      return 'unknown';
-    }
-  }
+  recommendation: () => {
+    const r = Math.random();
+    return r < 0.1 ? 'no' : r < 0.3 ? 'yes' : 'unknown';
+  },
 
-  return {
-    recommend: generateRecommendation(),
-    interactions: generateInteractions(to, from),
-    public: Math.random() < 0.9 && !profileType.receivedPrivate(to),
-  };
-}
+  public: to => Math.random() < 0.9 && !profileType.receivedPrivate(to),
 
-function generateExpCharacteristicMatrix(nUsers, averageExpNumber, replyRate) {
-  function populatePair(matrix, to, from, shouldShareExp, shouldReply) {
-    matrix[to][from] = shouldShareExp
-      ? generateExperienceCharacteristics(to, from)
-      : null;
-    matrix[from][to] =
-      shouldShareExp && shouldReply
-        ? generateExperienceCharacteristics(from, to)
-        : null;
-  }
+  created: () => util.addDays(Date.now(), -_.random(14)),
+
+  feedbackPublic: () => faker.lorem.sentences(),
+};
+
+/**
+ * This method generates an {nUsers} x {nUsers} matrix experience sharing matrix M.
+ * M[i][j] === true if and only if an experience of user[j] shared with user[i] is to be added to the db.
+ * In other words, the array M[i] defines experiences to be present in the profile of User i.
+ *
+ * To cover different cases, the generation is done as follows:
+ * 1. Make sure there are profiles with no experiences,
+ * one experience with and without reply, and
+ * profiles with only one non-public experience.
+ * 2. Populate one profile with as many experiences as possible.
+ * 3. Populate the rest of the profiles randomly according to the specified
+ * {averageExpNumber} and {replyRate}.
+ *
+ * @param {number} nUsers - the number of users in the db
+ * @param {number} averageExpNumber - the average number of references a randomly populated profile has
+ * @param {number} replyRate - the probability for a randomly populated experience to have a reply
+ * @returns {*[]} user experience sharing matrix
+ */
+function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
+  const matrix = Array(nUsers)
+    .fill()
+    .map(() => Array(nUsers).fill());
+
+  // cannot share experience with myself
+  Array.from({ length: nUsers }, (x, i) => (matrix[i][i] = null));
+
+  prePopulate(matrix);
+  populateOneProfileWithLotsOfExperiences(matrix, replyRate);
+  populateRandomly(matrix, averageExpNumber, replyRate);
+  return matrix;
 
   function prePopulate(expMatrix) {
-    const pt = profileType;
-
     const fromSameBatch = function differsOnlyLastDigit(x, y) {
       return Math.floor(x / 10) === Math.floor(y / 10);
     };
+    const pt = profileType;
 
     for (let to = 0; to < expMatrix.length; to++) {
       for (let from = 0; from < expMatrix.length; from++) {
@@ -161,23 +160,24 @@ function generateExpCharacteristicMatrix(nUsers, averageExpNumber, replyRate) {
           ((pt.isWriter(from) && pt.isRecipient(to)) ||
             (pt.isReplier(from) && pt.isWriter(to)))
         ) {
-          expMatrix[to][from] = generateExperienceCharacteristics(to, from);
+          expMatrix[to][from] = true;
         } else if (pt.isPrePopulated(to) || pt.isPrePopulated(from)) {
-          expMatrix[to][from] = null;
+          expMatrix[to][from] = false;
         }
       }
     }
   }
 
-  function populateOneProfileWithLotsOfExperiences(
-    expMatrix,
-    seqNum,
-    replyRate,
-  ) {
+  function populateOneProfileWithLotsOfExperiences(expMatrix, replyRate) {
+    const profileWithManyExperiences = profileType.getSeqNumWithManyExperiences();
     for (let from = 0; from < expMatrix.length; from++) {
-      if (seqNum !== from && !profileType.isPrePopulated(from)) {
+      if (
+        profileWithManyExperiences !== from &&
+        !profileType.isPrePopulated(from)
+      ) {
         const shouldReply = Math.random() < replyRate;
-        populatePair(expMatrix, seqNum, from, true, shouldReply);
+        expMatrix[profileWithManyExperiences][from] = true;
+        expMatrix[from][profileWithManyExperiences] = shouldReply;
       }
     }
   }
@@ -195,52 +195,29 @@ function generateExpCharacteristicMatrix(nUsers, averageExpNumber, replyRate) {
     }
 
     const pt = profileType;
-    const expSharingRate = getExperienceSharingRate(
+    const experienceSharingRate = getExperienceSharingRate(
       expMatrix.length,
       averageExpNumber,
       replyRate,
     );
+    const profileWithManyExperiences = pt.getSeqNumWithManyExperiences();
     for (let to = 1; to < expMatrix.length; to++) {
       for (let from = 0; from < to; from++) {
         if (
           !pt.isPrePopulated(to) &&
           !pt.isPrePopulated(from) &&
           to !== from &&
-          pt.SEQNUM_WITH_MANY_EXPERIENCES !== to &&
-          pt.SEQNUM_WITH_MANY_EXPERIENCES !== from
+          profileWithManyExperiences !== to &&
+          profileWithManyExperiences !== from
         ) {
-          const shouldShareExperience = Math.random() < expSharingRate;
+          const shouldShareExperience = Math.random() < experienceSharingRate;
           const shouldReply = Math.random() < replyRate;
-          populatePair(expMatrix, to, from, shouldShareExperience, shouldReply);
+          expMatrix[to][from] = shouldShareExperience;
+          expMatrix[from][to] = shouldShareExperience && shouldReply;
         }
       }
     }
   }
-
-  const matrix = Array(nUsers)
-    .fill()
-    .map(() => Array(nUsers).fill());
-
-  // cannot share experience with myself
-  Array.from({ length: nUsers }, (x, i) => (matrix[i][i] = null));
-
-  /*
-   * To cover different cases, we first make sure there are profiles
-   * with no experiences, one experience with and without reply,
-   * profiles with only non-public experience.
-   *
-   * Then we populate one profile with as many experiences as we can.
-   *
-   * Then we populate the rest of the profiles randomly.
-   */
-  prePopulate(matrix);
-  populateOneProfileWithLotsOfExperiences(
-    matrix,
-    profileType.SEQNUM_WITH_MANY_EXPERIENCES,
-    replyRate,
-  );
-  populateRandomly(matrix, averageExpNumber, replyRate);
-  return matrix;
 }
 
 function seedExperiences() {
@@ -259,59 +236,6 @@ function seedExperiences() {
       const User = mongoose.model('User');
 
       const users = await User.find().sort('username');
-
-      function createExperience(userTo, userFrom, expSharing) {
-        const experience = new Reference();
-        experience.created = util.addDays(Date.now(), -_.random(14));
-        experience.feedbackPublic = faker.lorem.sentences();
-        experience.userTo = userTo;
-        experience.userFrom = userFrom;
-        experience.interactions = expSharing.interactions;
-        experience.recommend = expSharing.recommend;
-        experience.public = expSharing.public;
-        return experience;
-      }
-
-      function saveExperiences(expMatrix) {
-        return Promise.all(
-          expMatrix.map((row, i) => {
-            return Promise.all(
-              row.map((elm, j) => {
-                return new Promise((resolve, reject) => {
-                  if (elm === null) {
-                    resolve();
-                    return;
-                  }
-
-                  const experience = createExperience(
-                    users[i]._id,
-                    users[j]._id,
-                    elm,
-                  );
-
-                  experience.save(err => {
-                    if (err != null) {
-                      console.log(err);
-                      reject();
-                    } else {
-                      process.stdout.write('.');
-                      resolve();
-                    }
-                  });
-                });
-              }),
-            );
-          }),
-        );
-      }
-
-      function countNonNullElements(matrix) {
-        return matrix
-          .map(row =>
-            row.map(elm => (elm === null ? 0 : 1)).reduce((a, b) => a + b, 0),
-          )
-          .reduce((a, b) => a + b, 0);
-      }
 
       if (users.length < profileType.minimumTestableUserNumber()) {
         console.error(
@@ -341,30 +265,78 @@ function seedExperiences() {
         }
         console.log(
           `Profile with many experiences (username): ${
-            users[profileType.SEQNUM_WITH_MANY_EXPERIENCES].username
+            users[profileType.getSeqNumWithManyExperiences()].username
           }`,
         );
 
         try {
-          const expCharacteristicsMatrix = generateExpCharacteristicMatrix(
+          const experienceSharingMatrix = generateExperienceSharingMatrix(
             users.length,
-            argv.averageExpNumber,
+            argv.averageNumberPerProfile,
             argv.replyRate,
           );
-          const nExperiencesToBeAdded = countNonNullElements(
-            expCharacteristicsMatrix,
+          const nExperiencesToBeAdded = countTrueElements(
+            experienceSharingMatrix,
           );
           console.log(
             chalk.green(`Saving ${nExperiencesToBeAdded} experiences ... `),
           );
-          await saveExperiences(expCharacteristicsMatrix);
+          await saveExperiences(experienceSharingMatrix);
         } catch (err) {
           console.log(err);
         }
       }
+      console.log('');
       mongooseService.disconnect();
-    }); // monggooseService.loadModels
-  }); // mongooseService.connect
+
+      function createExperience(users, to, from) {
+        const experience = new Reference();
+        experience.userTo = users[to]._id;
+        experience.userFrom = users[from]._id;
+        experience.created = experienceGenerator.created();
+        experience.feedbackPublic = experienceGenerator.feedbackPublic();
+        experience.interactions = experienceGenerator.interactions();
+        experience.recommend = experienceGenerator.recommendation();
+        experience.public = experienceGenerator.public();
+        return experience;
+      }
+
+      function saveExperiences(expMatrix) {
+        return Promise.all(
+          expMatrix.map((row, i) => {
+            return Promise.all(
+              row.map((elm, j) => {
+                return new Promise((resolve, reject) => {
+                  if (!elm) {
+                    resolve();
+                    return;
+                  }
+
+                  const experience = createExperience(users, i, j);
+
+                  experience.save(err => {
+                    if (err != null) {
+                      console.log(err);
+                      reject();
+                    } else {
+                      process.stdout.write('.');
+                      resolve();
+                    }
+                  });
+                });
+              }),
+            );
+          }),
+        );
+      }
+
+      function countTrueElements(matrix) {
+        return matrix
+          .map(row => row.filter(v => v).length)
+          .reduce((a, b) => a + b, 0);
+      }
+    });
+  });
 }
 
 seedExperiences();
