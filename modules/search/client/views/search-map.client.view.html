@@ -27,28 +27,11 @@
 </div>
 
 <div ng-if="searchMap.mapCenter">
-  <!--
-  ng-class="{
-       'is-sidebar-open': search.isSidebarOpen,
-     }"
-   -->
   <search-map
     id="search-map-canvas"
     location="searchMap.mapCenter"
     offers="searchMap.mapMarkers"
+    onOfferClose="searchMap.closeOffer"
+    onOfferOpen="searchMap.previewOffer"
   ></search-map>
-  <!--
-    leaflet
-      id="search-map-canvas"
-      lf-center="searchMap.mapCenter"
-      markers="searchMap.mapMarkers"
-      layers="searchMap.mapLayers"
-      bounds="searchMap.mapBounds"
-      paths="searchMap.mapPaths"
-      defaults="searchMap.mapDefaults"
-      event-broadcast="searchMap.mapEvents"
-      tabindex="0"
-      aria-label="Map"
-    ></leaflet>
-  -->
 </div>

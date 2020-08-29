@@ -31,6 +31,8 @@ function SearchMapController(
   vm.mapLayerstyle = 'street';
   vm.notFound = false;
   vm.mapCenter = false;
+  vm.closeOffer = closeOffer;
+  vm.previewOffer = previewOffer;
   vm.currentSelection = MapMarkersFactory.getOfferCircle({
     layer: 'selectedOffers',
   });
