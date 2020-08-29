@@ -368,6 +368,7 @@ function validateReadMany(req) {
 
 /**
  * Read references filtered by userFrom or userTo
+ * and sorted by 'created' field starting from the most recent date
  */
 exports.readMany = async function readMany(req, res, next) {
   try {
@@ -410,6 +411,7 @@ exports.readMany = async function readMany(req, res, next) {
     // find references by query
     const references = await Reference.find(query)
       .select(referenceFields)
+      .sort({ created: -1 })
       .populate(
         'userFrom userTo',
         userProfile.userMiniProfileFields + ' created',
