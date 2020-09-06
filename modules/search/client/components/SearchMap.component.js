@@ -1,6 +1,6 @@
 // External dependencies
 // import { useTranslation } from 'react-i18next';
-import { Source, Layer, WebMercatorViewport } from 'react-map-gl';
+import { Source, Layer } from 'react-map-gl';
 import { useDebouncedCallback } from 'use-debounce';
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react'; //eslint-disable-line
@@ -20,86 +20,112 @@ import SearchMapLoading from './SearchMapLoading';
 export default function SearchMap(props) {
   // const { t } = useTranslation('search');
   const [isFetching, setIsFetching] = useState(false);
-  const [offers, setOffers] = useState([]);
+  const [offers, setOffers] = useState({
+    features: [],
+    type: 'FeatureCollection',
+  });
   const sourceRef = React.createRef();
-  const { location, onOfferOpen, onOfferClose } = props;
-
-  console.log('location:', location); //eslint-disable-line
-
+  const { mapCenter, onOfferOpen, onOfferClose } = props;
   const [geojson, setGeojson] = useState(null); //eslint-disable-line
+  // eslint-disable-next-line
+  const [viewport, setViewport] = useState({
+    latitude: mapCenter.lat,
+    longitude: mapCenter.lng,
+    zoom: mapCenter.zoom,
+  });
+
+  /**
+   * Hook on map interactions to update features
+   */
+  const updateOffers = () => {
+    const mapboxSource = sourceRef?.current?.getSource();
+    // eslint-disable-next-line
+    console.log('updateOffers:', mapboxSource);
+
+    // @TODO: better way to get bounds?
+    // @TODO: expand bound slightly to load more as "buffer"
+    // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
+    const bounds = mapboxSource?.map ? mapboxSource.map.getBounds() : false;
+
+    // Too early for this, map was not initialized yet
+    if (!bounds) {
+      return;
+    }
+
+    const northEast = bounds.getNorthEast();
+    const southWest = bounds.getSouthWest();
+
+    setGeojson({
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: northEast.toArray(),
+          },
+        },
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: southWest.toArray(),
+          },
+        },
+      ],
+    });
+
+    // @TODO: no need to fetch if in same area as in previous fetch — thus store in state?
+    fetchOffers({
+      northEastLat: northEast.lat, // [1],
+      northEastLng: northEast.lng, // [0],
+      southWestLat: southWest.lat, // [1],
+      southWestLng: southWest.lng, // [0],
+    });
+  };
 
   const [debouncedUpdateOffers] = useDebouncedCallback(
-    ({ viewState }) => {
-      console.log('useDebouncedCallback'); //eslint-disable-line
-      // Build bounding box
-      // @TODO: better way to get bounds? Where's the utility function for it?
-      const mercatorViewport = new WebMercatorViewport(viewState);
-      const northEast = mercatorViewport.unproject([viewState.width, 0]);
-      const southWest = mercatorViewport.unproject([0, viewState.height]);
-
-      /*
-      setGeojson({
-        type: 'FeatureCollection',
-        features: [
-          {
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: northEast,
-            },
-          },
-          {
-            type: 'Feature',
-            geometry: {
-              type: 'Point',
-              coordinates: southWest,
-            },
-          },
-        ],
-      });
-      */
-
-      // @TODO: no need to fetch if in same area as in previous fetch — thus store in state?
-      fetchOffers({
-        northEastLat: northEast[1],
-        northEastLng: northEast[0],
-        southWestLat: southWest[1],
-        southWestLng: southWest[0],
-      });
-    },
+    updateOffers,
     // delay in ms
     500,
     // The maximum time func is allowed to be delayed before it's invoked:
     { maxWait: 1500 },
   );
 
+  /**
+   * React on any clicks on map or layers defined on `interactiveLayerIds` prop
+   */
   const onClickMap = event => {
     console.log('onClickMap:', event); //eslint-disable-line
 
     // Delegated to Angular controller
     onOfferClose();
 
-    if (!event.features?.length) {
+    if (!event?.features?.length) {
       return;
     }
 
-    const layer = event.features[0]?.layer?.id;
+    const layerId = event.features[0]?.layer?.id;
 
-    switch (layer) {
+    switch (layerId) {
       case 'unclustered-point':
         openOfferById(event.features[0]?.properties?._id);
         break;
       case 'clusters':
-        zoomToClusterById(event.features[0]?.properties?.cluster_id);
+        zoomToClusterById(
+          event.features[0]?.properties?.cluster_id,
+          event.lngLat,
+        );
         break;
       default:
+        // @TODO: Send to Sentry.io
         // eslint-disable-next-line no-console
-        console.error('Map: unhandled click event');
+        console.error('Map: unhandled click event', event);
     }
   };
 
   // https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
-  function zoomToClusterById(clusterId) {
+  function zoomToClusterById(clusterId, lngLat) {
     console.log('zoomToClusterById:', clusterId); //eslint-disable-line
 
     if (!clusterId) {
@@ -107,10 +133,11 @@ export default function SearchMap(props) {
     }
 
     const mapboxSource = sourceRef.current.getSource();
-    console.log('mapboxSource:', mapboxSource); //eslint-disable-line
+    // console.log('mapboxSource:', mapboxSource); //eslint-disable-line
 
     // eslint-disable-next-line
-    mapboxSource.getClusterExpansionZoom(clusterId, (err, zoom) => {
+    mapboxSource.getClusterExpansionZoom(clusterId, (err, newZoom) => {
+      console.log('got ClusterExpansionZoom:', newZoom, lngLat); //eslint-disable-line
       if (err) {
         return;
       }
@@ -120,6 +147,8 @@ export default function SearchMap(props) {
         ...this.state.viewport,
         longitude: event.lngLat[0],
         latitude: event.lngLat[1],
+        //longitude: feature.geometry.coordinates[0],
+        //latitude: feature.geometry.coordinates[1],
         zoom,
         transitionDuration: 500,
       });
@@ -142,6 +171,7 @@ export default function SearchMap(props) {
     }
   }
 
+  // eslint-disable-next-line
   async function fetchOffers(query) {
     console.log('fetchOffers:', query); //eslint-disable-line
     setIsFetching(true);
@@ -151,6 +181,8 @@ export default function SearchMap(props) {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers(query);
       if (data?.features?.length) {
+        // eslint-disable-next-line
+        console.log('Got offers:', data);
         setOffers(data);
       }
     } finally {
@@ -173,17 +205,26 @@ export default function SearchMap(props) {
     <Map
       className="search-map"
       height="100%"
-      location={[location.lat, location.lng]}
+      location={[mapCenter.lat, mapCenter.lng]}
       showMapStyles
-      width="100%"
-      zoom={location.zoom}
+      zoom={mapCenter.zoom}
+      /*
+       * Pointer event callbacks will only query the features under the pointer
+       * of `interactiveLayerIds` layers. The getCursor callback will receive
+       * `isHovering:true` when hover over features of these layers.
+       *
+       * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
+       */
       interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
       onClick={onClickMap}
-      onViewStateChange={debouncedUpdateOffers}
+      onInteractionStateChange={debouncedUpdateOffers}
+      width={
+        '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
+      }
     >
       {isFetching && <SearchMapLoading />}
       <Source
-        buffer={0} // 512
+        buffer={0} // 512 @TODO what's this?
         cluster={true}
         clusterMaxZoom={14}
         clusterRadius={50}
@@ -213,7 +254,7 @@ export default function SearchMap(props) {
 }
 
 SearchMap.propTypes = {
-  location: PropTypes.object,
+  mapCenter: PropTypes.object,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
 };

@@ -71,8 +71,8 @@ export const unclusteredPointLayer = {
       base: 1.75,
       stops: [
         // Zoom level, size
-        [2, 1],
-        [7, 5],
+        [2, 2],
+        [7, 10],
         [10, 12],
         [22, 80],
       ],
