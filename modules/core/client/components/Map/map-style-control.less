@@ -1,0 +1,26 @@
+@import '~less/global-variables';
+
+.map-style-control-container {
+  left: 10px;
+  position: absolute;
+  bottom: 40px;
+  z-index: 5;
+  box-shadow: @map-toolbar-shadow;
+  .btn {
+    color: @text-color;
+    background: @map-toolbar-background;
+    transition: background 0.25s;
+
+    &:hover {
+      color: @text-color;
+      background: @map-toolbar-background-hover;
+    }
+  }
+  .btn img,
+  .dropdown-menu > li > a > img {
+    margin-right: 5px;
+  }
+  .dropdown-menu > li > a {
+    padding-left: 10px;
+  }
+}
