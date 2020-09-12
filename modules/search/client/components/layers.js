@@ -61,7 +61,7 @@ export const clusterLayer = {
   },
 };
 
-export const clusterCountLayer = {
+export const clusterCountLayerMapbox = {
   id: 'cluster-count',
   type: 'symbol',
   source: SOURCE_OFFERS,
@@ -72,6 +72,19 @@ export const clusterCountLayer = {
     'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
     'text-size': 17,
     // 'color': '#555',
+  },
+};
+
+// OSM layer doesn't pull fonts from Mapbox and hence we override them
+// This font has to exist at glyphs URL defined at modules/core/client/components/Map/osm.json
+// See https://openmaptiles.org/docs/style/mapbox-gl-style-spec/
+// See https://github.com/openmaptiles/fonts
+export const clusterCountLayerOSM = {
+  ...clusterCountLayerMapbox,
+  layout: {
+    ...clusterCountLayerMapbox.layout,
+    // Has to be something available at https://github.com/openmaptiles/fonts/tree/gh-pages
+    'text-font': ['Open Sans Bold'],
   },
 };
 

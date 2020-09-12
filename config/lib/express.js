@@ -317,6 +317,7 @@ module.exports.initHelmetHeaders = function (app) {
           "'self'",
           'https://api.mapbox.com',
           'https://events.mapbox.com',
+          'https://fonts.openmaptiles.org',
           'https://tile.openstreetmap.org',
           'fcm.googleapis.com',
           'www.facebook.com',

@@ -8,7 +8,10 @@ import ReactMapGL, { FlyToInterpolator, Layer, Source } from 'react-map-gl';
 
 // Internal dependencies
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
-import { MAP_STYLE_DEFAULT } from '@/modules/core/client/components/Map/constants';
+import {
+  MAP_STYLE_DEFAULT,
+  MAP_STYLE_OSM,
+} from '@/modules/core/client/components/Map/constants';
 import { SOURCE_OFFERS, SOURCE_HEATMAP, HEATMAP_MIN_ZOOM } from './constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
@@ -16,10 +19,11 @@ import MapStyleControl from '@/modules/core/client/components/Map/MapStyleContro
 import { ensureValidLat, ensureValidLng } from '../utils';
 
 import {
+  clusterCountLayerMapbox,
+  clusterCountLayerOSM,
   clusterLayer,
-  clusterCountLayer,
-  unclusteredPointLayer,
   heatMapLayer,
+  unclusteredPointLayer,
 } from './layers';
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 // import Map from '@/modules/core/client/components/Map/index';
@@ -262,7 +266,12 @@ export default function SearchMap(props) {
         type="geojson"
       >
         <Layer {...clusterLayer} />
-        <Layer {...clusterCountLayer} />
+        {/* OSM and Mapbox use different fonts for cluster numbers */}
+        {mapStyle === MAP_STYLE_OSM ? (
+          <Layer {...clusterCountLayerOSM} />
+        ) : (
+          <Layer {...clusterCountLayerMapbox} />
+        )}
         <Layer {...unclusteredPointLayer} />
       </Source>
       <Source buffer={0} data={offers} id={SOURCE_HEATMAP} type="geojson">
