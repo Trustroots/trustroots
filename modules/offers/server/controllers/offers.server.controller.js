@@ -614,7 +614,7 @@ exports.list = function (req, res) {
       _id: 0,
       type: 'Feature',
       properties: {
-        _id: '$_id',
+        id: '$_id',
         status: '$status',
         type: '$type',
         offer: { $concat: ['$type', '-', '$status'] },

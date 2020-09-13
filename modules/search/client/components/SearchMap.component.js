@@ -12,7 +12,7 @@ import {
   MAP_STYLE_DEFAULT,
   MAP_STYLE_OSM,
 } from '@/modules/core/client/components/Map/constants';
-import { SOURCE_OFFERS, SOURCE_HEATMAP, HEATMAP_MIN_ZOOM } from './constants';
+import { HEATMAP_MIN_ZOOM, SOURCE_HEATMAP, SOURCE_OFFERS } from './constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
@@ -38,6 +38,8 @@ export default function SearchMap(props) {
   const [interactionState, setInteractionState] = useState({});
   const [isFetching, setIsFetching] = useState(false);
   const [mapStyle, setMapstyle] = useState(MAP_STYLE_DEFAULT);
+  const [hoveredOffer, setHoveredOffer] = useState(false); //eslint-disable-line
+  const [selectedOffer, setSelectedOffer] = useState(false); //eslint-disable-line
   const [offers, setOffers] = useState({
     features: [],
     type: 'FeatureCollection',
@@ -52,6 +54,7 @@ export default function SearchMap(props) {
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles = !!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production';
   const offersSourceRef = createRef();
+  const mapRef = createRef();
 
   /**
    * Hook on map interactions to update features
@@ -89,7 +92,6 @@ export default function SearchMap(props) {
     const northEastLng = ensureValidLng(northEast.lng + boundsBuffer);
     const southWestLat = ensureValidLat(southWest.lat - boundsBuffer);
     const southWestLng = ensureValidLng(southWest.lng - boundsBuffer);
-    console.log('fetchOffers extended by:', boundsBuffer); //eslint-disable-line
 
     // @TODO: no need to fetch if in same area as in previous fetch — thus store in state?
     fetchOffers({
@@ -108,6 +110,130 @@ export default function SearchMap(props) {
     { maxWait: 1500 },
   );
 
+  // Get the Mapbox object for direct manipulation
+  // @TODO set just once and store?
+  const getMapRef = () => {
+    const mapboxSource = offersSourceRef?.current?.getSource();
+    return mapboxSource?.map;
+  };
+
+  const updateFeatureState = (map, { source, id }, newFeatureState) => {
+    if (!map) {
+      console.log('🛑No map!'); //eslint-disable-line
+      return;
+    }
+
+    const featureStatePreviously = map.getFeatureState({
+      source,
+      id,
+    });
+
+    // eslint-disable-next-line no-console
+    console.log('🔵previous feature state:', featureStatePreviously);
+    // eslint-disable-next-line no-console
+    console.log('🟢new feature state:', {
+      ...featureStatePreviously,
+      ...newFeatureState,
+    });
+
+    map.setFeatureState(
+      { source, id },
+      {
+        ...featureStatePreviously,
+        // New state merges into previous state, overriding only defined keys
+        ...newFeatureState,
+      },
+    );
+  };
+
+  const clearPreviouslyHoveredState = () => {
+    if (hoveredOffer) {
+      // @TODO set just once and store in state?
+      const map = getMapRef();
+
+      // Too early for this, map was not initialized yet
+      if (!map) {
+        console.log('🛑Tried map too early 1.'); //eslint-disable-line
+        return;
+      }
+
+      setHoveredOffer(false);
+      updateFeatureState(map, hoveredOffer, { hover: false });
+    }
+  };
+
+  // eslint-disable-next-line
+  const clearPreviouslySelectedState = () => {
+    if (selectedOffer) {
+      // @TODO set just once and store in state?
+      const map = getMapRef();
+
+      // Too early for this, map was not initialized yet
+      if (!map) {
+        console.log('🛑Tried map too early 4.'); //eslint-disable-line
+        return;
+      }
+
+      updateFeatureState(map, selectedOffer, { selected: false });
+
+      setSelectedOffer(false);
+    }
+  };
+
+  // eslint-disable-next-line
+  const setSelectedState = offer => {
+    console.log('🚀 setSelectedState:', offer); //eslint-disable-line
+    // @TODO set just once and store in state?
+    const map = getMapRef();
+
+    // Too early for this, map was not initialized yet
+    if (!map) {
+      console.log('🛑Tried map too early 5.'); //eslint-disable-line
+      return;
+    }
+
+    updateFeatureState(map, offer, { selected: true });
+    setSelectedOffer(offer);
+  };
+
+  const onHover = event => {
+    if (!event?.features?.length) {
+      return;
+    }
+
+    const feature = event.features[0];
+
+    // Stop here if:
+    // - feature on other than points layer
+    // - feature doesn't have ID for some reason, or
+    // - we're just hovering previously hovered feature, or
+    if (
+      feature.layer.id !== unclusteredPointLayer.id ||
+      !feature.id ||
+      feature.id === hoveredOffer?.id
+    ) {
+      return;
+    }
+
+    // @TODO set just once and store in state?
+    const map = getMapRef();
+
+    // Too early for this, map was not initialized yet
+    if (!map) {
+      console.log('🛑Tried map too early 3.'); //eslint-disable-line
+      return;
+    }
+
+    if (!hoveredOffer || hoveredOffer?.id !== feature.id) {
+      console.log('onHover, feature:', feature); //eslint-disable-line
+      clearPreviouslyHoveredState();
+      setHoveredOffer(feature);
+      updateFeatureState(map, feature, { hover: true });
+    } else {
+      console.log('Ignore hovering, feature, was same as previous.'); //eslint-disable-line
+    }
+  };
+
   /**
    * React on any clicks on map or layers defined on `interactiveLayerIds` prop
    */
@@ -115,8 +241,9 @@ export default function SearchMap(props) {
     console.log('onClickMap:', event); //eslint-disable-line
     const { features, lngLat } = event;
 
-    // Delegated to Angular controller
+    // Delegated to Angular controller, to be refactored
     onOfferClose();
+    clearPreviouslySelectedState();
 
     if (!features?.length) {
       return;
@@ -125,10 +252,13 @@ export default function SearchMap(props) {
     const layerId = features[0]?.layer?.id;
 
     switch (layerId) {
-      case 'unclustered-point':
-        openOfferById(features[0]?.properties?._id);
+      case unclusteredPointLayer.id:
+        if (features[0]?.id) {
+          setSelectedState(features[0]);
+          openOfferById(features[0].id);
+        }
         break;
-      case 'clusters':
+      case clusterLayer.id:
         zoomToClusterById(features[0]?.properties?.cluster_id, lngLat);
         break;
       default:
@@ -140,14 +270,16 @@ export default function SearchMap(props) {
 
   // https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
   function zoomToClusterById(clusterId, lngLat) {
-    console.log('zoomToClusterById:', clusterId); //eslint-disable-line
-
     if (!clusterId) {
       return;
     }
 
     const mapboxSource = offersSourceRef?.current?.getSource();
     // console.log('mapboxSource:', mapboxSource); //eslint-disable-line
+
+    if (!mapboxSource) {
+      return;
+    }
 
     // eslint-disable-next-line
     mapboxSource.getClusterExpansionZoom(clusterId, (err, newZoom) => {
@@ -156,6 +288,7 @@ export default function SearchMap(props) {
         return;
       }
 
+      // Transition map to show offers in the cluster
       setViewport({
         ...viewport,
         latitude: lngLat[1],
@@ -164,18 +297,6 @@ export default function SearchMap(props) {
         transitionInterpolator: new FlyToInterpolator({ speed: 1.2 }),
         zoom: newZoom,
       });
-      // Do the map transition
-      /*
-      _onViewportChange({
-        ...this.state.viewport,
-        longitude: event.lngLat[0],
-        latitude: event.lngLat[1],
-        //longitude: feature.geometry.coordinates[0],
-        //latitude: feature.geometry.coordinates[1],
-        zoom,
-        transitionDuration: 500,
-      });
-      */
     });
   }
 
@@ -189,7 +310,7 @@ export default function SearchMap(props) {
     const offer = await getOffer(offerId);
 
     if (offer) {
-      // Delegated to Angular controller
+      // Delegated to Angular controller, to be refactored
       onOfferOpen(offer);
     }
   }
@@ -205,10 +326,12 @@ export default function SearchMap(props) {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers(query);
       if (data?.features?.length) {
-        // eslint-disable-next-line
-        console.log('Got offers:', data);
         setOffers(data);
       }
+    } catch {
+      // @TODO Error handling
+      // eslint-disable-next-line no-console
+      console.error('Could not load offers. Re-attempt?');
     } finally {
       setIsFetching(false);
     }
@@ -223,6 +346,9 @@ export default function SearchMap(props) {
       mapboxApiAccessToken={MAPBOX_TOKEN}
       mapStyle={mapStyle}
       onViewportChange={setViewport}
+      ref={mapRef}
+      onHover={onHover}
+      onMouseLeave={clearPreviouslyHoveredState}
       touchRotate={false}
       className="search-map"
       height="100%"
@@ -262,6 +388,7 @@ export default function SearchMap(props) {
         clusterRadius={50}
         data={offers}
         id={SOURCE_OFFERS}
+        promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
         ref={offersSourceRef}
         type="geojson"
       >

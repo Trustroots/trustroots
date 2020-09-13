@@ -2,8 +2,8 @@ import {
   HEATMAP_MAX_ZOOM,
   HEATMAP_MIN_ZOOM,
   HEATMAP_OPACITY_BUFFER,
-  SOURCE_OFFERS,
   SOURCE_HEATMAP,
+  SOURCE_OFFERS,
 } from './constants';
 
 // Transition from heatmap to circle layer by zoom level
@@ -43,21 +43,11 @@ export const clusterLayer = {
   minzoom: HEATMAP_MAX_ZOOM - HEATMAP_OPACITY_BUFFER,
   paint: {
     'circle-color': 'rgba(18, 181, 145, 0.7)',
-    /* [
-      'step',
-      ['get', 'point_count'],
-      '#51bbd6',
-      100,
-      '#f1f075',
-      750,
-      '#f28cb1',
-    ],*/
-    // 'fill-opacity': 0.9,
-    'circle-radius': ['step', ['get', 'point_count'], 20, 100, 30, 750, 40],
-    'circle-stroke-width': 5,
-    'circle-stroke-color': 'rgba(18, 181, 145, 0.3)',
     'circle-opacity': offersOpacityTransition,
+    'circle-radius': ['step', ['get', 'point_count'], 20, 100, 30, 750, 40],
+    'circle-stroke-color': 'rgba(18, 181, 145, 0.3)',
     'circle-stroke-opacity': offersOpacityTransition,
+    'circle-stroke-width': 5,
   },
 };
 
@@ -71,7 +61,9 @@ export const clusterCountLayerMapbox = {
     'text-field': '{point_count_abbreviated}',
     'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
     'text-size': 17,
-    // 'color': '#555',
+  },
+  paint: {
+    'text-color': '#555',
   },
 };
 
@@ -100,6 +92,7 @@ export const unclusteredPointLayer = {
   paint: {
     // color circles by offer type, using a match expression
     // https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-match
+    /*
     'circle-color': [
       'match',
       // @TODO: ideally we'd pull both `type` and `status` properties and combine
@@ -120,6 +113,32 @@ export const unclusteredPointLayer = {
 
       // Other:
       '#ccc',
+    ],
+    */
+    'circle-color': [
+      'case',
+      ['boolean', ['feature-state', 'selected'], false],
+      '#000', // On select
+      // By default:
+      [
+        'match',
+        ['get', 'offer'],
+
+        // Meet
+        'meet-yes',
+        '#11b4da',
+
+        // Host yes
+        'host-yes',
+        '#58ba58',
+
+        // Host no
+        'host-maybe',
+        '#f2ae43',
+
+        // Other:
+        '#ccc',
+      ],
     ],
     // make circles larger as the user zooms from z6 to z22
     'circle-radius': {
@@ -146,8 +165,18 @@ export const unclusteredPointLayer = {
     ],
     */
     // @TODO: remove stroke in higher zoom levels?
-    // @TODO: show stroke only on hover, otherwise none?
-    'circle-stroke-width': 1,
+    'circle-stroke-width': [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      4, // On hover
+      2, // By default
+    ],
+    'circle-stroke-opacity': [
+      'case',
+      ['boolean', ['feature-state', 'selected'], false],
+      1, // On select
+      0.5, // By default
+    ],
     'circle-stroke-color': '#fff',
     'circle-opacity': offersOpacityTransition,
   },
