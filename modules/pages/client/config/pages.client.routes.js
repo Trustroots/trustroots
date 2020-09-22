@@ -46,11 +46,11 @@ function PagesRoutes($stateProvider) {
         pageTitle: 'Privacy policy',
       },
     })
-    .state('donate', {
-      url: '/donate',
-      template: '<donate />',
+    .state('contribute', {
+      url: '/contribute',
+      template: '<contribute />',
       data: {
-        pageTitle: 'Donate',
+        pageTitle: 'Contribute',
       },
     })
     .state('faq', {

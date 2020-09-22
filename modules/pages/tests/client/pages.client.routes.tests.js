@@ -62,14 +62,14 @@ describe('Pages Route Tests', function () {
       });
     });
 
-    describe('Donate Route', function () {
+    describe('Contribute Route', function () {
       let mainstate;
       beforeEach(inject(function ($state) {
-        mainstate = $state.get('donate');
+        mainstate = $state.get('contribute');
       }));
 
       it('Should have the correct URL', function () {
-        expect(mainstate.url).toEqual('/donate');
+        expect(mainstate.url).toEqual('/contribute');
       });
 
       it('Should not be abstract', function () {

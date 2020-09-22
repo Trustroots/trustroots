@@ -2,7 +2,7 @@ import React from 'react';
 import Board from '@/modules/core/client/components/Board.js';
 import { Trans, useTranslation } from 'react-i18next';
 
-export default function Donate() {
+export default function Contribute() {
   const { t } = useTranslation('pages');
 
   return (
@@ -95,4 +95,4 @@ export default function Donate() {
   );
 }
 
-Donate.propTypes = {};
+Contribute.propTypes = {};
