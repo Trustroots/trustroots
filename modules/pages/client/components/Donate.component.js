@@ -24,124 +24,71 @@ export default function Donate() {
 
       <section className="container container-spacer">
         <div className="row">
-          <div className="col-xs-12 col-sm-6 col-md-offset-1 col-md-5">
+          <div className="col-xs-12 col-sm-12 col-md-offset-2 col-md-8">
             <p className="lead">
               <Trans t={t} ns="pages">
-                Trustroots is run entirely by donations. We are a non-profit{' '}
-                <a href="/foundation">foundation</a> registered in the United
-                Kingdom in March 2015.
+                Trustroots is a non-profit <a href="/foundation">foundation</a>{' '}
+                registered in the United Kingdom in{' '}
+                <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
+                  March 2015
+                </a>
+                . At the moment our costs are mainly for servers and other
+                technical aspects, currently between €1000 and €2000 per year.
+                As accepting donations would lead to higher total costs (due to
+                accounting etc.) and require more effort than it seems worth,
+                everything is currently being covered by the board.
               </Trans>
             </p>
-
-            <h4>{t('How will my donation be used?')}</h4>
-            <p>
-              {t(
-                "Most our expenses are tech related; servers, services, domains and bandwidth. Additionally we have expenses from governing the foundation, such as legal consultation, handling our finances and accounting. In the future we consider paying salaries to get some of the work done. This said, we're mainly a volunteer organisation and that won't change. We are working on opening up our expenditures and governance soon.",
-              )}
-            </p>
-            <br />
-
-            <h4>{t('Is my donation tax deductible?')}</h4>
-            <p>{t('Unfortunately not at the moment.')}</p>
-            <br />
-
-            <h4>{t('Which currencies do you accept?')}</h4>
-            <p>
-              {t(
-                'You can donate via PayPal, which currently accepts nearly two dozen currencies.',
-              )}
-            </p>
-            <br />
-
-            <h4>{t('Can I donate bitcoin?')}</h4>
-            <p>{t('Yes!')}</p>
-            <br />
-
-            <h4>
-              {t(
-                'I’m unable to give money at this time, are there other ways I can help?',
-              )}
-            </h4>
-            <p>
+            <p className="lead">
               <Trans t={t} ns="pages">
-                Yes! <a href="/volunteering">Become a volunteer</a> and make a
-                difference.
+                That said, there are still other ways to support us!
               </Trans>
             </p>
-
             <hr />
-
-            <p>
-              <a href="/donate/help">{t('Problems donating?')}</a>
-            </p>
-
-            <br />
           </div>
-          <div className="col-xs-12 col-sm-6 col-md-5">
-            <p className="lead">
-              <em>
-                {t(
-                  "We're currently working on setting up ways to receive donations. Until that, this page gives you preliminary information about our funding model.",
-                )}
-              </em>
-            </p>
-            <hr />
-            <h2>{t('Ways to Give')}</h2>
-            <h3>{t('Credit/debit card')}</h3>
-            {t(
-              "We don't have a credit card transfer set up yet at this point.",
-            )}
-            <h3>{t('Bank transfer')}</h3>
-            {t("We don't have a bank account set up yet at this point.")}
-            <h3>Bitcoin</h3>
-            <Trans t={t} ns="pages">
-              <a href="/support">Contact us</a> if you want to donate through
-              Bitcoin.
-            </Trans>
-            <h3>PayPal</h3>
-            <Trans t={t} ns="pages">
-              <a href="/support">Contact us</a> if you want to donate through
-              PayPal.
-            </Trans>
-            <h3>{t('Referal programs')}</h3>
-            <h4>{t('Namecheap')}</h4>
-            <Trans t={t} ns="pages">
-              We use and recommend Namecheap for domains, partly because
-              they&apos;re a{' '}
-              <a href="https://www.namecheap.com/about/causes.aspx">
-                responsible company
-              </a>{' '}
-              and foremost they do a great job. Sign up via{' '}
-              <a href="https://www.namecheap.com/?aff=90636">this link</a> and
-              we&apos;ll get little bit in return.
-            </Trans>
-            <br />
-            <h4>DigitalOcean</h4>
-            <Trans t={t} ns="pages">
-              Our servers are hosted at reliable and easy to use DigitalOcean.
-              Sign up via{' '}
-              <a href="https://www.digitalocean.com/?refcode=6dc078966c9c">
-                this link
-              </a>{' '}
-              and when you start using their VPS service, we get 25$ to cover
-              our hosting, you get 100$.
-            </Trans>
-            <hr />
+        </div>
+        <div className="row">
+          <div className="col-xs-12  col-sm-6 col-md-offset-2 col-md-4">
+            <h2>{t('Volunteering')}</h2>
             <p>
-              <small>
-                <Trans t={t} ns="pages">
-                  By donating, you agree to share your personal information with
-                  the Trustroots Foundation, the non-profit organisation running
-                  Trustroots.org, pursuant to our{' '}
-                  <a href="/donate/policy">donor policy</a>. Trustroots
-                  Foundation is located in the United Kingdom. We do not sell or
-                  trade your information to anyone.
-                </Trans>
-              </small>
+              <Trans t={t} ns="pages">
+                Whether you’re a hardcore techie or know nothing of coding, we
+                can use your help! Head over to the{' '}
+                <a href="https://team.trustroots.org/Chat.html">
+                  volunteer chat
+                </a>{' '}
+                to get an idea of what’s in the making and what you can do to
+                help out.
+              </Trans>
+            </p>
+          </div>
+          <div className="col-xs-12 col-sm-6 col-md-4">
+            <h2>{t('Referal Programs')}</h2>
+            <p>
+              <Trans t={t} ns="pages">
+                We use and recommend <strong>Namecheap</strong> for domains,
+                partly because they&apos;re a{' '}
+                <a href="https://www.namecheap.com/about/causes.aspx">
+                  responsible company
+                </a>{' '}
+                and foremost as they do a great job. Sign up via{' '}
+                <a href="https://www.namecheap.com/?aff=90636">this link</a> and
+                we&apos;ll get little bit in return.
+              </Trans>
+            </p>
+            <p>
+              <Trans t={t} ns="pages">
+                Our servers are hosted at reliable and easy to use{' '}
+                <strong>DigitalOcean</strong>. Sign up via{' '}
+                <a href="https://www.digitalocean.com/?refcode=6dc078966c9c">
+                  this link
+                </a>{' '}
+                and when you start using their VPS service, we get 25$ to cover
+                our hosting, you get 100$.
+              </Trans>
             </p>
           </div>
         </div>
-        {/* /.row */}
       </section>
       {/* /.container */}
     </>
