@@ -53,20 +53,6 @@ function PagesRoutes($stateProvider) {
         pageTitle: 'Donate',
       },
     })
-    .state('donate-help', {
-      url: '/donate/help',
-      template: '<donate-help />',
-      data: {
-        pageTitle: 'Donation help',
-      },
-    })
-    .state('donate-policy', {
-      url: '/donate/policy',
-      template: '<donate-policy />',
-      data: {
-        pageTitle: 'Donation policy',
-      },
-    })
     .state('faq', {
       url: '/faq',
       abstract: true,
