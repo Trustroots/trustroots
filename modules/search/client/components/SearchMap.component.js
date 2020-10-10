@@ -33,9 +33,7 @@ import './search-map.less';
 
 // export default class SearchMap extends Component {
 export default function SearchMap(props) {
-  const { mapCenter, onOfferOpen, onOfferClose } = props;
-  // eslint-disable-next-line
-  const [interactionState, setInteractionState] = useState({});
+  const { filters, mapCenter, onOfferClose, onOfferOpen } = props;
   const [isFetching, setIsFetching] = useState(false);
   const [mapStyle, setMapstyle] = useState(MAP_STYLE_DEFAULT);
   const [hoveredOffer, setHoveredOffer] = useState(false); //eslint-disable-line
@@ -53,8 +51,14 @@ export default function SearchMap(props) {
   const MAPBOX_TOKEN = getMapBoxToken();
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles = !!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production';
-  const offersSourceRef = createRef();
+  const sourceRef = createRef();
   const mapRef = createRef();
+
+  // Get the Mapbox object for direct manipulation
+  // @TODO set just once and store?
+  const getMapRef = () => {
+    return mapRef?.current?.getMap();
+  };
 
   /**
    * Hook on map interactions to update features
@@ -65,24 +69,24 @@ export default function SearchMap(props) {
       return;
     }
 
-    const mapboxSource = offersSourceRef?.current?.getSource();
-    // eslint-disable-next-line
-    console.log('updateOffers:', mapboxSource);
+    const map = getMapRef();
+    // eslint-disable-next-line no-console
+    console.log('updateOffers:', map);
 
     // Too early for this, map was not initialized yet
-    if (!mapboxSource?.map) {
-      // eslint-disable-next-line
-      console.log('updateOffers bailed — too early', mapboxSource);
+    if (!map) {
+      // eslint-disable-next-line no-console
+      console.log('updateOffers bailed — too early', map);
       return;
     }
 
     // @TODO: better way to get bounds?
     // @TODO: expand bound slightly to load more as "buffer"
     // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
-    const bounds = mapboxSource.map.getBounds();
+    const bounds = map.getBounds();
     const northEast = bounds.getNorthEast();
     const southWest = bounds.getSouthWest();
-    const zoom = mapboxSource.map.getZoom();
+    const zoom = map.getZoom();
 
     // Expand bounding box depending on the zoom level slightly to load more offers over the edge of the viewport
     const boundsBuffer = 10 / zoom;
@@ -109,13 +113,6 @@ export default function SearchMap(props) {
     // The maximum time func is allowed to be delayed before it's invoked:
     { maxWait: 1500 },
   );
-
-  // Get the Mapbox object for direct manipulation
-  // @TODO set just once and store?
-  const getMapRef = () => {
-    const mapboxSource = offersSourceRef?.current?.getSource();
-    return mapboxSource?.map;
-  };
 
   const updateFeatureState = (map, { source, id }, newFeatureState) => {
     if (!map) {
@@ -175,7 +172,6 @@ export default function SearchMap(props) {
       }
 
       updateFeatureState(map, selectedOffer, { selected: false });
-
       setSelectedOffer(false);
     }
   };
@@ -274,34 +270,42 @@ export default function SearchMap(props) {
       return;
     }
 
-    const mapboxSource = offersSourceRef?.current?.getSource();
-    // console.log('mapboxSource:', mapboxSource); //eslint-disable-line
+    const source = sourceRef?.current?.getSource();
 
-    if (!mapboxSource) {
+    const newLocation = {
+      latitude: lngLat[1],
+      longitude: lngLat[0],
+      transitionDuration: 'auto',
+      transitionInterpolator: new FlyToInterpolator({ speed: 1.3 }),
+    };
+
+    if (!source) {
+      // @TODO: sometimes source doesn't return map. At least center the group if no zooming — not ideal, should just re-attempt.
+      setViewport({
+        ...viewport,
+        ...newLocation,
+      });
+
       return;
     }
 
-    // eslint-disable-next-line
-    mapboxSource.getClusterExpansionZoom(clusterId, (err, newZoom) => {
-      console.log('got ClusterExpansionZoom:', newZoom, lngLat); //eslint-disable-line
-      if (err || newZoom === undefined) {
+    source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+      console.log('got ClusterExpansionZoom:', zoom, lngLat); // eslint-disable-line no-console
+      if (err || zoom === undefined) {
         return;
       }
 
       // Transition map to show offers in the cluster
       setViewport({
         ...viewport,
-        latitude: lngLat[1],
-        longitude: lngLat[0],
-        transitionDuration: 'auto',
-        transitionInterpolator: new FlyToInterpolator({ speed: 1.2 }),
-        zoom: newZoom,
+        ...newLocation,
+        zoom,
       });
     });
   }
 
   async function openOfferById(offerId) {
-    console.log('openOfferById:', offerId); //eslint-disable-line
+    console.log('openOfferById:', offerId); // eslint-disable-line no-console
     if (!offerId) {
       return;
     }
@@ -316,18 +320,17 @@ export default function SearchMap(props) {
   }
 
   // eslint-disable-next-line
-  async function fetchOffers(query) {
-    console.log('fetchOffers:', query); //eslint-disable-line
+  async function fetchOffers(boundingBox) {
     setIsFetching(true);
 
+    console.log('fetch with filters:', filters); // eslint-disable-line no-console
     try {
-      //   filters=%7B%22tribes%22:%5B%5D,%22types%22:%5B%22host%22,%22meet%22%5D,%22languages%22:%5B%5D,%22seen%22:%7B%22months%22:6%7D%7D&northEastLat=54.879278856608266&northEastLng=20.10172526041667&southWestLat=42.05680822944813&southWestLng=-1.8204752604166667
-      // @TODO: filters from Angular controller
       // @TODO: cancellation when need to re-fetch
-      const data = await queryOffers(query);
-      if (data?.features?.length) {
-        setOffers(data);
-      }
+      const data = await queryOffers({
+        filters,
+        ...boundingBox,
+      });
+      setOffers(data || []);
     } catch {
       // @TODO Error handling
       // eslint-disable-next-line no-console
@@ -338,21 +341,16 @@ export default function SearchMap(props) {
   }
 
   // Load offers on initial map load
-  useEffect(() => debouncedUpdateOffers(), []);
+  useEffect(() => {
+    // debouncedUpdateOffers();
+    console.log('RENDER'); //eslint-disable-line
+  }, [mapCenter, filters]);
 
   return (
     <ReactMapGL
-      dragRotate={false}
-      mapboxApiAccessToken={MAPBOX_TOKEN}
-      mapStyle={mapStyle}
-      onViewportChange={setViewport}
-      ref={mapRef}
-      onHover={onHover}
-      onMouseLeave={clearPreviouslyHoveredState}
-      touchRotate={false}
       className="search-map"
+      dragRotate={false}
       height="100%"
-      location={[mapCenter.lat, mapCenter.lng]}
       /*
        * Pointer event callbacks will only query the features under the pointer
        * of `interactiveLayerIds` layers. The getCursor callback will receive
@@ -361,8 +359,16 @@ export default function SearchMap(props) {
        * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
        */
       interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
+      location={[mapCenter.lat, mapCenter.lng]}
+      mapboxApiAccessToken={MAPBOX_TOKEN}
+      mapStyle={mapStyle}
       onClick={onClickMap}
+      onHover={onHover}
       onInteractionStateChange={debouncedUpdateOffers}
+      onMouseLeave={clearPreviouslyHoveredState}
+      onViewportChange={setViewport}
+      ref={mapRef}
+      touchRotate={false}
       {...viewport}
       width={
         '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
@@ -389,7 +395,7 @@ export default function SearchMap(props) {
         data={offers}
         id={SOURCE_OFFERS}
         promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
-        ref={offersSourceRef}
+        ref={sourceRef}
         type="geojson"
       >
         <Layer {...clusterLayer} />
@@ -409,6 +415,7 @@ export default function SearchMap(props) {
 }
 
 SearchMap.propTypes = {
+  filters: PropTypes.string,
   mapCenter: PropTypes.object,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,

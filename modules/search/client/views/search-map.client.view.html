@@ -16,18 +16,9 @@
   </div>
 </div>
 
-<div
-  class="search-message"
-  ng-show="searchMap.mapCenter.zoom <= searchMap.mapMinimumZoom && app.user.public"
-  role="alert"
-  aria-live="assertive"
-  aria-labelledby="map-zoom-message"
->
-  <h4 id="map-zoom-message">Zoom in closer to see everyone</h4>
-</div>
-
 <div ng-if="searchMap.mapCenter">
   <search-map
+    filters="searchMap.filters"
     id="search-map-canvas"
     mapCenter="searchMap.mapCenter"
     offers="searchMap.mapMarkers"

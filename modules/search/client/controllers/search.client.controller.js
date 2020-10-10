@@ -164,6 +164,7 @@ function SearchController(
    * Closes offer when filters are changed and updates the map
    */
   function onFiltersUpdated() {
+    console.log('angular onFiltersUpdated'); //eslint-disable-line
     // Close possible open offers
     if (vm.offer) {
       vm.offer = false;
@@ -171,8 +172,7 @@ function SearchController(
       // to close anything offer related
       $scope.$broadcast('search.closeOffer');
     }
-    // Tells map controller to reset markers
-    $scope.$broadcast('search.resetMarkers');
+    $scope.$broadcast('search.filtersUpdated', vm.filters);
   }
 
   /**
