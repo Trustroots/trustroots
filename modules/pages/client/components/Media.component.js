@@ -224,7 +224,7 @@ export default function Media() {
               <li>
                 <Trans t={t} ns="pages">
                   Operating costs covered entirely by{' '}
-                  <a href="/donate">donations</a>
+                  <a href="/contribute">donations</a>
                 </Trans>
               </li>
               <li>

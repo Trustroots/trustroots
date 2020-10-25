@@ -130,9 +130,9 @@ export default function FaqFoundation({ invitationsEnabled }) {
           {t('How do you want to make the project financially sustainable?')}
         </h3>
         <Trans t={t} ns="pages">
-          <a href="/donate">Donations</a> and grants are the most likely ways.
-          There are many inspiring organisations out there serving as great
-          examples:{' '}
+          <a href="/contribute">Donations</a> and grants are the most likely
+          ways. There are many inspiring organisations out there serving as
+          great examples:{' '}
           <a href="https://www.warmshowers.org/">Warmshowers Foundation</a>,{' '}
           <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a>{' '}
           (Hitchwiki), <a href="https://www.bevolunteer.org/">BeVolunteer</a>,{' '}
