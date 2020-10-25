@@ -3,6 +3,8 @@
  * Generate different image sizes for circle images
  *
  * Uses Sharp to manipulate image: https://sharp.pixelplumbing.com/
+ *
+ * Production images are kept at https://github.com/Trustroots/circle-images
  */
 
 const async = require('async');
