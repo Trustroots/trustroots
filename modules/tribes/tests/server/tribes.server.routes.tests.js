@@ -55,7 +55,7 @@ describe('Tribe CRUD tests', function () {
       label: 'Awesome Tribe',
       attribution: 'Photo credits',
       attribution_url: 'http://www.trustroots.org/team',
-      image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
+      image: false,
       tribe: true,
       description: 'Lorem ipsum.',
     };
@@ -103,9 +103,9 @@ describe('Tribe CRUD tests', function () {
         should.exist(tribesReadRes.body[0].created);
         should.exist(tribesReadRes.body[0]._id);
 
-        // `color` and `image_UUID` are published only for tribes
+        // `color` and `image` are published only for tribes
         should.exist(tribesReadRes.body[0].color);
-        tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
+        tribesReadRes.body[0].image.should.equal(_tribe.image);
 
         // These are at the model, but aren't exposed
         should.not.exist(tribesReadRes.body[0].synonyms);
@@ -144,9 +144,9 @@ describe('Tribe CRUD tests', function () {
             should.exist(tribesReadRes.body[0].created);
             should.exist(tribesReadRes.body[0]._id);
 
-            // `color` and `image_UUID` are published only for tribes
+            // `color` and `image` are published only for tribes
             should.exist(tribesReadRes.body[0].color);
-            tribesReadRes.body[0].image_UUID.should.equal(_tribe.image_UUID);
+            tribesReadRes.body[0].image.should.equal(_tribe.image);
 
             // These are at the model, but aren't exposed
             should.not.exist(tribesReadRes.body[0].synonyms);
