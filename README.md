@@ -27,7 +27,7 @@ We have two main ways to run the software.
 
 ### Running locally
 
-Install the stack on your localhost and run NodeJS and MongoDB locally.
+Install the stack on your localhost and run [NodeJS](https://nodejs.org/en/download/) and [MongoDB](https://docs.mongodb.com/manual/installation/) locally.
 This approach takes a little more time to setup, and bit more manual configuration,
 but is fast, and can be easier to work with. [Read more](https://team.trustroots.org/Install.html).
 
