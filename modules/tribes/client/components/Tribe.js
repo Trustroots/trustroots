@@ -6,7 +6,7 @@ import styled from 'styled-components';
 
 import JoinButton from './JoinButton';
 
-import getTribeBackgroundStyle from './helpers/getTribeBackgroundStyle';
+import { getCircleBackgroundStyle } from '../utils';
 
 const Container = styled.div.attrs({
   className: 'panel tribe tribe-image',
@@ -15,11 +15,7 @@ const Container = styled.div.attrs({
   // https://www.styled-components.com/docs/faqs#how-can-i-override-styles-with-higher-specificity
   &&& {
     position: relative;
-    ${({ tribe }) =>
-      getTribeBackgroundStyle(tribe, {
-        isProgressive: true,
-        dimensions: '742x496',
-      })}
+    ${({ tribe }) => getCircleBackgroundStyle(tribe, '742x496')}
   }
 `;
 
@@ -40,10 +36,9 @@ export default function Tribe({ tribe, user, onMembershipUpdated }) {
           </span>
         )}
         <div
-          className={classnames(
-            'tribe-content',
-            tribe.image_UUID ? 'is-image' : '',
-          )}
+          className={classnames('tribe-content', {
+            'is-image': tribe.image,
+          })}
         >
           <h3 className="font-brand-light tribe-label">{tribe.label}</h3>
           <span className="tribe-meta">{countInfo}</span>

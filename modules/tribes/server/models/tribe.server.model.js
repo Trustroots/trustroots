@@ -60,16 +60,6 @@ const validateURL = function (url) {
 };
 
 /**
- * Validation function for `TribeSchema.image_UUID`
- * Uses UUID version v4
- * @link https://en.wikipedia.org/wiki/Universally_unique_identifier#Variants_and_Versions
- * @link https://www.npmjs.com/package/validator#validators
- */
-const validateUUID = function (uuid) {
-  return !uuid || validator.isUUID(uuid, 4);
-};
-
-/**
  * Tribe Schema
  */
 const TribeSchema = new Schema({
@@ -119,9 +109,10 @@ const TribeSchema = new Schema({
     default: true,
     required: true,
   },
-  image_UUID: {
-    type: String,
-    validate: [validateUUID, 'Please use valid UUID.'],
+  image: {
+    type: Boolean,
+    default: false,
+    required: true,
   },
   attribution: {
     type: String,
