@@ -22,8 +22,6 @@ import resetPasswordTemplateUrl from '@/modules/users/client/views/password/rese
 import profileRemoveTemplateUrl from '@/modules/users/client/views/profile/remove.client.view.html';
 import profileReferencesTemplateUrl from '@/modules/users/client/views/profile/profile-view-references.client.view.html';
 
-import AppConfig from '@/modules/core/client/app/config';
-
 angular.module('users').config(UsersRoutes);
 
 /* @ngInject */
@@ -366,38 +364,35 @@ function UsersRoutes($stateProvider) {
       data: {
         pageTitle: 'Remove profile',
       },
+    })
+    .state('profile.references', {
+      url: '/references',
+      templateUrl: profileReferencesTemplateUrl,
+      requiresAuth: true,
+      noScrollingTop: true,
+      abstract: true,
+      data: {
+        pageTitle: 'Profile references',
+      },
+    })
+    .state('profile.references.list', {
+      url: '',
+      template:
+        '<list-references ng-if="app.appSettings.referencesEnabled" profile="profileCtrl.profile" authenticatedUser="app.user"></list-references>',
+      requiresAuth: true,
+      noScrollingTop: true,
+      data: {
+        pageTitle: 'Profile references',
+      },
+    })
+    .state('profile.references.new', {
+      url: '/new',
+      template:
+        '<create-reference ng-if="app.appSettings.referencesEnabled" userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',
+      requiresAuth: true,
+      noScrollingTop: true,
+      data: {
+        pageTitle: 'Leave a reference',
+      },
     });
-
-  if (AppConfig.appEnv !== 'production') {
-    $stateProvider
-      .state('profile.references', {
-        url: '/references',
-        templateUrl: profileReferencesTemplateUrl,
-        requiresAuth: true,
-        noScrollingTop: true,
-        abstract: true,
-        data: {
-          pageTitle: 'Profile references',
-        },
-      })
-      .state('profile.references.list', {
-        url: '',
-        template: '<list-references></list-references>',
-        requiresAuth: true,
-        noScrollingTop: true,
-        data: {
-          pageTitle: 'Profile references',
-        },
-      })
-      .state('profile.references.new', {
-        url: '/new',
-        template:
-          '<create-reference userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',
-        requiresAuth: true,
-        noScrollingTop: true,
-        data: {
-          pageTitle: 'Leave a reference',
-        },
-      });
-  }
 }

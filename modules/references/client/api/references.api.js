@@ -34,7 +34,10 @@ const referenceMapping = [
   ['recommend', 'recommend'],
   ['feedbackPublic', 'feedbackPublic'],
   ['userTo', 'userTo'],
+  ['userFrom', 'userFrom'],
   ['public', 'public'],
+  ['created', 'created'],
+  ['_id', '_id'],
 ];
 
 /**
@@ -58,9 +61,14 @@ export async function create(reference) {
  * @returns Promise<Reference[]> - array of the found references
  */
 export async function read({ userFrom, userTo }) {
-  const { data: references } = await axios.get(
-    `/api/references?userFrom=${userFrom}&userTo=${userTo}`,
-  );
+  const params = {};
+  if (userFrom) {
+    params.userFrom = userFrom;
+  }
+  if (userTo) {
+    params.userTo = userTo;
+  }
+  const { data: references } = await axios.get('/api/references', { params });
   return references.map(reference =>
     mapObjectToObject(reference, referenceMapping, true),
   );

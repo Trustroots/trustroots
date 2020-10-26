@@ -363,9 +363,9 @@ describe('Offer search tests', function () {
         agent
           .get(
             '/api/offers' +
-            '?northEastLat=25.' +
-            '1'.repeat(30) +
-            'foo' + // `foo` starts at 31
+              '?northEastLat=25.' +
+              '1'.repeat(30) +
+              'foo' + // `foo` starts at 31
               '&northEastLng=25.598493303571427' +
               '&southWestLat=-20.49068931208608' +
               '&southWestLng=-12.986188616071427',

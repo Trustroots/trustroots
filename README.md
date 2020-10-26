@@ -20,7 +20,6 @@ Check [Team Guide](https://team.trustroots.org/Volunteering.html) for more info 
 - [Issues about the website](https://github.com/Trustroots/trustroots/issues)
 - [Issues about mobile apps](https://github.com/Trustroots/trustroots-expo-mobile/issues)
 - [Report security issues](https://github.com/Trustroots/trustroots/blob/master/SECURITY.md#readme)
-- More generic project conversations over at [meta.trustroots.org](https://meta.trustroots.org/)
 
 ## Running the software
 
@@ -28,7 +27,7 @@ We have two main ways to run the software.
 
 ### Running locally
 
-Install the stack on your localhost and run NodeJS and MongoDB locally.
+Install the stack on your localhost and run [NodeJS](https://nodejs.org/en/download/) and [MongoDB](https://docs.mongodb.com/manual/installation/) locally.
 This approach takes a little more time to setup, and bit more manual configuration,
 but is fast, and can be easier to work with. [Read more](https://team.trustroots.org/Install.html).
 

@@ -97,6 +97,7 @@ describe('Read a single reference by reference id', () => {
         userTo: userToExp,
         created: new Date().toISOString(),
         _id: references[3]._id.toString(),
+        recommend: references[3].recommend,
         interactions: {
           met: references[3].interactions.met,
           hostedMe: references[3].interactions.hostedMe,
