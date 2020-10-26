@@ -25,16 +25,17 @@ export default function ListReferences({ profile, authenticatedUser }) {
         userTo: profile._id,
       });
 
-      const filteredPublic = references
-        .filter(reference => reference.public)
-        .sort((a, b) => a.created < b.created);
+      const publicNewestFirst = references.filter(
+        reference => reference.public,
+      );
 
-      const filteredPending = references
-        .filter(reference => !reference.public)
-        .sort((a, b) => a.created > b.created);
+      const pendingNewestFirst = references.filter(
+        reference => !reference.public,
+      );
+      const pendingOldestFirst = [...pendingNewestFirst].reverse();
 
-      setPublicReferences(filteredPublic);
-      setPendingReferences(filteredPending);
+      setPublicReferences(publicNewestFirst);
+      setPendingReferences(pendingOldestFirst);
     } finally {
       setIsLoading(false);
     }

@@ -55,7 +55,9 @@ export async function create(reference) {
 }
 
 /**
- * API request: read references and filter by userFrom and userTo
+ * API request: read references, filter them by userFrom and userTo,
+ * and sort by 'created' field starting from the most recent date
+ *
  * @param {string} userFrom - id of user who gave the reference
  * @param {string} userTo - id of user who received the reference
  * @returns Promise<Reference[]> - array of the found references
