@@ -1,48 +1,48 @@
 {
     "explaining that you are interested in meeting them, not just looking for free accommodation": {
-        "": ""
+        "": "explicando que tienes interés en conocerle, no simplemente buscando alojamiento gratuito."
     },
-    "Conversation started {{ date }}": "",
+    "Conversation started {{ date }}": "Conversación empezada {{ date }}",
     "Don't write to people 2 months ahead": {
-        "": ""
+        "": "No le escribas a la gente con 2 meses de anticipación."
     },
-    "Edit your profile": "Editar tu perfil",
-    "Explain to them why you are choosing them": "",
+    "Edit your profile": "Modifica tu perfil",
+    "Explain to them why you are choosing them": "Explícales a ellos porque los eliges",
     "Highlight text to add links or change its appearance": {
         " Ctrl+Enter to send": {
-            "": ""
+            "": "Selecciona el texto para agregar vínculos o cambiar su apariencia. Ctrl+Enter para enviar."
         }
     },
-    "Make sure your profile is complete": "",
-    "More messages": "",
+    "Make sure your profile is complete": "Asegúrate que tu perfil esté completo",
+    "More messages": "Más mensajes",
     "No conversations yet": {
-        "": ""
+        "": "Ninguna conversación aún."
     },
     "Please write longer profile description before sending messages": {
-        "": ""
+        "": "Por favor escribe una descripción de perfil más larga antes de enviar mensajes."
     },
-    "Send": "",
-    "Sorry I can't host": "",
-    "Tell a little bit about yourself": "",
-    "Tell your host why you're on a trip": "",
+    "Send": "Enviar",
+    "Sorry I can't host": "Disculpa no puedo hospedar",
+    "Tell a little bit about yourself": "Cuenta un poco acerca de tí",
+    "Tell your host why you're on a trip": "Cuéntale a tu anfitrión porque estás de viaje",
     "This user isn't a member anymore": {
-        "": ""
+        "": "Este usuario no es más miembro."
     },
-    "Tip": "",
-    "Trustroots is very much about spontaneous travel": "",
-    "Unknown member": "",
-    "What are your expectations in regards with going through their town?": "",
-    "Write back": "",
-    "Yes, I can host!": "",
-    "You": "",
+    "Tip": "Sugerencia",
+    "Trustroots is very much about spontaneous travel": "Trustroots es ante todo acerca de viajar espontáneamente",
+    "Unknown member": "Miembro desconocido",
+    "What are your expectations in regards with going through their town?": "¿Cuáles son tus expectativas respecto a recorrer su pueblo?",
+    "Write back": "Responde",
+    "Yes, I can host!": "Sí, puedo alojar!",
+    "You": "Tu",
     "You haven't been talking yet": {
-        "": ""
+        "": "Aún no han hablado."
     },
-    "You replied": "",
+    "You replied": "Tu has respondido",
     "You're much more likely to get a positive response if you have written a bit about yourself": {
-        "": ""
+        "": "Tienes muchas más posibilidades de obtener una respuesta positiva si has escrito un poco acerca de tí mismo."
     },
     "Your profile seems quite empty": {
-        "": ""
+        "": "Tu perfil parece estar bastante vacío."
     }
 }
