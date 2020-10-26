@@ -1,5 +1,5 @@
 {
-    "(additional {{amount}} pending)": "",
+    "(additional {{amount}} pending)": "({{amount}} adicional en espera)",
     "Cancel": "Cancelar",
     "Confirm Request": "Confirmar solicitud",
     "Connected since {{created, MMM D, YYYY}}": "Conectado desde {{created, D MMM, YYYY}}",
