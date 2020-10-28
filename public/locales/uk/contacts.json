@@ -1,1 +1,11 @@
-{}
+{
+    "{{count}} contacts in common_0": "{{count}} спільний контакт",
+    "{{count}} contacts in common_1": "{{count}}  спільні контакти",
+    "{{count}} contacts in common_2": "{{count}}  спільних контактів",
+    "{{count}} contacts_0": "{{count}} контакт",
+    "{{count}} contacts_1": "{{count}} контакти",
+    "{{count}} contacts_2": "{{count}} контактів",
+    "Yes, remove contact": "Так, видалити контакт",
+    "Remove contact?": "Видалити контакт?",
+    "Decline Request": "Відхилити запит"
+}
