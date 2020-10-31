@@ -192,7 +192,7 @@
     "@babel/preset-env": "7.12.1",
     "@babel/preset-react": "7.12.1",
     "@pmmmwh/react-refresh-webpack-plugin": "0.4.2",
-    "@testing-library/jest-dom": "5.11.4",
+    "@testing-library/jest-dom": "5.11.5",
     "@testing-library/react": "11.0.4",
     "@wordpress/browserslist-config": "2.7.0",
     "agendash": "1.0.0",
