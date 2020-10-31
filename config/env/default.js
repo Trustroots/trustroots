@@ -46,6 +46,7 @@ module.exports = {
   imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
   uploadDir: './public/uploads-profile',
+  circleImagesDir: './public/uploads-circle',
   port: 3000,
   host: 'localhost',
   fd: null, // listen on a file descriptor (instead of host/port)

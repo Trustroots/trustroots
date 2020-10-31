@@ -1,12 +1,12 @@
 {
-    "About": "",
+    "About": "Acerca",
     "About me": "Sobre mí",
     "Add contact": "Añadir contacto",
     "Change language": "Cambiar idioma",
     "Contacts": "Contactos",
     "Delete contact request": "Cancelar solicitud de contacto",
     "Don't panic!": "¡Qué no cunda el pánico!",
-    "Edit your profile": "Editar tu perfil",
+    "Edit your profile": "Modifica tu perfil",
     "Elsewhere": "En otros sitios",
     "Fill your profile": "Rellena tu perfil",
     "From <1>{{locationFrom}}</1>": "De <1>{{locationFrom}}</1>",
@@ -21,11 +21,11 @@
     "Member has not written description about themself": {
         "": "Este miembro no ha escrito ninguna descripción sobre sí mismo."
     },
-    "Member since {{date, MMM Do, YYYY}}": "",
+    "Member since {{date, MMM Do, YYYY}}": "Miembro desde {{date, MMM Do, YYYY}}",
     "Online long ago": "Conectado por última vez hace mucho",
-    "Online {{ date, fromNow }}": "",
+    "Online {{ date, fromNow }}": "Conectado {{ date, fromNow }}",
     "Open user profile for {{name}}": "Abrir el perfil del usuario de {{name}}",
-    "Overview": "",
+    "Overview": "Resúmen",
     "Remove contact": "Borrar contacto",
     "Replies within {{replyTime, fromNow}}": {
         "": "Responde entre {{replyTime, fromNow}}."
@@ -38,22 +38,22 @@
         "": "Lo siento, primero necesitas activar tu perfil confirmando tu correo electrónico."
     },
     "Support": "Soporte",
-    "Thanks to all our community members who helped translate!": "",
+    "Thanks to all our community members who helped translate!": "¡Gracias a todos los miembros de nuestra comunidad que nos ayudaron a traducir!",
     "This is the language of the interface you see across the site": {
-        "": ""
+        "": "Este es el lenguaje de la interface que ves a traves de todo el sitio."
     },
     "Tribes in common": "Tribus en común",
     "Write a reference": "Escribir una referencia",
-    "You can help us out!": "",
+    "You can help us out!": "¡Tú puedes ayudarnos!",
     "Your profile description should be longer so that you can send messages": {
-        "": ""
+        "": "La descripción de tu perfil debería ser más larga para poder enviar mensajes."
     },
     "female": "mujer",
     "male": "hombre",
-    "non-binary": "",
-    "other": "",
-    "{{birthdate, age}} years": "",
+    "non-binary": "no-binario",
+    "other": "otro",
+    "{{birthdate, age}} years": "{{birthdate, age}} años",
     "“Everyone is necessarily the hero of their own life story": {
-        "”": ""
+        "”": "“Todos son necesariamente los héroes de su propia historia de vida.”"
     }
 }

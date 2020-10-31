@@ -42,7 +42,7 @@ services:
 
   ## Database container
   mongodb:
-    image: mongo:4.2
+    image: mongo:4.4
     container_name: db_1
     volumes:
       - dbdata:/data/db

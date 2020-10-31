@@ -151,14 +151,18 @@
     Trustroots is a travellers' community for sharing, hosting and getting
     people together.">
     <meta property="og:url" content="{{hostPort}}/circles/{{tribe.slug}}" />
-    {% if tribe.image_UUID %} {#
+    {% if tribe.image %} {#
     https://developers.facebook.com/docs/sharing/best-practices#images #}
     <meta
       property="og:image"
-      content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg"
+      content="{{hostPort}}/uploads-circle/{{tribe.slug}}/1400x900.jpg"
     />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="900" />
     {% else %}
     <meta property="og:image" content="{{hostPort}}/img/og_image.jpg" />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="735" />
     {% endif %} {% else %} {% if invite %}
     <meta property="og:title" content="You are invited to join Trustroots!" />
     {% else %}
@@ -167,6 +171,8 @@
     <meta property="og:description" content="{{description}}" />
     <meta property="og:url" content="{{canonicalUrl}}" />
     <meta property="og:image" content="{{hostPort}}/img/og_image.jpg" />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="735" />
     {% endif %}
     <meta property="og:site_name" content="{{title}}" />
     <meta property="og:type" content="website" />

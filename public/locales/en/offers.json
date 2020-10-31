@@ -4,7 +4,7 @@
   "At most {{count}} guests._plural": "At most {{count}} guests.",
   "Bigger map": "Bigger map",
   "Can host": "Can host",
-  "Cannot host currently": "Cannot host currently'",
+  "Cannot host currently": "Cannot host currently",
   "Change": "Change",
   "Hosting status: {{statusLabel}}": "Hosting status: {{statusLabel}}",
   "I can host": "I can host",
