@@ -209,7 +209,7 @@
     "eslint-loader": "4.0.2",
     "eslint-plugin-angular": "4.0.1",
     "eslint-plugin-import": "2.22.1",
-    "eslint-plugin-jest-dom": "3.2.3",
+    "eslint-plugin-jest-dom": "3.2.4",
     "eslint-plugin-prettier": "3.1.4",
     "eslint-plugin-react": "7.20.6",
     "eslint-plugin-testing-library": "3.1.3",
