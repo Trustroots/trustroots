@@ -11,3 +11,17 @@ export function ready(fn) {
 
   document.addEventListener('DOMContentLoaded', fn, false);
 }
+
+/**
+ * Does browser support webp image format?
+ * @return {[bool]}
+ */
+export function canUseWebP() {
+  if (typeof window !== 'undefined') {
+    const elem = document.createElement('canvas');
+    if (elem.getContext?.('2d')) {
+      return elem.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+    }
+  }
+  return false;
+}
