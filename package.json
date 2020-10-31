@@ -144,7 +144,7 @@
     "migrate": "1.7.0",
     "mkdir-recursive": "0.4.0",
     "mmmagic": "0.5.3",
-    "moment": "2.28.0",
+    "moment": "2.29.1",
     "mongodb": "3.6.2",
     "mongoose": "5.4.0",
     "mongoose-beautiful-unique-validation": "7.1.1",
