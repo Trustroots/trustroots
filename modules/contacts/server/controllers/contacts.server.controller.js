@@ -78,7 +78,7 @@ exports.add = function (req, res) {
             req.body.message,
             textService.sanitizeOptions,
           );
-          messagePlain = htmlToText.fromString(req.body.message, {
+          messagePlain = htmlToText(req.body.message, {
             wordwrap: 80,
           });
         }
