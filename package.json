@@ -168,7 +168,7 @@
     "react-bootstrap": "0.33.1",
     "react-dom": "16.13.1",
     "react-i18next": "11.7.2",
-    "react-map-gl": "5.2.8",
+    "react-map-gl": "5.2.9",
     "react-medium-editor": "1.8.1",
     "react-responsive": "8.1.0",
     "sanitize-html": "1.27.4",
