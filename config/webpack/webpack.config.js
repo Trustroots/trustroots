@@ -33,8 +33,10 @@ const styleLoaders = [
   {
     loader: 'postcss-loader',
     options: {
-      ident: 'postcss',
-      plugins: [require('autoprefixer')()],
+      postcssOptions: {
+        plugins: [require('autoprefixer')],
+      },
+      sourceMap: isDevelopment,
     },
   },
 ];
