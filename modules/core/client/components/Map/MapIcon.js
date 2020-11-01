@@ -16,7 +16,7 @@ export default function MapIcon({ mapboxStyle }) {
     mapboxStyle && MAPBOX_TOKEN
       ? `https://api.mapbox.com/styles/v1/mapbox/${mapboxStyle
           .split('/')
-          .pop()}/static/14.1663,55.6438,5.22,0/128x128@2x?attribution=false&access_token=${MAPBOX_TOKEN}`
+          .pop()}/static/14.1663,55.6438,8.22,0/128x128@2x?attribution=false&access_token=${MAPBOX_TOKEN}`
       : // Default image when API isn't available
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNc8mTSfwAHaQMbL4UQfQAAAABJRU5ErkJggg==';
 

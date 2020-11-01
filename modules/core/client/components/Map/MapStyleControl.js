@@ -56,7 +56,8 @@ class MapStyleControl extends BaseControl {
             aria-haspopup="true"
             className="btn"
             onClick={this.open}
-            onMouseEnter={this.open}
+            onMouseEnter={() => !this._context.isDragging && this.open()}
+            aria-label={t('Change map style')}
           >
             <MapIcon
               mapboxStyle={
@@ -74,8 +75,8 @@ class MapStyleControl extends BaseControl {
           >
             {[
               MAP_STYLE_MAPBOX_STREETS,
-              MAP_STYLE_MAPBOX_SATELLITE,
               MAP_STYLE_MAPBOX_OUTDOORS,
+              MAP_STYLE_MAPBOX_SATELLITE,
             ].map(mapboxStyle => (
               <button
                 className={classnames('btn', 'btn-default', {

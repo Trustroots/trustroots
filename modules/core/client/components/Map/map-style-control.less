@@ -7,7 +7,7 @@
   position: absolute;
   z-index: 5;
 
-  .btn {
+  button.btn {
     background: @map-toolbar-background;
     color: @text-color;
     text-align: left;
@@ -18,8 +18,17 @@
       background: @map-toolbar-background-hover;
     }
 
+    &:active,
+    &:focus {
+      color: @text-color;
+      outline: 2px solid @brand-primary;
+    }
+
     &.is-active {
-      background: @gray-lighter;
+      &,
+      &:hover {
+        background: @gray-lighter;
+      }
     }
   }
 }
