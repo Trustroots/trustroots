@@ -6,5 +6,6 @@
     "Search members": "Rechercher des membres",
     "Type name, username…": "Tapez un nom, nom d'utilisateur…",
     "{{count}} members found": "{{count}} membre trouvé",
-    "{{count}} members found_plural": "{{count}} membres trouvés"
+    "{{count}} members found_plural": "{{count}} membres trouvés",
+    "Search": "Rechercher"
 }
