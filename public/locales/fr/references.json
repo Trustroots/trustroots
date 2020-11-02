@@ -44,5 +44,31 @@
     },
     "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
         "": "Votre recommandation deviendra publique lorsque <1></1> vous recommandera en retour, ou bien dans {{daysToReply}} jours."
-    }
+    },
+    "{{daysLeft}} days left": "{{daysLeft}} jours restants",
+    "{{count}} unknown": "{{count}} inconnu",
+    "{{count}} unknown_plural": "{{count}} inconnus",
+    "{{count}} recommend": "{{count}} recommandé",
+    "{{count}} recommend_plural": "{{count}} recommandés",
+    "{{count}} not recommend": "{{count}} non recommandé",
+    "{{count}} not recommend_plural": "{{count}} non recommandés",
+    "pending": "en attente",
+    "Your reference will become public when <1></1> gives you a reference back, or in {{DAYS_TO_REPLY}} days.": "Votre recommandation deviendra publique lorsque <1></1> vous obtiendrez une recommandation en retour, ou à défaut dans {{DAYS_TO_REPLY}} jours.",
+    "Write one!": "Écrivez-en une !",
+    "Would you like to describe something about them?": "Souhaitez-vous en dire un peu plus sur eux ?",
+    "The answer you write will be publicaly available on their profile": "La réponse que vous écrivez sera visible publiquement sur leur profil",
+    "Recommend.": "Recommander.",
+    "Public feedback": "Commentaire public",
+    "Public": "Public",
+    "Pending": "En attente",
+    "Optional": "Facultatif",
+    "Not recommend.": "Ne pas recommander.",
+    "No references yet.": "Aucune recommandation pour le moment.",
+    "Met in person.": "Rencontré en personne.",
+    "Member since {{memberSince}}": "Membre depuis {{memberSince}}",
+    "Host.": "Hôte.",
+    "Guest.": "Invité.",
+    "Give a reference": "Recommander",
+    "Feedback": "Commentaires",
+    "Did you enjoy their cooking? singing?": "Avez-vous apprécié leur cuisine ? Leur chant ?"
 }
