@@ -19,5 +19,12 @@
     "Send us suggestions!": "Envoyez-nous des suggestions !",
     "Sign up with Trustroots": "S'inscrire sur Trustroots",
     "{{count, number}} members": "{{count, number}} membre",
-    "{{count, number}} members_plural": "{{count, number}} membres"
+    "{{count, number}} members_plural": "{{count, number}} membres",
+    "New circle!": "Nouveau cercle !",
+    "Missing your circle?": "Votre cercle vous manque ?",
+    "Leave this circle?": "Quitter ce cercle ?",
+    "Leave circle": "Quitter le cercle",
+    "Joining circles helps you find likeminded Trustroots members.": "Rejoindre des cercles vous aide à trouver des membres de Trustroots qui partagent les mêmes idées.",
+    "Join Trustroots to find members behind circles.": "Rejoignez Trustroots et retrouvez des membres à l'aide des cercles.",
+    "Discover circles": "Découvrez les cercles"
 }
