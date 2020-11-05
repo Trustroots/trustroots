@@ -13,7 +13,7 @@ function JoinButtonPresentational({
   isLoggedIn,
   onToggle,
 }) {
-  const { t } = useTranslation('tribes');
+  const { t } = useTranslation('circles');
 
   const ariaLabel = isMember
     ? t('Leave circle')
