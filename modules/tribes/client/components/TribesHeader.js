@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Board from '@/modules/core/client/components/Board';
 
 export default function TribesHeader({ isLoggedIn }) {
-  const { t } = useTranslation('tribes');
+  const { t } = useTranslation('circles');
 
   return (
     <Board names="tribes-1" className="tribes-header">

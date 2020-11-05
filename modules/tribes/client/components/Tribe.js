@@ -20,7 +20,7 @@ const Container = styled.div.attrs({
 `;
 
 export default function Tribe({ tribe, user, onMembershipUpdated }) {
-  const { t } = useTranslation('tribes');
+  const { t } = useTranslation('circles');
 
   const countInfo =
     tribe.count === 0
