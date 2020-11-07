@@ -190,7 +190,7 @@
     "@babel/plugin-proposal-object-rest-spread": "7.12.1",
     "@babel/plugin-proposal-optional-chaining": "7.12.1",
     "@babel/preset-env": "7.12.1",
-    "@babel/preset-react": "7.12.1",
+    "@babel/preset-react": "7.12.5",
     "@pmmmwh/react-refresh-webpack-plugin": "0.4.2",
     "@testing-library/jest-dom": "5.11.5",
     "@testing-library/react": "11.1.0",
