@@ -25,7 +25,6 @@ import {
 } from './layers';
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import NoContent from '@/modules/core/client/components/NoContent';
-import SearchMapLoading from './SearchMapLoading';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import './search-map.less';
@@ -52,7 +51,6 @@ export default function SearchMap(props) {
     zoom: mapCenter.zoom,
   });
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
-  const [isFetching, setIsFetching] = useState(false);
   const [hoveredOffer, setHoveredOffer] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(false);
   const [offers, setOffers] = useState({
@@ -346,8 +344,6 @@ export default function SearchMap(props) {
 
   // eslint-disable-next-line
   async function fetchOffers(boundingBox) {
-    setIsFetching(true);
-
     console.log('fetch with filters:', filters); // eslint-disable-line no-console
     try {
       // @TODO: cancellation when need to re-fetch
@@ -360,8 +356,6 @@ export default function SearchMap(props) {
       // @TODO Error handling
       // eslint-disable-next-line no-console
       console.error('Could not load offers. Re-attempt?');
-    } finally {
-      setIsFetching(false);
     }
   }
 
@@ -399,7 +393,6 @@ export default function SearchMap(props) {
         '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
       }
     >
-      {isFetching && <SearchMapLoading />}
       {viewport.zoom <= MIN_ZOOM && (
         <NoContent
           className="search-map-no-content"
