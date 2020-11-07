@@ -1,7 +1,6 @@
 // External dependencies
-// import { useTranslation } from 'react-i18next';
-import { useTranslation } from 'react-i18next';
 import { useDebouncedCallback } from 'use-debounce';
+import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { createRef, useEffect, useState } from 'react';
 import ReactMapGL, { FlyToInterpolator, Layer, Source } from 'react-map-gl';
@@ -12,7 +11,7 @@ import {
   MAP_STYLE_DEFAULT,
   MAP_STYLE_OSM,
 } from '@/modules/core/client/components/Map/constants';
-import { HEATMAP_MIN_ZOOM, SOURCE_HEATMAP, SOURCE_OFFERS } from './constants';
+import { MIN_ZOOM, SOURCE_OFFERS } from './constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
@@ -22,32 +21,44 @@ import {
   clusterCountLayerMapbox,
   clusterCountLayerOSM,
   clusterLayer,
-  heatMapLayer,
   unclusteredPointLayer,
 } from './layers';
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
-// import Map from '@/modules/core/client/components/Map/index';
-import SearchMapLoading from './SearchMapLoading';
 import NoContent from '@/modules/core/client/components/NoContent';
+import SearchMapLoading from './SearchMapLoading';
+import usePersistentMapStyle from '../hooks/use-persistent-map-style';
+import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import './search-map.less';
 
-// export default class SearchMap extends Component {
 export default function SearchMap(props) {
-  const { filters, mapCenter, onOfferClose, onOfferOpen } = props;
-  const [isFetching, setIsFetching] = useState(false);
-  const [mapStyle, setMapstyle] = useState(MAP_STYLE_DEFAULT);
-  const [hoveredOffer, setHoveredOffer] = useState(false); //eslint-disable-line
-  const [selectedOffer, setSelectedOffer] = useState(false); //eslint-disable-line
-  const [offers, setOffers] = useState({
-    features: [],
-    type: 'FeatureCollection',
+  // eslint-disable-next-line
+  const { filters, mapCenter, mapBounds, onOfferClose, onOfferOpen } = props;
+  const { t } = useTranslation('search');
+  const [
+    persistentMapLocation, //eslint-disable-line
+    setPersistentMapLocation,
+  ] = usePersistentMapLocation({
+    latitude: mapCenter.lat,
+    longitude: mapCenter.lng,
+    zoom: mapCenter.zoom,
   });
+
+  // eslint-disable-next-line
+  const initialMapLocation = mapCenter ? {} : {};
+
   const [viewport, setViewport] = useState({
     latitude: mapCenter.lat,
     longitude: mapCenter.lng,
     zoom: mapCenter.zoom,
   });
-  const { t } = useTranslation('search');
+  const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
+  const [isFetching, setIsFetching] = useState(false);
+  const [hoveredOffer, setHoveredOffer] = useState(false);
+  const [selectedOffer, setSelectedOffer] = useState(false);
+  const [offers, setOffers] = useState({
+    features: [],
+    type: 'FeatureCollection',
+  });
   const MAPBOX_TOKEN = getMapBoxToken();
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles = !!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production';
@@ -65,7 +76,7 @@ export default function SearchMap(props) {
    */
   const updateOffers = () => {
     // Don't fetch if viewing the whole world
-    if (viewport.zoom <= HEATMAP_MIN_ZOOM) {
+    if (viewport.zoom <= MIN_ZOOM) {
       return;
     }
 
@@ -80,8 +91,6 @@ export default function SearchMap(props) {
       return;
     }
 
-    // @TODO: better way to get bounds?
-    // @TODO: expand bound slightly to load more as "buffer"
     // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
     const bounds = map.getBounds();
     const northEast = bounds.getNorthEast();
@@ -106,12 +115,27 @@ export default function SearchMap(props) {
     });
   };
 
+  const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
+    setPersistentMapLocation,
+    // delay in ms
+    1000,
+    // The maximum time func is allowed to be delayed before it's invoked:
+    { maxWait: 3000 },
+  );
+
+  const onViewPortChange = viewport => {
+    setViewport(viewport);
+
+    const { latitude, longitude, zoom } = viewport;
+    debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
+  };
+
   const [debouncedUpdateOffers] = useDebouncedCallback(
     updateOffers,
     // delay in ms
     500,
     // The maximum time func is allowed to be delayed before it's invoked:
-    { maxWait: 1500 },
+    { maxWait: 3500 },
   );
 
   const updateFeatureState = (map, { source, id }, newFeatureState) => {
@@ -176,9 +200,10 @@ export default function SearchMap(props) {
     }
   };
 
-  // eslint-disable-next-line
   const setSelectedState = offer => {
-    console.log('🚀 setSelectedState:', offer); //eslint-disable-line
+    console.log('🚀 setSelectedState:'); //eslint-disable-line
+    console.log(offer); //eslint-disable-line
+    console.log(offer.toJSON()); //eslint-disable-line
     // @TODO set just once and store in state?
     const map = getMapRef();
 
@@ -188,7 +213,7 @@ export default function SearchMap(props) {
       return;
     }
 
-    updateFeatureState(map, offer, { selected: true });
+    updateFeatureState(map, offer, { selected: true, viewed: true });
     setSelectedOffer(offer);
   };
 
@@ -330,7 +355,7 @@ export default function SearchMap(props) {
         filters,
         ...boundingBox,
       });
-      setOffers(data || []);
+      setOffers(data);
     } catch {
       // @TODO Error handling
       // eslint-disable-next-line no-console
@@ -366,7 +391,7 @@ export default function SearchMap(props) {
       onHover={onHover}
       onInteractionStateChange={debouncedUpdateOffers}
       onMouseLeave={clearPreviouslyHoveredState}
-      onViewportChange={setViewport}
+      onViewportChange={onViewPortChange}
       ref={mapRef}
       touchRotate={false}
       {...viewport}
@@ -375,7 +400,7 @@ export default function SearchMap(props) {
       }
     >
       {isFetching && <SearchMapLoading />}
-      {viewport.zoom <= HEATMAP_MIN_ZOOM && (
+      {viewport.zoom <= MIN_ZOOM && (
         <NoContent
           className="search-map-no-content"
           icon="users"
@@ -406,9 +431,6 @@ export default function SearchMap(props) {
           <Layer {...clusterCountLayerMapbox} />
         )}
         <Layer {...unclusteredPointLayer} />
-      </Source>
-      <Source buffer={0} data={offers} id={SOURCE_HEATMAP} type="geojson">
-        <Layer {...heatMapLayer} />
       </Source>
     </ReactMapGL>
   );

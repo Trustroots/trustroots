@@ -42,9 +42,11 @@ function SearchMapController(
 
     // Listen to new map location values from other controllers
     $scope.$on('search.mapCenter', (event, mapCenter) => {
+      console.log('Angular got mapCenter:', mapCenter); //eslint-disable-line
       vm.mapCenter = mapCenter;
     });
     $scope.$on('search.mapBounds', (event, mapBounds) => {
+      console.log('Angular got mapBounds:', mapBounds); //eslint-disable-line
       vm.mapBounds = mapBounds;
     });
     // eslint-disable-next-line

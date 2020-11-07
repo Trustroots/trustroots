@@ -1,53 +1,15 @@
-import {
-  HEATMAP_MAX_ZOOM,
-  HEATMAP_MIN_ZOOM,
-  HEATMAP_OPACITY_BUFFER,
-  SOURCE_HEATMAP,
-  SOURCE_OFFERS,
-} from './constants';
-
-// Transition from heatmap to circle layer by zoom level
-const offersOpacityTransition = [
-  'interpolate',
-  ['linear'],
-  ['zoom'],
-  // From heatmap to circle layer (opacity from 0 to 1)
-  HEATMAP_MAX_ZOOM - HEATMAP_OPACITY_BUFFER,
-  0,
-  HEATMAP_MAX_ZOOM,
-  1,
-];
-
-// Transition from nothing to heatmap, and from heatmap to circle layer by zoom level
-const heatmapOpacityTransition = [
-  'interpolate',
-  ['linear'],
-  ['zoom'],
-  // From nothing to heatmap (opacity from 0 to 1)
-  HEATMAP_MIN_ZOOM,
-  0,
-  HEATMAP_MIN_ZOOM + HEATMAP_OPACITY_BUFFER,
-  1,
-  // From heatmap to circle layer (opacity from 1 to 0)
-  HEATMAP_MAX_ZOOM - HEATMAP_OPACITY_BUFFER,
-  1,
-  HEATMAP_MAX_ZOOM,
-  0,
-];
+import { MIN_ZOOM, SOURCE_OFFERS } from './constants';
 
 export const clusterLayer = {
   id: 'clusters',
   type: 'circle',
   source: SOURCE_OFFERS,
   filter: ['has', 'point_count'],
-  minzoom: HEATMAP_MAX_ZOOM - HEATMAP_OPACITY_BUFFER,
+  minzoom: MIN_ZOOM,
   paint: {
     'circle-color': 'rgba(18, 181, 145, 0.7)',
-    'circle-opacity': offersOpacityTransition,
-    'circle-radius': ['step', ['get', 'point_count'], 20, 100, 30, 750, 40],
-    'circle-stroke-color': 'rgba(18, 181, 145, 0.3)',
-    'circle-stroke-opacity': offersOpacityTransition,
-    'circle-stroke-width': 5,
+    // First circle size, then point count in a group
+    'circle-radius': ['step', ['get', 'point_count'], 25, 100, 30, 750, 40],
   },
 };
 
@@ -56,14 +18,14 @@ export const clusterCountLayerMapbox = {
   type: 'symbol',
   source: SOURCE_OFFERS,
   filter: ['has', 'point_count'],
-  minzoom: HEATMAP_MAX_ZOOM,
+  minzoom: MIN_ZOOM,
   layout: {
     'text-field': '{point_count_abbreviated}',
     'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
     'text-size': 17,
   },
   paint: {
-    'text-color': '#555',
+    'text-color': '#111',
   },
 };
 
@@ -86,7 +48,7 @@ export const unclusteredPointLayer = {
   type: 'circle',
   source: SOURCE_OFFERS,
   filter: ['!', ['has', 'point_count']],
-  minzoom: HEATMAP_MAX_ZOOM - HEATMAP_OPACITY_BUFFER,
+  minzoom: MIN_ZOOM,
   // Data driven dot visual customizations
   // https://docs.mapbox.com/mapbox-gl-js/example/data-driven-circle-colors/
   paint: {
@@ -151,68 +113,36 @@ export const unclusteredPointLayer = {
         [22, 80],
       ],
     },
-    /*
     // @TODO: visual and performance difference between this and above? test with many dots.
+    /*
     'circle-radius': [
       'interpolate',
       ['linear'],
       ['zoom'],
       // [Zoom level, size]
       [2, 2],
-      [6, 4],
-      [10, 10],
+      [7, 10],
+      [10, 12],
       [22, 80],
     ],
     */
-    // @TODO: remove stroke in higher zoom levels?
-    'circle-stroke-width': [
-      'case',
-      ['boolean', ['feature-state', 'hover'], false],
-      4, // On hover
-      2, // By default
-    ],
+    'circle-stroke-width': 3,
     'circle-stroke-opacity': [
       'case',
-      ['boolean', ['feature-state', 'selected'], false],
-      1, // On select
-      0.5, // By default
+      ['boolean', ['feature-state', 'hover'], false],
+      1, // On hover
+      0, // By default
     ],
     'circle-stroke-color': '#fff',
-    'circle-opacity': offersOpacityTransition,
-  },
-};
-
-export const heatMapLayer = {
-  id: 'heatmap',
-  type: 'heatmap',
-  source: SOURCE_HEATMAP,
-  maxzoom: HEATMAP_MAX_ZOOM + HEATMAP_OPACITY_BUFFER,
-  minzoom: HEATMAP_MIN_ZOOM,
-  paint: {
-    // Increase the heatmap weight based on frequency and property magnitude
-    // 'heatmap-weight': ['interpolate', ['linear'], ['get', 'mag'], 0, 0, 6, 1],
-    // Increase the heatmap color weight weight by zoom level
-    // heatmap-intensity is a multiplier on top of heatmap-weight
-    'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 0, 1, 9, 3],
-    // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
-    // Begin color ramp at 0-stop with a 0-transparancy color
-    // to create a blur-like effect.
-    'heatmap-color': [
-      'interpolate',
-      ['linear'],
-      ['heatmap-density'],
-      0,
-      'rgba(18, 181, 145, 0)',
-      0.2,
-      'rgba(18, 181, 145, 0.2)',
-      0.6,
-      'rgba(18, 181, 145, 0.5)',
-      1,
-      'rgba(18, 181, 145, 0.8)',
+    'circle-opacity': [
+      'case',
+      ['boolean', ['feature-state', 'hover'], false],
+      1, // When hovered
+      ['boolean', ['feature-state', 'selected'], false],
+      1, // When selected
+      ['boolean', ['feature-state', 'viewed'], false],
+      0.7, // When viewed already previously
+      1, // By default
     ],
-    // Adjust the heatmap radius by zoom level
-    // 'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 0, 2, 9, 20],
-    // Transition from heatmap to circle layer by zoom level
-    'heatmap-opacity': heatmapOpacityTransition,
   },
 };
