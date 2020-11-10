@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 
 export default function LeaveTribeModal({ tribe, show, onConfirm, onCancel }) {
-  const { t } = useTranslation('tribes');
+  const { t } = useTranslation('circles');
 
   return (
     <Modal show={show} onHide={onCancel}>

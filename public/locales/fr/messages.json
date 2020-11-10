@@ -44,5 +44,9 @@
     },
     "Your profile seems quite empty": {
         "": "Votre profil semble bien vide."
-    }
+    },
+    "{{count}} unread messages": "{{count}} message non lu",
+    "{{count}} unread messages_plural": "{{count}} messages non lus",
+    "License": "Licence",
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "…montrant que vous êtes intéressé pour les rencontrer, pas seulement pour obtenir un hébergement gratuit."
 }
