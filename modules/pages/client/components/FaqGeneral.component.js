@@ -274,11 +274,11 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
       <div className="faq-question" id="covid-19">
         <h3>{t('Trustroots and COVID-19 outbreak')}</h3>
         <Trans t={t} ns="pages">
-          We are all waiting to get back to "normal" and international travel open up again, and have people enjoy Trustroots community.
+          We are all waiting to get back to "normal", for international travel to open up again, and to having people enjoy the Trustroots community.
           <br /><br />
-          Until then, be patient. Please help to stop the spread of the virus. Consider not traveling, especially internationally. Consider not hosting people especially if you live with <a href="https://www.who.int/westernpacific/emergencies/covid-19/information/high-risk-groups">people in higher-risk</a>.
+          Until then, be patient. Please help stop the spread of the virus. Consider not traveling, especially internationally. Consider not hosting people, especially if you live with <a href="https://www.who.int/westernpacific/emergencies/covid-19/information/high-risk-groups">people in higher-risk</a>.
           <br /><br />
-          When you do travel or host, take care of your own and other's safety. Communicate to your guests and hosts what are your expecations regarding safety. <a href="/rules">Remember to stay respectful</a> towards each other and each other's needs when it comes to safety.
+          When you do travel or host, take care of your own and other's safety. Communicate to your guests and hosts what your expecations regarding safety are. <a href="/rules">Remember to stay respectful</a> towards each other and each other's needs when it comes to safety.
         </Trans>
       </div>
     </Faq>
