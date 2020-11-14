@@ -269,16 +269,33 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
           your report.
         </Trans>
       </div>
-           
-                               
+
       <div className="faq-question" id="covid-19">
         <h3>{t('Trustroots and COVID-19 outbreak')}</h3>
         <Trans t={t} ns="pages">
-          We are all waiting to get back to "normal", for international travel to open up again, and to having people enjoy the Trustroots community.
-          <br /><br />
-          Until then, be patient. Please help stop the spread of the virus. Consider not traveling, especially internationally. Consider not hosting people, especially if you live with <a href="https://www.who.int/westernpacific/emergencies/covid-19/information/high-risk-groups">people at higher risk</a>.
-          <br /><br />
-          When you do travel or host, take care of your own and other's safety. Communicate to your guests and hosts what your expectations regarding safety are. <a href="/rules">Remember to stay respectful</a> towards each other and each other's needs when it comes to safety.
+          We are all waiting to get back to &quot;normal&quot;, for
+          international travel to open up again, and to having people enjoy the
+          Trustroots community.
+        </Trans>
+        <br />
+        <br />
+        <Trans t={t} ns="pages">
+          Until then, be patient. Please help stop the spread of the virus.
+          Consider not traveling, especially internationally. Consider not
+          hosting people, especially if you live with{' '}
+          <a href="https://www.who.int/westernpacific/emergencies/covid-19/information/high-risk-groups">
+            people at higher risk
+          </a>
+        </Trans>
+        .
+        <br />
+        <br />
+        <Trans t={t} ns="pages">
+          When you do travel or host, take care of your own and other&apos;s
+          safety. Communicate to your guests and hosts what your expectations
+          regarding safety are. <a href="/rules">Remember to stay respectful</a>{' '}
+          towards each other and each other&apos;s needs when it comes to
+          safety.
         </Trans>
       </div>
     </Faq>
