@@ -148,6 +148,9 @@ export default function Faq({ category, invitationsEnabled, children }) {
                       >
                         {t('How do I report a member that violates the rules?')}
                       </a>
+                      <a href="/faq#covid-19" className="list-group-item">
+                        {t('Trustroots and COVID-19 outbreak')}
+                      </a>
                     </div>
                   </div>
                 )}
