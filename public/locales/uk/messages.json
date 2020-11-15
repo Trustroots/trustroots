@@ -1,3 +1,12 @@
 {
-    "More messages": "Інші повідомлення"
+    "More messages": "Інші повідомлення",
+    "You haven't been talking yet.": "Ви поки не обмінювались повідомленнями.",
+    "You": "Ти",
+    "Tell a little bit about yourself": "Розповіси трохи про себе",
+    "Send": "Відправити",
+    "No conversations yet.": "Поки немає розмов.",
+    "Make sure your profile is complete": "Переконайся, що твій профіль заповнений",
+    "Highlight text to add links or change its appearance. Ctrl+Enter to send.": "Виділи текст, щоб змінити його вигляд або додати посилання. Ctrl+Enter, щоб відправити.",
+    "Explain to them why you are choosing them": "Поясни їм, чому ти обрав їх",
+    "Edit your profile": "Редагувати профіль"
 }
