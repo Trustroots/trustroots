@@ -198,7 +198,7 @@
     "agendash": "1.0.0",
     "autoprefixer": "10.0.2",
     "babel-eslint": "10.1.0",
-    "babel-loader": "8.1.0",
+    "babel-loader": "8.2.1",
     "babel-plugin-angularjs-annotate": "0.10.0",
     "babel-plugin-i18next-extract": "0.8.0",
     "concurrently": "5.3.0",
