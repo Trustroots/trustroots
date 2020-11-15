@@ -118,7 +118,8 @@ class MapStyleControl extends BaseControl {
 }
 
 MapStyleControl.propTypes = {
-  mapStyle: PropTypes.string.isRequired,
+  mapStyle: PropTypes.oneOfType([PropTypes.object, PropTypes.string])
+    .isRequired,
   setMapstyle: PropTypes.func.isRequired,
 };
 
