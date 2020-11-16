@@ -8,6 +8,7 @@ const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
+const PromisePool = require('es6-promise-pool');
 const config = require(path.resolve('./config/config'));
 const util = require(path.resolve('./bin/fillTestData/util'));
 
@@ -281,7 +282,23 @@ function seedExperiences() {
           console.log(
             chalk.green(`Saving ${nExperiencesToBeAdded} experiences ... `),
           );
-          await saveExperiences(experienceSharingMatrix);
+
+          const saveExperiences = function* () {
+            for (let i = 0; i < experienceSharingMatrix.length; i++) {
+              if (i % 100 === 0) {
+                process.stdout.write(`Saving experiences for user ${i}...\n`);
+              }
+              for (let j = 0; j < experienceSharingMatrix[i].length; j++) {
+                if (experienceSharingMatrix[i][j]) {
+                  const experience = createExperience(users, i, j);
+                  yield saveExperience(experience);
+                }
+              }
+            }
+          };
+
+          const pool = new PromisePool(saveExperiences, 100);
+          await pool.start();
         } catch (err) {
           console.log(err);
         }
@@ -301,33 +318,17 @@ function seedExperiences() {
         return experience;
       }
 
-      function saveExperiences(expMatrix) {
-        return Promise.all(
-          expMatrix.map((row, i) => {
-            return Promise.all(
-              row.map((elm, j) => {
-                return new Promise((resolve, reject) => {
-                  if (!elm) {
-                    resolve();
-                    return;
-                  }
-
-                  const experience = createExperience(users, i, j);
-
-                  experience.save(err => {
-                    if (err != null) {
-                      console.log(err);
-                      reject();
-                    } else {
-                      process.stdout.write('.');
-                      resolve();
-                    }
-                  });
-                });
-              }),
-            );
-          }),
-        );
+      function saveExperience(experience) {
+        return new Promise((resolve, reject) => {
+          experience.save(err => {
+            if (err != null) {
+              console.log(err);
+              reject();
+            } else {
+              resolve();
+            }
+          });
+        });
       }
 
       function countTrueElements(matrix) {
