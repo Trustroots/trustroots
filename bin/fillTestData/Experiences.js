@@ -32,9 +32,9 @@ const argv = yargs.usage(
       })
       .boolean('debug')
       .describe('debug', 'Enable extra database output (default=false)')
-      .boolean('force')
+      .boolean('re-create')
       .describe(
-        'force',
+        're-create',
         'Remove existing experiences if there are any and create new ones',
       )
       .example(
@@ -42,7 +42,7 @@ const argv = yargs.usage(
         'Adds on average 10 experiences (8 of them having replies) to each profile to the database ',
       )
       .example(
-        '$0 10 0.8 --force',
+        '$0 10 0.8 --re-create',
         'Adds on average 10 experiences (8 of them having replies) to each profile to the database after removing all existing references from the db ',
       )
       .example(
@@ -248,17 +248,17 @@ function seedExperiences() {
       }
 
       const experience = await Reference.findOne();
-      if (experience && !argv.force) {
+      if (experience && !argv.reCreate) {
         console.log(
           chalk.red(
-            'Experiences already exist in the db. Use --force option if you want to rewrite them',
+            'Experiences already exist in the db. Use --re-create option if you want to rewrite them',
           ),
         );
       } else {
         if (experience) {
           console.log(
             chalk.yellow(
-              'Running with --force option. Removing existing Experiences ...',
+              'Running with --re-create option. Removing existing Experiences ...',
             ),
           );
           await Reference.deleteMany();
