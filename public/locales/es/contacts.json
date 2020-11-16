@@ -1,5 +1,5 @@
 {
-    "(additional {{amount}} pending)": "",
+    "(additional {{amount}} pending)": "({{amount}} adicional en espera)",
     "Cancel": "Cancelar",
     "Confirm Request": "Confirmar solicitud",
     "Connected since {{created, MMM D, YYYY}}": "Conectado desde {{created, D MMM, YYYY}}",
@@ -33,6 +33,9 @@
         "": "Has recibido una solicitud de contacto."
     },
     "{{amount}} contacts": "{{amount}} contactos",
-    "{{count}} contacts in common": "{{count}} contacto en común",
-    "{{count}} contacts in common_plural": "{{count}} contactos en común"
+    "{{count}} contacts in common": "Un contacto en común",
+    "{{count}} contacts in common_plural": "{{count}} contactos en común",
+    "{{count}} contacts": "{{count}} contacto",
+    "{{count}} contacts_plural": "{{count}} contactos",
+    "Search contacts": "Búsqueda de contactos"
 }

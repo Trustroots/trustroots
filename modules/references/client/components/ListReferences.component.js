@@ -12,7 +12,7 @@ import ReferenceCounts from './read-references/ReferenceCounts';
 /**
  * List of user's references
  */
-export default function ListReferences({ profile }) {
+export default function ListReferences({ profile, authenticatedUser }) {
   const { t } = useTranslation('references');
   const [publicReferences, setPublicReferences] = useState([]);
   const [pendingReferences, setPendingReferences] = useState([]);
@@ -25,16 +25,17 @@ export default function ListReferences({ profile }) {
         userTo: profile._id,
       });
 
-      const filteredPublic = references
-        .filter(reference => reference.public)
-        .sort((a, b) => a.created < b.created);
+      const publicNewestFirst = references.filter(
+        reference => reference.public,
+      );
 
-      const filteredPending = references
-        .filter(reference => !reference.public)
-        .sort((a, b) => a.created > b.created);
+      const pendingNewestFirst = references.filter(
+        reference => !reference.public,
+      );
+      const pendingOldestFirst = [...pendingNewestFirst].reverse();
 
-      setPublicReferences(filteredPublic);
-      setPendingReferences(filteredPending);
+      setPublicReferences(publicNewestFirst);
+      setPendingReferences(pendingOldestFirst);
     } finally {
       setIsLoading(false);
     }
@@ -55,9 +56,11 @@ export default function ListReferences({ profile }) {
       <div className="row content-empty">
         <i className="icon-3x icon-users"></i>
         <h4>{t('No references yet.')}</h4>
-        <a href={`/profile/${profile.username}/references/new`}>
-          {t('Write one!')}
-        </a>
+        {authenticatedUser._id !== profile._id && (
+          <a href={`/profile/${profile.username}/references/new`}>
+            {t('Write one!')}
+          </a>
+        )}
       </div>
     );
   }
@@ -94,4 +97,5 @@ export default function ListReferences({ profile }) {
 
 ListReferences.propTypes = {
   profile: PropTypes.object.isRequired,
+  authenticatedUser: PropTypes.object.isRequired,
 };

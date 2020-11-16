@@ -8,7 +8,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import Board from '@/modules/core/client/components/Board.js';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
-import getTribeBackgroundStyle from '@/modules/tribes/client/components/helpers/getTribeBackgroundStyle';
+import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
 
 const api = {
@@ -162,7 +162,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 <br />
                 {/* @TODO remove ns (issue #1368) */}
                 <Trans t={t} ns="pages">
-                  Trustroots is over <a href="/statistics">47,000 members</a>{' '}
+                  Trustroots is over <a href="/statistics">50,000 members</a>{' '}
                   strong!
                 </Trans>
               </p>
@@ -234,13 +234,9 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     key={tribe._id}
                     href={`/circles/${tribe.slug}`}
                     className="img-circle tribe-xs tribe-image"
-                    style={getTribeBackgroundStyle(tribe, {
-                      quality: 'lightest',
-                      dimensions: '520x520',
-                      isProgressive: true,
-                    })}
+                    style={getCircleBackgroundStyle(tribe, '520x520')}
                   >
-                    {!tribe.image_UUID && <span>{tribe.label.charAt(0)}</span>}
+                    {!tribe.image && <span>{tribe.label.charAt(0)}</span>}
                   </a>
                 ))}
               </div>
@@ -253,7 +249,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 >
                   <div
                     className="img-circle tribe tribe-image"
-                    style={getTribeBackgroundStyle(tribe)}
+                    style={getCircleBackgroundStyle(tribe, '1024x768')}
                   >
                     <a href={`/circles/${tribe.slug}`} className="tribe-link">
                       <h3 className="tribe-label">{tribe.label}</h3>

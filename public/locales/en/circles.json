@@ -1,0 +1,19 @@
+{
+  "Cancel": "Cancel",
+  "Discover circles": "Discover circles",
+  "Do you want to leave \"{{label}}\"?": "Do you want to leave \"{{label}}\"?",
+  "Join": "Join",
+  "Join ({{label}})": "Join ({{label}})",
+  "Join Trustroots to find members behind circles.": "Join Trustroots to find members behind circles.",
+  "Joined": "Joined",
+  "Joining circles helps you find likeminded Trustroots members.": "Joining circles helps you find likeminded Trustroots members.",
+  "Leave circle": "Leave circle",
+  "Leave this circle?": "Leave this circle?",
+  "Missing your circle?": "Missing your circle?",
+  "New circle!": "New circle!",
+  "No members yet": "No members yet",
+  "Send us suggestions!": "Send us suggestions!",
+  "Sign up with Trustroots": "Sign up with Trustroots",
+  "{{count, number}} members": "One member",
+  "{{count, number}} members_plural": "{{count, number}} members"
+}

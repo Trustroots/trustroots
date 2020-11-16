@@ -1,21 +1,31 @@
 {
-  "Accommodation": "",
-  "At most {{count}} guests.": "",
-  "At most {{count}} guests._plural": "",
-  "Bigger map": "",
-  "Can host": "",
-  "Cannot host currently": "",
-  "Change": "",
-  "Hosting status: {{statusLabel}}": "",
-  "I can host": "",
-  "I can't host currently": "",
-  "I might be able to host": "",
-  "Meet people": "",
-  "Might be able to host": "",
-  "Modify hosting offer": "",
-  "No guests.": "",
-  "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "",
-  "Open on device": "",
-  "Sorry, user is not hosting currently.": "",
-  "Start hosting travellers": ""
+    "Accommodation": "Alojamiento",
+    "At most {{count}} guests": {
+        "At most {{count}} guests.": "Máximo {{count}} invitado.",
+        "At most {{count}} guests._plural": "Máximo {{count}} invitados."
+    },
+    "Bigger map": "Mapa más grande",
+    "Can host": "Puedo alojar",
+    "Cannot host currently": "No puedo alojar ahora",
+    "Change": "Cambiar",
+    "Hosting status: {{statusLabel}}": "Estado para alojar: {{statusLabel}}",
+    "I can host": "Puedo alojar",
+    "I can't host currently": "No puedo alojar por el momento",
+    "I might be able to host": "Quizás pueda alojar",
+    "Meet people": "Conocer gente",
+    "Might be able to host": "Quizás pueda alojar",
+    "Modify hosting offer": "Modificar la oferta de alojamiento",
+    "No guests": {
+        "": "Ningún invitado."
+    },
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
+        "": "Ofrecer hospitalidad y dar la bienvenida a “desconocidos” a nuestros hogares fortalece nuestra fe en cada uno."
+    },
+    "Open on device": "Abrir en el dispositivo",
+    "Sorry, user is not hosting currently": {
+        "": "Disculpa, el usuario no acepta invitados por el momento."
+    },
+    "Start hosting travellers": "Empieza a alojar viajeros",
+    "At most {{count}} guests.": "Como máximo un invitado.",
+    "At most {{count}} guests._plural": "Como máximo {{count}} invitados."
 }

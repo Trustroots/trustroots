@@ -13,10 +13,10 @@ function JoinButtonPresentational({
   isLoggedIn,
   onToggle,
 }) {
-  const { t } = useTranslation('tribes');
+  const { t } = useTranslation('circles');
 
   const ariaLabel = isMember
-    ? t('Leave Tribe')
+    ? t('Leave circle')
     : t('Join ({{label}})', { label: tribe.label });
   const buttonLabel = isMember ? t('Joined') : t('Join');
 
@@ -35,7 +35,7 @@ function JoinButtonPresentational({
 
   return (
     <Tooltip
-      tooltip={t('Leave Tribe')}
+      tooltip={t('Leave circle')}
       placement="bottom"
       hidden={!isMember}
       id={`tribe-${tribe._id}`}

@@ -3,11 +3,10 @@
     class="tribe-badge-image"
     tr-tribe-styles="{{::tribeBadge.tribe}}"
     tr-tribe-styles-dimensions="120x120"
-    tr-tribe-styles-quality="lightest"
     ng-click="tribeBadge.openTribe()"
   >
     <span
-      ng-if="::!tribeBadge.tribe.image_UUID"
+      ng-if="::!tribeBadge.tribe.image"
       ng-bind="::tribeBadge.tribe.label.charAt(0)"
     ></span>
   </div>

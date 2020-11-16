@@ -1,0 +1,30 @@
+{
+    "Cancel": "Cancelar",
+    "Discover Tribes": "Descubrir Tribus",
+    "Do you want to leave \"{{label}}\"?": "¿Deseas abandonar \"{{label}}\"?",
+    "Join": "Unirse",
+    "Join ({{label}})": "Únete a ({{label}})",
+    "Join Trustroots to find members behind Tribes": {
+        "": "Únete a Trustroots para encontrar miembros de las Tribus."
+    },
+    "Joined": "Te has unido",
+    "Joining Tribes helps you find likeminded Trustroots members": {
+        "": "Unirse a Tribus te ayuda a encontrar miembros de Trustroots con mentalidades similares."
+    },
+    "Leave Tribe": "Dejar la Tribu",
+    "Leave this Tribe?": "¿Dejar esta Tribu?",
+    "Missing your Tribe?": "¿Hechas de menos tu Tribu?",
+    "New tribe!": "¡Nueva Tribu!",
+    "No members yet": "Ningún miembro aún",
+    "Send us suggestions!": "¡Envíanos sugerencias!",
+    "Sign up with Trustroots": "Únete a Trustroots",
+    "{{count, number}} members": "{{count, number}} miembro",
+    "{{count, number}} members_plural": "{{count, number}} miembros",
+    "Joining circles helps you find likeminded Trustroots members.": "Unirte a Circulos te permite encontrar a miembros de Trustroots afines a tus ideas.",
+    "Join Trustroots to find members behind circles.": "Únete a Trustroots para encontrar miembros detrás de los circulos.",
+    "New circle!": "Nuevo circulo!",
+    "Missing your circle?": "Hechas de menos a tu círculo?",
+    "Leave this circle?": "Abandonar este circulo?",
+    "Leave circle": "Abandona el circulo",
+    "Discover circles": "Descubre Circulos"
+}
