@@ -107,10 +107,10 @@ export const unclusteredPointLayer = {
       base: 1.75,
       stops: [
         // Zoom level, size
-        [2, 2],
-        [7, 10],
-        [10, 12],
-        [22, 80],
+        [2, 3],
+        [7, 12],
+        [14, 14],
+        [22, 20],
       ],
     },
     // @TODO: visual and performance difference between this and above? test with many dots.
@@ -126,7 +126,7 @@ export const unclusteredPointLayer = {
       [22, 80],
     ],
     */
-    'circle-stroke-width': 3,
+    'circle-stroke-width': 2,
     'circle-stroke-opacity': [
       'case',
       ['boolean', ['feature-state', 'hover'], false],

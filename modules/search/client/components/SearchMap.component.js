@@ -16,7 +16,6 @@ import MapNavigationControl from '@/modules/core/client/components/Map/MapNaviga
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
 import { ensureValidLat, ensureValidLng } from '../utils';
-
 import {
   clusterCountLayerMapbox,
   clusterCountLayerOSM,
@@ -51,6 +50,7 @@ export default function SearchMap(props) {
     zoom: mapCenter.zoom,
   });
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
+  const [map, setMap] = useState();
   const [hoveredOffer, setHoveredOffer] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(false);
   const [offers, setOffers] = useState({
@@ -64,10 +64,28 @@ export default function SearchMap(props) {
   const mapRef = createRef();
 
   // Get the Mapbox object for direct manipulation
-  // @TODO set just once and store?
   const getMapRef = () => {
-    return mapRef?.current?.getMap();
+    if (map) {
+      console.log('map ref from cache'); //eslint-disable-line
+      return map;
+    }
+
+    console.time('TIME - getMapRef'); //eslint-disable-line
+    const mapFromRef = mapRef?.current?.getMap();
+    console.timeEnd('TIME - getMapRef'); //eslint-disable-line
+    return mapFromRef;
   };
+
+  // Load and store Mapbox object for quick reference on render
+  useEffect(() => {
+    if (!map) {
+      const currentMap = mapRef?.current?.getMap();
+      console.log('🌍 RENDER MAP getter:', currentMap); //eslint-disable-line
+      setMap(currentMap);
+    } else {
+      console.log('🌍 RENDER MAP from cache :', map); //eslint-disable-line
+    }
+  }, []);
 
   /**
    * Hook on map interactions to update features
@@ -137,6 +155,7 @@ export default function SearchMap(props) {
   );
 
   const updateFeatureState = (map, { source, id }, newFeatureState) => {
+    console.time('TIME - updateOffers'); //eslint-disable-line
     if (!map) {
       console.log('🛑No map!'); //eslint-disable-line
       return;
@@ -148,12 +167,12 @@ export default function SearchMap(props) {
     });
 
     // eslint-disable-next-line no-console
-    console.log('🔵previous feature state:', featureStatePreviously);
+    // console.log('🔵previous feature state:', featureStatePreviously);
     // eslint-disable-next-line no-console
-    console.log('🟢new feature state:', {
-      ...featureStatePreviously,
-      ...newFeatureState,
-    });
+    // console.log('🟢new feature state:', {
+    //   ...featureStatePreviously,
+    //   ...newFeatureState,
+    // });
 
     map.setFeatureState(
       { source, id },
@@ -163,6 +182,7 @@ export default function SearchMap(props) {
         ...newFeatureState,
       },
     );
+    console.timeEnd('TIME - updateOffers'); //eslint-disable-line
   };
 
   const clearPreviouslyHoveredState = () => {
@@ -183,6 +203,7 @@ export default function SearchMap(props) {
 
   // eslint-disable-next-line
   const clearPreviouslySelectedState = () => {
+    console.time('TIME - clearPreviouslySelectedState'); //eslint-disable-line
     if (selectedOffer) {
       // @TODO set just once and store in state?
       const map = getMapRef();
@@ -196,12 +217,14 @@ export default function SearchMap(props) {
       updateFeatureState(map, selectedOffer, { selected: false });
       setSelectedOffer(false);
     }
+    console.timeEnd('TIME - clearPreviouslySelectedState'); //eslint-disable-line
   };
 
   const setSelectedState = offer => {
-    console.log('🚀 setSelectedState:'); //eslint-disable-line
-    console.log(offer); //eslint-disable-line
-    console.log(offer.toJSON()); //eslint-disable-line
+    console.time(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
+    // console.log('🚀 setSelectedState:'); //eslint-disable-line
+    // console.log(offer); //eslint-disable-line
+    // console.log(offer.toJSON()); //eslint-disable-line
     // @TODO set just once and store in state?
     const map = getMapRef();
 
@@ -211,8 +234,16 @@ export default function SearchMap(props) {
       return;
     }
 
+    // Clear out previously selected offers
+    if (selectedOffer) {
+      updateFeatureState(map, selectedOffer, { selected: false });
+    }
+
+    // Mark newly selected offer
     updateFeatureState(map, offer, { selected: true, viewed: true });
-    setSelectedOffer(offer);
+
+    // setSelectedOffer(offer);
+    console.timeEnd(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
   };
 
   const onHover = event => {
@@ -257,34 +288,42 @@ export default function SearchMap(props) {
    * React on any clicks on map or layers defined on `interactiveLayerIds` prop
    */
   const onClickMap = event => {
-    console.log('onClickMap:', event); //eslint-disable-line
+    console.time('TIME - onClickMap'); //eslint-disable-line
+    // console.log('onClickMap:', event); //eslint-disable-line
     const { features, lngLat } = event;
 
-    // Delegated to Angular controller, to be refactored
-    onOfferClose();
-    clearPreviouslySelectedState();
+    // console.timeLog('TIME - onClickMap'); //eslint-disable-line
+    // clearPreviouslySelectedState();
+    // console.timeLog('TIME - onClickMap'); //eslint-disable-line
 
     if (!features?.length) {
+      // Close open offers when clicking on map canvas
+      // Delegated to Angular controller; to be refactored to React
+      onOfferClose();
       return;
     }
 
     const layerId = features[0]?.layer?.id;
 
     switch (layerId) {
+      // Hosting or meeting offer
       case unclusteredPointLayer.id:
         if (features[0]?.id) {
           setSelectedState(features[0]);
+          // console.timeLog('TIME - onClickMap'); //eslint-disable-line
           openOfferById(features[0].id);
+          // console.timeLog('TIME - onClickMap'); //eslint-disable-line
+        } else {
+          console.log('🛑No Feature ID!', features[0]); //eslint-disable-line
         }
         break;
+      // Clusters
       case clusterLayer.id:
         zoomToClusterById(features[0]?.properties?.cluster_id, lngLat);
+        // console.timeLog('TIME - onClickMap'); //eslint-disable-line
         break;
-      default:
-        // @TODO: Send to Sentry.io
-        // eslint-disable-next-line no-console
-        console.error('Map: unhandled click event', event);
     }
+    console.timeEnd('TIME - onClickMap'); //eslint-disable-line
   };
 
   // https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
@@ -358,12 +397,6 @@ export default function SearchMap(props) {
       console.error('Could not load offers. Re-attempt?');
     }
   }
-
-  // Load offers on initial map load
-  useEffect(() => {
-    // debouncedUpdateOffers();
-    console.log('RENDER'); //eslint-disable-line
-  }, [mapCenter, filters]);
 
   return (
     <ReactMapGL
