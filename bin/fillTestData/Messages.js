@@ -9,7 +9,6 @@ const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
 const config = require(path.resolve('./config/config'));
-const util = require(path.resolve('./bin/fillTestData/util'));
 
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
@@ -59,6 +58,29 @@ const argv = yargs.usage(
       .strict().yargs;
   },
 ).argv;
+
+/**
+ * This generates a random integer between 0 and max - 1 inclusively
+ *
+ * @param {number} max The max value to use to generate the random integer
+ * @returns random integer between 0 and max - 1
+ */
+function random(max) {
+  return Math.floor(Math.random() * max);
+}
+
+/**
+ * Adds number of days to the date and returns a new date
+ *
+ * @param {Date} date
+ * @param {number} days
+ * @returns {Date} the new date object
+ */
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
 
 /**
  * This the the main method that seeds all the message threads. Based on the
@@ -137,7 +159,7 @@ function seedThreads() {
 
           // Add threads until we reach the total
           while (index < numThreads) {
-            const messageCount = _.random(maxMessages) + 1;
+            const messageCount = random(maxMessages) + 1;
             let messageIndex = messageCount;
             let to;
             let from;
@@ -149,7 +171,7 @@ function seedThreads() {
               function addMessage(depth, userTo, userFrom) {
                 const message = new Message();
 
-                message.created = util.addDays(Date.now(), -depth + 1);
+                message.created = addDays(Date.now(), -depth + 1);
                 message.content = faker.lorem.sentences();
 
                 // Randomize indecies
@@ -173,7 +195,7 @@ function seedThreads() {
                 }
 
                 // Assume 80% of messages are read
-                if (_.random(100) < 80) {
+                if (random(100) < 80) {
                   message.read = true;
                 } else {
                   message.read = false;
