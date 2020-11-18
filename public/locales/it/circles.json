@@ -1,5 +1,5 @@
 {
-    "Cancel": "Cancella",
+    "Cancel": "Annulla",
     "Discover Tribes": "Scopri nuove Tribes",
     "Do you want to leave \"{{label}}\"?": "Vuoi abbandonare\"{{label}}\"?",
     "Join": "Unisciti",
@@ -19,5 +19,12 @@
     "Send us suggestions!": "Inviaci suggerimenti!",
     "Sign up with Trustroots": "Iscriviti a Trustroots",
     "{{count, number}} members": "{{count, number}} membro",
-    "{{count, number}} members_plural": "{{count, number}} membri"
+    "{{count, number}} members_plural": "{{count, number}} membri",
+    "Joining circles helps you find likeminded Trustroots members.": "Unendoti alle cerchie puoi trovare persone simili a te",
+    "New circle!": "Nuova cerchia!",
+    "Missing your circle?": "Non trovi la tua cerchia?",
+    "Leave this circle?": "Abbandonare questa cerchia?",
+    "Leave circle": "Abbandona la cerchia",
+    "Join Trustroots to find members behind circles.": "Unisciti a Trustroots per vedere chi appartiene alle cerchie.",
+    "Discover circles": "Esplora le cerchie"
 }
