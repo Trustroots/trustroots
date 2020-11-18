@@ -10,7 +10,7 @@ const faker = require('faker');
 const mongoose = require('mongoose');
 const queue = require('async/queue');
 const config = require(path.resolve('./config/config'));
-const util = require(path.resolve('./bin/fillTestData/util'));
+const moment = require('moment');
 
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.
@@ -112,7 +112,10 @@ const experienceGenerator = {
 
   public: to => Math.random() < 0.9 && !profileType.receivedPrivate(to),
 
-  created: () => util.addDays(Date.now(), -_.random(14)),
+  created: () =>
+    moment()
+      .add({ days: -_.random(14) })
+      .toDate(),
 
   feedbackPublic: () => faker.lorem.sentences(),
 };
