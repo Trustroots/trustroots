@@ -8,7 +8,7 @@ const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
-const PromisePool = require('es6-promise-pool');
+const queue = require('async/queue');
 const config = require(path.resolve('./config/config'));
 const util = require(path.resolve('./bin/fillTestData/util'));
 
@@ -270,65 +270,64 @@ function seedExperiences() {
           }`,
         );
 
-        try {
-          const experienceSharingMatrix = generateExperienceSharingMatrix(
-            users.length,
-            argv.averageNumberPerProfile,
-            argv.replyRate,
-          );
-          const nExperiencesToBeAdded = countTrueElements(
-            experienceSharingMatrix,
-          );
+        const experienceSharingMatrix = generateExperienceSharingMatrix(
+          users.length,
+          argv.averageNumberPerProfile,
+          argv.replyRate,
+        );
+        const nExperiencesToBeAdded = countTrueElements(
+          experienceSharingMatrix,
+        );
+        console.log(
+          chalk.green(`Saving ${nExperiencesToBeAdded} experiences ... `),
+        );
+
+        const experienceSaveTaskQueue = queue(async (task, callback) => {
+          const experience = createExperience(task.userTo, task.userFrom);
+          await experience.save();
+          callback();
+        }, 100);
+
+        experienceSaveTaskQueue.error((err, task) => {
           console.log(
-            chalk.green(`Saving ${nExperiencesToBeAdded} experiences ... `),
+            `Error ${err} when saving experience of user ${task.userFrom} with ${task.userTo}`,
           );
+        });
 
-          const saveExperiences = function* () {
-            for (let i = 0; i < experienceSharingMatrix.length; i++) {
-              if (i % 100 === 0) {
-                process.stdout.write(`Saving experiences for user ${i}...\n`);
-              }
-              for (let j = 0; j < experienceSharingMatrix[i].length; j++) {
-                if (experienceSharingMatrix[i][j]) {
-                  const experience = createExperience(users, i, j);
-                  yield saveExperience(experience);
-                }
-              }
+        const intervalObject = setInterval(() => {
+          console.log(
+            `Experiences still to be persisted: ${experienceSaveTaskQueue.length()}`,
+          );
+        }, 1000);
+
+        experienceSaveTaskQueue.drain = function () {
+          clearInterval(intervalObject);
+          console.log('All experiences have been saved');
+          mongooseService.disconnect();
+        };
+
+        experienceSharingMatrix.forEach((row, i) => {
+          row.forEach((elem, j) => {
+            if (elem) {
+              experienceSaveTaskQueue.push({
+                userTo: users[i]._id,
+                userFrom: users[j]._id,
+              });
             }
-          };
-
-          const pool = new PromisePool(saveExperiences, 100);
-          await pool.start();
-        } catch (err) {
-          console.log(err);
-        }
+          });
+        });
       }
-      console.log('');
-      mongooseService.disconnect();
 
-      function createExperience(users, to, from) {
+      function createExperience(userTo, userFrom) {
         const experience = new Reference();
-        experience.userTo = users[to]._id;
-        experience.userFrom = users[from]._id;
+        experience.userTo = userTo;
+        experience.userFrom = userFrom;
         experience.created = experienceGenerator.created();
         experience.feedbackPublic = experienceGenerator.feedbackPublic();
         experience.interactions = experienceGenerator.interactions();
         experience.recommend = experienceGenerator.recommendation();
         experience.public = experienceGenerator.public();
         return experience;
-      }
-
-      function saveExperience(experience) {
-        return new Promise((resolve, reject) => {
-          experience.save(err => {
-            if (err != null) {
-              console.log(err);
-              reject();
-            } else {
-              resolve();
-            }
-          });
-        });
       }
 
       function countTrueElements(matrix) {
