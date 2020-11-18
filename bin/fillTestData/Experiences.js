@@ -114,7 +114,7 @@ const experienceGenerator = {
 
   created: () =>
     moment()
-      .add({ days: -_.random(14) })
+      .subtract({ days: _.random(14) })
       .toDate(),
 
   feedbackPublic: () => faker.lorem.sentences(),
