@@ -1,4 +1,17 @@
 {
-    "Change language": "Вибрати мову",
-    "Edit your profile": "Редагувати профіль"
+    "Change language": "Змінити мову",
+    "Edit your profile": "Редагувати профіль",
+    "Lives in <2>{{locationLiving}}</2>": "Мешкає у <2>{{locationLiving}}</2>",
+    "Languages": "Мови",
+    "Interface language": "Мова інтерфейсу",
+    "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>.": "Якщо ти не отримав листа, перевір папку зі спамом або надішли його знов за допомогою <1> налаштувань електронної пошти </1>.",
+    "Help!": "Допоможіть!",
+    "From <1>{{locationFrom}}</1>": "Із <1>{{locationFrom}}</1>",
+    "Fill your profile": "Заповни свій профіль",
+    "Elsewhere": "Деінде",
+    "Don't panic!": "Не панікуй!",
+    "Contacts": "Контакти",
+    "Circles in common": "Спільні кола",
+    "Add contact": "Додати контакт",
+    "About me": "Про мене"
 }
