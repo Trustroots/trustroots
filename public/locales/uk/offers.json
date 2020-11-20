@@ -1,3 +1,20 @@
 {
-    "Bigger map": "Більша мапа"
+    "Bigger map": "Більша мапа",
+    "Start hosting travellers": "Почни приймати гостей",
+    "Sorry, user is not hosting currently.": "На жаль, користувач наразі не приймає гостей.",
+    "Open on device": "Відкрити на пристрої",
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "Приймання гостей та запрошення “чужих” людей до наших домівок зміцнює нашу віру в одне одного.",
+    "No guests.": "Немає гостей.",
+    "Might be able to host": "Можливо зможу прийняти",
+    "Meet people": "Зустрітись з людьми",
+    "I might be able to host": "Можливо зможу прийняти",
+    "I can't host currently": "Наразі не можу приймати",
+    "I can host": "Я можу прийняти",
+    "Change": "Змінити",
+    "Cannot host currently": "Наразі не можу прийняти",
+    "Can host": "Можу прийняти",
+    "At most {{count}} guests._0": "Максимум один гість.",
+    "At most {{count}} guests._1": "Максимум {{count}} гостей.",
+    "At most {{count}} guests._2": "Максимум {{count}} гостей.",
+    "Accommodation": "Житло"
 }
