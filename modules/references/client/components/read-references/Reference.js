@@ -44,6 +44,25 @@ export default function Reference({ reference }) {
     userTo,
   } = reference;
 
+  /*
+   * Functions passing strings to translation fuction for translation scripts
+   * TODO this method should be extracted for reuse in References for example.
+   */
+  const getGender = genderCode => {
+    switch (genderCode) {
+      case 'female':
+        return t('female');
+      case 'male':
+        return t('male');
+      case 'non-binary':
+        return t('non-binary');
+      case 'other':
+        return t('other');
+      default:
+        return undefined;
+    }
+  };
+
   const created = new Date(reference.created);
 
   const getDaysLeft = created =>
@@ -65,6 +84,9 @@ export default function Reference({ reference }) {
               {t('Member since {{memberSince}}', {
                 memberSince: new Date(userFrom.created).getFullYear(),
               })}
+              {getGender(userFrom.gender) === undefined
+                ? ''
+                : ', ' + getGender(userFrom.gender)}
             </span>
           </UserMeta>
           <time dateTime={created} className="text-color-links">
