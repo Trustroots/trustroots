@@ -33,7 +33,7 @@
         "": "Hai ricevuto una richiesta di contatto."
     },
     "{{amount}} contacts": "{{amount}} contatti",
-    "{{count}} contacts in common": "{{count}} contatto in comune",
+    "{{count}} contacts in common": "Un contatto in comune",
     "{{count}} contacts in common_plural": "{{count}} contatti in comune",
     "{{count}} contacts": "Un contatto",
     "{{count}} contacts_plural": "{{count}} contatti",

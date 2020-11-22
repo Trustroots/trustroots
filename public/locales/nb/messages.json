@@ -44,5 +44,8 @@
     },
     "Your profile seems quite empty": {
         "": "Profilen din ser ganske tom ut."
-    }
+    },
+    "{{count}} unread messages": "{{count}} ulest melding",
+    "{{count}} unread messages_plural": "{{count}} uleste meldinger",
+    "License": "Lisens"
 }
