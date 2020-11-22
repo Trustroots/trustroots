@@ -1,15 +1,15 @@
-import React from 'react';
-import { render, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-
-// lolex functionality should/might/may be included in jest one day
-// https://github.com/facebook/jest/issues/5165
-import lolex from 'lolex';
+import { render, act } from '@testing-library/react';
+import fakeTimers from '@sinonjs/fake-timers';
+import React from 'react';
 
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 
+// @TODO: timer can be migrated to Jest
+// https://github.com/facebook/jest/issues/5165
+// https://jestjs.io/docs/en/jest-object#jestusefaketimersimplementation-modern--legacy
 let clock;
-beforeEach(() => (clock = lolex.install()));
+beforeEach(() => (clock = fakeTimers.install()));
 afterEach(() => clock.uninstall());
 
 describe('<TimeAgo>', () => {
