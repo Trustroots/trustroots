@@ -23,6 +23,7 @@ export default function ListReferences({ profile, authenticatedUser }) {
     try {
       const references = await readReferences({
         userTo: profile._id,
+        includeReplies: false,
       });
 
       const publicNewestFirst = references.filter(

@@ -60,9 +60,10 @@ export async function create(reference) {
  *
  * @param {string} userFrom - id of user who gave the reference
  * @param {string} userTo - id of user who received the reference
+ * @params {bool} includeReplies - true if replies to the references need to be fetched
  * @returns Promise<Reference[]> - array of the found references
  */
-export async function read({ userFrom, userTo }) {
+export async function read({ userFrom, userTo, includeReplies }) {
   const params = {};
   if (userFrom) {
     params.userFrom = userFrom;
@@ -70,6 +71,10 @@ export async function read({ userFrom, userTo }) {
   if (userTo) {
     params.userTo = userTo;
   }
+  if (includeReplies) {
+    params.includeReplies = includeReplies;
+  }
+
   const { data: references } = await axios.get('/api/references', { params });
   return references.map(reference =>
     mapObjectToObject(reference, referenceMapping, true),

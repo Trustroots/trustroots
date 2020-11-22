@@ -38,6 +38,7 @@ export default function CreateReference({ userFrom, userTo }) {
       const reference = await api.references.read({
         userFrom: userFrom._id,
         userTo: userTo._id,
+        includeReplies: false,
       });
 
       if (reference.length === 1) {
