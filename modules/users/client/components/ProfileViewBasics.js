@@ -8,28 +8,10 @@ import {
   isWarmshowersId,
   socialAccountLink,
 } from '../utils/networks';
+import { getGender } from '@/modules/core/client/utils/user_info';
 
 export default function ProfileViewBasics({ profile }) {
   const { t } = useTranslation(['users', 'languages']);
-
-  /*
-   * Functions passing strings to translation fuction for translation scripts
-   * TODO this method should be extracted for reuse in References for example.
-   */
-  const getGender = genderCode => {
-    switch (genderCode) {
-      case 'female':
-        return t('female');
-      case 'male':
-        return t('male');
-      case 'non-binary':
-        return t('non-binary');
-      case 'other':
-        return t('other');
-      default:
-        return undefined;
-    }
-  };
 
   const getBirthdate = birthdate =>
     t('{{birthdate, age}} years', { birthdate: new Date(birthdate) });
