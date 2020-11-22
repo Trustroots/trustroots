@@ -9,7 +9,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
 import Recommendation from './Recommendation';
-
+import { getGender } from '@/modules/core/client/utils/user_info';
 // @TODO, pull from config
 const DAYS_TO_REPLY = 14;
 
@@ -65,6 +65,7 @@ export default function Reference({ reference }) {
               {t('Member since {{memberSince}}', {
                 memberSince: new Date(userFrom.created).getFullYear(),
               })}
+              {userFrom.gender && `, ${getGender(userFrom.gender)}`}
             </span>
           </UserMeta>
           <time dateTime={created} className="text-color-links">
