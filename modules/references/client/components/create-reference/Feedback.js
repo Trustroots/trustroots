@@ -21,7 +21,7 @@ export default function Feedback({
         return t('Did you enjoy their cooking? singing?');
       case 'no':
         return report
-          ? t('Did you hate enjoy their cooking? singing?')
+          ? t('Did you hate their cooking? singing?')
           : t('Did you not enjoy their cooking? singing?');
       case 'unknown':
         return t('Did you maybe enjoy their cooking? singing?');
