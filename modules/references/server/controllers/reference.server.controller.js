@@ -414,7 +414,7 @@ exports.readMany = async function readMany(req, res, next) {
       .sort({ created: -1 })
       .populate(
         'userFrom userTo',
-        userProfile.userMiniProfileFields + ' created' + ' gender',
+        userProfile.userMiniProfileFields + ' created',
       )
       .exec();
 

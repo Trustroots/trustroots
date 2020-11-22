@@ -14,7 +14,6 @@ export default function ProfileViewBasics({ profile }) {
 
   /*
    * Functions passing strings to translation fuction for translation scripts
-   * TODO this method should be extracted for reuse in References for example.
    */
   const getGender = genderCode => {
     switch (genderCode) {
