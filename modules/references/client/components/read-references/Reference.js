@@ -53,7 +53,7 @@ const PendingNoticePlaceholder = styled.div`
   padding: 0 0 10px 0;
 `;
 
-export default function Reference({ reference }) {
+export default function Reference({ reference, isMine }) {
   const { t } = useTranslation('references');
 
   const {
@@ -83,24 +83,29 @@ export default function Reference({ reference }) {
     <div className="panel panel-default" id={_id}>
       <div className="panel-body reference">
         <ReferenceHeading>
+          {!isMine && <div>{t('their reply')}</div>}
           <Avatar user={userFrom} size={36} />
           <UserMeta>
             <strong>
               <UserLink user={userFrom} />
             </strong>
-            <span className="muted">
-              {userFrom.gender && `${getGender(userFrom.gender)}. `}
-              {t('Member since {{date, YYYY}}.', {
-                date: new Date(userFrom.created),
-              })}
-            </span>
+            {isMine && (
+              <span className="muted">
+                {userFrom.gender && `${getGender(userFrom.gender)}. `}
+                {t('Member since {{date, YYYY}}.', {
+                  date: new Date(userFrom.created),
+                })}
+              </span>
+            )}
           </UserMeta>
-          <a
-            className="reference-time"
-            href={`/profile/${userTo.username}/references#${_id}`}
-          >
-            <TimeAgo date={createdDate} />
-          </a>
+          {isMine && (
+            <a
+              className="reference-time"
+              href={`/profile/${userTo.username}/references#${_id}`}
+            >
+              <TimeAgo date={createdDate} />
+            </a>
+          )}
         </ReferenceHeading>
 
         {!isPublicReference && (
@@ -134,6 +139,7 @@ export default function Reference({ reference }) {
           hostedMe={hostedMe}
           hostedThem={hostedThem}
           recommend={recommend}
+          isMyExperience={isMine}
         />
         {feedbackPublic && <div>{feedbackPublic}</div>}
       </div>
@@ -143,4 +149,5 @@ export default function Reference({ reference }) {
 
 Reference.propTypes = {
   reference: PropTypes.object.isRequired,
+  isMine: PropTypes.bool.isRequired,
 };

@@ -8,7 +8,7 @@ import Reference from './Reference';
 /**
  * List of user's references
  */
-export default function ReferencesSection({ title, references }) {
+export default function ReferencesSection({ title, referencePairs }) {
   return (
     <section>
       {title && (
@@ -18,18 +18,27 @@ export default function ReferencesSection({ title, references }) {
           </div>
         </div>
       )}
-      <div className="row">
-        <div className="col-xs-12">
-          {references.map(reference => (
-            <Reference key={reference._id} reference={reference} />
-          ))}
+      {referencePairs.map(referencePair => (
+        <div key={referencePair.theirs._id}>
+          <div className="row">
+            <div className="col-xs-12">
+              <Reference reference={referencePair.theirs} isMine={true} />
+            </div>
+          </div>
+          {referencePair.mine && (
+            <div className="row">
+              <div className="col-xs-12">
+                <Reference reference={referencePair.mine} isMine={false} />
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      ))}
     </section>
   );
 }
 
 ReferencesSection.propTypes = {
-  references: PropTypes.array.isRequired,
+  referencePairs: PropTypes.array.isRequired,
   title: PropTypes.string,
 };
