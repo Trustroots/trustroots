@@ -274,8 +274,6 @@ module.exports.initHelmetHeaders = function (app) {
           '*.twitter.com',
           '*.google-analytics.com',
           '*.gstatic.com', // Google analytics related
-          'maitreapp.co', // Signup waiting list feature
-          'ajax.googleapis.com', // Used by Maitre app
           // Use `nonce` for `<script>` tags
           // Nonce is generated above at `initLocalVariables()` middleware
           // @link https://github.com/helmetjs/helmet/wiki/Conditionally-using-middleware
@@ -312,7 +310,6 @@ module.exports.initHelmetHeaders = function (app) {
           'i0.wp.com', // Gravatar (WordPress.com)
           'i1.wp.com', // Gravatar (WordPress.com)
           'i2.wp.com', // Gravatar (WordPress.com)
-          'ucarecdn.com', // Our Tribe image CDN "Uploadcare.com"
           'data:', // Inline images (`<img src="data:...">`) + mapbox-gl
           'blob:', // mapbox-gl https://docs.mapbox.com/mapbox-gl-js/overview/#csp-directives
         ],
@@ -326,7 +323,6 @@ module.exports.initHelmetHeaders = function (app) {
           'https://events.mapbox.com',
           'https://tile.openstreetmap.org',
           'fcm.googleapis.com',
-          'maitreapp.co', // Signup waiting list feature
           'www.facebook.com',
           'https://sentry.io',
         ],
@@ -338,7 +334,7 @@ module.exports.initHelmetHeaders = function (app) {
         mediaSrc: ["'self'"],
 
         // Lists valid endpoints for submission from `<form>` tags.
-        formAction: ["'self'", 'trustroots.us9.list-manage.com'],
+        formAction: ["'self'"],
 
         // specifies the sources that can embed the current page.
         // This directive applies to these tags:
@@ -350,25 +346,6 @@ module.exports.initHelmetHeaders = function (app) {
         childSrc: ["'self'", 'blob:', '*.twitter.com', '*.facebook.com'],
 
         workerSrc: ["'self'", 'blob:'],
-
-        // San
-        // @link https://developers.google.com/web/fundamentals/security/csp/#sandboxing
-        // @link https://developers.whatwg.org/origin-0.html#sandboxing
-        /*
-      sandbox: [
-        'allow-forms',
-        'allow-scripts'
-      ],
-      */
-
-        // Defines valid MIME types for plugins invoked via `<object>` and `<embed>`
-        /*
-      // For some reason Chrome complains about `'none'` as a value here and
-      // leaving it empty causes `helmet.contentSecurityPolicy()` crash. :-(
-      pluginTypes: [
-        '\'none\''
-      ],
-      */
 
         // Restricts the URLs that can appear in a page's `<base>` element.
         baseUri: ["'self'"],
