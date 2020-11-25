@@ -25,8 +25,8 @@ exports.getBlockedUsers = async function (req, res) {
     res.send(user.blocked);
   } catch (err) {
     log('error', err);
-    return res.status(500).send({
-      message: 'invalid error',
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('default'),
     });
   }
 };
@@ -38,8 +38,8 @@ exports.blockUser = async function (req, res) {
   /*
    * req.profile was instantiated by a prev middleware
    */
-  if (!req.profile || req.profile._id === req.user._id) {
-    return res.status(500).send({
+  if (!req.profile || req.profile._id.equals(req.user._id)) {
+    return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
@@ -68,8 +68,8 @@ exports.blockUser = async function (req, res) {
     res.send(`${req.profile.username} added to block list.`);
   } catch (err) {
     log('error', err);
-    return res.status(500).send({
-      message: 'invalid error',
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('default'),
     });
   }
 };
@@ -82,7 +82,7 @@ exports.unblockUser = async function (req, res) {
    * req.profile was instantiated by a prev middleware
    */
   if (!req.profile) {
-    return res.status(500).send({
+    return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
   }
@@ -112,8 +112,8 @@ exports.unblockUser = async function (req, res) {
     res.send({ message: `${req.profile.username} removed from block list.` });
   } catch (err) {
     log('error', err);
-    return res.status(500).send({
-      message: 'invalid error',
+    return res.status(400).send({
+      message: errorService.getErrorMessageByKey('default'),
     });
   }
 };
