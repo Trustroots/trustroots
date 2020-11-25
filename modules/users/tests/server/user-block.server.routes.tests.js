@@ -199,7 +199,7 @@ describe('User block - user', function () {
         log('info', `block response ${JSON.stringify(resp.body)}`);
         agent
           .get('/api/blocked-users')
-          .expect(200) // not found!
+          .expect(200)
           .end(function (err, resp) {
             if (err) {
               return done(err);
