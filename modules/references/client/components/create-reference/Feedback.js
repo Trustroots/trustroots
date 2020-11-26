@@ -2,8 +2,33 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function Feedback({ feedback, onChangeFeedback }) {
+export default function Feedback({
+  feedback,
+  recommend,
+  report,
+  onChangeFeedback,
+}) {
   const { t } = useTranslation('references');
+
+  /*
+   * Functions passing strings to translation fuction for translation scripts
+   * Added not, hate, maybe to differenciate between the 4 options.
+   * This should be changed to something more fitting (perferably fitting experiences concept)
+   */
+  const getRecommend = (recommendCode, report) => {
+    switch (recommendCode) {
+      case 'yes':
+        return t('Did you enjoy their cooking? singing?');
+      case 'no':
+        return report
+          ? t('Did you hate their cooking? singing?')
+          : t('Did you not enjoy their cooking? singing?');
+      case 'unknown':
+        return t('Did you maybe enjoy their cooking? singing?');
+      default:
+        return undefined;
+    }
+  };
 
   return (
     <div className="panel panel-default">
@@ -18,7 +43,7 @@ export default function Feedback({ feedback, onChangeFeedback }) {
         role="group"
         aria-labelledby="feedback-public-question"
       >
-        <p>{t('Did you enjoy their cooking? singing?')}</p>
+        <p>{getRecommend(recommend, report)}</p>
         <br />
         <label htmlFor="feedback-message" className="control-label">
           {t('Public feedback')}
@@ -43,5 +68,7 @@ export default function Feedback({ feedback, onChangeFeedback }) {
 
 Feedback.propTypes = {
   feedback: PropTypes.string.isRequired,
+  recommend: PropTypes.string,
+  report: PropTypes.bool,
   onChangeFeedback: PropTypes.func.isRequired,
 };

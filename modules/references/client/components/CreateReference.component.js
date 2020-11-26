@@ -103,6 +103,8 @@ export default function CreateReference({ userFrom, userTo }) {
     <Feedback
       key="feedback"
       feedback={feedbackPublic}
+      recommend={recommend}
+      report={report}
       onChangeFeedback={setFeedbackPublic}
     />,
   ];
