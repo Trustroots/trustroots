@@ -51,6 +51,6 @@ describe('<UnreadCount>', () => {
     enableUnreadMessageCountPolling();
     await updateUnreadCount();
     const { container } = render(<UnreadCount />);
-    expect(container).toBeEmpty();
+    expect(container).toBeEmptyDOMElement();
   });
 });

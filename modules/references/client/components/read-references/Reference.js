@@ -89,7 +89,7 @@ export default function Reference({ reference }) {
                   className="btn btn-xs btn-primary"
                   href={`/profile/${userFrom.username}/references/new`}
                 >
-                  {t('Give a reference')}
+                  {t('Share an experience')}
                 </a>
               </div>
             )}

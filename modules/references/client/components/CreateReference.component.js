@@ -40,7 +40,10 @@ export default function CreateReference({ userFrom, userTo }) {
         userTo: userTo._id,
       });
 
-      if (reference.length === 1) setIsDuplicate(true);
+      if (reference.length === 1) {
+        setIsDuplicate(true);
+      }
+
       setIsLoading(false);
     })();
   }, [userFrom, userTo]);
@@ -100,6 +103,8 @@ export default function CreateReference({ userFrom, userTo }) {
     <Feedback
       key="feedback"
       feedback={feedbackPublic}
+      recommend={recommend}
+      report={report}
       onChangeFeedback={setFeedbackPublic}
     />,
   ];
