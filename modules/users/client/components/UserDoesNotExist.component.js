@@ -16,6 +16,11 @@ export default function UserDoesNotExist() {
       <a href="/search/members" className="btn btn-primary">
         {t('Find people')}
       </a>
+      <br />
+      <br />
+      <a href="/search" className="btn btn-secondary">
+        {t('Map search')}
+      </a>
     </div>
   );
 }
