@@ -81,6 +81,7 @@ exports.signup = function (req, res) {
         // (from where it's then again moved to email field)
         user.emailTemporary = user.email;
 
+        user.emailTokenDate = Date.now();
         user.emailToken = authenticationService.generateEmailToken(user, salt);
 
         // Then save the user
@@ -650,14 +651,24 @@ exports.extendFBAccessToken = function (shortAccessToken, callback) {
  * Confirm email GET from email token
  */
 exports.validateEmailToken = function (req, res) {
+  console.log('🛑 validateEmailToken:'); //eslint-disable-line
   User.findOne(
     {
       emailToken: req.params.token,
     },
     function (err, user) {
       if (!user) {
+        // Add failure tracking
         return res.redirect('/confirm-email-invalid');
       }
+      // Success tracking here
+
+      const isSignup = !user.public;
+      const timeFromEmail = moment().diff(user.emailTokenDate);
+
+      console.log('🛑 isSignup:', isSignup); //eslint-disable-line
+      console.log('🛑 timeFromEmail:', timeFromEmail); //eslint-disable-line
+
       res.redirect('/confirm-email/' + req.params.token);
     },
   );
@@ -703,6 +714,7 @@ exports.confirmEmail = function (req, res) {
             $unset: {
               emailTemporary: 1,
               emailToken: 1,
+              emailTokenDate: 1,
               // Note that `publicReminderCount` and `publicReminderSent` get reset now each
               // time user confirms any email change, even if they didn't confirm their profile yet.
               // That's fine: we'll just start sending 'finish signup' notifications from scratch
@@ -731,6 +743,35 @@ exports.confirmEmail = function (req, res) {
             done(err, result, modifiedUser);
           },
         );
+      },
+
+      // @TODO:
+      // - timeFromemail 0 ??
+      // - tags: do they need to be strings or are booleans ok?
+      // - add failure logging here
+
+      function (result, user, done) {
+        // @TODO: remove
+        const isSignup = !user.public;
+        const timeFromEmail = moment(Date.now()).diff(user.emailTokenDate);
+        console.log('🛑 isSignup:', isSignup); //eslint-disable-line
+        console.log('🛑 timeFromEmail:', timeFromEmail); //eslint-disable-line
+
+        const statsObject = {
+          namespace: 'email-confirm',
+          counts: {
+            count: 1,
+            timeSinceEmail: moment(Date.now()).diff(user.emailTokenDate),
+          },
+          tags: {
+            state: true,
+            signup: !user.public,
+          },
+        };
+
+        statService.stat(statsObject, function () {
+          done(null, result, user);
+        });
       },
 
       function (result, user, done) {
@@ -795,6 +836,7 @@ exports.resendConfirmation = function (req, res) {
       function (salt, done) {
         const user = req.user;
         user.updated = Date.now();
+        user.emailTokenDate = Date.now();
         user.emailToken = authenticationService.generateEmailToken(user, salt);
         user.save(function (err) {
           if (err) return done(err);

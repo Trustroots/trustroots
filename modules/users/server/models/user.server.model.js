@@ -297,6 +297,9 @@ const UserSchema = new Schema({
   emailToken: {
     type: String,
   },
+  emailTokenDate: {
+    type: Date,
+  },
   /* New users are public=false until they validate their email. If public=false,
      users can't email other users, can't be seen by other users. They are
      effectively black holed... */

@@ -101,6 +101,7 @@ exports.userSearchProfileFields =
  * Update user profile
  */
 exports.update = function (req, res) {
+  console.log(req.body); //eslint-disable-line
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -231,6 +232,8 @@ exports.update = function (req, res) {
 
         // This is set only if user edited email
         if (token && email) {
+          console.log('setting email', token, email); //eslint-disable-line
+          user.emailTokenDate = Date.now();
           user.emailToken = token;
           user.emailTemporary = email;
         }
