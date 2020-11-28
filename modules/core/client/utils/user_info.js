@@ -14,7 +14,7 @@ export function getGender(genderCode) {
     case 'non-binary':
       return t('non-binary');
     case 'other':
-      return t('other');
+      return t('other gender');
     default:
       return undefined;
   }
