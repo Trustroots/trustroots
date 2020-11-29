@@ -81,7 +81,8 @@ export default function ListReferences({ profile, authenticatedUser }) {
       )}
       {hasPublicReferencs > 0 && (
         <ReferencesSection
-          title={t('Public experiences')}
+          // Show "Public" title only if there are also pending experiences listed
+          title={hasPendingReferences && t('Public experiences')}
           references={publicReferences}
         />
       )}
