@@ -664,7 +664,15 @@ exports.validateEmailToken = function (req, res) {
       // Success tracking here
 
       const isSignup = !user.public;
-      const timeFromEmail = moment().diff(user.emailTokenDate);
+
+      console.log('🛑 user:validateEmailToken', user); //eslint-disable-line
+      console.log('🛑 emailTokenDate:', user.emailTokenDate); //eslint-disable-line
+
+      // did we say this code is never used?
+      const timeFromEmail = moment().diff(
+        moment(user.emailTokenDate),
+        'seconds',
+      );
 
       console.log('🛑 isSignup:', isSignup); //eslint-disable-line
       console.log('🛑 timeFromEmail:', timeFromEmail); //eslint-disable-line
@@ -696,12 +704,65 @@ exports.confirmEmail = function (req, res) {
 
               done(null, result, user);
             } else {
+              // I think this should NOT be here but I'm not sure where to get the user from so maybe it shoudl?.
+
+              const timeSinceEmail = moment().diff(
+                moment(user.emailTokenDate),
+                'seconds',
+              );
+              const statsObject = {
+                namespace: 'email-confirm',
+                counts: {
+                  count: 1,
+                  timeSinceEmail: timeSinceEmail,
+                },
+                tags: {
+                  state: 'failed',
+                  err_message: 'bad token',
+                  signup: user.public ? 'no' : 'yes',
+                },
+              };
+
+              statService.stat(statsObject, function () {});
+
               return res.status(400).send({
                 message: 'Email confirm token is invalid or has expired.',
               });
             }
           },
         );
+      },
+
+      // @TODO:
+      // - tags: do they need to be strings or are booleans ok? made them strings for now
+      // - add failure logging here - how do I get the user in the error function?
+
+      function (result, user, done) {
+        // @TODO: remove
+        const isSignup = !user.public;
+        console.log('🛑 emailTokenDate:', user.emailTokenDate); //eslint-disable-line
+        const timeSinceEmail = moment().diff(
+          moment(user.emailTokenDate),
+          'seconds',
+        );
+        console.log('🛑 isSignup:', isSignup); //eslint-disable-line
+        console.log('🛑 timeSinceEmail:', timeSinceEmail); //eslint-disable-line
+
+        const statsObject = {
+          namespace: 'email-confirm',
+          counts: {
+            count: 1,
+            timeSinceEmail: timeSinceEmail,
+          },
+          tags: {
+            state: 'success',
+            signup: user.public ? 'no' : 'yes',
+          },
+        };
+
+        statService.stat(statsObject, function () {
+          done(null, result, user);
+        });
       },
 
       // Update user
@@ -745,35 +806,6 @@ exports.confirmEmail = function (req, res) {
         );
       },
 
-      // @TODO:
-      // - timeFromemail 0 ??
-      // - tags: do they need to be strings or are booleans ok?
-      // - add failure logging here
-
-      function (result, user, done) {
-        // @TODO: remove
-        const isSignup = !user.public;
-        const timeFromEmail = moment(Date.now()).diff(user.emailTokenDate);
-        console.log('🛑 isSignup:', isSignup); //eslint-disable-line
-        console.log('🛑 timeFromEmail:', timeFromEmail); //eslint-disable-line
-
-        const statsObject = {
-          namespace: 'email-confirm',
-          counts: {
-            count: 1,
-            timeSinceEmail: moment(Date.now()).diff(user.emailTokenDate),
-          },
-          tags: {
-            state: true,
-            signup: !user.public,
-          },
-        };
-
-        statService.stat(statsObject, function () {
-          done(null, result, user);
-        });
-      },
-
       function (result, user, done) {
         req.login(user, function (err) {
           done(err, result, user);
@@ -790,6 +822,27 @@ exports.confirmEmail = function (req, res) {
     ],
     function (err) {
       if (err) {
+        // I think this should also be here but I'm not sure where to get the user from.
+        // have to be carefull because the data we rely on gets set in the database beforehand
+        /*
+          const timeSinceEmail = moment().diff(
+          moment(user.emailTokenDate),
+          'seconds',
+          );
+          const statsObject = {
+          namespace: 'email-confirm',
+          counts: {
+            count: 1,
+            timeSinceEmail: timeSinceEmail,
+          },
+          tags: {
+            state: 'failed',
+            err_message: 'bad token',
+            signup: user.public ? 'no' : 'yes',
+          },
+        };
+
+        statService.stat(statsObject, function () {}); */
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
         });
