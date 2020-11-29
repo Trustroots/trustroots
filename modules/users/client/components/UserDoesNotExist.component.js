@@ -9,7 +9,7 @@ export default function UserDoesNotExist() {
     <div className="row text-center" role="alert">
       <h1>{t('Oops!')}</h1>
       <em className="lead">
-        {t('Member you are looking for is not available.')}
+        {t('The Trustrooter you are looking for is not available.')}
       </em>
       <br />
       <br />
