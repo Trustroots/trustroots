@@ -10,6 +10,7 @@ import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
 import Recommendation from './Recommendation';
 import { getGender } from '@/modules/core/client/utils/user_info';
+
 // @TODO, pull from config
 const DAYS_TO_REPLY = 14;
 
@@ -29,28 +30,43 @@ const UserMeta = styled.div`
   flex-direction: column;
 `;
 
+const PendingNotice = styled.div`
+  font-style: italic;
+  padding: 20px 0;
+`;
+
+const PendingNoticePlaceholder = styled.div`
+  color: #ccc;
+  filter: blur(4px);
+  user-select: none;
+  padding: 0 0 10px 0;
+`;
+
 export default function Reference({ reference }) {
   const { t } = useTranslation('references');
 
   const {
     _id,
+    created,
     feedbackPublic,
     hostedMe,
     hostedThem,
     met,
-    public: publicReference,
+    public: isPublicReference,
     recommend,
     userFrom,
     userTo,
   } = reference;
 
-  const created = new Date(reference.created);
+  const createdDate = new Date(created);
 
-  const getDaysLeft = created =>
-    DAYS_TO_REPLY -
-    Math.round((Date.now() - created.getTime()) / 3600 / 24 / 1000);
-
-  ReferenceHeading;
+  // Get how many days are left before experience will become public
+  const getDaysLeft = date =>
+    Math.max(
+      0,
+      DAYS_TO_REPLY -
+        Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
+    );
 
   return (
     <div className="panel panel-default" id={_id}>
@@ -68,32 +84,38 @@ export default function Reference({ reference }) {
               {userFrom.gender && `, ${getGender(userFrom.gender)}`}
             </span>
           </UserMeta>
-          <time dateTime={created} className="text-color-links">
+          <time dateTime={createdDate} className="text-color-links">
             <a href={`/profile/${userTo.username}/references#${_id}`}>
-              <TimeAgo date={created} />
+              <TimeAgo date={createdDate} />
             </a>
           </time>
         </ReferenceHeading>
 
-        {!publicReference && (
-          <div>
-            <div>
-              <small>{t('pending')}</small>
-            </div>
-            <div>
-              {t('{{daysLeft}} days left', { daysLeft: getDaysLeft(created) })}
-            </div>
+        {!isPublicReference && (
+          <>
+            <PendingNotice>
+              <PendingNoticePlaceholder aria-hidden="true">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+                enim ad minim veniam, quis nostrud exercitation ullamco laboris
+                nisi ut aliquip ex ea commodo consequat...
+              </PendingNoticePlaceholder>
+              {t(
+                'You have {{count}} days left to respond before their experience will become public.',
+                { count: getDaysLeft(createdDate) },
+              )}
+            </PendingNotice>
             {userFrom?.username && (
-              <div>
+              <p>
                 <a
-                  className="btn btn-xs btn-primary"
+                  className="btn btn-primary"
                   href={`/profile/${userFrom.username}/references/new`}
                 >
-                  {t('Share an experience')}
+                  {t('Write about your experience with them')}
                 </a>
-              </div>
+              </p>
             )}
-          </div>
+          </>
         )}
         <Recommendation
           met={met}
