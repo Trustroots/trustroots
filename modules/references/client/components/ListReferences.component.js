@@ -50,11 +50,11 @@ export default function ListReferences({ profile, authenticatedUser }) {
     return <LoadingIndicator />;
   }
 
-  const hasPublicReferencs = publicReferences.length > 0;
+  const hasPublicReferences = publicReferences.length > 0;
   const hasPendingReferences = pendingReferences.length > 0;
 
   // No references
-  if (!hasPendingReferences && !hasPublicReferencs) {
+  if (!hasPendingReferences && !hasPublicReferences) {
     return (
       <div className="row content-empty">
         <i className="icon-3x icon-users"></i>
@@ -70,7 +70,7 @@ export default function ListReferences({ profile, authenticatedUser }) {
 
   return (
     <>
-      {hasPublicReferencs && (
+      {hasPublicReferences && (
         <ReferenceCounts publicReferences={publicReferences} />
       )}
       {hasPendingReferences && (
@@ -79,7 +79,7 @@ export default function ListReferences({ profile, authenticatedUser }) {
           references={pendingReferences}
         />
       )}
-      {hasPublicReferencs && (
+      {hasPublicReferences && (
         <ReferencesSection
           // Show "Public" title only if there are also pending experiences listed
           title={hasPendingReferences && t('Public experiences')}
