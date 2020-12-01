@@ -1,5 +1,5 @@
 {
-    "About": "",
+    "About": "A proposito di",
     "About me": "Su di me",
     "Add contact": "Aggiungi contatto",
     "Change language": "Cambia lingua",
@@ -11,7 +11,7 @@
     "Fill your profile": "Completa il tuo profilo",
     "From <1>{{locationFrom}}</1>": "Da <1>{{locationFrom}}</1>",
     "Help!": "Aiuto!",
-    "Hosting": "",
+    "Hosting": "Ospitando",
     "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>": {
         "": "Se non hai ricevuto il messaggio, controlla nello spam o invia di nuovo attraverso<1>impostazione dell'email</1>."
     },
@@ -22,10 +22,10 @@
         "": "Questo membro non ha scritto descrizione di se stesso."
     },
     "Member since {{date, MMM Do, YYYY}}": "Membro dal{{date, MMM Do, YYYY}}",
-    "Online long ago": "",
+    "Online long ago": "Non si connette da tempo",
     "Online {{ date, fromNow }}": "Ultima connessione {{ date, fromNow }}",
     "Open user profile for {{name}}": "Apri il profilo del membro {{name}}",
-    "Overview": "",
+    "Overview": "Panoramica",
     "Remove contact": "Cancellare contatto",
     "Replies within {{replyTime, fromNow}}": {
         "": "Risponde in{{replyTime, fromNow}}."
@@ -56,5 +56,6 @@
     "“Everyone is necessarily the hero of their own life story": {
         "”": "\"Ognuno è necessariamente l'eroe della storia della propria vita\""
     },
-    "Circles in common": "Cerchie in comune"
+    "Circles in common": "Cerchie in comune",
+    "other gender": "altro genere"
 }
