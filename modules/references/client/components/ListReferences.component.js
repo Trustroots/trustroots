@@ -6,8 +6,8 @@ import React, { useState, useEffect } from 'react';
 // Internal dependencies
 import { read as readReferences } from '../api/references.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import Reference from './read-references/Reference';
 import ReferenceCounts from './read-references/ReferenceCounts';
+import ReferencesSection from './read-references/ReferencesSection';
 
 /**
  * List of user's references
@@ -50,8 +50,11 @@ export default function ListReferences({ profile, authenticatedUser }) {
     return <LoadingIndicator />;
   }
 
+  const hasPublicReferences = publicReferences.length > 0;
+  const hasPendingReferences = pendingReferences.length > 0;
+
   // No references
-  if (pendingReferences.length === 0 && publicReferences.length === 0) {
+  if (!hasPendingReferences && !hasPublicReferences) {
     return (
       <div className="row content-empty">
         <i className="icon-3x icon-users"></i>
@@ -65,32 +68,24 @@ export default function ListReferences({ profile, authenticatedUser }) {
     );
   }
 
-  const renderReferencesSection = (sectionTitle, references) => (
-    <section>
-      <div className="row">
-        <div className="col-xs-12 col-sm-6">
-          <h4 className="text-muted">{sectionTitle}</h4>
-        </div>
-      </div>
-      <div className="row">
-        <div className="col-xs-12">
-          {references.map(reference => (
-            <Reference key={reference._id} reference={reference} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-
   return (
     <>
-      {publicReferences.length > 0 && (
+      {hasPublicReferences && (
         <ReferenceCounts publicReferences={publicReferences} />
       )}
-      {pendingReferences.length > 0 &&
-        renderReferencesSection(t('Pending'), pendingReferences)}
-      {publicReferences.length > 0 &&
-        renderReferencesSection(t('Public'), publicReferences)}
+      {hasPendingReferences && (
+        <ReferencesSection
+          title={t('Experiences pending publishing')}
+          references={pendingReferences}
+        />
+      )}
+      {hasPublicReferences && (
+        <ReferencesSection
+          // Show "Public" title only if there are also pending experiences listed
+          title={hasPendingReferences && t('Public experiences')}
+          references={publicReferences}
+        />
+      )}
     </>
   );
 }

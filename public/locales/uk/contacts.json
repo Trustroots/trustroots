@@ -7,5 +7,6 @@
     "{{count}} contacts_2": "{{count}} контактів",
     "Yes, remove contact": "Так, видалити контакт",
     "Remove contact?": "Видалити контакт?",
-    "Decline Request": "Відхилити запит"
+    "Decline Request": "Відхилити запит",
+    "Lives in <2>{{locationLiving}}</2>": "Мешкає у <2>{{locationLiving}}</2>"
 }

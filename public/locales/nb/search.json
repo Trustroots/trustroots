@@ -6,5 +6,6 @@
     "Search members": "Søk etter medlemmer",
     "Type name, username…": "Skriv navn, brukernavn…",
     "{{count}} members found": "Fant ett medlem",
-    "{{count}} members found_plural": "Fant {{count}} medlemmer"
+    "{{count}} members found_plural": "Fant {{count}} medlemmer",
+    "Search": "Søk"
 }

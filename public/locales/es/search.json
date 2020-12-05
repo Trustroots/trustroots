@@ -5,6 +5,7 @@
     },
     "Search members": "Buscar miembros",
     "Type name, username…": "Escriba nombre, usuario…",
-    "{{count}} members found": "{{count}} miembro encontrado",
-    "{{count}} members found_plural": "{{count}} miembros encontrados"
+    "{{count}} members found": "Un miembro encontrado",
+    "{{count}} members found_plural": "{{count}} miembros encontrados",
+    "Search": "Búsqueda"
 }
