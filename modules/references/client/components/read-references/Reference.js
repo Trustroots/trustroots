@@ -78,10 +78,10 @@ export default function Reference({ reference }) {
               <UserLink user={userFrom} />
             </strong>
             <span className="muted">
-              {t('Member since {{memberSince}}', {
-                memberSince: new Date(userFrom.created).getFullYear(),
+              {userFrom.gender && `${getGender(userFrom.gender)}. `}
+              {t('Member since {{date, YYYY}}.', {
+                date: new Date(userFrom.created),
               })}
-              {userFrom.gender && `, ${getGender(userFrom.gender)}`}
             </span>
           </UserMeta>
           <time dateTime={createdDate} className="text-color-links">
