@@ -1,34 +1,34 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import '@/config/client/i18n';
+// External dependencies
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import React from 'react';
+import styled from 'styled-components';
+
+// Internal dependencies
+import '@/config/client/i18n';
+import Switch from '@/modules/core/client/components/Switch';
+
+const ReportContainer = styled.div`
+  margin-top: 50px;
+`;
 
 export default function Report({
-  report,
-  reportMessage,
   onChangeReport,
   onChangeReportMessage,
+  report,
+  reportMessage,
 }) {
   const { t } = useTranslation('references');
 
   return (
-    <div>
-      <br />
-      <br />
-      <p className="lead">
-        {t(
-          "We're sad to hear you didn't have a great experience using Trustroots!",
-        )}{' '}
-        😞
-      </p>
-      <div className="checkbox">
-        <label>
-          <input type="checkbox" checked={report} onChange={onChangeReport} />
-          {t('Report this person to moderators')}
-        </label>
-      </div>
+    <ReportContainer>
+      <Switch small checked={report} onChange={onChangeReport}>
+        {t('Report this person to moderators')}
+      </Switch>
       {report && (
-        <div>
+        <>
+          <br />
+          <br />
           <label htmlFor="report-message" className="control-label">
             {t('Message to moderators')}
           </label>
@@ -43,9 +43,9 @@ export default function Report({
             {t('Please write in English if possible.')}
             <br />
           </span>
-        </div>
+        </>
       )}
-    </div>
+    </ReportContainer>
   );
 }
 
