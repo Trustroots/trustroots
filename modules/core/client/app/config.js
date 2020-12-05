@@ -36,8 +36,6 @@ import 'angular-chosen-localytics/dist/angular-chosen.js';
 
 import ngreact from 'ngreact';
 
-import 'angular-waypoints/dist/angular-waypoints.all';
-
 // eslint-disable-next-line angular/window-service
 const SENTRY_DSN = window.SENTRY_DSN;
 
@@ -66,7 +64,6 @@ const appModuleVendorDependencies = compact([
   'nemLogging',
   'ui-leaflet',
   ngFileUpload,
-  'zumba.angular-waypoints',
   'localytics.directives',
   'angular-loading-bar',
   trTrustpass,
