@@ -18,7 +18,7 @@ const REFRESH_INTERVAL = 10000; // 10s
  *  Well, I think it's useful to be able to reuse our date formatting library,
  *  given we have it already. But, lets see, can always switch it out later...
  */
-export default function TimeAgo({ date, className }) {
+export default function TimeAgo({ date }) {
   const momentDate = moment(date);
 
   const [fromNow, setFromNow] = useState(momentDate.fromNow());
@@ -33,17 +33,12 @@ export default function TimeAgo({ date, className }) {
   }, [date]);
 
   return (
-    <time
-      className={className}
-      dateTime={date}
-      title={momentDate.format('LLLL')}
-    >
+    <time dateTime={date} title={momentDate.format('LLLL')}>
       {fromNow}
     </time>
   );
 }
 
 TimeAgo.propTypes = {
-  className: PropTypes.string,
   date: PropTypes.instanceOf(Date).isRequired,
 };
