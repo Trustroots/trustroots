@@ -5,11 +5,11 @@ import React from 'react';
 import styled from 'styled-components';
 
 // Internal dependencies
+import { getGender } from '@/modules/core/client/utils/user_info';
 import Avatar from '@/modules/users/client/components/Avatar.component';
+import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
-import Recommendation from './Recommendation';
-import { getGender } from '@/modules/core/client/utils/user_info';
 
 // @TODO, pull from config
 const DAYS_TO_REPLY = 14;
@@ -51,6 +51,10 @@ const PendingNoticePlaceholder = styled.div`
   filter: blur(4px);
   user-select: none;
   padding: 0 0 10px 0;
+`;
+
+const FeedbackPublic = styled.div`
+  max-width: 600px;
 `;
 
 export default function Reference({ reference, inRecipientProfile }) {
@@ -136,13 +140,13 @@ export default function Reference({ reference, inRecipientProfile }) {
             )}
           </>
         )}
-        <Recommendation
-          met={met}
+        <Meta
           hostedMe={hostedMe}
           hostedThem={hostedThem}
+          met={met}
           recommend={recommend}
         />
-        {feedbackPublic && <div>{feedbackPublic}</div>}
+        {feedbackPublic && <FeedbackPublic>{feedbackPublic}</FeedbackPublic>}
       </div>
     </div>
   );
