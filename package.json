@@ -173,7 +173,7 @@
     "react-map-gl": "5.2.10",
     "react-medium-editor": "1.8.1",
     "react-responsive": "8.2.0",
-    "sanitize-html": "2.1.2",
+    "sanitize-html": "2.2.0",
     "serve-favicon": "2.5.0",
     "speakingurl": "14.0.1",
     "stathat": "0.0.8",
