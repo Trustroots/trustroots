@@ -2,9 +2,6 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^modules/(.*)$': '<rootDir>/modules/$1',
-    // doesn't play nicely with jest, see jest.setup.js for more info
-    'angular-waypoints/dist/angular-waypoints.all':
-      '<rootDir>/jest/jest.empty-module.js',
     '^.+\\.(css)$': '<rootDir>/jest/jest.empty-module.js',
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.js'],

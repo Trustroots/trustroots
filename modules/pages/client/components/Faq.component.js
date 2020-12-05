@@ -30,11 +30,7 @@ export default function Faq({ category, invitationsEnabled, children }) {
       <section className="container">
         <div className="row">
           <div className="col-xs-12 col-sm-4 col-md-4">
-            <div
-              id="faq-sidebar"
-              className="sidebar"
-              // TODO make CSS 'position: sticky' work or toggle 'sidebar-sticky' class
-            >
+            <div id="faq-sidebar" className="sidebar">
               {/* <Site & Community */}
               <div className="panel panel-default">
                 <div className="panel-heading">
