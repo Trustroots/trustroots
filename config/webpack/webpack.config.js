@@ -1,22 +1,19 @@
+const { join, resolve } = require('path');
 const BundleAnalyzerPlugin =
   require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const webpack = require('webpack');
 const webpackMerge = require('webpack-merge');
-const compact = require('lodash/compact');
-const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 // This is very experimental library
 // There might be another favourite react-refresh webpack plugin at some point ...
 // See https://github.com/facebook/react/issues/16604 for discussion
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
-const { join, resolve } = require('path');
-
 const shims = require('./webpack.shims');
-const basedir = join(__dirname, '../..');
-
 const config = require('../config');
 
+const basedir = join(__dirname, '../..');
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -30,7 +27,10 @@ const styleLoaders = [
       },
   {
     loader: 'css-loader',
-    options: { importLoaders: 1 },
+    options: {
+      importLoaders: 1,
+      sourceMap: isDevelopment,
+    },
   },
   {
     loader: 'postcss-loader',
@@ -45,7 +45,7 @@ const styleLoaders = [
 
 module.exports = webpackMerge.merge(shims, {
   mode: isProduction ? 'production' : 'development',
-  devtool: isProduction ? 'source-map' : 'cheap-module-eval-source-map',
+  devtool: isProduction ? 'source-map' : 'eval-cheap-module-source-map',
   entry: require.resolve('./entries/main'),
   output: {
     path: join(basedir, 'public/assets'),
@@ -82,6 +82,15 @@ module.exports = webpackMerge.merge(shims, {
         exclude: /node_modules/,
         test: /\.js$/,
         loader: 'eslint-loader',
+      },
+      // This is due Babel failing to resolve ESM modules in `react-map-gl` package.
+      // It might be okay to remove this later on: just test by removing and running the build
+      // Solution via https://github.com/graphql/graphql-js/issues/2721#issuecomment-723008284
+      {
+        test: /\.m?js/,
+        resolve: {
+          fullySpecified: false,
+        },
       },
       {
         test: /\.js$/,
@@ -127,10 +136,6 @@ module.exports = webpackMerge.merge(shims, {
           },
           {
             loader: 'html-loader',
-            options: {
-              minimize: true,
-              attrs: ['img:src', ':ng-include'],
-            },
           },
         ],
       },
@@ -149,7 +154,7 @@ module.exports = webpackMerge.merge(shims, {
       },
     ],
   },
-  plugins: compact([
+  plugins: [
     config.bundleAnalyzer.enabled &&
       new BundleAnalyzerPlugin(config.bundleAnalyzer.options),
     isProduction &&
@@ -160,5 +165,5 @@ module.exports = webpackMerge.merge(shims, {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),
     isDevelopment && new ReactRefreshWebpackPlugin(),
-  ]),
+  ].filter(Boolean),
 });

@@ -2,7 +2,7 @@
 <!-- There's another one inside `search.client.view.html` template for small screens -->
 <div
   class="search-sidebar-section hidden-xs"
-  ng-include="~modules/search/client/views/search-input.client.view.html"
+  ng-include="'/modules/search/views/search-input.client.view.html'"
 ></div>
 <!-- /Location search -->
 
@@ -17,7 +17,7 @@
       Filters
     </uib-tab-heading>
     <div
-      ng-include="~modules/search/client/views/search-sidebar-filters.client.view.html"
+      ng-include="'/modules/search/views/search-sidebar-filters.client.view.html'"
     ></div>
   </uib-tab>
   <uib-tab index="'results'">
@@ -27,7 +27,7 @@
       Results
     </uib-tab-heading>
     <div
-      ng-include="~modules/search/client/views/search-sidebar-results.client.view.html"
+      ng-include="'/modules/search/views/search-sidebar-results.client.view.html'"
     ></div>
   </uib-tab>
 </uib-tabset>

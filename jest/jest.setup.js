@@ -1,3 +1,6 @@
+// eslint-disable-next-line no-undef
+jest.mock('@/config/client/bootstrap');
+
 global.L = require('leaflet');
 global.jQuery = require('jquery');
 require('angular');

@@ -4,6 +4,10 @@ import '@/modules/core/client/core.client.module';
 
 AppConfig.registerModule('users', ['core']);
 
+// Templates used in `ng-include`s
+require('@/modules/users/client/views/profile/activate.client.view.html');
+require('@/modules/users/client/views/profile/profile-view-basics.client.view.html');
+
 // config
 require('@/modules/users/client/config/users.client.config');
 require('@/modules/users/client/config/users.client.routes');
