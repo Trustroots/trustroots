@@ -53,7 +53,7 @@ const PendingNoticePlaceholder = styled.div`
   padding: 0 0 10px 0;
 `;
 
-export default function Reference({ reference, isWrittenByUser }) {
+export default function Reference({ reference, inRecipientProfile }) {
   const { t } = useTranslation('references');
 
   const {
@@ -79,17 +79,19 @@ export default function Reference({ reference, isWrittenByUser }) {
         Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
     );
 
+  const inCreatorProfile = !inRecipientProfile;
+
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body reference">
         <ReferenceHeading>
-          {!isWrittenByUser && <div>{t('their reply')}</div>}
+          {inCreatorProfile && <div>{t('their reply')}</div>}
           <Avatar user={userFrom} size={36} />
           <UserMeta>
             <strong>
               <UserLink user={userFrom} />
             </strong>
-            {isWrittenByUser && (
+            {inRecipientProfile && (
               <span className="muted">
                 {userFrom.gender && `${getGender(userFrom.gender)}. `}
                 {t('Member since {{date, YYYY}}.', {
@@ -98,7 +100,7 @@ export default function Reference({ reference, isWrittenByUser }) {
               </span>
             )}
           </UserMeta>
-          {isWrittenByUser && (
+          {inRecipientProfile && (
             <a
               className="reference-time"
               href={`/profile/${userTo.username}/references#${_id}`}
@@ -139,7 +141,7 @@ export default function Reference({ reference, isWrittenByUser }) {
           hostedMe={hostedMe}
           hostedThem={hostedThem}
           recommend={recommend}
-          isExperienceWrittenByUser={isWrittenByUser}
+          isExperienceWrittenByUser={inRecipientProfile}
         />
         {feedbackPublic && <div>{feedbackPublic}</div>}
       </div>
@@ -149,5 +151,5 @@ export default function Reference({ reference, isWrittenByUser }) {
 
 Reference.propTypes = {
   reference: PropTypes.object.isRequired,
-  isWrittenByUser: PropTypes.bool.isRequired,
+  inRecipientProfile: PropTypes.bool.isRequired,
 };

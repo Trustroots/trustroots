@@ -24,7 +24,7 @@ export default function ReferencesSection({ title, referencePairs }) {
             <div className="col-xs-12">
               <Reference
                 reference={referencePair.sharedWithUser}
-                isWrittenByUser={true}
+                inRecipientProfile={true}
               />
             </div>
           </div>
@@ -33,7 +33,7 @@ export default function ReferencesSection({ title, referencePairs }) {
               <div className="col-xs-12">
                 <Reference
                   reference={referencePair.writtenByUser}
-                  isWrittenByUser={false}
+                  inRecipientProfile={false}
                 />
               </div>
             </div>
