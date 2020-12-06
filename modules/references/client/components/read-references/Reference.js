@@ -5,14 +5,12 @@ import React from 'react';
 import styled from 'styled-components';
 
 // Internal dependencies
+import { DAYS_TO_REPLY } from '../../utils/constants';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
-
-// @TODO, pull from config
-const DAYS_TO_REPLY = 14;
 
 const ReferenceHeading = styled.div`
   display: flex;
