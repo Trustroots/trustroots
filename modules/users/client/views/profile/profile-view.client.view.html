@@ -55,16 +55,9 @@ this is a fallback when the contacts are loading
   </div>
 
   <!-- Couldn't find profile... -->
-  <div
-    class="row text-center"
-    aria-role="alert"
+  <user-does-not-exist
     ng-if="!profileCtrl.profile.username && profileCtrl.profile.$resolved && app.user.public !== false"
-  >
-    <h1>Don't panic!</h1>
-    <em class="lead">User does not exist.</em>
-    <br /><br />
-    <a ui-sref="search.map">Continue...</a>
-  </div>
+  ></user-does-not-exist>
 
   <!-- Own profile is non-public -->
   <div
