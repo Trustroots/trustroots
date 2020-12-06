@@ -46,9 +46,11 @@ export default function ListReferences({ profile, authenticatedUser }) {
 
       publicExperiences.forEach(experience => {
         if (experience.userFrom.username === profile.username) {
-          publicExperiencePairsDict[
-            experience.userTo.username
-          ].writtenByUser = experience;
+          const userTo = experience.userTo.username;
+          if (publicExperiencePairsDict[userTo] === undefined) {
+            publicExperiencePairsDict[userTo] = {};
+          }
+          publicExperiencePairsDict[userTo].writtenByUser = experience;
         }
       });
 
