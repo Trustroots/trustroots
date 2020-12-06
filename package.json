@@ -257,7 +257,7 @@
     "webpack-cli": "4.2.0",
     "webpack-dev-server": "3.11.0",
     "webpack-merge": "5.4.0",
-    "yargs": "16.1.1"
+    "yargs": "16.2.0"
   },
   "optionalDependencies": {
     "chokidar": "3.4.3"
