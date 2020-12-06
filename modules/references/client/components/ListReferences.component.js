@@ -37,7 +37,10 @@ export default function ListReferences({ profile, authenticatedUser }) {
       const publicExperiencePairsDict = publicExperiences
         .filter(experience => experience.userTo.username === profile.username)
         .reduce(
-          (a, exp) => ({ ...a, [exp.userFrom.username]: { theirs: exp } }),
+          (a, exp) => ({
+            ...a,
+            [exp.userFrom.username]: { sharedWithUser: exp },
+          }),
           {},
         );
 
@@ -45,18 +48,18 @@ export default function ListReferences({ profile, authenticatedUser }) {
         if (experience.userFrom.username === profile.username) {
           publicExperiencePairsDict[
             experience.userTo.username
-          ].mine = experience;
+          ].writtenByUser = experience;
         }
       });
 
       // Object.values(publicExperiencePairs).forEach(pair => {
-      //   if (pair.mine === undefined) {
-      //     throw Error(`The following experience is public: ${pair.theirs._id}.
+      //   if (pair.writtenByUser === undefined) {
+      //     throw Error(`The following experience is public: ${pair.sharedWithUser._id}.
       //     The reply to it should also exist but it doesn't.`);
       //   }
-      //   if (pair.theirs.userTo.username !== pair.mine.userFrom.username) {
+      //   if (pair.sharedWithUser.userTo.username !== pair.writtenByUser.userFrom.username) {
       //     throw Error(
-      //       `This experience ${pair.mine._id} should be reply to this one ${pair.theirs._id} but it is not`,
+      //       `This experience ${pair.writtenByUser._id} should be reply to this one ${pair.sharedWithUser._id} but it is not`,
       //     );
       //   }
       // });
@@ -66,7 +69,7 @@ export default function ListReferences({ profile, authenticatedUser }) {
       setPublicExperiencePairs(Object.values(publicExperiencePairsDict));
       setPendingExperiences(
         pendingOldestFirst.map(experience => {
-          return { theirs: experience };
+          return { sharedWithUser: experience };
         }),
       );
     } finally {

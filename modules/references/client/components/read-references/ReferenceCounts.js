@@ -12,13 +12,13 @@ export default function ReferenceCounts({ publicReferences }) {
   const { t } = useTranslation('references');
 
   const positiveCount = publicReferences.filter(
-    ({ theirs }) => theirs.recommend === 'yes',
+    ({ sharedWithUser }) => sharedWithUser.recommend === 'yes',
   ).length;
   const unknownCount = publicReferences.filter(
-    ({ theirs }) => theirs.recommend === 'unknown',
+    ({ sharedWithUser }) => sharedWithUser.recommend === 'unknown',
   ).length;
   const negativeCount = publicReferences.filter(
-    ({ theirs }) => theirs.recommend === 'no',
+    ({ sharedWithUser }) => sharedWithUser.recommend === 'no',
   ).length;
 
   return (

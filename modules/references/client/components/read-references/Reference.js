@@ -53,7 +53,7 @@ const PendingNoticePlaceholder = styled.div`
   padding: 0 0 10px 0;
 `;
 
-export default function Reference({ reference, isMine }) {
+export default function Reference({ reference, isWrittenByUser }) {
   const { t } = useTranslation('references');
 
   const {
@@ -83,13 +83,13 @@ export default function Reference({ reference, isMine }) {
     <div className="panel panel-default" id={_id}>
       <div className="panel-body reference">
         <ReferenceHeading>
-          {!isMine && <div>{t('their reply')}</div>}
+          {!isWrittenByUser && <div>{t('their reply')}</div>}
           <Avatar user={userFrom} size={36} />
           <UserMeta>
             <strong>
               <UserLink user={userFrom} />
             </strong>
-            {isMine && (
+            {isWrittenByUser && (
               <span className="muted">
                 {userFrom.gender && `${getGender(userFrom.gender)}. `}
                 {t('Member since {{date, YYYY}}.', {
@@ -98,7 +98,7 @@ export default function Reference({ reference, isMine }) {
               </span>
             )}
           </UserMeta>
-          {isMine && (
+          {isWrittenByUser && (
             <a
               className="reference-time"
               href={`/profile/${userTo.username}/references#${_id}`}
@@ -139,7 +139,7 @@ export default function Reference({ reference, isMine }) {
           hostedMe={hostedMe}
           hostedThem={hostedThem}
           recommend={recommend}
-          isMyExperience={isMine}
+          isExperienceWrittenByUser={isWrittenByUser}
         />
         {feedbackPublic && <div>{feedbackPublic}</div>}
       </div>
@@ -149,5 +149,5 @@ export default function Reference({ reference, isMine }) {
 
 Reference.propTypes = {
   reference: PropTypes.object.isRequired,
-  isMine: PropTypes.bool.isRequired,
+  isWrittenByUser: PropTypes.bool.isRequired,
 };

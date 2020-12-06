@@ -7,13 +7,13 @@ export default function Recommendation({
   hostedMe,
   hostedThem,
   recommend,
-  isMyExperience,
+  isExperienceWrittenByUser,
 }) {
   const { t } = useTranslation('references');
 
   return (
     <div>
-      {isMyExperience && (
+      {isExperienceWrittenByUser && (
         <ul className="list-inline">
           {hostedMe && <li>{t('Guest.')}</li>}
           {hostedThem && <li>{t('Host.')}</li>}
@@ -33,5 +33,5 @@ Recommendation.propTypes = {
   hostedMe: PropTypes.bool.isRequired,
   hostedThem: PropTypes.bool.isRequired,
   recommend: PropTypes.string.isRequired,
-  isMyExperience: PropTypes.bool.isRequired,
+  isExperienceWrittenByUser: PropTypes.bool.isRequired,
 };
