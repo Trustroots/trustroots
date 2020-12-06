@@ -141,7 +141,6 @@ export default function Reference({ reference, inRecipientProfile }) {
           hostedMe={hostedMe}
           hostedThem={hostedThem}
           recommend={recommend}
-          isExperienceWrittenByUser={inRecipientProfile}
         />
         {feedbackPublic && <div>{feedbackPublic}</div>}
       </div>
