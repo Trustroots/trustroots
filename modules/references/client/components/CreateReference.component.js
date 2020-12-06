@@ -143,17 +143,17 @@ export default function CreateReference({ userFrom, userTo }) {
   }
 
   if (isDuplicate) {
-    return <DuplicateInfo userTo={userTo} />;
+    return <DuplicateInfo username={userTo.username} />;
   }
 
   if (isSubmitted) {
     const isReported = recommend === 'no' && report;
     return (
       <SubmittedInfo
-        isReported={isReported}
         isPublic={isPublic}
-        userFrom={userFrom}
-        userTo={userTo}
+        isReported={isReported}
+        name={userTo.displayName}
+        username={userTo.username}
       />
     );
   }
