@@ -375,7 +375,7 @@ exports.readMany = async function readMany(req, res, next) {
     // validate the query
     validate(validateReadMany, req);
 
-    const { userFrom, userTo, includeReplies } = req.query;
+    const { userFrom, userTo } = req.query;
     const self = req.user;
 
     // build a query
@@ -401,21 +401,19 @@ exports.readMany = async function readMany(req, res, next) {
 
     const matchQueryReply = {};
 
-    if (includeReplies) {
-      // Allow non-public references only when userFrom or userTo is self
-      if (!self._id.equals(userFrom) && !self._id.equals(userTo)) {
-        matchQueryReply.public = true;
-      }
+    // Allow non-public references only when userFrom or userTo is self
+    if (!self._id.equals(userFrom) && !self._id.equals(userTo)) {
+      matchQueryReply.public = true;
+    }
 
-      // Filter by userFrom
-      if (userTo) {
-        matchQueryReply.userFrom = new mongoose.Types.ObjectId(userTo);
-      }
+    // Filter by userFrom
+    if (userTo) {
+      matchQueryReply.userFrom = new mongoose.Types.ObjectId(userTo);
+    }
 
-      // Filter by userTo
-      if (userFrom) {
-        matchQueryReply.userTo = new mongoose.Types.ObjectId(userFrom);
-      }
+    // Filter by userTo
+    if (userFrom) {
+      matchQueryReply.userTo = new mongoose.Types.ObjectId(userFrom);
     }
 
     // Aggregate projection for User in reference
@@ -439,9 +437,7 @@ exports.readMany = async function readMany(req, res, next) {
     // Find references
     const references = await Reference.aggregate([
       {
-        $match: includeReplies
-          ? { $or: [matchQuery, matchQueryReply] }
-          : matchQuery,
+        $match: { $or: [matchQuery, matchQueryReply] },
       },
 
       // Extend user objects

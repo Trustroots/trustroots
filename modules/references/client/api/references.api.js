@@ -63,16 +63,13 @@ export async function create(reference) {
  * @params {bool} includeReplies - true if replies to the references need to be fetched
  * @returns Promise<Reference[]> - array of the found references
  */
-export async function read({ userFrom, userTo, includeReplies }) {
+export async function read({ userFrom, userTo }) {
   const params = {};
   if (userFrom) {
     params.userFrom = userFrom;
   }
   if (userTo) {
     params.userTo = userTo;
-  }
-  if (includeReplies) {
-    params.includeReplies = includeReplies;
   }
 
   const { data: references } = await axios.get('/api/references', { params });

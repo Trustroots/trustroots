@@ -35,15 +35,16 @@ export default function CreateReference({ userFrom, userTo }) {
 
   useEffect(() => {
     (async () => {
-      const reference = await api.references.read({
+      const references = await api.references.read({
         userFrom: userFrom._id,
         userTo: userTo._id,
-        includeReplies: false,
       });
 
-      if (reference.length === 1) {
-        setIsDuplicate(true);
-      }
+      references.forEach(reference => {
+        if (reference.userFrom.username === userFrom.username) {
+          setIsDuplicate(true);
+        }
+      });
 
       setIsLoading(false);
     })();
