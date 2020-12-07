@@ -18,6 +18,31 @@ export default function ListReferences({ profile, authenticatedUser }) {
   const [pendingExperiences, setPendingExperiences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  function pairUpExperiences(experiences) {
+    /* TODO: compare by ids (couldn't make it work, so I used usernames to compare for now) */
+    const experiencePairsDict = experiences
+      .filter(experience => experience.userTo.username === profile.username)
+      .reduce(
+        (a, exp) => ({
+          ...a,
+          [exp.userFrom.username]: { sharedWithUser: exp },
+        }),
+        {},
+      );
+
+    experiences.forEach(experience => {
+      if (experience.userFrom.username === profile.username) {
+        const userTo = experience.userTo.username;
+        if (experiencePairsDict[userTo] === undefined) {
+          experiencePairsDict[userTo] = {};
+        }
+        experiencePairsDict[userTo].writtenByUser = experience;
+      }
+    });
+
+    return Object.values(experiencePairsDict);
+  }
+
   async function fetchReferences() {
     setIsLoading(true);
     try {
@@ -29,34 +54,13 @@ export default function ListReferences({ profile, authenticatedUser }) {
       const publicExperiences = experiences.filter(
         experience => experience.public,
       );
+      const publicExperiencePairs = pairUpExperiences(publicExperiences);
+      setPublicExperiencePairs(publicExperiencePairs);
+
       const pendingNewestFirst = experiences.filter(
         experience => !experience.public,
       );
-
-      /* TODO: compare by ids (couldn't make it work, so I used usernames to compare for now) */
-      const publicExperiencePairsDict = publicExperiences
-        .filter(experience => experience.userTo.username === profile.username)
-        .reduce(
-          (a, exp) => ({
-            ...a,
-            [exp.userFrom.username]: { sharedWithUser: exp },
-          }),
-          {},
-        );
-
-      publicExperiences.forEach(experience => {
-        if (experience.userFrom.username === profile.username) {
-          const userTo = experience.userTo.username;
-          if (publicExperiencePairsDict[userTo] === undefined) {
-            publicExperiencePairsDict[userTo] = {};
-          }
-          publicExperiencePairsDict[userTo].writtenByUser = experience;
-        }
-      });
-
       const pendingOldestFirst = [...pendingNewestFirst].reverse();
-
-      setPublicExperiencePairs(Object.values(publicExperiencePairsDict));
       setPendingExperiences(
         pendingOldestFirst.map(experience => {
           return { sharedWithUser: experience };
