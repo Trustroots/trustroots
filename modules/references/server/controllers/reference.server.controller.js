@@ -151,15 +151,18 @@ function formatReference(reference, isNonpublicFullyDisplayed) {
   }
 }
 
+async function findMyReference(req, userTo) {
+  return await Reference.findOne({
+    userFrom: req.user._id,
+    userTo: userTo,
+  }).exec();
+}
+
 /**
  * Check if the reference already exists. If it exists, return an error in a callback.
  */
 async function checkDuplicate(req) {
-  const ref = await Reference.findOne({
-    userFrom: req.user._id,
-    userTo: req.body.userTo,
-  }).exec();
-
+  const ref = await findMyReference(req, req.body.userTo);
   if (ref === null) return;
 
   throw new ResponseError({ status: 409, body: { errType: 'conflict' } });
@@ -572,4 +575,9 @@ exports.referenceById = async function referenceById(req, res, next, id) {
  */
 exports.readOne = function readOne(req, res) {
   return res.status(200).json(req.reference);
+};
+
+exports.readMine = async function readMine(req, res) {
+  const reference = await findMyReference(req, req.query.userTo);
+  return res.status(200).json(reference);
 };
