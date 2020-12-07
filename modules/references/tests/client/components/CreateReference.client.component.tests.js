@@ -50,7 +50,6 @@ describe('<CreateReference />', () => {
     expect(api.references.read).toBeCalledWith({
       userFrom: userFrom._id,
       userTo: userTo._id,
-      includeReplies: false,
     });
   });
 
@@ -68,7 +67,6 @@ describe('<CreateReference />', () => {
     expect(api.references.read).toBeCalledWith({
       userFrom: userFrom._id,
       userTo: userTo._id,
-      includeReplies: false,
     });
   });
 
