@@ -54,18 +54,6 @@ export default function ListReferences({ profile, authenticatedUser }) {
         }
       });
 
-      // Object.values(publicExperiencePairs).forEach(pair => {
-      //   if (pair.writtenByUser === undefined) {
-      //     throw Error(`The following experience is public: ${pair.sharedWithUser._id}.
-      //     The reply to it should also exist but it doesn't.`);
-      //   }
-      //   if (pair.sharedWithUser.userTo.username !== pair.writtenByUser.userFrom.username) {
-      //     throw Error(
-      //       `This experience ${pair.writtenByUser._id} should be reply to this one ${pair.sharedWithUser._id} but it is not`,
-      //     );
-      //   }
-      // });
-
       const pendingOldestFirst = [...pendingNewestFirst].reverse();
 
       setPublicExperiencePairs(Object.values(publicExperiencePairsDict));
