@@ -25,8 +25,12 @@ describe('<CreateReference />', () => {
   let userTo;
 
   beforeEach(() => {
-    userFrom = { _id: '111111', username: 'userfrom' };
-    userTo = { _id: '222222', username: 'userto' };
+    userFrom = {
+      _id: '111111',
+      displayName: 'from-name',
+      username: 'userfrom',
+    };
+    userTo = { _id: '222222', displayName: 'to-name', username: 'userto' };
   });
 
   it('should not be possible to leave a reference to self', () => {
@@ -57,8 +61,8 @@ describe('<CreateReference />', () => {
       <CreateReference userFrom={userFrom} userTo={userTo} />,
     );
     await waitForLoader();
-    expect(queryByRole('alert')).toHaveTextContent(
-      `You've already given a reference to ${userTo.username}.`,
+    expect(queryByRole('heading')).toHaveTextContent(
+      `You already shared your experience with them`,
     );
     expect(api.references.read).toBeCalledWith({
       userFrom: userFrom._id,
@@ -86,7 +90,6 @@ describe('<CreateReference />', () => {
       getAllByText,
       getByLabelText,
       queryByLabelText,
-      queryByRole,
     } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
@@ -123,9 +126,14 @@ describe('<CreateReference />', () => {
       userTo: userTo._id,
     });
 
-    const alert = await waitForElement(() => queryByRole('alert'));
-    expect(alert).toHaveTextContent(
-      `Your reference will become public when ${userTo.username} gives you a reference back, or in 14 days.`,
+    const successMessage = await waitForElement(() =>
+      getByText('Thank you for sharing your experience!').closest('div'),
+    );
+    expect(successMessage).toHaveTextContent(
+      `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
+    );
+    expect(successMessage).not.toHaveTextContent(
+      `You also reported them to us.`,
     );
   });
 
@@ -138,7 +146,6 @@ describe('<CreateReference />', () => {
       getAllByText,
       getByLabelText,
       queryByLabelText,
-      queryByRole,
     } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
@@ -176,10 +183,12 @@ describe('<CreateReference />', () => {
       'they were mean to me',
     );
 
-    const alert = await waitForElement(() => queryByRole('alert'));
-    expect(alert).toHaveTextContent(
-      `Your reference will become public when ${userTo.username} gives you a reference back, or in 14 days.`,
+    const successMessage = await waitForElement(() =>
+      getByText('Thank you for sharing your experience!').closest('div'),
     );
-    expect(alert).toHaveTextContent(`Also, ${userTo.username} was reported.`);
+    expect(successMessage).toHaveTextContent(
+      `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
+    );
+    expect(successMessage).toHaveTextContent(`You also reported them to us.`);
   });
 });
