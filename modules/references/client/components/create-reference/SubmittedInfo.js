@@ -7,7 +7,6 @@ import React from 'react';
 import '@/config/client/i18n';
 import { DAYS_TO_REPLY } from '../../utils/constants';
 import SuccessMessage from '@/modules/core/client/components/SuccessMessage';
-import UserLink from '@/modules/users/client/components/UserLink';
 
 /**
  * Info after successful submitting of a new reference.
