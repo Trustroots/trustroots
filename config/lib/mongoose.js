@@ -47,12 +47,12 @@ module.exports.loadModels = function (callback) {
     mongoose.model(model).on('index', function (error) {
       if (error) {
         log('error', 'Calling createIndex failed for Mongoose Schema.', {
-          error: error,
-          model: model,
+          error,
+          model,
         });
       } else {
         log('info', 'Calling createIndex succeeded for Mongoose Schema.', {
-          model: model,
+          model,
         });
       }
     });
@@ -173,7 +173,7 @@ module.exports.ensureIndexes = function (modelNames) {
           if (error) {
             log('error', 'Indexing Mongoose Schema failed', {
               model: modelName,
-              error: error,
+              error,
             });
             callback(error);
           } else {
@@ -188,7 +188,7 @@ module.exports.ensureIndexes = function (modelNames) {
           // One of the iterations produced an error.
           // All processing will now stop.
           log('error', 'A Schema failed to index.', {
-            error: error,
+            error,
           });
           reject(error);
         } else {

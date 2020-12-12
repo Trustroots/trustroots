@@ -15,8 +15,8 @@ function SearchMapService($q, $log, Authentication, LocationService, locker) {
     : 'search.mapCenter';
 
   const service = {
-    getMapCenter: getMapCenter,
-    cacheMapCenter: cacheMapCenter,
+    getMapCenter,
+    cacheMapCenter,
   };
 
   return service;

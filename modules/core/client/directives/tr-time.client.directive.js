@@ -41,7 +41,7 @@ function trTimeDirective($log, $rootScope, $parse, locker) {
       trTimeTooltipPlacement: '@',
       trTimeFormat: '=?', // `?` makes it optional
     },
-    link: function (scope, element, attrs) {
+    link(scope, element, attrs) {
       if (!scope.trTime) {
         $log.warn('No time passed for tr-time directive.');
         return;

@@ -35,7 +35,7 @@ describe('Display Message Statistics in User Route', function () {
           displayName: 'displayName',
           email: 'user' + i + '@example.com',
           username: 'username' + i,
-          password: password,
+          password,
           provider: 'local',
           public: true,
         }),
@@ -130,7 +130,7 @@ describe('Display Message Statistics in User Route', function () {
 
   // Sign in
   beforeEach(function (done) {
-    const credentials = { username: users[4].username, password: password };
+    const credentials = { username: users[4].username, password };
 
     agent
       .post('/api/auth/signin')

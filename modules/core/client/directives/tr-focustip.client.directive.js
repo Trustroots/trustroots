@@ -16,7 +16,7 @@ function trFocustipDirective($compile) {
     scope: {
       trFocustip: '=',
     },
-    link: function (scope, element) {
+    link(scope, element) {
       // Compiled template
       // after() requires jQuery
       const template = $compile(

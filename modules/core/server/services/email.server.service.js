@@ -63,14 +63,14 @@ exports.sendMessagesUnread = function (
     urlReply: analyticsHandler.appendUTMParams(urlReply, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
       content: 'reply-to',
     }),
     urlUserFromProfilePlainText: urlUserFromProfile,
     urlUserFromProfile: analyticsHandler.appendUTMParams(urlUserFromProfile, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
       content: 'profile',
     }),
     utmCampaign: campaign,
@@ -96,21 +96,21 @@ exports.sendConfirmContact = function (
     subject: 'Confirm contact',
     name: friend.displayName,
     email: friend.email,
-    messageHTML: messageHTML,
-    messageText: messageText,
+    messageHTML,
+    messageText,
     meName: user.displayName,
     meURLPlainText: meURL,
     meURL: analyticsHandler.appendUTMParams(meURL, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
       content: 'profile',
     }),
     urlConfirmPlainText: urlConfirm,
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
       content: 'confirm-contact',
     }),
     utmCampaign: campaign,
@@ -137,7 +137,7 @@ exports.sendRemoveProfile = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
     }),
   });
   exports.renderEmailAndSend('remove-profile', params, callback);
@@ -173,7 +173,7 @@ exports.sendResetPassword = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
     }),
   });
   exports.renderEmailAndSend('reset-password', params, callback);
@@ -193,7 +193,7 @@ exports.sendResetPasswordConfirm = function (user, callback) {
     urlResetPassword: analyticsHandler.appendUTMParams(urlResetPassword, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
     }),
   });
   exports.renderEmailAndSend('reset-password-confirm', params, callback);
@@ -211,7 +211,7 @@ exports.sendChangeEmailConfirmation = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
     }),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
@@ -232,7 +232,7 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
     }),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
@@ -256,8 +256,8 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
     from: 'Trustroots Support <' + config.supportEmail + '>',
     name: 'Trustroots Support', // `To:`
     email: config.supportEmail, // `To:`
-    replyTo: replyTo,
-    subject: subject,
+    replyTo,
+    subject,
     request: supportRequest,
     skipHtmlTemplate: true, // Don't render html template for this email
     sparkpostCampaign: 'support-request',
@@ -285,11 +285,11 @@ exports.sendSignupEmailReminder = function (user, callback) {
     urlConfirm: analyticsHandler.appendUTMParams(urlConfirm, {
       source: 'transactional-email',
       medium: 'email',
-      campaign: campaign,
+      campaign,
     }),
     utmCampaign: campaign,
     sparkpostCampaign: campaign,
-    reminderCount: reminderCount, // This email is a reminder number `n` to this user
+    reminderCount, // This email is a reminder number `n` to this user
     reminderCountMax: config.limits.maxSignupReminders, // Max n of reminders system sends
     timeAgo: moment(user.created).fromNow(), // A string, e.g. `3 days ago`
   });
@@ -308,7 +308,7 @@ exports.sendReactivateHosts = function (user, callback) {
   const utmParams = {
     source: 'transactional-email',
     medium: 'email',
-    campaign: campaign,
+    campaign,
   };
 
   const params = exports.addEmailBaseTemplateParams({
@@ -342,7 +342,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
   const utmParams = {
     source: 'transactional-email',
     medium: 'email',
-    campaign: campaign,
+    campaign,
   };
 
   const params = exports.addEmailBaseTemplateParams({
@@ -374,7 +374,7 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
   const utmParams = {
     source: 'transactional-email',
     medium: 'email',
-    campaign: campaign,
+    campaign,
   };
 
   const params = exports.addEmailBaseTemplateParams({
@@ -415,7 +415,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
   const utmParams = {
     source: 'transactional-email',
     medium: 'email',
-    campaign: campaign,
+    campaign,
   };
 
   const params = exports.addEmailBaseTemplateParams({
@@ -446,8 +446,8 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
     username: userTo.username, // data needed for link to profile in footer
-    userFrom: userFrom,
-    userTo: userTo,
+    userFrom,
+    userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
     giveReferenceUrl: url + '/profile/' + userFrom.username + '/references/new',
   });
@@ -468,8 +468,8 @@ exports.sendReferenceNotificationSecond = function (
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
     username: userTo.username, // data needed for link to profile in footer
-    userFrom: userFrom,
-    userTo: userTo,
+    userFrom,
+    userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
     seeReferencesUrl: url + '/profile/' + userTo.username + '/references',
     recommend: reference.recommend,
@@ -506,7 +506,7 @@ exports.addEmailBaseTemplateParams = function (params) {
       source: 'transactional-email',
       medium: 'email',
       campaign: params.utmCampaign || 'transactional-email',
-      content: content,
+      content,
     });
   };
 
@@ -570,7 +570,7 @@ exports.renderEmail = function (templateName, params, callback) {
         mention: false,
         hashtag: false,
         stripPrefix: false,
-        replaceFn: function (match) {
+        replaceFn(match) {
           return '<' + match.getAnchorHref() + '>';
         },
       });

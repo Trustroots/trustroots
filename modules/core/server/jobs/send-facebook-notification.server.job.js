@@ -10,7 +10,7 @@ module.exports = function (job, done) {
 
   // Log that we're sending an email
   log('debug', 'Starting `send facebook notification` job #jdjh73', {
-    jobId: jobId,
+    jobId,
   });
 
   // Collect parameters for FB notification object
@@ -46,7 +46,7 @@ module.exports = function (job, done) {
       if (err) {
         // Log the failure to send the notification
         log('error', 'The `send facebook notification` job failed #38hgsj', {
-          jobId: jobId,
+          jobId,
           error: err,
         });
         return done(
@@ -58,7 +58,7 @@ module.exports = function (job, done) {
           'info',
           'Successfully finished `send facebook notification` job #39jjjd',
           {
-            jobId: jobId,
+            jobId,
           },
         );
 

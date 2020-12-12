@@ -191,7 +191,7 @@ exports.signupValidation = function (req, res) {
       function (done) {
         User.findOne(
           {
-            username: username,
+            username,
           },
           function (err, user) {
             if (user) {
@@ -342,15 +342,15 @@ exports.oauthCallback = function (strategy) {
     passport.authenticate(strategy, function (err, user, redirectURL) {
       if (err) {
         log('error', 'oAuth callback error #h3hg82', {
-          strategy: strategy,
-          err: err,
+          strategy,
+          err,
         });
         return res.redirect(defaultRedirectUrl);
       }
 
       if (!user) {
         log('error', 'oAuth callback requires authenticated user #g82bff', {
-          strategy: strategy,
+          strategy,
         });
         return res.redirect('/signin');
       }
@@ -358,7 +358,7 @@ exports.oauthCallback = function (strategy) {
       req.login(user, function (err) {
         if (err) {
           log('error', 'oAuth callback failed to login user #h2bgff', {
-            strategy: strategy,
+            strategy,
           });
           return res.redirect('/signin');
         }

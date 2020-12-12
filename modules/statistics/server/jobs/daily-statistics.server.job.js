@@ -39,7 +39,7 @@ module.exports = function (job, agendaDone) {
             {
               namespace: 'members',
               values: {
-                count: count,
+                count,
               },
               tags: {
                 members: 'members',
@@ -67,7 +67,7 @@ module.exports = function (job, agendaDone) {
             {
               namespace: 'pushRegistrations',
               values: {
-                count: count,
+                count,
               },
               tags: {
                 type: 'all',
@@ -143,7 +143,7 @@ module.exports = function (job, agendaDone) {
                 {
                   namespace: 'offers',
                   values: {
-                    count: count,
+                    count,
                     percentage: (count / totalUserCount) * 100,
                   },
                   tags: {
@@ -172,7 +172,7 @@ module.exports = function (job, agendaDone) {
             {
               namespace: 'offers',
               values: {
-                count: count,
+                count,
               },
               tags: {
                 type: 'meet',
@@ -216,7 +216,7 @@ module.exports = function (job, agendaDone) {
                 {
                   namespace: 'membersInNetworks',
                   values: {
-                    count: count,
+                    count,
                     percentage: (count / totalUserCount) * 100,
                   },
                   tags: {
@@ -330,9 +330,9 @@ function collectLastSeen(seenSinceDays, namespace, totalUserCount, callback) {
     }
     writeDailyStat(
       {
-        namespace: namespace,
+        namespace,
         values: {
-          count: count,
+          count,
           percentage: (count / totalUserCount) * 100,
         },
         tags: {

@@ -36,7 +36,7 @@ describe('ForgotPasswordController', function () {
 
       // Initialize the Authentication controller
       $controller('ForgotPasswordController as vm', {
-        $scope: $scope,
+        $scope,
       });
     }));
 

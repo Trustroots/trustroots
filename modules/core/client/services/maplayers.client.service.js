@@ -23,7 +23,7 @@ function MapLayersFactory(SettingsFactory, LocationService) {
   const location = LocationService.getDefaultLocation(3);
 
   const service = {
-    getLayers: getLayers,
+    getLayers,
   };
 
   return service;

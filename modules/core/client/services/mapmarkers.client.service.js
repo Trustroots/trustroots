@@ -15,9 +15,9 @@ function MapMarkersFactory($window) {
   const Leaflet = $window.L;
 
   const service = {
-    getIconConfig: getIconConfig,
-    getIcon: getIcon,
-    getOfferCircle: getOfferCircle,
+    getIconConfig,
+    getIcon,
+    getOfferCircle,
   };
 
   return service;

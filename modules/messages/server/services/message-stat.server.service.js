@@ -326,7 +326,7 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
             replyTime = replyTimeCumulated / repliedCount;
           }
 
-          return { replyRate: replyRate, replyTime: replyTime };
+          return { replyRate, replyTime };
         })(chosenStats);
 
         return done(null, stats);
@@ -370,7 +370,7 @@ exports.formatStats = function (stats) {
     ? moment.duration(stats.replyTime).humanize()
     : '';
 
-  return { replyRate: replyRate, replyTime: replyTime };
+  return { replyRate, replyTime };
 };
 
 /**

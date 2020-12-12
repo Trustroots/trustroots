@@ -42,13 +42,13 @@ exports.renderIndex = function (req, res) {
  */
 exports.renderNotFound = function (req, res) {
   res.status(404).format({
-    'text/html': function () {
+    'text/html'() {
       res.render('404.server.view.html');
     },
-    'application/json': function () {
+    'application/json'() {
       res.json({ message: errorService.getErrorMessageByKey('not-found') });
     },
-    default: function () {
+    default() {
       res.send(errorService.getErrorMessageByKey('not-found'));
     },
   });

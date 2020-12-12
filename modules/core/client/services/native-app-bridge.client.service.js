@@ -16,11 +16,11 @@ function trNativeAppBridgeFactory(
   $location,
 ) {
   const service = {
-    activate: activate,
-    getAppInfo: getAppInfo,
-    isNativeMobileApp: isNativeMobileApp,
-    signalUnAuthenticated: signalUnAuthenticated,
-    signalAuthenticated: signalAuthenticated,
+    activate,
+    getAppInfo,
+    isNativeMobileApp,
+    signalUnAuthenticated,
+    signalAuthenticated,
   };
 
   return service;
@@ -118,7 +118,7 @@ function trNativeAppBridgeFactory(
             if (url) {
               e.preventDefault();
               postMessageToApp('openUrl', {
-                url: url,
+                url,
               });
             }
           });
@@ -193,7 +193,7 @@ function trNativeAppBridgeFactory(
 
     const message = angular.extend(
       {
-        action: action,
+        action,
       },
       data,
     );

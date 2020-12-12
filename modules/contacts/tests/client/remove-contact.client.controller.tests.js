@@ -58,9 +58,9 @@ describe('ContactRemoveController', function () {
       inject(function ($controller) {
         Authentication.user = user1;
         ContactRemoveController = $controller('ContactRemoveController', {
-          $scope: $scope,
-          $uibModalInstance: $uibModalInstance,
-          messageCenterService: messageCenterService,
+          $scope,
+          $uibModalInstance,
+          messageCenterService,
         });
         done();
       });

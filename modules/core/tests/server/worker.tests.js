@@ -39,11 +39,11 @@ describe('Worker tests', function () {
     // Collect calls to agenda.define() and agenda.every()
 
     sinon.stub(agenda, 'define').callsFake(function (name, options, fn) {
-      definedJobs.push({ name: name, options: options, fn: fn });
+      definedJobs.push({ name, options, fn });
     });
 
     sinon.stub(agenda, 'every').callsFake(function (repeat, name) {
-      scheduledJobs.push({ repeat: repeat, name: name });
+      scheduledJobs.push({ repeat, name });
     });
 
     // Allow for easily maths for nextRunAt calculations
@@ -67,7 +67,7 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: 0,
       },
-      save: function () {},
+      save() {},
     };
     const err = new Error('some regular error');
     const mock = sinon.mock(job).expects('save').never();
@@ -82,7 +82,7 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: workerOptions.maxAttempts - 1,
       },
-      save: function () {},
+      save() {},
     };
     const err = new Error('ECONNREFUSED');
     const mock = sinon.mock(job).expects('save').once();
@@ -101,7 +101,7 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: workerOptions.maxAttempts - 1,
       },
-      save: function () {},
+      save() {},
     };
     const err = new Error('ECONNRESET');
     const mock = sinon.mock(job).expects('save').once();
@@ -120,7 +120,7 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: workerOptions.maxAttempts,
       },
-      save: function () {},
+      save() {},
     };
     const err = new Error('ECONNRESET');
     const mock = sinon.mock(job).expects('save').never();

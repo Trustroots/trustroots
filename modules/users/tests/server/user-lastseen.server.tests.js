@@ -130,7 +130,7 @@ describe('User last seen CRUD tests', function () {
         .expect(200)
         .end(function () {
           // read user from database
-          User.findOne({ username: username }, function (err, user) {
+          User.findOne({ username }, function (err, user) {
             try {
               should(user.seen).eql(originalTime);
 
@@ -141,7 +141,7 @@ describe('User last seen CRUD tests', function () {
                 .expect(200)
                 .end(function () {
                   // and the User.seen should not be updated (too early)
-                  User.findOne({ username: username }, function (err, user) {
+                  User.findOne({ username }, function (err, user) {
                     try {
                       should(user.seen).eql(originalTime);
 
@@ -153,10 +153,7 @@ describe('User last seen CRUD tests', function () {
                         .expect(200)
                         .end(function () {
                           // and the User.seen should be updated now
-                          User.findOne({ username: username }, function (
-                            err,
-                            user,
-                          ) {
+                          User.findOne({ username }, function (err, user) {
                             should(user.seen).eql(new Date());
 
                             return done();

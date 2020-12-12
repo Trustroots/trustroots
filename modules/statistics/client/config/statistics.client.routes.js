@@ -13,7 +13,7 @@ function StatisticsRoutes($stateProvider) {
     resolve: {
       // A string value resolves to a service
       SettingsService: 'Statistics',
-      statisticsData: function (Statistics) {
+      statisticsData(Statistics) {
         return Statistics.get();
       },
     },

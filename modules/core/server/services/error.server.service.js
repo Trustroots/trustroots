@@ -81,13 +81,13 @@ exports.errorResponse = function (err, req, res, next) {
 
   // Do content negotiation and return a message
   return res.status(err.status || 500).format({
-    'text/html': function () {
+    'text/html'() {
       res.render('500.server.view.html');
     },
-    'application/json': function () {
+    'application/json'() {
       res.json(errorResponse);
     },
-    default: function () {
+    default() {
       res.send(errorResponse.message);
     },
   });

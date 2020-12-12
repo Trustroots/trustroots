@@ -18,7 +18,7 @@ function SearchRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         OffersService: 'OffersService',
-        offer: function ($stateParams, OffersService) {
+        offer($stateParams, OffersService) {
           if ($stateParams.offer && $stateParams.offer.length === 24) {
             return OffersService.get({
               offerId: $stateParams.offer,
@@ -30,7 +30,7 @@ function SearchRoutes($stateProvider) {
 
         // A string value resolves to a service
         TribeService: 'TribeService',
-        tribe: function (TribeService, $stateParams) {
+        tribe(TribeService, $stateParams) {
           if ($stateParams.tribe && $stateParams.tribe.length) {
             return TribeService.get({
               tribeSlug: $stateParams.tribe,

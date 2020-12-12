@@ -17,10 +17,10 @@ export default function ProfileViewBasics({ profile }) {
     t('{{birthdate, age}} years', { birthdate: new Date(birthdate) });
 
   const getReplyRate = replyRate =>
-    t('Reply rate {{replyRate}}.', { replyRate: replyRate });
+    t('Reply rate {{replyRate}}.', { replyRate });
 
   const getReplyTime = replyTime =>
-    t('Replies within {{replyTime, fromNow}}.', { replyTime: replyTime });
+    t('Replies within {{replyTime, fromNow}}.', { replyTime });
 
   const getMemberSince = created =>
     t('Member since {{date, MMM Do, YYYY}}', { date: new Date(created) });

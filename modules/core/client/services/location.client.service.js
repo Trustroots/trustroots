@@ -15,11 +15,11 @@ function LocationService($log, $http, SettingsFactory) {
   };
 
   const service = {
-    getDefaultLocation: getDefaultLocation,
-    getBounds: getBounds,
-    getCenter: getCenter,
-    shortTitle: shortTitle,
-    suggestions: suggestions,
+    getDefaultLocation,
+    getBounds,
+    getCenter,
+    shortTitle,
+    suggestions,
   };
 
   /**

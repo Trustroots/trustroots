@@ -33,7 +33,7 @@ function TribesRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         TribeService: 'TribeService',
-        tribe: function (TribeService, $stateParams) {
+        tribe(TribeService, $stateParams) {
           return TribeService.get({
             tribeSlug: $stateParams.circle,
           });

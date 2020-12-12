@@ -116,7 +116,7 @@ module.exports.initMiddleware = function (app) {
   // Should be placed before express.static
   app.use(
     compress({
-      filter: function (req, res) {
+      filter(req, res) {
         return /json|text|javascript|css|font|svg/.test(
           res.getHeader('Content-Type'),
         );

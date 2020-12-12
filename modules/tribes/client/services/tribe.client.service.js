@@ -18,9 +18,9 @@ function TribeService($resource, $q, $log) {
   let cachedTribe;
 
   const service = {
-    fillCache: fillCache,
-    clearCache: clearCache,
-    get: get,
+    fillCache,
+    clearCache,
+    get,
   };
 
   return service;

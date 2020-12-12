@@ -17,12 +17,12 @@ function firebaseMessaging($window, $q, $timeout, SettingsService) {
   const firebaseMessaging = {
     name: 'fcm',
     shouldInitialize: !!SENDER_ID,
-    getToken: getToken,
-    requestPermission: requestPermission,
-    deleteToken: deleteToken,
-    onTokenRefresh: onTokenRefresh,
-    onMessage: onMessage,
-    removeServiceWorker: removeServiceWorker,
+    getToken,
+    requestPermission,
+    deleteToken,
+    onTokenRefresh,
+    onMessage,
+    removeServiceWorker,
   };
 
   function getToken() {
