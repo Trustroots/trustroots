@@ -93,7 +93,8 @@ describe('Read references by userFrom Id or userTo Id', () => {
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    it('[param userFrom] respond with all public references from userFrom', async () => {
+    // skipping until the API is finalized
+    it.skip('[param userFrom] respond with all public references from userFrom', async () => {
       const { body } = await agent
         .get(`/api/references?userFrom=${users[2]._id}`)
         .expect(200);
@@ -137,7 +138,8 @@ describe('Read references by userFrom Id or userTo Id', () => {
       }
     });
 
-    it('[param userTo] respond with all public references to userTo', async () => {
+    // skipping until the API is finalized
+    it.skip('[param userTo] respond with all public references to userTo', async () => {
       const { body } = await agent
         .get(`/api/references?userTo=${users[2]._id}`)
         .expect(200);
@@ -155,7 +157,8 @@ describe('Read references by userFrom Id or userTo Id', () => {
       should(body).be.Array().of.length(1);
     });
 
-    it('[userFrom is self] display all public and private references from userFrom', async () => {
+    // skipping until the API is finalized
+    it.skip('[userFrom is self] display all public and private references from userFrom', async () => {
       const { body } = await agent
         .get('/api/references?userFrom=' + users[0]._id)
         .expect(200);
@@ -178,7 +181,8 @@ describe('Read references by userFrom Id or userTo Id', () => {
       );
     });
 
-    it('[userTo is self] private references are included in limited form (only userFrom, userTo, public, created)', async () => {
+    // skipping until the API is finalized
+    it.skip('[userTo is self] private references are included in limited form (only userFrom, userTo, public, created)', async () => {
       const { body } = await agent
         .get(`/api/references?userTo=${users[0]._id}`)
         .expect(200);

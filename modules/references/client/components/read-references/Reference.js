@@ -53,7 +53,7 @@ const PendingNoticePlaceholder = styled.div`
   padding: 0 0 10px 0;
 `;
 
-export default function Reference({ reference }) {
+export default function Reference({ reference, inRecipientProfile }) {
   const { t } = useTranslation('references');
 
   const {
@@ -79,28 +79,35 @@ export default function Reference({ reference }) {
         Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
     );
 
+  const inCreatorProfile = !inRecipientProfile;
+
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body reference">
         <ReferenceHeading>
+          {inCreatorProfile && <div>{t('their reply')}</div>}
           <Avatar user={userFrom} size={36} />
           <UserMeta>
             <strong>
               <UserLink user={userFrom} />
             </strong>
-            <span className="muted">
-              {userFrom.gender && `${getGender(userFrom.gender)}. `}
-              {t('Member since {{date, YYYY}}.', {
-                date: new Date(userFrom.created),
-              })}
-            </span>
+            {inRecipientProfile && (
+              <span className="muted">
+                {userFrom.gender && `${getGender(userFrom.gender)}. `}
+                {t('Member since {{date, YYYY}}.', {
+                  date: new Date(userFrom.created),
+                })}
+              </span>
+            )}
           </UserMeta>
-          <a
-            className="reference-time"
-            href={`/profile/${userTo.username}/references#${_id}`}
-          >
-            <TimeAgo date={createdDate} />
-          </a>
+          {inRecipientProfile && (
+            <a
+              className="reference-time"
+              href={`/profile/${userTo.username}/references#${_id}`}
+            >
+              <TimeAgo date={createdDate} />
+            </a>
+          )}
         </ReferenceHeading>
 
         {!isPublicReference && (
@@ -143,4 +150,5 @@ export default function Reference({ reference }) {
 
 Reference.propTypes = {
   reference: PropTypes.object.isRequired,
+  inRecipientProfile: PropTypes.bool.isRequired,
 };
