@@ -23,7 +23,7 @@ export default function Report({
   return (
     <ReportContainer>
       <Switch isSmall checked={report} onChange={onChangeReport}>
-        {t('Report this person to moderators')}
+        {t('Privately report this person to moderators')}
       </Switch>
       {report && (
         <>
