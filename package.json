@@ -249,7 +249,7 @@
     "semver": "7.3.4",
     "sharp": "0.26.2",
     "should": "13.2.3",
-    "sinon": "9.2.1",
+    "sinon": "9.2.2",
     "style-loader": "2.0.0",
     "supertest": "4.0.2",
     "url-loader": "4.1.1",
