@@ -41,9 +41,10 @@ mongod
 
 Optional: If you need to modify connection settings, see `config/env/local.js` config file.
 
-### 3. Start the app:
+### 3. Install dependencies and start the app:
 
 ```bash
+npm ci
 npm start
 ```
 
@@ -56,7 +57,7 @@ npm start
 - Stop the app by hitting `Ctrl+C`.
 - When you change any file, they get recompiled and the browser is refreshed.
 - Keep an eye on the console in case of compiling errors.
-- NPM dependencies are installed and kept up-to date automatically when starting the app.
+- NPM dependencies can be updated with `npm ci`
 - You can start clean by running `npm run dropdb && npm run distclean`.
 
 ## Modifying configurations
