@@ -40,7 +40,7 @@ We're a non-profit volunteer project.)_
 
 - Flickr has [quite a lot of Creative Commons media](https://www.flickr.com/search/?text=hitchhiking&sort=relevance&license=1%2C2%2C3%2C4%2C5%2C6)
 - [Wikipedia Commons](https://commons.wikimedia.org/) has a lot of photos as well.
-- [Hitchwiki](http://hitchwiki.org/en/Press_images) has a press image section as well with related images from the community.
+- [Hitchwiki](https://hitchwiki.org/en/Press_images) has a press image section as well with related images from the community.
 - https://unsplash.com/ - [Creative commons zero](https://unsplash.com/license)
 
 ## Adding photos

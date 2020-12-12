@@ -6,7 +6,7 @@ Here you can read what data are collected and what queries you can run.
 
 ## See the data
 
-You can use InfluxDB admin panel or install [Grafana](http://grafana.org/)
+You can use InfluxDB admin panel or install [Grafana](https://grafana.com/)
 
 ### Admin panel
 
@@ -16,7 +16,7 @@ When `influxd` or influx service is running, open [localhost:8083](http://localh
 
 By default Grafana runs on port 3000. In order to solve the conflict with trustroots application you need to change the default port in configuration.
 
-- [locate your grafana configuration file](http://docs.grafana.org/installation/configuration/#config-file-locations)
+- [locate your Grafana configuration file](https://grafana.com/docs/grafana/latest/administration/configuration/)
 - find, uncomment and change `http_port` value according to your preference
 - save the changes and start/restart the grafana server (i.e. `systemctl start grafana`, it is system specific)
 - run the client on localhost:(your-value)
