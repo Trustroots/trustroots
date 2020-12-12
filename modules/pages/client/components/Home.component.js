@@ -1,15 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { userType } from '@/modules/users/client/users.prop-types';
-import ManifestoText from './ManifestoText.component.js';
-import Tooltip from '@/modules/core/client/components/Tooltip.js';
-import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
+// External dependencies
 import { Trans, useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import Board from '@/modules/core/client/components/Board.js';
-import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+
+// Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
+import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import { userType } from '@/modules/users/client/users.prop-types';
 import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
+import Board from '@/modules/core/client/components/Board.js';
+import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
+import ManifestoText from './ManifestoText.component.js';
+import Screenshot from '@/modules/core/client/components/Screenshot.js';
+import screenshotProfilePng from '../img/screenshot-profile.png';
+import screenshotProfilePng2x from '../img/screenshot-profile-2x.png';
+import screenshotProfileWebp from '../img/screenshot-profile.webp';
+import screenshotProfileWebp2x from '../img/screenshot-profile-2x.webp';
+import screenshotSearchPng from '../img/screenshot-search.png';
+import screenshotSearchPng2x from '../img/screenshot-search-2x.png';
+import screenshotSearchWebp from '../img/screenshot-search.webp';
+import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
+import Tooltip from '@/modules/core/client/components/Tooltip.js';
 
 const api = {
   tribes: tribesAPI,
@@ -167,13 +179,13 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 </Trans>
               </p>
             </div>
-            <div className="col-md-7">
-              <div className="home-browser">
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-screenshot home-browser-screenshot-search"></div>
-              </div>
+            <div aria-hidden className="col-md-7">
+              <Screenshot
+                png={screenshotSearchPng}
+                png2x={screenshotSearchPng2x}
+                webp={screenshotSearchWebp}
+                webp2x={screenshotSearchWebp2x}
+              />
             </div>
           </div>
         </div>
@@ -183,13 +195,13 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
       <section className="home-how">
         <div className="container">
           <div className="row">
-            <div className="col-xs-12 col-md-7 hidden-xs hidden-sm">
-              <div className="home-browser">
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-screenshot home-browser-screenshot-profile"></div>
-              </div>
+            <div aria-hidden className="col-xs-12 col-md-7 hidden-xs hidden-sm">
+              <Screenshot
+                png={screenshotProfilePng}
+                png2x={screenshotProfilePng2x}
+                webp={screenshotProfileWebp}
+                webp2x={screenshotProfileWebp2x}
+              />
             </div>
             <div className="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-0 col-md-5 text-center lead">
               <div className="home-wohoo center-block hidden-xs hidden-sm"></div>
