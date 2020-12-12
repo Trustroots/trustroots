@@ -1,5 +1,4 @@
 import React from 'react';
-import classnames from 'classnames';
 import { Trans, useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import * as languages from '@/config/languages/languages';
@@ -14,7 +13,7 @@ export default function ProfileViewBasics({ profile }) {
   const { t } = useTranslation(['users', 'languages']);
 
   const getBirthdate = birthdate =>
-    t('{{birthdate, age}} years', { birthdate: new Date(birthdate) });
+    t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
 
   const getReplyRate = replyRate =>
     t('Reply rate {{replyRate}}.', { replyRate: replyRate });
@@ -50,15 +49,14 @@ export default function ProfileViewBasics({ profile }) {
     </div>
   );
 
-  const renderBirthdateAndGender = (birthdate, gender) => (
-    <div className="profile-sidebar-section">
-      {birthdate && getBirthdate(birthdate)}
-      {birthdate && gender && <span>, </span>}
-      <span className={classnames({ 'text-capitalize': !birthdate })}>
-        {getGender(gender)}.
-      </span>
-    </div>
-  );
+  const renderBirthdateAndGender = (birthdate, gender) => {
+    return (
+      <div className="profile-sidebar-section">
+        {birthdate && `${getBirthdate(birthdate)} `}
+        {gender && `${getGender(gender)}.`}
+      </div>
+    );
+  };
 
   const renderMemberSince = created => (
     <div className="profile-sidebar-section">{getMemberSince(created)}</div>
