@@ -153,7 +153,7 @@ describe('<CreateReference />', () => {
     ).toBeInTheDocument();
     fireEvent.click(getByText('No'));
 
-    fireEvent.click(getByText('Report this person to moderators'));
+    fireEvent.click(getByText('Privately report this person to moderators'));
     fireEvent.change(getByLabelText('Message to moderators'), {
       target: { value: 'they were mean to me' },
     });
