@@ -16,13 +16,24 @@ const DAYS_TO_REPLY = 14;
 
 const ReferenceHeading = styled.div`
   display: flex;
-  align-items: center;
+  flex-wrap: wrap-reverse;
+  line-height: 1.3em;
+
   .avatar {
     margin-right: 10px;
   }
-  time {
+
+  .reference-time {
     margin-left: auto;
+    color: #333;
   }
+
+  @media (max-width: 480px) {
+   .reference-time {
+     width: 100%;
+     margin-left: 0;
+     margin-bottom: 10px;
+   }
 `;
 
 const UserMeta = styled.div`
@@ -84,11 +95,12 @@ export default function Reference({ reference }) {
               })}
             </span>
           </UserMeta>
-          <time dateTime={createdDate} className="text-color-links">
-            <a href={`/profile/${userTo.username}/references#${_id}`}>
-              <TimeAgo date={createdDate} />
-            </a>
-          </time>
+          <a
+            className="reference-time"
+            href={`/profile/${userTo.username}/references#${_id}`}
+          >
+            <TimeAgo date={createdDate} />
+          </a>
         </ReferenceHeading>
 
         {!isPublicReference && (

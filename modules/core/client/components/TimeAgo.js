@@ -32,7 +32,11 @@ export default function TimeAgo({ date }) {
     };
   }, [date]);
 
-  return <span title={momentDate.format('LLLL')}>{fromNow}</span>;
+  return (
+    <time dateTime={date} title={momentDate.format('LLLL')}>
+      {fromNow}
+    </time>
+  );
 }
 
 TimeAgo.propTypes = {
