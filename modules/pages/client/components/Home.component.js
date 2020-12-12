@@ -322,9 +322,9 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   felt that the world of sharing is being taken over by
                   corporations trying to monetize people&apos;s willingness to
                   help each other. Same team brought you also{' '}
-                  <a href="http://hitchwiki.org/">Hitchwiki</a>,{' '}
-                  <a href="http://trashwiki.org/">Trashwiki</a> and{' '}
-                  <a href="http://nomadwiki.org/">Nomadwiki</a>.
+                  <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
+                  <a href="https://trashwiki.org/">Trashwiki</a> and{' '}
+                  <a href="https://nomadwiki.org/">Nomadwiki</a>.
                 </Trans>
               </p>
               <p>

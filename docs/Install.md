@@ -11,15 +11,15 @@ Make sure you have installed all these prerequisites:
 - [Node.js](https://nodejs.org/en/download/):
   - See "engines" from [`package.json`](https://github.com/Trustroots/trustroots/blob/master/package.json#L11) for supported versions
   - Use `node --version && npm --version` to check your current version.
-  - We recommend managing Node.js versions using [NVM](https://github.com/creationix/nvm).
-- [MongoDB](http://www.mongodb.org/downloads)
+  - We recommend managing Node.js versions using [NVM](https://github.com/nvm-sh/nvm).
+- [MongoDB](https://www.mongodb.org/downloads)
   - See "engines" from [`package.json`](https://github.com/Trustroots/trustroots/blob/master/package.json#L11) for supported versions
   - Use `mongod --version` to check your current version.
 - Some of the NPM modules require compiling native code, which might require installing:
   - MacOS: X-Code's [Command line tools](https://railsapps.github.io/xcode-command-line-tools.html). You can install or confirm they're installed by running `xcode-select --install`
   - Linux: `build-essential` and `make`
 - [GraphicsMagick](http://www.graphicsmagick.org/).
-  - In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
+  - In MacOS, you can simply use [Homebrew](https://brew.sh/) to install it:
     ```bash
     brew install graphicsmagick
     ```
@@ -69,7 +69,7 @@ Add any configurations you want to keep out of version control to `config/env/lo
 
 MailDev is there for viewing and testing emails during development.
 
-[MailDev](https://github.com/djfarrelly/MailDev) will be already running at [localhost:1080](http://localhost:1080) but if you need to run it manually, type:
+[MailDev](https://github.com/maildev/maildev) will be already running at [localhost:1080](http://localhost:1080) but if you need to run it manually, type:
 
 ```bash
 npm run dashboard:mail
@@ -203,7 +203,7 @@ npm run dropdb
 
 ## Enable collecting statistics to InfluxDB (optional)
 
-1. [Install InfluxDB](https://docs.influxdata.com/influxdb/latest/introduction/installation/) v1.0+ and run it (type `influxd`)
+1. [Install InfluxDB](https://docs.influxdata.com/influxdb/) v1.0+ and run it (type `influxd`)
 
 2. Add InfluxDB configuration to your `./config/env/local.js`:
 
@@ -229,7 +229,7 @@ npm run dropdb
 
 If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](http://www.graphicsmagick.org/):
 
-1. In MacOS, you can simply use [Homebrew](http://mxcl.github.io/homebrew/) to install it:
+1. In MacOS, you can simply use [Homebrew](https://brew.sh/) to install it:
 
    ```bash
    brew install imagemagick
@@ -241,5 +241,4 @@ If you prefer [ImageMagick](http://www.imagemagick.org/) over [GraphicsMagick](h
 
 - Check and open issues at [GitHub](https://github.com/Trustroots/trustroots/issues)
 - [Contact us](https://www.trustroots.org/contact)
-- https://meta.trustroots.org/
-- https://trustroots.slack.com/
+- [Volunteer chat](https://team.trustroots.org/Chat.html)
