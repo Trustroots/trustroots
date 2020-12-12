@@ -48,4 +48,4 @@ Occasionally there might be disagreements on how to translate certain terms or w
 - Strings are located in json files: https://github.com/Trustroots/trustroots/tree/master/public/locales
 - Is it possible to get Weblate to integrate new languages automatically?
 
-Please see the [Developer’s guide to internationalization](https://team.trustroots.org/i18n.html) for more details.
+Please see the [Developer’s guide to internationalization](./i18n.md) for more details.
