@@ -234,7 +234,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     key={tribe._id}
                     href={`/circles/${tribe.slug}`}
                     className="img-circle tribe-xs tribe-image"
-                    style={getCircleBackgroundStyle(tribe, '520x520')}
+                    style={getCircleBackgroundStyle(tribe, '742x496')}
                   >
                     {!tribe.image && <span>{tribe.label.charAt(0)}</span>}
                   </a>
@@ -249,7 +249,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 >
                   <div
                     className="img-circle tribe tribe-image"
-                    style={getCircleBackgroundStyle(tribe, '1024x768')}
+                    style={getCircleBackgroundStyle(tribe, '742x496')}
                   >
                     <a href={`/circles/${tribe.slug}`} className="tribe-link">
                       <h3 className="tribe-label">{tribe.label}</h3>
