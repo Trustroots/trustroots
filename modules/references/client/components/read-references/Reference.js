@@ -55,6 +55,16 @@ const FeedbackPublic = styled.div`
   max-width: 600px;
 `;
 
+const ReferenceContainer = styled.div`
+  margin-left: 0;
+
+  ${props =>
+    props.inCreatorProfile &&
+    `
+      margin-left: 20px;
+    `}
+`;
+
 export default function Reference({ reference, inRecipientProfile }) {
   const { t } = useTranslation('references');
 
@@ -84,10 +94,13 @@ export default function Reference({ reference, inRecipientProfile }) {
   const inCreatorProfile = !inRecipientProfile;
 
   return (
-    <div className="panel panel-default" id={_id}>
+    <ReferenceContainer
+      className="panel panel-default"
+      id={_id}
+      inCreatorProfile={inCreatorProfile}
+    >
       <div className="panel-body reference">
         <ReferenceHeading>
-          {inCreatorProfile && <div>{t('their reply')}</div>}
           <Avatar user={userFrom} size={36} />
           <UserMeta>
             <strong>
@@ -102,14 +115,14 @@ export default function Reference({ reference, inRecipientProfile }) {
               </span>
             )}
           </UserMeta>
-          {inRecipientProfile && (
-            <a
-              className="reference-time"
-              href={`/profile/${userTo.username}/experiences#${_id}`}
-            >
-              <TimeAgo date={createdDate} />
-            </a>
-          )}
+          <a
+            className="reference-time"
+            href={`/profile/${
+              inRecipientProfile ? userTo.username : userFrom.username
+            }/references#${_id}`}
+          >
+            <TimeAgo date={createdDate} />
+          </a>
         </ReferenceHeading>
 
         {!isPublicReference && (
@@ -146,7 +159,7 @@ export default function Reference({ reference, inRecipientProfile }) {
         />
         {feedbackPublic && <FeedbackPublic>{feedbackPublic}</FeedbackPublic>}
       </div>
-    </div>
+    </ReferenceContainer>
   );
 }
 
