@@ -54,5 +54,5 @@ export default function ReferencesSection({ title, referencePairs }) {
 
 ReferencesSection.propTypes = {
   referencePairs: PropTypes.array.isRequired,
-  title: PropTypes.string,
+  title: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
 };
