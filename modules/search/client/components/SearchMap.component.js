@@ -72,6 +72,10 @@ export default function SearchMap(props) {
 
     console.time('TIME - getMapRef'); //eslint-disable-line
     const mapFromRef = mapRef?.current?.getMap();
+    if (!mapFromRef) {
+      console.log('🛑No map from ref available!'); //eslint-disable-line
+      return;
+    }
     console.timeEnd('TIME - getMapRef'); //eslint-disable-line
     return mapFromRef;
   };
@@ -154,14 +158,13 @@ export default function SearchMap(props) {
     { maxWait: 3500 },
   );
 
-  const updateFeatureState = (map, { source, id }, newFeatureState) => {
-    console.time('TIME - updateOffers'); //eslint-disable-line
-    if (!map) {
-      console.log('🛑No map!'); //eslint-disable-line
-      return;
-    }
+  const updateFeatureState = (feature, newState) => {
+    const map = getMapRef();
 
-    const featureStatePreviously = map.getFeatureState({
+    // console.time('TIME - updateOffers'); //eslint-disable-line
+
+    const { source, id } = feature;
+    const previousState = map.getFeatureState({
       source,
       id,
     });
@@ -177,33 +180,25 @@ export default function SearchMap(props) {
     map.setFeatureState(
       { source, id },
       {
-        ...featureStatePreviously,
+        ...previousState,
         // New state merges into previous state, overriding only defined keys
-        ...newFeatureState,
+        ...newState,
       },
     );
-    console.timeEnd('TIME - updateOffers'); //eslint-disable-line
+    // console.timeEnd('TIME - updateOffers'); //eslint-disable-line
   };
 
   const clearPreviouslyHoveredState = () => {
     if (hoveredOffer) {
-      // @TODO set just once and store in state?
-      const map = getMapRef();
-
-      // Too early for this, map was not initialized yet
-      if (!map) {
-        console.log('🛑Tried map too early 1.'); //eslint-disable-line
-        return;
-      }
-
       setHoveredOffer(false);
-      updateFeatureState(map, hoveredOffer, { hover: false });
+      updateFeatureState(hoveredOffer, { hover: false });
     }
   };
 
   // eslint-disable-next-line
+  /*
   const clearPreviouslySelectedState = () => {
-    console.time('TIME - clearPreviouslySelectedState'); //eslint-disable-line
+    // console.time('TIME - clearPreviouslySelectedState'); //eslint-disable-line
     if (selectedOffer) {
       // @TODO set just once and store in state?
       const map = getMapRef();
@@ -214,36 +209,29 @@ export default function SearchMap(props) {
         return;
       }
 
-      updateFeatureState(map, selectedOffer, { selected: false });
+      updateFeatureState(selectedOffer, { selected: false });
       setSelectedOffer(false);
     }
-    console.timeEnd('TIME - clearPreviouslySelectedState'); //eslint-disable-line
+    // console.timeEnd('TIME - clearPreviouslySelectedState'); //eslint-disable-line
   };
+  */
 
   const setSelectedState = offer => {
-    console.time(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
+    // console.time(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
     // console.log('🚀 setSelectedState:'); //eslint-disable-line
     // console.log(offer); //eslint-disable-line
     // console.log(offer.toJSON()); //eslint-disable-line
-    // @TODO set just once and store in state?
-    const map = getMapRef();
-
-    // Too early for this, map was not initialized yet
-    if (!map) {
-      console.log('🛑Tried map too early 5.'); //eslint-disable-line
-      return;
-    }
 
     // Clear out previously selected offers
     if (selectedOffer) {
-      updateFeatureState(map, selectedOffer, { selected: false });
+      updateFeatureState(selectedOffer, { selected: false });
     }
 
     // Mark newly selected offer
-    updateFeatureState(map, offer, { selected: true, viewed: true });
+    updateFeatureState(offer, { selected: true, viewed: true });
 
-    // setSelectedOffer(offer);
-    console.timeEnd(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
+    setSelectedOffer(offer);
+    // console.timeEnd(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
   };
 
   const onHover = event => {
@@ -265,20 +253,11 @@ export default function SearchMap(props) {
       return;
     }
 
-    // @TODO set just once and store in state?
-    const map = getMapRef();
-
-    // Too early for this, map was not initialized yet
-    if (!map) {
-      console.log('🛑Tried map too early 3.'); //eslint-disable-line
-      return;
-    }
-
     if (!hoveredOffer || hoveredOffer?.id !== feature.id) {
       console.log('onHover, feature:', feature); //eslint-disable-line
       clearPreviouslyHoveredState();
       setHoveredOffer(feature);
-      updateFeatureState(map, feature, { hover: true });
+      updateFeatureState(feature, { hover: true });
     } else {
       console.log('Ignore hovering, feature, was same as previous.'); //eslint-disable-line
     }

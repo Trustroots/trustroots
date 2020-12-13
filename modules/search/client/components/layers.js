@@ -126,7 +126,7 @@ export const unclusteredPointLayer = {
       [22, 80],
     ],
     */
-    'circle-stroke-width': 2,
+    'circle-stroke-width': 3,
     'circle-stroke-opacity': [
       'case',
       ['boolean', ['feature-state', 'hover'], false],
