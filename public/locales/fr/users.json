@@ -61,5 +61,10 @@
     "The person you are looking for is not available.": "La personne que vous cherchez n'est pas disponible.",
     "Oops!": "Oups !",
     "Map search": "Rechercher sur la carte",
-    "Find people": "Rechercher des personnes"
+    "Find people": "Rechercher des personnes",
+    "{{birthdate, age}} years.": "{{birthdate, age}} ans.",
+    "Other gender": "Autre genre",
+    "Non-binary": "Non binaire",
+    "Male": "Homme",
+    "Female": "Femme"
 }
