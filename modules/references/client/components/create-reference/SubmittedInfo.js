@@ -5,10 +5,8 @@ import React from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
+import { DAYS_TO_REPLY } from '../../utils/constants';
 import SuccessMessage from '@/modules/core/client/components/SuccessMessage';
-
-// @TODO, pull from config
-const DAYS_TO_REPLY = 14;
 
 /**
  * Info after successful submitting of a new reference.
