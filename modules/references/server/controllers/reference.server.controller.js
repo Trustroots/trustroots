@@ -418,7 +418,7 @@ exports.readMany = async function readMany(req, res, next) {
 
     // Aggregate projection for User in reference
     const userKeys = {
-      id: 1,
+      _id: 1,
       updated: 1,
       displayName: 1,
       username: 1,

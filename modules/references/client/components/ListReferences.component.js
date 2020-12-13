@@ -19,20 +19,19 @@ export default function ListReferences({ profile, authenticatedUser }) {
   const [isLoading, setIsLoading] = useState(true);
 
   function pairUpExperiences(experiences) {
-    /* TODO: compare by ids (couldn't make it work, so I used usernames to compare for now) */
     const experiencePairsDict = experiences
-      .filter(experience => experience.userTo.username === profile.username)
+      .filter(experience => experience.userTo._id === profile._id)
       .reduce(
         (a, exp) => ({
           ...a,
-          [exp.userFrom.username]: { sharedWithUser: exp },
+          [exp.userFrom._id]: { sharedWithUser: exp },
         }),
         {},
       );
 
     experiences.forEach(experience => {
-      if (experience.userFrom.username === profile.username) {
-        const userTo = experience.userTo.username;
+      if (experience.userFrom._id === profile._id) {
+        const userTo = experience.userTo._id;
         if (experiencePairsDict[userTo] === undefined) {
           experiencePairsDict[userTo] = {};
         }

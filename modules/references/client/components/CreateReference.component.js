@@ -41,7 +41,7 @@ export default function CreateReference({ userFrom, userTo }) {
       });
 
       references.forEach(reference => {
-        if (reference.userFrom.username === userFrom.username) {
+        if (reference.userFrom._id === userFrom._id) {
           setIsDuplicate(true);
         }
       });
