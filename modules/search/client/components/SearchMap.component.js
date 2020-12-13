@@ -196,25 +196,14 @@ export default function SearchMap(props) {
   };
 
   // eslint-disable-next-line
-  /*
   const clearPreviouslySelectedState = () => {
     // console.time('TIME - clearPreviouslySelectedState'); //eslint-disable-line
     if (selectedOffer) {
-      // @TODO set just once and store in state?
-      const map = getMapRef();
-
-      // Too early for this, map was not initialized yet
-      if (!map) {
-        console.log('🛑Tried map too early 4.'); //eslint-disable-line
-        return;
-      }
-
       updateFeatureState(selectedOffer, { selected: false });
       setSelectedOffer(false);
     }
     // console.timeEnd('TIME - clearPreviouslySelectedState'); //eslint-disable-line
   };
-  */
 
   const setSelectedState = offer => {
     // console.time(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
@@ -272,7 +261,7 @@ export default function SearchMap(props) {
     const { features, lngLat } = event;
 
     // console.timeLog('TIME - onClickMap'); //eslint-disable-line
-    // clearPreviouslySelectedState();
+    clearPreviouslySelectedState();
     // console.timeLog('TIME - onClickMap'); //eslint-disable-line
 
     if (!features?.length) {
