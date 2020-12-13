@@ -5,10 +5,11 @@ import styled from 'styled-components';
 
 const Labels = styled.div`
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   padding: 10px 0;
   .label {
-    margin-right: 5px;
+    margin: 0 5px 5px 0;
   }
 `;
 
