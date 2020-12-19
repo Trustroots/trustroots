@@ -205,7 +205,7 @@
     "canvas": "2.6.1",
     "concurrently": "5.3.0",
     "css-loader": "3.6.0",
-    "eslint": "7.15.0",
+    "eslint": "7.16.0",
     "eslint-config-prettier": "7.0.0",
     "eslint-import-resolver-webpack": "0.13.0",
     "eslint-loader": "4.0.2",
