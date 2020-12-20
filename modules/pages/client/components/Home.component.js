@@ -19,6 +19,9 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { t } = useTranslation('pages');
   const { tribe: tribeRoute } = getRouteParams();
 
+  // @TODO change this to be based on UI language rather than browser locale
+  const memberCount = new Intl.NumberFormat().format(51000);
+
   // TODO get header height instead of magic number 56
   // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
   const headerHeight = 56;
@@ -161,9 +164,10 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 <br />
                 <br />
                 {/* @TODO remove ns (issue #1368) */}
-                <Trans t={t} ns="pages">
-                  Trustroots is over <a href="/statistics">50,000 members</a>{' '}
-                  strong!
+                <Trans t={t} ns="pages" values={{ memberCount }}>
+                  Trustroots is over{' '}
+                  <a href="/statistics">{{ memberCount }} members</a> strong and
+                  growing!
                 </Trans>
               </p>
             </div>
