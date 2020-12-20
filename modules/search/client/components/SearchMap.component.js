@@ -34,7 +34,13 @@ import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 export default function SearchMap(props) {
-  const { filters, location, bounds, onOfferClose, onOfferOpen } = props;
+  const {
+    filters,
+    location,
+    locationBounds: bounds,
+    onOfferClose,
+    onOfferOpen,
+  } = props;
 
   const [
     persistentMapLocation,
@@ -472,8 +478,8 @@ export default function SearchMap(props) {
 }
 
 SearchMap.propTypes = {
-  bounds: PropTypes.object,
   location: PropTypes.object,
+  locationBounds: PropTypes.object,
   filters: PropTypes.string,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
