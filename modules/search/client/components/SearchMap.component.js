@@ -16,6 +16,7 @@ import {
   MAP_STYLE_OSM,
 } from '@/modules/core/client/components/Map/constants';
 import { MIN_ZOOM, SOURCE_OFFERS } from './constants';
+import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
@@ -33,25 +34,18 @@ import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 export default function SearchMap(props) {
-  // eslint-disable-next-line
-  const { filters, center, bounds, onOfferClose, onOfferOpen } = props;
+  const { filters, location, bounds, onOfferClose, onOfferOpen } = props;
+
   const [
-    persistentMapLocation, //eslint-disable-line
+    persistentMapLocation,
     setPersistentMapLocation,
   ] = usePersistentMapLocation({
-    latitude: center.lat,
-    longitude: center.lng,
-    zoom: center.zoom,
+    latitude: DEFAULT_LOCATION.lat,
+    longitude: DEFAULT_LOCATION.lng,
+    zoom: DEFAULT_LOCATION.zoom,
   });
 
-  // eslint-disable-next-line
-  const initialMapLocation = center ? {} : {};
-
-  const [viewport, setViewport] = useState({
-    latitude: center.lat,
-    longitude: center.lng,
-    zoom: center.zoom,
-  });
+  const [viewport, setViewport] = useState(persistentMapLocation);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
   const [hoveredOffer, setHoveredOffer] = useState(false);
@@ -91,6 +85,7 @@ export default function SearchMap(props) {
    *   southWest.lng;
    */
   const zoomToBounds = ({ northEast, southWest }) => {
+    console.log('zoomToBounds'); //eslint-disable-line
     const newViewport = new WebMercatorViewport(viewport);
     const { longitude, latitude, zoom } = newViewport.fitBounds(
       [
@@ -145,35 +140,6 @@ export default function SearchMap(props) {
       southWestLng,
     });
   };
-
-  // Load and store Mapbox object for quick reference on render
-  useEffect(() => {
-    if (!map) {
-      const currentMap = getMapRef();
-      // console.log('🌍 RENDER MAP getter:', currentMap); //eslint-disable-line
-      setMap(currentMap);
-    }
-    // else {
-    // console.log('🌍 RENDER MAP from cache :', map); //eslint-disable-line
-    // }
-    //  console.log('🌀', filters, center); //eslint-disable-line
-  }, []); // filters, center, bounds
-
-  // Apply externally changed filters object
-  // Changed by Angular search sidebar
-  useEffect(() => {
-    console.log('🌀filters: ', typeof filters, filters); //eslint-disable-line
-    updateOffers();
-  }, [filters]);
-
-  // Apply externally changed bounds object
-  // Changed by Angular search sidebar
-  useEffect(() => {
-    console.log('🌀bounds: ', typeof bounds, bounds); //eslint-disable-line
-    if (bounds?.northEast && bounds?.southWest) {
-      zoomToBounds(bounds);
-    }
-  }, [bounds]);
 
   const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
     setPersistentMapLocation,
@@ -383,7 +349,7 @@ export default function SearchMap(props) {
     try {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers({
-        filters: JSON.stringify(filters),
+        filters, // JSON.stringify(filters),
         ...boundingBox,
       });
       setOffers(data);
@@ -394,6 +360,55 @@ export default function SearchMap(props) {
         console.error('Could not load offers.');
     }
   }
+
+  // Load and store Mapbox object for quick reference on render
+  useEffect(() => {
+    if (!map) {
+      const currentMap = getMapRef();
+      // console.log('🌍 RENDER MAP getter:', currentMap); //eslint-disable-line
+      setMap(currentMap);
+    }
+    // else {
+    // console.log('🌍 RENDER MAP from cache :', map); //eslint-disable-line
+    // }
+  }, []);
+
+  // Apply externally changed bounds object
+  // Changed by Angular search sidebar
+  useEffect(() => {
+    console.log('🌀bounds: ', typeof bounds, bounds); //eslint-disable-line
+    if (bounds?.northEast && bounds?.southWest) {
+      zoomToBounds(bounds);
+    }
+  }, [bounds]);
+
+  // Apply externally changed filters object
+  // Changed by Angular search sidebar
+  useEffect(() => {
+    console.log('🌀filters: ', typeof filters, filters); //eslint-disable-line
+
+    // Clear out previous open offers and such
+    onOfferClose();
+    clearPreviouslySelectedState();
+    clearPreviouslyHoveredState();
+
+    // Update map offers
+    updateOffers();
+  }, [filters]);
+
+  // Apply externally changed location object
+  // Changed by Angular controller when loading offer via URL
+  useEffect(() => {
+    console.log('🌀location: ', typeof location, location); //eslint-disable-line
+    if (location?.lat && location?.lng) {
+      setViewport({
+        ...viewport,
+        latitude: location.lat,
+        longitude: location.lng,
+        zoom: location?.zoom || DEFAULT_LOCATION.zoom,
+      });
+    }
+  }, [location]);
 
   return (
     <ReactMapGL
@@ -408,7 +423,10 @@ export default function SearchMap(props) {
        * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
        */
       interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
-      location={[center.lat, center.lng]}
+      location={[
+        persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
+        persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
+      ]}
       mapboxApiAccessToken={MAPBOX_TOKEN}
       mapStyle={mapStyle}
       onClick={onClickMap}
@@ -455,8 +473,8 @@ export default function SearchMap(props) {
 
 SearchMap.propTypes = {
   bounds: PropTypes.object,
-  center: PropTypes.object,
-  filters: PropTypes.object,
+  location: PropTypes.object,
+  filters: PropTypes.string,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
 };

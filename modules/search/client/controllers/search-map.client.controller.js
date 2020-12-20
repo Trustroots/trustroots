@@ -6,7 +6,6 @@ function SearchMapController(
   $state,
   $stateParams,
   $analytics,
-  SearchMapService,
   FiltersService,
 ) {
   // ViewModel
@@ -28,12 +27,7 @@ function SearchMapController(
    */
   function activate() {
     const filters = FiltersService.get();
-    vm.filters = filters;
-
-    // Set map's initial location
-    SearchMapService.getMapCenter().then(center => {
-      vm.center = center;
-    });
+    vm.filters = angular.toJson(filters);
 
     // If offer gets closed elsewhere
     $scope.$on('search.closeOffer', () => {
@@ -42,18 +36,19 @@ function SearchMapController(
     });
 
     // Listen to new map location values from other controllers
-    $scope.$on('search.mapCenter', (event, center) => {
-      console.log('Angular got center:', center); //eslint-disable-line
-      vm.center = center;
+    $scope.$on('search.mapCenter', (event, location) => {
+      console.log('Angular got center:', location); //eslint-disable-line
+      vm.location = location;
     });
+
     $scope.$on('search.mapBounds', (event, bounds) => {
       console.log('Angular got bounds:', bounds); //eslint-disable-line
       vm.bounds = bounds;
     });
-    // eslint-disable-next-line
+
     $scope.$on('search.filtersUpdated', (event, filters) => {
       console.log('angular map cntrl got filters event'); //eslint-disable-line
-      vm.filters = filters;
+      vm.filters = angular.toJson(filters);
     });
 
     // Initializing either location search or offer
@@ -68,7 +63,7 @@ function SearchMapController(
   /**
    * Open hosting offer
    */
-  function previewOffer(offer, reCenterMap, $event) {
+  function previewOffer(offer, reCenterMap) {
     if (offer.location) {
       // Let parent controller handle setting this to scope
       $scope.$emit('search.previewOffer', offer);
@@ -78,13 +73,13 @@ function SearchMapController(
 
       // Re-position map
       if (reCenterMap) {
-        vm.center = {
-          // See above explanation for using `$event` coordinates
-          lat: $event && $event.latlng ? $event.latlng.lat : offer.location[0],
-          lng: $event && $event.latlng ? $event.latlng.lng : offer.location[1],
+        vm.location = {
+          lat: offer.location[0],
+          lng: offer.location[1],
           zoom: 13,
         };
       }
+
       $analytics.eventTrack('offer.preview', {
         category: 'search.map',
         label: 'Preview offer',
