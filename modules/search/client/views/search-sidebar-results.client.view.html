@@ -22,12 +22,8 @@
         ███ ███
         <small class="text-muted">@███</small>
       </h4>
-      <div class="search-result-meta">
-        █ ███, ███.
-      </div>
-      <div class="search-result-tagline">
-        █████ █████ ████
-      </div>
+      <div class="search-result-meta">█ ███, ███.</div>
+      <div class="search-result-tagline">█████ █████ ████</div>
       <div class="search-result-hosting">
         <span class="search-result-label">Hosting:</span>
         <span class="label">██</span>
@@ -59,13 +55,11 @@
         tr-avatar
         data-size="32"
         data-link="false"
-        data-user="::search.offer.user"
+        data-user="search.offer.user"
       ></div>
       <h4>
-        {{ ::search.offer.user.displayName }}
-        <small class="text-muted">
-          @{{ ::search.offer.user.username }}
-        </small>
+        {{ search.offer.user.displayName }}
+        <small class="text-muted"> @{{ search.offer.user.username }} </small>
       </h4>
       <div class="search-result-meta">
         <span
@@ -79,19 +73,19 @@
           ng-if="search.offer.user.gender"
           ng-class="{ 'text-capitalize': !search.offer.user.birthdate }"
         >
-          {{ ::search.offer.user.gender }}.
+          {{ search.offer.user.gender }}.
         </span>
       </div>
       <div
         class="search-result-tagline"
-        ng-if="::search.offer.user.tagline && search.offer.type !== 'meet'"
-        ng-bind="::search.offer.user.tagline"
+        ng-if="search.offer.user.tagline && search.offer.type !== 'meet'"
+        ng-bind="search.offer.user.tagline"
       ></div>
       <div class="search-result-hosting">
         <div
           class="search-result-label"
           ng-if="search.offer.type === 'host'"
-          aria-label="Hosting offer: {{::search.offer.status}}"
+          aria-label="Hosting offer: {{search.offer.status}}"
         >
           Hosting:
           <span
@@ -109,16 +103,14 @@
           aria-label="Meet offer"
           ng-if="search.offer.type === 'meet'"
         >
-          <span class="label btn-offer-meet">
-            Meet
-          </span>
+          <span class="label btn-offer-meet"> Meet </span>
         </div>
 
         <!-- Short descriptions for 'host' offers -->
         <div
           class="search-result-description"
           ng-if="search.offer.description && search.offer.description.length < 1000 && search.offer.type === 'host'"
-          ng-bind-html="::search.offer.description | trustedHtml"
+          ng-bind-html="search.offer.description | trustedHtml"
         ></div>
 
         <!-- Long descriptions for 'host' offers -->
@@ -129,7 +121,7 @@
           <div class="panel-more-wrap">
             <div
               class="panel-more-excerpt"
-              ng-bind-html="::search.offer.description | limitTo:1000 | trustedHtml"
+              ng-bind-html="search.offer.description | limitTo:1000 | trustedHtml"
             ></div>
             <div
               class="panel-more-fade"
@@ -146,11 +138,11 @@
         <div
           class="search-result-description"
           ng-if="search.offer.description && search.offer.type === 'meet'"
-          ng-bind-html="::search.offer.description | trustedHtml"
+          ng-bind-html="search.offer.description | trustedHtml"
         ></div>
 
         <div
-          ng-if="::search.offer.type === 'meet' && search.offer.updated"
+          ng-if="search.offer.type === 'meet' && search.offer.updated"
           class="text-muted"
         >
           Updated
@@ -163,7 +155,7 @@
         <div
           class="search-result-tribes-common"
           ng-if="search.offer.user.member.length"
-          tr-tribes-in-common="::search.offer.user.member"
+          tr-tribes-in-common="search.offer.user.member"
         ></div>
       </div>
       <div
@@ -173,8 +165,8 @@
         <h4>Languages</h4>
         <ul class="list-inline">
           <li
-            ng-repeat="code in ::search.offer.user.languages track by code"
-            ng-bind="::app.languageNames[code] || code"
+            ng-repeat="code in search.offer.user.languages track by code"
+            ng-bind="app.languageNames[code] || code"
           ></li>
         </ul>
       </div>
