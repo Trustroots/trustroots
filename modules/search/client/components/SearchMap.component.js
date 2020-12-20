@@ -1,6 +1,5 @@
 // External dependencies
 import { useDebouncedCallback } from 'use-debounce';
-import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { createRef, useEffect, useState } from 'react';
 import ReactMapGL, {
@@ -20,6 +19,7 @@ import { MIN_ZOOM, SOURCE_OFFERS } from './constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
+import SearchMapNoContent from './SearchMapNoContent';
 import { ensureValidLat, ensureValidLng } from '../utils';
 import {
   clusterCountLayerMapbox,
@@ -28,15 +28,13 @@ import {
   unclusteredPointLayer,
 } from './layers';
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
-import NoContent from '@/modules/core/client/components/NoContent';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
-import './search-map.less';
+import 'mapbox-gl/dist/mapbox-gl.css';
 
 export default function SearchMap(props) {
   // eslint-disable-next-line
   const { filters, center, bounds, onOfferClose, onOfferOpen } = props;
-  const { t } = useTranslation('search');
   const [
     persistentMapLocation, //eslint-disable-line
     setPersistentMapLocation,
@@ -449,13 +447,7 @@ export default function SearchMap(props) {
         '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
       }
     >
-      {viewport.zoom <= MIN_ZOOM && (
-        <NoContent
-          className="search-map-no-content"
-          icon="users"
-          message={t('Zoom closer to find members.')}
-        />
-      )}
+      {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
       <MapScaleControl />
       <MapNavigationControl />
       {showMapStyles && (
