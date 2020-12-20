@@ -16,14 +16,10 @@
   </div>
 </div>
 
-<div ng-if="searchMap.mapCenter">
-  <search-map
-    filters="searchMap.filters"
-    id="search-map-canvas"
-    mapCenter="searchMap.mapCenter"
-    mapBounds="searchMap.mapBounds"
-    offers="searchMap.mapMarkers"
-    onOfferClose="searchMap.closeOffer"
-    onOfferOpen="searchMap.previewOffer"
-  ></search-map>
-</div>
+<search-map
+  filters="searchMap.filters"
+  bounds="searchMap.bounds"
+  center="searchMap.center"
+  onOfferClose="searchMap.closeOffer"
+  onOfferOpen="searchMap.previewOffer"
+></search-map>

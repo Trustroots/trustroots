@@ -3,7 +3,12 @@ import { useDebouncedCallback } from 'use-debounce';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { createRef, useEffect, useState } from 'react';
-import ReactMapGL, { FlyToInterpolator, Layer, Source } from 'react-map-gl';
+import ReactMapGL, {
+  FlyToInterpolator,
+  Layer,
+  Source,
+  WebMercatorViewport,
+} from 'react-map-gl';
 
 // Internal dependencies
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
@@ -30,24 +35,24 @@ import './search-map.less';
 
 export default function SearchMap(props) {
   // eslint-disable-next-line
-  const { filters, mapCenter, mapBounds, onOfferClose, onOfferOpen } = props;
+  const { filters, center, bounds, onOfferClose, onOfferOpen } = props;
   const { t } = useTranslation('search');
   const [
     persistentMapLocation, //eslint-disable-line
     setPersistentMapLocation,
   ] = usePersistentMapLocation({
-    latitude: mapCenter.lat,
-    longitude: mapCenter.lng,
-    zoom: mapCenter.zoom,
+    latitude: center.lat,
+    longitude: center.lng,
+    zoom: center.zoom,
   });
 
   // eslint-disable-next-line
-  const initialMapLocation = mapCenter ? {} : {};
+  const initialMapLocation = center ? {} : {};
 
   const [viewport, setViewport] = useState({
-    latitude: mapCenter.lat,
-    longitude: mapCenter.lng,
-    zoom: mapCenter.zoom,
+    latitude: center.lat,
+    longitude: center.lng,
+    zoom: center.zoom,
   });
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
@@ -80,16 +85,38 @@ export default function SearchMap(props) {
     return mapFromRef;
   };
 
-  // Load and store Mapbox object for quick reference on render
-  useEffect(() => {
-    if (!map) {
-      const currentMap = mapRef?.current?.getMap();
-      console.log('🌍 RENDER MAP getter:', currentMap); //eslint-disable-line
-      setMap(currentMap);
-    } else {
-      console.log('🌍 RENDER MAP from cache :', map); //eslint-disable-line
-    }
-  }, []);
+  /**
+   * {"northEast":{"lat":56.107367,"lng":12.918713},"southWest":{"lat":55.963278,"lng":12.625396}}
+   *
+   * @param  {[type]} bounds bounding box coordinates with shape:
+   *   northEast.lat;
+   *   northEast.lng;
+   *   southWest.lat;
+   *   southWest.lng;
+   */
+  const zoomToBounds = ({ northEast, southWest }) => {
+    // Construct a viewport instance from the current state
+    console.log(viewport); //eslint-disable-line
+    const newViewport = new WebMercatorViewport(viewport);
+    const { longitude, latitude, zoom } = newViewport.fitBounds(
+      [
+        // [minLng, minLat],
+        // [maxLng, maxLat],
+        [northEast.lng, northEast.lat],
+        [southWest.lng, southWest.lat],
+      ],
+      {
+        padding: 40,
+      },
+    );
+
+    setViewport({
+      ...viewport,
+      longitude,
+      latitude,
+      zoom,
+    });
+  };
 
   /**
    * Hook on map interactions to update features
@@ -134,6 +161,34 @@ export default function SearchMap(props) {
       southWestLng,
     });
   };
+
+  // Load and store Mapbox object for quick reference on render
+  useEffect(() => {
+    if (!map) {
+      const currentMap = mapRef?.current?.getMap();
+      console.log('🌍 RENDER MAP getter:', currentMap); //eslint-disable-line
+      setMap(currentMap);
+    } else {
+      console.log('🌍 RENDER MAP from cache :', map); //eslint-disable-line
+    }
+    console.log('🌀', filters, center); //eslint-disable-line
+  }, []); // filters, center, bounds
+
+  // Apply externally changed filters object
+  // Changed by Angular search sidebar
+  useEffect(() => {
+    console.log('🌀filters: ', typeof filters, filters); //eslint-disable-line
+    updateOffers();
+  }, [filters]);
+
+  // Apply externally changed bounds object
+  // Changed by Angular search sidebar
+  useEffect(() => {
+    console.log('🌀bounds: ', typeof bounds, bounds); //eslint-disable-line
+    if (bounds?.northEast && bounds?.southWest) {
+      zoomToBounds(bounds);
+    }
+  }, [bounds]);
 
   const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
     setPersistentMapLocation,
@@ -231,9 +286,9 @@ export default function SearchMap(props) {
     const feature = event.features[0];
 
     // Stop here if:
-    // - feature on other than points layer
+    // - feature on other than points layer, or
     // - feature doesn't have ID for some reason, or
-    // - we're just hovering previously hovered feature, or
+    // - we're just hovering previously hovered feature
     if (
       feature.layer.id !== unclusteredPointLayer.id ||
       !feature.id ||
@@ -355,7 +410,7 @@ export default function SearchMap(props) {
     try {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers({
-        filters,
+        filters: JSON.stringify(filters),
         ...boundingBox,
       });
       setOffers(data);
@@ -379,7 +434,7 @@ export default function SearchMap(props) {
        * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
        */
       interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
-      location={[mapCenter.lat, mapCenter.lng]}
+      location={[center.lat, center.lng]}
       mapboxApiAccessToken={MAPBOX_TOKEN}
       mapStyle={mapStyle}
       onClick={onClickMap}
@@ -431,8 +486,9 @@ export default function SearchMap(props) {
 }
 
 SearchMap.propTypes = {
-  filters: PropTypes.string,
-  mapCenter: PropTypes.object,
+  bounds: PropTypes.object,
+  center: PropTypes.object,
+  filters: PropTypes.object,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
 };

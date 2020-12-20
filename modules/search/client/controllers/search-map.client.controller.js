@@ -13,9 +13,10 @@ function SearchMapController(
   const vm = this;
 
   // Exposed to the view
-  vm.filters = '';
+  vm.bounds = {};
+  vm.center = {};
+  vm.filters = {};
   vm.notFound = false;
-  vm.mapCenter = false;
   vm.closeOffer = closeOffer;
   vm.previewOffer = previewOffer;
 
@@ -27,11 +28,11 @@ function SearchMapController(
    */
   function activate() {
     const filters = FiltersService.get();
-    vm.filters = angular.toJson(filters);
+    vm.filters = filters;
 
     // Set map's initial location
-    SearchMapService.getMapCenter().then(mapCenter => {
-      vm.mapCenter = mapCenter;
+    SearchMapService.getMapCenter().then(center => {
+      vm.center = center;
     });
 
     // If offer gets closed elsewhere
@@ -41,18 +42,18 @@ function SearchMapController(
     });
 
     // Listen to new map location values from other controllers
-    $scope.$on('search.mapCenter', (event, mapCenter) => {
-      console.log('Angular got mapCenter:', mapCenter); //eslint-disable-line
-      vm.mapCenter = mapCenter;
+    $scope.$on('search.mapCenter', (event, center) => {
+      console.log('Angular got center:', center); //eslint-disable-line
+      vm.center = center;
     });
-    $scope.$on('search.mapBounds', (event, mapBounds) => {
-      console.log('Angular got mapBounds:', mapBounds); //eslint-disable-line
-      vm.mapBounds = mapBounds;
+    $scope.$on('search.mapBounds', (event, bounds) => {
+      console.log('Angular got bounds:', bounds); //eslint-disable-line
+      vm.bounds = bounds;
     });
     // eslint-disable-next-line
     $scope.$on('search.filtersUpdated', (event, filters) => {
       console.log('angular map cntrl got filters event'); //eslint-disable-line
-      vm.filters = angular.toJson(filters);
+      vm.filters = filters;
     });
 
     // Initializing either location search or offer
@@ -77,7 +78,7 @@ function SearchMapController(
 
       // Re-position map
       if (reCenterMap) {
-        vm.mapCenter = {
+        vm.center = {
           // See above explanation for using `$event` coordinates
           lat: $event && $event.latlng ? $event.latlng.lat : offer.location[0],
           lng: $event && $event.latlng ? $event.latlng.lng : offer.location[1],
