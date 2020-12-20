@@ -62,27 +62,6 @@ describe('Search Route Tests', function () {
       });
     });
 
-    describe('Search non-authenticated Route', function () {
-      let mainstate;
-      beforeEach(inject(function ($state) {
-        mainstate = $state.get('search-signin');
-      }));
-
-      it('Should have the correct URL', function () {
-        expect(mainstate.url).toEqual('/search?location?offer?tribe');
-      });
-
-      it('Should not be abstract', function () {
-        expect(mainstate.abstract).toBe(undefined);
-      });
-
-      it('Should have templateUrl', function () {
-        expect(mainstate.templateUrl).toBe(
-          '/modules/search/views/search-signin.client.view.html',
-        );
-      });
-    });
-
     describe('Handle Trailing Slash', function () {
       beforeEach(inject(function ($state, $rootScope, $location) {
         $state.go('search.map');
