@@ -66,32 +66,19 @@ export default function SearchMap(props) {
   const sourceRef = createRef();
   const mapRef = createRef();
 
-  // Get the Mapbox object for direct manipulation
-  const getMapRef = () => {
-    if (map) {
-      // console.log('map ref from cache'); //eslint-disable-line
-      return map;
-    }
-
-    // console.time('TIME - getMapRef'); //eslint-disable-line
-    const mapFromRef = mapRef?.current?.getMap();
-    if (!mapFromRef) {
-      console.log('🛑No map from ref available!'); //eslint-disable-line
-      return;
-    }
-    // console.timeEnd('TIME - getMapRef'); //eslint-disable-line
-    return mapFromRef;
-  };
+  // Get the Mapbox object for direct map manipulation
+  const getMapRef = () => map || mapRef?.current?.getMap();
 
   /**
-   * @param  {[type]} bounds Bounding box coordinates with shape:
+   * Zoom visible map to bounding box
+   *
+   * @param  {object} bounds Bounding box coordinates with shape:
    *   northEast.lat;
    *   northEast.lng;
    *   southWest.lat;
    *   southWest.lng;
    */
   const zoomToBounds = ({ northEast, southWest }) => {
-    console.log('zoomToBounds'); //eslint-disable-line
     const newViewport = new WebMercatorViewport(viewport);
     const { longitude, latitude, zoom } = newViewport.fitBounds(
       [
@@ -147,6 +134,9 @@ export default function SearchMap(props) {
     });
   };
 
+  /**
+   * Debounce setting persistent map state to avoid performance issues
+   */
   const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
     setPersistentMapLocation,
     // delay in ms
@@ -155,6 +145,9 @@ export default function SearchMap(props) {
     { maxWait: 3000 },
   );
 
+  /**
+   * Refresh persistent map state when viewport changes
+   */
   const onViewPortChange = viewport => {
     setViewport(viewport);
 
@@ -162,6 +155,9 @@ export default function SearchMap(props) {
     debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
   };
 
+  /**
+   * Debounce getting fresh offers for new map state to avoid performance issues
+   */
   const [debouncedUpdateOffers] = useDebouncedCallback(
     updateOffers,
     // delay in ms
@@ -170,22 +166,16 @@ export default function SearchMap(props) {
     { maxWait: 3500 },
   );
 
+  /**
+   * Update state for a feature on the map
+   */
   const updateFeatureState = (feature, newState) => {
     const map = getMapRef();
-    // console.time('TIME - updateOffers'); //eslint-disable-line
     const { source, id } = feature;
     const previousState = map.getFeatureState({
       source,
       id,
     });
-
-    // eslint-disable-next-line no-console
-    // console.log('🔵previous feature state:', featureStatePreviously);
-    // eslint-disable-next-line no-console
-    // console.log('🟢new feature state:', {
-    //   ...featureStatePreviously,
-    //   ...newFeatureState,
-    // });
 
     map.setFeatureState(
       { source, id },
@@ -195,9 +185,11 @@ export default function SearchMap(props) {
         ...newState,
       },
     );
-    // console.timeEnd('TIME - updateOffers'); //eslint-disable-line
   };
 
+  /**
+   * Reset hover state for previouslyly hovered feature
+   */
   const clearPreviouslyHoveredState = () => {
     if (hoveredOffer) {
       setHoveredOffer(false);
@@ -205,22 +197,20 @@ export default function SearchMap(props) {
     }
   };
 
-  // eslint-disable-next-line
+  /**
+   * Reset selected state for previouslyly selected feature
+   */
   const clearPreviouslySelectedState = () => {
-    // console.time('TIME - clearPreviouslySelectedState'); //eslint-disable-line
     if (selectedOffer) {
       updateFeatureState(selectedOffer, { selected: false });
       setSelectedOffer(false);
     }
-    // console.timeEnd('TIME - clearPreviouslySelectedState'); //eslint-disable-line
   };
 
+  /**
+   * Set selected state for a feature
+   */
   const setSelectedState = offer => {
-    // console.time(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
-    // console.log('🚀 setSelectedState:'); //eslint-disable-line
-    // console.log(offer); //eslint-disable-line
-    // console.log(offer.toJSON()); //eslint-disable-line
-
     // Clear out previously selected offers
     if (selectedOffer) {
       updateFeatureState(selectedOffer, { selected: false });
@@ -229,9 +219,11 @@ export default function SearchMap(props) {
     // Mark newly selected offer
     updateFeatureState(offer, { selected: true, viewed: true });
     setSelectedOffer(offer);
-    // console.timeEnd(`TIME - setSelectedState ${offer.id}`); //eslint-disable-line
   };
 
+  /**
+   * Handle feature hover states on map
+   */
   const onHover = event => {
     if (!event?.features?.length) {
       return;
@@ -252,22 +244,20 @@ export default function SearchMap(props) {
     }
 
     if (!hoveredOffer || hoveredOffer?.id !== feature.id) {
-      console.log('onHover, feature:', feature); //eslint-disable-line
       clearPreviouslyHoveredState();
       setHoveredOffer(feature);
       updateFeatureState(feature, { hover: true });
-    } else {
-      console.log('Ignore hovering, feature, was same as previous.'); //eslint-disable-line
     }
   };
 
-  // https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
+  /**
+   * Zoom to cluster of features
+   * @link https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
+   */
   const zoomToClusterById = (clusterId, lngLat) => {
     if (!clusterId) {
       return;
     }
-
-    const source = sourceRef?.current?.getSource();
 
     const newLocation = {
       latitude: lngLat[1],
@@ -275,6 +265,8 @@ export default function SearchMap(props) {
       transitionDuration: 'auto',
       transitionInterpolator: new FlyToInterpolator({ speed: 1.3 }),
     };
+
+    const source = sourceRef?.current?.getSource();
 
     if (!source) {
       // @TODO: sometimes source doesn't return map. At least center the group if no zooming — not ideal, should just re-attempt.
@@ -287,7 +279,6 @@ export default function SearchMap(props) {
     }
 
     source.getClusterExpansionZoom(clusterId, (err, zoom) => {
-      console.log('got ClusterExpansionZoom:', zoom, lngLat); // eslint-disable-line no-console
       if (err || zoom === undefined) {
         return;
       }
@@ -323,8 +314,6 @@ export default function SearchMap(props) {
         if (features[0]?.id) {
           setSelectedState(features[0]);
           openOfferById(features[0].id);
-        } else {
-          console.log('🛑No Feature ID!', features[0]); //eslint-disable-line
         }
         break;
       // Clusters
@@ -334,8 +323,10 @@ export default function SearchMap(props) {
     }
   };
 
+  /**
+   * Fetch offer data and open it on seach sidebar (handled by Angular)
+   */
   async function openOfferById(offerId) {
-    console.log('openOfferById:', offerId); // eslint-disable-line no-console
     if (!offerId) {
       return;
     }
@@ -349,13 +340,14 @@ export default function SearchMap(props) {
     }
   }
 
-  // eslint-disable-next-line
+  /**
+   * Fetch offers inside bounding box
+   */
   async function fetchOffers(boundingBox) {
-    console.log('fetch with filters:', filters); // eslint-disable-line no-console
     try {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers({
-        filters, // JSON.stringify(filters),
+        filters,
         ...boundingBox,
       });
       setOffers(data);
@@ -371,18 +363,13 @@ export default function SearchMap(props) {
   useEffect(() => {
     if (!map) {
       const currentMap = getMapRef();
-      // console.log('🌍 RENDER MAP getter:', currentMap); //eslint-disable-line
       setMap(currentMap);
     }
-    // else {
-    // console.log('🌍 RENDER MAP from cache :', map); //eslint-disable-line
-    // }
   }, []);
 
   // Apply externally changed bounds object
   // Changed by Angular search sidebar
   useEffect(() => {
-    console.log('🌀bounds: ', typeof bounds, bounds); //eslint-disable-line
     if (bounds?.northEast && bounds?.southWest) {
       zoomToBounds(bounds);
     }
@@ -391,8 +378,6 @@ export default function SearchMap(props) {
   // Apply externally changed filters object
   // Changed by Angular search sidebar
   useEffect(() => {
-    console.log('🌀filters: ', typeof filters, filters); //eslint-disable-line
-
     // Clear out previous open offers and such
     onOfferClose();
     clearPreviouslySelectedState();
@@ -405,7 +390,6 @@ export default function SearchMap(props) {
   // Apply externally changed location object
   // Changed by Angular controller when loading offer via URL
   useEffect(() => {
-    console.log('🌀location: ', typeof location, location); //eslint-disable-line
     if (location?.lat && location?.lng) {
       setViewport({
         ...viewport,

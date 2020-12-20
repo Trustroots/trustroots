@@ -37,17 +37,14 @@ function SearchMapController(
 
     // Listen to new map location values from other controllers
     $scope.$on('search.mapCenter', (event, location) => {
-      console.log('Angular got center:', location); //eslint-disable-line
       vm.location = location;
     });
 
     $scope.$on('search.mapBounds', (event, bounds) => {
-      console.log('Angular got bounds:', bounds); //eslint-disable-line
       vm.bounds = bounds;
     });
 
     $scope.$on('search.filtersUpdated', (event, filters) => {
-      console.log('angular map cntrl got filters event'); //eslint-disable-line
       vm.filters = angular.toJson(filters);
     });
 
