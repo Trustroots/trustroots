@@ -1,9 +1,17 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+// External dependencies
 import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
-import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import React from 'react';
+import styled from 'styled-components';
+
+// Internal dependencies
+import '@/config/client/i18n';
 import Report from './Report';
+
+const SadNotice = styled.div`
+  margin: 30px 0;
+`;
 
 export default function Recommend({
   primaryInteraction,
@@ -65,13 +73,23 @@ export default function Recommend({
           </ToggleButton>
         </ToggleButtonGroup>
         {recommend === 'no' && (
-          <Report
-            onChangeReport={onChangeReport}
-            onChangeReportMessage={onChangeReportMessage}
-            report={report}
-            reportMessage={reportMessage}
-          />
+          <SadNotice className="lead">
+            {t(
+              "We're sad to hear you didn't have a great experience using Trustroots!",
+            )}
+            {' 😞'}
+            <br />
+            {t(
+              "It's extremely important you report anyone behaving against rules to us.",
+            )}
+          </SadNotice>
         )}
+        <Report
+          onChangeReport={onChangeReport}
+          onChangeReportMessage={onChangeReportMessage}
+          report={report}
+          reportMessage={reportMessage}
+        />
       </div>
     </div>
   );

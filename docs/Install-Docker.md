@@ -7,7 +7,7 @@ Development with Docker might be little bit slower than running Mongo and NodeJS
 ## Prerequisites
 
 - Install [Docker](https://www.docker.com/get-started) on your system.
-- Make sure you have [`git`](http://git-scm.com/) installed on your system (`git --version`, preinstalled on MacOS)
+- Make sure you have [`git`](https://git-scm.com/) installed on your system (`git --version`, preinstalled on MacOS)
 
 ## Install
 
@@ -54,7 +54,7 @@ You can now access these from your browser:
 - When you do changes to any files, they get recompiled and the browser is refreshed. If this step feels too slow for your needs, it's because of Docker. This step is faster on local install so you might want to consider that.
 - Keep an eye on console in case of compiling errors.
 - To read and debug emails, open Maildev [http://localhost:1080](http://localhost:1080) in your browser. Mails won't leave your Docker container.
-- To read and debug MongoDB use e.g. [Robomongo](https://robomongo.org/) to connect to `localhost` on port `27017`.
+- To read and debug MongoDB, connect to `localhost` on port `27017` for example by using [Robomongo](https://robomongo.org/) or [MongoDB for Visual Studio](https://marketplace.visualstudio.com/items?itemName=mongodb.mongodb-vscode).
 
 Refer to regular Install documentations for how to seed content, [how to run tests](Install.html#running-tests) etc.
 

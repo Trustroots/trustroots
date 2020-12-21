@@ -135,6 +135,14 @@ exports.invokeRolesPolicies = function () {
           resources: '/api/users/invitecode/:invitecode',
           permissions: ['post'],
         },
+        {
+          resources: '/api/blocked-users',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/blocked-users/:username',
+          permissions: ['put', 'delete'],
+        },
       ],
     },
     {

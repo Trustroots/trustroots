@@ -1,15 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
-import { userType } from '@/modules/users/client/users.prop-types';
-import ManifestoText from './ManifestoText.component.js';
-import Tooltip from '@/modules/core/client/components/Tooltip.js';
-import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
+// External dependencies
 import { Trans, useTranslation } from 'react-i18next';
 import classnames from 'classnames';
-import Board from '@/modules/core/client/components/Board.js';
-import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+
+// Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
+import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import { userType } from '@/modules/users/client/users.prop-types';
 import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
+import Board from '@/modules/core/client/components/Board.js';
+import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
+import ManifestoText from './ManifestoText.component.js';
+import Screenshot from '@/modules/core/client/components/Screenshot.js';
+import screenshotProfilePng from '../img/screenshot-profile.png';
+import screenshotProfilePng2x from '../img/screenshot-profile-2x.png';
+import screenshotProfileWebp from '../img/screenshot-profile.webp';
+import screenshotProfileWebp2x from '../img/screenshot-profile-2x.webp';
+import screenshotSearchPng from '../img/screenshot-search.png';
+import screenshotSearchPng2x from '../img/screenshot-search-2x.png';
+import screenshotSearchWebp from '../img/screenshot-search.webp';
+import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
+import Tooltip from '@/modules/core/client/components/Tooltip.js';
 
 const api = {
   tribes: tribesAPI,
@@ -18,6 +30,9 @@ const api = {
 export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { t } = useTranslation('pages');
   const { tribe: tribeRoute } = getRouteParams();
+
+  // @TODO change this to be based on UI language rather than browser locale
+  const memberCount = new Intl.NumberFormat().format(51000);
 
   // TODO get header height instead of magic number 56
   // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
@@ -161,19 +176,20 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 <br />
                 <br />
                 {/* @TODO remove ns (issue #1368) */}
-                <Trans t={t} ns="pages">
-                  Trustroots is over <a href="/statistics">50,000 members</a>{' '}
-                  strong!
+                <Trans t={t} ns="pages" values={{ memberCount }}>
+                  Trustroots is over{' '}
+                  <a href="/statistics">{{ memberCount }} members</a> strong and
+                  growing!
                 </Trans>
               </p>
             </div>
-            <div className="col-md-7">
-              <div className="home-browser">
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-screenshot home-browser-screenshot-search"></div>
-              </div>
+            <div aria-hidden className="col-md-7">
+              <Screenshot
+                png={screenshotSearchPng}
+                png2x={screenshotSearchPng2x}
+                webp={screenshotSearchWebp}
+                webp2x={screenshotSearchWebp2x}
+              />
             </div>
           </div>
         </div>
@@ -183,13 +199,13 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
       <section className="home-how">
         <div className="container">
           <div className="row">
-            <div className="col-xs-12 col-md-7 hidden-xs hidden-sm">
-              <div className="home-browser">
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-circle"></div>
-                <div className="home-browser-screenshot home-browser-screenshot-profile"></div>
-              </div>
+            <div aria-hidden className="col-xs-12 col-md-7 hidden-xs hidden-sm">
+              <Screenshot
+                png={screenshotProfilePng}
+                png2x={screenshotProfilePng2x}
+                webp={screenshotProfileWebp}
+                webp2x={screenshotProfileWebp2x}
+              />
             </div>
             <div className="col-xs-12 col-sm-offset-2 col-sm-8 col-md-offset-0 col-md-5 text-center lead">
               <div className="home-wohoo center-block hidden-xs hidden-sm"></div>
@@ -234,7 +250,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     key={tribe._id}
                     href={`/circles/${tribe.slug}`}
                     className="img-circle tribe-xs tribe-image"
-                    style={getCircleBackgroundStyle(tribe, '520x520')}
+                    style={getCircleBackgroundStyle(tribe, '742x496')}
                   >
                     {!tribe.image && <span>{tribe.label.charAt(0)}</span>}
                   </a>
@@ -249,7 +265,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 >
                   <div
                     className="img-circle tribe tribe-image"
-                    style={getCircleBackgroundStyle(tribe, '1024x768')}
+                    style={getCircleBackgroundStyle(tribe, '742x496')}
                   >
                     <a href={`/circles/${tribe.slug}`} className="tribe-link">
                       <h3 className="tribe-label">{tribe.label}</h3>
@@ -322,9 +338,9 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   felt that the world of sharing is being taken over by
                   corporations trying to monetize people&apos;s willingness to
                   help each other. Same team brought you also{' '}
-                  <a href="http://hitchwiki.org/">Hitchwiki</a>,{' '}
-                  <a href="http://trashwiki.org/">Trashwiki</a> and{' '}
-                  <a href="http://nomadwiki.org/">Nomadwiki</a>.
+                  <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
+                  <a href="https://trashwiki.org/">Trashwiki</a> and{' '}
+                  <a href="https://nomadwiki.org/">Nomadwiki</a>.
                 </Trans>
               </p>
               <p>

@@ -342,6 +342,11 @@ const UserSchema = new Schema({
     type: [UserPushRegistrationSchema],
     default: [],
   },
+  blocked: {
+    type: [Schema.Types.ObjectId],
+    ref: 'User',
+    default: [],
+  },
   acquisitionStory: {
     type: String,
     default: '',

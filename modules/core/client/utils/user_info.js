@@ -1,20 +1,20 @@
 import { useTranslation } from 'react-i18next';
 
-/*
- * Functions passing strings to translation fuction for translation scripts
+/**
+ * Get label for profile gender options
  */
 export function getGender(genderCode) {
-  const { t } = useTranslation(['users', 'languages']);
+  const { t } = useTranslation('users');
 
   switch (genderCode) {
     case 'female':
-      return t('female');
+      return t('Female');
     case 'male':
-      return t('male');
+      return t('Male');
     case 'non-binary':
-      return t('non-binary');
+      return t('Non-binary');
     case 'other':
-      return t('other gender');
+      return t('Other gender');
     default:
       return undefined;
   }

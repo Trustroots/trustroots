@@ -35,14 +35,16 @@ export default function CreateReference({ userFrom, userTo }) {
 
   useEffect(() => {
     (async () => {
-      const reference = await api.references.read({
+      const references = await api.references.read({
         userFrom: userFrom._id,
         userTo: userTo._id,
       });
 
-      if (reference.length === 1) {
-        setIsDuplicate(true);
-      }
+      references.forEach(reference => {
+        if (reference.userFrom._id === userFrom._id) {
+          setIsDuplicate(true);
+        }
+      });
 
       setIsLoading(false);
     })();
@@ -143,17 +145,17 @@ export default function CreateReference({ userFrom, userTo }) {
   }
 
   if (isDuplicate) {
-    return <DuplicateInfo userTo={userTo} />;
+    return <DuplicateInfo username={userTo.username} />;
   }
 
   if (isSubmitted) {
     const isReported = recommend === 'no' && report;
     return (
       <SubmittedInfo
-        isReported={isReported}
         isPublic={isPublic}
-        userFrom={userFrom}
-        userTo={userTo}
+        isReported={isReported}
+        name={userTo.displayName}
+        username={userTo.username}
       />
     );
   }

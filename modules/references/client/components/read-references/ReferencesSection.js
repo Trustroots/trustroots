@@ -8,7 +8,7 @@ import Reference from './Reference';
 /**
  * List of user's references
  */
-export default function ReferencesSection({ title, references }) {
+export default function ReferencesSection({ title, referencePairs }) {
   return (
     <section>
       {title && (
@@ -18,18 +18,41 @@ export default function ReferencesSection({ title, references }) {
           </div>
         </div>
       )}
-      <div className="row">
-        <div className="col-xs-12">
-          {references.map(reference => (
-            <Reference key={reference._id} reference={reference} />
-          ))}
+      {referencePairs.map(referencePair => (
+        <div
+          key={
+            referencePair.sharedWithUser
+              ? referencePair.sharedWithUser._id
+              : referencePair.writtenByUser._id
+          }
+        >
+          {referencePair.sharedWithUser && (
+            <div className="row">
+              <div className="col-xs-12">
+                <Reference
+                  reference={referencePair.sharedWithUser}
+                  inRecipientProfile={true}
+                />
+              </div>
+            </div>
+          )}
+          {referencePair.writtenByUser && (
+            <div className="row">
+              <div className="col-xs-12">
+                <Reference
+                  reference={referencePair.writtenByUser}
+                  inRecipientProfile={false}
+                />
+              </div>
+            </div>
+          )}
         </div>
-      </div>
+      ))}
     </section>
   );
 }
 
 ReferencesSection.propTypes = {
-  references: PropTypes.array.isRequired,
-  title: PropTypes.string,
+  referencePairs: PropTypes.array.isRequired,
+  title: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
 };

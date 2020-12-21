@@ -26,9 +26,9 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
           In the initial phase we were focusing on getting especially
           hitchhikers on board and making the site ideal for that. Our
           background is within Hitchhikers community and in{' '}
-          <a href="http://hitchwiki.org/">Hitchwiki</a>. The site will obviously
-          remain rather alternative and true to its roots, even when we
-          introduce it to new communities. <br />
+          <a href="https://hitchwiki.org/">Hitchwiki</a>. The site will
+          obviously remain rather alternative and true to its roots, even when
+          we introduce it to new communities. <br />
         </Trans>
         <br />
         <a href="/faq/tribes">{t('Read more about circles')}</a>.

@@ -54,6 +54,5 @@ Trustroots should first get level A compliance, then work on AA and keep AA. AAA
 
 ## Resources
 
-- A readable [WCAG tutorial](http://www.evengrounds.com/wcag-tutorial)
-- [a11yproject](http://a11yproject.com/): Simple articles and nice resources
+- [a11yproject](https://www.a11yproject.com/): Simple articles and nice resources
 - Please familiarise yourself with [these accessibility tutorials](https://developer.mozilla.org/en-US/docs/Web/Accessibility) by Mozilla.

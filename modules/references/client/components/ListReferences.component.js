@@ -14,28 +14,57 @@ import ReferencesSection from './read-references/ReferencesSection';
  */
 export default function ListReferences({ profile, authenticatedUser }) {
   const { t } = useTranslation('references');
-  const [publicReferences, setPublicReferences] = useState([]);
-  const [pendingReferences, setPendingReferences] = useState([]);
+  const [publicExperiencePairs, setPublicExperiencePairs] = useState([]);
+  const [pendingExperiences, setPendingExperiences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  function pairUpExperiences(experiences) {
+    const experiencePairsDict = experiences
+      .filter(experience => experience.userTo._id === profile._id)
+      .reduce(
+        (a, exp) => ({
+          ...a,
+          [exp.userFrom._id]: { sharedWithUser: exp },
+        }),
+        {},
+      );
+
+    experiences.forEach(experience => {
+      if (experience.userFrom._id === profile._id) {
+        const userTo = experience.userTo._id;
+        if (experiencePairsDict[userTo] === undefined) {
+          experiencePairsDict[userTo] = {};
+        }
+        experiencePairsDict[userTo].writtenByUser = experience;
+      }
+    });
+
+    return Object.values(experiencePairsDict);
+  }
 
   async function fetchReferences() {
     setIsLoading(true);
     try {
-      const references = await readReferences({
+      const experiences = await readReferences({
         userTo: profile._id,
+        includeReplies: true,
       });
 
-      const publicNewestFirst = references.filter(
-        reference => reference.public,
+      const publicExperiences = experiences.filter(
+        experience => experience.public,
       );
+      const publicExperiencePairs = pairUpExperiences(publicExperiences);
+      setPublicExperiencePairs(publicExperiencePairs);
 
-      const pendingNewestFirst = references.filter(
-        reference => !reference.public,
+      const pendingNewestFirst = experiences.filter(
+        experience => !experience.public,
       );
       const pendingOldestFirst = [...pendingNewestFirst].reverse();
-
-      setPublicReferences(publicNewestFirst);
-      setPendingReferences(pendingOldestFirst);
+      setPendingExperiences(
+        pendingOldestFirst.map(experience => {
+          return { sharedWithUser: experience };
+        }),
+      );
     } finally {
       setIsLoading(false);
     }
@@ -50,8 +79,8 @@ export default function ListReferences({ profile, authenticatedUser }) {
     return <LoadingIndicator />;
   }
 
-  const hasPublicReferences = publicReferences.length > 0;
-  const hasPendingReferences = pendingReferences.length > 0;
+  const hasPublicReferences = publicExperiencePairs.length > 0;
+  const hasPendingReferences = pendingExperiences.length > 0;
 
   // No references
   if (!hasPendingReferences && !hasPublicReferences) {
@@ -71,19 +100,19 @@ export default function ListReferences({ profile, authenticatedUser }) {
   return (
     <>
       {hasPublicReferences && (
-        <ReferenceCounts publicReferences={publicReferences} />
+        <ReferenceCounts publicReferences={publicExperiencePairs} />
       )}
       {hasPendingReferences && (
         <ReferencesSection
           title={t('Experiences pending publishing')}
-          references={pendingReferences}
+          referencePairs={pendingExperiences}
         />
       )}
       {hasPublicReferences && (
         <ReferencesSection
           // Show "Public" title only if there are also pending experiences listed
           title={hasPendingReferences && t('Public experiences')}
-          references={publicReferences}
+          referencePairs={publicExperiencePairs}
         />
       )}
     </>

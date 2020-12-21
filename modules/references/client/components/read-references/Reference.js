@@ -5,24 +5,33 @@ import React from 'react';
 import styled from 'styled-components';
 
 // Internal dependencies
+import { DAYS_TO_REPLY } from '../../utils/constants';
+import { getGender } from '@/modules/core/client/utils/user_info';
 import Avatar from '@/modules/users/client/components/Avatar.component';
+import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
-import Recommendation from './Recommendation';
-import { getGender } from '@/modules/core/client/utils/user_info';
-
-// @TODO, pull from config
-const DAYS_TO_REPLY = 14;
 
 const ReferenceHeading = styled.div`
   display: flex;
-  align-items: center;
+  flex-wrap: wrap-reverse;
+  line-height: 1.3em;
+
   .avatar {
     margin-right: 10px;
   }
-  time {
+
+  .reference-time {
     margin-left: auto;
+    color: #333;
   }
+
+  @media (max-width: 480px) {
+   .reference-time {
+     width: 100%;
+     margin-left: 0;
+     margin-bottom: 10px;
+   }
 `;
 
 const UserMeta = styled.div`
@@ -42,7 +51,11 @@ const PendingNoticePlaceholder = styled.div`
   padding: 0 0 10px 0;
 `;
 
-export default function Reference({ reference }) {
+const FeedbackPublic = styled.div`
+  max-width: 600px;
+`;
+
+export default function Reference({ reference, inRecipientProfile }) {
   const { t } = useTranslation('references');
 
   const {
@@ -68,27 +81,35 @@ export default function Reference({ reference }) {
         Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
     );
 
+  const inCreatorProfile = !inRecipientProfile;
+
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body reference">
         <ReferenceHeading>
+          {inCreatorProfile && <div>{t('their reply')}</div>}
           <Avatar user={userFrom} size={36} />
           <UserMeta>
             <strong>
               <UserLink user={userFrom} />
             </strong>
-            <span className="muted">
-              {t('Member since {{memberSince}}', {
-                memberSince: new Date(userFrom.created).getFullYear(),
-              })}
-              {userFrom.gender && `, ${getGender(userFrom.gender)}`}
-            </span>
+            {inRecipientProfile && (
+              <span className="muted">
+                {userFrom.gender && `${getGender(userFrom.gender)}. `}
+                {t('Member since {{date, YYYY}}.', {
+                  date: new Date(userFrom.created),
+                })}
+              </span>
+            )}
           </UserMeta>
-          <time dateTime={createdDate} className="text-color-links">
-            <a href={`/profile/${userTo.username}/references#${_id}`}>
+          {inRecipientProfile && (
+            <a
+              className="reference-time"
+              href={`/profile/${userTo.username}/references#${_id}`}
+            >
               <TimeAgo date={createdDate} />
             </a>
-          </time>
+          )}
         </ReferenceHeading>
 
         {!isPublicReference && (
@@ -117,13 +138,13 @@ export default function Reference({ reference }) {
             )}
           </>
         )}
-        <Recommendation
-          met={met}
+        <Meta
           hostedMe={hostedMe}
           hostedThem={hostedThem}
+          met={met}
           recommend={recommend}
         />
-        {feedbackPublic && <div>{feedbackPublic}</div>}
+        {feedbackPublic && <FeedbackPublic>{feedbackPublic}</FeedbackPublic>}
       </div>
     </div>
   );
@@ -131,4 +152,5 @@ export default function Reference({ reference }) {
 
 Reference.propTypes = {
   reference: PropTypes.object.isRequired,
+  inRecipientProfile: PropTypes.bool.isRequired,
 };
