@@ -6,7 +6,7 @@
 @import './variables';
 
 // Styled as 'mobile first'
-.search-sidebar {
+.search-sidebar-container {
   // Active tab
   .nav-tabs.nav-justified > .active > a {
     border-bottom-color: @brand-primary;
@@ -15,6 +15,7 @@
   // Tabs are hidden on small screens
   // They are controlled via view controller JS instead
   @media (max-width: @screen-xs-max) {
+    padding-top: 20px;
     .nav-tabs {
       display: none;
     }

@@ -14,20 +14,11 @@
 
 // Styled as 'mobile first'
 .search-sidebar-container {
-  /*
-  position: absolute;
-  width: auto;
-  top: @navbar-height;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: auto;
-  */
   z-index: @zindex-navbar;
   overflow: hidden;
   overflow-y: auto;
   background: @gray-lighter;
-  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
 
   @media (min-width: @screen-sm-min) {
     background: @map-toolbar-background;
@@ -37,7 +28,6 @@
     min-width: @search-sidebar-min-width;
     max-width: @search-sidebar-max-width;
     width: @search-sidebar-percentage-width;
-    //right: auto;
   }
 }
 
@@ -45,5 +35,11 @@
   flex: 1;
   > div {
     height: 100%;
+  }
+
+  @media (max-width: @screen-sm-min) {
+    // Make space for the search+filters navbar
+    height: calc(100% - @navbar-height);
+    margin-top: @navbar-height;
   }
 }
