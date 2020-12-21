@@ -365,8 +365,8 @@ function UsersRoutes($stateProvider) {
         pageTitle: 'Remove profile',
       },
     })
-    .state('profile.references', {
-      url: '/references',
+    .state('profile.experiences', {
+      url: '/experiences',
       templateUrl: profileReferencesTemplateUrl,
       requiresAuth: true,
       noScrollingTop: true,
@@ -375,7 +375,7 @@ function UsersRoutes($stateProvider) {
         pageTitle: 'Profile references',
       },
     })
-    .state('profile.references.list', {
+    .state('profile.experiences.list', {
       url: '',
       template:
         '<list-references ng-if="app.appSettings.referencesEnabled" profile="profileCtrl.profile" authenticatedUser="app.user"></list-references>',
@@ -385,7 +385,7 @@ function UsersRoutes($stateProvider) {
         pageTitle: 'Profile references',
       },
     })
-    .state('profile.references.new', {
+    .state('profile.experiences.new', {
       url: '/new',
       template:
         '<create-reference ng-if="app.appSettings.referencesEnabled" userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',

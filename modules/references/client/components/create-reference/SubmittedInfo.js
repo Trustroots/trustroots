@@ -23,7 +23,10 @@ export default function SubmittedInfo({
     <SuccessMessage
       title={t('Thank you for sharing your experience!')}
       cta={
-        <a href={`/profile/${username}/references`} className="btn btn-primary">
+        <a
+          className="btn btn-primary"
+          href={`/profile/${username}/experiences`}
+        >
           {t('See their experiences')}
         </a>
       }

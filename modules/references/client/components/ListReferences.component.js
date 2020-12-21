@@ -89,7 +89,7 @@ export default function ListReferences({ profile, authenticatedUser }) {
         <i className="icon-3x icon-users"></i>
         <h4>{t('No references yet.')}</h4>
         {authenticatedUser._id !== profile._id && (
-          <a href={`/profile/${profile.username}/references/new`}>
+          <a href={`/profile/${profile.username}/experiences/new`}>
             {t('Write one!')}
           </a>
         )}
