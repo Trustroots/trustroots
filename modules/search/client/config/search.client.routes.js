@@ -1,7 +1,6 @@
 import searchTemplateUrl from '@/modules/search/client/views/search.client.view.html';
 import searchMapTemplateUrl from '@/modules/search/client/views/search-map.client.view.html';
 import searchSidebarTemplateUrl from '@/modules/search/client/views/search-sidebar.client.view.html';
-import searchSigninTemplateUrl from '@/modules/search/client/views/search-signin.client.view.html';
 
 angular.module('search').config(SearchRoutes);
 /* @ngInject */
@@ -60,17 +59,6 @@ function SearchRoutes($stateProvider) {
         sidebar: {
           templateUrl: searchSidebarTemplateUrl,
         },
-      },
-    })
-    .state('search-signin', {
-      url: '/search?location?offer?tribe',
-      templateUrl: searchSigninTemplateUrl,
-      requiresAuth: false,
-      footerHidden: true,
-      controller: 'SearchSignupController',
-      controllerAs: 'searchSignup',
-      data: {
-        pageTitle: 'Search',
       },
     })
     .state('search-users', {

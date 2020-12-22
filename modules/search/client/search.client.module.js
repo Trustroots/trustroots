@@ -9,7 +9,6 @@ require('@/modules/search/client/config/search.client.routes');
 
 // controllers
 require('@/modules/search/client/controllers/search-map.client.controller');
-require('@/modules/search/client/controllers/search-signup.client.controller');
 require('@/modules/search/client/controllers/search.client.controller');
 
 // directives
