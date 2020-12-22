@@ -58,7 +58,7 @@ function MessageCenterService(
       /** @var Do not delete this message automatically. */
       permanent: 'permanent',
     },
-    add: function (type, message, options) {
+    add(type, message, options) {
       const availableTypes = ['info', 'warning', 'danger', 'success'];
       const service = this;
       options = options || {};
@@ -68,10 +68,10 @@ function MessageCenterService(
         throw 'Invalid message type';
       }
       const messageObject = {
-        type: type,
+        type,
         status: options.status || this.status.unseen,
         processed: false,
-        close: function () {
+        close() {
           return service.remove(this);
         },
       };
@@ -87,21 +87,21 @@ function MessageCenterService(
       this.mcMessages.push(messageObject);
       return messageObject;
     },
-    remove: function (message) {
+    remove(message) {
       const index = this.mcMessages.indexOf(message);
       this.mcMessages.splice(index, 1);
     },
-    reset: function () {
+    reset() {
       this.mcMessages = [];
     },
-    removeShown: function () {
+    removeShown() {
       for (let index = this.mcMessages.length - 1; index >= 0; index--) {
         if (this.mcMessages[index].status === this.status.shown) {
           this.remove(this.mcMessages[index]);
         }
       }
     },
-    markShown: function () {
+    markShown() {
       for (let index = this.mcMessages.length - 1; index >= 0; index--) {
         if (!this.mcMessages[index].processed) {
           if (this.mcMessages[index].status === this.status.unseen) {
@@ -113,7 +113,7 @@ function MessageCenterService(
         }
       }
     },
-    flush: function () {
+    flush() {
       $rootScope.mcMessages = this.mcMessages;
     },
   };

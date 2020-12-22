@@ -85,7 +85,7 @@ exports.tribeBySlug = function (req, res, next, slug) {
   Tribe.findOne(
     {
       public: true,
-      slug: slug,
+      slug,
     },
     exports.tribeFields,
   ).exec(function (err, tribe) {

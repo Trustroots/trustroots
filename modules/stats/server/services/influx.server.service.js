@@ -80,8 +80,8 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
 
   // the point is the IPoint we'll send to node-influx's writeMeasurement
   const point = {
-    fields: fields,
-    tags: tags,
+    fields,
+    tags,
   };
 
   // deal with the time
@@ -123,8 +123,8 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
           {
             error: err,
             measurement: measurementName,
-            fields: fields,
-            tags: tags,
+            fields,
+            tags,
           },
         );
 

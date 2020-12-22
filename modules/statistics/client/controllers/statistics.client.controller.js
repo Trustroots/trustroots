@@ -42,8 +42,8 @@ function StatisticsController($scope, $interval, Statistics, statisticsData) {
     vm.connections = [];
     angular.forEach(data.connected, function (count, network) {
       vm.connections.push({
-        network: network,
-        count: count,
+        network,
+        count,
       });
     });
   }

@@ -12,7 +12,7 @@ module.exports = function (job, done) {
   const jobId = _.get(job, 'attrs._id').toString();
 
   // Log that we're sending an email
-  log('debug', 'Starting `send email` job #wGcxmQ', { jobId: jobId });
+  log('debug', 'Starting `send email` job #wGcxmQ', { jobId });
 
   smtpTransport.sendMail(job.attrs.data, function (err) {
     smtpTransport.close(); // close the connection pool
@@ -20,7 +20,7 @@ module.exports = function (job, done) {
     if (err) {
       // Log the failure to send the message
       log('error', 'The `send email` job failed #VDKMbr', {
-        jobId: jobId,
+        jobId,
         error: err,
       });
 
@@ -28,7 +28,7 @@ module.exports = function (job, done) {
     } else {
       // Log the successful delivery of the message
       log('info', 'Successfully finished `send email` job #4vO5Vt', {
-        jobId: jobId,
+        jobId,
       });
 
       return done();

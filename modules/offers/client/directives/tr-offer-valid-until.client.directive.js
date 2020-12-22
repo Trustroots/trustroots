@@ -98,9 +98,7 @@ function trOfferValidUntilDirective() {
 
       // Defaults to max
       // @link https://momentjs.com/docs/#/manipulating/add/
-      const add = days
-        ? { days: days }
-        : appSettings.limits.maxOfferValidFromNow;
+      const add = days ? { days } : appSettings.limits.maxOfferValidFromNow;
 
       vm.validUntil = moment().endOf('day').add(add).toDate();
     }

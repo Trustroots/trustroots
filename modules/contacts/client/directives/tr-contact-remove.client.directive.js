@@ -14,13 +14,13 @@ function trContactRemoveDirective($uibModal) {
     scope: {
       contactToRemove: '=trContactRemove',
     },
-    link: function (scope, element) {
+    link(scope, element) {
       function openModal() {
         $uibModal.open({
           templateUrl,
           controllerAs: 'removeContactModal',
           controller: 'ContactRemoveController',
-          scope: scope,
+          scope,
         });
       }
 

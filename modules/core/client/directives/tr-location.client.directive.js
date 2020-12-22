@@ -36,7 +36,7 @@ function trLocationDirective($compile, $timeout, LocationService) {
       trLocationBounds: '=?',
     },
     replace: false,
-    link: function (scope, element, attr, ngModel) {
+    link(scope, element, attr, ngModel) {
       // Event handler to stop submitting the surrounding form
       element.bind('keydown keypress focus', function ($event) {
         scope.trLocationNotfound = false;
@@ -91,7 +91,7 @@ function trLocationDirective($compile, $timeout, LocationService) {
       });
     },
     controllerAs: 'trLocation',
-    controller: function ($scope, $timeout) {
+    controller($scope, $timeout) {
       // View Model
       const vm = this;
 

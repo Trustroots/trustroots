@@ -133,11 +133,10 @@ function PagesRoutes($stateProvider) {
     .state('about', {
       url: '/about',
       footerHidden: true,
-      controller:
-        /* @ngInject */
-        function ($state) {
-          $state.go('home');
-        },
+      /* @ngInject */
+      controller($state) {
+        $state.go('home');
+      },
       controllerAs: 'about',
     });
 

@@ -307,7 +307,7 @@ function sendUnreadMessageReminders(reminder, callback) {
           // After both are done, calls `notificationCallback(err, res)`
           async.series(
             {
-              email: function (callback) {
+              email(callback) {
                 emailService.sendMessagesUnread(
                   userFrom,
                   userTo,
@@ -315,7 +315,7 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
-              facebook: function (callback) {
+              facebook(callback) {
                 facebookNotificationService.notifyMessagesUnread(
                   userFrom,
                   userTo,
@@ -323,7 +323,7 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
-              push: function (callback) {
+              push(callback) {
                 pushService.notifyMessagesUnread(
                   userFrom,
                   userTo,

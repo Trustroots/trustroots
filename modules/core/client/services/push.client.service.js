@@ -21,7 +21,7 @@ function push(
     isEnabled: loadEnabled(),
     isBlocked: getIsBlocked(),
 
-    init: function () {
+    init() {
       if (firebaseMessaging.shouldInitialize) {
         return setup();
       } else {
@@ -32,7 +32,7 @@ function push(
     /**
      * Enable local browser push notifications
      */
-    enable: function () {
+    enable() {
       if (!push.isSupported) return $q.reject(new Error('push is unsupported'));
       saveEnabled(true);
       return enable();
@@ -41,7 +41,7 @@ function push(
     /**
      * Disable local browser push notifications
      */
-    disable: function () {
+    disable() {
       if (!push.isSupported) return $q.reject(new Error('push is unsupported'));
       saveEnabled(false);
       return disable();
@@ -112,7 +112,7 @@ function push(
 
     $uibModal.open({
       templateUrl: questionModalTemplateUrl,
-      controller: function ($scope, $uibModalInstance) {
+      controller($scope, $uibModalInstance) {
         const vm = this;
 
         // Yes! Turn push notifications on
@@ -214,7 +214,7 @@ function push(
 
   function addTokenToServer(token) {
     return $http
-      .post('/api/users/push/registrations', { token: token, platform: 'web' })
+      .post('/api/users/push/registrations', { token, platform: 'web' })
       .then(function (res) {
         Authentication.user = res.data.user;
       })

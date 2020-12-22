@@ -23,7 +23,7 @@ function trBoardsDirective($window) {
     scope: {
       trBoards: '=',
     },
-    link: function (scope, elem, attrs) {
+    link(scope, elem, attrs) {
       // Don't set background images for mobile screens if defined so via attribute
       if (
         angular.isDefined(attrs.trBoardsIgnoreSmall) &&

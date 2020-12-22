@@ -155,7 +155,7 @@ const initGlobalConfig = function () {
 
   // Expose configuration utilities
   config.utils = {
-    getGlobbedPaths: getGlobbedPaths,
+    getGlobbedPaths,
   };
 
   return config;

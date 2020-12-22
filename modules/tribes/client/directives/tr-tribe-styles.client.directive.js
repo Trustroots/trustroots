@@ -14,7 +14,7 @@ function trTribeStylesDirective() {
     restrict: 'A',
     replace: false,
     scope: false,
-    link: function (scope, elem, attrs) {
+    link(scope, elem, attrs) {
       if (
         !angular.isDefined(attrs.trTribeStyles) ||
         attrs.trTribeStyles === '' ||

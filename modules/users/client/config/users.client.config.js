@@ -10,7 +10,7 @@ function UsersConfig($httpProvider) {
     'Authentication',
     function ($q, $location, Authentication) {
       return {
-        responseError: function (rejection) {
+        responseError(rejection) {
           if (rejection.config.url.startsWith('/api/')) {
             switch (rejection.status) {
               case 401:

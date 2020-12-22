@@ -24,13 +24,13 @@ function UsersFactory($resource) {
   );
 
   angular.extend(Users, {
-    deleteWithToken: function (token) {
+    deleteWithToken(token) {
       return this.deleteConfirm(
         {
-          token: token, // api expects token as a parameter (i.e. /:token)
+          token, // api expects token as a parameter (i.e. /:token)
         },
         {
-          token: token,
+          token,
         },
       ).$promise;
     },

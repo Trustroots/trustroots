@@ -24,6 +24,7 @@ const rules = {
   'no-unused-expressions': 0,
   'no-use-before-define': [1, 'nofunc'],
   'object-curly-spacing': [2, 'always'],
+  'object-shorthand': 2,
   'one-var': [2, 'never'],
   'one-var-declaration-per-line': [2, 'always'],
   semi: [2, 'always'],

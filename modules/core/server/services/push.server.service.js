@@ -74,7 +74,7 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
 
   const notification = {
     title: 'Trustroots',
-    body: body,
+    body,
     click_action: analyticsHandler.appendUTMParams(messagesUrl, {
       source: 'push-notification',
       medium: 'fcm',
@@ -122,7 +122,7 @@ exports.sendUserNotification = function (user, notification, callback) {
   const data = {
     userId: user._id,
     pushServices: user.pushRegistration,
-    notification: notification,
+    notification,
   };
 
   agenda.now('send push message', data, callback);

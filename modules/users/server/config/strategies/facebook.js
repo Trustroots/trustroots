@@ -32,9 +32,9 @@ module.exports = function (config) {
   passport.use(
     new FacebookStrategy(
       {
-        clientID: clientID,
-        clientSecret: clientSecret,
-        callbackURL: callbackURL,
+        clientID,
+        clientSecret,
+        callbackURL,
         // Available fields:
         // @link https://developers.facebook.com/docs/graph-api/reference/user/
         // Validate fields using Graph explorer (`/me?fields=id,name,...`):
@@ -71,7 +71,7 @@ module.exports = function (config) {
           email: _.get(profile, 'email', undefined),
           provider: 'facebook',
           providerIdentifierField: 'id',
-          providerData: providerData,
+          providerData,
         };
 
         // Save the user OAuth profile

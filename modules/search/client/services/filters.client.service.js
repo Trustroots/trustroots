@@ -32,8 +32,8 @@ function FiltersService($log, Authentication, locker) {
   filters = angular.extend(defaultFilters, filters);
 
   const service = {
-    set: set,
-    get: get,
+    set,
+    get,
   };
 
   return service;

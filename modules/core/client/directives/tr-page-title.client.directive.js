@@ -4,7 +4,7 @@ angular.module('core').directive('trPageTitle', trPageTitle);
 function trPageTitle($rootScope, $interpolate, $state, $window) {
   const directive = {
     restrict: 'A',
-    link: link,
+    link,
   };
 
   return directive;

@@ -3,7 +3,7 @@ angular.module('core').directive('trSpinner', trSpinnerDirective);
 function trSpinnerDirective() {
   return {
     restrict: 'E',
-    link: function (scope, element, attrs) {
+    link(scope, element, attrs) {
       // @link https://haltersweb.github.io/Accessibility/svg.html
       function generateSVGMarkup(size, square, stroke) {
         return (

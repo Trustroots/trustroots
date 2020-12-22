@@ -68,7 +68,7 @@ function trEditorDirective($parse) {
     scope: {
       trEditorOptions: '=',
     },
-    link: function (scope, iElement, iAttrs, ngModel) {
+    link(scope, iElement, iAttrs, ngModel) {
       const angularIElement = angular.element(iElement);
 
       angularIElement.addClass('tr-editor');
