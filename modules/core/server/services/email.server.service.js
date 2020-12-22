@@ -445,6 +445,7 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
   const params = exports.addEmailBaseTemplateParams({
     subject: 'New reference from ' + userFrom.username,
     email: userTo.email,
+    days: config.limits.timeToReplyReference.days,
     username: userTo.username, // data needed for link to profile in footer
     userFrom,
     userTo,
