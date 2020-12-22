@@ -449,7 +449,8 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
     userFrom: userFrom,
     userTo: userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
-    giveReferenceUrl: url + '/profile/' + userFrom.username + '/references/new',
+    giveReferenceUrl:
+      url + '/profile/' + userFrom.username + '/experiences/new',
   });
 
   exports.renderEmailAndSend('reference-notification-first', params, callback);
@@ -471,7 +472,7 @@ exports.sendReferenceNotificationSecond = function (
     userFrom: userFrom,
     userTo: userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
-    seeReferencesUrl: url + '/profile/' + userTo.username + '/references',
+    seeReferencesUrl: url + '/profile/' + userTo.username + '/experiences',
     recommend: reference.recommend,
   });
 
