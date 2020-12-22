@@ -102,13 +102,14 @@ exports.notifyNewReference = function (userFrom, userTo, data, callback) {
   // When the reference is first, reply reference can be given.
   // Otherwise both references are public now and can be seen.
   const actionText = data.isFirst
-    ? 'Give a reference back.'
-    : 'You can see it.';
+    ? 'Share your experience, too.'
+    : 'Have a look!';
   const actionUrl = data.isFirst ? giveReferenceUrl : readReferencesUrl;
 
   const notification = {
     title: 'Trustroots',
-    body: userFrom.username + ' gave you a new reference. ' + actionText,
+    body:
+      userFrom.username + ' shared their experience with you. ' + actionText,
     click_action: analyticsHandler.appendUTMParams(actionUrl, {
       source: 'push-notification',
       medium: 'fcm',

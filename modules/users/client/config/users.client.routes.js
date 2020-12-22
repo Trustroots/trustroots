@@ -371,7 +371,7 @@ function UsersRoutes($stateProvider) {
       noScrollingTop: true,
       abstract: true,
       data: {
-        pageTitle: 'Profile references',
+        pageTitle: 'Experiences',
       },
     })
     .state('profile.experiences.list', {
@@ -381,7 +381,7 @@ function UsersRoutes($stateProvider) {
       requiresAuth: true,
       noScrollingTop: true,
       data: {
-        pageTitle: 'Profile references',
+        pageTitle: 'Experiences',
       },
     })
     .state('profile.experiences.new', {
@@ -391,7 +391,7 @@ function UsersRoutes($stateProvider) {
       requiresAuth: true,
       noScrollingTop: true,
       data: {
-        pageTitle: 'Leave a reference',
+        pageTitle: 'Share your experience',
       },
     });
 }
