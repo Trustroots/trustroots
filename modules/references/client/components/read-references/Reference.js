@@ -58,8 +58,8 @@ const FeedbackPublic = styled.div`
 const ReferenceContainer = styled.div`
   margin-left: 0;
 
-  ${props =>
-    props.inCreatorProfile &&
+  ${({ inRecipientProfile }) =>
+    !inRecipientProfile &&
     `
       margin-left: 20px;
     `}
@@ -91,15 +91,13 @@ export default function Reference({ reference, inRecipientProfile }) {
         Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
     );
 
-  const inCreatorProfile = !inRecipientProfile;
-
   return (
     <ReferenceContainer
       className="panel panel-default"
       id={_id}
-      inCreatorProfile={inCreatorProfile}
+      inRecipientProfile={inRecipientProfile}
     >
-      <div className="panel-body reference">
+      <div className="panel-body">
         <ReferenceHeading>
           <Avatar user={userFrom} size={36} />
           <UserMeta>
