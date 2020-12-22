@@ -154,7 +154,7 @@ function formatReference(reference, isNonpublicFullyDisplayed) {
 async function findMyReference(req, userTo) {
   return await Reference.findOne({
     userFrom: req.user._id,
-    userTo: userTo,
+    userTo,
   }).exec();
 }
 
