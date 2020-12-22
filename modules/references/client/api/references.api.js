@@ -84,7 +84,7 @@ export async function read({ userFrom, userTo }) {
  * @returns Promise<Reference[]> - array of the found references
  */
 export async function readMine({ userTo }) {
-  const params = { userTo: userTo };
+  const params = { userTo };
   const { data: reference } = await axios.get('/api/my-reference', {
     params,
   });
