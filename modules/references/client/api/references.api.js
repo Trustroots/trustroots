@@ -85,13 +85,18 @@ export async function read({ userFrom, userTo }) {
  */
 export async function readMine({ userTo }) {
   const params = { userTo };
-  const { data: reference } = await axios.get('/api/my-reference', {
-    params,
-  });
-
-  return reference !== null
-    ? mapObjectToObject(reference, referenceMapping, true)
-    : null;
+  try {
+    const { data: reference } = await axios.get('/api/my-reference', {
+      params,
+    });
+    return mapObjectToObject(reference, referenceMapping, true);
+  } catch (err) {
+    if (err.response?.status === 404) {
+      return null;
+    } else {
+      throw err;
+    }
+  }
 }
 
 /**

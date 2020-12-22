@@ -579,5 +579,10 @@ exports.readOne = function readOne(req, res) {
 
 exports.readMine = async function readMine(req, res) {
   const reference = await findMyReference(req, req.query.userTo);
+  if (reference === null) {
+    return res.status(404).json({
+      message: errorService.getErrorMessageByKey('not-found'),
+    });
+  }
   return res.status(200).json(reference);
 };
