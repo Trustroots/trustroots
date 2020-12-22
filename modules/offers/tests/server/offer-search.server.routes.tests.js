@@ -437,7 +437,10 @@ describe('Offer search tests', function () {
             // MongoDb returns these in random order, figure out order here
             let user2Order = 1;
             let user3Order = 0;
-            if (offersGetRes.body[0]._id === offer2Id.toString()) {
+            if (
+              offersGetRes.body.features[0].properties.id ===
+              offer2Id.toString()
+            ) {
               user2Order = 0;
               user3Order = 1;
             }
@@ -448,23 +451,23 @@ describe('Offer search tests', function () {
             offerA.properties.status.should.equal(offer2.status);
             offerA.geometry.coordinates.should.have.lengthOf(2);
             offerA.geometry.coordinates[0].should.be.approximately(
-              offer2.locationFuzzy[0],
+              offer2.locationFuzzy[1],
               0.0000000000001,
             );
             offerA.geometry.coordinates[1].should.be.approximately(
-              offer2.locationFuzzy[1],
+              offer2.locationFuzzy[0],
               0.0000000000001,
             );
             offerA.properties.id.should.equal(offer2Id.toString());
 
-            offerB.status.should.equal(offer3.status);
+            offerB.properties.status.should.equal(offer3.status);
             offerB.geometry.coordinates.should.have.lengthOf(2);
             offerB.geometry.coordinates[0].should.be.approximately(
-              offer3.locationFuzzy[0],
+              offer3.locationFuzzy[1],
               0.0000000000001,
             );
             offerB.geometry.coordinates[1].should.be.approximately(
-              offer3.locationFuzzy[1],
+              offer3.locationFuzzy[0],
               0.0000000000001,
             );
             offerB.properties.id.should.equal(offer3Id.toString());
@@ -511,11 +514,11 @@ describe('Offer search tests', function () {
                   const offerA = offersGetRes.body.features[0];
                   offerA.properties.id.should.equal(saveRes._id.toString());
                   offerA.geometry.coordinates[0].should.be.approximately(
-                    testLocation.location[0],
+                    testLocation.location[1],
                     0.1,
                   );
                   offerA.geometry.coordinates[1].should.be.approximately(
-                    testLocation.location[1],
+                    testLocation.location[0],
                     0.1,
                   );
 
@@ -645,7 +648,10 @@ describe('Offer search tests', function () {
                 // MongoDb returns these in random order, figure out order here
                 let user2Order = 1;
                 let user3Order = 0;
-                if (offersGetRes.body[0]._id === offer2Id.toString()) {
+                if (
+                  offersGetRes.body.features[0].properties.id ===
+                  offer2Id.toString()
+                ) {
                   user2Order = 0;
                   user3Order = 1;
                 }
@@ -826,7 +832,10 @@ describe('Offer search tests', function () {
               // MongoDb returns these in random order, figure out order here
               let user2Order = 1;
               let user3Order = 0;
-              if (offersGetRes.body[0]._id === offer2Id.toString()) {
+              if (
+                offersGetRes.body.features[0].properties.id ===
+                offer2Id.toString()
+              ) {
                 user2Order = 0;
                 user3Order = 1;
               }
@@ -882,11 +891,11 @@ describe('Offer search tests', function () {
               offerA.properties.type.should.equal(offer2.type);
               offerA.geometry.coordinates.should.have.lengthOf(2);
               offerA.geometry.coordinates[0].should.be.approximately(
-                offer2.locationFuzzy[0],
+                offer2.locationFuzzy[1],
                 0.0000000000001,
               );
               offerA.geometry.coordinates[1].should.be.approximately(
-                offer2.locationFuzzy[1],
+                offer2.locationFuzzy[0],
                 0.0000000000001,
               );
 
@@ -933,11 +942,11 @@ describe('Offer search tests', function () {
                 offerA.properties.type.should.equal(offer2.type);
                 offerA.geometry.coordinates.should.have.lengthOf(2);
                 offerA.geometry.coordinates[0].should.be.approximately(
-                  offer2.locationFuzzy[0],
+                  offer2.locationFuzzy[1],
                   0.0000000000001,
                 );
                 offerA.geometry.coordinates[1].should.be.approximately(
-                  offer2.locationFuzzy[1],
+                  offer2.locationFuzzy[0],
                   0.0000000000001,
                 );
 
@@ -980,7 +989,7 @@ describe('Offer search tests', function () {
               let user2Order = 1;
               let user3Order = 0;
               if (
-                offersGetRes.body[0].features.properties.id ===
+                offersGetRes.body.features[0].properties.id ===
                 offer2Id.toString()
               ) {
                 user2Order = 0;
@@ -996,11 +1005,11 @@ describe('Offer search tests', function () {
               offerA.properties.type.should.equal(offer2.type);
               offerA.geometry.coordinates.should.have.lengthOf(2);
               offerA.geometry.coordinates[0].should.be.approximately(
-                offer2.locationFuzzy[0],
+                offer2.locationFuzzy[1],
                 0.0000000000001,
               );
               offerA.geometry.coordinates[1].should.be.approximately(
-                offer2.locationFuzzy[1],
+                offer2.locationFuzzy[0],
                 0.0000000000001,
               );
 
@@ -1010,11 +1019,11 @@ describe('Offer search tests', function () {
               offerB.properties.type.should.equal(offer2.type);
               offerB.geometry.coordinates.should.have.lengthOf(2);
               offerB.geometry.coordinates[0].should.be.approximately(
-                offer3.locationFuzzy[0],
+                offer3.locationFuzzy[1],
                 0.0000000000001,
               );
               offerB.geometry.coordinates[1].should.be.approximately(
-                offer3.locationFuzzy[1],
+                offer3.locationFuzzy[0],
                 0.0000000000001,
               );
 
