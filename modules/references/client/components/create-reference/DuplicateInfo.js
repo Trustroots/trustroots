@@ -16,7 +16,10 @@ export default function DuplicateInfo({ username }) {
     <SuccessMessage
       title={t('You already shared your experience with them')}
       cta={
-        <a href={`/profile/${username}/references`} className="btn btn-primary">
+        <a
+          className="btn btn-primary"
+          href={`/profile/${username}/experiences`}
+        >
           {t('See their experiences')}
         </a>
       }

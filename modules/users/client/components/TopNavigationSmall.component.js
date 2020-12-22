@@ -50,7 +50,7 @@ export default function TopNavigationSmall({
       links.push({
         id: 'write-reference',
         label: t('Write a reference'),
-        link: `/profile/${username}/references/new`,
+        link: `/profile/${username}/experiences/new`,
       });
     }
 

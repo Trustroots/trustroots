@@ -105,7 +105,7 @@ export default function Reference({ reference, inRecipientProfile }) {
           {inRecipientProfile && (
             <a
               className="reference-time"
-              href={`/profile/${userTo.username}/references#${_id}`}
+              href={`/profile/${userTo.username}/experiences#${_id}`}
             >
               <TimeAgo date={createdDate} />
             </a>
@@ -130,7 +130,7 @@ export default function Reference({ reference, inRecipientProfile }) {
               <p>
                 <a
                   className="btn btn-primary"
-                  href={`/profile/${userFrom.username}/references/new`}
+                  href={`/profile/${userFrom.username}/experiences/new`}
                 >
                   {t('Write about your experience with them')}
                 </a>
