@@ -578,6 +578,11 @@ exports.readOne = function readOne(req, res) {
 };
 
 exports.readMine = async function readMine(req, res) {
+  if (!mongoose.Types.ObjectId.isValid(req.query.userTo)) {
+    return res
+      .status(400)
+      .send({ message: 'Missing or invalid `userTo` request param' });
+  }
   const reference = await findMyReference(req, req.query.userTo);
   if (reference === null) {
     return res.status(404).json({
