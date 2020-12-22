@@ -95,8 +95,9 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
  */
 exports.notifyNewReference = function (userFrom, userTo, data, callback) {
   const giveReferenceUrl =
-    url + '/profile/' + userFrom.username + '/references/new';
-  const readReferencesUrl = url + '/profile/' + userTo.username + '/references';
+    url + '/profile/' + userFrom.username + '/experiences/new';
+  const readReferencesUrl =
+    url + '/profile/' + userTo.username + '/experiences';
 
   // When the reference is first, reply reference can be given.
   // Otherwise both references are public now and can be seen.
