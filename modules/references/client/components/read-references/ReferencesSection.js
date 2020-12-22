@@ -18,20 +18,19 @@ export default function ReferencesSection({ title, referencePairs }) {
           </div>
         </div>
       )}
-      {referencePairs.map(({ sharedWithUser, writtenByUser }) => (
-        <div key={sharedWithUser?._id || writtenByUser._id}>
-          <div className="row">
-            <div className="col-xs-12">
-              {sharedWithUser && (
+      {referencePairs.map(
+        ({ sharedWithUser, writtenByUser }) =>
+          sharedWithUser && (
+            <div className="row" key={sharedWithUser._id}>
+              <div className="col-xs-12">
                 <Reference
                   reference={sharedWithUser}
                   response={writtenByUser}
                 />
-              )}
+              </div>
             </div>
-          </div>
-        </div>
-      ))}
+          ),
+      )}
     </section>
   );
 }
