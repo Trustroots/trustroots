@@ -52,31 +52,6 @@ export const unclusteredPointLayer = {
   // Data driven dot visual customizations
   // https://docs.mapbox.com/mapbox-gl-js/example/data-driven-circle-colors/
   paint: {
-    // color circles by offer type, using a match expression
-    // https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-match
-    /*
-    'circle-color': [
-      'match',
-      // @TODO: ideally we'd pull both `type` and `status` properties and combine
-      // those here, and we wouldn't need to send `offer` property via API.
-      ['get', 'offer'],
-
-      // Meet
-      'meet-yes',
-      '#11b4da',
-
-      // Host yes
-      'host-yes',
-      '#58ba58',
-
-      // Host no
-      'host-maybe',
-      '#f2ae43',
-
-      // Other:
-      '#ccc',
-    ],
-    */
     'circle-color': [
       'case',
       ['boolean', ['feature-state', 'selected'], false],
@@ -102,7 +77,7 @@ export const unclusteredPointLayer = {
         '#ccc',
       ],
     ],
-    // make circles larger as the user zooms from z6 to z22
+    // Make circles larger as the user zooms from z6 to z22
     'circle-radius': {
       base: 1.75,
       stops: [
@@ -113,19 +88,6 @@ export const unclusteredPointLayer = {
         [22, 20],
       ],
     },
-    // @TODO: visual and performance difference between this and above? test with many dots.
-    /*
-    'circle-radius': [
-      'interpolate',
-      ['linear'],
-      ['zoom'],
-      // [Zoom level, size]
-      [2, 2],
-      [7, 10],
-      [10, 12],
-      [22, 80],
-    ],
-    */
     'circle-stroke-width': 3,
     'circle-stroke-opacity': [
       'case',
