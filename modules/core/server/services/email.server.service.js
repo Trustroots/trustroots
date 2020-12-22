@@ -443,7 +443,7 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
  */
 exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
   const params = exports.addEmailBaseTemplateParams({
-    subject: 'New reference from ' + userFrom.username,
+    subject: `${userFrom.displayName} shared their experience with you`,
     email: userTo.email,
     days: config.limits.timeToReplyReference.days,
     username: userTo.username, // data needed for link to profile in footer
@@ -467,7 +467,7 @@ exports.sendReferenceNotificationSecond = function (
   callback,
 ) {
   const params = exports.addEmailBaseTemplateParams({
-    subject: 'New reference from ' + userFrom.username,
+    subject: `${userFrom.displayName} shared their experience with you`,
     email: userTo.email,
     username: userTo.username, // data needed for link to profile in footer
     userFrom,
