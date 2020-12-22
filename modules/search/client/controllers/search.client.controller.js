@@ -164,7 +164,6 @@ function SearchController(
    * Closes offer when filters are changed and updates the map
    */
   function onFiltersUpdated() {
-    console.log('angular onFiltersUpdated'); //eslint-disable-line
     // Close possible open offers
     if (vm.offer) {
       vm.offer = false;
