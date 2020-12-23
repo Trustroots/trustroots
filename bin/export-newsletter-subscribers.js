@@ -4,7 +4,7 @@
  * A script to create csv files for importing newsletter subscribers to Mailtrain
  *
  * Usage:
- * NODE_ENV=production node scripts/export-newsletter-subscribers.js /srv/newsletters/subscribers_2015-08-31.csv
+ * NODE_ENV=production node bin/export-newsletter-subscribers.js /srv/newsletters/subscribers_2015-08-31.csv
  */
 
 const chalk = require('chalk');
