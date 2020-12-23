@@ -14,8 +14,7 @@ export default function ConfirmEmailNotification() {
       <p>
         <Trans t={t} ns="users">
           If you didn&quot;t receive the message, check your spam folder or
-          resend it via
-          <a href="/profile/edit/account">email settings</a>.
+          resend it via <a href="/profile/edit/account">email settings</a>.
         </Trans>
       </p>
       <hr />
