@@ -67,7 +67,9 @@ mongooseService.connect(() => {
         users.forEach(user => {
           data += '\n';
           data += [user.email, user.firstName, user.lastName]
-            .map(string => string.trim().replace(',', ''))
+            .map(string =>
+              string.trim().replace("'", '').replace('"', '').replace(',', ''),
+            )
             .join(',');
         });
 
