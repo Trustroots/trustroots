@@ -13,7 +13,7 @@ export default function ConfirmEmailNotification() {
       </em>
       <p>
         <Trans t={t} ns="users">
-          If you didn&quot;t receive the message, check your spam folder or
+          If you didn&rsquo;t receive the message, check your spam folder or
           resend it via <a href="/profile/edit/account">email settings</a>.
         </Trans>
       </p>
