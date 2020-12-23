@@ -47,7 +47,6 @@ export default function ListReferences({ profile, authenticatedUser }) {
     try {
       const experiences = await readReferences({
         userTo: profile._id,
-        includeReplies: true,
       });
 
       const publicExperiences = experiences.filter(
@@ -56,9 +55,15 @@ export default function ListReferences({ profile, authenticatedUser }) {
       const publicExperiencePairs = pairUpExperiences(publicExperiences);
       setPublicExperiencePairs(publicExperiencePairs);
 
+      // TODO for now we add `experience.userTo._id.equals(profile._id)`
+      // condition to filter out the experiences written by the user,
+      // which are currently not displayed. Later, we will be showing also
+      // those: https://github.com/Trustroots/trustroots/pull/1860
       const pendingNewestFirst = experiences.filter(
-        experience => !experience.public,
+        experience =>
+          !experience.public && experience.userTo._id === profile._id,
       );
+
       const pendingOldestFirst = [...pendingNewestFirst].reverse();
       setPendingExperiences(
         pendingOldestFirst.map(experience => {

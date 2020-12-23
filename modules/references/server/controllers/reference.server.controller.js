@@ -142,9 +142,9 @@ const referenceFields = nonpublicReferenceFields.concat([
  * @param {boolean} isNonpublicFullyDisplayed - can we show all fields of the nonpublic reference?
  * @returns {object} the reference, either full or limited
  */
-function formatReference(reference, isNonpublicFullyDisplayed) {
+function formatReference(reference, fromLoggedInUser) {
   // converts MongooseObject to Object and picks only defined fields
-  if (reference.public || isNonpublicFullyDisplayed) {
+  if (reference.public || fromLoggedInUser) {
     return _.pick(reference, referenceFields);
   } else {
     return _.pick(reference, nonpublicReferenceFields);
@@ -344,33 +344,18 @@ exports.create = async function (req, res, next) {
  * Validator for readMany controller
  */
 function validateReadMany(req) {
-  let valid = true;
-  const details = {};
-
-  // check that query contains userFrom or userTo
-  const isQueryWithFilter = req.query.userFrom || req.query.userTo;
-  if (!isQueryWithFilter) {
-    valid = false;
-    details.userFrom = 'missing';
-    details.userTo = 'missing';
+  if (!mongoose.Types.ObjectId.isValid(req.query.userTo)) {
+    return {
+      valid: false,
+      details: { userTo: req.query.userTo ? 'invalid' : 'missing' },
+    };
   }
 
-  // check that userFrom and userTo is valid mongodb/mongoose ObjectId
-  ['userFrom', 'userTo'].forEach(function (param) {
-    if (!req.query[param]) return;
-
-    const isParamValid = mongoose.Types.ObjectId.isValid(req.query[param]);
-    if (!isParamValid) {
-      valid = false;
-      details[param] = 'invalid';
-    }
-  });
-
-  return { valid, details };
+  return { valid: true, details: {} };
 }
 
 /**
- * Read references filtered by userFrom or userTo
+ * Read references filtered by userTo
  * and sorted by 'created' field starting from the most recent date
  */
 exports.readMany = async function readMany(req, res, next) {
@@ -378,45 +363,18 @@ exports.readMany = async function readMany(req, res, next) {
     // validate the query
     validate(validateReadMany, req);
 
-    const { userFrom, userTo } = req.query;
+    const { userTo } = req.query;
     const self = req.user;
 
-    // build a query
-
-    const matchQuery = {};
-
-    // Allow non-public references only when userFrom or userTo is self
-    if (!self._id.equals(userFrom) && !self._id.equals(userTo)) {
+    const matchQuery = {
+      $or: [
+        { userTo: new mongoose.Types.ObjectId(userTo) },
+        { userFrom: new mongoose.Types.ObjectId(userTo) },
+      ],
+    };
+    // Allow non-public references only when userTo is self
+    if (!self._id.equals(userTo)) {
       matchQuery.public = true;
-    }
-
-    // Filter by userFrom
-    if (userFrom) {
-      matchQuery.userFrom = new mongoose.Types.ObjectId(userFrom);
-    }
-
-    // Filter by userTo
-    if (userTo) {
-      matchQuery.userTo = new mongoose.Types.ObjectId(userTo);
-    }
-
-    // TODO optimize all this:
-
-    const matchQueryReply = {};
-
-    // Allow non-public references only when userFrom or userTo is self
-    if (!self._id.equals(userFrom) && !self._id.equals(userTo)) {
-      matchQueryReply.public = true;
-    }
-
-    // Filter by userFrom
-    if (userTo) {
-      matchQueryReply.userFrom = new mongoose.Types.ObjectId(userTo);
-    }
-
-    // Filter by userTo
-    if (userFrom) {
-      matchQueryReply.userTo = new mongoose.Types.ObjectId(userFrom);
     }
 
     // Aggregate projection for User in reference
@@ -440,7 +398,7 @@ exports.readMany = async function readMany(req, res, next) {
     // Find references
     const references = await Reference.aggregate([
       {
-        $match: { $or: [matchQuery, matchQueryReply] },
+        $match: matchQuery,
       },
 
       // Extend user objects
@@ -486,14 +444,11 @@ exports.readMany = async function readMany(req, res, next) {
       { $sort: { created: -1 } },
     ]).exec();
 
-    // is the logged user userFrom?
-    const isSelfUserFrom = self._id.equals(userFrom);
-
     // when userFrom is self, we can see the nonpublic references in their full form
     throw new ResponseError({
       status: 200,
       body: references.map(reference =>
-        formatReference(reference, isSelfUserFrom),
+        formatReference(reference, self._id.equals(reference.userFrom._id)),
       ),
     });
   } catch (e) {
