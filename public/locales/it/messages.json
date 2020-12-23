@@ -4,7 +4,7 @@
     },
     "Conversation started {{ date }}": "Conversazione iniziata{{ date }}",
     "Don't write to people 2 months ahead": {
-        "": "Non scrivere alle persone con 2 mesi di anticipo."
+        "": "Non scrivere alle persone due mesi in anticipo."
     },
     "Edit your profile": "Modifica il tuo profilo",
     "Explain to them why you are choosing them": "Spiega loro perché li hai scelti",
@@ -19,7 +19,7 @@
         "": "Ancora nessuna conversazione."
     },
     "Please write longer profile description before sending messages": {
-        "": ""
+        "": "Per piacere scrivi una descrizione del profilo più lunga prima di inviare messaggi."
     },
     "Send": "Invia",
     "Sorry I can't host": "Mi dispiace, non posso ospitare",
@@ -29,9 +29,9 @@
         "": "Questo utente non è più un membro."
     },
     "Tip": "Suggerimento",
-    "Trustroots is very much about spontaneous travel": "",
+    "Trustroots is very much about spontaneous travel": "Trustroots è soprattutto viaggiare in modo spontaneo",
     "Unknown member": "membro sconosciuto",
-    "What are your expectations in regards with going through their town?": "",
+    "What are your expectations in regards with going through their town?": "Quali sono le tue aspettative riguardo la visita della loro città?",
     "Write back": "Rispondi",
     "Yes, I can host!": "Sì, posso ospitare!",
     "You": "Tu",
