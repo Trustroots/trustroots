@@ -244,6 +244,7 @@ function addUsers() {
           console.log(chalk.green('Trustroots test user data'));
           console.log(chalk.white('--'));
 
+          const genderValues = User.schema.path('gender').enumValues;
           while (index < max) {
             (function addNextUser() {
               const user = new User();
@@ -255,7 +256,8 @@ function addUsers() {
               }
 
               // Add mock data
-              user.firstName = faker.name.firstName();
+              user.gender = faker.random.arrayElement(genderValues);
+              user.firstName = faker.name.firstName(user.gender);
               user.lastName = faker.name.lastName();
               user.displayName = user.firstName + ' ' + user.lastName;
               user.provider = 'local';
