@@ -105,7 +105,7 @@ describe('Read references by userFrom Id or userTo Id', () => {
 
     it('the references in response have expected structure, userFrom & userTo have miniProfile', async () => {
       const { body } = await agent
-        .get(`/api/references?userFrom=${users[2]._id}`)
+        .get(`/api/references?userTo=${users[2]._id}`)
         .expect(200);
 
       for (const ref of body) {
@@ -146,15 +146,6 @@ describe('Read references by userFrom Id or userTo Id', () => {
 
       // user2 has received 2 public and 1 non-public reference
       should(body).be.Array().of.length(2);
-    });
-
-    it('[params userFrom and userTo] respond with 1 or 0 public reference from userFrom to userTo', async () => {
-      const { body } = await agent
-        .get(`/api/references?userFrom=${users[2]._id}&userTo=${users[5]._id}`)
-        .expect(200);
-
-      // there is 1 public reference from user2 to user5
-      should(body).be.Array().of.length(1);
     });
 
     // skipping until the API is finalized
@@ -213,21 +204,17 @@ describe('Read references by userFrom Id or userTo Id', () => {
       should(body).eql({
         message: 'Bad request.',
         details: {
-          userFrom: 'missing',
           userTo: 'missing',
         },
       });
     });
 
     it('[invalid params] 400 and error', async () => {
-      const { body } = await agent
-        .get('/api/references?userFrom=asdf&userTo=1')
-        .expect(400);
+      const { body } = await agent.get('/api/references?userTo=1').expect(400);
 
       should(body).eql({
         message: 'Bad request.',
         details: {
-          userFrom: 'invalid',
           userTo: 'invalid',
         },
       });
