@@ -40,7 +40,7 @@ describe('<CreateReference />', () => {
       <CreateReference userFrom={me} userTo={me} />,
     );
     expect(queryByRole('alert')).toHaveTextContent(
-      "Sorry, you can't give a reference to yourself.",
+      "Sorry, you can't share experience only with yourself.",
     );
   });
 

@@ -10,7 +10,7 @@ export default function ReferenceToSelfInfo() {
 
   return (
     <div role="alert" className="alert alert-warning">
-      {t("Sorry, you can't give a reference to yourself.")}
+      {t("Sorry, you can't share experience only with yourself.")}
     </div>
   );
 }
