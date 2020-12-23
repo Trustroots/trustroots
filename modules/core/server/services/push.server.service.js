@@ -74,7 +74,7 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
 
   const notification = {
     title: 'Trustroots',
-    body: body,
+    body,
     click_action: analyticsHandler.appendUTMParams(messagesUrl, {
       source: 'push-notification',
       medium: 'fcm',
@@ -95,19 +95,21 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
  */
 exports.notifyNewReference = function (userFrom, userTo, data, callback) {
   const giveReferenceUrl =
-    url + '/profile/' + userFrom.username + '/references/new';
-  const readReferencesUrl = url + '/profile/' + userTo.username + '/references';
+    url + '/profile/' + userFrom.username + '/experiences/new';
+  const readReferencesUrl =
+    url + '/profile/' + userTo.username + '/experiences';
 
   // When the reference is first, reply reference can be given.
   // Otherwise both references are public now and can be seen.
   const actionText = data.isFirst
-    ? 'Give a reference back.'
-    : 'You can see it.';
+    ? 'Share your experience, too.'
+    : 'Have a look!';
   const actionUrl = data.isFirst ? giveReferenceUrl : readReferencesUrl;
 
   const notification = {
     title: 'Trustroots',
-    body: userFrom.username + ' gave you a new reference. ' + actionText,
+    body:
+      userFrom.username + ' shared their experience with you. ' + actionText,
     click_action: analyticsHandler.appendUTMParams(actionUrl, {
       source: 'push-notification',
       medium: 'fcm',
@@ -122,7 +124,7 @@ exports.sendUserNotification = function (user, notification, callback) {
   const data = {
     userId: user._id,
     pushServices: user.pushRegistration,
-    notification: notification,
+    notification,
   };
 
   agenda.now('send push message', data, callback);

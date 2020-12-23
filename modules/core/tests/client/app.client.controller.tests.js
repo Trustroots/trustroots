@@ -37,7 +37,7 @@ describe('App Controller Tests', function () {
 
     // Mock settings
     SettingsFactory = {
-      get: function () {
+      get() {
         return {};
       },
     };
@@ -45,7 +45,7 @@ describe('App Controller Tests', function () {
 
     // Mock languages
     Languages = {
-      get: function () {
+      get() {
         return {};
       },
     };
@@ -56,9 +56,9 @@ describe('App Controller Tests', function () {
 
     // Initialize the App controller.
     $controller('AppController as vm', {
-      $scope: $scope,
-      SettingsFactory: SettingsFactory,
-      Languages: Languages,
+      $scope,
+      SettingsFactory,
+      Languages,
     });
   }));
 

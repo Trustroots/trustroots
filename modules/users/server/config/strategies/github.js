@@ -21,9 +21,9 @@ module.exports = function (config) {
   passport.use(
     new GithubStrategy(
       {
-        clientID: clientID,
-        clientSecret: clientSecret,
-        callbackURL: callbackURL,
+        clientID,
+        clientSecret,
+        callbackURL,
         passReqToCallback: true,
       },
       function (req, accessToken, refreshToken, profile, done) {
@@ -39,7 +39,7 @@ module.exports = function (config) {
           username: profile.username || undefined,
           provider: 'github',
           providerIdentifierField: 'id',
-          providerData: providerData,
+          providerData,
         };
 
         // Save the user OAuth profile

@@ -22,7 +22,7 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
   return {
     restrict: 'A',
     require: 'ngModel',
-    link: function (scope, elem, attr, ngModel) {
+    link(scope, elem, attr, ngModel) {
       const minlength = angular.isDefined(attr.minlength) ? attr.minlength : 1;
 
       ngModel.$asyncValidators.username = function (modelValue) {

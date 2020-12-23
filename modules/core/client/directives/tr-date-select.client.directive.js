@@ -40,7 +40,7 @@ angular
       return {
         restrict: 'A',
         replace: true,
-        templateUrl: function ($element, $attrs) {
+        templateUrl($element, $attrs) {
           return $attrs.templateUrl || 'tr-date-select.html';
         },
         require: 'ngModel',
@@ -49,7 +49,7 @@ angular
           selectClass: '@trSelectClass',
         },
 
-        link: function (scope, elem, attrs, ngModel) {
+        link(scope, elem, attrs, ngModel) {
           scope.val = {};
 
           const min = (scope.min = moment(attrs.min || '1900-01-01'));

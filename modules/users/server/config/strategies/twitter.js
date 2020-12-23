@@ -23,7 +23,7 @@ module.exports = function (config) {
       {
         consumerKey: clientID,
         consumerSecret: clientSecret,
-        callbackURL: callbackURL,
+        callbackURL,
         passReqToCallback: true,
       },
       function (req, token, tokenSecret, profile, done) {
@@ -38,7 +38,7 @@ module.exports = function (config) {
           username: _.get(profile, 'username', undefined),
           provider: 'twitter',
           providerIdentifierField: 'id_str',
-          providerData: providerData,
+          providerData,
         };
 
         // Save the user OAuth profile

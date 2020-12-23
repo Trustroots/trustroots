@@ -350,7 +350,7 @@ exports.changePassword = function (req, res) {
         emailService.sendResetPasswordConfirm(user, function (err) {
           if (err) return done(err);
           return res.send({
-            user: user,
+            user,
             message: 'Password changed successfully!',
           });
         });

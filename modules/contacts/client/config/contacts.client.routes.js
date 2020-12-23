@@ -17,11 +17,11 @@ function ContactsRoutes($stateProvider) {
         ContactByService: 'ContactByService',
         UsersMini: 'UsersMini',
 
-        existingContact: function (ContactByService, $stateParams) {
+        existingContact(ContactByService, $stateParams) {
           return ContactByService.get({ userId: $stateParams.userId });
         },
 
-        friend: function (UsersMini, $stateParams) {
+        friend(UsersMini, $stateParams) {
           return UsersMini.get({
             userId: $stateParams.userId,
           });
@@ -41,7 +41,7 @@ function ContactsRoutes($stateProvider) {
         // A string value resolves to a service
         Contact: 'Contact',
 
-        contact: function (Contact, $stateParams) {
+        contact(Contact, $stateParams) {
           return Contact.get({ contactId: $stateParams.contactId });
         },
       },

@@ -169,10 +169,10 @@ this is a fallback when the contacts are loading
               </li>
               <li ng-if="app.appSettings.referencesEnabled">
                 <a
-                  ui-sref="profile.references.new({username: profileCtrl.profile.username})"
+                  ui-sref="profile.experiences.new({username: profileCtrl.profile.username})"
                 >
                   <i class="icon-plus-squared-alt"></i>
-                  Write a reference
+                  Share your experience
                 </a>
               </li>
               <li>
@@ -244,7 +244,7 @@ this is a fallback when the contacts are loading
                   ng-if="app.appSettings.referencesEnabled"
                 >
                   <a ui-sref="profile.references.list" role="tab">
-                    References
+                    Experiences
                   </a>
                 </li>
               </ul>

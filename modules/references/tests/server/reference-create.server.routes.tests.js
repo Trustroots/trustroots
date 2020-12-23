@@ -282,10 +282,10 @@ describe('Create a reference', () => {
           should(job.data.to.address).equal(user2.email);
           // @TODO add the right link
           should(job.data.text).containEql(
-            `/profile/${user1.username}/references/new`,
+            `/profile/${user1.username}/experiences/new`,
           );
           should(job.data.html).containEql(
-            `/profile/${user1.username}/references/new`,
+            `/profile/${user1.username}/experiences/new`,
           );
         });
 
@@ -311,10 +311,11 @@ describe('Create a reference', () => {
           should(job.data.notification.title).equal('Trustroots');
           // @TODO design the notification text
           should(job.data.notification.body).equal(
-            `${user1.username} gave you a new reference. Give a reference back.`,
+            `${user1.username} shared their experience with you. Share your experience, too.`,
           );
+
           should(job.data.notification.click_action).containEql(
-            `/profile/${user1.username}/references/new`,
+            `/profile/${user1.username}/experiences/new`,
           );
         });
       });
@@ -451,10 +452,10 @@ describe('Create a reference', () => {
           // this is a link to the own references - see my references
           // because I already gave a reference
           should(job.data.text).containEql(
-            `/profile/${user2.username}/references`,
+            `/profile/${user2.username}/experiences`,
           );
           should(job.data.html).containEql(
-            `/profile/${user2.username}/references`,
+            `/profile/${user2.username}/experiences`,
           );
         });
 
@@ -494,10 +495,11 @@ describe('Create a reference', () => {
           should(job.data.notification.title).equal('Trustroots');
           // @TODO design the notification text
           should(job.data.notification.body).equal(
-            `${user1.username} gave you a new reference. You can see it.`,
+            `${user1.username} shared their experience with you. Have a look!`,
           );
+
           should(job.data.notification.click_action).containEql(
-            `/profile/${user2.username}/references`,
+            `/profile/${user2.username}/experiences`,
           );
         });
       });

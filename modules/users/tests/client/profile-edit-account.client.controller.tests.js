@@ -41,7 +41,7 @@ describe('ProfileEditAccountController', function () {
         ProfileEditAccountController = $controller(
           'ProfileEditAccountController',
           {
-            messageCenterService: messageCenterService,
+            messageCenterService,
             $scope: $rootScope.$new(),
             push: {}, // this ends up trying to load firebaseMessaging service otherwise
           },

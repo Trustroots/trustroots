@@ -167,7 +167,7 @@ TribeSchema.virtual('new').get(function () {
 TribeSchema.plugin(
   urlslugs('label', {
     field: 'slug',
-    generator: function (string) {
+    generator(string) {
       return speakingurl(string, {
         separator: '-', // char that replaces the whitespaces
         maintainCase: false, // maintain case (true, convert all chars to lower case (false)

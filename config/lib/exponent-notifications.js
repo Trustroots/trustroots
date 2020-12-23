@@ -20,7 +20,7 @@ exports.sendToDevice = function sendToDevice(tokens, notification) {
   tokens.forEach(function (token) {
     if (!token || !Expo.isExpoPushToken(token)) {
       log('error', 'Invalid or missing Expo push notification token #mg9hwf', {
-        token: token,
+        token,
       });
       return;
     }

@@ -102,7 +102,7 @@ function count(name, count, time, callback) {
   const statObject = {
     namespace: name,
     counts: {
-      count: count,
+      count,
     },
   };
 
@@ -134,7 +134,7 @@ function value(name, value, time, callback) {
   const statObject = {
     namespace: name,
     values: {
-      value: value,
+      value,
     },
   };
 

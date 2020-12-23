@@ -102,8 +102,8 @@ export default function StepNavigation({
    * https://reactjs.org/docs/react-api.html#cloneelement
    */
   const backProps = { onClick: onBack };
-  const nextProps = { onClick: onNext, disabled: disabled };
-  const submitProps = { onClick: onSubmit, disabled: disabled };
+  const nextProps = { onClick: onNext, disabled };
+  const submitProps = { onClick: onSubmit, disabled };
   const tooltipProps = {
     tooltip: disabledReason,
     id: 'tooltip-disabled-button',

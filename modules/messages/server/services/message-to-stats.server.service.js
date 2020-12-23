@@ -147,8 +147,8 @@ module.exports.process = function (message, callback) {
         return Message.findOne({
           $or: [
             {
-              userTo: userTo,
-              userFrom: userFrom,
+              userTo,
+              userFrom,
             },
             {
               userTo: userFrom,
@@ -231,7 +231,7 @@ module.exports.process = function (message, callback) {
           },
           values: {},
           tags: {
-            position: position, // position (first|firstReply|other)
+            position, // position (first|firstReply|other)
             messageLengthType: msgLenType, // (short|long) content (shortness defined in a config)
           },
           meta: {

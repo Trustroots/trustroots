@@ -153,7 +153,7 @@ angular.module('users').directive('trAvatar', [
           });
         },
       ],
-      link: function (scope, element, attr) {
+      link(scope, element, attr) {
         // Make sure source won't change dynamicly when user changes
         if (attr.source) {
           scope.source = attr.source;

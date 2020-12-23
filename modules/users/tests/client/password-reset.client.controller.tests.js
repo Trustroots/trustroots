@@ -41,7 +41,7 @@ describe('ResetPasswordController', function () {
 
       // Initialize the Authentication controller
       $controller('ResetPasswordController as vm', {
-        $scope: $scope,
+        $scope,
       });
     }));
 

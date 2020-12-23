@@ -77,6 +77,29 @@ export async function read({ userFrom, userTo }) {
 }
 
 /**
+ * API request: read references written by loggedIn user, filter them by userTo,
+ * and sort by 'created' field starting from the most recent date
+ *
+ * @param {string} userTo - id of user who received the reference
+ * @returns Promise<Reference[]> - array of the found references
+ */
+export async function readMine({ userTo }) {
+  const params = { userTo };
+  try {
+    const { data: reference } = await axios.get('/api/my-reference', {
+      params,
+    });
+    return mapObjectToObject(reference, referenceMapping, true);
+  } catch (err) {
+    if (err.response?.status === 404) {
+      return null;
+    } else {
+      throw err;
+    }
+  }
+}
+
+/**
  * API request: report a member
  * @TODO this request belongs to a different module
  * @param {object} user - member to report

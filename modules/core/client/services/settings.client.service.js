@@ -4,8 +4,8 @@ angular.module('core').factory('SettingsService', SettingsService);
 function SettingsService($window) {
   let settings = {};
   const service = {
-    get: get,
-    settings: settings,
+    get,
+    settings,
   };
   return service;
 
@@ -26,8 +26,8 @@ angular.module('core').factory('SettingsFactory', SettingsFactory);
 function SettingsFactory($window) {
   let settings = {};
   const service = {
-    get: get,
-    settings: settings,
+    get,
+    settings,
   };
   return service;
 

@@ -16,6 +16,10 @@ exports.invokeRolesPolicies = function () {
           permissions: ['get', 'post'],
         },
         {
+          resources: '/api/my-reference',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/references/:referenceId',
           permissions: ['get'],
         },

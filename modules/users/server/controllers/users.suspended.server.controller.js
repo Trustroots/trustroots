@@ -30,13 +30,13 @@ exports.invalidateSuspendedSessions = function (req, res, next) {
       // https://expressjs.com/en/api.html#res.format
       res.status(403).format({
         // For HTML calls send "suspended" html view
-        'text/html': function () {
+        'text/html'() {
           res.render('suspended.server.view.html', {
             message: suspendedMessage,
           });
         },
         // For API calls send "suspended" json message
-        'application/json': function () {
+        'application/json'() {
           res.json({
             message: suspendedMessage,
           });

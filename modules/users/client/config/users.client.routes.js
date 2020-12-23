@@ -30,11 +30,10 @@ function UsersRoutes($stateProvider) {
     // Invite route deprecated in 11-2018
     .state('invite', {
       url: '/invite',
-      controller:
-        /* @ngInject */
-        function ($state) {
-          $state.go('signup');
-        },
+      /* @ngInject */
+      controller($state) {
+        $state.go('signup');
+      },
       controllerAs: 'invite',
       requiresAuth: false,
       data: {
@@ -77,7 +76,7 @@ function UsersRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
-        appSettings: function (SettingsService) {
+        appSettings(SettingsService) {
           return SettingsService.get();
         },
       },
@@ -94,7 +93,7 @@ function UsersRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
-        appSettings: function (SettingsService) {
+        appSettings(SettingsService) {
           return SettingsService.get();
         },
       },
@@ -136,11 +135,11 @@ function UsersRoutes($stateProvider) {
         SettingsService: 'SettingsService',
         ContactsListService: 'ContactsListService',
 
-        appSettings: function (SettingsService) {
+        appSettings(SettingsService) {
           return SettingsService.get();
         },
 
-        profile: function (UserProfilesService, $stateParams, $q) {
+        profile(UserProfilesService, $stateParams, $q) {
           return UserProfilesService.get({
             username: $stateParams.username,
           }).$promise.catch(function (e) {
@@ -154,7 +153,7 @@ function UsersRoutes($stateProvider) {
         },
 
         // Contact is loaded only after profile is loaded, because we need the profile ID
-        contact: function (ContactByService, profile, Authentication) {
+        contact(ContactByService, profile, Authentication) {
           return profile.$promise.then(
             function (profile) {
               // when user doesn't exist, no need to load contact
@@ -181,7 +180,7 @@ function UsersRoutes($stateProvider) {
         },
 
         // Contacts list is loaded only after profile is loaded, because we need the profile ID
-        contacts: function (ContactsListService, profile) {
+        contacts(ContactsListService, profile) {
           return profile.$promise.then(function (profile) {
             // when user doesn't exist, no need to load contacts
             if (!profile._id) {
@@ -270,7 +269,7 @@ function UsersRoutes($stateProvider) {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
 
-        appSettings: function (SettingsService) {
+        appSettings(SettingsService) {
           return SettingsService.get();
         },
       },
@@ -289,7 +288,7 @@ function UsersRoutes($stateProvider) {
         // A string value resolves to a service
         SettingsService: 'SettingsService',
 
-        appSettings: function (SettingsService) {
+        appSettings(SettingsService) {
           return SettingsService.get();
         },
       },
@@ -365,34 +364,34 @@ function UsersRoutes($stateProvider) {
         pageTitle: 'Remove profile',
       },
     })
-    .state('profile.references', {
-      url: '/references',
+    .state('profile.experiences', {
+      url: '/experiences',
       templateUrl: profileReferencesTemplateUrl,
       requiresAuth: true,
       noScrollingTop: true,
       abstract: true,
       data: {
-        pageTitle: 'Profile references',
+        pageTitle: 'Experiences',
       },
     })
-    .state('profile.references.list', {
+    .state('profile.experiences.list', {
       url: '',
       template:
         '<list-references ng-if="app.appSettings.referencesEnabled" profile="profileCtrl.profile" authenticatedUser="app.user"></list-references>',
       requiresAuth: true,
       noScrollingTop: true,
       data: {
-        pageTitle: 'Profile references',
+        pageTitle: 'Experiences',
       },
     })
-    .state('profile.references.new', {
+    .state('profile.experiences.new', {
       url: '/new',
       template:
         '<create-reference ng-if="app.appSettings.referencesEnabled" userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',
       requiresAuth: true,
       noScrollingTop: true,
       data: {
-        pageTitle: 'Leave a reference',
+        pageTitle: 'Share your experience',
       },
     });
 }

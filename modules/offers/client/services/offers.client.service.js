@@ -26,7 +26,7 @@ function OffersService($resource) {
   );
 
   angular.extend(Offer.prototype, {
-    createOrUpdate: function () {
+    createOrUpdate() {
       const offer = this;
       return createOrUpdate(offer);
     },

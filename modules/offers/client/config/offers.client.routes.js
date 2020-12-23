@@ -24,7 +24,7 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
         LocationService: 'LocationService',
 
         // Initial default location for all offer maps
-        defaultLocation: function (LocationService) {
+        defaultLocation(LocationService) {
           // Returns `{lat: Float, lng: Float, zoom: 4}`
           return LocationService.getDefaultLocation(4);
         },
@@ -41,7 +41,7 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
         // A string value resolves to a service
         OffersByService: 'OffersByService',
 
-        offers: function (OffersByService, Authentication) {
+        offers(OffersByService, Authentication) {
           return OffersByService.query({
             userId: Authentication.user._id,
             types: 'host',
@@ -81,7 +81,7 @@ function OffersRoutes($stateProvider, $urlRouterProvider) {
         // A string value resolves to a service
         OffersByService: 'OffersByService',
 
-        offers: function (OffersByService, Authentication) {
+        offers(OffersByService, Authentication) {
           return OffersByService.query({
             userId: Authentication.user._id,
             types: 'meet',

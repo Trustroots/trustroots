@@ -20,7 +20,7 @@ exports.catchJobs = function () {
     originalNow = agenda.now;
     agenda.now = function (type, data, callback) {
       // ensure it is plain data by serializing to json and back
-      jobs.push(JSON.parse(JSON.stringify({ type: type, data: data })));
+      jobs.push(JSON.parse(JSON.stringify({ type, data })));
 
       // run in nextTick() to simulate async action that real agenda would do
       process.nextTick(function () {
@@ -53,7 +53,7 @@ exports.catchEmails = function () {
     config.mailer.options = {
       name: 'testsend',
       version: '1',
-      send: function (data, callback) {
+      send(data, callback) {
         sentEmails.push(data);
         callback();
       },

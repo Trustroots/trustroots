@@ -10,23 +10,18 @@
  */
 
 const fs = require('fs');
-const spawnSync = require('child_process').spawnSync;
 
 if (!fs.existsSync('node_modules')) {
-  console.log('No "node_modules" present, installing NPM dependencies...');
-  const installResult = spawnSync('npm', ['ci'], {
-    shell: true,
-    stdio: 'inherit',
-  }).status;
-  if (installResult) {
-    process.exit(installResult);
-  }
+  console.error('\n\n\n\nDependencies missing!');
+  console.error(
+    '\n\nPlease install dependencies by running "npm ci" first.\n\n',
+  );
+  process.exit(1);
 } else {
   /**
-   * Installs NPM dependencies. Since that's a costly operation,
-   * it will only perform it if needed, that is, if the packages
-   * installed at `node_modules` aren't in sync over what
-   * `package-lock.json` has. For that, modification times of both
+   * Checks if NPM dependencies are up-to-date.
+   *
+   * For that, modification times of both
    * files will be compared. If the package-lock is newer, it means that
    * the packages at node_modules may be outdated. That will happen,
    * for example, when switching branches.
@@ -42,16 +37,11 @@ if (!fs.existsSync('node_modules')) {
   };
 
   if (needsInstall()) {
-    console.log('NPM dependencies out of date. Updating...');
-    const installResult = spawnSync('npm', ['ci'], {
-      shell: true,
-      stdio: 'inherit',
-    }).status;
-    if (installResult) {
-      process.exit(installResult);
-    }
-    fs.utimesSync('node_modules', new Date(), new Date());
+    console.warn('\n\n\n\nDependencies out of date.');
+    console.warn(
+      '\n\nPlease install fresh dependencies by running "npm ci" first.\n\n',
+    );
   } else {
-    console.log('NPM dependencies up to date.');
+    console.log('Dependencies up to date.');
   }
 }

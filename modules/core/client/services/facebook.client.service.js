@@ -11,7 +11,7 @@ function FacebookFactory(
   Authentication,
 ) {
   const service = {
-    init: init,
+    init,
   };
 
   return service;

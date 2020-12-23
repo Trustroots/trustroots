@@ -40,8 +40,8 @@ describe('AuthenticationController', function () {
 
       // Initialize the Authentication controller
       AuthenticationController = $controller('AuthenticationController', {
-        $scope: $scope,
-        appSettings: appSettings,
+        $scope,
+        appSettings,
       });
 
       $scope.vm = AuthenticationController;
@@ -111,8 +111,8 @@ describe('AuthenticationController', function () {
         };
 
         AuthenticationController = $controller('AuthenticationController', {
-          $scope: $scope,
-          appSettings: appSettings,
+          $scope,
+          appSettings,
         });
       }));
 

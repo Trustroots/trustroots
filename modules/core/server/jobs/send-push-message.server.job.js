@@ -26,7 +26,7 @@ module.exports = function (job, done) {
   const notification = data.notification;
 
   // Log that we're sending a notification
-  log('debug', 'Starting `send push notification` job', { jobId: jobId });
+  log('debug', 'Starting `send push notification` job', { jobId });
 
   // Validate notification
   if (!notification.body || !notification.click_action) {
@@ -34,7 +34,7 @@ module.exports = function (job, done) {
       'error',
       '`send push notification` job cannot send notification due missing required `body` or `click_action` values #zqo8bf',
       {
-        jobId: jobId,
+        jobId,
       },
     );
 
@@ -63,7 +63,7 @@ module.exports = function (job, done) {
           'error',
           'The `send push notification` job cannot process notification due missing platform value. #f932hf',
           {
-            jobId: jobId,
+            jobId,
           },
         );
     }
@@ -76,7 +76,7 @@ module.exports = function (job, done) {
       log(
         'debug',
         '`send push notification` job could not find Firebase tokens.',
-        { jobId: jobId },
+        { jobId },
       );
       // if not, mark as done
       resolve();
@@ -84,7 +84,7 @@ module.exports = function (job, done) {
     }
     // push to Firebase
     firebaseMessaging
-      .sendToDevice(firebaseTokens, { notification: notification })
+      .sendToDevice(firebaseTokens, { notification })
       .then(function (response) {
         const unregisteredTokens = [];
         response.results.forEach(function (result, idx) {
@@ -124,7 +124,7 @@ module.exports = function (job, done) {
     .then(function () {
       process.nextTick(function () {
         log('info', 'Successfully finished `send push message` job', {
-          jobId: jobId,
+          jobId,
         });
         return done();
       });
@@ -132,7 +132,7 @@ module.exports = function (job, done) {
     .catch(function (err) {
       process.nextTick(function () {
         log('error', 'The `send push notification` job failed', {
-          jobId: jobId,
+          jobId,
           error: err,
         });
         return done(new Error('Failed to send push message.'));
@@ -161,7 +161,7 @@ function removeUserPushTokens(userId, tokens, callback) {
         'error',
         'The `send push notification` job failed to remove invalid tokens from user. #gj932f',
         {
-          err: err,
+          err,
         },
       );
     }

@@ -89,7 +89,7 @@ function trLanguagesDirective() {
         $scope.output.forEach(function (key) {
           if (angular.isString(key)) {
             this.push({
-              key: key,
+              key,
               name: vm.languages[key],
             });
           }

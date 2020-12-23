@@ -1,7 +1,6 @@
 import searchTemplateUrl from '@/modules/search/client/views/search.client.view.html';
 import searchMapTemplateUrl from '@/modules/search/client/views/search-map.client.view.html';
 import searchSidebarTemplateUrl from '@/modules/search/client/views/search-sidebar.client.view.html';
-import searchSigninTemplateUrl from '@/modules/search/client/views/search-signin.client.view.html';
 
 angular.module('search').config(SearchRoutes);
 /* @ngInject */
@@ -18,7 +17,7 @@ function SearchRoutes($stateProvider) {
       resolve: {
         // A string value resolves to a service
         OffersService: 'OffersService',
-        offer: function ($stateParams, OffersService) {
+        offer($stateParams, OffersService) {
           if ($stateParams.offer && $stateParams.offer.length === 24) {
             return OffersService.get({
               offerId: $stateParams.offer,
@@ -30,7 +29,7 @@ function SearchRoutes($stateProvider) {
 
         // A string value resolves to a service
         TribeService: 'TribeService',
-        tribe: function (TribeService, $stateParams) {
+        tribe(TribeService, $stateParams) {
           if ($stateParams.tribe && $stateParams.tribe.length) {
             return TribeService.get({
               tribeSlug: $stateParams.tribe,
@@ -60,17 +59,6 @@ function SearchRoutes($stateProvider) {
         sidebar: {
           templateUrl: searchSidebarTemplateUrl,
         },
-      },
-    })
-    .state('search-signin', {
-      url: '/search?location?offer?tribe',
-      templateUrl: searchSigninTemplateUrl,
-      requiresAuth: false,
-      footerHidden: true,
-      controller: 'SearchSignupController',
-      controllerAs: 'searchSignup',
-      data: {
-        pageTitle: 'Search',
       },
     })
     .state('search-users', {

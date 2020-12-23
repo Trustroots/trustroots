@@ -33,7 +33,7 @@ describe('Push Service Tests', function () {
     notifications.length = 0;
     firebaseMessaging.shouldInitialize = false;
     $window.Notification = function (title, options) {
-      notifications.push({ title: title, options: options });
+      notifications.push({ title, options });
     };
   }));
 
@@ -54,14 +54,12 @@ describe('Push Service Tests', function () {
 
     $httpBackend
       .expect('POST', '/api/users/push/registrations', {
-        token: token,
+        token,
         platform: 'web',
       })
       .respond(200, {
         user: {
-          pushRegistration: [
-            { token: token, platform: 'web', created: Date.now() },
-          ],
+          pushRegistration: [{ token, platform: 'web', created: Date.now() }],
         },
       });
 
@@ -85,14 +83,14 @@ describe('Push Service Tests', function () {
 
     $httpBackend
       .expect('POST', '/api/users/push/registrations', {
-        token: token,
+        token,
         platform: 'web',
       })
       .respond(200, {
         user: {
           pushRegistration: [
             {
-              token: token,
+              token,
               platform: 'web',
               created: Date.now(),
             },
@@ -133,7 +131,7 @@ describe('Push Service Tests', function () {
     firebase.token = token;
     firebase.permissionGranted = true;
     Authentication.user.pushRegistration.push({
-      token: token,
+      token,
       platform: 'web',
     });
 
@@ -181,7 +179,7 @@ describe('Push Service Tests', function () {
     firebase.token = token;
     firebase.permissionGranted = true;
     Authentication.user.pushRegistration.push({
-      token: token,
+      token,
       platform: 'web',
     });
     push.enable();
@@ -213,17 +211,17 @@ function createFirebaseMock() {
 
   const firebase = {
     deletedTokens: [],
-    reset: reset,
+    reset,
     moduleName: 'firebaseMessagingMock',
 
-    triggerOnMessage: function () {
+    triggerOnMessage() {
       const args = arguments;
       onMessageCallbacks.forEach(function (fn) {
         fn.apply(null, args);
       });
     },
 
-    triggerOnTokenRefresh: function () {
+    triggerOnTokenRefresh() {
       const args = arguments;
       onTokenRefreshCallbacks.forEach(function (fn) {
         fn.apply(null, args);
@@ -251,29 +249,29 @@ function createFirebaseMock() {
     return {
       name: 'fcm-mock',
       shouldInitialize: false, // means core does not set it up for us
-      getToken: function () {
+      getToken() {
         if (firebase.permissionGranted) {
           return $q.resolve(firebase.token);
         } else {
           return $q.resolve(null);
         }
       },
-      requestPermission: function () {
+      requestPermission() {
         firebase.permissionGranted = true;
         firebase.requestPermissionCalled++;
         return $q.resolve();
       },
-      deleteToken: function (token) {
+      deleteToken(token) {
         firebase.deletedTokens.push(token);
         return $q.resolve();
       },
-      onTokenRefresh: function (fn) {
+      onTokenRefresh(fn) {
         onTokenRefreshCallbacks.push(fn);
       },
-      onMessage: function (fn) {
+      onMessage(fn) {
         onMessageCallbacks.push(fn);
       },
-      removeServiceWorker: function () {
+      removeServiceWorker() {
         firebase.removeServiceWorkerCalled++;
       },
     };

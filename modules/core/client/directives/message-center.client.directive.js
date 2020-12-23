@@ -36,7 +36,7 @@ function mcMessages($rootScope, messageCenterService) {
   return {
     restrict: 'EA',
     template: templateString,
-    link: function (scope, element, attrs) {
+    link(scope, element, attrs) {
       // Bind the messages from the service to the root scope.
       messageCenterService.flush();
       const changeReaction = function () {

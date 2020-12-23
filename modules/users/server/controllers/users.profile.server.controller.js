@@ -993,7 +993,7 @@ exports.joinTribe = function (req, res) {
             res.send({
               message: 'Joined tribe.',
               tribe: pickedTribe,
-              user: user,
+              user,
             });
 
             done();
@@ -1107,7 +1107,7 @@ exports.leaveTribe = function (req, res) {
             res.send({
               message: 'Left tribe.',
               tribe: pickedTribe,
-              user: user,
+              user,
             });
 
             done();
@@ -1175,7 +1175,7 @@ exports.removePushRegistration = function (req, res) {
   const query = {
     $pull: {
       pushRegistration: {
-        token: token,
+        token,
       },
     },
   };
@@ -1241,7 +1241,7 @@ exports.addPushRegistration = function (req, res) {
         User.findByIdAndUpdate(user._id, {
           $pull: {
             pushRegistration: {
-              token: token,
+              token,
             },
           },
         }).exec(function (err) {
@@ -1253,8 +1253,8 @@ exports.addPushRegistration = function (req, res) {
 
       function (done) {
         const registration = {
-          platform: platform,
-          token: token,
+          platform,
+          token,
           created: Date.now(),
         };
 

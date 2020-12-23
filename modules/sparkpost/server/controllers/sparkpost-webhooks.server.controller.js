@@ -156,8 +156,8 @@ exports.processAndSendMetrics = function (event, callback) {
     counts: {
       count: 1,
     },
-    tags: tags,
-    meta: meta,
+    tags,
+    meta,
   };
 
   // Set `time` field to event's timestamp

@@ -33,7 +33,7 @@ describe('job: send push message', function () {
             { platform: 'web', token: '123' },
             { platform: 'web', token: '456' },
           ],
-          notification: notification,
+          notification,
         },
       },
     };
@@ -42,7 +42,7 @@ describe('job: send push message', function () {
       messages.length.should.equal(1);
       const message = messages[0];
       message.tokens.should.deepEqual(['123', '456']);
-      message.payload.should.deepEqual({ notification: notification });
+      message.payload.should.deepEqual({ notification });
       done();
     });
   });
@@ -60,7 +60,7 @@ describe('job: send push message', function () {
           // eslint-disable-next-line new-cap
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [{ platform: 'web', token: '123' }],
-          notification: notification,
+          notification,
         },
       },
     };
@@ -84,7 +84,7 @@ describe('job: send push message', function () {
           // eslint-disable-next-line new-cap
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [{ platform: 'web', token: '123' }],
-          notification: notification,
+          notification,
         },
       },
     };
@@ -109,7 +109,7 @@ describe('job: send push message', function () {
           // eslint-disable-next-line new-cap
           userId: mongoose.Types.ObjectId().toString(),
           pushServices: [{ token: '123' }, { token: '456' }],
-          notification: notification,
+          notification,
         },
       },
     };
@@ -137,7 +137,7 @@ describe('job: send push message', function () {
             { platform: 'INVALID', token: '123' },
             { platform: 'INVALID', token: '456' },
           ],
-          notification: notification,
+          notification,
         },
       },
     };
@@ -155,7 +155,7 @@ describe('job: send push message', function () {
       lastName: 'Name',
       displayName: 'Full Name',
       email: username + '@test.com',
-      username: username,
+      username,
       password: 'password123!',
       provider: 'local',
       pushRegistration: [
@@ -207,7 +207,7 @@ describe('job: send push message', function () {
               { platform: 'web', token: '456' },
               { platform: 'web', token: 'toberemoved' },
             ],
-            notification: notification,
+            notification,
           },
         },
       };
@@ -216,7 +216,7 @@ describe('job: send push message', function () {
         messages.length.should.equal(1);
         const message = messages[0];
         message.tokens.should.deepEqual(['123', '456', 'toberemoved']);
-        message.payload.should.deepEqual({ notification: notification });
+        message.payload.should.deepEqual({ notification });
         User.findOne(user._id, function (err, updatedUser) {
           if (err) return done(err);
           user.pushRegistration.length.should.equal(3);
@@ -249,8 +249,8 @@ describe('job: send push message', function () {
 
   function createFirebaseMessagingStub(shouldResponseWithError) {
     return {
-      sendToDevice: function (tokens, payload) {
-        messages.push({ tokens: tokens, payload: payload });
+      sendToDevice(tokens, payload) {
+        messages.push({ tokens, payload });
         const results = tokens.map(function (token) {
           if (shouldResponseWithError(token)) {
             return {
@@ -260,7 +260,7 @@ describe('job: send push message', function () {
             return {};
           }
         });
-        return Promise.resolve({ results: results });
+        return Promise.resolve({ results });
       },
     };
   }
