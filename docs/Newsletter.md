@@ -32,6 +32,8 @@ Remember to delete both files after you don't need them anymore. Especially the 
 
 ### Rollout
 
-Test the campaign first by sending it to a small, internal test list. Once that works out, do the full-rollout on the main list. Stagger it across long enough time, allowing around 1K subscribers per hour seems good pace.
+Test the campaign first by sending it to a small, internal test list. Once that works out, do the full-rollout on the main list.
+
+Sending emails is throttled across long enough time. That's so that email providers like Gmail don't flag us for spam when they see a sudden surge of mass email coming out from our servers. Therefore it can take little while before the whole list is processed. Our throttle is currently (2020/12) 400 emails per hour. This can be adjusted from _Send configurations_. [Read more about sender reputation](https://www.sparkpost.com/resources/email-explained/email-sender-reputation/).
 
 Consider also creating a blog and social media material from the newsletter.
