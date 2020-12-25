@@ -11,6 +11,7 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const config = require(path.resolve('./config/config'));
 const cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
+const languages = require(path.resolve('./config/languages/languages.json'));
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
 
@@ -269,6 +270,10 @@ function addUsers() {
                 .subtract(Math.random() * 365, 'd')
                 .subtract(Math.random() * 24, 'h')
                 .subtract(Math.random() * 3600, 's');
+              // 0-4 random languages
+              user.languages = [...Array(random(4))].map(() =>
+                faker.random.objectElement(languages, 'key'),
+              );
 
               if (admin !== undefined) {
                 // admin user
