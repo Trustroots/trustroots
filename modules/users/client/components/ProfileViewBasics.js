@@ -10,14 +10,11 @@ import {
   isWarmshowersId,
   socialAccountLink,
 } from '../utils/networks';
-import { getGender } from '@/modules/core/client/utils/user_info';
+import { getBirthdate, getGender } from '@/modules/users/client/utils/profile';
 import LanguageList from './LanguageList';
 
 export default function ProfileViewBasics({ profile }) {
   const { t } = useTranslation(['users']);
-
-  const getBirthdate = birthdate =>
-    t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
 
   const getReplyRate = replyRate =>
     t('Reply rate {{replyRate}}.', { replyRate });
