@@ -62,9 +62,7 @@ export default function Reference({ reference, inRecipientProfile }) {
     _id,
     created,
     feedbackPublic,
-    hostedMe,
-    hostedThem,
-    met,
+    interactions,
     public: isPublicReference,
     recommend,
     userFrom,
@@ -138,12 +136,7 @@ export default function Reference({ reference, inRecipientProfile }) {
             )}
           </>
         )}
-        <Meta
-          hostedMe={hostedMe}
-          hostedThem={hostedThem}
-          met={met}
-          recommend={recommend}
-        />
+        <Meta interactions={interactions} recommend={recommend} />
         {feedbackPublic && <FeedbackPublic>{feedbackPublic}</FeedbackPublic>}
       </div>
     </div>
