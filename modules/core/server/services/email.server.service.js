@@ -473,7 +473,8 @@ exports.sendReferenceNotificationSecond = function (
     userFrom,
     userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
-    seeReferencesUrl: url + '/profile/' + userTo.username + '/experiences',
+    seeReferencesUrl:
+      url + '/profile/' + userTo.username + '/experiences#' + reference._id,
   });
 
   exports.renderEmailAndSend('reference-notification-second', params, callback);

@@ -277,12 +277,10 @@ describe('Create a reference', () => {
           should(emailJobs.length).equal(1);
 
           const [job] = emailJobs;
-          // @TODO design the email (subject, body, ...)
           should(job.data.subject).equal(
-            `New reference from ${user1.username}`,
+            `${user1.displayName} shared their experience with you`,
           );
           should(job.data.to.address).equal(user2.email);
-          // @TODO add the right link
           should(job.data.text).containEql(
             `/profile/${user1.username}/experiences/new`,
           );
@@ -311,7 +309,6 @@ describe('Create a reference', () => {
           const [job] = pushJobs;
           should(job.data.userId).equal(user2._id.toString());
           should(job.data.notification.title).equal('Trustroots');
-          // @TODO design the notification text
           should(job.data.notification.body).equal(
             `${user1.username} shared their experience with you. Share your experience, too.`,
           );
@@ -419,14 +416,14 @@ describe('Create a reference', () => {
           should(jobs.length).equal(0);
 
           // first create a reference in the opposite direction
-          const reference = new Reference({
+          const _reference = new Reference({
             userFrom: user2._id,
             userTo: user1._id,
             met: true,
             recommend: 'no',
           });
 
-          await reference.save();
+          const reference = await _reference.save();
 
           await agent
             .post('/api/references')
@@ -445,19 +442,15 @@ describe('Create a reference', () => {
           should(emailJobs.length).equal(1);
 
           const [job] = emailJobs;
-          // @TODO design the email (subject, body, ...)
           should(job.data.subject).equal(
-            `New reference from ${user1.username}`,
+            `${user1.displayName} shared their experience with you`,
           );
           should(job.data.to.address).equal(user2.email);
-          // @TODO add the right link
-          // this is a link to the own references - see my references
-          // because I already gave a reference
           should(job.data.text).containEql(
-            `/profile/${user2.username}/experiences`,
+            `/profile/${user2.username}/experiences#${reference._id}`,
           );
           should(job.data.html).containEql(
-            `/profile/${user2.username}/experiences`,
+            `/profile/${user2.username}/experiences#${reference._id}`,
           );
         });
 
@@ -495,7 +488,6 @@ describe('Create a reference', () => {
           const [job] = pushJobs;
           should(job.data.userId).equal(user2._id.toString());
           should(job.data.notification.title).equal('Trustroots');
-          // @TODO design the notification text
           should(job.data.notification.body).equal(
             `${user1.username} shared their experience with you. Have a look!`,
           );
