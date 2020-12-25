@@ -1,9 +1,12 @@
+// External dependencies
 import React, { useEffect, useState } from 'react';
 import keyBy from 'lodash/keyBy';
 import { useTranslation } from 'react-i18next';
 
-import Avatar from '@/modules/users/client/components/Avatar.component';
+// Internal dependencies
 import { userType } from '@/modules/users/client/users.prop-types';
+import Avatar from '@/modules/users/client/components/Avatar.component';
+import LanguageList from './LanguageList';
 
 function TribesInCommon({ user, otherUser }) {
   const { t } = useTranslation('users');
@@ -60,11 +63,10 @@ export default function Monkeybox({ user, otherUser }) {
         {user.languages.length > 0 && (
           <div className="monkeybox-section">
             <h4>{t('Languages')}</h4>
-            <ul className="list-unstyled">
-              {user.languages.map(language => (
-                <li key={language.code}>{language.code}</li>
-              ))}
-            </ul>
+            <LanguageList
+              className="list-unstyled"
+              languages={user.languages}
+            />
           </div>
         )}
       </div>
