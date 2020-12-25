@@ -12,33 +12,6 @@ import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
 
-const ReferenceHeading = styled.div`
-  display: flex;
-  flex-wrap: wrap-reverse;
-  line-height: 1.3em;
-
-  .avatar {
-    margin-right: 10px;
-  }
-
-  .reference-time {
-    margin-left: auto;
-    color: #333;
-  }
-
-  @media (max-width: 480px) {
-   .reference-time {
-     width: 100%;
-     margin-left: 0;
-     margin-bottom: 10px;
-   }
-`;
-
-const UserMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
 const PendingNotice = styled.div`
   font-style: italic;
   padding: 20px 0;
@@ -55,7 +28,50 @@ const FeedbackPublic = styled.div`
   max-width: 600px;
 `;
 
-export default function Reference({ reference, inRecipientProfile }) {
+const Response = styled.div`
+  border-top: 1px solid #ccc;
+  margin: 20px 0 0 20px;
+  padding: 20px 0 0 0;
+
+  @media (max-width: 480px) {
+    margin-left: 10px;
+  }
+`;
+
+const Header = styled.div`
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap-reverse;
+  line-height: 1.3em;
+
+  .avatar {
+    margin-right: 10px;
+  }
+`;
+
+const UserMeta = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const ReferenceLink = styled.a`
+  align-self: start;
+  margin-left: auto;
+  color: #333;
+
+  @media (max-width: 480px) {
+    width: 100%;
+    margin-left: 0;
+    margin-bottom: 10px;
+  }
+`;
+
+const UserLinkStyled = styled(UserLink)`
+  font-weight: bold;
+  margin-right: 5px;
+`;
+
+export default function Reference({ reference, response }) {
   const { t } = useTranslation('references');
 
   const {
@@ -81,37 +97,25 @@ export default function Reference({ reference, inRecipientProfile }) {
         Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
     );
 
-  const inCreatorProfile = !inRecipientProfile;
-
   return (
     <div className="panel panel-default" id={_id}>
-      <div className="panel-body reference">
-        <ReferenceHeading>
-          {inCreatorProfile && <div>{t('their reply')}</div>}
+      <div className="panel-body">
+        <Header>
           <Avatar user={userFrom} size={36} />
           <UserMeta>
-            <strong>
-              <UserLink user={userFrom} />
-            </strong>
-            {inRecipientProfile && (
-              <span className="muted">
-                {userFrom.gender && `${getGender(userFrom.gender)}. `}
-                {t('Member since {{date, YYYY}}.', {
+            <UserLinkStyled user={userFrom} />
+            <span className="muted">
+              {userFrom?.gender && `${getGender(userFrom.gender)}. `}
+              {userFrom?.created &&
+                t('Member since {{date, YYYY}}.', {
                   date: new Date(userFrom.created),
                 })}
-              </span>
-            )}
+            </span>
           </UserMeta>
-          {inRecipientProfile && (
-            <a
-              className="reference-time"
-              href={`/profile/${userTo.username}/experiences#${_id}`}
-            >
-              <TimeAgo date={createdDate} />
-            </a>
-          )}
-        </ReferenceHeading>
-
+          <ReferenceLink href={`/profile/${userTo.username}/references#${_id}`}>
+            <TimeAgo date={createdDate} />
+          </ReferenceLink>
+        </Header>
         {!isPublicReference && (
           <>
             <PendingNotice>
@@ -145,6 +149,24 @@ export default function Reference({ reference, inRecipientProfile }) {
           recommend={recommend}
         />
         {feedbackPublic && <FeedbackPublic>{feedbackPublic}</FeedbackPublic>}
+        {response && (
+          <Response>
+            <Header>
+              <Avatar user={response.userFrom} size={24} />
+              <UserLinkStyled user={response.userFrom} />
+              (<TimeAgo date={new Date(response.created)} />)
+            </Header>
+            <Meta
+              hostedMe={response.hostedMe}
+              hostedThem={response.hostedThem}
+              met={response.met}
+              recommend={response.recommend}
+            />
+            {response.feedbackPublic && (
+              <FeedbackPublic>{response.feedbackPublic}</FeedbackPublic>
+            )}
+          </Response>
+        )}
       </div>
     </div>
   );
@@ -152,5 +174,5 @@ export default function Reference({ reference, inRecipientProfile }) {
 
 Reference.propTypes = {
   reference: PropTypes.object.isRequired,
-  inRecipientProfile: PropTypes.bool.isRequired,
+  response: PropTypes.object,
 };
