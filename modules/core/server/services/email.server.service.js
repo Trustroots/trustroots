@@ -467,14 +467,13 @@ exports.sendReferenceNotificationSecond = function (
   callback,
 ) {
   const params = exports.addEmailBaseTemplateParams({
-    subject: `${userFrom.displayName} shared their experience with you`,
+    subject: `${userFrom.displayName} shared also their experience with you`,
     email: userTo.email,
     username: userTo.username, // data needed for link to profile in footer
     userFrom,
     userTo,
     userFromProfileUrl: url + '/profile/' + userFrom.username,
     seeReferencesUrl: url + '/profile/' + userTo.username + '/experiences',
-    recommend: reference.recommend,
   });
 
   exports.renderEmailAndSend('reference-notification-second', params, callback);
