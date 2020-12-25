@@ -114,9 +114,11 @@ describe('<CreateReference />', () => {
     fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
-      met: false,
-      hostedMe: true,
-      hostedThem: false,
+      interactions: {
+        met: false,
+        hostedMe: true,
+        hostedThem: false,
+      },
       recommend: 'yes',
       feedbackPublic: 'they made a tasty pie',
       userTo: userTo._id,
@@ -166,9 +168,11 @@ describe('<CreateReference />', () => {
     fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
-      met: false,
-      hostedMe: true,
-      hostedThem: false,
+      interactions: {
+        met: false,
+        hostedMe: true,
+        hostedThem: false,
+      },
       recommend: 'no',
       feedbackPublic: '',
       userTo: userTo._id,

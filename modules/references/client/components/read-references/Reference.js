@@ -78,9 +78,7 @@ export default function Reference({ reference, response }) {
     _id,
     created,
     feedbackPublic,
-    hostedMe,
-    hostedThem,
-    met,
+    interactions,
     public: isPublicReference,
     recommend,
     userFrom,
@@ -142,12 +140,7 @@ export default function Reference({ reference, response }) {
             )}
           </>
         )}
-        <Meta
-          hostedMe={hostedMe}
-          hostedThem={hostedThem}
-          met={met}
-          recommend={recommend}
-        />
+        <Meta interactions={interactions} recommend={recommend} />
         {feedbackPublic && <FeedbackPublic>{feedbackPublic}</FeedbackPublic>}
         {response && (
           <Response>

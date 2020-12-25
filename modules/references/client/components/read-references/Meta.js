@@ -13,7 +13,7 @@ const Labels = styled.div`
   }
 `;
 
-export default function Meta({ met, hostedMe, hostedThem, recommend }) {
+export default function Meta({ interactions, recommend }) {
   const { t } = useTranslation('references');
 
   return (
@@ -21,9 +21,9 @@ export default function Meta({ met, hostedMe, hostedThem, recommend }) {
       {[
         recommend === 'yes' && t('Recommend'),
         recommend === 'no' && t('Not recommend'),
-        hostedMe && t('Guest'),
-        hostedThem && t('Host'),
-        met && t('Met in person'),
+        interactions?.hostedMe && t('Guest'),
+        interactions?.hostedThem && t('Host'),
+        interactions?.met && t('Met in person'),
       ]
         .filter(label => !!label)
         .map(label => (
@@ -36,8 +36,6 @@ export default function Meta({ met, hostedMe, hostedThem, recommend }) {
 }
 
 Meta.propTypes = {
-  hostedMe: PropTypes.bool.isRequired,
-  hostedThem: PropTypes.bool.isRequired,
-  met: PropTypes.bool.isRequired,
+  interactions: PropTypes.object.isRequired,
   recommend: PropTypes.string.isRequired,
 };

@@ -65,7 +65,11 @@ export default function CreateReference({ userFrom, userTo }) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const reference = { met, hostedThem, hostedMe, recommend, feedbackPublic };
+    const reference = {
+      interactions: { met, hostedThem, hostedMe },
+      recommend,
+      feedbackPublic,
+    };
 
     // save the reference
     const [savedReference] = await Promise.all([
