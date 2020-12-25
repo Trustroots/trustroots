@@ -60,3 +60,20 @@ export async function readMine({ userTo }) {
 export async function report(user, message) {
   await axios.post('/api/support', { message, reportMember: user.username });
 }
+
+/**
+ * API request: get count of references
+ *
+ * @param {string} userTo - id of user who received the reference
+ * @returns {int} Number of experiences
+ */
+export async function getCount(userTo) {
+  try {
+    const { data } = await axios.get('/api/references/count', {
+      params: { userTo },
+    });
+    return parseInt(data, 10);
+  } catch {
+    return 0;
+  }
+}

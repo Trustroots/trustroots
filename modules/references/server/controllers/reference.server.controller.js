@@ -546,3 +546,32 @@ exports.readMine = async function readMine(req, res) {
   }
   return res.status(200).json(reference);
 };
+
+exports.getCount = async function getCount(req, res, next) {
+  console.log('getCount — userTo:', req.query.userTo); //eslint-disable-line
+  const { userTo } = req.query;
+
+  if (!mongoose.Types.ObjectId.isValid(userTo)) {
+    return res
+      .status(400)
+      .send({ message: 'Missing or invalid `userTo` request param' });
+  }
+
+  try {
+    const query = {
+      userTo: new mongoose.Types.ObjectId(userTo),
+    };
+
+    // Allow non-public references only when userTo is self
+    if (!req.user._id.equals(userTo)) {
+      query.public = true;
+    }
+
+    const count = await Reference.find(query).count();
+
+    console.log('getCount — count:', query, count); //eslint-disable-line
+    return res.status(200).json(count);
+  } catch (error) {
+    processResponses(res, next, error);
+  }
+};
