@@ -6,11 +6,11 @@ import styled from 'styled-components';
 const Dot = styled.div`
   background: #d9534f;
   border-radius: 50%;
-  height: 5px;
+  height: 7px;
   position: absolute;
-  right: 10px;
+  right: 9px;
   top: 6px;
-  width: 5px;
+  width: 7px;
 `;
 
 export default function Badge({ children, withNotification }) {
