@@ -546,3 +546,42 @@ exports.readMine = async function readMine(req, res) {
   }
   return res.status(200).json(reference);
 };
+
+exports.getCount = async function getCount(req, res, next) {
+  const { userTo } = req.query;
+
+  if (!mongoose.Types.ObjectId.isValid(userTo)) {
+    return res
+      .status(400)
+      .send({ message: 'Missing or invalid `userTo` request param' });
+  }
+
+  try {
+    const isSelf = req.user._id.equals(userTo);
+
+    const query = {
+      userTo: new mongoose.Types.ObjectId(userTo),
+    };
+
+    const publicCount = await Reference.find({
+      ...query,
+      public: true,
+    }).count();
+
+    // Include non-public references only when userTo is self
+    const privateCount = isSelf
+      ? await Reference.find({
+          ...query,
+          public: false,
+        }).count()
+      : 0;
+
+    return res.status(200).json({
+      count: privateCount + publicCount,
+      // `hasPending` included only for own profile
+      ...(isSelf ? { hasPending: Boolean(privateCount) } : {}),
+    });
+  } catch (error) {
+    processResponses(res, next, error);
+  }
+};

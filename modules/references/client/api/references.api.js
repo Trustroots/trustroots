@@ -18,7 +18,7 @@ export async function create(reference) {
  * and sort by 'created' field starting from the most recent date
  *
  * @param {string} userTo - id of user who received the reference
- * @returns Promise<Reference[]> - array of the found references
+ * @returns {array} - array of the found references
  */
 export async function read({ userTo }) {
   const { data: references } = await axios.get('/api/references', {
@@ -32,7 +32,7 @@ export async function read({ userTo }) {
  * and sort by 'created' field starting from the most recent date
  *
  * @param {string} userTo - id of user who received the reference
- * @returns Promise<Reference[]> - array of the found references
+ * @returns {object} - A reference
  */
 export async function readMine({ userTo }) {
   const params = { userTo };
@@ -59,4 +59,21 @@ export async function readMine({ userTo }) {
  */
 export async function report(user, message) {
   await axios.post('/api/support', { message, reportMember: user.username });
+}
+
+/**
+ * API request: get count of references
+ *
+ * @param {string} userTo - id of user who received the reference
+ * @returns {object} - Number of experiences as `{count: Int, hasPending: Bool}`
+ */
+export async function getCount(userTo) {
+  try {
+    const { data } = await axios.get('/api/references/count', {
+      params: { userTo },
+    });
+    return data;
+  } catch {
+    return { count: 0 };
+  }
 }
