@@ -23,10 +23,12 @@ export default function ProfileTabs({
   const [pathName, setPathName] = useState(initialPathName);
 
   useEffect(async () => {
-    const { count, hasPending } = await getExperiencesCount(userId);
-    setExperiencesCount(count);
-    if (hasPending) {
-      setHasPendingExperiences(true);
+    if (isExperiencesEnabled) {
+      const { count, hasPending } = await getExperiencesCount(userId);
+      setExperiencesCount(count);
+      if (hasPending) {
+        setHasPendingExperiences(true);
+      }
     }
   }, []);
 
