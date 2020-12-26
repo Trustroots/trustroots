@@ -72,8 +72,11 @@ export async function getCount(userTo) {
     const { data } = await axios.get('/api/references/count', {
       params: { userTo },
     });
-    return parseInt(data, 10);
+    return data;
   } catch {
-    return 0;
+    return {
+      count: 0,
+      hasPending: false,
+    };
   }
 }

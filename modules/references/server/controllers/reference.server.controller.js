@@ -548,7 +548,6 @@ exports.readMine = async function readMine(req, res) {
 };
 
 exports.getCount = async function getCount(req, res, next) {
-  console.log('getCount — userTo:', req.query.userTo); //eslint-disable-line
   const { userTo } = req.query;
 
   if (!mongoose.Types.ObjectId.isValid(userTo)) {
@@ -558,19 +557,30 @@ exports.getCount = async function getCount(req, res, next) {
   }
 
   try {
+    const isSelf = req.user._id.equals(userTo);
+
     const query = {
       userTo: new mongoose.Types.ObjectId(userTo),
     };
 
-    // Allow non-public references only when userTo is self
-    if (!req.user._id.equals(userTo)) {
-      query.public = true;
-    }
+    const publicCount = await Reference.find({
+      ...query,
+      public: true,
+    }).count();
 
-    const count = await Reference.find(query).count();
+    // Include non-public references only when userTo is self
+    const privateCount = isSelf
+      ? await Reference.find({
+          ...query,
+          public: false,
+        }).count()
+      : 0;
 
-    console.log('getCount — count:', query, count); //eslint-disable-line
-    return res.status(200).json(count);
+    return res.status(200).json({
+      count: privateCount + publicCount,
+      // `hasPending` included only for own profile
+      ...(isSelf ? { hasPending: Boolean(privateCount) } : {}),
+    });
   } catch (error) {
     processResponses(res, next, error);
   }

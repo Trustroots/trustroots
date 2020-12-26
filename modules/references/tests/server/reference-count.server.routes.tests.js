@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const path = require('path');
+const should = require('should');
 const request = require('supertest');
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
@@ -77,7 +78,8 @@ describe('Read count of references received by user', () => {
         .expect(200);
 
       // user2 has received 2 public and 1 non-public reference
-      body.should.equal(2);
+      body.count.should.equal(2);
+      should.not.exist(body.hasPending);
     });
 
     it('private references are included when own profile', async () => {
@@ -85,7 +87,8 @@ describe('Read count of references received by user', () => {
         .get(`/api/references/count?userTo=${users[0]._id}`)
         .expect(200);
 
-      body.should.equal(5);
+      body.count.should.equal(5);
+      body.hasPending.should.be.true();
     });
 
     it('[no params] 400 and error', async () => {

@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 // Internal dependencies
 import { $on } from '@/modules/core/client/services/angular-compat';
 import { getCount as getExperiencesCount } from '@/modules/references/client/api/references.api';
+import Badge from '@/modules/core/client/components/Badge';
 
 export default function ProfileTabs({
   contactsCount,
@@ -18,11 +19,15 @@ export default function ProfileTabs({
 }) {
   const { t } = useTranslation('users');
   const [experiencesCount, setExperiencesCount] = useState(0);
+  const [hasPendingExperiences, setHasPendingExperiences] = useState(false);
   const [pathName, setPathName] = useState(initialPathName);
 
   useEffect(async () => {
-    const count = await getExperiencesCount(userId);
+    const { count, hasPending } = await getExperiencesCount(userId);
     setExperiencesCount(count);
+    if (hasPending) {
+      setHasPendingExperiences(true);
+    }
   }, []);
 
   // Handle tab changes from Angular UI router
@@ -65,11 +70,11 @@ export default function ProfileTabs({
               role="tab"
             >
               {t('Contacts')}
-              <span className="badge">{contactsCount}</span>
+              <Badge>{contactsCount}</Badge>
             </a>
           </li>
         )}
-        {isExperiencesEnabled && (experiencesCount > 0 || isOWnProfile) && (
+        {isExperiencesEnabled && (experiencesCount >= 0 || isOWnProfile) && (
           <li
             className={classnames({
               active: pathName === 'profile.experiences.list',
@@ -84,7 +89,9 @@ export default function ProfileTabs({
               role="tab"
             >
               {t('Experiences')}
-              <span className="badge">{experiencesCount}</span>
+              <Badge withNotification={hasPendingExperiences}>
+                {experiencesCount}
+              </Badge>
             </a>
           </li>
         )}
