@@ -1,22 +1,26 @@
+// External dependencies
+const mongoose = require('mongoose');
 const path = require('path');
 const proxyquire = require('proxyquire');
-const mongoose = require('mongoose');
+const should = require('should');
+
+// Internal dependencies
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 
-require('should');
-
-describe('job: send push message', function () {
+describe('job: send push message', () => {
   let sendPushJobHandler;
-  const messages = []; // collects firebase messages that are sent
+  const messages = []; // Collects firebase messages that are sent
 
-  beforeEach(function () {
-    sendPushJobHandler = proxyquireFirebaseMessaging(function (token) {
-      // decides whether to return error code
-      return token === 'toberemoved';
-    });
+  beforeEach(() => {
+    sendPushJobHandler = proxyquireFirebaseMessaging(
+      // Decides whether to return error code
+      token => token === 'toberemoved',
+    );
   });
 
-  it('will send a push', function (done) {
+  it('will send a push', () => {
     const notification = {
       title: 'a title',
       body: 'a body',
@@ -37,17 +41,16 @@ describe('job: send push message', function () {
         },
       },
     };
-    sendPushJobHandler(job, function (err) {
-      if (err) return done(err);
+    sendPushJobHandler(job, err => {
+      should.not.exist(err);
       messages.length.should.equal(1);
       const message = messages[0];
       message.tokens.should.deepEqual(['123', '456']);
       message.payload.should.deepEqual({ notification });
-      done();
     });
   });
 
-  it('will not send a push when notification is missing "click_action"', function (done) {
+  it('will not send a push when notification is missing "click_action"', () => {
     const notification = {
       title: 'a title',
       body: 'a body',
@@ -64,14 +67,13 @@ describe('job: send push message', function () {
         },
       },
     };
-    sendPushJobHandler(job, function (err) {
-      if (err) return done(err);
+    sendPushJobHandler(job, err => {
+      should.not.exist(err);
       messages.length.should.equal(0);
-      done();
     });
   });
 
-  it('will not send a push when notification is missing "body"', function (done) {
+  it('will not send a push when notification is missing "body"', () => {
     const notification = {
       title: 'a title',
       click_action: 'http://example.com',
@@ -88,14 +90,13 @@ describe('job: send push message', function () {
         },
       },
     };
-    sendPushJobHandler(job, function (err) {
-      if (err) return done(err);
+    sendPushJobHandler(job, err => {
+      should.not.exist(err);
       messages.length.should.equal(0);
-      done();
     });
   });
 
-  it('will not send a push when platform is missing', function (done) {
+  it('will not send a push when platform is missing', () => {
     const notification = {
       title: 'a title',
       body: 'a body',
@@ -113,14 +114,13 @@ describe('job: send push message', function () {
         },
       },
     };
-    sendPushJobHandler(job, function (err) {
-      if (err) return done(err);
+    sendPushJobHandler(job, err => {
+      should.not.exist(err);
       messages.length.should.equal(0);
-      done();
     });
   });
 
-  it('will not send a push when platform is invalid', function (done) {
+  it('will not send a push when platform is invalid', () => {
     const notification = {
       title: 'a title',
       body: 'a body',
@@ -141,23 +141,16 @@ describe('job: send push message', function () {
         },
       },
     };
-    sendPushJobHandler(job, function (err) {
-      if (err) return done(err);
+    sendPushJobHandler(job, err => {
+      should.not.exist(err);
       messages.length.should.equal(0);
-      done();
     });
   });
 
-  context('with user', function () {
-    const username = 'username1' + new Date().getTime();
-    const userParams = {
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
-      email: username + '@test.com',
-      username,
-      password: 'password123!',
-      provider: 'local',
+  context('with user', () => {
+    let user;
+
+    const _user = utils.generateUsers(1, {
       pushRegistration: [
         {
           token: '123',
@@ -172,25 +165,15 @@ describe('job: send push message', function () {
           platform: 'web',
         },
       ],
-    };
-
-    let user;
-
-    beforeEach(function (done) {
-      User.create(userParams, function (err, newUser) {
-        if (err) {
-          return done(err);
-        }
-        user = newUser;
-        done();
-      });
     });
 
-    afterEach(function (done) {
-      User.deleteMany().exec(done);
+    beforeEach(async () => {
+      [user] = await utils.saveUsers(_user);
     });
 
-    it('removes user tokens if they are invalid', function (done) {
+    afterEach(utils.clearDatabase);
+
+    it('removes user tokens if they are invalid', () => {
       const notification = {
         title: 'a title',
         body: 'a body',
@@ -211,26 +194,22 @@ describe('job: send push message', function () {
           },
         },
       };
-      sendPushJobHandler(job, function (err) {
-        if (err) return done(err);
+      sendPushJobHandler(job, async err => {
+        should.not.exist(err);
+
         messages.length.should.equal(1);
         const message = messages[0];
         message.tokens.should.deepEqual(['123', '456', 'toberemoved']);
         message.payload.should.deepEqual({ notification });
-        User.findOne(user._id, function (err, updatedUser) {
-          if (err) return done(err);
-          user.pushRegistration.length.should.equal(3);
+        const updatedUser = await User.findOne(user._id);
+        user.pushRegistration.length.should.equal(3);
 
-          // Invalid token has been removed!
-          updatedUser.pushRegistration.length.should.equal(2);
-          const tokens = updatedUser.pushRegistration.map(function (reg) {
-            return reg.token;
-          });
-          // we need to convert CoreMongooseArray to Array
-          Array.from(tokens).should.deepEqual(['123', '456']);
+        // Invalid token has been removed!
+        updatedUser.pushRegistration.length.should.equal(2);
+        const tokens = updatedUser.pushRegistration.map(reg => reg.token);
 
-          done();
-        });
+        // We need to convert CoreMongooseArray to Array
+        Array.from(tokens).should.deepEqual(['123', '456']);
       });
     });
   });
@@ -251,15 +230,16 @@ describe('job: send push message', function () {
     return {
       sendToDevice(tokens, payload) {
         messages.push({ tokens, payload });
-        const results = tokens.map(function (token) {
+        const results = tokens.map(token => {
           if (shouldResponseWithError(token)) {
             return {
               error: { code: 'messaging/registration-token-not-registered' },
             };
-          } else {
-            return {};
           }
+
+          return {};
         });
+
         return Promise.resolve({ results });
       },
     };
