@@ -443,7 +443,7 @@ describe('Create a reference', () => {
 
           const [job] = emailJobs;
           should(job.data.subject).equal(
-            `${user1.displayName} shared their experience with you`,
+            `${user1.displayName} shared also their experience with you`,
           );
           should(job.data.to.address).equal(user2.email);
           should(job.data.text).containEql(
