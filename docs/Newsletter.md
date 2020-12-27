@@ -30,10 +30,22 @@ You can see from import "status" page in case the import failed due failed forma
 
 Remember to delete both files after you don't need them anymore. Especially the local one.
 
+### "From" email
+
+You have a couple options for "from" email. If you use our `support@` address, people's replies go to our support tool, for the support team to read.
+
+If you would prefer other folks in your team to read replies, use `share@` email as sender. There's a list of emails at Zoho's admin panel to whom this email gets forwarded.
+
+Note that we typically get a dozen or so "out of office" auto-replies, so it shouldn't get too noisy. You can also create filters for yourself to funnel all newsletter related emails to a separate folder.
+
+If you don't want replies to newsletter, use `no-reply@` address.
+
 ### Rollout
 
 Test the campaign first by sending it to a small, internal test list. Once that works out, do the full-rollout on the main list.
 
 Sending emails is throttled across long enough time. That's so that email providers like Gmail don't flag us for spam when they see a sudden surge of mass email coming out from our servers. Therefore it can take little while before the whole list is processed. Our throttle is currently (2020/12) 400 emails per hour. This can be adjusted from _Send configurations_. [Read more about sender reputation](https://www.sparkpost.com/resources/email-explained/email-sender-reputation/).
+
+### Social media
 
 Consider also creating a blog and social media material from the newsletter.
