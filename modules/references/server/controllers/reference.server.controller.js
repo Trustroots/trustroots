@@ -148,7 +148,7 @@ const responseFields = [
 
 function prepareSendingToClient(experience, response, authUserId) {
   const fields_to_pick =
-    experience.public || authUserId === experience.userFrom._id
+    experience.public || authUserId.equals(experience.userFrom._id)
       ? referenceFields
       : nonpublicReferenceFields;
   const prepared_experience = _.pick(experience, fields_to_pick);
