@@ -20,7 +20,7 @@ export default function ReferencesSection({ title, experiences }) {
         </div>
       )}
       {experiences.map(experience => (
-        <div className="row" key={experience.id}>
+        <div className="row" key={experience._id}>
           <div className="col-xs-12">
             <Reference experience={experience} />
           </div>
