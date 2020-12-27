@@ -150,6 +150,58 @@ describe('Read references by userTo Id', () => {
       should(body[1].userFrom._id).eql(users[4].id);
     });
 
+    it('[param userTo] userTo is self, respond with all public and pending references to userTo', async () => {
+      const { body } = await agent
+        .get(`/api/references?userTo=${users[0]._id}`)
+        .expect(200);
+
+      // user1 and user4 shared public experiences, user5 shared a private one
+      should(body).be.Array().of.length(3);
+    });
+
+    it('userTo is self, private reference has only limited fields', async () => {
+      const { body } = await agent
+        .get(`/api/references?userTo=${users[0]._id}`)
+        .expect(200);
+
+      for (const ref of [body[0], body[1]]) {
+        should(ref).have.properties(
+          '_id',
+          'userFrom',
+          'userTo',
+          'public',
+          'created',
+          'recommend',
+          'response',
+        );
+
+        should(ref).have.propertyByPath('interactions', 'met');
+        should(ref).have.propertyByPath('interactions', 'hostedMe');
+        should(ref).have.propertyByPath('interactions', 'hostedThem');
+      }
+
+      should(body[2]).have.only.properties(
+        '_id',
+        'userFrom',
+        'userTo',
+        'public',
+        'created',
+        'response',
+      );
+
+      should(body[0]).have.property('response').not.eql(null);
+      should(body[1].response).eql(null);
+      should(body[2].response).eql(null);
+
+      should(body[0].userTo._id).eql(users[0].id);
+      should(body[1].userTo._id).eql(users[0].id);
+      should(body[2].userTo._id).eql(users[0].id);
+
+      should(body[0].userFrom._id).eql(users[1].id);
+      should(body[1].userFrom._id).eql(users[4].id);
+      should(body[2].userFrom._id).eql(users[5].id);
+    });
+
     it('[no params] 400 and error', async () => {
       const { body } = await agent.get('/api/references').expect(400);
 
