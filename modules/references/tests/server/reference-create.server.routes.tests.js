@@ -89,6 +89,8 @@ describe('Create a reference', () => {
               hostedThem: true,
             },
             feedbackPublic,
+            recommend: 'yes',
+            response: null,
             _id: /^[0-9a-f]{24}$/,
           });
         });

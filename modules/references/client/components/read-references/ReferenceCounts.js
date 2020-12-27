@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
+import { experienceType } from '../../../experiences.prop-types';
 
 const Counts = styled.div`
   display: flex;
@@ -12,15 +13,13 @@ export default function ReferenceCounts({ publicReferences }) {
   const { t } = useTranslation('references');
 
   const positiveCount = publicReferences.filter(
-    ({ sharedWithUser }) =>
-      sharedWithUser && sharedWithUser.recommend === 'yes',
+    ({ recommend }) => recommend === 'yes',
   ).length;
   const unknownCount = publicReferences.filter(
-    ({ sharedWithUser }) =>
-      sharedWithUser && sharedWithUser.recommend === 'unknown',
+    ({ recommend }) => recommend === 'unknown',
   ).length;
   const negativeCount = publicReferences.filter(
-    ({ sharedWithUser }) => sharedWithUser && sharedWithUser.recommend === 'no',
+    ({ recommend }) => recommend === 'no',
   ).length;
 
   return (
@@ -35,5 +34,5 @@ export default function ReferenceCounts({ publicReferences }) {
 }
 
 ReferenceCounts.propTypes = {
-  publicReferences: PropTypes.array.isRequired,
+  publicReferences: PropTypes.arrayOf(experienceType).isRequired,
 };

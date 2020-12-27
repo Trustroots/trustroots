@@ -1,6 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import PropTypes from 'prop-types';
+
 import React from 'react';
 import styled from 'styled-components';
 
@@ -11,6 +11,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
+import { experienceType } from '../../../experiences.prop-types';
 
 const PendingNotice = styled.div`
   font-style: italic;
@@ -71,7 +72,7 @@ const UserLinkStyled = styled(UserLink)`
   margin-right: 5px;
 `;
 
-export default function Reference({ reference, response }) {
+export default function Reference({ experience }) {
   const { t } = useTranslation('references');
 
   const {
@@ -83,7 +84,8 @@ export default function Reference({ reference, response }) {
     recommend,
     userFrom,
     userTo,
-  } = reference;
+    response,
+  } = experience;
 
   const createdDate = new Date(created);
 
@@ -145,14 +147,12 @@ export default function Reference({ reference, response }) {
         {response && (
           <Response>
             <Header>
-              <Avatar user={response.userFrom} size={24} />
-              <UserLinkStyled user={response.userFrom} />
+              <Avatar user={userTo} size={24} />
+              <UserLinkStyled user={userTo} />
               (<TimeAgo date={new Date(response.created)} />)
             </Header>
             <Meta
-              hostedMe={response.hostedMe}
-              hostedThem={response.hostedThem}
-              met={response.met}
+              interactions={response.interactions}
               recommend={response.recommend}
             />
             {response.feedbackPublic && (
@@ -166,6 +166,5 @@ export default function Reference({ reference, response }) {
 }
 
 Reference.propTypes = {
-  reference: PropTypes.object.isRequired,
-  response: PropTypes.object,
+  experience: experienceType.isRequired,
 };

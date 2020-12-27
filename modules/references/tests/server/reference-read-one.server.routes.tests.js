@@ -18,7 +18,7 @@ describe('Read a single reference by reference id', () => {
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
 
-  const _usersPublic = utils.generateUsers(3, { public: true });
+  const _usersPublic = utils.generateUsers(4, { public: true });
   const _usersPrivate = utils.generateUsers(1, {
     public: false,
     username: 'private',
@@ -54,18 +54,19 @@ describe('Read a single reference by reference id', () => {
    * - F: reference exists and is not public
    * - .: reference doesn't exist
    *
-   *   0 1 2
-   * 0 . T F
-   * 1 F . T
-   * 2 T F .
+   *   0 1 2 3
+   * 0 . . F T
+   * 1 F . T .
+   * 2 . T . .
+   * 3 . F . .
    */
   const referenceData = [
-    [0, 1],
+    [0, 3],
     [0, 2, { public: false }],
     [1, 0, { public: false }],
     [1, 2],
-    [2, 0],
-    [2, 1, { public: false }],
+    [2, 1],
+    [3, 1, { public: false }],
   ];
 
   beforeEach(async () => {
@@ -79,7 +80,7 @@ describe('Read a single reference by reference id', () => {
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    it('read a single public reference by id', async () => {
+    it('read a single public reference by id that has response', async () => {
       const { body } = await agent
         .get(`/api/references/${references[3]._id}`)
         .expect(200);
@@ -103,6 +104,16 @@ describe('Read a single reference by reference id', () => {
           hostedMe: references[3].interactions.hostedMe,
           hostedThem: references[3].interactions.hostedThem,
         },
+        response: {
+          _id: references[4]._id.toString(),
+          created: new Date().toISOString(),
+          recommend: references[4].recommend,
+          interactions: {
+            met: references[4].interactions.met,
+            hostedMe: references[4].interactions.hostedMe,
+            hostedThem: references[4].interactions.hostedThem,
+          },
+        },
       });
     });
 
@@ -114,6 +125,7 @@ describe('Read a single reference by reference id', () => {
       should(body).match({
         public: false,
         _id: references[1]._id.toString(),
+        response: null,
       });
     });
 
@@ -126,6 +138,7 @@ describe('Read a single reference by reference id', () => {
         public: false,
         _id: references[2]._id.toString(),
         created: new Date().toISOString(),
+        response: null,
       });
 
       should(body).have.only.keys(
@@ -134,6 +147,7 @@ describe('Read a single reference by reference id', () => {
         '_id',
         'public',
         'created',
+        'response',
       );
     });
 
