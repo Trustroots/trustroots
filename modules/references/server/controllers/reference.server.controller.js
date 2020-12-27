@@ -579,18 +579,33 @@ exports.readOne = function readOne(req, res) {
 };
 
 exports.readMine = async function readMine(req, res) {
-  if (!mongoose.Types.ObjectId.isValid(req.query.userTo)) {
+  const selfId = req.user._id;
+  const userTo = req.query.userTo;
+
+  if (!mongoose.Types.ObjectId.isValid(userTo)) {
     return res
       .status(400)
       .send({ message: 'Missing or invalid `userTo` request param' });
   }
-  const reference = await findMyReference(req, req.query.userTo);
+
+  const reference = await findMyReference(req, userTo);
   if (reference === null) {
     return res.status(404).json({
       message: errorService.getErrorMessageByKey('not-found'),
     });
   }
-  return res.status(200).json(reference);
+  const otherReference = await Reference.findOne({
+    userFrom: userTo,
+    userTo: selfId,
+  }).exec();
+
+  const experienceWithResponse = prepareSendingToClient(
+    reference,
+    otherReference,
+    selfId,
+  );
+
+  return res.status(200).json(experienceWithResponse);
 };
 
 exports.getCount = async function getCount(req, res, next) {
