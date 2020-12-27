@@ -106,12 +106,14 @@ exports.createReferenceThread = function (req, res) {
       },
 
       // Get user
-      async function (threadId, referenceUserToId, done) {
-        const referenceUserTo = await User.findById(
+      function (threadId, referenceUserToId, done) {
+        User.findById(
           referenceUserToId,
           '_id gender',
+          (err, referenceUserTo) => {
+            done(err, threadId, referenceUserTo);
+          },
         );
-        done(threadId, referenceUserTo, done);
       },
 
       // Save referenceThread
