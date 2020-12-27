@@ -32,9 +32,11 @@ Remember to delete both files after you don't need them anymore. Especially the 
 
 ### "From" email
 
-You have a couple options for "from" email. If you use our `support@` address, people's replies go to our support tool, for the support team to read.
+You have a couple options for "from" email. You can override defaults for each campaign in Mailtrain separately.
 
-If you would prefer other folks in your team to read replies, use `share@` email as sender. There's a list of emails at Zoho's admin panel to whom this email gets forwarded.
+If you use our `support@` address, people's replies go to our support tool, for the support team to read.
+
+If you would prefer other folks in your team to read replies, use `share@` email as sender. There's a list of emails at [Zoho's email admin](https://mailadmin.zoho.com/) panel to whom this email gets forwarded.
 
 Note that we typically get a dozen or so "out of office" auto-replies, so it shouldn't get too noisy. You can also create filters for yourself to funnel all newsletter related emails to a separate folder.
 
