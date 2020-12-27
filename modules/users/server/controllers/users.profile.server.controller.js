@@ -886,7 +886,12 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.emailToken;
   delete profile.password;
   delete profile.salt;
-  delete profile.roles;
+
+  // Authenticated admins can receive roles object for all users
+  // This is mostly to allow `/admin` routes at client for them
+  if (!authenticatedUser.roles.includes('admin')) {
+    delete profile.roles;
+  }
 
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;
