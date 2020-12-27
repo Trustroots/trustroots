@@ -90,9 +90,8 @@ describe('Read references by userTo Id', () => {
         .expect(200);
 
       // user0 and user4 shared public experiencdes with user1,
-      // there is also a public reply from user1 to user2, which is also returned
       // private experiences are not returned
-      should(body).be.Array().of.length(3);
+      should(body).be.Array().of.length(2);
     });
 
     it('the references in response have expected structure, userFrom & userTo have miniProfile', async () => {
@@ -143,18 +142,12 @@ describe('Read references by userTo Id', () => {
         .which.is.equalOneOf(['no', 'yes', 'unknown']);
 
       should(body[1].response).eql(null);
-      should(body[2].response).eql(null);
 
       should(body[0].userTo._id).eql(users[1].id);
       should(body[1].userTo._id).eql(users[1].id);
 
       should(body[0].userFrom._id).eql(users[0].id);
       should(body[1].userFrom._id).eql(users[4].id);
-
-      // this experience is only replied,
-      // even though user1 did not "receive", it is also returned
-      should(body[2].userTo._id).eql(users[2].id);
-      should(body[2].userFrom._id).eql(users[1].id);
     });
 
     it('[no params] 400 and error', async () => {

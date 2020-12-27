@@ -382,9 +382,7 @@ function pairUpExperiences(experiences, userId) {
   experiences.forEach(experience => {
     if (experience.userFrom._id.equals(userId)) {
       const userTo = experience.userTo._id;
-      if (experiencePairDict[userTo] === undefined) {
-        experiencePairDict[userTo] = [experience, null];
-      } else {
+      if (experiencePairDict[userTo]) {
         experiencePairDict[userTo][1] = experience;
       }
     }
