@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
 
-import { interactionsType } from '../../experiences.prop-types';
+import { interactionsType } from '@/modules/references/client/experiences.prop-types';
 
 const Labels = styled.div`
   display: flex;
