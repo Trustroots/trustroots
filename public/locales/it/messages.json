@@ -46,7 +46,7 @@
         "": "Il tuo profilo risulta un po' vuoto."
     },
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "... spiegando che siete interessati a incontrarli, non solo a trovare una sistemazione gratuita.",
-    "{{count}} unread messages": "Un messaggio non letto",
+    "{{count}} unread messages": "{{count}} messaggio non letto",
     "{{count}} unread messages_plural": "{{count}} messaggi non letti",
     "License": "Licenza"
 }
