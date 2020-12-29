@@ -442,6 +442,10 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
  * Reference Notification (First between users)
  */
 exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
+  const campaign = 'reference-notification-first';
+  const userFromProfileUrl = `${url}/profile/${userFrom.username}`;
+  const giveReferenceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
+
   const params = exports.addEmailBaseTemplateParams({
     subject: `${userFrom.displayName} shared their experience with you`,
     email: userTo.email,
@@ -449,9 +453,20 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
     username: userTo.username, // data needed for link to profile in footer
     userFrom,
     userTo,
-    userFromProfileUrl: url + '/profile/' + userFrom.username,
-    giveReferenceUrl:
-      url + '/profile/' + userFrom.username + '/experiences/new',
+    userFromProfileUrlPlainText: userFromProfileUrl,
+    userFromProfileUrl: analyticsHandler.appendUTMParams(userFromProfileUrl, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign,
+      content: 'from-profile',
+    }),
+    giveReferenceUrlPlainText: giveReferenceUrl,
+    giveReferenceUrl: analyticsHandler.appendUTMParams(giveReferenceUrl, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign,
+      content: 'give-reference',
+    }),
   });
 
   exports.renderEmailAndSend('reference-notification-first', params, callback);
@@ -466,15 +481,30 @@ exports.sendReferenceNotificationSecond = function (
   reference,
   callback,
 ) {
+  const campaign = 'reference-notification-second';
+  const seeReferencesUrl = `${url}/profile/${userTo.username}/experiences#${reference._id}`;
+  const userFromProfileUrl = `${url}/profile/${userFrom.username}`;
+
   const params = exports.addEmailBaseTemplateParams({
     subject: `${userFrom.displayName} shared also their experience with you`,
     email: userTo.email,
     username: userTo.username, // data needed for link to profile in footer
     userFrom,
     userTo,
-    userFromProfileUrl: url + '/profile/' + userFrom.username,
-    seeReferencesUrl:
-      url + '/profile/' + userTo.username + '/experiences#' + reference._id,
+    userFromProfileUrlPlainText: userFromProfileUrl,
+    userFromProfileUrl: analyticsHandler.appendUTMParams(userFromProfileUrl, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign,
+      content: 'from-profile',
+    }),
+    seeReferencesUrlPlainText: seeReferencesUrl,
+    seeReferencesUrl: analyticsHandler.appendUTMParams(seeReferencesUrl, {
+      source: 'transactional-email',
+      medium: 'email',
+      campaign,
+      content: 'see-references',
+    }),
   });
 
   exports.renderEmailAndSend('reference-notification-second', params, callback);
