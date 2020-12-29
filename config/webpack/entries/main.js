@@ -14,7 +14,6 @@ import '@/modules/contacts/client/contacts.client.module';
 import '@/modules/messages/client/messages.client.module';
 import '@/modules/offers/client/offers.client.module';
 import '@/modules/pages/client/pages.client.module';
-import '@/modules/references-thread/client/references-thread.client.module';
 import '@/modules/search/client/search.client.module';
 import '@/modules/statistics/client/statistics.client.module';
 import '@/modules/support/client/support.client.module';

@@ -19,6 +19,7 @@ import ThreadMessages from '@/modules/messages/client/components/ThreadMessages'
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 
@@ -263,6 +264,9 @@ export default function Thread({ user, profileMinimumLength }) {
         {otherUser && !isExtraSmall && (
           <div className="col-sm-3 text-center">
             <Monkeybox user={otherUser} otherUser={user} />
+            {messages.length > 0 && (
+              <ReferenceThread userToId={otherUser._id} />
+            )}
             <ReportMemberLink username={otherUser.username} />
           </div>
         )}
