@@ -37,7 +37,7 @@ export default function AdminNewsletter() {
         <ul>
           <li>
             <a href="https://ideas.trustroots.org/wp-admin/admin.php?page=mailpoet-import">
-              Import subscribers (Mailpoet)
+              Import subscribers (MailPoet)
             </a>
           </li>
           <li>
