@@ -4,7 +4,7 @@ import React from 'react';
 
 // Internal dependencies
 import Reference from './Reference';
-import { experienceType } from '../../../experiences.prop-types';
+import { experienceType } from '../../experiences.prop-types';
 
 /**
  * List of user's references

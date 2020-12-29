@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'styled-components';
-import { experienceType } from '../../../experiences.prop-types';
+import { experienceType } from '../../experiences.prop-types';
 
 const Counts = styled.div`
   display: flex;
