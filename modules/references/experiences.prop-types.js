@@ -17,7 +17,7 @@ export const experienceType = PropTypes.shape({
   feedbackPublic: PropTypes.string.isRequired,
   response: PropTypes.shape({
     _id: PropTypes.string.isRequired,
-    created: PropTypes.strimg.isRequired,
+    created: PropTypes.string.isRequired,
     interactions: interactionsType.isRequired,
     recommend: PropTypes.bool.isRequired,
     feedbackPublic: PropTypes.string.isRequired,
