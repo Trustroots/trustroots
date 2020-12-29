@@ -30,14 +30,8 @@ export default function ListReferences({ profile, authenticatedUser }) {
       );
       setPublicExperiences(publicExperiences);
 
-      // TODO for now we add `experience.userTo._id.equals(profile._id)`
-      // condition to filter out the experiences written by the user,
-      // which are currently not displayed. Later, we will be showing also
-      // those: https://github.com/Trustroots/trustroots/pull/1860
       const pendingNewestFirst = experiences.filter(
-        experience =>
-          !experience.public &&
-          experience.userFrom._id !== authenticatedUser._id,
+        experience => !experience.public,
       );
 
       const pendingOldestFirst = [...pendingNewestFirst].reverse();

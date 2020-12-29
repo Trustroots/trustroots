@@ -116,7 +116,7 @@ export default function Reference({ experience }) {
             <TimeAgo date={createdDate} />
           </ReferenceLink>
         </Header>
-        {!isPublicReference && (
+        {!isPublicReference && feedbackPublic === undefined && (
           <>
             <PendingNotice>
               <PendingNoticePlaceholder aria-hidden="true">
@@ -159,6 +159,16 @@ export default function Reference({ experience }) {
               <FeedbackPublic>{response.feedbackPublic}</FeedbackPublic>
             )}
           </Response>
+        )}
+        {!isPublicReference && feedbackPublic !== undefined && (
+          <>
+            <PendingNotice>
+              {t(
+                'Your experience will become public in {{count}} days, or when they share their experience with you.',
+                { count: getDaysLeft(createdDate) },
+              )}
+            </PendingNotice>
+          </>
         )}
       </div>
     </div>

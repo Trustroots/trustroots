@@ -422,13 +422,23 @@ exports.readMany = async function readMany(req, res, next) {
     const selfId = req.user._id;
 
     const userToId = new mongoose.Types.ObjectId(userTo);
-    const matchQuery = {
+    let matchQuery = {
       $or: [{ userTo: userToId }, { userFrom: userToId }],
     };
     // Allow non-public references only when userTo is self
     if (!selfId.equals(userToId)) {
       matchQuery.public = true;
     }
+
+    const privateFromSelfQuery = {
+      userFrom: selfId,
+      userTo: userToId,
+      public: false,
+    };
+
+    matchQuery = {
+      $or: [matchQuery, privateFromSelfQuery],
+    };
 
     // Aggregate projection for User in reference
     const userKeys = {
