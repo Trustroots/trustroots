@@ -4,11 +4,12 @@ import React from 'react';
 
 // Internal dependencies
 import Reference from './Reference';
+import { experienceType } from '@/modules/references/client/experiences.prop-types';
 
 /**
  * List of user's references
  */
-export default function ReferencesSection({ title, referencePairs }) {
+export default function ReferencesSection({ title, experiences }) {
   return (
     <section>
       {title && (
@@ -18,24 +19,18 @@ export default function ReferencesSection({ title, referencePairs }) {
           </div>
         </div>
       )}
-      {referencePairs.map(
-        ({ sharedWithUser, writtenByUser }) =>
-          sharedWithUser && (
-            <div className="row" key={sharedWithUser._id}>
-              <div className="col-xs-12">
-                <Reference
-                  reference={sharedWithUser}
-                  response={writtenByUser}
-                />
-              </div>
-            </div>
-          ),
-      )}
+      {experiences.map(experience => (
+        <div className="row" key={experience._id}>
+          <div className="col-xs-12">
+            <Reference experience={experience} />
+          </div>
+        </div>
+      ))}
     </section>
   );
 }
 
 ReferencesSection.propTypes = {
-  referencePairs: PropTypes.array.isRequired,
+  experiences: PropTypes.arrayOf(experienceType).isRequired,
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
 };

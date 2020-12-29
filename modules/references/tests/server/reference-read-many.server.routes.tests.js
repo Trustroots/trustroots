@@ -9,14 +9,12 @@ const userProfile = require(path.resolve(
 ));
 const express = require(path.resolve('./config/lib/express'));
 
-describe('Read references by userFrom Id or userTo Id', () => {
+describe('Read references by userTo Id', () => {
   // GET /references?userFrom=:UserId&userTo=:UserId
 
-  // logged in public user can read all public references by userFrom
-  // ...                   can read all public references by userTo
-  // ...                   can read all public and private references from self
+  // logged in public user can read all public references by userTo
+  // ...                   can read all public and private references to self
   // ...                   can not read private references to self
-  // ...                   can read a specific reference by specifying userFrom and userTo
   // when userFrom or userTo doesn't exist, we simply return empty list
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
@@ -54,31 +52,24 @@ describe('Read references by userFrom Id or userTo Id', () => {
    * - .: reference doesn't exist
    *
    *   0 1 2 3 4 5
-   * 0 . T T F F T
-   * 1 T . T T . T
-   * 2 T . . T F T
-   * 3 T . F . . .
-   * 4 F . . . . .
-   * 5 T . . . . .
+   * 0 . T T F . .
+   * 1 T . T F . .
+   * 2 . . . . . .
+   * 3 . . . . . .
+   * 4 T T . . . .
+   * 5 F F . . . .
    */
   const referenceData = [
     [0, 1],
     [0, 2],
     [0, 3, { public: false }],
-    [0, 4, { public: false }],
-    [0, 5],
     [1, 0],
     [1, 2],
-    [1, 3],
-    [1, 5],
-    [2, 0],
-    [2, 3],
-    [2, 4, { public: false }],
-    [2, 5],
-    [3, 0],
-    [3, 2, { public: false }],
-    [4, 0, { public: false }],
-    [5, 0],
+    [1, 3, { public: false }],
+    [4, 0],
+    [4, 1],
+    [5, 0, { public: false }],
+    [5, 1, { public: false }],
   ];
 
   beforeEach(async () => {
@@ -93,19 +84,19 @@ describe('Read references by userFrom Id or userTo Id', () => {
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    // skipping until the API is finalized
-    it.skip('[param userFrom] respond with all public references from userFrom', async () => {
+    it('[param userTo] respond with all public references to userTo', async () => {
       const { body } = await agent
-        .get(`/api/references?userFrom=${users[2]._id}`)
+        .get(`/api/references?userTo=${users[1]._id}`)
         .expect(200);
 
-      // user2 gave 3 public and 1 non-public references
-      should(body).be.Array().of.length(3);
+      // user0 and user4 shared public experiencdes with user1,
+      // private experiences are not returned
+      should(body).be.Array().of.length(2);
     });
 
     it('the references in response have expected structure, userFrom & userTo have miniProfile', async () => {
       const { body } = await agent
-        .get(`/api/references?userTo=${users[2]._id}`)
+        .get(`/api/references?userTo=${users[1]._id}`)
         .expect(200);
 
       for (const ref of body) {
@@ -136,66 +127,79 @@ describe('Read references by userFrom Id or userTo Id', () => {
           .String()
           .match(/[0-9a-f]{24}/);
       }
-    });
 
-    // skipping until the API is finalized
-    it.skip('[param userTo] respond with all public references to userTo', async () => {
-      const { body } = await agent
-        .get(`/api/references?userTo=${users[2]._id}`)
-        .expect(200);
-
-      // user2 has received 2 public and 1 non-public reference
-      should(body).be.Array().of.length(2);
-    });
-
-    // skipping until the API is finalized
-    it.skip('[userFrom is self] display all public and private references from userFrom', async () => {
-      const { body } = await agent
-        .get('/api/references?userFrom=' + users[0]._id)
-        .expect(200);
-
-      // user0 has given 3 public and 2 non-public reference
-      // and should see all 5 of them
-      should(body).be.Array().of.length(5);
-
-      const nonpublic = body.filter(ref => !ref.public);
-      should(nonpublic).length(2);
-      should(nonpublic[0])
+      const response = body[0].response;
+      should(response).have.property('created', new Date().toISOString());
+      should(response).have.propertyByPath('interactions', 'met').Boolean();
+      should(response)
+        .have.propertyByPath('interactions', 'hostedMe')
+        .Boolean();
+      should(response)
+        .have.propertyByPath('interactions', 'hostedThem')
+        .Boolean();
+      should(response)
         .have.property('recommend')
         .which.is.equalOneOf(['no', 'yes', 'unknown']);
-      // the reference details are also present
-      should(nonpublic[0]).have.keys('interactions');
-      should(nonpublic[0].interactions).have.keys(
-        'met',
-        'hostedMe',
-        'hostedThem',
-      );
+
+      should(body[1].response).eql(null);
+
+      should(body[0].userTo._id).eql(users[1].id);
+      should(body[1].userTo._id).eql(users[1].id);
+
+      should(body[0].userFrom._id).eql(users[0].id);
+      should(body[1].userFrom._id).eql(users[4].id);
     });
 
-    // skipping until the API is finalized
-    it.skip('[userTo is self] private references are included in limited form (only userFrom, userTo, public, created)', async () => {
+    it('[param userTo] userTo is self, respond with all public and pending references to userTo', async () => {
       const { body } = await agent
         .get(`/api/references?userTo=${users[0]._id}`)
         .expect(200);
 
-      // user0 has received 4 public and 1 non-public reference
-      // and should see all 5 of them
-      // but the 1 non-public should have only fields userFrom, userTo, public, created
-      should(body).be.Array().of.length(5);
+      // user1 and user4 shared public experiences, user5 shared a private one
+      should(body).be.Array().of.length(3);
+    });
 
-      const nonpublic = body.filter(ref => !ref.public);
-      should(nonpublic).be.Array().of.length(1);
-      should(nonpublic[0]).match({
-        public: false,
-        created: new Date().toISOString(),
-      });
-      should(nonpublic[0]).have.only.keys(
+    it('userTo is self, private reference has only limited fields', async () => {
+      const { body } = await agent
+        .get(`/api/references?userTo=${users[0]._id}`)
+        .expect(200);
+
+      for (const ref of [body[0], body[1]]) {
+        should(ref).have.properties(
+          '_id',
+          'userFrom',
+          'userTo',
+          'public',
+          'created',
+          'recommend',
+          'response',
+        );
+
+        should(ref).have.propertyByPath('interactions', 'met');
+        should(ref).have.propertyByPath('interactions', 'hostedMe');
+        should(ref).have.propertyByPath('interactions', 'hostedThem');
+      }
+
+      should(body[2]).have.only.properties(
         '_id',
         'userFrom',
         'userTo',
-        'created',
         'public',
+        'created',
+        'response',
       );
+
+      should(body[0]).have.property('response').not.eql(null);
+      should(body[1].response).eql(null);
+      should(body[2].response).eql(null);
+
+      should(body[0].userTo._id).eql(users[0].id);
+      should(body[1].userTo._id).eql(users[0].id);
+      should(body[2].userTo._id).eql(users[0].id);
+
+      should(body[0].userFrom._id).eql(users[1].id);
+      should(body[1].userFrom._id).eql(users[4].id);
+      should(body[2].userFrom._id).eql(users[5].id);
     });
 
     it('[no params] 400 and error', async () => {
@@ -226,13 +230,13 @@ describe('Read references by userFrom Id or userTo Id', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent.get(`/api/references?userFrom=${users[2]._id}`).expect(403);
+      await agent.get(`/api/references?userTo=${users[2]._id}`).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent.get(`/api/references?userFrom=${users[2]._id}`).expect(403);
+      await agent.get(`/api/references?userTo=${users[2]._id}`).expect(403);
     });
   });
 });

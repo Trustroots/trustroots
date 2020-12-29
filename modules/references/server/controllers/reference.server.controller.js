@@ -136,19 +136,26 @@ const referenceFields = nonpublicReferenceFields.concat([
   'recommend',
 ]);
 
-/**
- * Convert mongoose object to a reference with limited fields
- * @param {MongooseObject|object} reference - the raw reference
- * @param {boolean} isNonpublicFullyDisplayed - can we show all fields of the nonpublic reference?
- * @returns {object} the reference, either full or limited
- */
-function formatReference(reference, fromLoggedInUser) {
-  // converts MongooseObject to Object and picks only defined fields
-  if (reference.public || fromLoggedInUser) {
-    return _.pick(reference, referenceFields);
-  } else {
-    return _.pick(reference, nonpublicReferenceFields);
-  }
+const responseFields = [
+  '_id',
+  'created',
+  'feedbackPublic',
+  'interactions.hostedMe',
+  'interactions.hostedThem',
+  'interactions.met',
+  'recommend',
+];
+
+function prepareSendingToClient(experience, response, authUserId) {
+  const fields_to_pick =
+    experience.public || authUserId.equals(experience.userFrom._id)
+      ? referenceFields
+      : nonpublicReferenceFields;
+  const prepared_experience = _.pick(experience, fields_to_pick);
+
+  const preparedResponse = response ? _.pick(response, responseFields) : null;
+
+  return { ...prepared_experience, response: preparedResponse };
 }
 
 async function findMyReference(req, userTo) {
@@ -289,6 +296,7 @@ async function sendPushNotification(userFrom, userTo, { isFirst }) {
 exports.create = async function (req, res, next) {
   // each of the following functions throws a special response error when it wants to respond
   // this special error gets processed within the catch {}
+  const selfId = req.user._id;
   try {
     // Synchronous validation of the request data consistency
     validate(validateCreate, req);
@@ -303,7 +311,7 @@ exports.create = async function (req, res, next) {
     // when it exists, we will want to make both references public
     const otherReference = await Reference.findOne({
       userFrom: req.body.userTo,
-      userTo: req.user._id,
+      userTo: selfId,
     }).exec();
 
     // when the other reference is public, this one can only have value of recommend: yes
@@ -312,7 +320,7 @@ exports.create = async function (req, res, next) {
     // save the reference...
     const savedReference = await saveNewReference({
       ...req.body,
-      userFrom: req.user._id,
+      userFrom: selfId,
       public: !!otherReference,
     });
 
@@ -327,13 +335,19 @@ exports.create = async function (req, res, next) {
       otherReference,
     );
 
+    const experiencesWithResponses = prepareSendingToClient(
+      savedReference._doc,
+      otherReference,
+      selfId,
+    );
+
     // send push notification
     await sendPushNotification(req.user, userTo, { isFirst: !otherReference });
 
     // finally, respond
     throw new ResponseError({
       status: 201,
-      body: formatReference(savedReference, true),
+      body: experiencesWithResponses,
     });
   } catch (e) {
     processResponses(res, next, e);
@@ -354,6 +368,29 @@ function validateReadMany(req) {
   return { valid: true, details: {} };
 }
 
+function pairUpExperiences(experiences, userId) {
+  const experiencePairDict = experiences
+    .filter(experience => experience.userTo._id.equals(userId))
+    .reduce(
+      (a, exp) => ({
+        ...a,
+        [exp.userFrom._id]: [exp, null],
+      }),
+      {},
+    );
+
+  experiences.forEach(experience => {
+    if (experience.userFrom._id.equals(userId)) {
+      const userTo = experience.userTo._id;
+      if (experiencePairDict[userTo]) {
+        experiencePairDict[userTo][1] = experience;
+      }
+    }
+  });
+
+  return Object.values(experiencePairDict);
+}
+
 /**
  * Read references filtered by userTo
  * and sorted by 'created' field starting from the most recent date
@@ -364,16 +401,14 @@ exports.readMany = async function readMany(req, res, next) {
     validate(validateReadMany, req);
 
     const { userTo } = req.query;
-    const self = req.user;
+    const selfId = req.user._id;
 
+    const userToId = new mongoose.Types.ObjectId(userTo);
     const matchQuery = {
-      $or: [
-        { userTo: new mongoose.Types.ObjectId(userTo) },
-        { userFrom: new mongoose.Types.ObjectId(userTo) },
-      ],
+      $or: [{ userTo: userToId }, { userFrom: userToId }],
     };
     // Allow non-public references only when userTo is self
-    if (!self._id.equals(userTo)) {
+    if (!selfId.equals(userToId)) {
       matchQuery.public = true;
     }
 
@@ -444,12 +479,14 @@ exports.readMany = async function readMany(req, res, next) {
       { $sort: { created: -1 } },
     ]).exec();
 
-    // when userFrom is self, we can see the nonpublic references in their full form
+    const pairedUpExperiences = pairUpExperiences(references, userToId);
+    const experiencesWithResponses = pairedUpExperiences.map(experiencePair =>
+      prepareSendingToClient(...experiencePair, selfId),
+    );
+
     throw new ResponseError({
       status: 200,
-      body: references.map(reference =>
-        formatReference(reference, self._id.equals(reference.userFrom._id)),
-      ),
+      body: experiencesWithResponses,
     });
   } catch (e) {
     processResponses(res, next, e);
@@ -489,7 +526,6 @@ exports.referenceById = async function referenceById(req, res, next, id) {
 
     // find the reference by id
     const reference = await Reference.findById(req.params.referenceId)
-      .select(referenceFields)
       .populate('userFrom userTo', userProfile.userMiniProfileFields)
       .exec();
 
@@ -515,10 +551,18 @@ exports.referenceById = async function referenceById(req, res, next, id) {
       });
     }
 
-    // assign the reference to the request object
-    // when reference is not public, only userFrom can see it whole
-    const isUserFrom = userFromId === selfId;
-    req.reference = formatReference(reference, isUserFrom);
+    const response = await Reference.findOne({
+      userFrom: userToId,
+      userTo: userFromId,
+    }).exec();
+
+    const experienceWithResponse = prepareSendingToClient(
+      reference,
+      response,
+      selfId,
+    );
+
+    req.reference = experienceWithResponse;
     return next();
   } catch (e) {
     processResponses(res, next, e);
@@ -533,18 +577,33 @@ exports.readOne = function readOne(req, res) {
 };
 
 exports.readMine = async function readMine(req, res) {
-  if (!mongoose.Types.ObjectId.isValid(req.query.userTo)) {
+  const selfId = req.user._id;
+  const userTo = req.query.userTo;
+
+  if (!mongoose.Types.ObjectId.isValid(userTo)) {
     return res
       .status(400)
       .send({ message: 'Missing or invalid `userTo` request param' });
   }
-  const reference = await findMyReference(req, req.query.userTo);
+
+  const reference = await findMyReference(req, userTo);
   if (reference === null) {
     return res.status(404).json({
       message: errorService.getErrorMessageByKey('not-found'),
     });
   }
-  return res.status(200).json(reference);
+  const otherReference = await Reference.findOne({
+    userFrom: userTo,
+    userTo: selfId,
+  }).exec();
+
+  const experienceWithResponse = prepareSendingToClient(
+    reference,
+    otherReference,
+    selfId,
+  );
+
+  return res.status(200).json(experienceWithResponse);
 };
 
 exports.getCount = async function getCount(req, res, next) {
