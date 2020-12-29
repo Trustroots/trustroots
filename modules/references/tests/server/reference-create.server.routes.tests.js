@@ -8,6 +8,7 @@ const Reference = mongoose.model('Reference');
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
+const config = require(path.resolve('./config/config'));
 
 describe('Create a reference', () => {
   // user can leave a reference to anyone
@@ -451,6 +452,12 @@ describe('Create a reference', () => {
           );
           should(job.data.html).containEql(
             `/profile/${user2.username}/experiences#${reference._id}`,
+          );
+          should(job.data.text).containEql(
+            `${config.limits.timeToReplyReference.days} days`,
+          );
+          should(job.data.html).containEql(
+            `${config.limits.timeToReplyReference.days} days`,
           );
         });
 
