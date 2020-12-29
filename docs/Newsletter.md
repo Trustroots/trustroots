@@ -13,6 +13,8 @@ It's accessible with same account and URL as our blog:
 - [Login](https://ideas.trustroots.org/wp-admin/)
 - [MailPoet admin](https://ideas.trustroots.org/wp-admin/admin.php?page=mailpoet-newsletters)
 
+If you don't have an account yet, create one at [wordpress.com/start/account](https://wordpress.com/start/account) and ask someone to add you to the site.
+
 ### Updating subscribers
 
 MailPoet's subscribers and subscribers on the actual site's database are not synchronised automatically. Therefore you need to manually update the list each time you want to send out a campaign.
