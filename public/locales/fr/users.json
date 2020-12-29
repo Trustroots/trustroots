@@ -66,5 +66,12 @@
     "Other gender": "Autre genre",
     "Non-binary": "Non binaire",
     "Male": "Homme",
-    "Female": "Femme"
+    "Female": "Femme",
+    "Note that your profile will not be visible to others until you confirm your email.": "Veuillez noter que votre profil ne sera pas visible des autres utilisateurs tant que vous n'aurez pas confirmé votre e-mail.",
+    "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "Vos données sont les vôtres. Nous nous engageons à vous faciliter l'accès à toutes vos données dans et hors de Trustroots à tout moment.",
+    "Profile": "Profil",
+    "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "Si vous n'avez pas reçu le message, vérifiez votre dossier de spam ou demandez un renvoi via les <1>paramètres d'e-mail</1>.",
+    "Hosting offer": "Offre d'hébergement",
+    "Download your data": "Télécharger vos données",
+    "Anonymous member": "Membre anonyme"
 }

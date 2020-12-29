@@ -59,6 +59,7 @@ function generateUsers(
     locale,
     newsletter,
     public: pub,
+    pushRegistration,
   } = {},
   type = 'server',
   tribes = [],
@@ -74,6 +75,7 @@ function generateUsers(
           locale,
           newsletter,
           public: pub,
+          pushRegistration,
         });
       case 'client':
         return generateClientUser({

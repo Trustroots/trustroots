@@ -35,28 +35,25 @@ describe('<CreateReference />', () => {
 
   it('should not be possible to leave a reference to self', () => {
     const me = { _id: '123456', username: 'username' };
-    api.references.read.mockResolvedValueOnce([]);
+    api.references.readMine.mockResolvedValueOnce([]);
     const { queryByRole } = render(
       <CreateReference userFrom={me} userTo={me} />,
     );
     expect(queryByRole('alert')).toHaveTextContent(
-      "Sorry, you can't give a reference to yourself.",
+      "Sorry, you can't share experience only with yourself.",
     );
   });
 
   it('check whether the reference exists at the beginning', () => {
-    api.references.read.mockResolvedValueOnce([]);
+    api.references.readMine.mockResolvedValueOnce([]);
     render(<CreateReference userFrom={userFrom} userTo={userTo} />);
-    expect(api.references.read).toBeCalledWith({
-      userFrom: userFrom._id,
+    expect(api.references.readMine).toBeCalledWith({
       userTo: userTo._id,
     });
   });
 
   it('can not leave a second reference', async () => {
-    api.references.read.mockResolvedValueOnce([
-      { userFrom, userTo, public: false },
-    ]);
+    api.references.readMine.mockResolvedValueOnce([{ userTo, public: false }]);
     const { queryByRole } = render(
       <CreateReference userFrom={userFrom} userTo={userTo} />,
     );
@@ -64,14 +61,13 @@ describe('<CreateReference />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(api.references.read).toBeCalledWith({
-      userFrom: userFrom._id,
+    expect(api.references.readMine).toBeCalledWith({
       userTo: userTo._id,
     });
   });
 
   it('can leave a reference (reference form is available)', async () => {
-    api.references.read.mockResolvedValueOnce([]);
+    api.references.readMine.mockResolvedValueOnce(null);
     const { queryByLabelText } = render(
       <CreateReference userFrom={userFrom} userTo={userTo} />,
     );
@@ -82,7 +78,7 @@ describe('<CreateReference />', () => {
   });
 
   it('submit a reference', async () => {
-    api.references.read.mockResolvedValueOnce([]);
+    api.references.readMine.mockResolvedValueOnce(null);
     api.references.create.mockResolvedValueOnce({ public: false });
 
     const {
@@ -118,9 +114,11 @@ describe('<CreateReference />', () => {
     fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
-      met: false,
-      hostedMe: true,
-      hostedThem: false,
+      interactions: {
+        met: false,
+        hostedMe: true,
+        hostedThem: false,
+      },
       recommend: 'yes',
       feedbackPublic: 'they made a tasty pie',
       userTo: userTo._id,
@@ -138,7 +136,7 @@ describe('<CreateReference />', () => {
   });
 
   it('submit a report when recommend is no and user wants to send a report', async () => {
-    api.references.read.mockResolvedValueOnce([]);
+    api.references.readMine.mockResolvedValueOnce(null);
     api.references.create.mockResolvedValueOnce({ public: false });
 
     const {
@@ -170,9 +168,11 @@ describe('<CreateReference />', () => {
     fireEvent.click(getAllByText('Finish')[0]);
 
     expect(api.references.create).toHaveBeenCalledWith({
-      met: false,
-      hostedMe: true,
-      hostedThem: false,
+      interactions: {
+        met: false,
+        hostedMe: true,
+        hostedThem: false,
+      },
       recommend: 'no',
       feedbackPublic: '',
       userTo: userTo._id,

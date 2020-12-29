@@ -11,6 +11,7 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const config = require(path.resolve('./config/config'));
 const cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
+const languages = require(path.resolve('./config/languages/languages.json'));
 
 require(path.resolve('./modules/offers/server/models/offer.server.model'));
 
@@ -244,6 +245,7 @@ function addUsers() {
           console.log(chalk.green('Trustroots test user data'));
           console.log(chalk.white('--'));
 
+          const genderValues = User.schema.path('gender').enumValues;
           while (index < max) {
             (function addNextUser() {
               const user = new User();
@@ -255,7 +257,8 @@ function addUsers() {
               }
 
               // Add mock data
-              user.firstName = faker.name.firstName();
+              user.gender = faker.random.arrayElement(genderValues);
+              user.firstName = faker.name.firstName(user.gender);
               user.lastName = faker.name.lastName();
               user.displayName = user.firstName + ' ' + user.lastName;
               user.provider = 'local';
@@ -267,6 +270,10 @@ function addUsers() {
                 .subtract(Math.random() * 365, 'd')
                 .subtract(Math.random() * 24, 'h')
                 .subtract(Math.random() * 3600, 's');
+              // 0-4 random languages
+              user.languages = [...Array(random(4))].map(() =>
+                faker.random.objectElement(languages, 'key'),
+              );
 
               if (admin !== undefined) {
                 // admin user

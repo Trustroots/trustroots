@@ -1,8 +1,6 @@
 <!-- Email -->
 <div class="panel panel-default">
-  <div class="panel-heading">
-    Email
-  </div>
+  <div class="panel-heading">Email</div>
   <div class="panel-body">
     <!-- Email Address -->
     <form
@@ -126,9 +124,7 @@
   id="notifications"
   ng-if="!profileEditAccount.isNativeMobileApp"
 >
-  <div class="panel-heading">
-    Notifications
-  </div>
+  <div class="panel-heading">Notifications</div>
   <div class="panel-body">
     <form autocomplete="off">
       <div class="form-horizontal">
@@ -176,9 +172,7 @@
 
 <!-- Password -->
 <div class="panel panel-default" id="password">
-  <div class="panel-heading">
-    Change your password
-  </div>
+  <div class="panel-heading">Change your password</div>
   <div class="panel-body">
     <form
       ng-submit="profileEditAccount.changeUserPassword()"
@@ -267,9 +261,7 @@
 
 <!-- Username -->
 <div class="panel panel-default" id="username">
-  <div class="panel-heading">
-    Username
-  </div>
+  <div class="panel-heading">Username</div>
   <div class="panel-body">
     <form
       ng-submit="profileEditAccount.updateUsername()"
@@ -340,75 +332,14 @@
 </div>
 <!-- /Username -->
 
-<!-- Data liberation -->
-<div class="panel panel-default" id="download">
-  <div class="panel-heading">
-    Download your data
-  </div>
-  <div class="panel-body">
-    <div class="row">
-      <div class="col-xs-12 col-sm-5">
-        <p class="text-muted">
-          Your data is <em>Yours</em>. We are committed to making it easy for
-          you to get all of your data into, and out of, Trustroots at any time.
-        </p>
-      </div>
-      <div class="ccol-xs-12 col-sm-7">
-        <ul class="list-unstyled">
-          <li>
-            <a
-              class="btn btn-link btn-sm"
-              href="/api/users/{{app.user.username}}"
-              target="_top"
-              type="application/json"
-              download="profile.json"
-              analytics-on="click"
-              analytics-event="user-data-download"
-              analytics-properties="{ category: 'user.data', label: 'Download User Data: Download User Data: Profile' }"
-              >Profile</a
-            >
-            <small class="text-muted">(json)</small>
-          </li>
-          <li>
-            <a
-              class="btn btn-link btn-sm"
-              href="/api/contacts/{{app.user._id}}"
-              target="_top"
-              type="application/json"
-              download="contacts.json"
-              analytics-on="click"
-              analytics-event="user-data-download"
-              analytics-properties="{ category: 'user.data', label: 'Download User Data: Contacts' }"
-              >Contacts</a
-            >
-            <small class="text-muted">(json)</small>
-          </li>
-          <li>
-            <a
-              class="btn btn-link btn-sm"
-              href="/api/offers-by/{{app.user._id}}"
-              target="_top"
-              type="application/json"
-              download="offers.json"
-              analytics-on="click"
-              analytics-event="user-data-download"
-              analytics-properties="{ category: 'user.data', label: 'Download User Data: Hosting offer' }"
-              >Hosting offer</a
-            >
-            <small class="text-muted">(json)</small>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- /Data liberation -->
+<download-profile
+  username="app.user.username"
+  userId="app.user._id"
+></download-profile>
 
 <!-- Remove -->
 <div class="panel panel-default" id="remove">
-  <div class="panel-heading">
-    Remove your account
-  </div>
+  <div class="panel-heading">Remove your account</div>
   <div class="panel-body">
     <div
       class="alert alert-success text-center"

@@ -12,6 +12,16 @@ module.exports = function (app) {
       .get(references.readMany);
 
     app
+      .route('/api/references/count')
+      .all(referencePolicy.isAllowed)
+      .get(references.getCount);
+
+    app
+      .route('/api/my-reference')
+      .all(referencePolicy.isAllowed)
+      .get(references.readMine);
+
+    app
       .route('/api/references/:referenceId')
       .all(referencePolicy.isAllowed)
       .get(references.readOne);

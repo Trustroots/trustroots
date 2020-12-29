@@ -6,6 +6,7 @@ import { getMessages } from '../api/messages.api';
 import AdminHeader from './AdminHeader.component';
 import Json from './Json.component';
 import UserLink from './UserLink.component';
+import TimeAgo from '@/modules/core/client/components/TimeAgo';
 
 // Mongo ObjectId is always 24 chars long
 const MONGO_OBJECT_ID_LENGTH = 24;
@@ -104,12 +105,19 @@ export default function AdminMessages() {
               return (
                 <div className="panel panel-default" key={_id}>
                   <div className="panel-body">
-                    {message.content}
-                    <br />
-                    <br />
                     <UserLink user={message.userFrom} />
+                    {' · '}
+                    <TimeAgo date={new Date(message.created)} />
+                    {' · '}
+                    {message.read ? 'Seen.' : 'Not seen.'}
+                    <br />
+                    <br />
+                    <div
+                      dangerouslySetInnerHTML={{ __html: message.content }}
+                    />
+                    <br />
                     <details>
-                      <summary>Message details</summary>
+                      <summary>Database entry</summary>
                       <Json content={message} />
                     </details>
                   </div>

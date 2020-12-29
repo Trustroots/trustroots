@@ -22,6 +22,7 @@ function ProfileController(
   vm.profile = profile;
   vm.contact = contact;
   vm.contacts = contacts;
+  vm.initialPathName = $state.current.name;
 
   /**
    * Remove contact via React RemoveContact component

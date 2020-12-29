@@ -1,5 +1,3 @@
-import templateUrl from '@/modules/core/client/views/404.client.view.html';
-
 angular.module('core').config(CoreRoutes);
 
 /* @ngInject */
@@ -21,7 +19,7 @@ function CoreRoutes($stateProvider, $urlRouterProvider) {
 
   $stateProvider.state('not-found', {
     url: '/not-found',
-    templateUrl,
+    template: '<not-found-page></not-found-page>',
     footerHidden: true,
     headerHidden: true,
     data: {

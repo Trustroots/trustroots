@@ -2,6 +2,9 @@
  * Module dependencies.
  */
 const path = require('path');
+const async = require('async');
+const mongoose = require('mongoose');
+
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
@@ -9,10 +12,10 @@ const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
 const log = require(path.resolve('./config/lib/logger'));
-const async = require('async');
-const mongoose = require('mongoose');
+
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
+const User = mongoose.model('User');
 const ReferenceThread = mongoose.model('ReferenceThread');
 
 /**
@@ -72,10 +75,10 @@ exports.createReferenceThread = function (req, res) {
       },
 
       // Make sure targeted user has actually sent messages to user who is leaving the reference
-      function (threadId, referenceUserTo, done) {
+      function (threadId, referenceUserToId, done) {
         Message.findOne(
           {
-            userFrom: referenceUserTo,
+            userFrom: referenceUserToId,
             userTo: req.user._id,
           },
           'userFrom userTo',
@@ -97,7 +100,18 @@ exports.createReferenceThread = function (req, res) {
             }
 
             // All good, continue
-            done(null, threadId, referenceUserTo);
+            done(null, threadId, referenceUserToId);
+          },
+        );
+      },
+
+      // Get user
+      function (threadId, referenceUserToId, done) {
+        User.findById(
+          referenceUserToId,
+          '_id gender',
+          (err, referenceUserTo) => {
+            done(err, threadId, referenceUserTo);
           },
         );
       },
@@ -108,7 +122,7 @@ exports.createReferenceThread = function (req, res) {
 
         referenceThread.thread = threadId;
         referenceThread.userFrom = req.user._id;
-        referenceThread.userTo = referenceUserTo;
+        referenceThread.userTo = referenceUserTo._id;
         referenceThread.created = new Date(); // Ensure user doesn't try to set this
 
         referenceThread.save(function (err, savedReferenceThread) {
@@ -134,6 +148,8 @@ exports.createReferenceThread = function (req, res) {
                 // References are `yes` or `no`
                 // (defined at the `ReferenceThread` model)
                 reference: referenceThread.reference,
+                reporterGender: req.user.gender || 'unknown',
+                reporteeGender: referenceUserTo.gender || 'unknown',
               },
             },
             function () {

@@ -1,7 +1,9 @@
+// External dependencies
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
-import * as languages from '@/config/languages/languages';
+
+// Internal dependencies
 import {
   getNetworkName,
   hasConnectedAdditionalSocialAccounts,
@@ -9,9 +11,10 @@ import {
   socialAccountLink,
 } from '../utils/networks';
 import { getGender } from '@/modules/core/client/utils/user_info';
+import LanguageList from './LanguageList';
 
 export default function ProfileViewBasics({ profile }) {
-  const { t } = useTranslation(['users', 'languages']);
+  const { t } = useTranslation(['users']);
 
   const getBirthdate = birthdate =>
     t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
@@ -31,9 +34,6 @@ export default function ProfileViewBasics({ profile }) {
     }
     return t('Online long ago');
   };
-
-  // i18next-extract-disable-next-line
-  const getLanguage = code => t(languages[code], { ns: 'languages' });
 
   /*
    * Rendering functions
@@ -90,14 +90,10 @@ export default function ProfileViewBasics({ profile }) {
     </div>
   );
 
-  const renderLanguages = languagesList => (
+  const renderLanguages = languages => (
     <div className="profile-sidebar-section">
-      <h4 id="profile-languages">{t('Languages')}</h4>
-      <ul className="list-unstyled" aria-describedby="profile-languages">
-        {languagesList.map(code => (
-          <li key={code}>{getLanguage(code) || code}</li>
-        ))}
-      </ul>
+      <h4>{t('Languages')}</h4>
+      <LanguageList className="list-unstyled" languages={languages} />
     </div>
   );
 

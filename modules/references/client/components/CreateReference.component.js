@@ -35,16 +35,13 @@ export default function CreateReference({ userFrom, userTo }) {
 
   useEffect(() => {
     (async () => {
-      const references = await api.references.read({
-        userFrom: userFrom._id,
+      const reference = await api.references.readMine({
         userTo: userTo._id,
       });
 
-      references.forEach(reference => {
-        if (reference.userFrom._id === userFrom._id) {
-          setIsDuplicate(true);
-        }
-      });
+      if (reference !== null) {
+        setIsDuplicate(true);
+      }
 
       setIsLoading(false);
     })();
@@ -68,7 +65,11 @@ export default function CreateReference({ userFrom, userTo }) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const reference = { met, hostedThem, hostedMe, recommend, feedbackPublic };
+    const reference = {
+      interactions: { met, hostedThem, hostedMe },
+      recommend,
+      feedbackPublic,
+    };
 
     // save the reference
     const [savedReference] = await Promise.all([
