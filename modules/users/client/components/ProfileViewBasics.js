@@ -183,9 +183,13 @@ export default function ProfileViewBasics({ profile }) {
 
   return (
     <div>
-      {profile.isVolunteer && (
+      {(profile.isVolunteer || profile.isVolunteerAlumni) && (
         <div className="profile-sidebar-section">
-          ✨ <a href="/team">{t('Trustroots volunteer')}</a>
+          ✨{' '}
+          <a href="/team">
+            {profile.isVolunteer && t('Trustroots volunteer')}
+            {profile.isVolunteerAlumni && t('Trustroots volunteer alumni')}
+          </a>
         </div>
       )}
 

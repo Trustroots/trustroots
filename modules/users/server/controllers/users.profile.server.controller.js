@@ -868,7 +868,10 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
     delete profile.usernameUpdated;
   }
 
-  if (profile.roles.includes('volunteer')) {
+  // Volunteer status
+  if (profile.roles.includes('volunteer-alumni')) {
+    profile.isVolunteerAlumni = true;
+  } else if (profile.roles.includes('volunteer')) {
     profile.isVolunteer = true;
   }
 
