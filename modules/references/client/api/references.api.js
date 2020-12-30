@@ -7,7 +7,7 @@ import axios from 'axios';
  */
 export async function create(reference) {
   const { data: responseReference } = await axios.post(
-    '/api/references',
+    '/api/experiences',
     reference,
   );
   return responseReference;
@@ -21,7 +21,7 @@ export async function create(reference) {
  * @returns {array} - array of the found references
  */
 export async function read({ userTo }) {
-  const { data: references } = await axios.get('/api/references', {
+  const { data: references } = await axios.get('/api/experiences', {
     params: { userTo },
   });
   return references;
@@ -37,7 +37,7 @@ export async function read({ userTo }) {
 export async function readMine({ userTo }) {
   const params = { userTo };
   try {
-    const { data: reference } = await axios.get('/api/my-reference', {
+    const { data: reference } = await axios.get('/api/my-experience', {
       params,
     });
     return reference;
@@ -69,7 +69,7 @@ export async function report(user, message) {
  */
 export async function getCount(userTo) {
   try {
-    const { data } = await axios.get('/api/references/count', {
+    const { data } = await axios.get('/api/experiences/count', {
       params: { userTo },
     });
     return data;

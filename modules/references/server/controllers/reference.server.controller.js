@@ -542,7 +542,7 @@ exports.referenceById = async function referenceById(req, res, next, id) {
     const selfId = req.user._id;
 
     // find the reference by id
-    const reference = await Reference.findById(req.params.referenceId)
+    const reference = await Reference.findById(req.params.experienceId)
       .populate('userFrom userTo', userProfile.userMiniProfileFields)
       .exec();
 

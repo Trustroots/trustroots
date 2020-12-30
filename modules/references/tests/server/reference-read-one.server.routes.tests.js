@@ -11,7 +11,7 @@ const userProfile = require(path.resolve(
 const express = require(path.resolve('./config/lib/express'));
 
 describe('Read a single reference by reference id', () => {
-  // GET /references/:referenceId
+  // GET /experiences/:referenceId
   // logged in public user can read a single public reference by id
   // .....                 can read a single private reference if it is from self
   // logged in public user can not read other private references
@@ -82,7 +82,7 @@ describe('Read a single reference by reference id', () => {
 
     it('read a single public reference by id that has response', async () => {
       const { body } = await agent
-        .get(`/api/references/${references[3]._id}`)
+        .get(`/api/experiences/${references[3]._id}`)
         .expect(200);
 
       // pre-collect expected values of users
@@ -119,7 +119,7 @@ describe('Read a single reference by reference id', () => {
 
     it('read a single private reference if it is from self', async () => {
       const { body } = await agent
-        .get(`/api/references/${references[1]._id}`)
+        .get(`/api/experiences/${references[1]._id}`)
         .expect(200);
 
       should(body).match({
@@ -131,7 +131,7 @@ describe('Read a single reference by reference id', () => {
 
     it('[private reference to self] display in limited form', async () => {
       const { body } = await agent
-        .get(`/api/references/${references[2]._id}`)
+        .get(`/api/experiences/${references[2]._id}`)
         .expect(200);
 
       should(body).match({
@@ -153,7 +153,7 @@ describe('Read a single reference by reference id', () => {
 
     it('[private references not from self] 404', async () => {
       const { body } = await agent
-        .get(`/api/references/${references[5]._id}`)
+        .get(`/api/experiences/${references[5]._id}`)
         .expect(404);
 
       should(body).eql({
@@ -166,7 +166,7 @@ describe('Read a single reference by reference id', () => {
 
     it("[reference doesn't exist] 404", async () => {
       const { body } = await agent
-        .get(`/api/references/${'a'.repeat(24)}`)
+        .get(`/api/experiences/${'a'.repeat(24)}`)
         .expect(404);
 
       should(body).eql({
@@ -178,7 +178,7 @@ describe('Read a single reference by reference id', () => {
     });
 
     it('[invalid referenceId] 400', async () => {
-      const { body } = await agent.get('/api/references/foo').expect(400);
+      const { body } = await agent.get('/api/experiences/foo').expect(400);
 
       should(body).eql({
         message: 'Bad request.',
@@ -194,13 +194,13 @@ describe('Read a single reference by reference id', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent.get(`/api/references/${references[3]._id}`).expect(403);
+      await agent.get(`/api/experiences/${references[3]._id}`).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent.get(`/api/references/${references[3]._id}`).expect(403);
+      await agent.get(`/api/experiences/${references[3]._id}`).expect(403);
     });
   });
 });

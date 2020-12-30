@@ -72,7 +72,7 @@ describe('Read my reference to userTo Id', () => {
 
     it('[param userTo] 1: user who has also shared experience', async () => {
       const { body } = await agent
-        .get(`/api/my-reference?userTo=${users[1]._id}`)
+        .get(`/api/my-experience?userTo=${users[1]._id}`)
         .expect(200);
 
       should(body).have.propertyByPath('interactions', 'met').Boolean();
@@ -116,7 +116,7 @@ describe('Read my reference to userTo Id', () => {
 
     it('[param userTo] 2: user who did not share experience', async () => {
       const { body } = await agent
-        .get(`/api/my-reference?userTo=${users[2]._id}`)
+        .get(`/api/my-experience?userTo=${users[2]._id}`)
         .expect(200);
 
       should(body).have.propertyByPath('interactions', 'met').Boolean();
@@ -144,7 +144,7 @@ describe('Read my reference to userTo Id', () => {
 
     it('[param userTo] 3: experience is still private', async () => {
       const { body } = await agent
-        .get(`/api/my-reference?userTo=${users[3]._id}`)
+        .get(`/api/my-experience?userTo=${users[3]._id}`)
         .expect(200);
 
       should(body).have.propertyByPath('interactions', 'met').Boolean();
@@ -172,7 +172,7 @@ describe('Read my reference to userTo Id', () => {
 
     it('[param userTo] 4: user with whom no experience shared', async () => {
       const { body } = await agent
-        .get(`/api/my-reference?userTo=${users[4]._id}`)
+        .get(`/api/my-experience?userTo=${users[4]._id}`)
         .expect(404);
 
       should(body).eql({
@@ -182,7 +182,7 @@ describe('Read my reference to userTo Id', () => {
 
     it('[param userTo] 0: myself', async () => {
       const { body } = await agent
-        .get(`/api/my-reference?userTo=${users[4]._id}`)
+        .get(`/api/my-experience?userTo=${users[4]._id}`)
         .expect(404);
 
       should(body).eql({
@@ -191,7 +191,7 @@ describe('Read my reference to userTo Id', () => {
     });
 
     it('[no params] 400 and error', async () => {
-      const { body } = await agent.get('/api/my-reference').expect(400);
+      const { body } = await agent.get('/api/my-experience').expect(400);
 
       should(body).eql({
         message: 'Missing or invalid `userTo` request param',
@@ -200,7 +200,7 @@ describe('Read my reference to userTo Id', () => {
 
     it('[invalid params] 400 and error', async () => {
       const { body } = await agent
-        .get('/api/my-reference?userTo=asdf')
+        .get('/api/my-experience?userTo=asdf')
         .expect(400);
 
       should(body).eql({
@@ -214,13 +214,13 @@ describe('Read my reference to userTo Id', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent.get(`/api/my-reference?userTo=${users[2]._id}`).expect(403);
+      await agent.get(`/api/my-experience?userTo=${users[2]._id}`).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent.get(`/api/my-reference?userTo=${users[2]._id}`).expect(403);
+      await agent.get(`/api/my-experience?userTo=${users[2]._id}`).expect(403);
     });
   });
 });

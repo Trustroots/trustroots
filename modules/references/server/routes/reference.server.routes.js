@@ -6,26 +6,26 @@ const references = require('../controllers/reference.server.controller');
 module.exports = function (app) {
   if (config.featureFlags.reference) {
     app
-      .route('/api/references')
+      .route('/api/experiences')
       .all(referencePolicy.isAllowed)
       .post(references.create)
       .get(references.readMany);
 
     app
-      .route('/api/references/count')
+      .route('/api/experiences/count')
       .all(referencePolicy.isAllowed)
       .get(references.getCount);
 
     app
-      .route('/api/my-reference')
+      .route('/api/my-experience')
       .all(referencePolicy.isAllowed)
       .get(references.readMine);
 
     app
-      .route('/api/references/:referenceId')
+      .route('/api/experiences/:experienceId')
       .all(referencePolicy.isAllowed)
       .get(references.readOne);
 
-    app.param('referenceId', references.referenceById);
+    app.param('experienceId', references.referenceById);
   }
 };
