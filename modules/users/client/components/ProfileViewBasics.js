@@ -183,6 +183,12 @@ export default function ProfileViewBasics({ profile }) {
 
   return (
     <div>
+      {profile.isVolunteer && (
+        <div className="profile-sidebar-section">
+          ✨ <a href="/team">{t('Trustroots volunteer')}</a>
+        </div>
+      )}
+
       {/* reply rate and reply time */}
       {(profile.replyRate || profile.replyTime) &&
         renderReplyData(profile.replyRate, profile.replyTime)}
