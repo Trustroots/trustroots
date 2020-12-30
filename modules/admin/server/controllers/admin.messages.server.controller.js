@@ -36,6 +36,7 @@ exports.getMessages = (req, res) => {
       { userFrom: user2, userTo: user1 },
     ],
   })
+    .sort({ created: 1 })
     .populate({
       path: 'userFrom',
       select: 'username displayName',

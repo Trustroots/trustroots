@@ -95,6 +95,23 @@ describe('Read my reference to userTo Id', () => {
         .have.property('userTo')
         .String()
         .match(/[0-9a-f]{24}/);
+
+      const response = body.response;
+      should(response).have.propertyByPath('interactions', 'met').Boolean();
+      should(response)
+        .have.propertyByPath('interactions', 'hostedMe')
+        .Boolean();
+      should(response)
+        .have.propertyByPath('interactions', 'hostedThem')
+        .Boolean();
+      should(response).have.property('created', new Date().toISOString());
+      should(response)
+        .have.property('recommend')
+        .which.is.equalOneOf(['no', 'yes', 'unknown']);
+      should(response)
+        .have.property('_id')
+        .String()
+        .match(/[0-9a-f]{24}/);
     });
 
     it('[param userTo] 2: user who did not share experience', async () => {
@@ -122,6 +139,7 @@ describe('Read my reference to userTo Id', () => {
         .have.property('userTo')
         .String()
         .match(/[0-9a-f]{24}/);
+      should(body.response).eql(null);
     });
 
     it('[param userTo] 3: experience is still private', async () => {
@@ -149,6 +167,7 @@ describe('Read my reference to userTo Id', () => {
         .have.property('userTo')
         .String()
         .match(/[0-9a-f]{24}/);
+      should(body.response).eql(null);
     });
 
     it('[param userTo] 4: user with whom no experience shared', async () => {

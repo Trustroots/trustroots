@@ -1,6 +1,8 @@
 {
   "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...explaining that you are interested in meeting them, not just looking for free accommodation.",
+  "Change": "Change",
   "Conversation started {{ date }}": "Conversation started {{ date }}",
+  "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?",
   "Don't write to people 2 months ahead.": "Don't write to people 2 months ahead.",
   "Edit your profile": "Edit your profile",
   "Explain to them why you are choosing them": "Explain to them why you are choosing them",
@@ -8,6 +10,7 @@
   "License": "License",
   "Make sure your profile is complete": "Make sure your profile is complete",
   "More messages": "More messages",
+  "No": "No",
   "No conversations yet.": "No conversations yet.",
   "Please write longer profile description before sending messages.": "Please write longer profile description before sending messages.",
   "Send": "Send",
@@ -20,12 +23,14 @@
   "Unknown member": "Unknown member",
   "What are your expectations in regards with going through their town?": "What are your expectations in regards with going through their town?",
   "Write back": "Write back",
+  "Yes": "Yes",
   "Yes, I can host!": "Yes, I can host!",
   "You": "You",
   "You haven't been talking yet.": "You haven't been talking yet.",
   "You replied": "You replied",
   "You're much more likely to get a positive response if you have written a bit about yourself.": "You're much more likely to get a positive response if you have written a bit about yourself.",
   "Your profile seems quite empty.": "Your profile seems quite empty.",
+  "Your response won't be visible to them.": "Your response won't be visible to them.",
   "{{count}} unread messages": "{{count}} unread messages",
   "{{count}} unread messages_plural": "{{count}} unread messages"
 }

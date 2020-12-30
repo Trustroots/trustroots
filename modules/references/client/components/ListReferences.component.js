@@ -14,57 +14,34 @@ import ReferencesSection from './read-references/ReferencesSection';
  */
 export default function ListReferences({ profile, authenticatedUser }) {
   const { t } = useTranslation('references');
-  const [publicExperiencePairs, setPublicExperiencePairs] = useState([]);
+  const [publicExperiences, setPublicExperiences] = useState([]);
   const [pendingExperiences, setPendingExperiences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  function pairUpExperiences(experiences) {
-    const experiencePairsDict = experiences
-      .filter(experience => experience.userTo._id === profile._id)
-      .reduce(
-        (a, exp) => ({
-          ...a,
-          [exp.userFrom._id]: { sharedWithUser: exp },
-        }),
-        {},
-      );
-
-    experiences.forEach(experience => {
-      if (experience.userFrom._id === profile._id) {
-        const userTo = experience.userTo._id;
-        if (experiencePairsDict[userTo] === undefined) {
-          experiencePairsDict[userTo] = {};
-        }
-        experiencePairsDict[userTo].writtenByUser = experience;
-      }
-    });
-
-    return Object.values(experiencePairsDict);
-  }
 
   async function fetchReferences() {
     setIsLoading(true);
     try {
       const experiences = await readReferences({
         userTo: profile._id,
-        includeReplies: true,
       });
 
       const publicExperiences = experiences.filter(
         experience => experience.public,
       );
-      const publicExperiencePairs = pairUpExperiences(publicExperiences);
-      setPublicExperiencePairs(publicExperiencePairs);
+      setPublicExperiences(publicExperiences);
 
+      // TODO for now we add `experience.userTo._id.equals(profile._id)`
+      // condition to filter out the experiences written by the user,
+      // which are currently not displayed. Later, we will be showing also
+      // those: https://github.com/Trustroots/trustroots/pull/1860
       const pendingNewestFirst = experiences.filter(
-        experience => !experience.public,
+        experience =>
+          !experience.public &&
+          experience.userFrom._id !== authenticatedUser._id,
       );
+
       const pendingOldestFirst = [...pendingNewestFirst].reverse();
-      setPendingExperiences(
-        pendingOldestFirst.map(experience => {
-          return { sharedWithUser: experience };
-        }),
-      );
+      setPendingExperiences(pendingOldestFirst);
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +56,7 @@ export default function ListReferences({ profile, authenticatedUser }) {
     return <LoadingIndicator />;
   }
 
-  const hasPublicReferences = publicExperiencePairs.length > 0;
+  const hasPublicReferences = publicExperiences.length > 0;
   const hasPendingReferences = pendingExperiences.length > 0;
 
   // No references
@@ -100,19 +77,19 @@ export default function ListReferences({ profile, authenticatedUser }) {
   return (
     <>
       {hasPublicReferences && (
-        <ReferenceCounts publicReferences={publicExperiencePairs} />
+        <ReferenceCounts publicReferences={publicExperiences} />
       )}
       {hasPendingReferences && (
         <ReferencesSection
           title={t('Experiences pending publishing')}
-          referencePairs={pendingExperiences}
+          experiences={pendingExperiences}
         />
       )}
       {hasPublicReferences && (
         <ReferencesSection
           // Show "Public" title only if there are also pending experiences listed
           title={hasPendingReferences && t('Public experiences')}
-          referencePairs={publicExperiencePairs}
+          experiences={publicExperiences}
         />
       )}
     </>

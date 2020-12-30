@@ -51,14 +51,14 @@ function generateClientUser(overrides = {}) {
  */
 function generateUsers(
   count,
-  { public: pub, locale } = {},
+  { public: pub, locale, pushRegistration } = {},
   type = 'server',
   tribes = [],
 ) {
   return _.range(count).map(() => {
     switch (type) {
       case 'server':
-        return generateServerUser({ public: pub, locale });
+        return generateServerUser({ public: pub, locale, pushRegistration });
       case 'client':
         return generateClientUser({
           memberIds: selectRandom(tribes, 0.4).map(tribe => tribe._id),
