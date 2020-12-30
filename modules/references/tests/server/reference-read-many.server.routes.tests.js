@@ -210,8 +210,8 @@ describe('Read references by userTo Id', () => {
       should(body[0].userFrom._id).eql(users[0].id);
       should(body[0].userTo._id).eql(users[3].id);
 
-      should(body[0].response).eql(null);
-      should(body[0].public).eql(false);
+      should(body[0].response).be.null();
+      should(body[0].public).be.false();
 
       should(body[0]).have.properties(
         '_id',
