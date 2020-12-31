@@ -1,59 +1,59 @@
 // External dependencies
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
+import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
-export default class AdminAcquisitionStories extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      acquisitionStories: [],
-    };
-  }
+export default function AdminAcquisitionStories() {
+  const [stories, setStories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  async componentDidMount() {
+  useEffect(async () => {
     const acquisitionStories = await getAcquisitionStories();
-    this.setState({ acquisitionStories });
-  }
+    setStories(acquisitionStories || []);
+    setIsLoading(false);
+  }, []);
 
-  render() {
-    const { acquisitionStories } = this.state;
+  return (
+    <>
+      <AdminHeader />
+      <div className="container">
+        <h2>Acquisition stories</h2>
+        <p>Based on latest 3000 stories</p>
 
-    return (
-      <>
-        <AdminHeader />
-        <div className="container">
-          <h2>Acquisition stories</h2>
-          <p>Showing 1000 latest.</p>
-          {acquisitionStories.length ? (
-            acquisitionStories.map(story => (
-              <div key={story._id} className="panel" id={story._id}>
-                <div className="panel-body">
-                  <p className="lead">{story.acquisitionStory}</p>
-                  <ul className="list-inline">
-                    <li>
-                      <a href={`#${story._id}`}>
-                        <time className="text-muted">{story.created}</time>
-                      </a>
-                    </li>
-                    <li>
-                      <a href={`/admin/user?id=${story._id}`}>
-                        Member report card
-                      </a>
-                    </li>
-                  </ul>
-                </div>
+        <AdminAcquisitionStoriesMenu active="stories" />
+
+        {isLoading && <LoadingIndicator />}
+
+        {!isLoading &&
+          stories.length > 0 &&
+          stories.map(({ _id: userId, acquisitionStory, created }) => (
+            <div key={userId} className="panel" id={userId}>
+              <div className="panel-body">
+                <p className="lead">{acquisitionStory}</p>
+                <ul className="list-inline">
+                  <li>
+                    <a href={`#${userId}`}>
+                      <time className="text-muted">{created}</time>
+                    </a>
+                  </li>
+                  <li>
+                    <a href={`/admin/user?id=${userId}`}>Member report card</a>
+                  </li>
+                </ul>
               </div>
-            ))
-          ) : (
-            <p>No acquisition stories found...</p>
-          )}
-        </div>
-      </>
-    );
-  }
+            </div>
+          ))}
+
+        {!isLoading && stories.length === 0 && (
+          <p>No acquisition stories found.</p>
+        )}
+      </div>
+    </>
+  );
 }
 
 AdminAcquisitionStories.propTypes = {};

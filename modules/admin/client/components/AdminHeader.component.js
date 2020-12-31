@@ -40,7 +40,12 @@ export default function AdminHeader() {
   ];
 
   const renderTab = ({ path, label }) => (
-    <li key={path} className={classnames({ active: currentPath === path })}>
+    <li
+      key={path}
+      className={classnames({
+        active: currentPath === path || currentPath.startsWith(`${path}/`),
+      })}
+    >
       <a href={`/admin/${path}`}>{label}</a>
     </li>
   );
