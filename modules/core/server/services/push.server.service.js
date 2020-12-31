@@ -91,30 +91,45 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
  * @param {User} userFrom - user who gave the reference
  * @param {User} userTo - user who received the reference
  * @param {Object} data - notification config
- * @param {boolean} data.isFirst - is it the first reference between users?
  */
-exports.notifyNewReference = function (userFrom, userTo, data, callback) {
-  const giveReferenceUrl =
-    url + '/profile/' + userFrom.username + '/experiences/new';
-  const readReferencesUrl =
-    url + '/profile/' + userTo.username + '/experiences';
-
-  // When the reference is first, reply reference can be given.
-  // Otherwise both references are public now and can be seen.
-  const actionText = data.isFirst
-    ? 'Share your experience, too.'
-    : 'Have a look!';
-  const actionUrl = data.isFirst ? giveReferenceUrl : readReferencesUrl;
+exports.notifyNewReferenceFirst = function (userFrom, userTo, callback) {
+  const giveReferenceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
 
   const notification = {
     title: 'Trustroots',
-    body:
-      userFrom.username + ' shared their experience with you. ' + actionText,
-    click_action: analyticsHandler.appendUTMParams(actionUrl, {
+    body: `${userFrom.displayName} shared their experience with you. Share your experience, too.`,
+    click_action: analyticsHandler.appendUTMParams(giveReferenceUrl, {
       source: 'push-notification',
       medium: 'fcm',
       campaign: 'new-reference',
-      content: 'reply-to', // @TODO what are the correct parameters here? What do they mean?
+      content: 'respond',
+    }),
+  };
+  exports.sendUserNotification(userTo, notification, callback);
+};
+
+/**
+ * Send a push notification about a new reference, to the receiver of the reference
+ * @param {User} userFrom - user who gave the reference
+ * @param {User} userTo - user who received the reference
+ * @param {string} referenceId - ID of the reference
+ */
+exports.notifyNewReferenceSecond = function (
+  userFrom,
+  userTo,
+  referenceId,
+  callback,
+) {
+  const readReferencesUrl = `${url}/profile/${userTo.username}/experiences#${referenceId}`;
+
+  const notification = {
+    title: 'Trustroots',
+    body: `${userFrom.displayName} shared their experience with you. Both experiences are now published.`,
+    click_action: analyticsHandler.appendUTMParams(readReferencesUrl, {
+      source: 'push-notification',
+      medium: 'fcm',
+      campaign: 'new-reference',
+      content: 'read',
     }),
   };
   exports.sendUserNotification(userTo, notification, callback);

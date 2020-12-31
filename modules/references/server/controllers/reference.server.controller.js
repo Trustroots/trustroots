@@ -284,10 +284,25 @@ async function sendEmailNotification(
   }
 }
 
-async function sendPushNotification(userFrom, userTo, { isFirst }) {
-  return util.promisify(pushService.notifyNewReference)(userFrom, userTo, {
-    isFirst,
-  });
+async function sendPushNotification(
+  userFrom,
+  userTo,
+  { isFirst, referenceId },
+) {
+  // First push notification when first experience-pair is written
+  if (isFirst) {
+    return util.promisify(pushService.notifyNewReferenceFirst)(
+      userFrom,
+      userTo,
+    );
+  }
+
+  // Second push notification when both experiences become public
+  return util.promisify(pushService.notifyNewReferenceSecond)(
+    userFrom,
+    userTo,
+    referenceId,
+  );
 }
 
 /**
@@ -342,7 +357,10 @@ exports.create = async function (req, res, next) {
     );
 
     // send push notification
-    await sendPushNotification(req.user, userTo, { isFirst: !otherReference });
+    await sendPushNotification(req.user, userTo, {
+      isFirst: !otherReference,
+      referenceId: savedReference._id,
+    });
 
     // finally, respond
     throw new ResponseError({
@@ -514,7 +532,6 @@ function validateReadOne(id) {
  * Load a reference by id to request.reference
  */
 exports.referenceById = async function referenceById(req, res, next, id) {
-  // eslint-disable-line no-unused-vars
   try {
     // don't bother fetching a reference for non-public users or guests
     if (!req.user || !req.user.public) return next();

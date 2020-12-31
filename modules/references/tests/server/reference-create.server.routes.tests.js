@@ -8,6 +8,7 @@ const Reference = mongoose.model('Reference');
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
+const config = require(path.resolve('./config/config'));
 
 describe('Create a reference', () => {
   // user can leave a reference to anyone
@@ -277,17 +278,21 @@ describe('Create a reference', () => {
           should(emailJobs.length).equal(1);
 
           const [job] = emailJobs;
-          // @TODO design the email (subject, body, ...)
           should(job.data.subject).equal(
-            `New reference from ${user1.username}`,
+            `${user1.displayName} shared their experience with you`,
           );
           should(job.data.to.address).equal(user2.email);
-          // @TODO add the right link
           should(job.data.text).containEql(
             `/profile/${user1.username}/experiences/new`,
           );
           should(job.data.html).containEql(
             `/profile/${user1.username}/experiences/new`,
+          );
+          should(job.data.text).containEql(
+            `${config.limits.timeToReplyReference.days} days`,
+          );
+          should(job.data.html).containEql(
+            `${config.limits.timeToReplyReference.days} days`,
           );
         });
 
@@ -311,9 +316,8 @@ describe('Create a reference', () => {
           const [job] = pushJobs;
           should(job.data.userId).equal(user2._id.toString());
           should(job.data.notification.title).equal('Trustroots');
-          // @TODO design the notification text
           should(job.data.notification.body).equal(
-            `${user1.username} shared their experience with you. Share your experience, too.`,
+            `${user1.displayName} shared their experience with you. Share your experience, too.`,
           );
 
           should(job.data.notification.click_action).containEql(
@@ -418,17 +422,17 @@ describe('Create a reference', () => {
         it('send email notification about the received reference', async () => {
           should(jobs.length).equal(0);
 
-          // first create a reference in the opposite direction
+          // First, create a reference in the opposite direction
           const reference = new Reference({
             userFrom: user2._id,
             userTo: user1._id,
             met: true,
             recommend: 'no',
           });
-
           await reference.save();
 
-          await agent
+          // Then respond to that reference
+          const { body: referenceResponse } = await agent
             .post('/api/references')
             .send({
               userTo: user2._id,
@@ -445,26 +449,23 @@ describe('Create a reference', () => {
           should(emailJobs.length).equal(1);
 
           const [job] = emailJobs;
-          // @TODO design the email (subject, body, ...)
           should(job.data.subject).equal(
-            `New reference from ${user1.username}`,
+            `${user1.displayName} shared also their experience with you`,
           );
+
           should(job.data.to.address).equal(user2.email);
-          // @TODO add the right link
-          // this is a link to the own references - see my references
-          // because I already gave a reference
           should(job.data.text).containEql(
-            `/profile/${user2.username}/experiences`,
+            `/profile/${user2.username}/experiences#${referenceResponse._id}`,
           );
           should(job.data.html).containEql(
-            `/profile/${user2.username}/experiences`,
+            `/profile/${user2.username}/experiences?utm_source=transactional-email&amp;utm_medium=email&amp;utm_campaign=reference-notification-second&amp;utm_content=see-references#${referenceResponse._id}`,
           );
         });
 
         it('push notification', async () => {
           should(jobs.length).equal(0);
 
-          // first create a reference in the opposite direction
+          // First, create a reference in the opposite direction
           const reference = new Reference({
             userFrom: user2._id,
             userTo: user1._id,
@@ -473,10 +474,10 @@ describe('Create a reference', () => {
             },
             recommend: 'no',
           });
-
           await reference.save();
 
-          await agent
+          // Then respond to that reference
+          const { body: referenceResponse } = await agent
             .post('/api/references')
             .send({
               userTo: user2._id,
@@ -495,13 +496,12 @@ describe('Create a reference', () => {
           const [job] = pushJobs;
           should(job.data.userId).equal(user2._id.toString());
           should(job.data.notification.title).equal('Trustroots');
-          // @TODO design the notification text
           should(job.data.notification.body).equal(
-            `${user1.username} shared their experience with you. Have a look!`,
+            `${user1.displayName} shared their experience with you. Both experiences are now published.`,
           );
 
           should(job.data.notification.click_action).containEql(
-            `/profile/${user2.username}/experiences`,
+            `/profile/${user2.username}/experiences?utm_source=push-notification&utm_medium=fcm&utm_campaign=new-reference&utm_content=read#${referenceResponse._id}`,
           );
         });
       });

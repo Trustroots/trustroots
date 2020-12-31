@@ -4,21 +4,15 @@
   <p>
     Hi {{userTo.firstName}}!
   </p>
-
   <p>
-    Good news, <a href="{{userFromProfileUrl}}">{{userFrom.firstName}}</a> has left you a reference as well.
-  </p>
-
-  <p>
-    Their recommendation was {{recommend}}. <!-- yes, no, unknown -->
+    <a href="{{userFromProfileUrl}}">{{userFrom.firstName}}</a> has shared also their experience with you. Both of your experiences are now public.
   </p>
 {% endblock textcontent %}
 
 {% block actionbutton %}
   {% from "./partials/button.server.view.html" import button %}
-  {{button(seeReferencesUrl, 'See my references')}}
+  {{button(seeReferencesUrl, 'See the experience')}}
 
   {% from "./partials/copypasteurl.server.view.html" import copyPasteUrl %}
-  {{copyPasteUrl(seeReferencesUrl)}}
-<!-- It's also possible to say if the other person said they hosted us or met us etc. -->
+  {{copyPasteUrl(seeReferencesUrlPlainText)}}
 {% endblock actionbutton %}
