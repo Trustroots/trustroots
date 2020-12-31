@@ -12,19 +12,19 @@ exports.invokeRolesPolicies = function () {
       roles: ['user', 'admin'],
       allows: [
         {
-          resources: '/api/references',
+          resources: '/api/experiences',
           permissions: ['get', 'post'],
         },
         {
-          resources: '/api/references/count',
+          resources: '/api/experiences/count',
           permissions: ['get'],
         },
         {
-          resources: '/api/my-reference',
+          resources: '/api/my-experience',
           permissions: ['get'],
         },
         {
-          resources: '/api/references/:referenceId',
+          resources: '/api/experiences/:experienceId',
           permissions: ['get'],
         },
       ],

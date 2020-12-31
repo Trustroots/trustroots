@@ -66,7 +66,7 @@ describe('Create a reference', () => {
         it('respond with 201 Created and the new reference in body', async () => {
           const feedbackPublic = 'they were very nice and good at cooking';
           const { body } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -106,7 +106,7 @@ describe('Create a reference', () => {
 
           // send request
           await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -138,7 +138,7 @@ describe('Create a reference', () => {
         it('[duplicate reference (the same (from, to) combination)] 409 Conflict', async () => {
           // send the first request and expect 201 Created
           await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -152,7 +152,7 @@ describe('Create a reference', () => {
 
           // send the second request and expect 409 Conflict
           await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -167,7 +167,7 @@ describe('Create a reference', () => {
 
         it('[creating a reference for self] 400', async () => {
           const { body } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user1._id, // the same user as logged in user
               interactions: {
@@ -189,7 +189,7 @@ describe('Create a reference', () => {
 
         it('[creating a reference for nonexistent user] 404', async () => {
           const { body } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: '0'.repeat(24), // nonexistent user id
               interactions: {
@@ -211,7 +211,7 @@ describe('Create a reference', () => {
 
         it('[creating a reference for non-public user] 404', async () => {
           const { body } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user3Nonpublic._id, // non-public user id
               interactions: {
@@ -236,7 +236,7 @@ describe('Create a reference', () => {
         it('the reference is saved as private', async () => {
           // send request
           const { body } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -262,7 +262,7 @@ describe('Create a reference', () => {
           should(jobs.length).equal(0);
 
           await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -298,7 +298,7 @@ describe('Create a reference', () => {
 
         it('push notification', async () => {
           await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -341,7 +341,7 @@ describe('Create a reference', () => {
 
           // create the opposite direction reference
           const { body } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -384,7 +384,7 @@ describe('Create a reference', () => {
           // create a response reference with recommend: 'no'
           // should fail
           const { body } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -406,7 +406,7 @@ describe('Create a reference', () => {
           // create a response reference with recommend: 'yes'
           // should succeed
           await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -433,7 +433,7 @@ describe('Create a reference', () => {
 
           // Then respond to that reference
           const { body: referenceResponse } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -478,7 +478,7 @@ describe('Create a reference', () => {
 
           // Then respond to that reference
           const { body: referenceResponse } = await agent
-            .post('/api/references')
+            .post('/api/experiences')
             .send({
               userTo: user2._id,
               interactions: {
@@ -510,7 +510,7 @@ describe('Create a reference', () => {
     context('invalid request', () => {
       it('[invalid value in interaction types] 400', async () => {
         const { body } = await agent
-          .post('/api/references')
+          .post('/api/experiences')
           .send({
             userTo: user2._id,
             interactions: {
@@ -533,7 +533,7 @@ describe('Create a reference', () => {
 
       it('[invalid recommendation] 400', async () => {
         const { body } = await agent
-          .post('/api/references')
+          .post('/api/experiences')
           .send({
             userTo: user2._id,
             interactions: {
@@ -554,7 +554,7 @@ describe('Create a reference', () => {
 
       it('[invalid userTo] 400', async () => {
         const { body } = await agent
-          .post('/api/references')
+          .post('/api/experiences')
           .send({
             userTo: 'hello',
             interactions: {
@@ -574,7 +574,7 @@ describe('Create a reference', () => {
 
       it('[missing userTo] 400', async () => {
         const { body } = await agent
-          .post('/api/references')
+          .post('/api/experiences')
           .send({
             interactions: {
               hostedMe: true,
@@ -593,7 +593,7 @@ describe('Create a reference', () => {
 
       it('[unexpected fields] 400', async () => {
         const { body } = await agent
-          .post('/api/references')
+          .post('/api/experiences')
           .send({
             userTo: user2._id,
             interactions: {
@@ -614,7 +614,7 @@ describe('Create a reference', () => {
 
       it('[too long public feedback] 400', async () => {
         const { body } = await agent
-          .post('/api/references')
+          .post('/api/experiences')
           .send({
             userTo: user2._id,
             met: false,
@@ -636,7 +636,7 @@ describe('Create a reference', () => {
 
       it('[all interaction types false or missing] 400', async () => {
         const { body } = await agent
-          .post('/api/references')
+          .post('/api/experiences')
           .send({
             userTo: user2._id,
             met: false,
@@ -665,13 +665,13 @@ describe('Create a reference', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent.post('/api/references').send({}).expect(403);
+      await agent.post('/api/experiences').send({}).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent.post('/api/references').send({}).expect(403);
+      await agent.post('/api/experiences').send({}).expect(403);
     });
   });
 });
