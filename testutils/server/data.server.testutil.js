@@ -82,7 +82,7 @@ async function clearDatabaseCollections(collections) {
  * The new collections should be added as needed
  * Eventually this list shall become complete
  */
-const collections = ['User', 'Reference'];
+const collections = ['User', 'Reference', 'ReferenceThread'];
 
 /**
  * Clear all collections in a database

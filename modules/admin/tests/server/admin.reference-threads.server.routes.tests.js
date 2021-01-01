@@ -13,32 +13,18 @@ describe('Admin Reference thread CRUD tests', () => {
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
 
-  let _users;
+  let users;
   let userRegular1Id;
   let userRegular2Id;
 
-  const _usersRaw = utils.generateUsers(3);
-  _usersRaw[0].roles = ['user', 'admin'];
-
-  const credentialsAdmin = {
-    username: _usersRaw[0].username,
-    password: _usersRaw[0].password,
-  };
-
-  const credentialsRegular = {
-    username: _usersRaw[1].username,
-    password: _usersRaw[1].password,
-  };
+  const _users = utils.generateUsers(3);
+  _users[0].roles = ['user', 'admin'];
 
   beforeEach(async () => {
-    _users = await utils.saveUsers(_usersRaw);
-    userRegular1Id = _users[1]._id;
-    userRegular2Id = _users[2]._id;
-  });
+    users = await utils.saveUsers(_users);
+    userRegular1Id = users[1]._id;
+    userRegular2Id = users[2]._id;
 
-  afterEach(utils.clearDatabase);
-
-  beforeEach(async () => {
     const referenceBase = {
       created: new Date(),
       // eslint-disable-next-line new-cap
@@ -63,6 +49,8 @@ describe('Admin Reference thread CRUD tests', () => {
     await reference2.save();
   });
 
+  afterEach(utils.clearDatabase);
+
   describe('Read reference threads', () => {
     it('non-authenticated users should not be allowed to read reference threads', async () => {
       const { body } = await agent
@@ -78,7 +66,7 @@ describe('Admin Reference thread CRUD tests', () => {
       });
 
       it('non-admin users should not be allowed to read reference threads', async () => {
-        await utils.signIn(credentialsRegular, agent);
+        await utils.signIn(_users[1], agent);
 
         const { body } = await agent
           .get('/api/admin/reference-threads')
@@ -88,12 +76,13 @@ describe('Admin Reference thread CRUD tests', () => {
       });
 
       it('admin users should be allowed to read reference threads', async () => {
-        await utils.signIn(credentialsAdmin, agent);
+        await utils.signIn(_users[0], agent);
 
         const { body } = await agent
           .get('/api/admin/reference-threads')
           .expect(200);
 
+        // Should contain only "no" references
         body.length.should.equal(1);
         body[0].reference.should.equal('no');
       });
