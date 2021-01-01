@@ -1,5 +1,3 @@
-import supportTemplateUrl from '@/modules/support/client/views/support.client.view.html';
-
 angular.module('support').config(SupportRoutes);
 
 /* @ngInject */
@@ -7,10 +5,8 @@ function SupportRoutes($stateProvider) {
   $stateProvider
     .state('support', {
       url: '/support?report=',
-      templateUrl: supportTemplateUrl,
+      template: '<support-page user="app.user"></support-page>',
       requiresAuth: false,
-      controller: 'SupportController',
-      controllerAs: 'support',
       data: {
         pageTitle: 'Support',
       },
@@ -18,10 +14,8 @@ function SupportRoutes($stateProvider) {
     // Deprecated (02-2016):
     .state('contact', {
       url: '/contact',
-      templateUrl: supportTemplateUrl,
+      template: '<support-page user="app.user"></support-page>',
       requiresAuth: false,
-      controller: 'SupportController',
-      controllerAs: 'support',
       data: {
         pageTitle: 'Contact us',
       },
