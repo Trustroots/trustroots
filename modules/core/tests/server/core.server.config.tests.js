@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const path = require('path');
 const request = require('supertest');
 const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const Tribe = mongoose.model('Tribe');
 const User = mongoose.model('User');
 
@@ -59,6 +61,8 @@ describe('Configuration Tests:', function () {
         return done();
       });
     });
+
+    afterEach(utils.clearDatabase);
 
     it('should have user set to "null" if not authenticated and loading index page', function (done) {
       // Get rendered layout
@@ -157,10 +161,6 @@ describe('Configuration Tests:', function () {
               });
           });
       });
-    });
-
-    afterEach(function (done) {
-      User.deleteMany().exec(done);
     });
   });
 

@@ -3,9 +3,12 @@ const should = require('should');
 const async = require('async');
 const request = require('supertest');
 const mongoose = require('mongoose');
+const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+afterEach(utils.clearDatabase);
+
 const User = mongoose.model('User');
 const MessageStat = mongoose.model('MessageStat');
-const express = require(path.resolve('./config/lib/express'));
 
 describe('Display Message Statistics in User Route', function () {
   let agent;
@@ -112,21 +115,7 @@ describe('Display Message Statistics in User Route', function () {
     );
   });
 
-  // clean the database after the tests
-  after(function (done) {
-    // remove all User, MessageStat
-    async.parallel(
-      [
-        function (cb) {
-          User.deleteMany().exec(cb);
-        },
-        function (cb) {
-          MessageStat.deleteMany().exec(cb);
-        },
-      ],
-      done,
-    );
-  });
+  after(utils.clearDatabase);
 
   // Sign in
   beforeEach(function (done) {

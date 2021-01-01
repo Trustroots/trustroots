@@ -2,9 +2,11 @@
  * Module dependencies.
  */
 const path = require('path');
-const config = require(path.resolve('./config/config'));
 const should = require('should');
 const mongoose = require('mongoose');
+const config = require(path.resolve('./config/config'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 
 /**
@@ -47,6 +49,8 @@ describe('User Model Unit Tests:', function () {
       provider: 'local',
     };
   });
+
+  afterEach(utils.clearDatabase);
 
   describe('Method Save', function () {
     it('should begin with no users', function (done) {
@@ -400,9 +404,5 @@ describe('User Model Unit Tests:', function () {
         done();
       });
     });
-  });
-
-  afterEach(function (done) {
-    User.remove().exec(done);
   });
 });
