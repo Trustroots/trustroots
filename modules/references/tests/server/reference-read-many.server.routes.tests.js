@@ -202,6 +202,25 @@ describe('Read references by userTo Id', () => {
       should(body[2].userFrom._id).eql(users[5].id);
     });
 
+    it('[param userTo] response should contain private experience from self', async () => {
+      const { body } = await agent
+        .get(`/api/experiences?userTo=${users[3]._id}`)
+        .expect(200);
+
+      should(body[0].userFrom._id).eql(users[0].id);
+      should(body[0].userTo._id).eql(users[3].id);
+
+      should(body[0].response).be.null();
+      should(body[0].public).be.false();
+
+      should(body[0]).have.properties(
+        '_id',
+        'created',
+        'recommend',
+        'interactions',
+      );
+    });
+
     it('[no params] 400 and error', async () => {
       const { body } = await agent.get('/api/experiences').expect(400);
 
