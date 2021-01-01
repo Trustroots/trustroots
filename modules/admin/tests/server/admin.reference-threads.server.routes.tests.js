@@ -39,16 +39,22 @@ describe('Admin Reference thread CRUD tests', () => {
   afterEach(utils.clearDatabase);
 
   beforeEach(async () => {
-    const reference1 = new ReferenceThread({
-      reference: 'yes',
+    const referenceBase = {
       created: new Date(),
+      // eslint-disable-next-line new-cap
+      thread: mongoose.Types.ObjectId().toString(),
+    };
+
+    const reference1 = new ReferenceThread({
+      ...referenceBase,
+      reference: 'yes',
       userFrom: userRegular1Id,
       userTo: userRegular2Id,
     });
 
     const reference2 = new ReferenceThread({
+      ...referenceBase,
       reference: 'no',
-      created: new Date(),
       userFrom: userRegular2Id,
       userTo: userRegular1Id,
     });
@@ -59,7 +65,9 @@ describe('Admin Reference thread CRUD tests', () => {
 
   describe('Read reference threads', () => {
     it('non-authenticated users should not be allowed to read reference threads', async () => {
-      const { body } = agent.get('/api/admin/reference-threads').expect(403);
+      const { body } = await agent
+        .get('/api/admin/reference-threads')
+        .expect(403);
 
       body.message.should.equal('Forbidden.');
     });
