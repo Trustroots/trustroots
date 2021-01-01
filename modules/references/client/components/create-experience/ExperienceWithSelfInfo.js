@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 
 /**
- * Error message when trying to give a reference to oneself.
+ * Error message when trying to share and experience with oneself.
  */
-export default function ReferenceToSelfInfo() {
+export default function ExperienceWithSelfInfo() {
   const { t } = useTranslation('references');
 
   return (

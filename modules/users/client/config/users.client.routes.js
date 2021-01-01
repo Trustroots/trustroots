@@ -377,7 +377,7 @@ function UsersRoutes($stateProvider) {
     .state('profile.experiences.list', {
       url: '',
       template:
-        '<list-references ng-if="app.appSettings.referencesEnabled" profile="profileCtrl.profile" authenticatedUser="app.user"></list-references>',
+        '<list-experiences ng-if="app.appSettings.referencesEnabled" profile="profileCtrl.profile" authenticatedUser="app.user"></list-experiences>',
       requiresAuth: true,
       noScrollingTop: true,
       data: {
@@ -387,7 +387,7 @@ function UsersRoutes($stateProvider) {
     .state('profile.experiences.new', {
       url: '/new',
       template:
-        '<create-reference ng-if="app.appSettings.referencesEnabled" userTo="profileCtrl.profile" userFrom="app.user"></create-reference>',
+        '<create-experience ng-if="app.appSettings.referencesEnabled" userTo="profileCtrl.profile" userFrom="app.user"></create-experience>',
       requiresAuth: true,
       noScrollingTop: true,
       data: {

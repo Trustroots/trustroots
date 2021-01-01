@@ -9,7 +9,7 @@ import { DAYS_TO_REPLY } from '../../utils/constants';
 import SuccessMessage from '@/modules/core/client/components/SuccessMessage';
 
 /**
- * Info after successful submitting of a new reference.
+ * Info after successful submitting of a new experience.
  */
 export default function SubmittedInfo({
   isPublic,

@@ -5,18 +5,18 @@ import { useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import * as references from '../api/references.api';
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
-import Interaction from './create-reference/Interaction';
-import Recommend from './create-reference/Recommend';
-import Feedback from './create-reference/Feedback';
-import ReferenceToSelfInfo from './create-reference/ReferenceToSelfInfo';
-import DuplicateInfo from './create-reference/DuplicateInfo';
-import SubmittedInfo from './create-reference/SubmittedInfo';
+import Interaction from './create-experience/Interaction';
+import Recommend from './create-experience/Recommend';
+import Feedback from './create-experience/Feedback';
+import ExperienceWithSelfInfo from './create-experience/ExperienceWithSelfInfo';
+import DuplicateInfo from './create-experience/DuplicateInfo';
+import SubmittedInfo from './create-experience/SubmittedInfo';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createValidator } from '@/modules/core/client/utils/validation';
 
 const api = { references };
 
-export default function CreateReference({ userFrom, userTo }) {
+export default function CreateExperience({ userFrom, userTo }) {
   const { t } = useTranslation('references');
 
   const [met, setMet] = useState(false);
@@ -35,11 +35,11 @@ export default function CreateReference({ userFrom, userTo }) {
 
   useEffect(() => {
     (async () => {
-      const reference = await api.references.readMine({
+      const experience = await api.references.readMine({
         userTo: userTo._id,
       });
 
-      if (reference !== null) {
+      if (experience !== null) {
         setIsDuplicate(true);
       }
 
@@ -65,15 +65,15 @@ export default function CreateReference({ userFrom, userTo }) {
   const handleSubmit = async () => {
     setIsSubmitting(true);
 
-    const reference = {
+    const experience = {
       interactions: { met, hostedThem, hostedMe },
       recommend,
       feedbackPublic,
     };
 
-    // save the reference
-    const [savedReference] = await Promise.all([
-      api.references.create({ ...reference, userTo: userTo._id }),
+    // save the experience
+    const [savedExperience] = await Promise.all([
+      api.references.create({ ...experience, userTo: userTo._id }),
       recommend === 'no' && report
         ? api.references.report(userTo, reportMessage)
         : null,
@@ -81,7 +81,7 @@ export default function CreateReference({ userFrom, userTo }) {
 
     setIsSubmitting(false);
     setIsSubmitted(true);
-    setIsPublic(savedReference.public);
+    setIsPublic(savedExperience.public);
   };
 
   const primaryInteraction =
@@ -138,7 +138,7 @@ export default function CreateReference({ userFrom, userTo }) {
     !isSubmitting && currentStepErrors.find(error => error.trim().length > 0);
 
   if (userFrom._id === userTo._id) {
-    return <ReferenceToSelfInfo />;
+    return <ExperienceWithSelfInfo />;
   }
 
   if (isLoading) {
@@ -192,7 +192,7 @@ export default function CreateReference({ userFrom, userTo }) {
   );
 }
 
-CreateReference.propTypes = {
+CreateExperience.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired,
 };

@@ -9,16 +9,16 @@ const Counts = styled.div`
   justify-content: space-between;
 `;
 
-export default function ReferenceCounts({ publicReferences }) {
+export default function ExperienceCounts({ publicExperiences }) {
   const { t } = useTranslation('references');
 
-  const positiveCount = publicReferences.filter(
+  const positiveCount = publicExperiences.filter(
     ({ recommend }) => recommend === 'yes',
   ).length;
-  const unknownCount = publicReferences.filter(
+  const unknownCount = publicExperiences.filter(
     ({ recommend }) => recommend === 'unknown',
   ).length;
-  const negativeCount = publicReferences.filter(
+  const negativeCount = publicExperiences.filter(
     ({ recommend }) => recommend === 'no',
   ).length;
 
@@ -33,6 +33,6 @@ export default function ReferenceCounts({ publicReferences }) {
   );
 }
 
-ReferenceCounts.propTypes = {
-  publicReferences: PropTypes.arrayOf(experienceType).isRequired,
+ExperienceCounts.propTypes = {
+  publicExperiences: PropTypes.arrayOf(experienceType).isRequired,
 };
