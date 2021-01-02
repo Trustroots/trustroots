@@ -4,24 +4,24 @@ import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
-import { read as readReferences } from '../api/references.api';
+import { read as readExperiences } from '../api/references.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import ReferenceCounts from './read-references/ReferenceCounts';
-import ReferencesSection from './read-references/ReferencesSection';
+import ExperienceCounts from './read-experiences/ExperienceCounts';
+import ExperiencesSection from './read-experiences/ExperiencesSection';
 
 /**
- * List of user's references
+ * List of user's experiences
  */
-export default function ListReferences({ profile, authenticatedUser }) {
+export default function ListExperiences({ profile, authenticatedUser }) {
   const { t } = useTranslation('references');
   const [publicExperiences, setPublicExperiences] = useState([]);
   const [pendingExperiences, setPendingExperiences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  async function fetchReferences() {
+  async function fetchExperiences() {
     setIsLoading(true);
     try {
-      const experiences = await readReferences({
+      const experiences = await readExperiences({
         userTo: profile._id,
       });
 
@@ -41,20 +41,20 @@ export default function ListReferences({ profile, authenticatedUser }) {
     }
   }
 
-  // Load references from api
+  // Load experiences from api
   useEffect(() => {
-    fetchReferences();
+    fetchExperiences();
   }, [profile]);
 
   if (isLoading) {
     return <LoadingIndicator />;
   }
 
-  const hasPublicReferences = publicExperiences.length > 0;
-  const hasPendingReferences = pendingExperiences.length > 0;
+  const hasPublicExperiences = publicExperiences.length > 0;
+  const hasPendingExperiences = pendingExperiences.length > 0;
 
-  // No references
-  if (!hasPendingReferences && !hasPublicReferences) {
+  // No experiences
+  if (!hasPendingExperiences && !hasPublicExperiences) {
     return (
       <div className="row content-empty">
         <i className="icon-3x icon-users"></i>
@@ -70,19 +70,19 @@ export default function ListReferences({ profile, authenticatedUser }) {
 
   return (
     <>
-      {hasPublicReferences && (
-        <ReferenceCounts publicReferences={publicExperiences} />
+      {hasPublicExperiences && (
+        <ExperienceCounts publicExperiences={publicExperiences} />
       )}
-      {hasPendingReferences && (
-        <ReferencesSection
+      {hasPendingExperiences && (
+        <ExperiencesSection
           title={t('Experiences pending publishing')}
           experiences={pendingExperiences}
         />
       )}
-      {hasPublicReferences && (
-        <ReferencesSection
+      {hasPublicExperiences && (
+        <ExperiencesSection
           // Show "Public" title only if there are also pending experiences listed
-          title={hasPendingReferences && t('Public experiences')}
+          title={hasPendingExperiences && t('Public experiences')}
           experiences={publicExperiences}
         />
       )}
@@ -90,7 +90,7 @@ export default function ListReferences({ profile, authenticatedUser }) {
   );
 }
 
-ListReferences.propTypes = {
+ListExperiences.propTypes = {
   profile: PropTypes.object.isRequired,
   authenticatedUser: PropTypes.object.isRequired,
 };
