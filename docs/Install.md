@@ -118,9 +118,11 @@ More information can be found in the NodeJS [debug documentation](https://nodejs
 
 ## Coding styles
 
-We apply [Eslint](https://eslint.org/) rules to our JavaScript files so you might want to consider installing [editor integration](https://eslint.org/docs/user-guide/integrations#editors) to let it point out errors and warnings.
+We apply [Eslint](https://eslint.org/) rules to our JavaScript files and automatically format them using [Prettier](https://prettier.io/). You should install [Eslint editor integration](https://eslint.org/docs/user-guide/integrations#editors) as well [Prettier editor integration](https://prettier.io/docs/en/editors.html) to notice code formatting errors and let the editor autoformat files for you automatically.
 
-Files are linted as you modify them when running `npm start`, but if you need to lint all the files separately, run:
+Files are autoformatted by Prettier each time you `git commit` your changes.
+
+Files are also continuously linted as you modify them when running `npm start`, but if you need to lint all the files separately, run:
 
 ```bash
 npm run lint
