@@ -116,6 +116,20 @@ More information can be found in the NodeJS [debug documentation](https://nodejs
 - `npm run test:server`
 - `npm run test:server:watch` (run + watch for changes)
 
+## Analyzing bundles
+
+You can what goes into the "bundle" that [Webpack](https://webpack.js.org/) compiles from all the JS, style and image assets by adding this to your `config/env/local/js`:
+
+```js
+bundleAnalyzer: {
+  enabled: true,
+  // See https://github.com/webpack-contrib/webpack-bundle-analyzer#options-for-plugin
+  options: {},
+},
+```
+
+Now when you start the application, [bundle analyzer](https://github.com/webpack-contrib/webpack-bundle-analyzer#readme) will automatically open new browser tab at `http://127.0.0.1:8888/` that shows you information about the bundle.
+
 ## Coding styles
 
 We apply [Eslint](https://eslint.org/) rules to our JavaScript files and automatically format them using [Prettier](https://prettier.io/). You should install [Eslint editor integration](https://eslint.org/docs/user-guide/integrations#editors) as well [Prettier editor integration](https://prettier.io/docs/en/editors.html) to notice code formatting errors and let the editor autoformat files for you automatically.

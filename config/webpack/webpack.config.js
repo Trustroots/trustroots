@@ -1,3 +1,5 @@
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
+  .BundleAnalyzerPlugin;
 const webpack = require('webpack');
 const webpackMerge = require('webpack-merge');
 const compact = require('lodash/compact');
@@ -148,6 +150,8 @@ module.exports = webpackMerge.merge(shims, {
     ],
   },
   plugins: compact([
+    config.bundleAnalyzer.enabled &&
+      new BundleAnalyzerPlugin(config.bundleAnalyzer.options),
     isProduction &&
       new MiniCssExtractPlugin({
         filename: 'main.css',
