@@ -74,7 +74,7 @@ describe('Read count of references received by user', () => {
 
     it('respond with all public references to userTo', async () => {
       const { body } = await agent
-        .get(`/api/references/count?userTo=${users[2]._id}`)
+        .get(`/api/experiences/count?userTo=${users[2]._id}`)
         .expect(200);
 
       // user2 has received 2 public and 1 non-public reference
@@ -84,7 +84,7 @@ describe('Read count of references received by user', () => {
 
     it('private references are included when own profile', async () => {
       const { body } = await agent
-        .get(`/api/references/count?userTo=${users[0]._id}`)
+        .get(`/api/experiences/count?userTo=${users[0]._id}`)
         .expect(200);
 
       body.count.should.equal(5);
@@ -92,14 +92,14 @@ describe('Read count of references received by user', () => {
     });
 
     it('[no params] 400 and error', async () => {
-      const { body } = await agent.get('/api/references/count').expect(400);
+      const { body } = await agent.get('/api/experiences/count').expect(400);
 
       body.message.should.equal('Missing or invalid `userTo` request param');
     });
 
     it('[invalid params] 400 and error', async () => {
       const { body } = await agent
-        .get('/api/references/count?userTo=1')
+        .get('/api/experiences/count?userTo=1')
         .expect(400);
 
       body.message.should.equal('Missing or invalid `userTo` request param');
@@ -112,7 +112,7 @@ describe('Read count of references received by user', () => {
 
     it('403', async () => {
       await agent
-        .get(`/api/references/count?userTo=${users[2]._id}`)
+        .get(`/api/experiences/count?userTo=${users[2]._id}`)
         .expect(403);
     });
   });
@@ -120,7 +120,7 @@ describe('Read count of references received by user', () => {
   context('not logged in', () => {
     it('403', async () => {
       await agent
-        .get(`/api/references/count?userTo=${users[2]._id}`)
+        .get(`/api/experiences/count?userTo=${users[2]._id}`)
         .expect(403);
     });
   });

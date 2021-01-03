@@ -10,7 +10,7 @@ import '@testing-library/jest-dom/extend-expect';
 
 import * as references from '@/modules/references/client/api/references.api';
 
-import CreateReference from '@/modules/references/client/components/CreateReference.component';
+import CreateExperience from '@/modules/references/client/components/CreateExperience.component';
 const api = { references };
 
 jest.mock('@/modules/references/client/api/references.api');
@@ -20,7 +20,7 @@ async function waitForLoader() {
   await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
 }
 
-describe('<CreateReference />', () => {
+describe('<CreateExperience />', () => {
   let userFrom;
   let userTo;
 
@@ -37,7 +37,7 @@ describe('<CreateReference />', () => {
     const me = { _id: '123456', username: 'username' };
     api.references.readMine.mockResolvedValueOnce([]);
     const { queryByRole } = render(
-      <CreateReference userFrom={me} userTo={me} />,
+      <CreateExperience userFrom={me} userTo={me} />,
     );
     expect(queryByRole('alert')).toHaveTextContent(
       "Sorry, you can't share experience only with yourself.",
@@ -46,7 +46,7 @@ describe('<CreateReference />', () => {
 
   it('check whether the reference exists at the beginning', () => {
     api.references.readMine.mockResolvedValueOnce([]);
-    render(<CreateReference userFrom={userFrom} userTo={userTo} />);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     expect(api.references.readMine).toBeCalledWith({
       userTo: userTo._id,
     });
@@ -55,7 +55,7 @@ describe('<CreateReference />', () => {
   it('can not leave a second reference', async () => {
     api.references.readMine.mockResolvedValueOnce([{ userTo, public: false }]);
     const { queryByRole } = render(
-      <CreateReference userFrom={userFrom} userTo={userTo} />,
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
     );
     await waitForLoader();
     expect(queryByRole('heading')).toHaveTextContent(
@@ -69,7 +69,7 @@ describe('<CreateReference />', () => {
   it('can leave a reference (reference form is available)', async () => {
     api.references.readMine.mockResolvedValueOnce(null);
     const { queryByLabelText } = render(
-      <CreateReference userFrom={userFrom} userTo={userTo} />,
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
     );
     await waitForLoader();
     for (const label of ['Met in person', 'I hosted them', 'They hosted me']) {
@@ -86,7 +86,7 @@ describe('<CreateReference />', () => {
       getAllByText,
       getByLabelText,
       queryByLabelText,
-    } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
+    } = render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
@@ -144,7 +144,7 @@ describe('<CreateReference />', () => {
       getAllByText,
       getByLabelText,
       queryByLabelText,
-    } = render(<CreateReference userFrom={userFrom} userTo={userTo} />);
+    } = render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 

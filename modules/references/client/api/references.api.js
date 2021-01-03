@@ -1,46 +1,45 @@
 import axios from 'axios';
 
 /**
- * API request: create a reference
- * @param {object} reference - reference to save
- * @returns Promise<Reference> - saved reference
+ * API request: create an experience
+ * @param {object} experience - experience to save
+ * @returns {object} - saved experience object, which includes the "response" to it if exists
  */
-export async function create(reference) {
-  const { data: responseReference } = await axios.post(
-    '/api/references',
-    reference,
+export async function create(experience) {
+  const { data: responseExperience } = await axios.post(
+    '/api/experiences',
+    experience,
   );
-  return responseReference;
+  return responseExperience;
 }
 
 /**
- * API request: read references, filter them by userTo,
- * and sort by 'created' field starting from the most recent date
+ * API request: read experiences shared with `userTo`;
+ * sorted by `created` field starting from the most recent date
  *
- * @param {string} userTo - id of user who received the reference
- * @returns {array} - array of the found references
+ * @param {string} userTo - id of the user with whom the experiences were shared
+ * @returns {array} - array of experience objects, which include the "responses" to them where exist
  */
 export async function read({ userTo }) {
-  const { data: references } = await axios.get('/api/references', {
+  const { data: experiences } = await axios.get('/api/experiences', {
     params: { userTo },
   });
-  return references;
+  return experiences;
 }
 
 /**
- * API request: read references written by loggedIn user, filter them by userTo,
- * and sort by 'created' field starting from the most recent date
+ * API request: read the experience shared by the logged-in user with `userTo`
  *
- * @param {string} userTo - id of user who received the reference
- * @returns {object} - A reference
+ * @param {string} userTo - id of the user with whom the experience was shared
+ * @returns {object} - experience object, which includes the "response" to it if exists
  */
 export async function readMine({ userTo }) {
   const params = { userTo };
   try {
-    const { data: reference } = await axios.get('/api/my-reference', {
+    const { data: experience } = await axios.get('/api/my-experience', {
       params,
     });
-    return reference;
+    return experience;
   } catch (err) {
     if (err.response?.status === 404) {
       return null;
@@ -62,14 +61,14 @@ export async function report(user, message) {
 }
 
 /**
- * API request: get count of references
+ * API request: get count of experiences
  *
- * @param {string} userTo - id of user who received the reference
+ * @param {string} userTo - id of the user with whom the experiences were shared
  * @returns {object} - Number of experiences as `{count: Int, hasPending: Bool}`
  */
 export async function getCount(userTo) {
   try {
-    const { data } = await axios.get('/api/references/count', {
+    const { data } = await axios.get('/api/experiences/count', {
       params: { userTo },
     });
     return data;

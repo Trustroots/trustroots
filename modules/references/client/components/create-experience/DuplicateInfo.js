@@ -8,7 +8,7 @@ import '@/config/client/i18n';
 import SuccessMessage from '@/modules/core/client/components/SuccessMessage';
 
 /**
- * Error message when reference was already given
+ * Error message when experience was already shared
  */
 export default function DuplicateInfo({ username }) {
   const { t } = useTranslation('references');

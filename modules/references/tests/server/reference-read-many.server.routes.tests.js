@@ -86,7 +86,7 @@ describe('Read references by userTo Id', () => {
 
     it('[param userTo] respond with all public references to userTo', async () => {
       const { body } = await agent
-        .get(`/api/references?userTo=${users[1]._id}`)
+        .get(`/api/experiences?userTo=${users[1]._id}`)
         .expect(200);
 
       // user0 and user4 shared public experiencdes with user1,
@@ -96,7 +96,7 @@ describe('Read references by userTo Id', () => {
 
     it('the references in response have expected structure, userFrom & userTo have miniProfile', async () => {
       const { body } = await agent
-        .get(`/api/references?userTo=${users[1]._id}`)
+        .get(`/api/experiences?userTo=${users[1]._id}`)
         .expect(200);
 
       for (const ref of body) {
@@ -152,7 +152,7 @@ describe('Read references by userTo Id', () => {
 
     it('[param userTo] userTo is self, respond with all public and pending references to userTo', async () => {
       const { body } = await agent
-        .get(`/api/references?userTo=${users[0]._id}`)
+        .get(`/api/experiences?userTo=${users[0]._id}`)
         .expect(200);
 
       // user1 and user4 shared public experiences, user5 shared a private one
@@ -161,7 +161,7 @@ describe('Read references by userTo Id', () => {
 
     it('userTo is self, private reference has only limited fields', async () => {
       const { body } = await agent
-        .get(`/api/references?userTo=${users[0]._id}`)
+        .get(`/api/experiences?userTo=${users[0]._id}`)
         .expect(200);
 
       for (const ref of [body[0], body[1]]) {
@@ -202,8 +202,27 @@ describe('Read references by userTo Id', () => {
       should(body[2].userFrom._id).eql(users[5].id);
     });
 
+    it('[param userTo] response should contain private experience from self', async () => {
+      const { body } = await agent
+        .get(`/api/experiences?userTo=${users[3]._id}`)
+        .expect(200);
+
+      should(body[0].userFrom._id).eql(users[0].id);
+      should(body[0].userTo._id).eql(users[3].id);
+
+      should(body[0].response).be.null();
+      should(body[0].public).be.false();
+
+      should(body[0]).have.properties(
+        '_id',
+        'created',
+        'recommend',
+        'interactions',
+      );
+    });
+
     it('[no params] 400 and error', async () => {
-      const { body } = await agent.get('/api/references').expect(400);
+      const { body } = await agent.get('/api/experiences').expect(400);
 
       should(body).eql({
         message: 'Bad request.',
@@ -214,7 +233,7 @@ describe('Read references by userTo Id', () => {
     });
 
     it('[invalid params] 400 and error', async () => {
-      const { body } = await agent.get('/api/references?userTo=1').expect(400);
+      const { body } = await agent.get('/api/experiences?userTo=1').expect(400);
 
       should(body).eql({
         message: 'Bad request.',
@@ -230,13 +249,13 @@ describe('Read references by userTo Id', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent.get(`/api/references?userTo=${users[2]._id}`).expect(403);
+      await agent.get(`/api/experiences?userTo=${users[2]._id}`).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent.get(`/api/references?userTo=${users[2]._id}`).expect(403);
+      await agent.get(`/api/experiences?userTo=${users[2]._id}`).expect(403);
     });
   });
 });

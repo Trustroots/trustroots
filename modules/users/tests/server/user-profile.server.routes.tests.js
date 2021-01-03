@@ -256,6 +256,88 @@ describe('User profile CRUD tests', function () {
     });
   });
 
+  it('should be able to see that someone is volunteer when they have "volunteer" role', function (done) {
+    user2.roles = ['user', 'volunteer'];
+
+    user2.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Get volunteer's profile
+          agent
+            .get('/api/users/' + user2.username)
+            .expect(200)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+
+              res.body.isVolunteer.should.be.true();
+
+              // Get non volunteer's profile
+              agent
+                .get('/api/users/' + user.username)
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+
+                  should.not.exist(res.body.isVolunteer);
+
+                  return done();
+                });
+            });
+        });
+    });
+  });
+
+  it('should be able to see that someone is volunteer-alumni when they have "volunteer-alumni" role', function (done) {
+    user2.roles = ['user', 'volunteer-alumni'];
+
+    user2.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Get volunteer-alumni's profile
+          agent
+            .get('/api/users/' + user2.username)
+            .expect(200)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+
+              res.body.isVolunteerAlumni.should.be.true();
+
+              // Get non volunteer-alumni's profile
+              agent
+                .get('/api/users/' + user.username)
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+
+                  should.not.exist(res.body.isVolunteerAlumni);
+
+                  return done();
+                });
+            });
+        });
+    });
+  });
+
   it('should not be able to get any user details of confirmed user if not logged in', function (done) {
     // Get own user details
     agent

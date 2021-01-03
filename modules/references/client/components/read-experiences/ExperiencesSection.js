@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
-import Reference from './Reference';
+import Experience from './Experience';
 import { experienceType } from '@/modules/references/client/experiences.prop-types';
 
 /**
- * List of user's references
+ * List of user's experiences
  */
-export default function ReferencesSection({ title, experiences }) {
+export default function ExperiencesSection({ title, experiences }) {
   return (
     <section>
       {title && (
@@ -22,7 +22,7 @@ export default function ReferencesSection({ title, experiences }) {
       {experiences.map(experience => (
         <div className="row" key={experience._id}>
           <div className="col-xs-12">
-            <Reference experience={experience} />
+            <Experience experience={experience} />
           </div>
         </div>
       ))}
@@ -30,7 +30,7 @@ export default function ReferencesSection({ title, experiences }) {
   );
 }
 
-ReferencesSection.propTypes = {
+ExperiencesSection.propTypes = {
   experiences: PropTypes.arrayOf(experienceType).isRequired,
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
 };

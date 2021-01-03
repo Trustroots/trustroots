@@ -73,5 +73,12 @@
     "Download your data": "Scarica i tuoi dati",
     "Anonymous member": "Membro anonimo",
     "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "I tuoi dati sono tuoi. Ci impegniamo a rendere semplice per te aggiungere i tuoi dati su Trustroots, e toglierli, in ogni momento.",
-    "Profile": "Profilo"
+    "Profile": "Profilo",
+    "{{count}} experiences": "{{count}} esperienza",
+    "{{count}} experiences_plural": "{{count}} esperienze",
+    "{{count}} contacts": "{{count}} contatto",
+    "{{count}} contacts_plural": "{{count}} contatti",
+    "Trustroots volunteer alumni": "\"Alumni\" volontari di Trustroots",
+    "Trustroots volunteer": "Volontario di Trustroots",
+    "Experiences": "Esperienze"
 }

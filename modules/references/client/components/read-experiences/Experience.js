@@ -55,7 +55,7 @@ const UserMeta = styled.div`
   flex-direction: column;
 `;
 
-const ReferenceLink = styled.a`
+const ExperienceLink = styled.a`
   align-self: start;
   margin-left: auto;
   color: #333;
@@ -72,7 +72,7 @@ const UserLinkStyled = styled(UserLink)`
   margin-right: 5px;
 `;
 
-export default function Reference({ experience }) {
+export default function Experience({ experience }) {
   const { t } = useTranslation('references');
 
   const {
@@ -80,7 +80,7 @@ export default function Reference({ experience }) {
     created,
     feedbackPublic,
     interactions,
-    public: isPublicReference,
+    public: isPublicExperience,
     recommend,
     userFrom,
     userTo,
@@ -112,11 +112,13 @@ export default function Reference({ experience }) {
                 })}
             </span>
           </UserMeta>
-          <ReferenceLink href={`/profile/${userTo.username}/references#${_id}`}>
+          <ExperienceLink
+            href={`/profile/${userTo.username}/references#${_id}`}
+          >
             <TimeAgo date={createdDate} />
-          </ReferenceLink>
+          </ExperienceLink>
         </Header>
-        {!isPublicReference && (
+        {!isPublicExperience && feedbackPublic === undefined && (
           <>
             <PendingNotice>
               <PendingNoticePlaceholder aria-hidden="true">
@@ -160,11 +162,21 @@ export default function Reference({ experience }) {
             )}
           </Response>
         )}
+        {!isPublicExperience && feedbackPublic !== undefined && (
+          <>
+            <PendingNotice>
+              {t(
+                'Your experience will become public in {{count}} days, or when they share their experience with you.',
+                { count: getDaysLeft(createdDate) },
+              )}
+            </PendingNotice>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-Reference.propTypes = {
+Experience.propTypes = {
   experience: experienceType.isRequired,
 };

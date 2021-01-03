@@ -44,6 +44,8 @@
   "You also reported them to us. Please do <2>get in touch with us</2> if you have any further info to add.": "You also reported them to us. Please do <2>get in touch with us</2> if you have any further info to add.",
   "You have {{count}} days left to respond before their experience will become public.": "You have {{count}} days left to respond before their experience will become public.",
   "You have {{count}} days left to respond before their experience will become public._plural": "You have {{count}} days left to respond before their experience will become public.",
+  "Your experience will become public in {{count}} days, or when they share their experience with you.": "Your experience will become public in {{count}} days, or when they share their experience with you.",
+  "Your experience will become public in {{count}} days, or when they share their experience with you._plural": "Your experience will become public in {{count}} days, or when they share their experience with you._plural",
   "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.": "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.",
   "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._plural": "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.",
   "Your experience with {{name}} is public now.": "Your experience with {{name}} is public now.",

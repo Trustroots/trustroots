@@ -284,10 +284,25 @@ async function sendEmailNotification(
   }
 }
 
-async function sendPushNotification(userFrom, userTo, { isFirst }) {
-  return util.promisify(pushService.notifyNewReference)(userFrom, userTo, {
-    isFirst,
-  });
+async function sendPushNotification(
+  userFrom,
+  userTo,
+  { isFirst, referenceId },
+) {
+  // First push notification when first experience-pair is written
+  if (isFirst) {
+    return util.promisify(pushService.notifyNewReferenceFirst)(
+      userFrom,
+      userTo,
+    );
+  }
+
+  // Second push notification when both experiences become public
+  return util.promisify(pushService.notifyNewReferenceSecond)(
+    userFrom,
+    userTo,
+    referenceId,
+  );
 }
 
 /**
@@ -342,7 +357,10 @@ exports.create = async function (req, res, next) {
     );
 
     // send push notification
-    await sendPushNotification(req.user, userTo, { isFirst: !otherReference });
+    await sendPushNotification(req.user, userTo, {
+      isFirst: !otherReference,
+      referenceId: savedReference._id,
+    });
 
     // finally, respond
     throw new ResponseError({
@@ -404,13 +422,23 @@ exports.readMany = async function readMany(req, res, next) {
     const selfId = req.user._id;
 
     const userToId = new mongoose.Types.ObjectId(userTo);
-    const matchQuery = {
+    let matchQuery = {
       $or: [{ userTo: userToId }, { userFrom: userToId }],
     };
     // Allow non-public references only when userTo is self
     if (!selfId.equals(userToId)) {
       matchQuery.public = true;
     }
+
+    const privateFromSelfQuery = {
+      userFrom: selfId,
+      userTo: userToId,
+      public: false,
+    };
+
+    matchQuery = {
+      $or: [matchQuery, privateFromSelfQuery],
+    };
 
     // Aggregate projection for User in reference
     const userKeys = {
@@ -514,7 +542,6 @@ function validateReadOne(id) {
  * Load a reference by id to request.reference
  */
 exports.referenceById = async function referenceById(req, res, next, id) {
-  // eslint-disable-line no-unused-vars
   try {
     // don't bother fetching a reference for non-public users or guests
     if (!req.user || !req.user.public) return next();
@@ -525,7 +552,7 @@ exports.referenceById = async function referenceById(req, res, next, id) {
     const selfId = req.user._id;
 
     // find the reference by id
-    const reference = await Reference.findById(req.params.referenceId)
+    const reference = await Reference.findById(req.params.experienceId)
       .populate('userFrom userTo', userProfile.userMiniProfileFields)
       .exec();
 
