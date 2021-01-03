@@ -1,13 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
 
-export default function FaqTechnology({ invitationsEnabled }) {
+export default function FaqTechnology() {
   const { t } = useTranslation('pages');
 
   return (
-    <Faq category="technology" invitationsEnabled={invitationsEnabled}>
+    <Faq category="technology">
       <div className="faq-question" id="opensource">
         <h3>{t('Is Trustroots open source?')}</h3>
         <Trans t={t} ns="pages">
@@ -102,6 +101,4 @@ export default function FaqTechnology({ invitationsEnabled }) {
   );
 }
 
-FaqTechnology.propTypes = {
-  invitationsEnabled: PropTypes.bool,
-};
+FaqTechnology.propTypes = {};

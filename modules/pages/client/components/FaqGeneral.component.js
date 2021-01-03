@@ -1,14 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
-import { userType } from '@/modules/users/client/users.prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 
-export default function FaqGeneral({ invitationsEnabled, user }) {
+export default function FaqGeneral() {
   const { t } = useTranslation('pages');
 
   return (
-    <Faq category="general" invitationsEnabled={invitationsEnabled}>
+    <Faq category="general">
       <div
         className="faq-question"
         id="is-trustroots-exclusively-for-hitchhikers"
@@ -129,68 +127,6 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
         )}
       </div>
 
-      {invitationsEnabled && (
-        <div>
-          <div className="faq-question" id="why-is-trustroots-invite-only">
-            <h3>{t('Why is Trustroots invite only?')}</h3>
-            <Trans t={t} ns="pages">
-              Trustroots is growing, we’ve passed
-              <a href="/statistics">25’000 members</a> (March 2017). Until now
-              Trustroots has been focused around the hitchhiking community. As
-              we grow, we want to manage the transition to a wider audience
-              carefully.{' '}
-            </Trans>
-            <br />
-            <br />
-            {t(
-              'Right now we simply don’t have the features to support a diverse audience of people with differing values. We want to build on the circles feature, and add a whole lot more to help with this. But for the time being, we feel that it’s better to keep our growth more focused.',
-            )}
-            <br />
-            <br />
-            <Trans t={t} ns="pages">
-              Read more from our{' '}
-              <a href="https://ideas.trustroots.org/2017/03/25/trustroots-goes-invitation-only/">
-                blog post
-              </a>
-              .
-            </Trans>
-          </div>
-
-          <div className="faq-question" id="how-waitinglist-works">
-            <h3>{t('How waiting list works?')}</h3>
-            <ul>
-              <li>{t('You sign up to the list.')}</li>
-              <li>{t('You verify your email.')}</li>
-              <li>{t('You get your own invite link.')}</li>
-              <li>{t('You invite friends by giving them your link.')}</li>
-              <li>
-                {t(
-                  'Once you have 4 friends on the waiting list, we send you and your friends a link to join the site.',
-                )}
-              </li>
-            </ul>
-            {!user && (
-              <p className="text-center">
-                <br />
-                <a href="/signup" className="btn btn-lg btn-primary">
-                  {t('Sign up!')}
-                </a>
-              </p>
-            )}
-          </div>
-
-          <div className="faq-question" id="i-did-not-receive-invite-code">
-            <h3>{t('I did not receive invite code')}</h3>
-            <Trans t={t} ns="pages">
-              If you know that you should&apos;ve received invite code from the
-              waiting list, check first your email spam folder. If you
-              don&apos;t find the email there, please{' '}
-              <a href="/support">contact us</a>.
-            </Trans>
-          </div>
-        </div>
-      )}
-
       <div className="faq-question" id="why-is-there-facebook-connection">
         <h3>{t('Why is there Facebook connection?')}</h3>
         {t(
@@ -302,7 +238,4 @@ export default function FaqGeneral({ invitationsEnabled, user }) {
   );
 }
 
-FaqGeneral.propTypes = {
-  user: userType,
-  invitationsEnabled: PropTypes.bool,
-};
+FaqGeneral.propTypes = {};

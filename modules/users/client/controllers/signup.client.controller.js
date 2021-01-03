@@ -7,29 +7,21 @@ angular.module('users').controller('SignupController', SignupController);
 function SignupController(
   $rootScope,
   $http,
-  $q,
   $state,
   $stateParams,
-  $location,
   $uibModal,
   $analytics,
-  $window,
   Authentication,
   UserMembershipsService,
   messageCenterService,
   TribeService,
   TribesService,
-  InvitationService,
-  SettingsFactory,
-  locker,
 ) {
   // If user is already signed in then redirect to search page
   if (Authentication.user) {
     $state.go('search.map');
     return;
   }
-
-  const appSettings = SettingsFactory.get();
 
   // View Model
   const vm = this;
@@ -44,14 +36,6 @@ function SignupController(
   vm.openRules = openRules;
   vm.tribe = null;
   vm.suggestedTribes = [];
-
-  // Variables for invitation feature
-  vm.invitationCode = $stateParams.code || '';
-  vm.invitationCodeValid = false;
-  vm.invitationCodeError = false;
-  vm.validateInvitationCode = validateInvitationCode;
-  vm.isWaitingListEnabled = false;
-  vm.waitinglistInvitation = Boolean($stateParams.mwr);
   vm.usernameMinlength = 3;
   vm.usernameMaxlength = 34;
   vm.suggestedTribesLimit = 4;
@@ -63,12 +47,6 @@ function SignupController(
    * Initalize controller
    */
   function activate() {
-    // If invitation code was passed to the page (via URL), validate it
-    validateInvitationCode().finally(function () {
-      // Initialise waitinglist
-      initWaitingList();
-    });
-
     // Get list of suggested tribes
     initSuggstedTribes();
   }
@@ -218,148 +196,6 @@ function SignupController(
         messageCenterService.add('danger', message);
       },
     );
-  }
-
-  /**
-   * Validate invitation code
-   * Invite code has to be present at `vm.invitationCode`
-   */
-  function validateInvitationCode() {
-    return $q(function (resolve, reject) {
-      vm.invitationCodeError = false;
-
-      if (vm.invitationCode) {
-        // Validate code
-        InvitationService.post({
-          invitecode: vm.invitationCode,
-        }).$promise.then(
-          function (data) {
-            // UI
-            vm.invitationCodeValid = data.valid;
-            vm.invitationCodeError = !data.valid;
-
-            // Resolve promise
-            resolve();
-
-            // Analytics
-            if (data.valid) {
-              $analytics.eventTrack('invitationCode.valid', {
-                category: 'invitation',
-                label: 'Valid invitation code entered',
-              });
-            } else {
-              $analytics.eventTrack('invitationCode.invalid', {
-                category: 'invitation',
-                label: 'Invalid invitation code entered',
-              });
-            }
-          },
-          function () {
-            vm.invitationCodeValid = false;
-            vm.invitationCodeError = true;
-
-            // Reject promise
-            reject();
-
-            messageCenterService.add(
-              'danger',
-              'Something went wrong, try again.',
-            );
-            $analytics.eventTrack('invitationCode.failed', {
-              category: 'invitation',
-              label: 'Failed to validate invitation code',
-            });
-          },
-        );
-      } else {
-        // No invite code available, just resolve promise
-        resolve();
-      }
-    });
-  }
-
-  /**
-   * Initialize waiting list
-   * @link https://maitreapp.co
-   */
-  function initWaitingList() {
-    // Don't proceed if no invitations enabled,
-    // or no Maitre id available
-    // or if valid invite code was already given
-    if (
-      !appSettings.invitationsEnabled ||
-      !appSettings.maitreId ||
-      vm.invitationCodeValid
-    ) {
-      return;
-    }
-
-    // Either store `mwr` URL parameter to localStorage
-    // or pick it up from localStorage and put it back to URL
-    // `mwr` is a Maitre invite parameter
-    if (locker.supported()) {
-      const mwrLockerKey = 'waitinglist.mwr';
-      // If `mwr` attribute is in the URL...
-      if ($stateParams.mwr) {
-        // ...store it in local storage
-        locker.put(mwrLockerKey, $stateParams.mwr);
-        $analytics.eventTrack('waitinglist.enabled', {
-          category: 'waitinglist',
-          label: 'Waiting list invitation code enabled',
-        });
-        // If previously stored `mwr` is available in locker...
-      } else if (locker.get(mwrLockerKey)) {
-        // ...put it back to the URL
-        // This route has `reloadOnSearch:false` configured so it won't
-        // reload the view
-        // See modules/users/client/config/users.client.routes.js
-        $location.search('mwr', locker.get(mwrLockerKey));
-        vm.waitinglistInvitation = true;
-        $analytics.eventTrack('waitinglist.re-enabled', {
-          category: 'waitinglist',
-          label: 'Waiting list invitation code re-enabled',
-        });
-      }
-    }
-
-    vm.isWaitingListEnabled = true;
-
-    // If page was opened via waiting list invitation,
-    // scroll to the right place on page
-    if (vm.waitinglistInvitation) {
-      $location.hash('waitinglist');
-    }
-
-    // Maitre configuration
-    // @link http://support.maitreapp.co/article/56-configuration
-    $window.Maitre = {
-      uuid: appSettings.maitreId,
-
-      // Show/hide name field in the form.
-      require_name: false,
-
-      // When "test_mode" is set to true,
-      // neither views nor registrations will be saved.
-      test_mode: Boolean($window.env !== 'production'),
-
-      // `true`: show list of waiting up users
-      // `false`: show number of waiting users
-      require_leaderboard: false,
-    };
-
-    // Initialize Maitre app by appending script to the page
-    // Expects an element with `data-maitre` be present in DOM
-    // https://api.jquery.com/jQuery.getScript/
-    jQuery.getScript('https://maitreapp.co/widget.js').fail(function () {
-      // If loading the script fails, hide waiting list feature
-      vm.isWaitingListEnabled = false;
-
-      // Send event to analytics
-      $analytics.eventTrack('waitinglist.failed', {
-        category: 'waitinglist',
-        label: 'Waiting list script failed to load.',
-      });
-    });
   }
 
   /**

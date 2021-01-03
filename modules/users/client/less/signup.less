@@ -1,7 +1,5 @@
 @import '~less/global-variables';
 @import '~bootstrap/less/mixins/size';
-@import '~less/bootstrap/buttons';
-@import '~less/bootstrap/forms';
 
 // Form
 .signup-form-steps {
@@ -73,104 +71,5 @@
   .signup-step-indicator {
     background-color: @brand-primary;
     color: #fff;
-  }
-}
-//font-brand-semibold
-
-// Signup waiting list using Maitreapp.co
-#maitre-widget-popup,
-#maitre-widget-container {
-  color: @text-muted;
-  max-width: 600px !important;
-  text-align: left !important;
-
-  * {
-    font-family: @font-family-brand-regular !important;
-    font-weight: @font-weight-brand-regular !important;
-    -webkit-font-smoothing: auto !important;
-  }
-
-  h2 {
-    font-family: @font-family-brand-semibold !important;
-    font-weight: @font-weight-brand-semibold !important;
-  }
-
-  // Hide header
-  #maitre-main-header {
-    display: none;
-  }
-
-  .maitre-field {
-    text-align: left !important;
-    color: @text-muted !important;
-    padding-left: 0 !important;
-  }
-
-  #maitre-share-plain-url,
-  .maitre-field input {
-    .form-control;
-    .input-lg;
-    min-width: 170px !important;
-  }
-
-  #maitre-share-plain-url,
-  #maitre-share-plain {
-    max-width: 700px;
-    font-size: @font-size-large !important;
-  }
-
-  #maitre-content-close {
-    font-size: 60px !important;
-    line-height: 60px !important;
-  }
-
-  button,
-  #maitre-submit-button {
-    .btn;
-    .btn-primary;
-    // .btn-lg;
-    height: auto !important;
-    padding: 10px 16px !important;
-    font-size: @font-size-large !important;
-    line-height: @line-height-base !important;
-    background-color: @btn-primary-bg !important;
-    color: @btn-primary-color !important;
-    border-radius: @border-radius-base !important;
-    border: @btn-border-radius-base !important;
-    text-shadow: none !important;
-    font-family: @font-family-brand-regular !important;
-    font-style: normal !important;
-    font-weight: @font-weight-brand-regular !important;
-  }
-
-  .maitre-lb-footnote,
-  #maitre-status {
-    color: @text-muted !important;
-    text-transform: none !important;
-  }
-
-  #maitre-people-ahead-number,
-  #maitre-people-ahead-text,
-  #maitre-people-referred-text,
-  #maitre-people-referred-number {
-    color: @brand-primary !important;
-  }
-
-  #maitre-instructions {
-    font-size: @font-size-large !important;
-    line-height: @line-height-base !important;
-    max-width: 500px !important;
-    margin: 40px auto !important;
-  }
-
-  .maitre-reward-content {
-    h2 {
-      font-size: @font-size-large !important;
-      line-height: @line-height-base !important;
-    }
-    p {
-      font-size: @font-size-large !important;
-      line-height: @line-height-base !important;
-    }
   }
 }
