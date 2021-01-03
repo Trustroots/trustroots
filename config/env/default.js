@@ -103,6 +103,7 @@ module.exports = {
     'tag',
     'community',
     'remove',
+    'circle',
   ],
   // SparkPost webhook API endpoint configuration (`/api/sparkpost/webhook`)
   sparkpostWebhook: {
