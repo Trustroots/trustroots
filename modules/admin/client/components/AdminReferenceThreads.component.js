@@ -40,6 +40,9 @@ export default function AdminReferenceThreads() {
         {!isFetching &&
           referenceThreads.length > 0 &&
           referenceThreads.map(({ _id, userFrom, userTo, created }) => {
+            const userToId = userTo?._id ?? userTo;
+            const userFromId = userFrom?._id ?? userFrom;
+
             return (
               <div key={_id} className="panel">
                 <div className="panel-body">
@@ -52,7 +55,7 @@ export default function AdminReferenceThreads() {
                   </p>
                   <p>
                     <a
-                      href={`/admin/messages?userId1=${userTo._id}&userId2=${userFrom._id}`}
+                      href={`/admin/messages?userId1=${userToId}&userId2=${userFromId}`}
                     >
                       See message thread
                     </a>
