@@ -73,5 +73,12 @@
     "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "Si vous n'avez pas reçu le message, vérifiez votre dossier de spam ou demandez un renvoi via les <1>paramètres d'e-mail</1>.",
     "Hosting offer": "Offre d'hébergement",
     "Download your data": "Télécharger vos données",
-    "Anonymous member": "Membre anonyme"
+    "Anonymous member": "Membre anonyme",
+    "{{count}} experiences": "{{count}} expérience",
+    "{{count}} experiences_plural": "{{count}} expériences",
+    "{{count}} contacts": "{{count}} contact",
+    "{{count}} contacts_plural": "{{count}} contacts",
+    "Trustroots volunteer": "Bénévole Trustroots",
+    "Trustroots volunteer alumni": "Ancien bénévole Trustroots",
+    "Experiences": "Expériences"
 }
