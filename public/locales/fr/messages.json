@@ -48,5 +48,10 @@
     "{{count}} unread messages": "{{count}} message non lu",
     "{{count}} unread messages_plural": "{{count}} messages non lus",
     "License": "Licence",
-    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "…montrant que vous êtes intéressé pour les rencontrer, pas seulement pour obtenir un hébergement gratuit."
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "…montrant que vous êtes intéressé pour les rencontrer, pas seulement pour obtenir un hébergement gratuit.",
+    "Your response won't be visible to them.": "Votre réponse ne leur sera pas visible.",
+    "Yes": "Oui",
+    "No": "Non",
+    "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Trouvez-vous que les messages de cette personne sont polis, respectueux et dans l'esprit de Trustroots ?",
+    "Change": "Modifier"
 }
