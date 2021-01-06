@@ -1,18 +1,9 @@
 <section class="container container-spacer">
-  <!-- Invitation form -->
-  <div
-    class="signin form-horizontal"
-    ng-if="app.appSettings.invitationsEnabled && !signup.invitationCodeValid"
-    ng-include="~modules/users/client/views/authentication/signup-invite-form.view.html"
-  ></div>
-  <!-- /Invitation form -->
-
   <form
     name="userForm"
     class="signin form-horizontal"
     novalidate
     autocomplete="off"
-    ng-if="!app.appSettings.invitationsEnabled || signup.invitationCodeValid"
   >
     <div class="row">
       <div class="col-xs-12 text-center">

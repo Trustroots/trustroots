@@ -20,18 +20,6 @@ module.exports = {
     description:
       'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.',
   },
-  // Is site invitation only?
-  invitations: {
-    enabled: false,
-    // Key salt
-    key: 62618893,
-    // Id for the waiting list feature
-    // http://maitreapp.co
-    maitreId: 'MF930c37aeb3',
-    // These codes are always valid
-    // ONLY lower case
-    alwaysValidCodes: ['trustroots'],
-  },
 
   // Appears on top of every page for authenticated users.
   // There's no way turning them off permanently,

@@ -27,19 +27,6 @@ angular.module('users').config(UsersRoutes);
 /* @ngInject */
 function UsersRoutes($stateProvider) {
   $stateProvider
-    // Invite route deprecated in 11-2018
-    .state('invite', {
-      url: '/invite',
-      /* @ngInject */
-      controller($state) {
-        $state.go('signup');
-      },
-      controllerAs: 'invite',
-      requiresAuth: false,
-      data: {
-        pageTitle: 'Signup',
-      },
-    })
     // Users state routing
     .state('welcome', {
       url: '/welcome',
@@ -255,9 +242,7 @@ function UsersRoutes($stateProvider) {
     // Auth routes
     .state('signup', {
       // `tribe`: preload tribe in suggested tribes list
-      // `code`: prefill invite code
-      // `mwr` used by Matre app if invite list is enabled
-      url: '/signup?tribe&code&mwr',
+      url: '/signup?tribe',
       templateUrl: signupTemplateUrl,
       controller: 'SignupController',
       controllerAs: 'signup',

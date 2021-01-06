@@ -44,16 +44,6 @@ module.exports = function (app) {
     .delete(userProfile.leaveTribe);
 
   app
-    .route('/api/users/invitecode')
-    .all(usersPolicy.isAllowed)
-    .get(userProfile.getInviteCode);
-
-  app
-    .route('/api/users/invitecode/:invitecode')
-    .all(usersPolicy.isAllowed)
-    .post(userProfile.validateInviteCode);
-
-  app
     .route('/api/users/push/registrations')
     .all(usersPolicy.isAllowed)
     .post(userProfile.addPushRegistration);
