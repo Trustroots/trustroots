@@ -118,7 +118,7 @@ More information can be found in the NodeJS [debug documentation](https://nodejs
 
 ## Analyzing bundles
 
-You can what goes into the "bundle" that [Webpack](https://webpack.js.org/) compiles from all the JS, style and image assets by adding this to your `config/env/local/js`:
+You can see what goes into the "bundle" that [Webpack](https://webpack.js.org/) compiles from all the JS, style and image assets by adding this to your `config/env/local/js`:
 
 ```js
 bundleAnalyzer: {
