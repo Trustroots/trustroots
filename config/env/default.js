@@ -226,4 +226,12 @@ module.exports = {
       dsn: '',
     },
   },
+  // Webpack bundle analyzer
+  // Visualize size of webpack output files with an interactive zoomable treemap.
+  // https://www.npmjs.com/package/webpack-bundle-analyzer
+  bundleAnalyzer: {
+    enabled: false,
+    // See https://github.com/webpack-contrib/webpack-bundle-analyzer#options-for-plugin
+    options: {},
+  },
 };
