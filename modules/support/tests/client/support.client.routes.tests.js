@@ -19,12 +19,6 @@ describe('Support Route Tests', function () {
       it('Should not be abstract', function () {
         expect(mainstate.abstract).toBe(undefined);
       });
-
-      it('Should have templateUrl', function () {
-        expect(mainstate.templateUrl).toBe(
-          '/modules/support/views/support.client.view.html',
-        );
-      });
     });
 
     describe('Alternative Route (contact)', function () {
@@ -39,12 +33,6 @@ describe('Support Route Tests', function () {
 
       it('Should not be abstract', function () {
         expect(mainstate.abstract).toBe(undefined);
-      });
-
-      it('Should have templateUrl', function () {
-        expect(mainstate.templateUrl).toBe(
-          '/modules/support/views/support.client.view.html',
-        );
       });
     });
 
