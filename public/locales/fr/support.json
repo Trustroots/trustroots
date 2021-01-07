@@ -1,4 +1,25 @@
 {
     "Report member": "Signaler le membre",
-    "Report member {{username}} to support": "Signaler le membre {{username}} à l'assistance"
+    "Report member {{username}} to support": "Signaler le membre {{username}} à l'assistance",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Vous pouvez vous rendre sur la <1>page d'accueil</1> ou consulter les <4>questions fréquentes</4>.",
+    "Wait…": "Veuillez patienter…",
+    "Username": "Nom d'utilisateur",
+    "Trustroots Support Robot": "Robot d'assistance de Trustroots",
+    "Trustroots Support": "Assistance de Trustroots",
+    "Thank you!": "Merci !",
+    "Something went wrong sending your message.": "Une erreur s'est produite lors de l'envoi de votre message.",
+    "Send": "Envoyer",
+    "See also": "Voir aussi",
+    "Reporting member": "Signaler un membre",
+    "Removing your account": "Supprimer votre compte",
+    "Please write in English if possible.": "Veuillez écrire en anglais si possible.",
+    "Please ensure you are connected to internet and try again.": "Assurez-vous que vous êtes connecté à Internet et réessayez.",
+    "Name": "Nom",
+    "Message": "Message",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Je ne suis qu'un petit robot mais j'ai bien transmis votre message à notre équipe d'assistance. Ils reviendront vers vous très prochainement !",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Si vous ou quelqu'un que vous connaissez est témoin d'un crime ou en a été victime, veuillez le signaler immédiatement à la police.",
+    "Frequently Asked Questions": "Questions fréquentes",
+    "Email": "E-mail",
+    "Contact us": "Nous contacter",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Devenez bénévole</0> et faîtes la différence !"
 }
