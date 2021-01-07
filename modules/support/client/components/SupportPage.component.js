@@ -38,7 +38,7 @@ export default function SupportPage({ user }) {
               </li>
               {user && (
                 <li>
-                  <a ui-sref="/profile/edit/account#remove">
+                  <a href="/profile/edit/account#remove">
                     {t('Removing your account')}
                   </a>
                 </li>
