@@ -33,15 +33,17 @@ import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-export default function SearchMap(props) {
-  const {
-    filters,
-    location,
-    locationBounds: bounds,
-    onOfferClose,
-    onOfferOpen,
-  } = props;
-
+export default function SearchMap({
+  filters,
+  isUserPublic,
+  location,
+  locationBounds: bounds,
+  onOfferClose,
+  onOfferOpen,
+}) {
+  /**
+   * Store map location in browser cache
+   */
   const [
     persistentMapLocation,
     setPersistentMapLocation,
@@ -50,6 +52,17 @@ export default function SearchMap(props) {
     longitude: DEFAULT_LOCATION.lng,
     zoom: DEFAULT_LOCATION.zoom,
   });
+
+  /**
+   * Debounce setting persistent map state to avoid performance issues
+   */
+  const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
+    setPersistentMapLocation,
+    // delay in ms
+    1000,
+    // The maximum time func is allowed to be delayed before it's invoked:
+    { maxWait: 3000 },
+  );
 
   const [viewport, setViewport] = useState(persistentMapLocation);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
@@ -133,17 +146,6 @@ export default function SearchMap(props) {
       southWestLng,
     });
   };
-
-  /**
-   * Debounce setting persistent map state to avoid performance issues
-   */
-  const [debouncedSetPersistentMapLocation] = useDebouncedCallback(
-    setPersistentMapLocation,
-    // delay in ms
-    1000,
-    // The maximum time func is allowed to be delayed before it's invoked:
-    { maxWait: 3000 },
-  );
 
   /**
    * Refresh persistent map state when viewport changes
@@ -344,6 +346,10 @@ export default function SearchMap(props) {
    * Fetch offers inside bounding box
    */
   async function fetchOffers(boundingBox) {
+    if (!isUserPublic) {
+      return;
+    }
+
     try {
       // @TODO: cancellation when need to re-fetch
       const data = await queryOffers({
@@ -462,9 +468,10 @@ export default function SearchMap(props) {
 }
 
 SearchMap.propTypes = {
+  filters: PropTypes.string,
+  isUserPublic: PropTypes.bool,
   location: PropTypes.object,
   locationBounds: PropTypes.object,
-  filters: PropTypes.string,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
 };
