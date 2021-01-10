@@ -59,6 +59,12 @@ export default function Contribute() {
                 </a>{' '}
                 to get an idea of what’s in the making and what you can do to
                 help out.
+                You could help Trustroots out with as little effort as{' '}
+                <a href="https://team.trustroots.org/Chat.html">
+                  donating your photo's
+                </a>{' '}
+                to use for our website or create content. If you're
+                a (semi-)professional photographer or have any questions you can contact us trough share@trustroots.org.
               </Trans>
             </p>
           </div>
