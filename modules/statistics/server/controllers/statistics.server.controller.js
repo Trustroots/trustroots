@@ -246,7 +246,7 @@ exports.getUserLanguagesCount = function (limit, callback) {
  */
 exports.getPublicStatistics = function (req, res) {
   req.statistics = {
-    connected: {},
+    connections: [],
     hosting: {},
   };
 
@@ -269,7 +269,12 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.connected.bewelcome = count;
+
+          req.statistics.connections.push({
+            network: 'bewelcome',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
           done();
         });
       },
@@ -280,7 +285,11 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.connected.couchsurfing = count;
+          req.statistics.connections.push({
+            network: 'couchsurfing',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
           done();
         });
       },
@@ -291,7 +300,11 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.connected.warmshowers = count;
+          req.statistics.connections.push({
+            network: 'warmshowers',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
           done();
         });
       },
@@ -302,7 +315,11 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.connected.facebook = count;
+          req.statistics.connections.push({
+            network: 'facebook',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
           done();
         });
       },
@@ -313,7 +330,11 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.connected.twitter = count;
+          req.statistics.connections.push({
+            network: 'twitter',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
           done();
         });
       },
@@ -324,7 +345,11 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.connected.github = count;
+          req.statistics.connections.push({
+            network: 'github',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
           done();
         });
       },
@@ -335,7 +360,10 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.newsletter = count;
+          req.statistics.newsletter = {
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          };
           done();
         });
       },
@@ -346,8 +374,18 @@ exports.getPublicStatistics = function (req, res) {
           if (err) {
             return done(err);
           }
-          req.statistics.hosting.yes = counter.yes;
-          req.statistics.hosting.maybe = counter.maybe;
+
+          const totalHosting = counter.yes + counter.maybe;
+
+          req.statistics.hosting = {
+            total: totalHosting,
+            percentage: Math.round((totalHosting / req.statistics.total) * 100),
+            yes: counter.yes,
+            yesPercentage: Math.round((counter.yes / totalHosting) * 100),
+            maybe: counter.maybe,
+            maybePercentage: Math.round((counter.maybe / totalHosting) * 100),
+          };
+
           done();
         });
       },

@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 
 // Internal dependencies
 import {
+  getNetworkName,
   hasConnectedAdditionalSocialAccounts,
   isWarmshowersId,
   socialAccountLink,
@@ -120,13 +121,13 @@ export default function ProfileViewBasics({ profile }) {
                   />
                   <a
                     rel="noopener"
-                    className="social-profile-handle text-capitalize"
+                    className="social-profile-handle"
                     href={socialAccountLink(
                       network,
                       profile.additionalProvidersData[network],
                     )}
                   >
-                    {network}
+                    {getNetworkName(network)}
                   </a>
                 </li>
               )
