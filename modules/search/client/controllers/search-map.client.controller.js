@@ -13,7 +13,7 @@ function SearchMapController(
 
   // Exposed to the view
   vm.bounds = {};
-  vm.center = {};
+  vm.location = {};
   vm.filters = {};
   vm.notFound = false;
   vm.closeOffer = closeOffer;
