@@ -44,11 +44,25 @@ export default function QuickReply({ onSend, onFocus }) {
           if (write) {
             onFocus();
           } else {
-            onSend(`
+            if (host) {
+              onSend(`
+              <p data-hosting="${host ? 'yes' : 'no'}">
+                <b><i>${content}</i></b>
+                <br>
+                <br>
+                Click here if you are interested in a quick face to face before you meet in person, set a time for a video call!
+                <br>
+                <br>
+                We set up a room for you here <a href = https://meet.jit.si/slkjfdhvreiuvsnf>meet.jit.si/slkjfdhvreiuvsnf</a>
+              </p>
+            `);
+            } else {
+              onSend(`
               <p data-hosting="${host ? 'yes' : 'no'}">
                 <b><i>${content}</i></b>
               </p>
             `);
+            }
           }
         }
 
