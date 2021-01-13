@@ -45,6 +45,17 @@ export default function QuickReply({ onSend, onFocus }) {
             onFocus();
           } else {
             if (host) {
+              let result = '';
+              const characters =
+                'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+              const charactersLength = characters.length;
+              for (let i = 0; i < 15; i++) {
+                result += characters.charAt(
+                  Math.floor(Math.random() * charactersLength),
+                );
+              }
+              alert(result);
+              const jitsi_random = result;
               onSend(`
               <p data-hosting="${host ? 'yes' : 'no'}">
                 <b><i>${content}</i></b>
@@ -53,7 +64,7 @@ export default function QuickReply({ onSend, onFocus }) {
                 Click here if you are interested in a quick face to face before you meet in person, set a time for a video call!
                 <br>
                 <br>
-                We set up a room for you here <a href = https://meet.jit.si/slkjfdhvreiuvsnf>meet.jit.si/slkjfdhvreiuvsnf</a>
+                We set up a room for you here <a href = https://meet.jit.si/${jitsi_random}>meet.jit.si/${jitsi_random}</a>
               </p>
             `);
             } else {

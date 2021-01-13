@@ -159,6 +159,14 @@ this is a fallback when the contacts are loading
                 <a
                   ui-sref="profile.experiences.new({username: profileCtrl.profile.username})"
                 >
+                  <i class="fa icon-message-alt"></i>
+                  WhatsApp me
+                </a>
+              </li>
+              <li ng-if="app.appSettings.referencesEnabled">
+                <a
+                  ui-sref="profile.experiences.new({username: profileCtrl.profile.username})"
+                >
                   <i class="icon-plus-squared-alt"></i>
                   Share your experience
                 </a>
