@@ -48,12 +48,16 @@ describe('<CreateExperience />', () => {
     api.references.readMine.mockResolvedValueOnce([]);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     expect(api.references.readMine).toBeCalledWith({
-      userTo: userTo._id,
+      userWith: userTo._id,
     });
   });
 
-  it('can not leave a second reference', async () => {
-    api.references.readMine.mockResolvedValueOnce([{ userTo, public: false }]);
+  it('can not leave a second reference - without response', async () => {
+    api.references.readMine.mockResolvedValueOnce({
+      userFrom: userFrom._id,
+      public: false,
+      response: null,
+    });
     const { queryByRole } = render(
       <CreateExperience userFrom={userFrom} userTo={userTo} />,
     );
@@ -62,7 +66,25 @@ describe('<CreateExperience />', () => {
       `You already shared your experience with them`,
     );
     expect(api.references.readMine).toBeCalledWith({
-      userTo: userTo._id,
+      userWith: userTo._id,
+    });
+  });
+
+  it('can not leave a second reference - with response', async () => {
+    api.references.readMine.mockResolvedValueOnce({
+      userFrom: userTo._id,
+      public: true,
+      response: 'mocked response',
+    });
+    const { queryByRole } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+    await waitForLoader();
+    expect(queryByRole('heading')).toHaveTextContent(
+      `You already shared your experience with them`,
+    );
+    expect(api.references.readMine).toBeCalledWith({
+      userWith: userTo._id,
     });
   });
 
