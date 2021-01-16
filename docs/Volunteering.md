@@ -28,7 +28,7 @@ Some of the easiest ways to help _right now_ are:
 
 **Got Space?** Let us know if you have a space at your disposal that you want to provide to a Trustroots collective or a Hackathon. Check out some <a href="https://nomadwiki.org/en/Trustroots_Iberian_Collective_2018">previous</a> Trustroots spaces.
 
-**Spread the word!** Honestly, the biggest thing that helps us is helping more people find out about Trustroots. Tell your friends and fellow travellers about Trustroots and tag us on social media. You can follow us on [Twitter](https://twitter.com/trustroots), [Instagram](https://www.instagram.com/trustroots_org/), [Facebook](https://www.facebook.com/trustroots.org/) and our [blog](https://ideas.trustroots.org/).
+**Spread the word!** Honestly, the biggest thing that helps us is helping more people find out about Trustroots. Tell your friends and fellow travellers about Trustroots and tag us on social media. You can follow us on [Twitter](https://twitter.com/trustroots), [Instagram](https://www.instagram.com/trustroots/), [Facebook](https://www.facebook.com/trustroots.org/) and our [blog](https://ideas.trustroots.org/).
 
 If you write a post about Trustroots on your blog, definitely [let us know](https://www.trustroots.org/contact) so that we can share it.
 
