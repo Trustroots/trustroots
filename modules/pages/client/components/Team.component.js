@@ -184,7 +184,7 @@ export default function Team({ user }) {
                 {t('Facebook group')}
               </a>
               <a
-                href="https://www.instagram.com/trustroots_org/"
+                href="https://www.instagram.com/trustroots/"
                 className="btn btn-link btn-lg"
               >
                 Twitter

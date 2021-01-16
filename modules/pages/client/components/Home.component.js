@@ -440,7 +440,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
               <li>
                 <Tooltip id="instagram-tooltip" tooltip="Instagram">
                   <a
-                    href="https://www.instagram.com/trustroots_org/"
+                    href="https://www.instagram.com/trustroots/"
                     aria-label={t('Trustroots at Instagram')}
                   >
                     <i className="icon-instagram icon-lg"></i>
