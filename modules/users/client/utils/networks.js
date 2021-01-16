@@ -32,3 +32,27 @@ export function socialAccountLink(providerName, providerData) {
     return '#';
   }
 }
+
+/**
+ * Get name for a network by slug.
+ * @param  {string} network Network slug.
+ * @return {string} Name of the network or slug if not found.
+ */
+export function getNetworkName(network) {
+  switch (network) {
+    case 'bewelcome':
+      return 'BeWelcome';
+    case 'couchsurfing':
+      return 'Couchsurfing';
+    case 'facebook':
+      return 'Facebook';
+    case 'github':
+      return 'Github';
+    case 'twitter':
+      return 'Twitter';
+    case 'warmshowers':
+      return 'Warmshowers';
+    default:
+      return network;
+  }
+}

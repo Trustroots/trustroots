@@ -93,20 +93,4 @@ module.exports = {
       'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJjanhydWF3bDkwYnd0M2JtanB2amg1NWVpIn0.a8XP1jMeVFBsScDI3oV1BA',
   }
   */
-  /*
-  // Is site invitation only?
-  // Set `enabled` to `true`
-  // You can use codes in `alwaysValidCodes` to pass signup form
-  invitations: {
-    enabled: false,
-    // Key salt
-    key: 62618893,
-    // Id for the waiting list feature
-    // http://maitreapp.co
-    maitreId: 'MF930c37aeb3',
-    // These codes are always valid
-    // ONLY lower case
-    alwaysValidCodes: ['trustroots']
-  }
-  */
 };

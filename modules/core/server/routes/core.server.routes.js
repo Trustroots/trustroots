@@ -7,9 +7,6 @@ const facebookNotificationService = require(path.resolve(
   './modules/core/server/services/facebook-notification.server.service',
 ));
 const core = require('../controllers/core.server.controller');
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
 const tribes = require(path.resolve(
   './modules/tribes/server/controllers/tribes.server.controller',
 ));
@@ -60,9 +57,6 @@ module.exports = function (app) {
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
   app.route('/circles/:tribe').get(core.renderIndex);
-
-  // Short URL for invite codes
-  app.route('/c/:code').get(userProfile.redirectInviteShortUrl);
 
   // Define application route
   app.route('/*').get(core.renderIndex);

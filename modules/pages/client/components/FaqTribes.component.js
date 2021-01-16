@@ -1,13 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
 
-export default function FaqTribes({ invitationsEnabled }) {
+export default function FaqTribes() {
   const { t } = useTranslation('pages');
 
   return (
-    <Faq category="circles" invitationsEnabled={invitationsEnabled}>
+    <Faq category="circles">
       <div className="faq-question" id="what-are-circles">
         <h3>{t('What are circles?')}</h3>
         {t(
@@ -66,6 +65,4 @@ export default function FaqTribes({ invitationsEnabled }) {
   );
 }
 
-FaqTribes.propTypes = {
-  invitationsEnabled: PropTypes.bool,
-};
+FaqTribes.propTypes = {};

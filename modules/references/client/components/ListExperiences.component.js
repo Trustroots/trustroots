@@ -8,6 +8,7 @@ import { read as readExperiences } from '../api/references.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ExperienceCounts from './read-experiences/ExperienceCounts';
 import ExperiencesSection from './read-experiences/ExperiencesSection';
+import NoContent from '@/modules/core/client/components/NoContent';
 
 /**
  * List of user's experiences
@@ -56,15 +57,19 @@ export default function ListExperiences({ profile, authenticatedUser }) {
   // No experiences
   if (!hasPendingExperiences && !hasPublicExperiences) {
     return (
-      <div className="row content-empty">
-        <i className="icon-3x icon-users"></i>
-        <h4>{t('No references yet.')}</h4>
+      <NoContent icon="users" message={t('No experiences yet.')}>
         {authenticatedUser._id !== profile._id && (
-          <a href={`/profile/${profile.username}/experiences/new`}>
-            {t('Write one!')}
-          </a>
+          <p>
+            <br />
+            <a
+              className="btn btn-primary"
+              href={`/profile/${profile.username}/experiences/new`}
+            >
+              {t('Share your experience')}
+            </a>
+          </p>
         )}
-      </div>
+      </NoContent>
     );
   }
 

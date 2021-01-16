@@ -20,18 +20,6 @@ module.exports = {
     description:
       'Travellers community for sharing, hosting and getting people together. We want a world that encourages trust and adventure.',
   },
-  // Is site invitation only?
-  invitations: {
-    enabled: false,
-    // Key salt
-    key: 62618893,
-    // Id for the waiting list feature
-    // http://maitreapp.co
-    maitreId: 'MF930c37aeb3',
-    // These codes are always valid
-    // ONLY lower case
-    alwaysValidCodes: ['trustroots'],
-  },
 
   // Appears on top of every page for authenticated users.
   // There's no way turning them off permanently,
@@ -60,49 +48,52 @@ module.exports = {
   profileMinimumLength: 140, // Require User.profile.description to be >=140 chars to send messages
   // Strings not allowed as usernames and tag/tribe labels
   illegalStrings: [
-    'trustroots',
-    'trust',
-    'roots',
-    're',
-    're:',
-    'fwd',
-    'fwd:',
-    'reply',
+    'account',
+    'accounts',
     'admin',
     'administrator',
-    'password',
-    'username',
-    'unknown',
     'anonymous',
-    'null',
-    'undefined',
-    'home',
-    'signup',
-    'signin',
-    'login',
-    'user',
-    'edit',
-    'settings',
-    'username',
-    'user',
-    'demo',
-    'test',
-    'support',
-    'networks',
-    'profile',
-    'avatar',
-    'mini',
-    'photo',
-    'account',
     'api',
-    'modify',
-    'feedback',
-    'security',
-    'accounts',
-    'tribe',
-    'tag',
+    'avatar',
+    'circle',
     'community',
+    'demo',
+    'edit',
+    'feedback',
+    'fwd:',
+    'fwd',
+    'home',
+    'login',
+    'mini',
+    'moderator',
+    'modify',
+    'networks',
+    'null',
+    'official',
+    'password',
+    'photo',
+    'profile',
+    're:',
+    're',
     'remove',
+    'reply',
+    'roots',
+    'security',
+    'settings',
+    'signin',
+    'signup',
+    'support',
+    'tag',
+    'test',
+    'tribe',
+    'trust',
+    'trustroots',
+    'undefined',
+    'unknown',
+    'user',
+    'user',
+    'username',
+    'username',
   ],
   // SparkPost webhook API endpoint configuration (`/api/sparkpost/webhook`)
   sparkpostWebhook: {
@@ -237,5 +228,13 @@ module.exports = {
     options: {
       dsn: '',
     },
+  },
+  // Webpack bundle analyzer
+  // Visualize size of webpack output files with an interactive zoomable treemap.
+  // https://www.npmjs.com/package/webpack-bundle-analyzer
+  bundleAnalyzer: {
+    enabled: false,
+    // See https://github.com/webpack-contrib/webpack-bundle-analyzer#options-for-plugin
+    options: {},
   },
 };

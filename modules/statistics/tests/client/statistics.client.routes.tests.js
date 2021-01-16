@@ -23,9 +23,6 @@ describe('Statistics Route Tests', function () {
         $httpBackend
           .when('GET', '/modules/pages/views/home.client.view.html')
           .respond(200, '');
-        $httpBackend
-          .when('GET', '/modules/statistics/views/statistics.client.view.html')
-          .respond(200, '');
         $httpBackend.when('GET', '/api/statistics').respond(200, '');
 
         mainstate = $state.get('statistics');
@@ -38,12 +35,6 @@ describe('Statistics Route Tests', function () {
       it('Should not be abstract', function () {
         expect(mainstate.abstract).toBe(undefined);
       });
-
-      it('Should have templateUrl', function () {
-        expect(mainstate.templateUrl).toBe(
-          '/modules/statistics/views/statistics.client.view.html',
-        );
-      });
     });
 
     describe('Handle Trailing Slash', function () {
@@ -51,9 +42,6 @@ describe('Statistics Route Tests', function () {
         // Test expected GET request
         $httpBackend
           .when('GET', '/modules/pages/views/home.client.view.html')
-          .respond(200, '');
-        $httpBackend
-          .when('GET', '/modules/statistics/views/statistics.client.view.html')
           .respond(200, '');
         $httpBackend.when('GET', '/api/statistics').respond(200, '');
 

@@ -177,7 +177,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
           <li>
             <p>
               <a
-                href="https://www.instagram.com/trustroots_org/"
+                href="https://www.instagram.com/trustroots/"
                 className="btn btn-default center-block"
                 aria-label="{t('Trustroots at Instagram')}"
               >

@@ -128,29 +128,12 @@ exports.invokeRolesPolicies = function () {
           permissions: ['delete'],
         },
         {
-          resources: '/api/users/invitecode',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/users/invitecode/:invitecode',
-          permissions: ['post'],
-        },
-        {
           resources: '/api/blocked-users',
           permissions: ['get'],
         },
         {
           resources: '/api/blocked-users/:username',
           permissions: ['put', 'delete'],
-        },
-      ],
-    },
-    {
-      roles: ['guest'],
-      allows: [
-        {
-          resources: '/api/users/invitecode/:invitecode',
-          permissions: ['post'],
         },
       ],
     },

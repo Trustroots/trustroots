@@ -51,14 +51,32 @@ function generateClientUser(overrides = {}) {
  */
 function generateUsers(
   count,
-  { public: pub, locale, pushRegistration } = {},
+  {
+    additionalProvidersData,
+    extSitesBW,
+    extSitesCS,
+    extSitesWS,
+    locale,
+    newsletter,
+    public: pub,
+    pushRegistration,
+  } = {},
   type = 'server',
   tribes = [],
 ) {
   return _.range(count).map(() => {
     switch (type) {
       case 'server':
-        return generateServerUser({ public: pub, locale, pushRegistration });
+        return generateServerUser({
+          additionalProvidersData,
+          extSitesBW,
+          extSitesCS,
+          extSitesWS,
+          locale,
+          newsletter,
+          public: pub,
+          pushRegistration,
+        });
       case 'client':
         return generateClientUser({
           memberIds: selectRandom(tribes, 0.4).map(tribe => tribe._id),

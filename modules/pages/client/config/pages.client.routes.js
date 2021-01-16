@@ -60,41 +60,28 @@ function PagesRoutes($stateProvider) {
     })
     .state('faq.general', {
       url: '',
-      template: `
-        <faq-general
-          user="app.user"
-          invitationsEnabled="app.appSettings.invitationsEnabled"
-        />`,
+      template: `<faq-general />`,
       data: {
         pageTitle: 'FAQ - Site & community',
       },
     })
     .state('faq.circles', {
       url: '/circles',
-      template: `
-        <faq-tribes
-          invitationsEnabled="app.appSettings.invitationsEnabled"
-        />`,
+      template: `<faq-tribes />`,
       data: {
         pageTitle: 'FAQ - Circles',
       },
     })
     .state('faq.foundation', {
       url: '/foundation',
-      template: `
-        <faq-foundation
-          invitationsEnabled="app.appSettings.invitationsEnabled"
-        />`,
+      template: `<faq-foundation />`,
       data: {
         pageTitle: 'FAQ - Foundation',
       },
     })
     .state('faq.technology', {
       url: '/technology',
-      template: `
-        <faq-technology
-          invitationsEnabled="app.appSettings.invitationsEnabled"
-        />`,
+      template: `<faq-technology />`,
       data: {
         pageTitle: 'FAQ - Technology',
       },

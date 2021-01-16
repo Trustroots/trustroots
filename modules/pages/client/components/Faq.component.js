@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import Board from '@/modules/core/client/components/Board.js';
 import { Trans, useTranslation } from 'react-i18next';
 
-export default function Faq({ category, invitationsEnabled, children }) {
+export default function Faq({ category, children }) {
   const { t } = useTranslation('pages');
 
   return (
@@ -83,28 +83,6 @@ export default function Faq({ category, invitationsEnabled, children }) {
                       >
                         {t('Why the name Trustroots?')}
                       </a>
-                      {invitationsEnabled && (
-                        <>
-                          <a
-                            href="/faq#why-is-trustroots-invite-only"
-                            className="list-group-item"
-                          >
-                            {t('Why is Trustroots invite only?')}
-                          </a>
-                          <a
-                            href="/faq#how-waitinglist-works"
-                            className="list-group-item"
-                          >
-                            {t('How waitinglist works?')}
-                          </a>
-                          <a
-                            href="/faq#i-did-not-receive-invite-code"
-                            className="list-group-item"
-                          >
-                            {t('I did not receive invite code')}
-                          </a>
-                        </>
-                      )}
                       <a
                         href="/faq#why-is-there-facebook-connection"
                         className="list-group-item"
@@ -331,5 +309,4 @@ export default function Faq({ category, invitationsEnabled, children }) {
 Faq.propTypes = {
   category: PropTypes.string,
   children: PropTypes.node,
-  invitationsEnabled: PropTypes.bool,
 };

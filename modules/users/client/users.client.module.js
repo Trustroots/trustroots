@@ -34,7 +34,6 @@ require('@/modules/users/client/directives/tr-validate-username.client.directive
 
 // services
 require('@/modules/users/client/services/authentication.client.service');
-require('@/modules/users/client/services/invitation.client.service');
 require('@/modules/users/client/services/signup-validation.client.service');
 require('@/modules/users/client/services/users-memberships.client.service');
 require('@/modules/users/client/services/users-mini.client.service');
