@@ -8,11 +8,11 @@ const MongoClient = require('mongodb').MongoClient;
 
 let agenda;
 
-exports.start = function (options, callback) {
+exports.start = (options, callback) => {
   // Don't initialise Agenda outisde `start()`, because we might miss `ready` event otherwise.
   agenda = require(path.resolve('./config/lib/agenda'));
 
-  agenda.on('ready', function () {
+  agenda.on('ready', async () => {
     // Define jobs
 
     agenda.define(
@@ -95,28 +95,30 @@ exports.start = function (options, callback) {
 
     // Schedule job(s)
 
-    agenda.every('5 minutes', 'check unread messages');
-    agenda.every('24 hours', 'daily statistics');
-    agenda.every('30 minutes', 'send signup reminders');
-    agenda.every('30 minutes', 'reactivate hosts');
-    agenda.every('15 minutes', 'welcome sequence first');
-    agenda.every('60 minutes', 'welcome sequence second');
-    agenda.every('60 minutes', 'welcome sequence third');
-    agenda.every('23 minutes', 'publish expired experiences');
+    await agenda.every('5 minutes', 'check unread messages');
+    await agenda.every('24 hours', 'daily statistics');
+    await agenda.every('30 minutes', 'send signup reminders');
+    await agenda.every('30 minutes', 'reactivate hosts');
+    await agenda.every('15 minutes', 'welcome sequence first');
+    await agenda.every('60 minutes', 'welcome sequence second');
+    await agenda.every('60 minutes', 'welcome sequence third');
+    await agenda.every('23 minutes', 'publish expired experiences');
 
     // Start worker
 
-    agenda.start();
+    await agenda.start();
 
     if (process.env.NODE_ENV !== 'test') {
       console.log('[Worker] Agenda started processing background jobs');
     }
 
-    if (callback) callback();
+    if (callback) {
+      callback();
+    }
   });
 
   // Log finished jobs
-  agenda.on('success', function (job) {
+  agenda.on('success', job => {
     if (process.env.NODE_ENV !== 'test') {
       const statsObject = {
         namespace: 'agendaJob',
@@ -131,7 +133,7 @@ exports.start = function (options, callback) {
       };
 
       // Send job failure to stats servers
-      statService.stat(statsObject, function () {
+      statService.stat(statsObject, () => {
         // Log also to console
         if (process.env.NODE_ENV !== 'test') {
           console.log(
@@ -145,7 +147,7 @@ exports.start = function (options, callback) {
   });
 
   // Error reporting and retry logic
-  agenda.on('fail', function (err, job) {
+  agenda.on('fail', (err, job) => {
     let extraMessage = '';
 
     if (job.attrs.failCount >= options.maxAttempts) {
@@ -175,7 +177,7 @@ exports.start = function (options, callback) {
     };
 
     // Send job failure to stats servers
-    statService.stat(statsObject, function () {
+    statService.stat(statsObject, () => {
       // Log also to console
 
       if (process.env.NODE_ENV !== 'test') {
@@ -199,7 +201,7 @@ exports.start = function (options, callback) {
  * Attempt to unlock Agenda jobs that were stuck due server restart
  * See https://github.com/agenda/agenda/issues/410
  */
-exports.unlockAgendaJobs = function (callback) {
+exports.unlockAgendaJobs = callback => {
   if (process.env.NODE_ENV !== 'test') {
     console.log('[Worker] Attempting to unlock locked Agenda jobs...');
   }
@@ -210,8 +212,6 @@ exports.unlockAgendaJobs = function (callback) {
       console.error(err);
       return callback(err);
     }
-
-    // agenda.on('ready', function() {
 
     // Re-use Agenda's MongoDB connection
     // var agendaJobs = agenda._mdb.collection('agendaJobs');
@@ -239,7 +239,7 @@ exports.unlockAgendaJobs = function (callback) {
       {
         multi: true,
       },
-      function (err, numUnlocked) {
+      (err, numUnlocked) => {
         if (err) {
           console.error(err);
         }
@@ -258,7 +258,7 @@ exports.unlockAgendaJobs = function (callback) {
 /**
  * Used for testing
  */
-exports.removeExitListeners = function () {
+exports.removeExitListeners = () => {
   process.removeListener('SIGTERM', gracefulExit);
   process.removeListener('SIGINT', gracefulExit);
 };
@@ -274,20 +274,16 @@ function addExitListeners() {
 /**
  * Gracefully exit Agenda
  */
-function gracefulExit() {
+async function gracefulExit() {
   console.log('[Worker] Stopping Agenda...');
-  agenda.stop(function () {
-    console.log('[Worker] Agenda stopped.');
-    process.exit(0);
-  });
+  await agenda.stop();
+  console.log('[Worker] Agenda stopped.');
+  process.exit(0);
 }
 
 function shouldRetry(err) {
   // Retry on connection errors as they may just be temporary
-  if (/(ECONNRESET|ECONNREFUSED)/.test(err.message)) {
-    return true;
-  }
-  return false;
+  return /(ECONNRESET|ECONNREFUSED)/.test(err.message);
 }
 
 function secondsFromNowDate(seconds) {
