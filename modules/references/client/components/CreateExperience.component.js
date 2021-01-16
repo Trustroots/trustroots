@@ -125,9 +125,17 @@ export default function CreateExperience({ userFrom, userTo }) {
   );
 
   let tabs = [
-    { title: t('How do you know them'), component: interactionsTab },
-    { title: t('Recommendation'), component: recommendationTab },
-    { title: t('Feedback'), component: feedbackTab },
+    {
+      id: 'interactions',
+      title: t('How do you know them'),
+      component: interactionsTab,
+    },
+    {
+      id: 'recommendation',
+      title: t('Recommendation'),
+      component: recommendationTab,
+    },
+    { id: 'feedback', title: t('Feedback'), component: feedbackTab },
   ];
 
   if (!sharedOnTime) {
@@ -191,9 +199,9 @@ export default function CreateExperience({ userFrom, userTo }) {
         onSelect={() => {}}
         id="create-reference-tabs"
       >
-        {tabs.map(({ component, title }, i) => {
+        {tabs.map(({ id, component, title }, i) => {
           return (
-            <Tab eventKey={i} key={`${i}`} title={title} disabled>
+            <Tab eventKey={i} key={id} title={title} disabled>
               {component}
             </Tab>
           );
