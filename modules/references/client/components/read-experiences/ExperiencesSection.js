@@ -9,7 +9,11 @@ import { experienceType } from '@/modules/references/client/experiences.prop-typ
 /**
  * List of user's experiences
  */
-export default function ExperiencesSection({ title, experiences }) {
+export default function ExperiencesSection({
+  title,
+  experiences,
+  onReceiverProfile,
+}) {
   return (
     <section>
       {title && (
@@ -22,7 +26,10 @@ export default function ExperiencesSection({ title, experiences }) {
       {experiences.map(experience => (
         <div className="row" key={experience._id}>
           <div className="col-xs-12">
-            <Experience experience={experience} />
+            <Experience
+              experience={experience}
+              onReceiverProfile={onReceiverProfile}
+            />
           </div>
         </div>
       ))}
@@ -33,4 +40,5 @@ export default function ExperiencesSection({ title, experiences }) {
 ExperiencesSection.propTypes = {
   experiences: PropTypes.arrayOf(experienceType).isRequired,
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
+  onReceiverProfile: PropTypes.bool.isRequired,
 };

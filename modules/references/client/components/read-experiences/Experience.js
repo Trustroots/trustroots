@@ -2,6 +2,7 @@
 import { useTranslation } from 'react-i18next';
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
 // Internal dependencies
@@ -72,7 +73,7 @@ const UserLinkStyled = styled(UserLink)`
   margin-right: 5px;
 `;
 
-export default function Experience({ experience }) {
+export default function Experience({ experience, onReceiverProfile }) {
   const { t } = useTranslation('references');
 
   const {
@@ -97,6 +98,7 @@ export default function Experience({ experience }) {
         Math.round((Date.now() - date.getTime()) / 3600 / 24 / 1000),
     );
 
+  // TODO use `onReceiverProfile` in conditions below instead of `feedbackPublic === undefined`
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body">
@@ -173,10 +175,21 @@ export default function Experience({ experience }) {
           </>
         )}
       </div>
+      {!response && isPublicExperience && onReceiverProfile && (
+        <div className="panel-footer text-right">
+          <a
+            href={`/profile/${userFrom.username}/experiences/new`}
+            className="btn btn-default"
+          >
+            {t('Write about your experience')}
+          </a>
+        </div>
+      )}
     </div>
   );
 }
 
 Experience.propTypes = {
   experience: experienceType.isRequired,
+  onReceiverProfile: PropTypes.bool.isRequired,
 };
