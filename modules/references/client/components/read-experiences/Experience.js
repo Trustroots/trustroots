@@ -164,13 +164,6 @@ export default function Experience({ experience, onReceiverProfile }) {
             )}
           </Response>
         )}
-        {!response && isPublicExperience && onReceiverProfile && (
-          <Response>
-            <a href={`/profile/${userFrom.username}/experiences/new`}>
-              {t('Share experience also with them.')}
-            </a>
-          </Response>
-        )}
         {!isPublicExperience && feedbackPublic !== undefined && (
           <>
             <PendingNotice>
@@ -182,6 +175,16 @@ export default function Experience({ experience, onReceiverProfile }) {
           </>
         )}
       </div>
+      {!response && isPublicExperience && onReceiverProfile && (
+        <div className="panel-footer text-right">
+          <a
+            href={`/profile/${userFrom.username}/experiences/new`}
+            className="btn btn-default"
+          >
+            {t('Write about your experience')}
+          </a>
+        </div>
+      )}
     </div>
   );
 }
