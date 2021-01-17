@@ -164,7 +164,7 @@ export default function Experience({ experience, onReceiverProfile }) {
             )}
           </Response>
         )}
-        {!response && onReceiverProfile && (
+        {!response && isPublicExperience && onReceiverProfile && (
           <Response>
             <a href={`/profile/${userFrom.username}/experiences/new`}>
               {t('Share experience also with them.')}
