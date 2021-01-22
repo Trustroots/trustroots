@@ -34,5 +34,10 @@
     },
     "{{amount}} contacts": "{{amount}} Kontakte",
     "{{count}} contacts in common": "{{count}} gemeinsamer Kontakt",
-    "{{count}} contacts in common_plural": "{{count}} gemeinsame Kontakte"
+    "{{count}} contacts in common_plural": "{{count}} gemeinsame Kontakte",
+    "{{count}} contacts": "{{count}} Kontakt",
+    "{{count}} contacts_plural": "{{count}} Kontakte",
+    "Search contacts": "Kontakte durchsuchen",
+    "(additional {{count}} pending)": "(weitere {{count}} offen)",
+    "(additional {{count}} pending)_plural": "(weitere {{count}} offen)"
 }
