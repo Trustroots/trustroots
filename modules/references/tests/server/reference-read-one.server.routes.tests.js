@@ -159,7 +159,7 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Not found.',
         details: {
-          reference: 'not found',
+          experience: 'not found',
         },
       });
     });
@@ -172,18 +172,18 @@ describe('Read a single reference by reference id', () => {
       should(body).eql({
         message: 'Not found.',
         details: {
-          reference: 'not found',
+          experience: 'not found',
         },
       });
     });
 
-    it('[invalid referenceId] 400', async () => {
+    it('[invalid experienceId] 400', async () => {
       const { body } = await agent.get('/api/experiences/foo').expect(400);
 
       should(body).eql({
         message: 'Bad request.',
         details: {
-          referenceId: 'invalid',
+          experienceId: 'invalid',
         },
       });
     });
