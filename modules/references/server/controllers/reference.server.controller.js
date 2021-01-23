@@ -18,19 +18,19 @@ const pushService = require(path.resolve(
 const userProfile = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));
-const Reference = mongoose.model('Reference');
+const Experience = mongoose.model('Reference');
 const User = mongoose.model('User');
 
 /**
  * Validate the request body and data consistency
- * of Create a reference
+ * of an experience
  */
 function validateCreate(req) {
   let valid = true;
   const details = {};
   const interactionErrors = {};
 
-  // Can't create a reference to oneself
+  // Can't create an experience to oneself
   if (req.user._id.equals(req.body.userTo)) {
     valid = false;
     details.userTo = 'self';
@@ -120,7 +120,7 @@ class ResponseError {
   }
 }
 
-const nonpublicReferenceFields = [
+const nonpublicExperienceFields = [
   '_id',
   'created',
   'public',
@@ -128,7 +128,7 @@ const nonpublicReferenceFields = [
   'userTo',
 ];
 
-const referenceFields = nonpublicReferenceFields.concat([
+const experienceFields = nonpublicExperienceFields.concat([
   'feedbackPublic',
   'interactions.hostedMe',
   'interactions.hostedThem',
@@ -149,8 +149,8 @@ const responseFields = [
 function prepareSendingToClient(experience, response, authUserId) {
   const fields_to_pick =
     experience.public || authUserId.equals(experience.userFrom._id)
-      ? referenceFields
-      : nonpublicReferenceFields;
+      ? experienceFields
+      : nonpublicExperienceFields;
   const prepared_experience = _.pick(experience, fields_to_pick);
 
   const preparedResponse = response ? _.pick(response, responseFields) : null;
@@ -158,18 +158,18 @@ function prepareSendingToClient(experience, response, authUserId) {
   return { ...prepared_experience, response: preparedResponse };
 }
 
-async function findMyReference(req, userTo) {
-  return await Reference.findOne({
+async function findMyExperience(req, userTo) {
+  return await Experience.findOne({
     userFrom: req.user._id,
     userTo,
   }).exec();
 }
 
 /**
- * Check if the reference already exists. If it exists, return an error in a callback.
+ * Check if the experience already exists. If it exists, return an error in a callback.
  */
 async function checkDuplicate(req) {
-  const ref = await findMyReference(req, req.body.userTo);
+  const ref = await findMyExperience(req, req.body.userTo);
   if (ref === null) return;
 
   throw new ResponseError({ status: 409, body: { errType: 'conflict' } });
@@ -221,8 +221,8 @@ function validate(validator, req) {
 async function isUserToPublic(req) {
   const userTo = await User.findOne({ _id: req.body.userTo }).exec();
 
-  // Can't create a reference to a nonexistent user
-  // Can't create a reference to a nonpublic user
+  // Can't create an experience to a nonexistent user
+  // Can't create an experience to a nonpublic user
   if (!userTo || !userTo.public) {
     throw new ResponseError({
       status: 404,
@@ -238,8 +238,12 @@ async function isUserToPublic(req) {
   return userTo;
 }
 
-function validateReplyToPublicReference(otherReference, req) {
-  if (otherReference && otherReference.public && req.body.recommend !== 'yes') {
+function validateReplyToPublicExperience(otherExperience, req) {
+  if (
+    otherExperience &&
+    otherExperience.public &&
+    req.body.recommend !== 'yes'
+  ) {
     throw new ResponseError({
       status: 400,
       body: {
@@ -252,25 +256,25 @@ function validateReplyToPublicReference(otherReference, req) {
   }
 }
 
-async function saveNewReference(referenceData) {
-  const reference = new Reference(referenceData);
-  return await reference.save();
+async function saveNewExperience(experienceData) {
+  const experience = new Experience(experienceData);
+  return await experience.save();
 }
 
-async function publishOtherReference(otherReference) {
-  if (otherReference && !otherReference.public) {
-    otherReference.set({ public: true });
-    await otherReference.save();
+async function publishOtherExperience(otherExperience) {
+  if (otherExperience && !otherExperience.public) {
+    otherExperience.set({ public: true });
+    await otherExperience.save();
   }
 }
 
 async function sendEmailNotification(
   userFrom,
   userTo,
-  savedReference,
-  otherReference,
+  savedExperience,
+  otherExperience,
 ) {
-  if (!otherReference) {
+  if (!otherExperience) {
     return util.promisify(emailService.sendReferenceNotificationFirst)(
       userFrom,
       userTo,
@@ -279,7 +283,7 @@ async function sendEmailNotification(
     return util.promisify(emailService.sendReferenceNotificationSecond)(
       userFrom,
       userTo,
-      savedReference,
+      savedExperience,
     );
   }
 }
@@ -287,7 +291,7 @@ async function sendEmailNotification(
 async function sendPushNotification(
   userFrom,
   userTo,
-  { isFirst, referenceId },
+  { isFirst, experienceId },
 ) {
   // First push notification when first experience-pair is written
   if (isFirst) {
@@ -301,12 +305,12 @@ async function sendPushNotification(
   return util.promisify(pushService.notifyNewReferenceSecond)(
     userFrom,
     userTo,
-    referenceId,
+    experienceId,
   );
 }
 
 /**
- * Create a reference - express middleware
+ * Create an experience - express middleware
  */
 exports.create = async function (req, res, next) {
   // each of the following functions throws a special response error when it wants to respond
@@ -316,50 +320,50 @@ exports.create = async function (req, res, next) {
     // Synchronous validation of the request data consistency
     validate(validateCreate, req);
 
-    // Check that the reference is not duplicate
+    // Check that the experience is not duplicate
     await checkDuplicate(req);
 
-    // Check if the receiver of the reference exists and is public
+    // Check if the receiver of the experience exists and is public
     const userTo = await isUserToPublic(req);
 
-    // Check if the opposite direction reference exists
-    // when it exists, we will want to make both references public
-    const otherReference = await Reference.findOne({
+    // Check if the opposite direction experience exists
+    // when it exists, we will want to make both experiences public
+    const otherExperience = await Experience.findOne({
       userFrom: req.body.userTo,
       userTo: selfId,
     }).exec();
 
-    // when the other reference is public, this one can only have value of recommend: yes
-    validateReplyToPublicReference(otherReference, req);
+    // when the other experience is public, this one can only have value of recommend: yes
+    validateReplyToPublicExperience(otherExperience, req);
 
-    // save the reference...
-    const savedReference = await saveNewReference({
+    // save the experience...
+    const savedExperience = await saveNewExperience({
       ...req.body,
       userFrom: selfId,
-      public: !!otherReference,
+      public: !!otherExperience,
     });
 
-    // ...and if this is a reference reply, make the other reference public, too
-    await publishOtherReference(otherReference);
+    // ...and if this is an experience reply, make the other experience public, too
+    await publishOtherExperience(otherExperience);
 
     // send email notification
     await sendEmailNotification(
       req.user,
       userTo,
-      savedReference,
-      otherReference,
+      savedExperience,
+      otherExperience,
     );
 
     const experiencesWithResponses = prepareSendingToClient(
-      savedReference._doc,
-      otherReference,
+      savedExperience._doc,
+      otherExperience,
       selfId,
     );
 
     // send push notification
     await sendPushNotification(req.user, userTo, {
-      isFirst: !otherReference,
-      referenceId: savedReference._id,
+      isFirst: !otherExperience,
+      experienceId: savedExperience._id,
     });
 
     // finally, respond
@@ -410,7 +414,7 @@ function pairUpExperiences(experiences, userId) {
 }
 
 /**
- * Read references filtered by userTo
+ * Read experiecnces filtered by userTo
  * and sorted by 'created' field starting from the most recent date
  */
 exports.readMany = async function readMany(req, res, next) {
@@ -425,7 +429,7 @@ exports.readMany = async function readMany(req, res, next) {
     let matchQuery = {
       $or: [{ userTo: userToId }, { userFrom: userToId }],
     };
-    // Allow non-public references only when userTo is self
+    // Allow non-public experiences only when userTo is self
     if (!selfId.equals(userToId)) {
       matchQuery.public = true;
     }
@@ -440,7 +444,7 @@ exports.readMany = async function readMany(req, res, next) {
       $or: [matchQuery, privateFromSelfQuery],
     };
 
-    // Aggregate projection for User in reference
+    // Aggregate projection for User in experience
     const userKeys = {
       _id: 1,
       updated: 1,
@@ -458,8 +462,8 @@ exports.readMany = async function readMany(req, res, next) {
       },
     };
 
-    // Find references
-    const references = await Reference.aggregate([
+    // Find experiences
+    const experiences = await Experience.aggregate([
       {
         $match: matchQuery,
       },
@@ -507,7 +511,7 @@ exports.readMany = async function readMany(req, res, next) {
       { $sort: { created: -1 } },
     ]).exec();
 
-    const pairedUpExperiences = pairUpExperiences(references, userToId);
+    const pairedUpExperiences = pairUpExperiences(experiences, userToId);
     const experiencesWithResponses = pairedUpExperiences.map(experiencePair =>
       prepareSendingToClient(...experiencePair, selfId),
     );
@@ -522,8 +526,8 @@ exports.readMany = async function readMany(req, res, next) {
 };
 
 /**
- * Validator for id of referenceById controller
- * @param {string} id - referenceId
+ * Validator for id of experienceById controller
+ * @param {string} id - experienceId
  */
 function validateReadOne(id) {
   let valid = true;
@@ -532,18 +536,18 @@ function validateReadOne(id) {
   const isIdValid = mongoose.Types.ObjectId.isValid(id);
   if (!isIdValid) {
     valid = false;
-    details.referenceId = 'invalid';
+    details.experienceId = 'invalid';
   }
 
   return { valid, details };
 }
 
 /**
- * Load a reference by id to request.reference
+ * Load an experience by id to request.experience
  */
-exports.referenceById = async function referenceById(req, res, next, id) {
+exports.experienceById = async function experienceById(req, res, next, id) {
   try {
-    // don't bother fetching a reference for non-public users or guests
+    // don't bother fetching an experience for non-public users or guests
     if (!req.user || !req.user.public) return next();
 
     // validate
@@ -551,19 +555,19 @@ exports.referenceById = async function referenceById(req, res, next, id) {
 
     const selfId = req.user._id;
 
-    // find the reference by id
-    const reference = await Reference.findById(req.params.experienceId)
+    // find the experience by id
+    const experience = await Experience.findById(req.params.experienceId)
       .populate('userFrom userTo', userProfile.userMiniProfileFields)
       .exec();
 
-    const userFromId = reference ? reference.userFrom._id : null;
-    const userToId = reference ? reference.userTo._id : null;
+    const userFromId = experience ? experience.userFrom._id : null;
+    const userToId = experience ? experience.userTo._id : null;
 
-    // make sure that nonpublic references are not exposed
-    // nonpublic reference can be exposed to userFrom or userTo only.
+    // make sure that nonpublic experiences are not exposed
+    // nonpublic experience can be exposed to userFrom or userTo only.
     const isExistentPublicOrFromToSelf =
-      reference &&
-      (reference.public ||
+      experience &&
+      (experience.public ||
         userFromId.equals(selfId) ||
         userToId.equals(selfId));
     if (!isExistentPublicOrFromToSelf) {
@@ -572,24 +576,24 @@ exports.referenceById = async function referenceById(req, res, next, id) {
         body: {
           errType: 'not-found',
           details: {
-            reference: 'not found',
+            experience: 'not found',
           },
         },
       });
     }
 
-    const response = await Reference.findOne({
+    const response = await Experience.findOne({
       userFrom: userToId,
       userTo: userFromId,
     }).exec();
 
     const experienceWithResponse = prepareSendingToClient(
-      reference,
+      experience,
       response,
       selfId,
     );
 
-    req.reference = experienceWithResponse;
+    req.experience = experienceWithResponse;
     return next();
   } catch (e) {
     processResponses(res, next, e);
@@ -597,10 +601,10 @@ exports.referenceById = async function referenceById(req, res, next, id) {
 };
 
 /**
- * Read a reference by id
+ * Read an experience by id
  */
 exports.readOne = function readOne(req, res) {
-  return res.status(200).json(req.reference);
+  return res.status(200).json(req.experience);
 };
 
 exports.readMine = async function readMine(req, res) {
@@ -613,19 +617,19 @@ exports.readMine = async function readMine(req, res) {
       .send({ message: 'Missing or invalid `userTo` request param' });
   }
 
-  const reference = await findMyReference(req, userTo);
-  if (reference === null) {
+  const experience = await findMyExperience(req, userTo);
+  if (experience === null) {
     return res.status(404).json({
       message: errorService.getErrorMessageByKey('not-found'),
     });
   }
-  const otherReference = await Reference.findOne({
+  const otherReference = await Experience.findOne({
     userFrom: userTo,
     userTo: selfId,
   }).exec();
 
   const experienceWithResponse = prepareSendingToClient(
-    reference,
+    experience,
     otherReference,
     selfId,
   );
@@ -649,14 +653,14 @@ exports.getCount = async function getCount(req, res, next) {
       userTo: new mongoose.Types.ObjectId(userTo),
     };
 
-    const publicCount = await Reference.find({
+    const publicCount = await Experience.find({
       ...query,
       public: true,
     }).count();
 
-    // Include non-public references only when userTo is self
+    // Include non-public experiences only when userTo is self
     const privateCount = isSelf
-      ? await Reference.find({
+      ? await Experience.find({
           ...query,
           public: false,
         }).count()
