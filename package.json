@@ -193,7 +193,7 @@
     "@babel/preset-env": "7.12.11",
     "@babel/preset-react": "7.12.10",
     "@pmmmwh/react-refresh-webpack-plugin": "0.4.3",
-    "@sinonjs/fake-timers": "7.0.1",
+    "@sinonjs/fake-timers": "7.0.2",
     "@testing-library/jest-dom": "5.11.9",
     "@testing-library/react": "11.2.3",
     "@wordpress/browserslist-config": "2.7.0",
