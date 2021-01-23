@@ -23,7 +23,7 @@ const User = mongoose.model('User');
 
 /**
  * Validate the request body and data consistency
- * of Create an experience
+ * of an experience
  */
 function validateCreate(req) {
   let valid = true;
@@ -128,7 +128,7 @@ const nonpublicExperienceFields = [
   'userTo',
 ];
 
-const interactionsFields = nonpublicExperienceFields.concat([
+const experienceFields = nonpublicExperienceFields.concat([
   'feedbackPublic',
   'interactions.hostedMe',
   'interactions.hostedThem',
@@ -149,7 +149,7 @@ const responseFields = [
 function prepareSendingToClient(experience, response, authUserId) {
   const fields_to_pick =
     experience.public || authUserId.equals(experience.userFrom._id)
-      ? interactionsFields
+      ? experienceFields
       : nonpublicExperienceFields;
   const prepared_experience = _.pick(experience, fields_to_pick);
 
