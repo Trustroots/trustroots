@@ -2,7 +2,7 @@
     "explaining that you are interested in meeting them, not just looking for free accommodation": {
         "": "specificando che sei interessato a conoscerli e non cerchi soltanto un posto gratis per dormire."
     },
-    "Conversation started {{ date }}": "Conversazione iniziata{{ date }}",
+    "Conversation started {{ date }}": "Conversazione iniziata il {{ date }}",
     "Don't write to people 2 months ahead": {
         "": "Non scrivere alle persone due mesi in anticipo."
     },
@@ -10,7 +10,7 @@
     "Explain to them why you are choosing them": "Spiega loro perché li hai scelti",
     "Highlight text to add links or change its appearance": {
         " Ctrl+Enter to send": {
-            "": "Evidenzia il testo per aggiungere links o cambiarne lo stile. Ctrl+Enter per inviare."
+            "": "Evidenzia il testo per aggiungere collegamenti o cambiarne lo stile. Ctrl+Enter per inviare."
         }
     },
     "Make sure your profile is complete": "Assicurati di aver completato il tuo profilo",
@@ -30,7 +30,7 @@
     },
     "Tip": "Suggerimento",
     "Trustroots is very much about spontaneous travel": "Trustroots è soprattutto viaggiare in modo spontaneo",
-    "Unknown member": "membro sconosciuto",
+    "Unknown member": "Membro sconosciuto",
     "What are your expectations in regards with going through their town?": "Quali sono le tue aspettative riguardo la visita della loro città?",
     "Write back": "Rispondi",
     "Yes, I can host!": "Sì, posso ospitare!",
@@ -43,7 +43,7 @@
         "": "È più probabile che tu ottenga una risposta positiva se hai raccontato un po' di te."
     },
     "Your profile seems quite empty": {
-        "": "Il tuo profilo risulta un po' vuoto."
+        "": "Il tuo profilo risulta un po' scarno."
     },
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "... spiegando che siete interessati a incontrarli, non solo a trovare una sistemazione gratuita.",
     "{{count}} unread messages": "{{count}} messaggio non letto",
