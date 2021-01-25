@@ -1,4 +1,25 @@
 {
-  "Report member": "",
-  "Report member {{username}} to support": ""
+    "Report member": "Mitglied melden",
+    "Report member {{username}} to support": "Mitglied {{username}} an das Support-Team melden",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Geh zur <1>Startseite</1> oder lies <4>häufig gestellte Fragen</4>.",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Ich bin nur ein kleiner Web-Roboter, aber ich hab deine Nachricht an unsere Support-Leute geschickt. Du wirst bald von ihnen hören!",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Engagiere dich als Freiwilliger</0> und bewege etwas!",
+    "Wait…": "Bitte warten…",
+    "Username": "Benutzername",
+    "Trustroots Support Robot": "Trustroots Support-Roboter",
+    "Trustroots Support": "Trustroots Support",
+    "Thank you!": "Danke!",
+    "Something went wrong sending your message.": "Etwas ist beim Abschicken deiner Nachricht falsch gelaufen.",
+    "Send": "Abschicken",
+    "See also": "Siehe auch",
+    "Reporting member": "Mitglied melden",
+    "Removing your account": "Dein Konto löschen",
+    "Please write in English if possible.": "Bitte schreib auf englisch, wenn möglich.",
+    "Please ensure you are connected to internet and try again.": "Bitte überprüfe deine Netzwerkverbindung und versuche es noch einmal.",
+    "Name": "Name",
+    "Message": "Nachricht",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Wenn du oder jemand, den du kennst, Opfer eines Verbrechens geworden ist, melde das bitte sofort der Polizei.",
+    "Frequently Asked Questions": "Häufig gestellte Fragen",
+    "Email": "E-Mail",
+    "Contact us": "Kontaktiere uns"
 }

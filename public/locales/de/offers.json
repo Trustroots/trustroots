@@ -25,5 +25,7 @@
     "Sorry, user is not hosting currently": {
         "": "Sorry, der Nutzer hosted derzeit nicht."
     },
-    "Start hosting travellers": "Beginne mit dem Hosten von Reisenden"
+    "Start hosting travellers": "Beginne mit dem Hosten von Reisenden",
+    "At most {{count}} guests.": "Maximal ein Gast.",
+    "At most {{count}} guests._plural": "Maximal {{count}} Gäste."
 }
