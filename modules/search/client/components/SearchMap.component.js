@@ -305,8 +305,7 @@ export default function SearchMap({
    * React on any clicks on map or layers defined on `interactiveLayerIds` prop
    */
   const onClickMap = event => {
-    const { features, latLng } = event;
-    console.log('latLng:', latLng); //eslint-disable-line
+    const { features } = event;
     clearPreviouslySelectedState();
 
     if (!features?.length) {

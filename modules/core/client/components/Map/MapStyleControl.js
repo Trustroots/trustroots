@@ -43,13 +43,6 @@ class MapStyleControl extends BaseControl {
     mapboxStyleNames[MAP_STYLE_MAPBOX_STREETS] = t('Streets');
     mapboxStyleNames[MAP_STYLE_MAPBOX_SATELLITE] = t('Satellite');
     mapboxStyleNames[MAP_STYLE_MAPBOX_OUTDOORS] = t('Outdoors');
-    /*
-        const mapboxStyleNames = {
-          MAP_STYLE_MAPBOX_STREETS: t('Streets'),
-          MAP_STYLE_MAPBOX_SATELLITE: t('Satellite'),
-          MAP_STYLE_MAPBOX_OUTDOORS: t('Outdoors'),
-        };
-*/
 
     // If it's an object, it'll have a name. Otherwise it's Mapbox URL in string presentation.
     const selectedStyle = mapStyle?.name || mapStyle;
