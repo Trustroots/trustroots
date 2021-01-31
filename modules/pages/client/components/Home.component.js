@@ -382,6 +382,9 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   <a href="https://shop.trustroots.org/">{t('Shop')}</a>
                 </li>
                 <li>
+                  <a href="https://www.trustroots.org/profile/edit/account/">{t('Subscribe to Newsletter')}</a>
+                </li>
+                <li>
                   <a href="/volunteering">{t('Volunteering')}</a>
                 </li>
                 <li>
