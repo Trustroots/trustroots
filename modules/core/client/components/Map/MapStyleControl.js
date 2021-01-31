@@ -3,7 +3,6 @@ import { BaseControl } from 'react-map-gl';
 import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
-import classnames from 'classnames';
 
 // Internal dependencies
 import {
@@ -14,6 +13,7 @@ import {
 } from './constants';
 import { getMapBoxToken } from '../../utils/map';
 import MapIcon from './MapIcon';
+import MapStyleButton from './MapStyleButton';
 import './map-style-control.less';
 
 class MapStyleControl extends BaseControl {
@@ -43,6 +43,13 @@ class MapStyleControl extends BaseControl {
     mapboxStyleNames[MAP_STYLE_MAPBOX_STREETS] = t('Streets');
     mapboxStyleNames[MAP_STYLE_MAPBOX_SATELLITE] = t('Satellite');
     mapboxStyleNames[MAP_STYLE_MAPBOX_OUTDOORS] = t('Outdoors');
+    /*
+        const mapboxStyleNames = {
+          MAP_STYLE_MAPBOX_STREETS: t('Streets'),
+          MAP_STYLE_MAPBOX_SATELLITE: t('Satellite'),
+          MAP_STYLE_MAPBOX_OUTDOORS: t('Outdoors'),
+        };
+*/
 
     // If it's an object, it'll have a name. Otherwise it's Mapbox URL in string presentation.
     const selectedStyle = mapStyle?.name || mapStyle;
@@ -78,37 +85,31 @@ class MapStyleControl extends BaseControl {
               MAP_STYLE_MAPBOX_OUTDOORS,
               MAP_STYLE_MAPBOX_SATELLITE,
             ].map(mapboxStyle => (
-              <button
-                className={classnames('btn', 'btn-default', {
-                  'is-active': selectedStyle === mapboxStyle,
-                })}
+              <MapStyleButton
                 disabled={!MAPBOX_TOKEN}
                 key={mapboxStyle}
+                label={mapboxStyleNames[mapboxStyle]}
                 onClick={() => {
                   this.close();
                   setMapstyle(mapboxStyle);
                 }}
-                type="button"
-              >
-                <MapIcon mapboxStyle={mapboxStyle} />
-                {mapboxStyleNames[mapboxStyle]}
-              </button>
+                selectedStyle={selectedStyle}
+                style={mapboxStyle}
+                styleName={mapboxStyle}
+                iconStyle={mapboxStyle}
+              />
             ))}
             {process.env.NODE_ENV !== 'production' && (
-              <button
-                className={classnames('btn', 'btn-default', {
-                  'is-active': selectedStyle === MAP_STYLE_OSM.name,
-                })}
+              <MapStyleButton
+                label={MAP_STYLE_OSM.name}
                 key={MAP_STYLE_OSM.name}
                 onClick={() => {
                   this.close();
                   setMapstyle(MAP_STYLE_OSM);
                 }}
-                type="button"
-              >
-                <MapIcon />
-                {MAP_STYLE_OSM.name}
-              </button>
+                selectedStyle={selectedStyle}
+                styleName={MAP_STYLE_OSM.name}
+              />
             )}
           </div>
         )}
