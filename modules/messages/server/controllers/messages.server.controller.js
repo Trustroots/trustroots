@@ -512,34 +512,41 @@ exports.threadByUser = function (req, res, next, userId) {
     });
   }
 
-  // Only moderator and admin roles can read messages from banned users. For others they stay hidden.
-  const publicityLimit =
-    req.user.roles.includes('moderator') || req.user.roles.includes('admin')
-      ? {}
-      : {
-          public: true,
-          roles: { $nin: ['suspended', 'shadowban'] },
-        };
+  // TODO do we want to allow to see the messages from suspended or banned users
+  // in order to make them "read"?
+
+  // // Only moderator and admin roles can read messages from banned users. For others they stay hidden.
+  // const publicityLimit =
+  //   req.user.roles.includes('moderator') || req.user.roles.includes('admin')
+  //     ? {}
+  //     : {
+  //         public: true,
+  //         roles: { $nin: ['suspended', 'shadowban'] },
+  //       };
 
   async.waterfall(
     [
-      // Check that other user is legitimate:
-      // - Has to be confirmed their email (hence be public)
-      // - Not suspended profile
-      function (done) {
-        User.findOne({
-          _id: userId,
-          ...publicityLimit,
-        }).exec(function (err, receiver) {
-          // If we were unable to find the receiver, return the error and stop here
-          if (err || !receiver) {
-            return res.status(404).send({
-              message: 'Member does not exist.',
-            });
-          }
-          done();
-        });
-      },
+      // TODO commented out just to make it work.
+      // We probably want to still return 404, if the user existed by didn't
+      // have conversation with logged-in user?
+
+      // // Check that other user is legitimate:
+      // // - Has to be confirmed their email (hence be public)
+      // // - Not suspended profile
+      // function (done) {
+      //   User.findOne({
+      //     _id: userId,
+      //     ...publicityLimit,
+      //   }).exec(function (err, receiver) {
+      //     // If we were unable to find the receiver, return the error and stop here
+      //     if (err || !receiver) {
+      //       return res.status(404).send({
+      //         message: 'Member does not exist.',
+      //       });
+      //     }
+      //     done();
+      //   });
+      // },
 
       // Find messages
       function (done) {

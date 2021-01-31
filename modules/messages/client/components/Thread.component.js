@@ -158,17 +158,51 @@ export default function Thread({ user, profileMinimumLength }) {
     }
   }
 
+  function createFakeUserObject(userId) {
+    return {
+      _id: userId,
+      displayName: 'Unknown User',
+      username: null,
+      member: [],
+      languages: [],
+    };
+  }
+
   async function fetchData() {
     if (isFetching) return;
     const username = getRouteParams().username;
     try {
       setIsFetching(true);
-      const otherUser = await api.users.fetch(username);
+      let otherUser;
+      if (username !== 'undefined') {
+        otherUser = await api.users.fetch(username);
+      } else {
+        const userId = getRouteParams().userId;
+        otherUser = createFakeUserObject(userId);
+      }
+
       const { messages, nextParams } = await api.messages.fetchMessages(
         otherUser._id,
       );
       setOtherUser(otherUser);
-      setMessages(messages.sort((a, b) => a.created.localeCompare(b.created)));
+      const sortedMessages = messages.sort((a, b) =>
+        a.created.localeCompare(b.created),
+      );
+      // TODO should be done at the back-end?
+      if (username === 'undefined') {
+        const filledMessages = messages.map(message => {
+          if (!message.userTo) {
+            message.userTo = { _id: otherUser._id };
+          }
+          if (!message.userFrom) {
+            message.userFrom = { _id: otherUser._id };
+          }
+          return message;
+        });
+        setMessages(filledMessages);
+      } else {
+        setMessages(sortedMessages);
+      }
       setNextParams(nextParams);
     } catch (error) {
       if (error.response?.status === 404) {
