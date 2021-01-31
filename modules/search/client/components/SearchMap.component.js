@@ -123,6 +123,11 @@ export default function SearchMap({
     }
 
     const map = getMapRef();
+
+    if (!map) {
+      return;
+    }
+
     // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
     const bounds = map.getBounds();
     const northEast = bounds.getNorthEast();
@@ -256,16 +261,18 @@ export default function SearchMap({
    * Zoom to cluster of features
    * @link https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
    */
-  const zoomToClusterById = (clusterId, lngLat) => {
+  const zoomToCluster = cluster => {
+    const clusterId = cluster?.properties?.cluster_id;
+
     if (!clusterId) {
       return;
     }
 
     const newLocation = {
-      latitude: lngLat[1],
-      longitude: lngLat[0],
+      latitude: cluster.geometry.coordinates[1],
+      longitude: cluster.geometry.coordinates[0],
       transitionDuration: 'auto',
-      transitionInterpolator: new FlyToInterpolator({ speed: 1.3 }),
+      transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
     };
 
     const source = sourceRef?.current?.getSource();
@@ -298,7 +305,8 @@ export default function SearchMap({
    * React on any clicks on map or layers defined on `interactiveLayerIds` prop
    */
   const onClickMap = event => {
-    const { features, lngLat } = event;
+    const { features, latLng } = event;
+    console.log('latLng:', latLng); //eslint-disable-line
     clearPreviouslySelectedState();
 
     if (!features?.length) {
@@ -320,7 +328,7 @@ export default function SearchMap({
         break;
       // Clusters
       case clusterLayer.id:
-        zoomToClusterById(features[0]?.properties?.cluster_id, lngLat);
+        zoomToCluster(features[0]);
         break;
     }
   };
@@ -447,6 +455,7 @@ export default function SearchMap({
         buffer={512}
         cluster
         clusterMaxZoom={12}
+        clusterMinPoints={3}
         clusterRadius={50}
         data={offers}
         id={SOURCE_OFFERS}

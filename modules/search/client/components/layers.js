@@ -1,11 +1,15 @@
 import { MIN_ZOOM, SOURCE_OFFERS } from './constants';
 
-export const clusterLayer = {
-  id: 'clusters',
-  type: 'circle',
+const clusterOptions = {
   source: SOURCE_OFFERS,
   filter: ['has', 'point_count'],
   minzoom: MIN_ZOOM,
+};
+
+export const clusterLayer = {
+  ...clusterOptions,
+  id: 'clusters',
+  type: 'circle',
   paint: {
     'circle-color': 'rgba(18, 181, 145, 0.7)',
     // First circle size, then point count in a group
@@ -14,11 +18,9 @@ export const clusterLayer = {
 };
 
 export const clusterCountLayerMapbox = {
+  ...clusterOptions,
   id: 'cluster-count',
   type: 'symbol',
-  source: SOURCE_OFFERS,
-  filter: ['has', 'point_count'],
-  minzoom: MIN_ZOOM,
   layout: {
     'text-field': '{point_count_abbreviated}',
     'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
