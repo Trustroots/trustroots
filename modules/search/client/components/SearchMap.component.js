@@ -15,7 +15,7 @@ import {
   MAP_STYLE_DEFAULT,
   MAP_STYLE_OSM,
 } from '@/modules/core/client/components/Map/constants';
-import { MIN_ZOOM, SOURCE_OFFERS } from './constants';
+import { CLUSTER_MAX_ZOOM, MIN_ZOOM, SOURCE_OFFERS } from './constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
@@ -296,7 +296,7 @@ export default function SearchMap({
       setViewport({
         ...viewport,
         ...newLocation,
-        zoom,
+        zoom: Math.min(zoom + 1, CLUSTER_MAX_ZOOM),
       });
     });
   };
@@ -453,7 +453,7 @@ export default function SearchMap({
       <Source
         buffer={512}
         cluster
-        clusterMaxZoom={12}
+        clusterMaxZoom={CLUSTER_MAX_ZOOM}
         clusterMinPoints={3}
         clusterRadius={50}
         data={offers}
