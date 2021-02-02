@@ -119,6 +119,8 @@ export default function Thread({ user, profileMinimumLength }) {
     return null; // important to return null to indicate "nothing to render"
   }
 
+  const chatWithUnknownUser = username === 'undefined';
+
   const [nextParams, setNextParams] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -135,7 +137,8 @@ export default function Thread({ user, profileMinimumLength }) {
   const userHasReplied = Boolean(
     messages.find(message => message.userFrom._id === user._id),
   );
-  const showReply = messages.length > 0 || !hasEmptyProfile;
+  const showReply =
+    (messages.length > 0 || !hasEmptyProfile) && !chatWithUnknownUser;
   const showQuickReply = showReply && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
@@ -189,7 +192,7 @@ export default function Thread({ user, profileMinimumLength }) {
         a.created.localeCompare(b.created),
       );
       // TODO should be done at the back-end?
-      if (username === 'undefined') {
+      if (chatWithUnknownUser) {
         const filledMessages = messages.map(message => {
           if (!message.userTo) {
             message.userTo = { _id: otherUser._id };
