@@ -218,7 +218,7 @@
     "eslint-plugin-testing-library": "3.10.1",
     "eslint-watch": "7.0.0",
     "expose-loader": "1.0.3",
-    "faker": "5.2.0",
+    "faker": "5.3.1",
     "file-loader": "6.2.0",
     "gulp-mocha": "3.0.1",
     "gulp-nodemon": "2.5.0",
