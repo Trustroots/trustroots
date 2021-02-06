@@ -608,21 +608,42 @@ exports.list = function (req, res) {
     }
   }
 
-  // Pick fields to receive
+  // Pick fields and convert to GeoJson Feature
   query.push({
     $project: {
-      _id: '$_id',
-      location: '$locationFuzzy',
-      status: '$status',
-      type: '$type',
+      _id: 0,
+      type: 'Feature',
+      properties: {
+        id: '$_id',
+        status: '$status',
+        type: '$type',
+        offer: { $concat: ['$type', '-', '$status'] },
+      },
+      geometry: {
+        coordinates: '$locationFuzzy',
+        type: 'Point',
+      },
     },
   });
 
   Offer.aggregate(query)
     .exec()
     .then(
-      function (offers) {
-        res.json(offers);
+      function (features) {
+        // @TODO :-(
+        const reversedFeatures = features.map(feature => {
+          feature.geometry.coordinates = [
+            feature.geometry.coordinates[1],
+            feature.geometry.coordinates[0],
+          ];
+          return feature;
+        });
+
+        // Geojson
+        res.json({
+          features: reversedFeatures,
+          type: 'FeatureCollection',
+        });
       },
       function (err) {
         // Log the failure

@@ -40,6 +40,10 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
           {t('Contacts')}
         </a>
 
+        <a href="/search/members" className="list-group-item">
+          {t('Find people')}
+        </a>
+
         <a href="/circles" className="list-group-item">
           {t('Circles')}
         </a>
@@ -148,7 +152,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
                 className="btn btn-default center-block"
                 aria-label="Trustroots Page at Facebook"
               >
-                {t('Facebook (Page)')}
+                {t('Facebook page')}
               </a>
             </p>
           </li>
@@ -159,7 +163,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
                 className="btn btn-default center-block"
                 aria-label="{t('Trustroots Group at Facebook')}"
               >
-                {t('Facebook (Group)')}
+                {t('Facebook group')}
               </a>
             </p>
           </li>

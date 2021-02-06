@@ -16,36 +16,11 @@
   </div>
 </div>
 
-<div
-  class="search-message"
-  ng-show="searchMap.mapCenter.zoom <= searchMap.mapMinimumZoom && app.user.public"
-  role="alert"
-  aria-live="assertive"
-  aria-labelledby="map-zoom-message"
->
-  <h4 id="map-zoom-message">Zoom in closer to see everyone</h4>
-</div>
-
-<div class="search-map-active-area-demo"></div>
-
-<div
-  class="search-map-container"
-  ng-if="searchMap.mapCenter"
-  ng-class="{
-       'is-sidebar-open': search.isSidebarOpen,
-       'leaflet-layerstyle-satellite': searchMap.mapLayerstyle === 'satellite'
-     }"
->
-  <leaflet
-    id="search-map-canvas"
-    lf-center="searchMap.mapCenter"
-    markers="searchMap.mapMarkers"
-    layers="searchMap.mapLayers"
-    bounds="searchMap.mapBounds"
-    paths="searchMap.mapPaths"
-    defaults="searchMap.mapDefaults"
-    event-broadcast="searchMap.mapEvents"
-    tabindex="0"
-    aria-label="Map"
-  ></leaflet>
-</div>
+<search-map
+  filters="searchMap.filters"
+  isUserPublic="app.user.public"
+  location-bounds="searchMap.bounds"
+  location="searchMap.location"
+  onOfferClose="searchMap.closeOffer"
+  onOfferOpen="searchMap.previewOffer"
+></search-map>

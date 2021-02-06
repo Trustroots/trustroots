@@ -1,31 +1,31 @@
 const path = require('path');
 const config = require(path.resolve('./config/config'));
-const referencePolicy = require('../policies/references.server.policy');
-const references = require('../controllers/reference.server.controller');
+const experiencesPolicy = require('../policies/references.server.policy');
+const experiences = require('../controllers/reference.server.controller');
 
 module.exports = function (app) {
   if (config.featureFlags.reference) {
     app
       .route('/api/experiences')
-      .all(referencePolicy.isAllowed)
-      .post(references.create)
-      .get(references.readMany);
+      .all(experiencesPolicy.isAllowed)
+      .post(experiences.create)
+      .get(experiences.readMany);
 
     app
       .route('/api/experiences/count')
-      .all(referencePolicy.isAllowed)
-      .get(references.getCount);
+      .all(experiencesPolicy.isAllowed)
+      .get(experiences.getCount);
 
     app
       .route('/api/my-experience')
-      .all(referencePolicy.isAllowed)
-      .get(references.readMine);
+      .all(experiencesPolicy.isAllowed)
+      .get(experiences.readMine);
 
     app
       .route('/api/experiences/:experienceId')
-      .all(referencePolicy.isAllowed)
-      .get(references.readOne);
+      .all(experiencesPolicy.isAllowed)
+      .get(experiences.readOne);
 
-    app.param('experienceId', references.referenceById);
+    app.param('experienceId', experiences.experienceById);
   }
 };

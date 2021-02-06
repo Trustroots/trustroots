@@ -1,13 +1,13 @@
 {
     "Cancel": "Abbrechen",
     "Discover Tribes": "",
-    "Do you want to leave \"{{label}}\"?": "",
-    "Join": "",
-    "Join ({{label}})": "",
+    "Do you want to leave \"{{label}}\"?": "Willst du \"{{label}}\" verlassen?",
+    "Join": "Beitreten",
+    "Join ({{label}})": "Beitreten ({{label}})",
     "Join Trustroots to find members behind Tribes": {
         "": ""
     },
-    "Joined": "",
+    "Joined": "Beigetreten",
     "Joining Tribes helps you find likeminded Trustroots members": {
         "": ""
     },
@@ -15,9 +15,16 @@
     "Leave this Tribe?": "",
     "Missing your Tribe?": "",
     "New tribe!": "",
-    "No members yet": "",
-    "Send us suggestions!": "",
-    "Sign up with Trustroots": "",
-    "{{count, number}} members": "",
-    "{{count, number}} members_plural": ""
+    "No members yet": "Noch keine Mitglieder",
+    "Send us suggestions!": "Schick uns Vorschläge!",
+    "Sign up with Trustroots": "Bei Trustroots anmelden",
+    "{{count, number}} members": "Ein Mitglied",
+    "{{count, number}} members_plural": "{{count, number}} Mitglieder",
+    "New circle!": "Neuer Kreis!",
+    "Missing your circle?": "Vermisst du einen Kreis?",
+    "Leave this circle?": "Diesen Kreis verlassen?",
+    "Leave circle": "Kreis verlassen",
+    "Joining circles helps you find likeminded Trustroots members.": "Tritt Kreisen bei, um gleichgesinnte Trustroots-Mitglieder zu finden.",
+    "Join Trustroots to find members behind circles.": "Tritt Trustroots bei, um Mitglieder in den Kreisen zu finden.",
+    "Discover circles": "Kreise entdecken"
 }

@@ -2,6 +2,7 @@
   "version": 8,
   "name": "OSM",
   "metadata": {},
+  "glyphs": "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
   "sources": {
     "osm": {
       "attribution": "<a href=\"https://www.openstreetmap.org/about/\" target=\"_blank\" rel=\"noopener\">&copy; OpenStreetMap</a>",

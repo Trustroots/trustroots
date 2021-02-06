@@ -16,10 +16,10 @@
         "": "Se non hai ricevuto il messaggio, controlla nello spam o invia di nuovo attraverso<1>impostazione dell'email</1>."
     },
     "Interface language": "Lingua dell'interfaccia",
-    "Languages": "lingue",
+    "Languages": "Lingue",
     "Lives in <2>{{locationLiving}}</2>": "Vive a <2>{{locationLiving}}</2>",
     "Member has not written description about themself": {
-        "": "Questo membro non ha scritto descrizione di se stesso."
+        "": "Questa persona non ha scritto alcuna descrizione di se stessa."
     },
     "Member since {{date, MMM Do, YYYY}}": "Membro dal{{date, MMM Do, YYYY}}",
     "Online long ago": "Non si connette da tempo",
@@ -31,7 +31,7 @@
         "": "Risponde in{{replyTime, fromNow}}."
     },
     "Reply rate {{replyRate}}": {
-        "": "Tasso di risposta{{replyRate}}."
+        "": "Tasso di risposta {{replyRate}}."
     },
     "Send a message": "Invia un messaggio",
     "Sorry, you need to first activate your profile by confirming your email": {
@@ -67,8 +67,8 @@
     "Non-binary": "Non binario",
     "Male": "Maschio",
     "Female": "Femmina",
-    "Note that your profile will not be visible to others until you confirm your email.": "Fai attenzione che il tuo profilo non sarà visibile agli altri fino a quando non avrai confermato la tua e-mail.",
-    "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "Se non hai ricevuto il messaggio, controlla nella cartella dello spam o invialo nuovamente dalle <1>impostazioni dell'e-mail</1>.",
+    "Note that your profile will not be visible to others until you confirm your email.": "Fai attenzione che il tuo profilo non sarà visibile agli altri fino a quando non avrai confermato la tua email.",
+    "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "Se non hai ricevuto il messaggio, controlla nella cartella dello spam o invialo nuovamente dalle <1>impostazioni dell'email</1>.",
     "Hosting offer": "Offerta di ospitalità",
     "Download your data": "Scarica i tuoi dati",
     "Anonymous member": "Membro anonimo",
@@ -79,6 +79,6 @@
     "{{count}} contacts": "{{count}} contatto",
     "{{count}} contacts_plural": "{{count}} contatti",
     "Trustroots volunteer alumni": "\"Alumni\" volontari di Trustroots",
-    "Trustroots volunteer": "Volontario di Trustroots",
+    "Trustroots volunteer": "Volontariə di Trustroots",
     "Experiences": "Esperienze"
 }

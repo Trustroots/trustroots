@@ -1,119 +1,108 @@
-const should = require('should');
-const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
-const User = mongoose.model('User');
+const path = require('path');
+const request = require('supertest');
+const should = require('should');
+const config = require(path.resolve('./config/config'));
 const express = require(path.resolve('./config/lib/express'));
-
-/**
- * Globals
- */
-let app;
-let agent;
-let credentials;
-let user;
-let supportMessage;
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 
 /**
  * Support routes tests
  */
-describe('Support CRUD tests', function () {
-  before(function (done) {
-    // Get application
-    app = express.init(mongoose.connection);
-    agent = request.agent(app);
+describe('Support CRUD tests', () => {
+  const app = express.init(mongoose.connection);
+  const agent = request.agent(app);
 
-    done();
-  });
+  // We'll catch emails
+  const jobs = testutils.catchJobs();
 
-  beforeEach(function (done) {
-    // Create user credentials
-    credentials = {
-      username: 'loremipsum',
-      password: 'Password123!',
-    };
+  const _usersPublic = utils.generateUsers(1, { public: true });
+  const _usersNonPublic = utils.generateUsers(1, { public: false });
+  const _users = [..._usersPublic, ..._usersNonPublic];
+  let users;
 
-    // Create a new user
-    user = new User({
-      firstName: 'Full',
-      lastName: 'Name',
-      displayName: 'Full Name',
-      email: 'test1@test.com',
-      username: credentials.username,
-      password: credentials.password,
-      provider: 'local',
-      public: true,
-    });
-
-    // Create new support message
-    supportMessage = {
-      username: user.username,
-      email: user.email,
-      message: 'Trustroots rocks!',
-    };
-
-    // Save user to the test db
-    user.save(function (err) {
-      should.not.exist(err);
-      return done();
-    });
-  });
-
-  it('should be able to send support message when not logged in', function (done) {
-    agent
-      .post('/api/support')
-      .send(supportMessage)
-      .expect(200)
-      .end(function (supportSaveErr, supportSaveRes) {
-        supportSaveRes.body.message.should.equal('Support request sent.');
-
-        // Call the assertion callback
-        return done(supportSaveErr);
-      });
-  });
-
-  it('should be able to send support message wihout email and username', function (done) {
-    agent
+  const assertSendingSupportMessage = async (supportRequest = {}) => {
+    const { body } = await agent
       .post('/api/support')
       .send({
+        username: 'demousername',
+        email: 'user@example.org',
+        message: 'Trustroots rocks!',
+        ...supportRequest, // Overrides
+      })
+      .expect(200);
+
+    body.message.should.equal('Support request sent.');
+
+    const emailJobs = jobs.filter(job => job.type === 'send email');
+    const [job] = emailJobs;
+    should(emailJobs.length).equal(1);
+    should(job.data.to.address).equal(config.supportEmail);
+    should(job.data.text).containEql('Trustroots rocks!');
+
+    return job;
+  };
+
+  beforeEach(async () => {
+    users = await utils.saveUsers(_users);
+  });
+
+  afterEach(utils.clearDatabase);
+
+  context('not logged in', () => {
+    it('should be able to send support message', async () => {
+      const job = await assertSendingSupportMessage();
+      should(job.data.subject).equal(`Support request from demousername (-)`);
+      should(job.data.text).containEql('Authenticated: no');
+      should(job.data.text).containEql('Signup confirmed: no');
+    });
+
+    it('should be able to send support message without email and username', async () => {
+      const job = await assertSendingSupportMessage({
         username: '',
         email: '',
-        message: 'Trustroots is cool!',
-      })
-      .expect(200)
-      .end(function (supportSaveErr, supportSaveRes) {
-        supportSaveRes.body.message.should.equal('Support request sent.');
-
-        // Call the assertion callback
-        return done(supportSaveErr);
       });
+      should(job.data.subject).equal(`Support request (-)`);
+      should(job.data.text).containEql('Authenticated: no');
+      should(job.data.text).containEql('Signup confirmed: no');
+    });
   });
 
-  it('should be able to send support message when logged in', function (done) {
-    agent
-      .post('/api/auth/signin')
-      .send(credentials)
-      .expect(200)
-      .end(function (signinErr) {
-        // Handle signin error
-        if (signinErr) return done(signinErr);
+  context('logged in as public user', () => {
+    // Sign in and sign out
+    beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
+    afterEach(utils.signOut.bind(this, agent));
 
-        // Send support message
-        agent
-          .post('/api/support')
-          .send(supportMessage)
-          .expect(200)
-          .end(function (supportSaveErr, supportSaveRes) {
-            supportSaveRes.body.message.should.equal('Support request sent.');
+    it('should be able to send support message', async () => {
+      const job = await assertSendingSupportMessage();
+      should(job.data.subject).equal(
+        `Support request from ${users[0].username} (${users[0].displayName})`,
+      );
+      should(job.data.text).containEql('Authenticated: yes');
+      should(job.data.text).containEql('Signup confirmed: yes');
+    });
 
-            // Call the assertion callback
-            return done(supportSaveErr);
-          });
+    it('should be able to report user in support message', async () => {
+      const job = await assertSendingSupportMessage({
+        reportMember: 'reported-username',
       });
+      should(job.data.text).containEql('reported-username');
+    });
   });
 
-  afterEach(function (done) {
-    // Clean out
-    User.deleteMany().exec(done);
+  context('logged in as non-public user', () => {
+    // Sign in and sign out
+    beforeEach(utils.signIn.bind(this, _usersNonPublic[0], agent));
+    afterEach(utils.signOut.bind(this, agent));
+
+    it('should be able to send support message', async () => {
+      const job = await assertSendingSupportMessage();
+      should(job.data.subject).equal(
+        `Support request from ${users[1].username} (${users[1].displayName})`,
+      );
+      should(job.data.text).containEql('Authenticated: yes');
+      should(job.data.text).containEql('Signup confirmed: no');
+    });
   });
 });

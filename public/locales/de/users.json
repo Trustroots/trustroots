@@ -1,52 +1,52 @@
 {
-    "About": "",
-    "About me": "",
-    "Add contact": "",
-    "Change language": "",
-    "Contacts": "",
-    "Delete contact request": "",
-    "Don't panic!": "",
-    "Edit your profile": "",
-    "Elsewhere": "",
-    "Fill your profile": "",
-    "From <1>{{locationFrom}}</1>": "",
-    "Help!": "",
-    "Hosting": "",
+    "About": "Über",
+    "About me": "Über mich",
+    "Add contact": "Kontakt hinzufügen",
+    "Change language": "Sprache ändern",
+    "Contacts": "Kontakte",
+    "Delete contact request": "Kontaktanfrage löschen",
+    "Don't panic!": "Keine Panik!",
+    "Edit your profile": "Dein Profil bearbeiten",
+    "Elsewhere": "Woanders",
+    "Fill your profile": "Füll dein Profil aus",
+    "From <1>{{locationFrom}}</1>": "Aus <1>{{locationFrom}}</1>",
+    "Help!": "Hilfe!",
+    "Hosting": "Gastgeber",
     "If you didn't receive the message, check your spam folder or resend it via<1>email settings</1>": {
-        "": ""
+        "": "Wenn du keine Nachricht erhalten hast, schau in deinem Spam-Ordner nach oder schick die Nachricht in den <1>E-Mail-Einstellungen</1> nochmal."
     },
-    "Interface language": "",
-    "Languages": "",
+    "Interface language": "Sprache der Benutzeroberfläche",
+    "Languages": "Sprachen",
     "Lives in <2>{{locationLiving}}</2>": "Lebt in <2>{{locationLiving}}</2>",
     "Member has not written description about themself": {
-        "": ""
+        "": "Dieses Mitglied hat noch keine Selbstbeschreibung verfasst."
     },
-    "Member since {{date, MMM Do, YYYY}}": "",
-    "Online long ago": "",
-    "Online {{ date, fromNow }}": "",
-    "Open user profile for {{name}}": "",
-    "Overview": "",
-    "Remove contact": "",
+    "Member since {{date, MMM Do, YYYY}}": "Mitglied seit {{date, MMM Do, YYYY}}",
+    "Online long ago": "Vor langer Zeit online",
+    "Online {{ date, fromNow }}": "Vor {{ date, fromNow }} online",
+    "Open user profile for {{name}}": "Profil von {{name}} öffnen",
+    "Overview": "Übersicht",
+    "Remove contact": "Kontakt löschen",
     "Replies within {{replyTime, fromNow}}": {
-        "": ""
+        "": "Antwortet innerhalb von {{replyTime, fromNow}}."
     },
     "Reply rate {{replyRate}}": {
-        "": ""
+        "": "Antwortquote {{replyRate}}."
     },
-    "Send a message": "",
+    "Send a message": "Verschick eine Nachricht",
     "Sorry, you need to first activate your profile by confirming your email": {
-        "": ""
+        "": "Sorry, du musst erst dein Profil aktivieren, indem du deine E-Mail bestätigst."
     },
-    "Support": "",
-    "Thanks to all our community members who helped translate!": "",
+    "Support": "Support",
+    "Thanks to all our community members who helped translate!": "Danke an all unsere Mitglieder, die beim Übersetzen geholfen haben!",
     "This is the language of the interface you see across the site": {
-        "": ""
+        "": "Das ist die Sprache der Benutzeroberfläche."
     },
     "Tribes in common": "",
-    "Write a reference": "",
-    "You can help us out!": "",
+    "Write a reference": "Schreib über ein Erlebnis",
+    "You can help us out!": "Du kannst uns unterstützen!",
     "Your profile description should be longer so that you can send messages": {
-        "": ""
+        "": "Deine Profilbeschreibung muss länger sein, damit du Nachrichten verschicken kannst."
     },
     "female": "",
     "male": "",
@@ -54,6 +54,30 @@
     "other": "",
     "{{birthdate, age}} years": "",
     "“Everyone is necessarily the hero of their own life story": {
-        "”": ""
-    }
+        "”": "„Jeder ist der Held seiner eigenen Lebensgeschichte.“"
+    },
+    "Hosting offer": "Übernachtungsangebot",
+    "{{count}} experiences": "{{count}} Erlebnis",
+    "{{count}} experiences_plural": "{{count}} Erlebnisse",
+    "{{count}} contacts": "{{count}} Kontakt",
+    "{{count}} contacts_plural": "{{count}} Kontakte",
+    "{{birthdate, age}} years.": "{{birthdate, age}} Jahre alt.",
+    "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "Deine Daten gehören dir. Wir wollen es dir so einfach wie möglich machen, deine Daten jederzeit in Trustroots rein und auch wieder raus zu bekommen.",
+    "Trustroots volunteer alumni": "Ehemalige*r Trustroots-Volunteer",
+    "Trustroots volunteer": "Trustroots-Volunteer",
+    "The person you are looking for is not available.": "Die Person, nach der du suchst, ist nicht verfügbar.",
+    "Profile": "Profil",
+    "Other gender": "Anderes Geschlecht",
+    "Oops!": "Ups!",
+    "Note that your profile will not be visible to others until you confirm your email.": "Beachte, dass dein Profil für andere erst sichtbar wird, wenn du deine E-Mail bestätigst.",
+    "Non-binary": "Non-binary",
+    "Map search": "Kartensuche",
+    "Male": "Männlich",
+    "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "Wenn du keine Nachricht erhalten hast, schau in deinem Spam-Ordner nach oder schick die Nachricht in den <1>E-Mail-Einstellungen</1> nochmal.",
+    "Find people": "Finde Leute",
+    "Female": "Weiblich",
+    "Experiences": "Erlebnisse",
+    "Download your data": "Deine Daten herunterladen",
+    "Circles in common": "Gemeinsame Kreise",
+    "Anonymous member": "Anonymes Mitglied"
 }

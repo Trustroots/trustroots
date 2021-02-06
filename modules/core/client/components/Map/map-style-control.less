@@ -1,0 +1,38 @@
+@import '~less/global-variables';
+
+.map-style-control-container {
+  bottom: 40px;
+  box-shadow: @map-toolbar-shadow;
+  left: 10px;
+  position: absolute;
+  z-index: 5;
+
+  img {
+    margin-right: 10px;
+  }
+
+  button.btn {
+    background: @map-toolbar-background;
+    color: @text-color;
+    text-align: left;
+    transition: background 0.25s;
+
+    &:hover {
+      color: @text-color;
+      background: @map-toolbar-background-hover;
+    }
+
+    &:active,
+    &:focus {
+      color: @text-color;
+      outline: 2px solid @brand-primary;
+    }
+
+    &.is-active {
+      &,
+      &:hover {
+        background: @gray-lighter;
+      }
+    }
+  }
+}

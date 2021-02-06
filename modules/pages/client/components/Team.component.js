@@ -187,13 +187,13 @@ export default function Team({ user }) {
                 href="https://www.instagram.com/trustroots/"
                 className="btn btn-link btn-lg"
               >
-                Twitter
+                Instagram
               </a>
               <a
                 href="https://twitter.com/trustroots"
                 className="btn btn-link btn-lg"
               >
-                Instagram
+                Twitter
               </a>
             </div>
             <br />

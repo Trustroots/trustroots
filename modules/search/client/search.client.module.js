@@ -18,4 +18,3 @@ require('@/modules/search/client/directives/tr-types-toggle.client.directive');
 
 // services
 require('@/modules/search/client/services/filters.client.service');
-require('@/modules/search/client/services/search-map.client.service');

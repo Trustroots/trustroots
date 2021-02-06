@@ -1,25 +1,17 @@
 // External dependencies
-import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
-import ReactMapGL, { NavigationControl, ScaleControl } from 'react-map-gl';
+import ReactMapGL from 'react-map-gl';
 
 // Internal dependencies
+import './map.less';
+import { MAP_STYLE_DEFAULT } from './constants';
+import MapNavigationControl from './MapNavigationControl';
+import MapScaleControl from './MapScaleControl';
 import MapStyleControl from './MapStyleControl';
-import '@/modules/core/client/components/Map/map.less';
-import {
-  getMapboxToken,
-  MAP_STYLE_MAPBOX_STREETS,
-  MAP_STYLE_OSM,
-} from './constants';
+import { getMapBoxToken } from '../../utils/map';
 
 export default function Map(props) {
-  const mapboxToken = getMapboxToken();
-  const defaultStyle = mapboxToken ? MAP_STYLE_MAPBOX_STREETS : MAP_STYLE_OSM;
-  const showMapStyles =
-    props.showMapStyles &&
-    (!!mapboxToken || process.env.NODE_ENV !== 'production');
-
   const {
     children,
     location = [48.6908333333, 9.14055555556], // Default location to Europe when not set
@@ -27,20 +19,22 @@ export default function Map(props) {
     ...overrideProps // anything else will be passed down to <ReactMapGL> as props
   } = props;
 
-  const { t } = useTranslation('core');
-
-  const [mapStyle, setMapstyle] = useState(defaultStyle);
+  const [mapStyle, setMapstyle] = useState(MAP_STYLE_DEFAULT);
   const [viewport, setViewport] = useState({
     latitude: location[0],
     longitude: location[1],
     zoom,
   });
+  const MAPBOX_TOKEN = getMapBoxToken();
+  const showMapStyles =
+    props.showMapStyles &&
+    (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
 
   return (
     <ReactMapGL
       dragRotate={false}
       height={320}
-      mapboxApiAccessToken={mapboxToken}
+      mapboxApiAccessToken={MAPBOX_TOKEN}
       mapStyle={mapStyle}
       onViewportChange={setViewport}
       touchRotate={false}
@@ -50,20 +44,10 @@ export default function Map(props) {
       }
       {...overrideProps}
     >
-      <div className="map-navigation-control-container">
-        <NavigationControl
-          showCompass={false}
-          zoomInLabel={t('Zoom in')}
-          zoomOutLabel={t('Zoom out')}
-        />
-      </div>
-      <div className="map-scale-control-container">
-        <ScaleControl />
-      </div>
+      <MapNavigationControl />
+      <MapScaleControl />
       {showMapStyles && (
-        <div className="map-style-control-container">
-          <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
-        </div>
+        <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
       )}
       {children}
     </ReactMapGL>

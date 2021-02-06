@@ -1,4 +1,25 @@
 {
     "Report member": "Segnala membro",
-    "Report member {{username}} to support": "Segnala membro {{username}} all'assistenza"
+    "Report member {{username}} to support": "Segnala membro {{username}} all'assistenza",
+    "Please write in English if possible.": "Se possibile, scrivi in inglese.",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Puoi tornare alla <1>pagina iniziale</1> o vedere le <4>domande frequenti</4>.",
+    "Wait…": "Attendi…",
+    "Username": "Nome utente",
+    "Trustroots Support Robot": "Assistenza automatica di Trustroots",
+    "Trustroots Support": "Assistenza di Trustroots",
+    "Thank you!": "Grazie!",
+    "Something went wrong sending your message.": "Qualcosa è andato storto nell'invio del messaggio.",
+    "Send": "Invia",
+    "See also": "Vedi anche",
+    "Reporting member": "Segnalare un membro",
+    "Removing your account": "Eliminare il tuo profilo",
+    "Please ensure you are connected to internet and try again.": "Per piacere assicurati di essere connesso a internet e riprova.",
+    "Name": "Nome",
+    "Message": "Messaggio",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Sono giusto un robot del sito ma ho mandato un messaggio alla nostra squadra di supporto. Ti ricontatteranno appena possibile!",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Se tu o qualcuno che conosci è stato testimone o vittima di un crimine, per piacere segnalalo alla polizia immediatamente.",
+    "Frequently Asked Questions": "Domande frequenti",
+    "Email": "Email",
+    "Contact us": "Contattaci",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Diventa volontariə</0> e fa la differenza!"
 }

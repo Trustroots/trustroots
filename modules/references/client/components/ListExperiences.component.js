@@ -54,11 +54,13 @@ export default function ListExperiences({ profile, authenticatedUser }) {
   const hasPublicExperiences = publicExperiences.length > 0;
   const hasPendingExperiences = pendingExperiences.length > 0;
 
+  const onReceiverProfile = authenticatedUser._id === profile._id;
+
   // No experiences
   if (!hasPendingExperiences && !hasPublicExperiences) {
     return (
       <NoContent icon="users" message={t('No experiences yet.')}>
-        {authenticatedUser._id !== profile._id && (
+        {!onReceiverProfile && (
           <p>
             <br />
             <a
@@ -82,6 +84,7 @@ export default function ListExperiences({ profile, authenticatedUser }) {
         <ExperiencesSection
           title={t('Experiences pending publishing')}
           experiences={pendingExperiences}
+          onReceiverProfile={onReceiverProfile}
         />
       )}
       {hasPublicExperiences && (
@@ -89,6 +92,7 @@ export default function ListExperiences({ profile, authenticatedUser }) {
           // Show "Public" title only if there are also pending experiences listed
           title={hasPendingExperiences && t('Public experiences')}
           experiences={publicExperiences}
+          onReceiverProfile={onReceiverProfile}
         />
       )}
     </>
