@@ -1,0 +1,45 @@
+@import '~less/global-variables';
+@import './variables';
+
+.search {
+  align-items: stretch;
+  position: fixed;
+  top: @navbar-height;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-flow: row;
+}
+
+// Styled as 'mobile first'
+.search-sidebar-container {
+  z-index: @zindex-navbar;
+  overflow: hidden;
+  overflow-y: auto;
+  background: @gray-lighter;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+
+  @media (min-width: @screen-sm-min) {
+    background: @map-toolbar-background;
+    box-shadow: none;
+    overflow: visible;
+    overflow-y: auto;
+    min-width: @search-sidebar-min-width;
+    max-width: @search-sidebar-max-width;
+    width: @search-sidebar-percentage-width;
+  }
+}
+
+.search-map-container {
+  flex: 1;
+  > div:not(.search-message) {
+    height: 100%;
+  }
+
+  @media (max-width: @screen-sm-min) {
+    // Make space for the search+filters navbar
+    height: calc(100% - @navbar-height);
+    margin-top: @navbar-height;
+  }
+}

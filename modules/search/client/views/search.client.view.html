@@ -39,7 +39,6 @@
     <div
       ng-include="~modules/search/client/views/search-input.client.view.html"
     ></div>
-    <!-- Search bar closing toggle -->
     <button
       type="button"
       class="btn btn-action btn-primary visible-xs-block search-sidebar-close"
@@ -48,8 +47,6 @@
       Back to map
     </button>
   </div>
-
-  <div ui-view="map"></div>
 
   <div
     class="search-sidebar-toggle hidden-xs"
@@ -74,7 +71,7 @@
   </div>
 
   <aside
-    class="search-sidebar"
+    class="search-sidebar-container"
     ui-view="sidebar"
     ng-if="app.user.public"
     ng-show="search.isSidebarOpen"
@@ -82,4 +79,5 @@
          'is-offer-open': search.offer || search.loadingOffer
        }"
   ></aside>
+  <div ui-view="map" class="search-map-container"></div>
 </section>

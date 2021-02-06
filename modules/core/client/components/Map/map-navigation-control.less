@@ -1,0 +1,30 @@
+@import '~bootstrap/less/mixins/size';
+@import '~less/global-variables';
+
+.map-navigation-control-container {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 5;
+
+  .mapboxgl-ctrl-group {
+    border-radius: @border-radius-small;
+    border: 0;
+    background: @map-toolbar-background;
+    transition: background 0.25s;
+
+    &:hover {
+      background: @map-toolbar-background-hover;
+    }
+
+    &:not(:empty) {
+      box-shadow: @map-toolbar-shadow;
+    }
+
+    button {
+      .square(36px);
+      border-radius: @border-radius-small;
+      border: 0;
+    }
+  }
+}

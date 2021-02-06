@@ -171,8 +171,7 @@ function SearchController(
       // to close anything offer related
       $scope.$broadcast('search.closeOffer');
     }
-    // Tells map controller to reset markers
-    $scope.$broadcast('search.resetMarkers');
+    $scope.$broadcast('search.filtersUpdated', vm.filters);
   }
 
   /**

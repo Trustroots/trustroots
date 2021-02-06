@@ -1,36 +1,12 @@
-@import '~bootstrap/less/mixins/background-variant';
-@import '~bootstrap/less/mixins/text-emphasis';
-@import '~bootstrap/less/mixins/text-overflow';
+@import '~bootstrap/less/mixins/background-variant'; // ~bootstrap/less/type depends on this
+@import '~bootstrap/less/mixins/text-emphasis'; // ~bootstrap/less/type depends on this
+@import '~bootstrap/less/mixins/text-overflow'; // ~bootstrap/less/type depends on this
 @import '~bootstrap/less/type';
 @import '~less/global-variables';
 @import './variables';
 
 // Styled as 'mobile first'
-.search-sidebar {
-  position: absolute;
-  width: auto;
-  top: @navbar-height;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: auto;
-  z-index: @zindex-navbar;
-  overflow: hidden;
-  overflow-y: auto;
-  background: @gray-lighter;
-  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-
-  @media (min-width: @screen-sm-min) {
-    background: @map-toolbar-background;
-    box-shadow: none;
-    overflow: visible;
-    overflow-y: auto;
-    min-width: @search-sidebar-min-width;
-    max-width: @search-sidebar-max-width;
-    width: @search-sidebar-percentage-width;
-    right: auto;
-  }
-
+.search-sidebar-container {
   // Active tab
   .nav-tabs.nav-justified > .active > a {
     border-bottom-color: @brand-primary;
@@ -39,6 +15,8 @@
   // Tabs are hidden on small screens
   // They are controlled via view controller JS instead
   @media (max-width: @screen-xs-max) {
+    width: 100%;
+    padding-top: 20px;
     .nav-tabs {
       display: none;
     }

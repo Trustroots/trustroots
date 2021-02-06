@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 /**
- * API request: read user offer
+ * API request: read user's offers
  * @param {int} userId - id of user
  * @returns Promise<Offer[]> - array of the found offers
  */
@@ -25,4 +25,24 @@ export async function getOffers(userId, types) {
       throw e;
     }
   }
+}
+
+/**
+ * API request: reade offer by id
+ * @param {int} offerId - id of offer
+ * @returns Promise<Offer> - a single offer
+ */
+export async function getOffer(offerId) {
+  const { data } = await axios.get(`/api/offers/${offerId}`);
+  return data;
+}
+
+/**
+ * API request: query for offers by search arguments, namely bounding box location coordinates and other search filters
+ * @param {int} offerId - id of offer
+ * @returns Promise<Offer[]> - array of the found offers with limited info, mainly offer id and type.
+ */
+export async function queryOffers(query = {}) {
+  const { data } = await axios.get(`/api/offers?${new URLSearchParams(query)}`);
+  return data;
 }
