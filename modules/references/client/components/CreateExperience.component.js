@@ -164,8 +164,9 @@ export default function CreateExperience({ userFrom, userTo }) {
   // can we continue?
   const isNextStepDisabled = isSubmitting || currentStepErrors.length > 0;
   // if not, why?
-  const nextStepError =
-    !isSubmitting && currentStepErrors.find(error => error.trim().length > 0);
+  const nextStepError = isSubmitting
+    ? ''
+    : currentStepErrors.find(error => error.trim().length > 0);
 
   if (userFrom._id === userTo._id) {
     return <ExperienceWithSelfInfo />;
