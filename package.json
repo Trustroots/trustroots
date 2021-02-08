@@ -139,7 +139,7 @@
     "leaflet": "1.7.1",
     "leaflet-active-area": "git+https://github.com/Mappy/Leaflet-active-area.git#f09574a3eb7fdce3a6778e4822955c6416415e43",
     "lodash": "4.17.20",
-    "mapbox-gl": "1.13.0",
+    "mapbox-gl": "2.1.1",
     "medium-editor": "5.23.3",
     "method-override": "3.0.0",
     "migrate": "1.7.0",
