@@ -609,28 +609,32 @@ exports.readOne = function readOne(req, res) {
 
 exports.readMine = async function readMine(req, res) {
   const selfId = req.user._id;
-  const userTo = req.query.userTo;
+  const userWith = req.query.userWith;
 
-  if (!mongoose.Types.ObjectId.isValid(userTo)) {
+  if (!mongoose.Types.ObjectId.isValid(userWith)) {
     return res
       .status(400)
       .send({ message: 'Missing or invalid `userTo` request param' });
   }
 
-  const experience = await findMyExperience(req, userTo);
-  if (experience === null) {
+  let experience = await findMyExperience(req, userWith);
+  let otherExperience = await Experience.findOne({
+    userFrom: userWith,
+    userTo: selfId,
+  }).exec();
+
+  if (experience === null && otherExperience === null) {
     return res.status(404).json({
       message: errorService.getErrorMessageByKey('not-found'),
     });
   }
-  const otherReference = await Experience.findOne({
-    userFrom: userTo,
-    userTo: selfId,
-  }).exec();
 
+  if (experience === null) {
+    [experience, otherExperience] = [otherExperience, experience];
+  }
   const experienceWithResponse = prepareSendingToClient(
     experience,
-    otherReference,
+    otherExperience,
     selfId,
   );
 
