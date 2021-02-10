@@ -134,7 +134,7 @@ function PagesRoutes($stateProvider) {
   // eslint-disable-next-line angular/window-service
   if (window.location.search.search('_escaped_fragment_') === -1) {
     $stateProvider.state('home', {
-      url: '/?tribe',
+      url: '/?tribe?circle',
       template: `
         <home
           user="app.user"
