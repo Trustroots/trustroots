@@ -152,6 +152,15 @@ const photos = {
     file: 'nt-hitchtruck.jpg',
     file_mobile: 'nt-hitchtruck--mobile.jpg',
   },
+  cyclist: {
+    name: 'Scott & Emily',
+    url:
+      'https://www.flickr.com/photos/snordq/6440512215/in/album-72157628461235121/',
+    license: 'CC BY-NC 2.0',
+    license_url: 'https://creativecommons.org/licenses/by-nc/2.0/',
+    file: 'cyclist.jpg',
+    file_mobile: 'cyclist--mobile.jpg',
+  },
 };
 
 export function selectPhoto(name) {

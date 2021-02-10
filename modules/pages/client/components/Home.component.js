@@ -8,7 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import { userType } from '@/modules/users/client/users.prop-types';
-import * as tribesAPI from '@/modules/tribes/client/api/tribes.api';
+import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from '@/modules/core/client/components/Board.js';
 import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
 import ManifestoText from './ManifestoText.component.js';
@@ -23,13 +23,52 @@ import screenshotSearchWebp from '../img/screenshot-search.webp';
 import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
 
-const api = {
-  tribes: tribesAPI,
-};
+/**
+ * List of photos to randomly pick as cover photo for homepage
+ *
+ * @param  {[String]} circleSlug Slug of circle.
+ * @return {Array}
+ */
+function getBoardPictures(circleSlug) {
+  // Default photos
+  let boards = [
+    'woman-bridge',
+    'rainbowpeople',
+    'hitchroad',
+    'hitchgirl1',
+    'wavewatching',
+    'sahara-backpacker',
+    'hitchtruck',
+  ];
+
+  // Different set of photos for cyclists circle
+  if (circleSlug === 'cyclists') {
+    boards = ['cyclist'];
+  }
+
+  // Different set of photos for these 3 circles
+  if (
+    circleSlug &&
+    ['hitchhikers', 'dumpster-divers', 'punks'].includes(circleSlug)
+  ) {
+    boards = [
+      'rainbowpeople',
+      'hitchroad',
+      'desertgirl',
+      'hitchgirl1',
+      'hitchgirl2',
+      'hitchtruck',
+    ];
+  }
+
+  return boards;
+}
 
 export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { t } = useTranslation('pages');
-  const { tribe: tribeRoute } = getRouteParams();
+  // `tribe` route supported for legacy reasons, deprecated Feb 2021
+  const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
+  const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
   const memberCount = new Intl.NumberFormat().format(52000);
@@ -43,43 +82,23 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
       ? 400
       : window.innerHeight - headerHeight + 14;
 
-  const boards =
-    tribeRoute &&
-    ['hitchhikers', 'dumpster-divers', 'punks'].indexOf(tribeRoute) > -1
-      ? // Photos for these 3 circles
-        [
-          'rainbowpeople',
-          'hitchroad',
-          'desertgirl',
-          'hitchgirl1',
-          'hitchgirl2',
-          'hitchtruck',
-        ]
-      : [
-          'woman-bridge',
-          'rainbowpeople',
-          'hitchroad',
-          'hitchgirl1',
-          'wavewatching',
-          'sahara-backpacker',
-          'hitchtruck',
-        ];
+  const boards = getBoardPictures(circleRoute);
 
-  const [tribes, setTribes] = useState([]);
+  const [circles, setCircles] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
-      const tribes = await api.tribes.read({ limit: 3 });
-      const tribeIsLoaded = tribes.some(t => t.slug === tribeRoute);
+      const circles = await circlesAPI.read({ limit: 3 });
+      const circleIsLoaded = circles.some(t => t.slug === circleRoute);
 
-      if (tribeRoute && !tribeIsLoaded) {
-        const extraTribe = await api.tribes.get(tribeRoute);
+      if (circleRoute && !circleIsLoaded) {
+        const extraCircle = await circlesAPI.get(circleRoute);
 
-        if (extraTribe && extraTribe._id) {
-          tribes.unshift(extraTribe);
+        if (extraCircle && extraCircle._id) {
+          circles.unshift(extraCircle);
         }
       }
-      setTribes(tribes);
+      setCircles(circles);
     }
     fetchData();
   }, []);
@@ -225,8 +244,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
         </div>
       </section>
 
-      {/* Tribes */}
-      {tribes.length > 0 && (
+      {circles.length > 0 && (
         <section className="home-how">
           <div className="container">
             <div className="row">
@@ -245,30 +263,30 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 </div>
               </div>
               <div className="col-xs-12 visible-xs tribes-xs">
-                {tribes.slice(0, 3).map(tribe => (
+                {circles.slice(0, 3).map(circle => (
                   <a
-                    key={tribe._id}
-                    href={`/circles/${tribe.slug}`}
+                    key={circle._id}
+                    href={`/circles/${circle.slug}`}
                     className="img-circle tribe-xs tribe-image"
-                    style={getCircleBackgroundStyle(tribe, '742x496')}
+                    style={getCircleBackgroundStyle(circle, '742x496')}
                   >
-                    {!tribe.image && <span>{tribe.label.charAt(0)}</span>}
+                    {!circle.image && <span>{circle.label.charAt(0)}</span>}
                   </a>
                 ))}
               </div>
-              {tribes.slice(0, 3).map((tribe, index, items) => (
+              {circles.slice(0, 3).map((circle, index, items) => (
                 <div
-                  key={tribe._id}
+                  key={circle._id}
                   className={classnames('col-sm-3', 'hidden-xs', {
                     'col-sm-pull-3': index < items.length - 1,
                   })}
                 >
                   <div
                     className="img-circle tribe tribe-image"
-                    style={getCircleBackgroundStyle(tribe, '742x496')}
+                    style={getCircleBackgroundStyle(circle, '742x496')}
                   >
-                    <a href={`/circles/${tribe.slug}`} className="tribe-link">
-                      <h3 className="tribe-label">{tribe.label}</h3>
+                    <a href={`/circles/${circle.slug}`} className="tribe-link">
+                      <h3 className="tribe-label">{circle.label}</h3>
                     </a>
                   </div>
                 </div>
