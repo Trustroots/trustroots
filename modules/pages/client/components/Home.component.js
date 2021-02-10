@@ -64,6 +64,21 @@ function getBoardPictures(circleSlug) {
   return boards;
 }
 
+/**
+ * Signup URL appended with circle if available
+ *
+ * @param  {[String]} circleSlug Slug of circle.
+ * @return {String} Signup URL
+ */
+export function getSignupUrl(circleSlug) {
+  if (circleSlug) {
+    // @TODO: change `tribe` to `circle`, needs changes in Signup form controller
+    return `/signup?tribe=${circleSlug}`;
+  }
+
+  return '/signup';
+}
+
 export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
@@ -140,7 +155,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     {t('Sharing, hosting and getting people together.')}
                   </h4>
                   <a
-                    href="/signup"
+                    href={getSignupUrl(circleRoute)}
                     className="btn btn-action btn-default home-join hidden-xs"
                   >
                     {t('Join Trustroots now')}
@@ -311,7 +326,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   <br />
                   <br />
                   <a
-                    href="signup"
+                    href={getSignupUrl(circleRoute)}
                     className="btn btn-lg btn-action btn-default"
                   >
                     {t('Join Trustroots')}
