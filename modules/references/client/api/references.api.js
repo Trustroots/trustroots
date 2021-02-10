@@ -28,13 +28,19 @@ export async function read({ userTo }) {
 }
 
 /**
- * API request: read the experience shared by the logged-in user with `userTo`
+ * API request: read the experience shared
+ * - by the logged-in user with `userTo`
+ * and
+ * - by the `userTo` with the logged-in user
  *
- * @param {string} userTo - id of the user with whom the experience was shared
- * @returns {object} - experience object, which includes the "response" to it if exists
+ * @param {string} userWith - id of the user with whom the experience was shared
+ * @returns {object} - experience object, where both experiences are returned
+ * in an experience object with response. The `response` field is `null` if only
+ * one party shared the experience, otherwise the "primary" experience is the one
+ * shared by the logged-in user.
  */
-export async function readMine({ userTo }) {
-  const params = { userTo };
+export async function readMine({ userWith }) {
+  const params = { userWith };
   try {
     const { data: experience } = await axios.get('/api/my-experience', {
       params,

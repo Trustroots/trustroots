@@ -1,5 +1,5 @@
 {
-    "Clear members search": "",
+    "Clear members search": "Pulisci la ricerca dei membri",
     "No members found by this name": {
         "": "Nessun membro trovato a questo nome."
     },
@@ -7,5 +7,6 @@
     "Type name, username…": "Digita nome, username…",
     "{{count}} members found": "{{count}} membro trovato",
     "{{count}} members found_plural": "{{count}} membri trovati",
-    "Search": "Cerca"
+    "Search": "Cerca",
+    "Zoom closer to find members.": "Ingrandisci per trovare membri."
 }

@@ -32,15 +32,21 @@ export default function CreateExperience({ userFrom, userTo }) {
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [sharedOnTime, setSharedOnTime] = useState(true);
 
   useEffect(() => {
     (async () => {
       const experience = await api.references.readMine({
-        userTo: userTo._id,
+        userWith: userTo._id,
       });
-
-      if (experience !== null) {
-        setIsDuplicate(true);
+      if (experience) {
+        if (experience.userFrom === userFrom._id || !!experience.response) {
+          setIsDuplicate(true);
+        } else {
+          setIsDuplicate(false);
+          setSharedOnTime(!experience.public);
+          setRecommend('yes');
+        }
       }
 
       setIsLoading(false);
@@ -87,12 +93,15 @@ export default function CreateExperience({ userFrom, userTo }) {
   const primaryInteraction =
     (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
 
-  const tabs = [
+  const interactionsTab = (
     <Interaction
       key="interaction"
       interactions={{ hostedMe, hostedThem, met }}
       onChange={handleChangeInteraction}
-    />,
+    />
+  );
+
+  const recommendationTab = (
     <Recommend
       key="recommend"
       primaryInteraction={primaryInteraction}
@@ -102,15 +111,36 @@ export default function CreateExperience({ userFrom, userTo }) {
       onChangeRecommend={recommend => setRecommend(recommend)}
       onChangeReport={() => setReport(report => !report)}
       onChangeReportMessage={message => setReportMessage(message)}
-    />,
+    />
+  );
+
+  const feedbackTab = (
     <Feedback
       key="feedback"
       feedback={feedbackPublic}
       recommend={recommend}
       report={report}
       onChangeFeedback={setFeedbackPublic}
-    />,
+    />
+  );
+
+  let tabs = [
+    {
+      id: 'interactions',
+      title: t('How do you know them'),
+      component: interactionsTab,
+    },
+    {
+      id: 'recommendation',
+      title: t('Recommendation'),
+      component: recommendationTab,
+    },
+    { id: 'feedback', title: t('Feedback'), component: feedbackTab },
   ];
+
+  if (!sharedOnTime) {
+    tabs = tabs.filter(elm => elm.component !== recommendationTab);
+  }
 
   // find out whether the current tab is valid, and whether we can continue
   // we'd prefer to create validator outside the render function,
@@ -134,8 +164,9 @@ export default function CreateExperience({ userFrom, userTo }) {
   // can we continue?
   const isNextStepDisabled = isSubmitting || currentStepErrors.length > 0;
   // if not, why?
-  const nextStepError =
-    !isSubmitting && currentStepErrors.find(error => error.trim().length > 0);
+  const nextStepError = isSubmitting
+    ? ''
+    : currentStepErrors.find(error => error.trim().length > 0);
 
   if (userFrom._id === userTo._id) {
     return <ExperienceWithSelfInfo />;
@@ -169,15 +200,13 @@ export default function CreateExperience({ userFrom, userTo }) {
         onSelect={() => {}}
         id="create-reference-tabs"
       >
-        <Tab eventKey={0} title={t('How do you know them')} disabled>
-          {tabs[0]}
-        </Tab>
-        <Tab eventKey={1} title={t('Recommendation')} disabled>
-          {tabs[1]}
-        </Tab>
-        <Tab eventKey={2} title={t('Feedback')} disabled>
-          {tabs[2]}
-        </Tab>
+        {tabs.map(({ id, component, title }, i) => {
+          return (
+            <Tab eventKey={i} key={id} title={title} disabled>
+              {component}
+            </Tab>
+          );
+        })}
       </Tabs>
       <StepNavigation
         currentStep={step}
