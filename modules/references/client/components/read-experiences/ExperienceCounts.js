@@ -163,14 +163,11 @@ export default function ExperienceCounts({ experiences }) {
     const females = getGenderPercentage('female');
     const males = getGenderPercentage('male');
 
-    const iconUser = <SummaryIcon icon="user" />;
-    const iconUsers = <SummaryIcon icon="users" />;
-
     if (females === 100) {
       return (
         <p>
-          {iconUser}
-          {t('All experiences are by females members.')}
+          <SummaryIcon icon="user" />
+          {t('All experiences are by female members.')}
         </p>
       );
     }
@@ -178,7 +175,7 @@ export default function ExperienceCounts({ experiences }) {
     if (males === 100) {
       return (
         <p>
-          {iconUser}
+          <SummaryIcon icon="user" />
           {t('All experiences are by male members.')}
         </p>
       );
@@ -187,7 +184,7 @@ export default function ExperienceCounts({ experiences }) {
     if (females > 0 && males > 0) {
       return (
         <p>
-          {iconUsers}
+          <SummaryIcon icon="users" />
           {t(
             '{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.',
             {
@@ -202,8 +199,8 @@ export default function ExperienceCounts({ experiences }) {
     if (females > 0) {
       return (
         <p>
-          {iconUser}
-          {t('{{percentage}}% of experiences are by females.', {
+          <SummaryIcon icon="user" />
+          {t('{{percentage}}% of experiences are by female members.', {
             percentage: females,
           })}
         </p>
@@ -213,8 +210,8 @@ export default function ExperienceCounts({ experiences }) {
     if (males > 0) {
       return (
         <p>
-          {iconUser}
-          {t('{{percentage}}% of experiences are by males.', {
+          <SummaryIcon icon="user" />
+          {t('{{percentage}}% of experiences are by male members.', {
             percentage: males,
           })}
         </p>
