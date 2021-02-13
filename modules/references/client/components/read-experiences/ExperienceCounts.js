@@ -163,62 +163,41 @@ export default function ExperienceCounts({ experiences }) {
     const females = getGenderPercentage('female');
     const males = getGenderPercentage('male');
 
+    let genderSummary;
+    let genderIcon = 'user';
+
     if (females === 100) {
-      return (
-        <p>
-          <SummaryIcon icon="user" />
-          {t('All experiences are by female members.')}
-        </p>
+      genderSummary = t('All experiences are by female members.');
+    } else if (males === 100) {
+      genderSummary = t('All experiences are by male members.');
+    } else if (females > 0 && males > 0) {
+      genderIcon = 'users'; // Plural instead of singular
+      genderSummary = t(
+        '{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.',
+        {
+          percentageFemales: females,
+          percentageMales: males,
+        },
       );
+    } else if (females > 0) {
+      genderSummary = t(
+        '{{percentage}}% of experiences are by female members.',
+        {
+          percentage: females,
+        },
+      );
+    } else if (males > 0) {
+      genderSummary = t('{{percentage}}% of experiences are by male members.', {
+        percentage: males,
+      });
     }
 
-    if (males === 100) {
-      return (
-        <p>
-          <SummaryIcon icon="user" />
-          {t('All experiences are by male members.')}
-        </p>
-      );
-    }
-
-    if (females > 0 && males > 0) {
-      return (
-        <p>
-          <SummaryIcon icon="users" />
-          {t(
-            '{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.',
-            {
-              percentageFemales: females,
-              percentageMales: males,
-            },
-          )}
-        </p>
-      );
-    }
-
-    if (females > 0) {
-      return (
-        <p>
-          <SummaryIcon icon="user" />
-          {t('{{percentage}}% of experiences are by female members.', {
-            percentage: females,
-          })}
-        </p>
-      );
-    }
-
-    if (males > 0) {
-      return (
-        <p>
-          <SummaryIcon icon="user" />
-          {t('{{percentage}}% of experiences are by male members.', {
-            percentage: males,
-          })}
-        </p>
-      );
-    }
-
-    return null;
+    return genderSummary ? (
+      <p>
+        <SummaryIcon icon={genderIcon} />
+        {genderSummary}
+      </p>
+    ) : null;
   };
 
   return (
