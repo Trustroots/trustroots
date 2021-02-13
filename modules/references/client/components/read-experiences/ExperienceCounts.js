@@ -27,8 +27,6 @@ const SummaryIcon = styled(Icon).attrs(() => ({
 export default function ExperienceCounts({ experiences }) {
   const { t } = useTranslation('references');
 
-  console.log('experiences:', experiences); //eslint-disable-line
-
   const totalCount = experiences.length;
 
   const recommendCount = experiences.filter(
