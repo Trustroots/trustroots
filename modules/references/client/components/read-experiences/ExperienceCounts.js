@@ -138,7 +138,7 @@ export default function ExperienceCounts({ experiences }) {
 
     return interactions.length > 0 ? (
       <p>
-        <SummaryIcon icon="home" />
+        <SummaryIcon icon="tree" />
         {interactions.join(' ')}
       </p>
     ) : null;
