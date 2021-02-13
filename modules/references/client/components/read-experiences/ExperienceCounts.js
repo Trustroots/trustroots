@@ -39,19 +39,17 @@ export default function ExperienceCounts({ experiences }) {
     ({ recommend }) => recommend === 'no',
   ).length;
 
-  // One sentence summary about experiences
+  // One sentence summary about experiences.
   const renderSummarySentece = () => {
     let summary;
 
-    if (totalCount === recommendCount) {
+    if (totalCount === 1 && recommendCount === 1) {
       summary = t(
-        '{{count}} members shared their experiences, and all recommended them.',
-        { count: totalCount },
+        'One member shared their experience and they recommended them.',
       );
-    } else if (totalCount === nonRecommendCount) {
+    } else if (totalCount === 1 && nonRecommendCount === 1) {
       summary = t(
-        '{{count}} members shared their experiences, and all said they would not recommend them.',
-        { count: totalCount },
+        'One member shared their experience and they would not recommend them.',
       );
     } else {
       summary = t('{{count}} members have shared their experiences.', {
@@ -66,7 +64,15 @@ export default function ExperienceCounts({ experiences }) {
   const renderRecommendationStats = () => {
     const summaries = [];
 
-    if (nonRecommendCount > 0) {
+    if (totalCount === recommendCount) {
+      summaries.push(t('Everyone recommends them.'));
+    }
+
+    if (totalCount === nonRecommendCount) {
+      summaries.push(t('Everyone said they would not recommend them.'));
+    }
+
+    if (totalCount !== recommendCount && nonRecommendCount > 0) {
       summaries.push(
         t('{{count}} did not recommend.', {
           count: nonRecommendCount,
@@ -74,7 +80,7 @@ export default function ExperienceCounts({ experiences }) {
       );
     }
 
-    if (recommendCount > 0) {
+    if (totalCount !== recommendCount && recommendCount > 0) {
       summaries.push(
         t('{{count}} recommended them.', {
           count: recommendCount,
@@ -84,13 +90,13 @@ export default function ExperienceCounts({ experiences }) {
 
     return summaries.length > 0 ? (
       <p>
-        <SummaryIcon icon="ok" />
+        <SummaryIcon icon={nonRecommendCount > 0 ? 'close' : 'ok'} />
         {summaries.join(' ')}
       </p>
     ) : null;
   };
 
-  // Statistics about "met", "host", "guest" interactions
+  // Statistics about "met", "host", "guest" interactions.
   const renderInteractionStats = () => {
     const interactions = [];
 
@@ -106,12 +112,12 @@ export default function ExperienceCounts({ experiences }) {
     const hostedMe = getInteractionPercentage('hostedMe');
     const hostedThem = getInteractionPercentage('hostedThem');
 
-    if (met === 100) {
-      interactions.push(t('Met with everyone.'));
+    if (hostedThem === 100) {
+      interactions.push(t('They hosted everyone.'));
     } else if (hostedThem > 0) {
       interactions.push(
-        t('Met with {{percentage}}% of members.', {
-          percentage: met,
+        t('They hosted {{percentage}}% of members.', {
+          percentage: hostedThem,
         }),
       );
     }
@@ -126,12 +132,12 @@ export default function ExperienceCounts({ experiences }) {
       );
     }
 
-    if (hostedThem === 100) {
-      interactions.push(t('They hosted everyone.'));
+    if (met === 100) {
+      interactions.push(t('Met with everyone.'));
     } else if (hostedThem > 0) {
       interactions.push(
-        t('They hosted {{percentage}}% of members.', {
-          percentage: hostedThem,
+        t('Met with {{percentage}}% of members.', {
+          percentage: met,
         }),
       );
     }
@@ -183,7 +189,7 @@ export default function ExperienceCounts({ experiences }) {
         <p>
           {iconUsers}
           {t(
-            '{{percentageFemales}}% of experiences are by female members, and {{percentageMales}}% are by male members.',
+            '{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.',
             {
               percentageFemales: females,
               percentageMales: males,
@@ -197,7 +203,7 @@ export default function ExperienceCounts({ experiences }) {
       return (
         <p>
           {iconUser}
-          {t('{{percentage}}% of experiences are by female members.', {
+          {t('{{percentage}}% of experiences are by females.', {
             percentage: females,
           })}
         </p>
@@ -208,7 +214,7 @@ export default function ExperienceCounts({ experiences }) {
       return (
         <p>
           {iconUser}
-          {t('{{percentage}}% of experiences are by male members.', {
+          {t('{{percentage}}% of experiences are by males.', {
             percentage: males,
           })}
         </p>
@@ -221,10 +227,7 @@ export default function ExperienceCounts({ experiences }) {
   return (
     <Summary>
       {renderSummarySentece()}
-      {totalCount > 1 &&
-        totalCount !== recommendCount &&
-        totalCount !== nonRecommendCount &&
-        renderRecommendationStats()}
+      {totalCount > 1 && renderRecommendationStats()}
       {totalCount > 2 && renderGenderStats()}
       {totalCount > 2 && renderInteractionStats()}
     </Summary>
