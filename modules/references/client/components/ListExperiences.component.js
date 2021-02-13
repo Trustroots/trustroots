@@ -78,7 +78,7 @@ export default function ListExperiences({ profile, authenticatedUser }) {
   return (
     <>
       {hasPublicExperiences && (
-        <ExperienceCounts publicExperiences={publicExperiences} />
+        <ExperienceCounts experiences={publicExperiences} />
       )}
       {hasPendingExperiences && (
         <ExperiencesSection

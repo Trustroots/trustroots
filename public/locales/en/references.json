@@ -50,10 +50,12 @@
   "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.": "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.",
   "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._plural": "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.",
   "Your experience with {{name}} is public now.": "Your experience with {{name}} is public now.",
-  "{{count}} not recommend": "{{count}} not recommend",
-  "{{count}} not recommend_plural": "{{count}} not recommend",
-  "{{count}} recommend": "{{count}} recommend",
-  "{{count}} recommend_plural": "{{count}} recommend",
-  "{{count}} unknown": "{{count}} unknown",
-  "{{count}} unknown_plural": "{{count}} unknown"
+  "{{count}} did not recommend.": "One did not recommend.",
+  "{{count}} did not recommend._plural": "{{count}} did not recommend.",
+  "{{count}} recommends them.": "One recommends them.",
+  "{{count}} recommends them._plural": "{{count}} recommends them.",
+  "{{count}} members shared their experiences, and all said they would not recommend them.": "One member shared their experience and they would not recommend them.",
+  "{{count}} members shared their experiences, and all said they would not recommend them._plural": "{{count}} members shared their experiences, and all said they would not recommend them.",
+  "{{count}} members shared their experiences, and all recommended them.": "One member shared their experience and they recommended them.",
+  "{{count}} members shared their experiences, and all recommended them._plural": "{{count}} members shared their experiences, and all recommended them."
 }
