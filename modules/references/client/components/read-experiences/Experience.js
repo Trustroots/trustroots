@@ -115,7 +115,7 @@ export default function Experience({ experience, onReceiverProfile }) {
             </span>
           </UserMeta>
           <ExperienceLink
-            href={`/profile/${userTo.username}/references#${_id}`}
+            href={`/profile/${userTo.username}/experiences#${_id}`}
           >
             <TimeAgo date={createdDate} />
           </ExperienceLink>
