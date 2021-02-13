@@ -124,7 +124,7 @@ export default function ExperienceCounts({ experiences }) {
 
     if (hostedMe === 100) {
       interactions.push(t('Was hosted by everyone.'));
-    } else if (hostedThem > 0) {
+    } else if (hostedMe > 0) {
       interactions.push(
         t('Was hosted by {{percentage}}% of members.', {
           percentage: hostedMe,
@@ -134,7 +134,7 @@ export default function ExperienceCounts({ experiences }) {
 
     if (met === 100) {
       interactions.push(t('Met with everyone.'));
-    } else if (hostedThem > 0) {
+    } else if (met > 0) {
       interactions.push(
         t('Met with {{percentage}}% of members.', {
           percentage: met,
@@ -229,7 +229,7 @@ export default function ExperienceCounts({ experiences }) {
       {renderSummarySentece()}
       {totalCount > 1 && renderRecommendationStats()}
       {totalCount > 2 && renderGenderStats()}
-      {totalCount > 2 && renderInteractionStats()}
+      {totalCount > 1 && renderInteractionStats()}
     </Summary>
   );
 }
