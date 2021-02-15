@@ -50,6 +50,7 @@ export default function ExperienceCounts({ experiences }) {
         'One member shared their experience and they would not recommend them.',
       );
     } else {
+      // Singular format comes from i18n-next translation files
       summary = t('{{count}} members have shared their experiences.', {
         count: totalCount,
       });
@@ -130,7 +131,9 @@ export default function ExperienceCounts({ experiences }) {
       );
     }
 
-    if (met === 100) {
+    if (met === 0) {
+      interactions.push(t('Did not meet with anyone.'));
+    } else if (met === 100) {
       interactions.push(t('Met with everyone.'));
     } else if (met > 0) {
       interactions.push(
