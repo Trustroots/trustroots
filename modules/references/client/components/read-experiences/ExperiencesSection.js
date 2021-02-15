@@ -9,36 +9,20 @@ import { experienceType } from '@/modules/references/client/experiences.prop-typ
 /**
  * List of user's experiences
  */
-export default function ExperiencesSection({
-  title,
-  experiences,
-  onReceiverProfile,
-}) {
-  return (
-    <section>
-      {title && (
-        <div className="row">
-          <div className="col-xs-12 col-sm-6">
-            <h4 className="text-muted">{title}</h4>
-          </div>
-        </div>
-      )}
-      {experiences.map(experience => (
-        <div className="row" key={experience._id}>
-          <div className="col-xs-12">
-            <Experience
-              experience={experience}
-              onReceiverProfile={onReceiverProfile}
-            />
-          </div>
-        </div>
-      ))}
-    </section>
-  );
+export default function ExperiencesSection({ experiences, onReceiverProfile }) {
+  return experiences.map(experience => (
+    <div className="row" key={experience._id}>
+      <div className="col-xs-12">
+        <Experience
+          experience={experience}
+          onReceiverProfile={onReceiverProfile}
+        />
+      </div>
+    </div>
+  ));
 }
 
 ExperiencesSection.propTypes = {
   experiences: PropTypes.arrayOf(experienceType).isRequired,
-  title: PropTypes.oneOfType([PropTypes.string, PropTypes.bool]),
   onReceiverProfile: PropTypes.bool.isRequired,
 };

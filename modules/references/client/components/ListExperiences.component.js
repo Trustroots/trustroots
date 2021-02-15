@@ -77,23 +77,29 @@ export default function ListExperiences({ profile, authenticatedUser }) {
 
   return (
     <>
-      {hasPublicExperiences && (
-        <ExperienceCounts experiences={publicExperiences} />
-      )}
       {hasPendingExperiences && (
-        <ExperiencesSection
-          title={t('Experiences pending publishing')}
-          experiences={pendingExperiences}
-          onReceiverProfile={onReceiverProfile}
-        />
+        <>
+          <div className="row">
+            <div className="col-xs-12 col-sm-6">
+              <h4 className="text-muted">
+                {t('Experiences pending publishing')}
+              </h4>
+            </div>
+          </div>
+          <ExperiencesSection
+            experiences={pendingExperiences}
+            onReceiverProfile={onReceiverProfile}
+          />
+        </>
       )}
       {hasPublicExperiences && (
-        <ExperiencesSection
-          // Show "Public" title only if there are also pending experiences listed
-          title={hasPendingExperiences && t('Public experiences')}
-          experiences={publicExperiences}
-          onReceiverProfile={onReceiverProfile}
-        />
+        <>
+          <ExperienceCounts experiences={publicExperiences} />
+          <ExperiencesSection
+            experiences={publicExperiences}
+            onReceiverProfile={onReceiverProfile}
+          />
+        </>
       )}
     </>
   );
