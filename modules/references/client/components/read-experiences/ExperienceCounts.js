@@ -38,7 +38,7 @@ export default function ExperienceCounts({ experiences }) {
   ).length;
 
   // One sentence summary about experiences.
-  const renderSummarySentece = () => {
+  const renderSummarySentence = () => {
     let summary;
 
     if (totalCount === 1 && recommendCount === 1) {
@@ -200,7 +200,7 @@ export default function ExperienceCounts({ experiences }) {
 
   return (
     <Summary>
-      {renderSummarySentece()}
+      {renderSummarySentence()}
       {totalCount > 1 && renderRecommendationStats()}
       {totalCount > 2 && renderGenderStats()}
       {totalCount > 1 && renderInteractionStats()}
