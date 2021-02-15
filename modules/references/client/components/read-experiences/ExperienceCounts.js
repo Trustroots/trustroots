@@ -51,7 +51,7 @@ export default function ExperienceCounts({ experiences }) {
       );
     } else {
       // Singular format comes from i18n-next translation files
-      summary = t('{{count}} members have shared their experiences.', {
+      summary = t('{{count}} members shared their experiences.', {
         count: totalCount,
       });
     }
