@@ -43,6 +43,25 @@ export default function Media() {
           <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
             <h3 id="in-media">{t('Trustroots in Media')}</h3>
 
+            <h4 className="media-list-divider text-muted">2020</h4>
+            <dl className="dl-horizontal media-list">
+              <dt>
+                <span className="text-muted">
+                  {/* June 24th */}
+                  {mediaDate(2020, 5, 24)}
+                </span>
+                <br />
+                Nikkei Asia
+              </dt>
+              <dd>
+                <h4>
+                  <a href="https://asia.nikkei.com/Editor-s-Picks/Tea-Leaves/Pandemic-hits-couchsurfing-travel-bug">
+                    Pandemic hits &quot;couchsurfing&quot; travel bug
+                  </a>
+                </h4>
+              </dd>
+            </dl>
+
             <h4 className="media-list-divider text-muted">2017</h4>
             <dl className="dl-horizontal media-list">
               <dt>
