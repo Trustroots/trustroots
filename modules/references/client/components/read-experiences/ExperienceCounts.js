@@ -70,7 +70,7 @@ export default function ExperienceCounts({ experiences }) {
       summaries.push(t('Everyone said they would not recommend them.'));
     }
 
-    if (totalCount !== recommendCount && nonRecommendCount > 0) {
+    if (totalCount !== nonRecommendCount && nonRecommendCount > 0) {
       summaries.push(
         t('{{count}} did not recommend.', {
           count: nonRecommendCount,
