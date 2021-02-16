@@ -5,6 +5,9 @@ import { Trans, useTranslation } from 'react-i18next';
 export default function Media() {
   const { t } = useTranslation('pages');
 
+  const mediaDate = (...dateArgs) =>
+    t('{{date, MMMM Do}}', { date: new Date(...dateArgs) });
+
   return (
     <>
       <Board names="bokeh">
@@ -40,10 +43,32 @@ export default function Media() {
           <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
             <h3 id="in-media">{t('Trustroots in Media')}</h3>
 
+            <h4 className="media-list-divider text-muted">2020</h4>
+            <dl className="dl-horizontal media-list">
+              <dt>
+                <span className="text-muted">
+                  {/* June 24th */}
+                  {mediaDate(2020, 5, 24)}
+                </span>
+                <br />
+                Nikkei Asia
+              </dt>
+              <dd>
+                <h4>
+                  <a href="https://asia.nikkei.com/Editor-s-Picks/Tea-Leaves/Pandemic-hits-couchsurfing-travel-bug">
+                    Pandemic hits &quot;couchsurfing&quot; travel bug
+                  </a>
+                </h4>
+              </dd>
+            </dl>
+
             <h4 className="media-list-divider text-muted">2017</h4>
             <dl className="dl-horizontal media-list">
               <dt>
-                <span className="text-muted">{t('October 13th')}</span>
+                <span className="text-muted">
+                  {/* October 13th */}
+                  {mediaDate(2017, 9, 13)}
+                </span>
                 <br />
                 The Daily Dot
               </dt>
@@ -56,7 +81,10 @@ export default function Media() {
               </dd>
 
               <dt>
-                <span className="text-muted">{t('September 25th')}</span>
+                <span className="text-muted">
+                  {/* September 25th */}
+                  {mediaDate(2017, 8, 25)}
+                </span>
                 <br />
                 RSI Rete Uno ({t('Radio')})
               </dt>
@@ -72,7 +100,10 @@ export default function Media() {
               </dd>
 
               <dt>
-                <span className="text-muted">July 17th</span>
+                <span className="text-muted">
+                  {/* July 17th */}
+                  {mediaDate(2017, 6, 17)}
+                </span>
                 <br />
                 Freestyle Travelshow ({t('podcast')})
               </dt>
@@ -85,7 +116,10 @@ export default function Media() {
               </dd>
 
               <dt>
-                <span className="text-muted">April 3rd</span>
+                <span className="text-muted">
+                  {/* April 3rd */}
+                  {mediaDate(2017, 3, 3)}
+                </span>
                 <br />
                 Freestyle Travelshow ({t('podcast')})
               </dt>
@@ -98,11 +132,13 @@ export default function Media() {
                 <small className="text-muted">({t('from 37:00')})</small>
               </dd>
             </dl>
-
             <h4 className="media-list-divider text-muted">2016</h4>
             <dl className="dl-horizontal media-list">
               <dt>
-                <span className="text-muted">{t('Jan 13th')}</span>
+                <span className="text-muted">
+                  {/* January 13th */}
+                  {mediaDate(2016, 0, 13)}
+                </span>
                 <br />
                 Helsingin Sanomat
               </dt>
@@ -115,11 +151,13 @@ export default function Media() {
                 <small className="text-muted">{t('In Finnish.')}</small>
               </dd>
             </dl>
-
             <h4 className="media-list-divider text-muted">2015</h4>
             <dl className="dl-horizontal media-list">
               <dt>
-                <span className="text-muted">{t('Jul 22nd')}</span>
+                <span className="text-muted">
+                  {/* Jul 22nd */}
+                  {mediaDate(2015, 6, 22)}
+                </span>
                 <br />
                 MO — Mondiaal Nieuws
               </dt>
@@ -133,7 +171,11 @@ export default function Media() {
               </dd>
 
               <dt>
-                <span className="text-muted">{t('Jun 12th')}</span>
+                <span className="text-muted">
+                  {/* Jun 12th */}
+                  {mediaDate(2015, 5, 12)}
+                </span>
+                <span className="text-muted">{t('')}</span>
                 <br />
                 MatadorNetwork
               </dt>
@@ -146,7 +188,10 @@ export default function Media() {
               </dd>
 
               <dt>
-                <span className="text-muted">{t('May 24th')}</span>
+                <span className="text-muted">
+                  {/* May 24th */}
+                  {mediaDate(2015, 4, 24)}
+                </span>
                 <br />
                 Kernelmag-Dailydot
               </dt>
@@ -159,7 +204,10 @@ export default function Media() {
               </dd>
 
               <dt>
-                <span className="text-muted">{t('Apr 19th')}</span>
+                <span className="text-muted">
+                  {/* Apr 19th */}
+                  {mediaDate(2015, 3, 19)}
+                </span>
                 <br />
                 Frankfurter Allgemeine Zeitung
               </dt>
@@ -178,7 +226,10 @@ export default function Media() {
               </dd>
 
               <dt>
-                <span className="text-muted">{t('Jan 29th')}</span>
+                <span className="text-muted">
+                  {/* Jan 29th */}
+                  {mediaDate(2015, 0, 29)}
+                </span>
                 <br />
                 WAZ
               </dt>
@@ -191,7 +242,6 @@ export default function Media() {
                 <small className="text-muted">{t('In German.')}</small>
               </dd>
             </dl>
-
             <br />
             <h3 id="interviews">{t('Interviews')}</h3>
             <p>
@@ -206,12 +256,16 @@ export default function Media() {
                 Dutch, French, Spanish &amp; Finnish.
               </Trans>
             </p>
-
             <br />
             <br />
             <h3 id="fact-sheet">{t('Fact sheet')}</h3>
             <ul>
-              <li>{t('Launched Dec 23. 2014')}</li>
+              <li>
+                {t('Launched {{date, MMMM Do YYYY}}', {
+                  // Dec 23rd
+                  date: new Date(2014, 11, 23),
+                })}
+              </li>
               <li>{t('Non-profit & open source')}</li>
               <li>
                 {t('Entirely free and operating on basis of gift-economy')}
@@ -238,7 +292,6 @@ export default function Media() {
                 </Trans>
               </li>
             </ul>
-
             <br />
             <br />
             <h3 id="files">{t('Files')}</h3>
@@ -270,7 +323,6 @@ export default function Media() {
               </li>
             </ul>
             <br />
-
             <div className="media" id="logo">
               <div className="media-left">
                 <img
@@ -329,7 +381,7 @@ export default function Media() {
                   </li>
                   <li>
                     <a href="https://github.com/Trustroots/media/tree/master/logo">
-                      {t('More...')}
+                      {t('More…')}
                     </a>
                   </li>
                 </ul>
