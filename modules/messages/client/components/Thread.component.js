@@ -119,13 +119,12 @@ export default function Thread({ user, profileMinimumLength }) {
     return null; // important to return null to indicate "nothing to render"
   }
 
-  const chatWithUnknownUser = username === 'undefined';
-
   const [nextParams, setNextParams] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
   const [doesNotExist, setDoesNotExist] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const [messages, setMessages] = useState([]);
   const cacheKey = `messages.thread.${user._id}-${username}`;
 
@@ -137,8 +136,7 @@ export default function Thread({ user, profileMinimumLength }) {
   const userHasReplied = Boolean(
     messages.find(message => message.userFrom._id === user._id),
   );
-  const showReply =
-    (messages.length > 0 || !hasEmptyProfile) && !chatWithUnknownUser;
+  const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
   const showQuickReply = showReply && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
@@ -173,16 +171,27 @@ export default function Thread({ user, profileMinimumLength }) {
 
   async function fetchData() {
     if (isFetching) return;
-    const username = getRouteParams().username;
     try {
       setIsFetching(true);
       let otherUser;
-      if (username !== 'undefined') {
+      let userRemoved = false;
+      try {
         otherUser = await api.users.fetch(username);
-      } else {
-        const userId = getRouteParams().userId;
-        otherUser = createFakeUserObject(userId);
+      } catch (error) {
+        if (error.response?.status === 404) {
+          const userId = getRouteParams().userId;
+          if (userId !== undefined) {
+            otherUser = createFakeUserObject(userId);
+            userRemoved = true;
+          } else {
+            setDoesNotExist(true);
+            throw error;
+          }
+        } else {
+          throw error;
+        }
       }
+      setRemoved(userRemoved);
 
       const { messages, nextParams } = await api.messages.fetchMessages(
         otherUser._id,
@@ -192,7 +201,7 @@ export default function Thread({ user, profileMinimumLength }) {
         a.created.localeCompare(b.created),
       );
       // TODO should be done at the back-end?
-      if (chatWithUnknownUser) {
+      if (userRemoved) {
         const filledMessages = messages.map(message => {
           if (!message.userTo) {
             message.userTo = { _id: otherUser._id };
@@ -207,12 +216,6 @@ export default function Thread({ user, profileMinimumLength }) {
         setMessages(sortedMessages);
       }
       setNextParams(nextParams);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setDoesNotExist(true);
-      } else {
-        throw error;
-      }
     } finally {
       setIsFetching(false);
     }
