@@ -301,7 +301,7 @@ export default function Thread({ user, profileMinimumLength }) {
             </ThreadContainer>
           )}
         </div>
-        {otherUser && !isExtraSmall && (
+        {otherUser && !isExtraSmall && !removed && (
           <div className="col-sm-3 text-center">
             <Monkeybox user={otherUser} otherUser={user} />
             {messages.length > 0 && (
