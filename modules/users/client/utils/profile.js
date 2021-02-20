@@ -1,5 +1,11 @@
 import { useTranslation } from 'react-i18next';
 
+export function getBirthdate(birthdate) {
+  const { t } = useTranslation('users');
+
+  return t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
+}
+
 /**
  * Get label for profile gender options
  */

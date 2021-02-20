@@ -1,14 +1,7 @@
 <section class="search-sidebar-results">
-  <section
-    class="content-empty text-muted text-center"
-    tabindex="0"
-    aria-live="polite"
-    aria-label="Search results: nothing selected, please choose offers from the map to load them here."
+  <search-result-none
     ng-if="!search.offer && !search.loadingOffer"
-  >
-    <br /><br />
-    <em>Choose something from the map.</em>
-  </section>
+  ></search-result-none>
 
   <!-- Profile loading -->
   <div
@@ -39,6 +32,12 @@
     </div>
   </div>
   <!-- /Profile loading -->
+
+  <search-result
+    ng-if="search.offer && search.offer.$resolved && !search.loadingOffer"
+    authenticated-user="app.user"
+    offer="search.offer"
+  ></search-result>
 
   <!-- Profile -->
   <div

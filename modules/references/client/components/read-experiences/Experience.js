@@ -7,7 +7,7 @@ import styled from 'styled-components';
 
 // Internal dependencies
 import { DAYS_TO_REPLY } from '../../utils/constants';
-import { getGender } from '@/modules/core/client/utils/user_info';
+import { getGender } from '@/modules/users/client/utils/profile';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
