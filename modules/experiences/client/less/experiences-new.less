@@ -1,7 +1,7 @@
 @import '~less/global-variables';
 @import '~bootstrap/less/mixins/buttons';
 
-.reference-new-tabs {
+.experience-new-tabs {
   .nav-pills {
     margin-bottom: @padding-base-horizontal;
     margin-right: 1px;
@@ -10,7 +10,7 @@
       width: 100%;
       opacity: 0.5;
       &.active,
-      &.reference-new-tabs-tab-processed {
+      &.experience-new-tabs-tab-processed {
         opacity: 1;
       }
       + li {
@@ -41,7 +41,7 @@
           background: none;
         }
       }
-      &.reference-new-tabs-tab-processed > a {
+      &.experience-new-tabs-tab-processed > a {
         cursor: pointer;
       }
     }
@@ -68,7 +68,7 @@
 }
 
 .btn-group {
-  > .btn-reference-recommend {
+  > .btn-experience-recommend {
     &,
     &:hover {
       border-color: transparent;
@@ -79,37 +79,37 @@
       margin: 0 5px;
     }
   }
-  > .btn-reference-recommend-unknown {
-    .button-variant(@reference-recommend-unknown-color; @reference-recommend-unknown-bg; @reference-recommend-unknown-bg);
+  > .btn-experience-recommend-unknown {
+    .button-variant(@experience-recommend-unknown-color; @experience-recommend-unknown-bg; @experience-recommend-unknown-bg);
     &.active {
       span {
-        border-color: @reference-recommend-unknown-color;
+        border-color: @experience-recommend-unknown-color;
       }
     }
   }
-  > .btn-reference-recommend-no {
-    .button-variant(@reference-recommend-no-color; @reference-recommend-no-bg; @reference-recommend-no-bg);
+  > .btn-experience-recommend-no {
+    .button-variant(@experience-recommend-no-color; @experience-recommend-no-bg; @experience-recommend-no-bg);
     &.active {
       span {
-        border-color: @reference-recommend-no-color;
+        border-color: @experience-recommend-no-color;
       }
     }
   }
-  > .btn-reference-recommend-yes {
-    .button-variant(@reference-recommend-yes-color; @reference-recommend-yes-bg; @reference-recommend-yes-bg);
+  > .btn-experience-recommend-yes {
+    .button-variant(@experience-recommend-yes-color; @experience-recommend-yes-bg; @experience-recommend-yes-bg);
     &.active {
       span {
-        border-color: @reference-recommend-yes-color;
+        border-color: @experience-recommend-yes-color;
       }
     }
   }
 }
 
-.reference-new-tabs-alert {
+.experience-new-tabs-alert {
   margin-top: @padding-base-horizontal;
 }
 
-.reference-new-endorsement-selector {
+.experience-new-endorsement-selector {
   button.list-group-item {
     width: 50%;
     float: left;

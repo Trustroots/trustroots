@@ -8,12 +8,11 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
-import * as references from '@/modules/experiences/client/api/references.api';
+import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
 
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
-const api = { references };
 
-jest.mock('@/modules/experiences/client/api/references.api');
+jest.mock('@/modules/experiences/client/api/experiences.api');
 afterEach(() => jest.clearAllMocks());
 
 async function waitForLoader() {
@@ -33,9 +32,9 @@ describe('<CreateExperience />', () => {
     userTo = { _id: '222222', displayName: 'to-name', username: 'userto' };
   });
 
-  it('should not be possible to leave a reference to self', () => {
+  it('should not be possible to leave an experience to self', () => {
     const me = { _id: '123456', username: 'username' };
-    api.references.readMine.mockResolvedValueOnce([]);
+    experiencesApi.readMine.mockResolvedValueOnce([]);
     const { queryByRole } = render(
       <CreateExperience userFrom={me} userTo={me} />,
     );
@@ -44,16 +43,16 @@ describe('<CreateExperience />', () => {
     );
   });
 
-  it('check whether the reference exists at the beginning', () => {
-    api.references.readMine.mockResolvedValueOnce([]);
+  it('check whether the experience exists at the beginning', () => {
+    experiencesApi.readMine.mockResolvedValueOnce([]);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
-    expect(api.references.readMine).toBeCalledWith({
+    expect(experiencesApi.readMine).toBeCalledWith({
       userWith: userTo._id,
     });
   });
 
-  it('can not leave a second reference - without response', async () => {
-    api.references.readMine.mockResolvedValueOnce({
+  it('can not leave a second experience - without response', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce({
       userFrom: userFrom._id,
       public: false,
       response: null,
@@ -65,13 +64,13 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(api.references.readMine).toBeCalledWith({
+    expect(experiencesApi.readMine).toBeCalledWith({
       userWith: userTo._id,
     });
   });
 
-  it('can not leave a second reference - with response', async () => {
-    api.references.readMine.mockResolvedValueOnce({
+  it('can not leave a second experience - with response', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce({
       userFrom: userTo._id,
       public: true,
       response: 'mocked response',
@@ -83,13 +82,13 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(api.references.readMine).toBeCalledWith({
+    expect(experiencesApi.readMine).toBeCalledWith({
       userWith: userTo._id,
     });
   });
 
-  it('can leave a reference (reference form is available)', async () => {
-    api.references.readMine.mockResolvedValueOnce(null);
+  it('can leave an experience (experience form is available)', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
     const { queryByLabelText } = render(
       <CreateExperience userFrom={userFrom} userTo={userTo} />,
     );
@@ -99,9 +98,9 @@ describe('<CreateExperience />', () => {
     }
   });
 
-  it('submit a reference', async () => {
-    api.references.readMine.mockResolvedValueOnce(null);
-    api.references.create.mockResolvedValueOnce({ public: false });
+  it('submit an experience', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+    experiencesApi.create.mockResolvedValueOnce({ public: false });
 
     const {
       getByText,
@@ -135,7 +134,7 @@ describe('<CreateExperience />', () => {
 
     fireEvent.click(getAllByText('Finish')[0]);
 
-    expect(api.references.create).toHaveBeenCalledWith({
+    expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
         met: false,
         hostedMe: true,
@@ -158,8 +157,8 @@ describe('<CreateExperience />', () => {
   });
 
   it('submit a report when recommend is no and user wants to send a report', async () => {
-    api.references.readMine.mockResolvedValueOnce(null);
-    api.references.create.mockResolvedValueOnce({ public: false });
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+    experiencesApi.create.mockResolvedValueOnce({ public: false });
 
     const {
       getByText,
@@ -189,7 +188,7 @@ describe('<CreateExperience />', () => {
 
     fireEvent.click(getAllByText('Finish')[0]);
 
-    expect(api.references.create).toHaveBeenCalledWith({
+    expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
         met: false,
         hostedMe: true,
@@ -200,7 +199,7 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    expect(api.references.report).toHaveBeenCalledWith(
+    expect(experiencesApi.report).toHaveBeenCalledWith(
       userTo,
       'they were mean to me',
     );

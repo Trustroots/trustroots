@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
-import { read as readExperiences } from '../api/references.api';
+import { read as readExperiences } from '../api/experiences.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ExperienceCounts from './read-experiences/ExperienceCounts';
 import ExperiencesSection from './read-experiences/ExperiencesSection';

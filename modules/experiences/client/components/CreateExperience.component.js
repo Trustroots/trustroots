@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Tab, Tabs } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
-import * as references from '../api/references.api';
+import * as experiencesApi from '../api/experiences.api';
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import Interaction from './create-experience/Interaction';
 import Recommend from './create-experience/Recommend';
@@ -13,8 +13,6 @@ import DuplicateInfo from './create-experience/DuplicateInfo';
 import SubmittedInfo from './create-experience/SubmittedInfo';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createValidator } from '@/modules/core/client/utils/validation';
-
-const api = { references };
 
 export default function CreateExperience({ userFrom, userTo }) {
   const { t } = useTranslation('experiences');
@@ -36,7 +34,7 @@ export default function CreateExperience({ userFrom, userTo }) {
 
   useEffect(() => {
     (async () => {
-      const experience = await api.references.readMine({
+      const experience = await experiencesApi.readMine({
         userWith: userTo._id,
       });
       if (experience) {
@@ -79,9 +77,9 @@ export default function CreateExperience({ userFrom, userTo }) {
 
     // save the experience
     const [savedExperience] = await Promise.all([
-      api.references.create({ ...experience, userTo: userTo._id }),
+      experiencesApi.create({ ...experience, userTo: userTo._id }),
       recommend === 'no' && report
-        ? api.references.report(userTo, reportMessage)
+        ? experiencesApi.report(userTo, reportMessage)
         : null,
     ]);
 
@@ -198,7 +196,8 @@ export default function CreateExperience({ userFrom, userTo }) {
         activeKey={step}
         bsStyle="pills"
         onSelect={() => {}}
-        id="create-reference-tabs"
+        className="experience-new-tabs"
+        id="create-experience-tabs"
       >
         {tabs.map(({ id, component, title }, i) => {
           return (
