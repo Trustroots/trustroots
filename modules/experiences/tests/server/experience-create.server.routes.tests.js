@@ -4,24 +4,24 @@ const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const faker = require('faker');
-const Reference = mongoose.model('Reference');
+const Experience = mongoose.model('Experience');
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
 const config = require(path.resolve('./config/config'));
 
-describe('Create a reference', () => {
-  // user can leave a reference to anyone
+describe('Create an experience', () => {
+  // user can leave an experience to anyone
   //  - types of interaction
   //  - recommend
   //  - from whom
   //  - to whom
-  // POST /references
-  // reference can't be modified or removed
-  // email notification will be sent to the receiver of the reference
-  // the receiver has some time to give a reference, too.
+  // POST /experiences
+  // experience can't be modified or removed
+  // email notification will be sent to the receiver of the experience
+  // the receiver has some time to give an experience, too.
   // after this time the only accepted answers are yes/ignore.
-  // after the given time or after both left reference, both references become public
+  // after the given time or after both left experience, both experiences become public
 
   // we'll catch email and push notifications
   const jobs = testutils.catchJobs();
@@ -62,8 +62,8 @@ describe('Create a reference', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     context('valid request', () => {
-      context('every reference', () => {
-        it('respond with 201 Created and the new reference in body', async () => {
+      context('every experience', () => {
+        it('respond with 201 Created and the new experience in body', async () => {
           const feedbackPublic = 'they were very nice and good at cooking';
           const { body } = await agent
             .post('/api/experiences')
@@ -96,13 +96,13 @@ describe('Create a reference', () => {
           });
         });
 
-        it('save reference to database', async () => {
-          // before, reference shouldn't be found in the database
-          const beforeReferences = await Reference.find({
+        it('save experience to database', async () => {
+          // before, experience shouldn't be found in the database
+          const beforeExperiences = await Experience.find({
             userFrom: user1._id,
             userTo: user2._id,
           }).exec();
-          should(beforeReferences).have.length(0);
+          should(beforeExperiences).have.length(0);
 
           // send request
           await agent
@@ -118,13 +118,13 @@ describe('Create a reference', () => {
             })
             .expect(201);
 
-          // after, reference should be found in the database
-          const afterReferences = await Reference.find({
+          // after, experience should be found in the database
+          const afterExperiences = await Experience.find({
             userFrom: user1._id,
             userTo: user2._id,
           }).exec();
-          should(afterReferences).have.length(1);
-          should(afterReferences[0]).match({
+          should(afterExperiences).have.length(1);
+          should(afterExperiences[0]).match({
             userFrom: user1._id,
             userTo: user2._id,
             interactions: {
@@ -135,7 +135,7 @@ describe('Create a reference', () => {
           });
         });
 
-        it('[duplicate reference (the same (from, to) combination)] 409 Conflict', async () => {
+        it('[duplicate experience (the same (from, to) combination)] 409 Conflict', async () => {
           // send the first request and expect 201 Created
           await agent
             .post('/api/experiences')
@@ -165,7 +165,7 @@ describe('Create a reference', () => {
             .expect(409);
         });
 
-        it('[creating a reference for self] 400', async () => {
+        it('[creating an experience for self] 400', async () => {
           const { body } = await agent
             .post('/api/experiences')
             .send({
@@ -187,7 +187,7 @@ describe('Create a reference', () => {
           });
         });
 
-        it('[creating a reference for nonexistent user] 404', async () => {
+        it('[creating an experience for nonexistent user] 404', async () => {
           const { body } = await agent
             .post('/api/experiences')
             .send({
@@ -209,7 +209,7 @@ describe('Create a reference', () => {
           });
         });
 
-        it('[creating a reference for non-public user] 404', async () => {
+        it('[creating an experience for non-public user] 404', async () => {
           const { body } = await agent
             .post('/api/experiences')
             .send({
@@ -232,8 +232,8 @@ describe('Create a reference', () => {
         });
       });
 
-      context('initial reference', () => {
-        it('the reference is saved as private', async () => {
+      context('initial experience', () => {
+        it('the experience is saved as private', async () => {
           // send request
           const { body } = await agent
             .post('/api/experiences')
@@ -250,12 +250,12 @@ describe('Create a reference', () => {
 
           should(body).have.property('public', false);
 
-          // after, reference should be found in the database
-          const reference = await Reference.findOne({
+          // after, experience should be found in the database
+          const experience = await Experience.findOne({
             userFrom: user1._id,
             userTo: user2._id,
           }).exec();
-          should(reference).have.property('public', false);
+          should(experience).have.property('public', false);
         });
 
         it('send email notification to target user', async () => {
@@ -289,10 +289,10 @@ describe('Create a reference', () => {
             `/profile/${user1.username}/experiences/new`,
           );
           should(job.data.text).containEql(
-            `${config.limits.timeToReplyReference.days} days`,
+            `${config.limits.timeToReplyExperience.days} days`,
           );
           should(job.data.html).containEql(
-            `${config.limits.timeToReplyReference.days} days`,
+            `${config.limits.timeToReplyExperience.days} days`,
           );
         });
 
@@ -326,10 +326,10 @@ describe('Create a reference', () => {
         });
       });
 
-      context('reply reference', () => {
-        it('set both references as public', async () => {
-          // first create a non-public reference in the opposite direction
-          const reference = new Reference({
+      context('reply experience', () => {
+        it('set both experiences as public', async () => {
+          // first create a non-public experience in the opposite direction
+          const experience = new Experience({
             userFrom: user2._id,
             userTo: user1._id,
             met: true,
@@ -337,9 +337,9 @@ describe('Create a reference', () => {
             public: false,
           });
 
-          await reference.save();
+          await experience.save();
 
-          // create the opposite direction reference
+          // create the opposite direction experience
           const { body } = await agent
             .post('/api/experiences')
             .send({
@@ -355,23 +355,23 @@ describe('Create a reference', () => {
 
           should(body).have.property('public', true);
 
-          // after, both references should be found in the database and public
-          const reference2To1 = await Reference.findOne({
+          // after, both experiences should be found in the database and public
+          const experience2To1 = await Experience.findOne({
             userFrom: user2._id,
             userTo: user1._id,
           }).exec();
-          should(reference2To1).have.property('public', true);
+          should(experience2To1).have.property('public', true);
 
-          const reference1To2 = await Reference.findOne({
+          const experience1To2 = await Experience.findOne({
             userFrom: user1._id,
             userTo: user2._id,
           }).exec();
-          should(reference1To2).have.property('public', true);
+          should(experience1To2).have.property('public', true);
         });
 
-        it('only positive recommendation is allowed when opposite-direction public reference exists', async () => {
-          // first create a public reference in the opposite direction
-          const reference = new Reference({
+        it('only positive recommendation is allowed when opposite-direction public experience exists', async () => {
+          // first create a public experience in the opposite direction
+          const experience = new Experience({
             userFrom: user2._id,
             userTo: user1._id,
             met: true,
@@ -379,9 +379,9 @@ describe('Create a reference', () => {
             public: true,
           });
 
-          await reference.save();
+          await experience.save();
 
-          // create a response reference with recommend: 'no'
+          // create a response experience with recommend: 'no'
           // should fail
           const { body } = await agent
             .post('/api/experiences')
@@ -403,7 +403,7 @@ describe('Create a reference', () => {
             },
           });
 
-          // create a response reference with recommend: 'yes'
+          // create a response experience with recommend: 'yes'
           // should succeed
           await agent
             .post('/api/experiences')
@@ -419,20 +419,20 @@ describe('Create a reference', () => {
             .expect(201);
         });
 
-        it('send email notification about the received reference', async () => {
+        it('send email notification about the received experience', async () => {
           should(jobs.length).equal(0);
 
-          // First, create a reference in the opposite direction
-          const reference = new Reference({
+          // First, create an experience in the opposite direction
+          const experience = new Experience({
             userFrom: user2._id,
             userTo: user1._id,
             met: true,
             recommend: 'no',
           });
-          await reference.save();
+          await experience.save();
 
-          // Then respond to that reference
-          const { body: referenceResponse } = await agent
+          // Then respond to that experience
+          const { body: experienceResponse } = await agent
             .post('/api/experiences')
             .send({
               userTo: user2._id,
@@ -455,18 +455,18 @@ describe('Create a reference', () => {
 
           should(job.data.to.address).equal(user2.email);
           should(job.data.text).containEql(
-            `/profile/${user2.username}/experiences#${referenceResponse._id}`,
+            `/profile/${user2.username}/experiences#${experienceResponse._id}`,
           );
           should(job.data.html).containEql(
-            `/profile/${user2.username}/experiences?utm_source=transactional-email&amp;utm_medium=email&amp;utm_campaign=reference-notification-second&amp;utm_content=see-references#${referenceResponse._id}`,
+            `/profile/${user2.username}/experiences?utm_source=transactional-email&amp;utm_medium=email&amp;utm_campaign=experience-notification-second&amp;utm_content=see-experiences#${experienceResponse._id}`,
           );
         });
 
         it('push notification', async () => {
           should(jobs.length).equal(0);
 
-          // First, create a reference in the opposite direction
-          const reference = new Reference({
+          // First, create an experience in the opposite direction
+          const experience = new Experience({
             userFrom: user2._id,
             userTo: user1._id,
             interaction: {
@@ -474,10 +474,10 @@ describe('Create a reference', () => {
             },
             recommend: 'no',
           });
-          await reference.save();
+          await experience.save();
 
-          // Then respond to that reference
-          const { body: referenceResponse } = await agent
+          // Then respond to that experience
+          const { body: experienceResponse } = await agent
             .post('/api/experiences')
             .send({
               userTo: user2._id,
@@ -501,7 +501,7 @@ describe('Create a reference', () => {
           );
 
           should(job.data.notification.click_action).containEql(
-            `/profile/${user2.username}/experiences?utm_source=push-notification&utm_medium=fcm&utm_campaign=new-reference&utm_content=read#${referenceResponse._id}`,
+            `/profile/${user2.username}/experiences?utm_source=push-notification&utm_medium=fcm&utm_campaign=new-experience&utm_content=read#${experienceResponse._id}`,
           );
         });
       });

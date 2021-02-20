@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 
 const {
   generateUsers,
-  generateReferences,
+  generateExperiences,
 } = require('../common/data.common.testutil');
 
 /**
@@ -48,14 +48,14 @@ async function saveUsers(_docs, done = () => {}) {
 
 /**
  * save references to database calls callback if provided and returns Promise with saved documents
- * @param {Reference[]} _docs - Reference documents to save
+ * @param {Experience[]} _docs - Experience documents to save
  * @param {callback} [done] - optional callback
- * @returns {Promise<Reference[]>}
+ * @returns {Promise<Experience[]>}
  * the callback support can be removed when the whole codebase is migrated to ES6
  */
-async function saveReferences(_docs, done = () => {}) {
+async function saveExperiences(_docs, done = () => {}) {
   try {
-    const docs = await saveDocumentsToCollection('Reference', _docs);
+    const docs = await saveDocumentsToCollection('Experience', _docs);
     done(null, docs);
     return docs;
   } catch (e) {
@@ -82,7 +82,7 @@ async function clearDatabaseCollections(collections) {
  * The new collections should be added as needed
  * Eventually this list shall become complete
  */
-const collections = ['User', 'Reference', 'ReferenceThread'];
+const collections = ['User', 'Experience', 'ExperienceThread'];
 
 /**
  * Clear all collections in a database
@@ -118,8 +118,8 @@ async function signOut(agent) {
 module.exports = {
   generateUsers,
   saveUsers,
-  generateReferences,
-  saveReferences,
+  generateExperiences,
+  saveExperiences,
   clearDatabase,
   signIn,
   signOut,

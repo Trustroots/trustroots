@@ -3,9 +3,9 @@ const mongoose = require('mongoose');
 const path = require('path');
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const User = mongoose.model('User');
-const Reference = mongoose.model('Reference');
+const Experience = mongoose.model('Experience');
 
-describe('Reference Model Unit Tests', () => {
+describe('Experience Model Unit Tests', () => {
   describe('Method Save', () => {
     let user1;
     let user2;
@@ -20,7 +20,7 @@ describe('Reference Model Unit Tests', () => {
     afterEach(utils.clearDatabase);
 
     it('save both directions without problems', async () => {
-      const reference1 = new Reference({
+      const experience1 = new Experience({
         userFrom: user1._id,
         userTo: user2._id,
         interactions: {
@@ -31,7 +31,7 @@ describe('Reference Model Unit Tests', () => {
         recommend: 'no',
       });
 
-      const reference2 = new Reference({
+      const experience2 = new Experience({
         userFrom: user2._id,
         userTo: user1._id,
         interactions: {
@@ -42,12 +42,12 @@ describe('Reference Model Unit Tests', () => {
         recommend: 'yes',
       });
 
-      await should(reference1.save()).be.resolved();
-      await should(reference2.save()).be.resolved();
+      await should(experience1.save()).be.resolved();
+      await should(experience2.save()).be.resolved();
     });
 
-    it('save multiple references from one user to different users without problems', async () => {
-      const reference1 = new Reference({
+    it('save multiple experiences from one user to different users without problems', async () => {
+      const experience1 = new Experience({
         userFrom: user1._id,
         userTo: user2._id,
         interactions: {
@@ -58,7 +58,7 @@ describe('Reference Model Unit Tests', () => {
         recommend: 'no',
       });
 
-      const reference2 = new Reference({
+      const experience2 = new Experience({
         userFrom: user1._id,
         userTo: user3._id,
         interactions: {
@@ -69,12 +69,12 @@ describe('Reference Model Unit Tests', () => {
         recommend: 'yes',
       });
 
-      await should(reference1.save()).be.resolved();
-      await should(reference2.save()).be.resolved();
+      await should(experience1.save()).be.resolved();
+      await should(experience2.save()).be.resolved();
     });
 
     it("show error when saving invalid values of 'met', 'recommend', 'hostedMe', 'hostedThem'", async () => {
-      const reference = new Reference({
+      const experience = new Experience({
         userFrom: user1._id,
         userTo: user2._id,
         interactions: {
@@ -85,7 +85,7 @@ describe('Reference Model Unit Tests', () => {
         recommend: 'bar',
       });
 
-      const err = await should(reference.save()).be.rejected();
+      const err = await should(experience.save()).be.rejected();
       should(err).match({
         errors: {
           'interactions.met': { value: 'foo', kind: 'Boolean' },
@@ -96,22 +96,22 @@ describe('Reference Model Unit Tests', () => {
       });
     });
 
-    it('show error when saving duplicate reference (reference (from, to) already exists)', async () => {
-      const reference1 = new Reference({
+    it('show error when saving duplicate experience (experience (from, to) already exists)', async () => {
+      const experience1 = new Experience({
         userFrom: user2._id,
         userTo: user1._id,
       });
 
-      const reference2 = new Reference({
+      const experience2 = new Experience({
         userFrom: user2._id,
         userTo: user1._id,
       });
 
-      // the first reference should be successfully saved
-      await should(reference1.save()).be.resolved();
+      // the first experience should be successfully saved
+      await should(experience1.save()).be.resolved();
 
-      // the second reference should fail with unique error
-      const err = await should(reference2.save()).be.rejected();
+      // the second experience should fail with unique error
+      const err = await should(experience2.save()).be.rejected();
       should(err)
         .have.property('errors')
         .match({

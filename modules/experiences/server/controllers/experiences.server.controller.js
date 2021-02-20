@@ -18,7 +18,7 @@ const pushService = require(path.resolve(
 const userProfile = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));
-const Experience = mongoose.model('Reference');
+const Experience = mongoose.model('Experience');
 const User = mongoose.model('User');
 
 /**
@@ -80,7 +80,8 @@ function validateCreate(req) {
     req.body.feedbackPublic = textService.plainText(req.body.feedbackPublic);
     const { feedbackPublic } = req.body;
     if (
-      feedbackPublic.length > config.limits.maximumReferenceFeedbackPublicLength
+      feedbackPublic.length >
+      config.limits.maximumExperienceFeedbackPublicLength
     ) {
       valid = false;
       details.feedbackPublic = 'toolong';
@@ -275,12 +276,12 @@ async function sendEmailNotification(
   otherExperience,
 ) {
   if (!otherExperience) {
-    return util.promisify(emailService.sendReferenceNotificationFirst)(
+    return util.promisify(emailService.sendExperienceNotificationFirst)(
       userFrom,
       userTo,
     );
   } else {
-    return util.promisify(emailService.sendReferenceNotificationSecond)(
+    return util.promisify(emailService.sendExperienceNotificationSecond)(
       userFrom,
       userTo,
       savedExperience,
@@ -295,14 +296,14 @@ async function sendPushNotification(
 ) {
   // First push notification when first experience-pair is written
   if (isFirst) {
-    return util.promisify(pushService.notifyNewReferenceFirst)(
+    return util.promisify(pushService.notifyNewExperienceFirst)(
       userFrom,
       userTo,
     );
   }
 
   // Second push notification when both experiences become public
-  return util.promisify(pushService.notifyNewReferenceSecond)(
+  return util.promisify(pushService.notifyNewExperienceSecond)(
     userFrom,
     userTo,
     experienceId,

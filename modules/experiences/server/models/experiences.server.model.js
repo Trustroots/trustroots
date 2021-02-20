@@ -6,20 +6,14 @@ const uniqueValidation = require('mongoose-beautiful-unique-validation');
 const Schema = mongoose.Schema;
 
 /**
- * ReferenceUser Schema
+ * Experience Schema
  */
-const ReferenceSchema = new Schema({
+const ExperienceSchema = new Schema({
   created: {
     type: Date,
     default: () => Date.now(), // Date.now is wrapped for sinon.useFakeTimers()
     required: true,
   },
-  /*
-  modified: {
-    type: Date,
-    default: Date.now
-  },
-  */
   public: {
     type: Boolean,
     default: false,
@@ -61,19 +55,14 @@ const ReferenceSchema = new Schema({
   feedbackPublic: {
     type: String,
     trim: true,
-  } /*
-  feedbackPrivate: {
-    type: String,
-    trim: true
   },
-  */,
 });
 
 /**
  * Indexing
  */
-ReferenceSchema.plugin(uniqueValidation);
-ReferenceSchema.index({ userFrom: 1, userTo: 1, public: 1, created: 1 });
-ReferenceSchema.index({ userFrom: 1, userTo: 1 }, { unique: true });
+ExperienceSchema.plugin(uniqueValidation);
+ExperienceSchema.index({ userFrom: 1, userTo: 1, public: 1, created: 1 });
+ExperienceSchema.index({ userFrom: 1, userTo: 1 }, { unique: true });
 
-mongoose.model('Reference', ReferenceSchema);
+mongoose.model('Experience', ExperienceSchema);

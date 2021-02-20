@@ -9,12 +9,12 @@ const userProfile = require(path.resolve(
 ));
 const express = require(path.resolve('./config/lib/express'));
 
-describe('Read references by userTo Id', () => {
-  // GET /references?userFrom=:UserId&userTo=:UserId
+describe('Read experiences by userTo Id', () => {
+  // GET /experiences?userFrom=:UserId&userTo=:UserId
 
-  // logged in public user can read all public references by userTo
-  // ...                   can read all public and private references to self
-  // ...                   can not read private references to self
+  // logged in public user can read all public experiences by userTo
+  // ...                   can read all public and private experiences to self
+  // ...                   can not read private experiences to self
   // when userFrom or userTo doesn't exist, we simply return empty list
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
@@ -44,12 +44,12 @@ describe('Read references by userTo Id', () => {
   /**
    * array of [userFrom, userTo, values]
    *
-   * Overview of the referenceData
-   * - row: userFrom - index of user within array of users provided to utils.generateReferences()
+   * Overview of the experienceData
+   * - row: userFrom - index of user within array of users provided to utils.generateExperiences()
    * - column: userTo - same as row
-   * - T: reference exists and is public
-   * - F: reference exists and is not public
-   * - .: reference doesn't exist
+   * - T: experience exists and is public
+   * - F: experience exists and is not public
+   * - .: experience doesn't exist
    *
    *   0 1 2 3 4 5
    * 0 . T T F . .
@@ -59,7 +59,7 @@ describe('Read references by userTo Id', () => {
    * 4 T T . . . .
    * 5 F F . . . .
    */
-  const referenceData = [
+  const experienceData = [
     [0, 1],
     [0, 2],
     [0, 3, { public: false }],
@@ -73,9 +73,9 @@ describe('Read references by userTo Id', () => {
   ];
 
   beforeEach(async () => {
-    const _references = utils.generateReferences(users, referenceData);
+    const _experiences = utils.generateExperiences(users, experienceData);
 
-    await utils.saveReferences(_references);
+    await utils.saveExperiences(_experiences);
   });
 
   afterEach(utils.clearDatabase);
@@ -84,7 +84,7 @@ describe('Read references by userTo Id', () => {
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    it('[param userTo] respond with all public references to userTo', async () => {
+    it('[param userTo] respond with all public experiences to userTo', async () => {
       const { body } = await agent
         .get(`/api/experiences?userTo=${users[1]._id}`)
         .expect(200);
@@ -94,7 +94,7 @@ describe('Read references by userTo Id', () => {
       should(body).be.Array().of.length(2);
     });
 
-    it('the references in response have expected structure, userFrom & userTo have miniProfile', async () => {
+    it('the experiences in response have expected structure, userFrom & userTo have miniProfile', async () => {
       const { body } = await agent
         .get(`/api/experiences?userTo=${users[1]._id}`)
         .expect(200);
@@ -150,7 +150,7 @@ describe('Read references by userTo Id', () => {
       should(body[1].userFrom._id).eql(users[4].id);
     });
 
-    it('[param userTo] userTo is self, respond with all public and pending references to userTo', async () => {
+    it('[param userTo] userTo is self, respond with all public and pending experiences to userTo', async () => {
       const { body } = await agent
         .get(`/api/experiences?userTo=${users[0]._id}`)
         .expect(200);
@@ -159,7 +159,7 @@ describe('Read references by userTo Id', () => {
       should(body).be.Array().of.length(3);
     });
 
-    it('userTo is self, private reference has only limited fields', async () => {
+    it('userTo is self, private experience has only limited fields', async () => {
       const { body } = await agent
         .get(`/api/experiences?userTo=${users[0]._id}`)
         .expect(200);

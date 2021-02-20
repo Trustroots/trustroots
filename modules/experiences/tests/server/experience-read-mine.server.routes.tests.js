@@ -6,8 +6,8 @@ const sinon = require('sinon');
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
 
-describe('Read my reference to userTo Id', () => {
-  // GET /my-reference&userTo=:UserId
+describe('Read my experience to userTo Id', () => {
+  // GET /my-experience&userTo=:UserId
 
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
@@ -37,12 +37,12 @@ describe('Read my reference to userTo Id', () => {
   /**
    * array of [userFrom, userTo, values]
    *
-   * Overview of the referenceData
-   * - row: userFrom - index of user within array of users provided to utils.generateReferences()
+   * Overview of the experienceData
+   * - row: userFrom - index of user within array of users provided to utils.generateExperiences()
    * - column: userTo - same as row
-   * - T: reference exists and is public
-   * - F: reference exists and is not public
-   * - .: reference doesn't exist
+   * - T: experience exists and is public
+   * - F: experience exists and is not public
+   * - .: experience doesn't exist
    *
    *   0 1 2 3 4 5 6
    * 0 . T T F . . .
@@ -53,7 +53,7 @@ describe('Read my reference to userTo Id', () => {
    * 5 F
    * 6 .
    */
-  const referenceData = [
+  const experienceData = [
     [0, 1],
     [0, 2],
     [0, 3, { public: false }],
@@ -63,9 +63,9 @@ describe('Read my reference to userTo Id', () => {
   ];
 
   beforeEach(async () => {
-    const _references = utils.generateReferences(users, referenceData);
+    const _experiences = utils.generateExperiences(users, experienceData);
 
-    await utils.saveReferences(_references);
+    await utils.saveExperiences(_experiences);
   });
 
   afterEach(utils.clearDatabase);

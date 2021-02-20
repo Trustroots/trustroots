@@ -5,8 +5,8 @@ const request = require('supertest');
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
 
-describe('Read count of references received by user', () => {
-  // GET /references/count?userTo=:UserId
+describe('Read count of experiences received by user', () => {
+  // GET /experiences/count?userTo=:UserId
 
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
@@ -24,12 +24,12 @@ describe('Read count of references received by user', () => {
   /**
    * array of [userFrom, userTo, values]
    *
-   * Overview of the referenceData
-   * - row: userFrom - index of user within array of users provided to utils.generateReferences()
+   * Overview of the experienceData
+   * - row: userFrom - index of user within array of users provided to utils.generateExperiences()
    * - column: userTo - same as row
-   * - T: reference exists and is public
-   * - F: reference exists and is not public
-   * - .: reference doesn't exist
+   * - T: experience exists and is public
+   * - F: experience exists and is not public
+   * - .: experience doesn't exist
    *
    *   0 1 2 3 4 5
    * 0 . T T F F T
@@ -39,7 +39,7 @@ describe('Read count of references received by user', () => {
    * 4 F . . . . .
    * 5 T . . . . .
    */
-  const referenceData = [
+  const experienceData = [
     [0, 1],
     [0, 2],
     [0, 3, { public: false }],
@@ -62,8 +62,8 @@ describe('Read count of references received by user', () => {
   before(async () => {
     users = await utils.saveUsers(_users);
 
-    const _references = utils.generateReferences(users, referenceData);
-    await utils.saveReferences(_references);
+    const _experiences = utils.generateExperiences(users, experienceData);
+    await utils.saveExperiences(_experiences);
   });
 
   after(utils.clearDatabase);
@@ -72,17 +72,17 @@ describe('Read count of references received by user', () => {
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    it('respond with all public references to userTo', async () => {
+    it('respond with all public experiences to userTo', async () => {
       const { body } = await agent
         .get(`/api/experiences/count?userTo=${users[2]._id}`)
         .expect(200);
 
-      // user2 has received 2 public and 1 non-public reference
+      // user2 has received 2 public and 1 non-public experience
       body.count.should.equal(2);
       should.not.exist(body.hasPending);
     });
 
-    it('private references are included when own profile', async () => {
+    it('private experiences are included when own profile', async () => {
       const { body } = await agent
         .get(`/api/experiences/count?userTo=${users[0]._id}`)
         .expect(200);

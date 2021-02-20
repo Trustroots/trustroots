@@ -10,11 +10,11 @@ const userProfile = require(path.resolve(
 ));
 const express = require(path.resolve('./config/lib/express'));
 
-describe('Read a single reference by reference id', () => {
-  // GET /experiences/:referenceId
-  // logged in public user can read a single public reference by id
-  // .....                 can read a single private reference if it is from self
-  // logged in public user can not read other private references
+describe('Read a single experience by experience id', () => {
+  // GET /experiences/:experienceId
+  // logged in public user can read a single public experience by id
+  // .....                 can read a single private experience if it is from self
+  // logged in public user can not read other private experiences
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
 
@@ -27,7 +27,7 @@ describe('Read a single reference by reference id', () => {
   const _users = [..._usersPublic, ..._usersPrivate];
 
   let users;
-  let references;
+  let experiences;
 
   beforeEach(() => {
     sinon.useFakeTimers({
@@ -47,12 +47,12 @@ describe('Read a single reference by reference id', () => {
   /**
    * array of [userFrom, userTo, values]
    *
-   * Overview of the referenceData
-   * - row: userFrom - index of user within array of users provided to utils.generateReferences()
+   * Overview of the experienceData
+   * - row: userFrom - index of user within array of users provided to utils.generateExperiences()
    * - column: userTo - same as row
-   * - T: reference exists and is public
-   * - F: reference exists and is not public
-   * - .: reference doesn't exist
+   * - T: experience exists and is public
+   * - F: experience exists and is not public
+   * - .: experience doesn't exist
    *
    *   0 1 2 3
    * 0 . . F T
@@ -60,7 +60,7 @@ describe('Read a single reference by reference id', () => {
    * 2 . T . .
    * 3 . F . .
    */
-  const referenceData = [
+  const experienceData = [
     [0, 3],
     [0, 2, { public: false }],
     [1, 0, { public: false }],
@@ -70,8 +70,8 @@ describe('Read a single reference by reference id', () => {
   ];
 
   beforeEach(async () => {
-    const _references = utils.generateReferences(users, referenceData);
-    references = await utils.saveReferences(_references);
+    const _experiences = utils.generateExperiences(users, experienceData);
+    experiences = await utils.saveExperiences(_experiences);
   });
 
   afterEach(utils.clearDatabase);
@@ -80,9 +80,9 @@ describe('Read a single reference by reference id', () => {
     beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
     afterEach(utils.signOut.bind(this, agent));
 
-    it('read a single public reference by id that has response', async () => {
+    it('read a single public experience by id that has response', async () => {
       const { body } = await agent
-        .get(`/api/experiences/${references[3]._id}`)
+        .get(`/api/experiences/${experiences[3]._id}`)
         .expect(200);
 
       // pre-collect expected values of users
@@ -97,46 +97,46 @@ describe('Read a single reference by reference id', () => {
         userFrom: userFromExp,
         userTo: userToExp,
         created: new Date().toISOString(),
-        _id: references[3]._id.toString(),
-        recommend: references[3].recommend,
+        _id: experiences[3]._id.toString(),
+        recommend: experiences[3].recommend,
         interactions: {
-          met: references[3].interactions.met,
-          hostedMe: references[3].interactions.hostedMe,
-          hostedThem: references[3].interactions.hostedThem,
+          met: experiences[3].interactions.met,
+          hostedMe: experiences[3].interactions.hostedMe,
+          hostedThem: experiences[3].interactions.hostedThem,
         },
         response: {
-          _id: references[4]._id.toString(),
+          _id: experiences[4]._id.toString(),
           created: new Date().toISOString(),
-          recommend: references[4].recommend,
+          recommend: experiences[4].recommend,
           interactions: {
-            met: references[4].interactions.met,
-            hostedMe: references[4].interactions.hostedMe,
-            hostedThem: references[4].interactions.hostedThem,
+            met: experiences[4].interactions.met,
+            hostedMe: experiences[4].interactions.hostedMe,
+            hostedThem: experiences[4].interactions.hostedThem,
           },
         },
       });
     });
 
-    it('read a single private reference if it is from self', async () => {
+    it('read a single private experience if it is from self', async () => {
       const { body } = await agent
-        .get(`/api/experiences/${references[1]._id}`)
+        .get(`/api/experiences/${experiences[1]._id}`)
         .expect(200);
 
       should(body).match({
         public: false,
-        _id: references[1]._id.toString(),
+        _id: experiences[1]._id.toString(),
         response: null,
       });
     });
 
-    it('[private reference to self] display in limited form', async () => {
+    it('[private experience to self] display in limited form', async () => {
       const { body } = await agent
-        .get(`/api/experiences/${references[2]._id}`)
+        .get(`/api/experiences/${experiences[2]._id}`)
         .expect(200);
 
       should(body).match({
         public: false,
-        _id: references[2]._id.toString(),
+        _id: experiences[2]._id.toString(),
         created: new Date().toISOString(),
         response: null,
       });
@@ -151,9 +151,9 @@ describe('Read a single reference by reference id', () => {
       );
     });
 
-    it('[private references not from self] 404', async () => {
+    it('[private experiences not from self] 404', async () => {
       const { body } = await agent
-        .get(`/api/experiences/${references[5]._id}`)
+        .get(`/api/experiences/${experiences[5]._id}`)
         .expect(404);
 
       should(body).eql({
@@ -164,7 +164,7 @@ describe('Read a single reference by reference id', () => {
       });
     });
 
-    it("[reference doesn't exist] 404", async () => {
+    it("[experience doesn't exist] 404", async () => {
       const { body } = await agent
         .get(`/api/experiences/${'a'.repeat(24)}`)
         .expect(404);
@@ -194,13 +194,13 @@ describe('Read a single reference by reference id', () => {
     afterEach(utils.signOut.bind(this, agent));
 
     it('403', async () => {
-      await agent.get(`/api/experiences/${references[3]._id}`).expect(403);
+      await agent.get(`/api/experiences/${experiences[3]._id}`).expect(403);
     });
   });
 
   context('not logged in', () => {
     it('403', async () => {
-      await agent.get(`/api/experiences/${references[3]._id}`).expect(403);
+      await agent.get(`/api/experiences/${experiences[3]._id}`).expect(403);
     });
   });
 });

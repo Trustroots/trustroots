@@ -1,7 +1,7 @@
 const path = require('path');
 const config = require(path.resolve('./config/config'));
-const experiencesPolicy = require('../policies/references.server.policy');
-const experiences = require('../controllers/reference.server.controller');
+const experiencesPolicy = require('../policies/experiences.server.policy');
+const experiences = require('../controllers/experiences.server.controller');
 
 module.exports = function (app) {
   if (config.featureFlags.reference) {
