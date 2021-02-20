@@ -22,7 +22,7 @@ export default function Recommend({
   onChangeReport,
   onChangeReportMessage,
 }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   const recommendQuestions = {
     hostedMe: t('Would you recommend others to stay with them?'),

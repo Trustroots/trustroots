@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
  * Presentational component for picking an interaction
  */
 export default function Interaction({ interactions, onChange }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   return (
     <div className="panel panel-default">

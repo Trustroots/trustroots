@@ -25,7 +25,7 @@ const SummaryIcon = styled(Icon).attrs(() => ({
 `;
 
 export default function ExperienceCounts({ experiences }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   const totalCount = experiences.length;
 

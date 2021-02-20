@@ -16,7 +16,7 @@ const Labels = styled.div`
 `;
 
 export default function Meta({ interactions, recommend }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   return (
     <Labels>

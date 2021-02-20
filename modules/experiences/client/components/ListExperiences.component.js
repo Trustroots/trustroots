@@ -14,7 +14,7 @@ import NoContent from '@/modules/core/client/components/NoContent';
  * List of user's experiences
  */
 export default function ListExperiences({ profile, authenticatedUser }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
   const [publicExperiences, setPublicExperiences] = useState([]);
   const [pendingExperiences, setPendingExperiences] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

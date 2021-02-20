@@ -18,7 +18,7 @@ export default function Report({
   report,
   reportMessage,
 }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   return (
     <ReportContainer>

@@ -8,7 +8,7 @@ export default function Feedback({
   report,
   onChangeFeedback,
 }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   /*
    * Functions passing strings to translation fuction for translation scripts

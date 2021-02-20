@@ -11,7 +11,7 @@ import SuccessMessage from '@/modules/core/client/components/SuccessMessage';
  * Error message when experience was already shared
  */
 export default function DuplicateInfo({ username }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
   return (
     <SuccessMessage
       title={t('You already shared your experience with them')}

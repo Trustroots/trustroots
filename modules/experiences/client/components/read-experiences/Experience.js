@@ -74,7 +74,7 @@ const UserLinkStyled = styled(UserLink)`
 `;
 
 export default function Experience({ experience, onReceiverProfile }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   const {
     _id,

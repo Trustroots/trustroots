@@ -6,7 +6,7 @@ import React from 'react';
  * Error message when trying to share and experience with oneself.
  */
 export default function ExperienceWithSelfInfo() {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   return (
     <div role="alert" className="alert alert-warning">

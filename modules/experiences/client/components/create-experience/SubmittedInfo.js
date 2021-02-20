@@ -17,7 +17,7 @@ export default function SubmittedInfo({
   name,
   username,
 }) {
-  const { t } = useTranslation('references');
+  const { t } = useTranslation('experiences');
 
   return (
     <SuccessMessage
@@ -43,7 +43,7 @@ export default function SubmittedInfo({
       {isReported && (
         <p>
           {/* @TODO remove ns (issue #1368) */}
-          <Trans t={t} ns="references">
+          <Trans t={t} ns="experiences">
             You also reported them to us. Please do{' '}
             <a href="/support">get in touch with us</a> if you have any further
             info to add.
