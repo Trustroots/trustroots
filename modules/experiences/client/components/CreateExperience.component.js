@@ -196,7 +196,6 @@ export default function CreateExperience({ userFrom, userTo }) {
         activeKey={step}
         bsStyle="pills"
         onSelect={() => {}}
-        className="experience-new-tabs"
         id="create-experience-tabs"
       >
         {tabs.map(({ id, component, title }, i) => {
