@@ -10,7 +10,7 @@
   </p>
 
   <p>
-    Would you like to share yours as well? You can <a href="{{giveReferenceUrl}}">write about your experience</a> and both experiences will become public right after that.
+    Would you like to share yours as well? You can <a href="{{giveExperienceUrl}}">write about your experience</a> and both experiences will become public right after that.
   </p>
 
   <p>
@@ -24,8 +24,8 @@
 
 {% block actionbutton %}
   {% from "./partials/button.server.view.html" import button %}
-  {{button(giveReferenceUrl, 'Share your experience now')}}
+  {{button(giveExperienceUrl, 'Share your experience now')}}
 
   {% from "./partials/copypasteurl.server.view.html" import copyPasteUrl %}
-  {{copyPasteUrl(giveReferenceUrlPlainText)}}
+  {{copyPasteUrl(giveExperienceUrlPlainText)}}
 {% endblock actionbutton %}

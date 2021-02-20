@@ -11,8 +11,8 @@
 
 {% block actionbutton %}
   {% from "./partials/button.server.view.html" import button %}
-  {{button(seeReferencesUrl, 'See the experience')}}
+  {{button(seeExperiencesUrl, 'See the experience')}}
 
   {% from "./partials/copypasteurl.server.view.html" import copyPasteUrl %}
-  {{copyPasteUrl(seeReferencesUrlPlainText)}}
+  {{copyPasteUrl(seeExperiencesUrlPlainText)}}
 {% endblock actionbutton %}
