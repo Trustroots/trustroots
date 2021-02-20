@@ -12,7 +12,7 @@ import Avatar from '@/modules/users/client/components/Avatar.component';
 import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
-import { experienceType } from '@/modules/references/client/experiences.prop-types';
+import { experienceType } from '@/modules/experiences/client/experiences.prop-types';
 
 const PendingNotice = styled.div`
   font-style: italic;

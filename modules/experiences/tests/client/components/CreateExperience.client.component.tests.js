@@ -8,12 +8,12 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
-import * as references from '@/modules/references/client/api/references.api';
+import * as references from '@/modules/experiences/client/api/references.api';
 
-import CreateExperience from '@/modules/references/client/components/CreateExperience.component';
+import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
 const api = { references };
 
-jest.mock('@/modules/references/client/api/references.api');
+jest.mock('@/modules/experiences/client/api/references.api');
 afterEach(() => jest.clearAllMocks());
 
 async function waitForLoader() {

@@ -5,7 +5,7 @@ import React from 'react';
 import styled from 'styled-components';
 
 // External dependencies
-import { experienceType } from '@/modules/references/client/experiences.prop-types';
+import { experienceType } from '@/modules/experiences/client/experiences.prop-types';
 import Icon from '@/modules/core/client/components/Icon';
 
 const Summary = styled.div`

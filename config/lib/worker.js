@@ -97,7 +97,7 @@ exports.start = function (options, callback) {
       'publish old unpublished references',
       { lockLifetime: 10000, concurrency: 1 },
       require(path.resolve(
-        './modules/references/server/jobs/references-publish.server.job',
+        './modules/experiences/server/jobs/references-publish.server.job',
       )),
     );
 
