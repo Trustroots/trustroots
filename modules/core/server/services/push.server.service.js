@@ -87,21 +87,21 @@ exports.notifyMessagesUnread = function (userFrom, userTo, data, callback) {
 };
 
 /**
- * Send a push notification about a new reference, to the receiver of the reference
- * @param {User} userFrom - user who gave the reference
- * @param {User} userTo - user who received the reference
+ * Send a push notification about a new experience, to the receiver of the experience
+ * @param {User} userFrom - user who gave the experience
+ * @param {User} userTo - user who received the experience
  * @param {Object} data - notification config
  */
-exports.notifyNewReferenceFirst = function (userFrom, userTo, callback) {
-  const giveReferenceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
+exports.notifyNewExperienceFirst = function (userFrom, userTo, callback) {
+  const giveExperienceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
 
   const notification = {
     title: 'Trustroots',
     body: `${userFrom.displayName} shared their experience with you. Share your experience, too.`,
-    click_action: analyticsHandler.appendUTMParams(giveReferenceUrl, {
+    click_action: analyticsHandler.appendUTMParams(giveExperienceUrl, {
       source: 'push-notification',
       medium: 'fcm',
-      campaign: 'new-reference',
+      campaign: 'new-experience',
       content: 'respond',
     }),
   };
@@ -109,26 +109,26 @@ exports.notifyNewReferenceFirst = function (userFrom, userTo, callback) {
 };
 
 /**
- * Send a push notification about a new reference, to the receiver of the reference
- * @param {User} userFrom - user who gave the reference
- * @param {User} userTo - user who received the reference
- * @param {string} referenceId - ID of the reference
+ * Send a push notification about a new experience, to the receiver of the experience
+ * @param {User} userFrom - user who gave the experience
+ * @param {User} userTo - user who received the experience
+ * @param {string} experienceId - ID of the experience
  */
-exports.notifyNewReferenceSecond = function (
+exports.notifyNewExperienceSecond = function (
   userFrom,
   userTo,
-  referenceId,
+  experienceId,
   callback,
 ) {
-  const readReferencesUrl = `${url}/profile/${userTo.username}/experiences#${referenceId}`;
+  const readExperiencesUrl = `${url}/profile/${userTo.username}/experiences#${experienceId}`;
 
   const notification = {
     title: 'Trustroots',
     body: `${userFrom.displayName} shared their experience with you. Both experiences are now published.`,
-    click_action: analyticsHandler.appendUTMParams(readReferencesUrl, {
+    click_action: analyticsHandler.appendUTMParams(readExperiencesUrl, {
       source: 'push-notification',
       medium: 'fcm',
-      campaign: 'new-reference',
+      campaign: 'new-experience',
       content: 'read',
     }),
   };

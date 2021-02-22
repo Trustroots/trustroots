@@ -1,0 +1,9 @@
+{% extends './email.server.view.html' %}
+
+{% block content %}
+Hi {{userTo.firstName}}!
+
+{{userFrom.firstName}} ({{userFromProfileUrlPlainText}}) has shared also their experience with you. Both of your experiences are now public.
+
+See the experience at {{seeExperiencesUrlPlainText}}
+{% endblock content %}

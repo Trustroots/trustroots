@@ -439,17 +439,21 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
 };
 
 /**
- * Reference Notification (First between users)
+ * Experience Notification (First between users)
  */
-exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
-  const campaign = 'reference-notification-first';
+exports.sendExperienceNotificationFirst = function (
+  userFrom,
+  userTo,
+  callback,
+) {
+  const campaign = 'experience-notification-first';
   const userFromProfileUrl = `${url}/profile/${userFrom.username}`;
-  const giveReferenceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
+  const giveExperienceUrl = `${url}/profile/${userFrom.username}/experiences/new`;
 
   const params = exports.addEmailBaseTemplateParams({
     subject: `${userFrom.displayName} shared their experience with you`,
     email: userTo.email,
-    days: config.limits.timeToReplyReference.days,
+    days: config.limits.timeToReplyExperience.days,
     username: userTo.username, // data needed for link to profile in footer
     userFrom,
     userTo,
@@ -460,29 +464,29 @@ exports.sendReferenceNotificationFirst = function (userFrom, userTo, callback) {
       campaign,
       content: 'from-profile',
     }),
-    giveReferenceUrlPlainText: giveReferenceUrl,
-    giveReferenceUrl: analyticsHandler.appendUTMParams(giveReferenceUrl, {
+    giveExperienceUrlPlainText: giveExperienceUrl,
+    giveExperienceUrl: analyticsHandler.appendUTMParams(giveExperienceUrl, {
       source: 'transactional-email',
       medium: 'email',
       campaign,
-      content: 'give-reference',
+      content: 'give-experience',
     }),
   });
 
-  exports.renderEmailAndSend('reference-notification-first', params, callback);
+  exports.renderEmailAndSend('experience-notification-first', params, callback);
 };
 
 /**
- * Reference Notification (Second reference between users)
+ * Experience Notification (Second experience between users)
  */
-exports.sendReferenceNotificationSecond = function (
+exports.sendExperienceNotificationSecond = function (
   userFrom,
   userTo,
-  reference,
+  experience,
   callback,
 ) {
-  const campaign = 'reference-notification-second';
-  const seeReferencesUrl = `${url}/profile/${userTo.username}/experiences#${reference._id}`;
+  const campaign = 'experience-notification-second';
+  const seeExperiencesUrl = `${url}/profile/${userTo.username}/experiences#${experience._id}`;
   const userFromProfileUrl = `${url}/profile/${userFrom.username}`;
 
   const params = exports.addEmailBaseTemplateParams({
@@ -498,16 +502,20 @@ exports.sendReferenceNotificationSecond = function (
       campaign,
       content: 'from-profile',
     }),
-    seeReferencesUrlPlainText: seeReferencesUrl,
-    seeReferencesUrl: analyticsHandler.appendUTMParams(seeReferencesUrl, {
+    seeExperiencesUrlPlainText: seeExperiencesUrl,
+    seeExperiencesUrl: analyticsHandler.appendUTMParams(seeExperiencesUrl, {
       source: 'transactional-email',
       medium: 'email',
       campaign,
-      content: 'see-references',
+      content: 'see-experiences',
     }),
   });
 
-  exports.renderEmailAndSend('reference-notification-second', params, callback);
+  exports.renderEmailAndSend(
+    'experience-notification-second',
+    params,
+    callback,
+  );
 };
 
 /**
