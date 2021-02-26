@@ -30,8 +30,8 @@ export default function Interaction({ interactions, onChange }) {
             <label>
               <input
                 type="checkbox"
-                checked={interactions.hostedThem}
-                onChange={() => onChange('hostedThem')}
+                checked={interactions.host}
+                onChange={() => onChange('host')}
               />
               {t('I hosted them')}
             </label>
@@ -40,8 +40,8 @@ export default function Interaction({ interactions, onChange }) {
             <label>
               <input
                 type="checkbox"
-                checked={interactions.hostedMe}
-                onChange={() => onChange('hostedMe')}
+                checked={interactions.guest}
+                onChange={() => onChange('guest')}
               />
               {t('They hosted me')}
             </label>

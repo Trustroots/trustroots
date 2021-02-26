@@ -80,8 +80,8 @@ describe('Read my experience to userTo Id', () => {
         .expect(200);
 
       should(body).have.propertyByPath('interactions', 'met').Boolean();
-      should(body).have.propertyByPath('interactions', 'hostedMe').Boolean();
-      should(body).have.propertyByPath('interactions', 'hostedThem').Boolean();
+      should(body).have.propertyByPath('interactions', 'guest').Boolean();
+      should(body).have.propertyByPath('interactions', 'host').Boolean();
       should(body).have.property('public', true);
       should(body).have.property('created', new Date().toISOString());
       should(body)
@@ -102,12 +102,8 @@ describe('Read my experience to userTo Id', () => {
 
       const response = body.response;
       should(response).have.propertyByPath('interactions', 'met').Boolean();
-      should(response)
-        .have.propertyByPath('interactions', 'hostedMe')
-        .Boolean();
-      should(response)
-        .have.propertyByPath('interactions', 'hostedThem')
-        .Boolean();
+      should(response).have.propertyByPath('interactions', 'guest').Boolean();
+      should(response).have.propertyByPath('interactions', 'host').Boolean();
       should(response).have.property('created', new Date().toISOString());
       should(response)
         .have.property('recommend')
@@ -124,8 +120,8 @@ describe('Read my experience to userTo Id', () => {
         .expect(200);
 
       should(body).have.propertyByPath('interactions', 'met').Boolean();
-      should(body).have.propertyByPath('interactions', 'hostedMe').Boolean();
-      should(body).have.propertyByPath('interactions', 'hostedThem').Boolean();
+      should(body).have.propertyByPath('interactions', 'guest').Boolean();
+      should(body).have.propertyByPath('interactions', 'host').Boolean();
       should(body).have.property('public', true);
       should(body).have.property('created', new Date().toISOString());
       should(body)
@@ -152,8 +148,8 @@ describe('Read my experience to userTo Id', () => {
         .expect(200);
 
       should(body).have.propertyByPath('interactions', 'met').Boolean();
-      should(body).have.propertyByPath('interactions', 'hostedMe').Boolean();
-      should(body).have.propertyByPath('interactions', 'hostedThem').Boolean();
+      should(body).have.propertyByPath('interactions', 'guest').Boolean();
+      should(body).have.propertyByPath('interactions', 'host').Boolean();
       should(body).have.property('public', false);
       should(body).have.property('created', new Date().toISOString());
       should(body)

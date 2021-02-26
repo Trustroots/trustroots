@@ -137,8 +137,8 @@ describe('<CreateExperience />', () => {
     expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
         met: false,
-        hostedMe: true,
-        hostedThem: false,
+        guest: true,
+        host: false,
       },
       recommend: 'yes',
       feedbackPublic: 'they made a tasty pie',
@@ -191,8 +191,8 @@ describe('<CreateExperience />', () => {
     expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
         met: false,
-        hostedMe: true,
-        hostedThem: false,
+        guest: true,
+        host: false,
       },
       recommend: 'no',
       feedbackPublic: '',

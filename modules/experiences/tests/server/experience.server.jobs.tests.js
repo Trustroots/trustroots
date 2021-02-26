@@ -34,8 +34,8 @@ describe('Job: Set experience to public after a given period of time', () => {
       // here we don't care if all interactions are false
       interactions: {
         met: true,
-        hostedMe: false,
-        hostedThem: true,
+        guest: false,
+        host: true,
       },
       recommend: 'yes',
     };
