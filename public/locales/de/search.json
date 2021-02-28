@@ -1,9 +1,10 @@
 {
     "Clear members search": "",
-    "No members found by this name.": "",
-    "Search members": "",
+    "No members found by this name.": "Keine Mitglieder mit diesem Namen gefunden.",
+    "Search members": "Mitglieder suchen",
     "Type name, username…": "",
     "{{count}} members found": "Ein Mitglied gefunden",
     "{{count}} members found_plural": "{{count}} Mitglieder gefunden",
-    "Search": "Suche"
+    "Search": "Suche",
+    "Zoom closer to find members.": "Hineinzoomen, um Mitglieder zu finden."
 }

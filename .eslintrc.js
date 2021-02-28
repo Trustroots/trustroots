@@ -161,7 +161,7 @@ module.exports = {
         'modules/**/client/api/**',
         'modules/**/client/utils/**',
         'modules/core/client/services/photos.service.js',
-        'modules/references/tests/client/**',
+        'modules/experiences/tests/client/**',
       ],
       env: {
         browser: true,

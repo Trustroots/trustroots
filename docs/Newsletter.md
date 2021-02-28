@@ -19,17 +19,7 @@ If you don't have an account yet, create one at [wordpress.com/start/account](ht
 
 MailPoet's subscribers and subscribers on the actual site's database are not synchronised automatically. Therefore you need to manually update the list each time you want to send out a campaign.
 
-Generate the list on the production server:
-
-```bash
-NODE_ENV=production node bin/export-newsletter-subscribers.js ~/tr-emails-2020-12-24.csv
-```
-
-Copy CSV file to your computer:
-
-```bash
-scp YOUR_USERNAME@trustroots.org:/home/YOUR_USERNAME/tr-emails-2020-12-24.csv ~/local-folder
-```
+Go to Trustroots admin panel to [export list of newsletter subscribers](https://www.trustroots.org/admin/newsletter) as a CSV file.
 
 Go to importing tool in MailPoet ([_MailPoet → Subscribers → Import_](https://ideas.trustroots.org/wp-admin/admin.php?page=mailpoet-import)) and create a new import with the file. It doesn't matter if the CSV file has some existing emails — MailPoet's import will ignore those.
 

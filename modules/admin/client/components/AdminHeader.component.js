@@ -33,6 +33,10 @@ export default function AdminHeader() {
       path: 'acquisition-stories',
       label: 'Acquisition stories',
     },
+    {
+      path: 'newsletter',
+      label: 'Newsletter',
+    },
   ];
 
   const renderTab = ({ path, label }) => (

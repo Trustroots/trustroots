@@ -94,10 +94,10 @@ exports.start = function (options, callback) {
     );
 
     agenda.define(
-      'publish old unpublished references',
+      'publish expired experiences',
       { lockLifetime: 10000, concurrency: 1 },
       require(path.resolve(
-        './modules/references/server/jobs/references-publish.server.job',
+        './modules/experiences/server/jobs/experiences-publish.server.job',
       )),
     );
 
@@ -110,7 +110,7 @@ exports.start = function (options, callback) {
     agenda.every('15 minutes', 'welcome sequence first');
     agenda.every('60 minutes', 'welcome sequence second');
     agenda.every('60 minutes', 'welcome sequence third');
-    agenda.every('23 minutes', 'publish old unpublished references');
+    agenda.every('23 minutes', 'publish expired experiences');
 
     // Start worker
 
