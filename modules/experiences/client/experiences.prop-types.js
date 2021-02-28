@@ -2,8 +2,8 @@ import PropTypes from 'prop-types';
 
 export const interactionsType = PropTypes.shape({
   met: PropTypes.bool.isRequired,
-  hostedMe: PropTypes.bool.isRequired,
-  hostedThem: PropTypes.bool.isRequired,
+  guest: PropTypes.bool.isRequired,
+  host: PropTypes.bool.isRequired,
 });
 
 const recommendType = PropTypes.oneOf(['yes', 'no', 'unknown']);

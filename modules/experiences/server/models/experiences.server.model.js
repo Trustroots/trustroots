@@ -35,12 +35,12 @@ const ExperienceSchema = new Schema({
       default: false,
       required: true,
     },
-    hostedMe: {
+    guest: {
       type: Boolean,
       default: false,
       required: true,
     },
-    hostedThem: {
+    host: {
       type: Boolean,
       default: false,
       required: true,

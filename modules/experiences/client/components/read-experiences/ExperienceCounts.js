@@ -108,25 +108,25 @@ export default function ExperienceCounts({ experiences }) {
     };
 
     const met = getInteractionPercentage('met');
-    const hostedMe = getInteractionPercentage('hostedMe');
-    const hostedThem = getInteractionPercentage('hostedThem');
+    const guest = getInteractionPercentage('guest');
+    const host = getInteractionPercentage('host');
 
-    if (hostedThem === 100) {
+    if (host === 100) {
       interactions.push(t('They hosted everyone.'));
-    } else if (hostedThem > 0) {
+    } else if (host > 0) {
       interactions.push(
         t('They hosted {{percentage}}% of members.', {
-          percentage: hostedThem,
+          percentage: host,
         }),
       );
     }
 
-    if (hostedMe === 100) {
+    if (guest === 100) {
       interactions.push(t('Was hosted by everyone.'));
-    } else if (hostedMe > 0) {
+    } else if (guest > 0) {
       interactions.push(
         t('Was hosted by {{percentage}}% of members.', {
-          percentage: hostedMe,
+          percentage: guest,
         }),
       );
     }

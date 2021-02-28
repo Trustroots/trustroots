@@ -40,8 +40,8 @@ function validateCreate(req) {
   const isInteraction =
     req.body.interactions &&
     (req.body.interactions.met ||
-      req.body.interactions.hostedMe ||
-      req.body.interactions.hostedThem);
+      req.body.interactions.guest ||
+      req.body.interactions.host);
   if (!isInteraction) {
     valid = false;
     interactionErrors.any = 'missing';
@@ -57,7 +57,7 @@ function validateCreate(req) {
   }
 
   // Values of interactions must be boolean
-  ['met', 'hostedMe', 'hostedThem'].forEach(function (interaction) {
+  ['met', 'guest', 'host'].forEach(function (interaction) {
     if (
       _.has(req, ['body', 'interactions', interaction]) &&
       typeof req.body.interactions[interaction] !== 'boolean'
@@ -97,7 +97,7 @@ function validateCreate(req) {
   ];
   const fields = Object.keys(req.body);
   const unexpectedFields = _.difference(fields, allowedFields);
-  const allowedInteractions = ['met', 'hostedMe', 'hostedThem'];
+  const allowedInteractions = ['met', 'guest', 'host'];
   const interactions = Object.keys(req.body.interactions || {});
   const unexpectedInteractions = _.difference(
     interactions,
@@ -131,8 +131,8 @@ const nonpublicExperienceFields = [
 
 const experienceFields = nonpublicExperienceFields.concat([
   'feedbackPublic',
-  'interactions.hostedMe',
-  'interactions.hostedThem',
+  'interactions.guest',
+  'interactions.host',
   'interactions.met',
   'recommend',
 ]);
@@ -141,8 +141,8 @@ const responseFields = [
   '_id',
   'created',
   'feedbackPublic',
-  'interactions.hostedMe',
-  'interactions.hostedThem',
+  'interactions.guest',
+  'interactions.host',
   'interactions.met',
   'recommend',
 ];
@@ -502,8 +502,8 @@ exports.readMany = async function readMany(req, res, next) {
           userTo: userKeys,
           feedbackPublic: 1,
           interactions: {
-            hostedMe: 1,
-            hostedThem: 1,
+            guest: 1,
+            host: 1,
             met: 1,
           },
           recommend: 1,

@@ -18,8 +18,8 @@ export default function CreateExperience({ userFrom, userTo }) {
   const { t } = useTranslation('experiences');
 
   const [met, setMet] = useState(false);
-  const [hostedThem, setHostedThem] = useState(false);
-  const [hostedMe, setHostedMe] = useState(false);
+  const [host, setHostedThem] = useState(false);
+  const [guest, setHostedMe] = useState(false);
   const [recommend, setRecommend] = useState(null);
   const [report, setReport] = useState(false);
   const [reportMessage, setReportMessage] = useState('');
@@ -56,11 +56,11 @@ export default function CreateExperience({ userFrom, userTo }) {
       case 'met':
         setMet(met => !met);
         break;
-      case 'hostedThem':
-        setHostedThem(hostedThem => !hostedThem);
+      case 'host':
+        setHostedThem(host => !host);
         break;
-      case 'hostedMe':
-        setHostedMe(hostedMe => !hostedMe);
+      case 'guest':
+        setHostedMe(guest => !guest);
         break;
       default:
     }
@@ -70,7 +70,7 @@ export default function CreateExperience({ userFrom, userTo }) {
     setIsSubmitting(true);
 
     const experience = {
-      interactions: { met, hostedThem, hostedMe },
+      interactions: { met, host, guest },
       recommend,
       feedbackPublic,
     };
@@ -88,13 +88,12 @@ export default function CreateExperience({ userFrom, userTo }) {
     setIsPublic(savedExperience.public);
   };
 
-  const primaryInteraction =
-    (hostedMe && 'hostedMe') || (hostedThem && 'hostedThem') || 'met';
+  const primaryInteraction = (guest && 'guest') || (host && 'host') || 'met';
 
   const interactionsTab = (
     <Interaction
       key="interaction"
-      interactions={{ hostedMe, hostedThem, met }}
+      interactions={{ guest, host, met }}
       onChange={handleChangeInteraction}
     />
   );
@@ -146,14 +145,14 @@ export default function CreateExperience({ userFrom, userTo }) {
   const validate = createValidator({
     interaction: [
       [
-        ({ hostedMe, hostedThem, met }) => hostedMe || hostedThem || met,
+        ({ guest, host, met }) => guest || host || met,
         t('Choose your interaction'),
       ],
     ],
     recommend: [[value => !!value, t('Choose your recommendation')]],
   });
   const errorDict = validate({
-    interaction: { hostedMe, hostedThem, met },
+    interaction: { guest, host, met },
     recommend,
   });
   // map errors to tabs and find errors relevant for current tab

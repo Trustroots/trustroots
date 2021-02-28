@@ -101,8 +101,8 @@ const profileType = {
 const experienceGenerator = {
   interactions: (to, from) => ({
     met: true,
-    hostedMe: to < from,
-    hostedThem: from < to,
+    guest: to < from,
+    host: from < to,
   }),
 
   recommendation: () => {

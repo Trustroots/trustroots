@@ -115,8 +115,8 @@ describe('Read experiences by userTo Id', () => {
           );
 
         should(ref).have.propertyByPath('interactions', 'met').Boolean();
-        should(ref).have.propertyByPath('interactions', 'hostedMe').Boolean();
-        should(ref).have.propertyByPath('interactions', 'hostedThem').Boolean();
+        should(ref).have.propertyByPath('interactions', 'guest').Boolean();
+        should(ref).have.propertyByPath('interactions', 'host').Boolean();
         should(ref).have.property('public', true);
         should(ref).have.property('created', new Date().toISOString());
         should(ref)
@@ -131,12 +131,8 @@ describe('Read experiences by userTo Id', () => {
       const response = body[0].response;
       should(response).have.property('created', new Date().toISOString());
       should(response).have.propertyByPath('interactions', 'met').Boolean();
-      should(response)
-        .have.propertyByPath('interactions', 'hostedMe')
-        .Boolean();
-      should(response)
-        .have.propertyByPath('interactions', 'hostedThem')
-        .Boolean();
+      should(response).have.propertyByPath('interactions', 'guest').Boolean();
+      should(response).have.propertyByPath('interactions', 'host').Boolean();
       should(response)
         .have.property('recommend')
         .which.is.equalOneOf(['no', 'yes', 'unknown']);
@@ -176,8 +172,8 @@ describe('Read experiences by userTo Id', () => {
         );
 
         should(ref).have.propertyByPath('interactions', 'met');
-        should(ref).have.propertyByPath('interactions', 'hostedMe');
-        should(ref).have.propertyByPath('interactions', 'hostedThem');
+        should(ref).have.propertyByPath('interactions', 'guest');
+        should(ref).have.propertyByPath('interactions', 'host');
       }
 
       should(body[2]).have.only.properties(

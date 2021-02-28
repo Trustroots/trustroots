@@ -101,8 +101,8 @@ function generateExperiences(users, experienceData) {
       public: true,
       interactions: {
         met: faker.random.boolean(),
-        hostedMe: faker.random.boolean(),
-        hostedThem: faker.random.boolean(),
+        guest: faker.random.boolean(),
+        host: faker.random.boolean(),
       },
       recommend: _.sample(['yes', 'no', 'unknown']),
     };

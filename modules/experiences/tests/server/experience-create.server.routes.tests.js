@@ -71,8 +71,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
               feedbackPublic,
@@ -86,8 +86,8 @@ describe('Create an experience', () => {
             created: new Date().toISOString(),
             interactions: {
               met: true,
-              hostedMe: true,
-              hostedThem: true,
+              guest: true,
+              host: true,
             },
             feedbackPublic,
             recommend: 'yes',
@@ -111,8 +111,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -129,8 +129,8 @@ describe('Create an experience', () => {
             userTo: user2._id,
             interactions: {
               met: true,
-              hostedMe: true,
-              hostedThem: true,
+              guest: true,
+              host: true,
             },
           });
         });
@@ -143,8 +143,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -157,8 +157,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: false,
-                hostedMe: true,
-                hostedThem: false,
+                guest: true,
+                host: false,
               },
               recommend: 'no',
             })
@@ -172,8 +172,8 @@ describe('Create an experience', () => {
               userTo: user1._id, // the same user as logged in user
               interactions: {
                 met: false,
-                hostedMe: true,
-                hostedThem: false,
+                guest: true,
+                host: false,
               },
               recommend: 'no',
             })
@@ -194,8 +194,8 @@ describe('Create an experience', () => {
               userTo: '0'.repeat(24), // nonexistent user id
               interactions: {
                 met: false,
-                hostedMe: true,
-                hostedThem: false,
+                guest: true,
+                host: false,
               },
               recommend: 'no',
             })
@@ -216,8 +216,8 @@ describe('Create an experience', () => {
               userTo: user3Nonpublic._id, // non-public user id
               interactions: {
                 met: false,
-                hostedMe: true,
-                hostedThem: false,
+                guest: true,
+                host: false,
               },
               recommend: 'no',
             })
@@ -241,8 +241,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -267,8 +267,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -303,8 +303,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -346,8 +346,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -389,8 +389,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'no',
             })
@@ -411,8 +411,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -438,8 +438,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -483,8 +483,8 @@ describe('Create an experience', () => {
               userTo: user2._id,
               interactions: {
                 met: true,
-                hostedMe: true,
-                hostedThem: true,
+                guest: true,
+                host: true,
               },
               recommend: 'yes',
             })
@@ -515,7 +515,7 @@ describe('Create an experience', () => {
             userTo: user2._id,
             interactions: {
               met: 'met',
-              hostedMe: false,
+              guest: false,
             },
             recommend: 'unknown',
           })
@@ -538,7 +538,7 @@ describe('Create an experience', () => {
             userTo: user2._id,
             interactions: {
               met: true,
-              hostedMe: false,
+              guest: false,
             },
             recommend: 'invalid',
           })
@@ -558,7 +558,7 @@ describe('Create an experience', () => {
           .send({
             userTo: 'hello',
             interactions: {
-              hostedMe: true,
+              guest: true,
             },
             recommend: 'yes',
           })
@@ -577,7 +577,7 @@ describe('Create an experience', () => {
           .post('/api/experiences')
           .send({
             interactions: {
-              hostedMe: true,
+              guest: true,
             },
             recommend: 'yes',
           })
@@ -597,7 +597,7 @@ describe('Create an experience', () => {
           .send({
             userTo: user2._id,
             interactions: {
-              hostedMe: true,
+              guest: true,
             },
             recommend: 'yes',
             foo: 'bar',
@@ -619,7 +619,7 @@ describe('Create an experience', () => {
             userTo: user2._id,
             met: false,
             interactions: {
-              hostedMe: true,
+              guest: true,
             },
             recommend: 'yes',
             feedbackPublic: faker.lorem.words(2000), // probably longer than the limit
@@ -641,7 +641,7 @@ describe('Create an experience', () => {
             userTo: user2._id,
             met: false,
             interactions: {
-              hostedMe: false,
+              guest: false,
             },
             recommend: 'yes',
           })

@@ -101,8 +101,8 @@ describe('Read a single experience by experience id', () => {
         recommend: experiences[3].recommend,
         interactions: {
           met: experiences[3].interactions.met,
-          hostedMe: experiences[3].interactions.hostedMe,
-          hostedThem: experiences[3].interactions.hostedThem,
+          guest: experiences[3].interactions.guest,
+          host: experiences[3].interactions.host,
         },
         response: {
           _id: experiences[4]._id.toString(),
@@ -110,8 +110,8 @@ describe('Read a single experience by experience id', () => {
           recommend: experiences[4].recommend,
           interactions: {
             met: experiences[4].interactions.met,
-            hostedMe: experiences[4].interactions.hostedMe,
-            hostedThem: experiences[4].interactions.hostedThem,
+            guest: experiences[4].interactions.guest,
+            host: experiences[4].interactions.host,
           },
         },
       });

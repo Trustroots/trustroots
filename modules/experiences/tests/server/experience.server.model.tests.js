@@ -25,8 +25,8 @@ describe('Experience Model Unit Tests', () => {
         userTo: user2._id,
         interactions: {
           met: true,
-          hostedMe: true,
-          hostedThem: false,
+          guest: true,
+          host: false,
         },
         recommend: 'no',
       });
@@ -36,8 +36,8 @@ describe('Experience Model Unit Tests', () => {
         userTo: user1._id,
         interactions: {
           met: true,
-          hostedMe: false,
-          hostedThem: true,
+          guest: false,
+          host: true,
         },
         recommend: 'yes',
       });
@@ -52,8 +52,8 @@ describe('Experience Model Unit Tests', () => {
         userTo: user2._id,
         interactions: {
           met: true,
-          hostedMe: true,
-          hostedThem: false,
+          guest: true,
+          host: false,
         },
         recommend: 'no',
       });
@@ -63,8 +63,8 @@ describe('Experience Model Unit Tests', () => {
         userTo: user3._id,
         interactions: {
           met: true,
-          hostedMe: false,
-          hostedThem: true,
+          guest: false,
+          host: true,
         },
         recommend: 'yes',
       });
@@ -73,14 +73,14 @@ describe('Experience Model Unit Tests', () => {
       await should(experience2.save()).be.resolved();
     });
 
-    it("show error when saving invalid values of 'met', 'recommend', 'hostedMe', 'hostedThem'", async () => {
+    it("show error when saving invalid values of 'met', 'recommend', 'guest', 'host'", async () => {
       const experience = new Experience({
         userFrom: user1._id,
         userTo: user2._id,
         interactions: {
           met: 'foo',
-          hostedMe: 'foolme',
-          hostedThem: 'foolthem',
+          guest: 'foolme',
+          host: 'foolthem',
         },
         recommend: 'bar',
       });
@@ -89,8 +89,8 @@ describe('Experience Model Unit Tests', () => {
       should(err).match({
         errors: {
           'interactions.met': { value: 'foo', kind: 'Boolean' },
-          'interactions.hostedMe': { value: 'foolme', kind: 'Boolean' },
-          'interactions.hostedThem': { value: 'foolthem', kind: 'Boolean' },
+          'interactions.guest': { value: 'foolme', kind: 'Boolean' },
+          'interactions.host': { value: 'foolthem', kind: 'Boolean' },
           recommend: { value: 'bar', kind: 'enum' },
         },
       });

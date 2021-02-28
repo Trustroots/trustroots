@@ -25,8 +25,8 @@ export default function Recommend({
   const { t } = useTranslation('experiences');
 
   const recommendQuestions = {
-    hostedMe: t('Would you recommend others to stay with them?'),
-    hostedThem: t('Would you recommend others to host them?'),
+    guest: t('Would you recommend others to stay with them?'),
+    host: t('Would you recommend others to host them?'),
     met: t('Would you recommend others to meet them?'),
   };
 

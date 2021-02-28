@@ -23,8 +23,8 @@ export default function Meta({ interactions, recommend }) {
       {[
         recommend === 'yes' && t('Recommend'),
         recommend === 'no' && t('Not recommend'),
-        interactions?.hostedMe && t('Guest'),
-        interactions?.hostedThem && t('Host'),
+        interactions?.guest && t('Guest'),
+        interactions?.host && t('Host'),
         interactions?.met && t('Met in person'),
       ]
         .filter(label => !!label)
