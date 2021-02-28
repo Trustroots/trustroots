@@ -600,6 +600,7 @@ exports.threadByUser = function (req, res, next, userId) {
 
         // If latest message in the thread was to current user, mark thread read
         if (
+          messages[0].userTo &&
           messages[0].userTo._id &&
           req.user._id.equals(messages[0].userTo._id)
         ) {
