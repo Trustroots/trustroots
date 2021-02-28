@@ -49,7 +49,7 @@ describe('Admin Newsletter subscribers CRUD tests', () => {
 
   it('non-admin users should not be allowed to read newsletter subscribers', async () => {
     await utils.signIn(nonAdminAuth, agent);
-    agent.get('/api/admin/newsletter-subscribers').expect(403);
+    await agent.get('/api/admin/newsletter-subscribers').expect(403);
     await utils.signOut(agent);
   });
 
