@@ -74,59 +74,93 @@ function sanitizeMessages(messages) {
 exports.sanitizeMessages = sanitizeMessages;
 
 /**
+ * Fill `userFrom` or `userTo` with deleted user's ID
+ *
+ * If user is deleted, the object from `User` collection is gone.
+ * `Thread.paginate()` attempts to populate it but failing to do so,
+ * leaves `userFrom` or `userTo` as `null` instead of just keeping
+ * the original document `_id` which would still be useful at the frontend.
+ * Until we refactor our code not to use `mongoose-paginate`, this helper
+ * will backfill the IDs. Cumbersome and not optimal, but there are not that
+ * many deleted profiles that this would be a significant issue.
+ *
+ * @param {Object} Thread
+ * @return {Object} Thread with possibly mutated `thread.userFrom` / `thread.userTo`
+ */
+function fillDeletedProfiles(threads, callback) {
+  if (!threads || !threads.length) {
+    return callback(null, []);
+  }
+
+  async.mapSeries(
+    threads,
+    function (thread, done) {
+      if (thread.userTo && thread.userFrom) {
+        return done(null, thread);
+      }
+
+      // Check which field is `null` — only one of them can
+      const field = !thread.userTo ? 'userTo' : 'userFrom';
+
+      Thread.findById(thread._id, field, function (err, newThread) {
+        if (!err && newThread) {
+          thread[field] = {
+            _id: newThread[field],
+          };
+        }
+        done(null, thread);
+      });
+    },
+    callback,
+  );
+}
+
+/**
  * Sanitize threads
+ *
  * @param {Array} threads - list of threads to go trough
  * @param {ObjectId} authenticatedUserId - ID of currently authenticated user
  * @returns {Array}
  */
-function sanitizeThreads(threads, authenticatedUserId) {
+function sanitizeThreads(threads, authenticatedUserId, callback) {
   if (!threads || !threads.length) {
-    return [];
+    return callback(null, []);
   }
 
-  // Sanitize each outgoing thread
-  const threadsCleaned = [];
+  async.mapSeries(
+    threads,
+    function (thread, done) {
+      // Threads need just excerpt
+      thread = thread.toObject();
 
-  threads.forEach(function (thread) {
-    // Threads need just excerpt
-    thread = thread.toObject();
+      // Clean message content from html + clean all whitespace + shorten
+      if (thread.message) {
+        thread.message.excerpt = thread.message.content
+          ? textService
+              .plainText(thread.message.content, true)
+              .substring(0, 100)
+          : '…';
+        delete thread.message.content;
+      } else {
+        // Ensure this works even if messages couldn't be found for some reason
+        thread.message = {
+          excerpt: '…',
+        };
+      }
+      // If latest message in the thread was from current user, show
+      // it as read - sender obviously read his/her own message
+      if (
+        thread.userFrom &&
+        thread.userFrom._id &&
+        thread.userFrom._id.toString() === authenticatedUserId.toString()
+      ) {
+        thread.read = true;
+      }
 
-    // Clean message content from html + clean all whitespace + shorten
-    if (thread.message) {
-      thread.message.excerpt = thread.message.content
-        ? textService.plainText(thread.message.content, true).substring(0, 100)
-        : '…';
-      delete thread.message.content;
-    } else {
-      // Ensure this works even if messages couldn't be found for some reason
-      thread.message = {
-        excerpt: '…',
-      };
-    }
-
-    // If latest message in the thread was from current user, show
-    // it as read - sender obviously read his/her own message
-    if (
-      thread.userFrom &&
-      thread.userFrom._id &&
-      thread.userFrom._id.toString() === authenticatedUserId.toString()
-    ) {
-      thread.read = true;
-    }
-
-    // If users weren't populated, they were removed.
-    // Don't return thread at all at this point.
-    //
-    // @todo:
-    // Return thread but with placeholder user and old user's ID
-    // With ID we could fetch the message thread — now all we could
-    // show is this line at inbox but not actual messages
-    if (thread.userTo && thread.userFrom) {
-      threadsCleaned.push(thread);
-    }
-  });
-
-  return threadsCleaned;
+      done(null, thread);
+    },
+    callback,
+  );
 }
 
 /**
@@ -165,10 +199,17 @@ exports.inbox = function (req, res) {
       limit: req.query.limit || 20,
       sort: '-updated',
       select: threadFields,
-      populate: {
-        path: 'userFrom userTo message',
-        select: 'content ' + userProfile.userMiniProfileFields,
-      },
+      populate: [
+        {
+          path: 'message',
+          select: 'content',
+        },
+        {
+          path: 'userFrom userTo',
+          select: userProfile.userMiniProfileFields,
+          model: 'User',
+        },
+      ],
     },
     function (err, data) {
       if (err) {
@@ -176,12 +217,22 @@ exports.inbox = function (req, res) {
           message: errorService.getErrorMessage(err),
         });
       } else {
-        const threads = sanitizeThreads(data.docs, req.user._id);
-
         // Pass pagination data to construct link header
         setLinkHeader(req, res, data.pages);
 
-        res.json(threads);
+        // Sanitize and return threads
+        sanitizeThreads(data.docs, req.user._id, function (err, threads) {
+          // If user is deleted, the object from `User` collection is gone.
+          // `Thread.paginate()` attempts to populate it but failing to do so,
+          // leaves `userFrom` or `userTo` as `null` instead of just keeping
+          // the original document `_id` which would still be useful at the frontend.
+          // Until we refactor our code not to use `mongoose-paginate`, this helper
+          // will backfill the IDs. Cumbersome and not optimal, but there are not that
+          // many deleted profiles that this would be a significant issue.
+          fillDeletedProfiles(threads, function (err, threads) {
+            res.json(threads || []);
+          });
+        });
       }
     },
   );
@@ -461,34 +512,41 @@ exports.threadByUser = function (req, res, next, userId) {
     });
   }
 
-  // Only moderator and admin roles can read messages from banned users. For others they stay hidden.
-  const publicityLimit =
-    req.user.roles.includes('moderator') || req.user.roles.includes('admin')
-      ? {}
-      : {
-          public: true,
-          roles: { $nin: ['suspended', 'shadowban'] },
-        };
+  // TODO do we want to allow to see the messages from suspended or banned users
+  // in order to make them "read"?
+
+  // // Only moderator and admin roles can read messages from banned users. For others they stay hidden.
+  // const publicityLimit =
+  //   req.user.roles.includes('moderator') || req.user.roles.includes('admin')
+  //     ? {}
+  //     : {
+  //         public: true,
+  //         roles: { $nin: ['suspended', 'shadowban'] },
+  //       };
 
   async.waterfall(
     [
-      // Check that other user is legitimate:
-      // - Has to be confirmed their email (hence be public)
-      // - Not suspended profile
-      function (done) {
-        User.findOne({
-          _id: userId,
-          ...publicityLimit,
-        }).exec(function (err, receiver) {
-          // If we were unable to find the receiver, return the error and stop here
-          if (err || !receiver) {
-            return res.status(404).send({
-              message: 'Member does not exist.',
-            });
-          }
-          done();
-        });
-      },
+      // TODO commented out just to make it work.
+      // We probably want to still return 404, if the user existed by didn't
+      // have conversation with logged-in user?
+
+      // // Check that other user is legitimate:
+      // // - Has to be confirmed their email (hence be public)
+      // // - Not suspended profile
+      // function (done) {
+      //   User.findOne({
+      //     _id: userId,
+      //     ...publicityLimit,
+      //   }).exec(function (err, receiver) {
+      //     // If we were unable to find the receiver, return the error and stop here
+      //     if (err || !receiver) {
+      //       return res.status(404).send({
+      //         message: 'Member does not exist.',
+      //       });
+      //     }
+      //     done();
+      //   });
+      // },
 
       // Find messages
       function (done) {
@@ -542,6 +600,7 @@ exports.threadByUser = function (req, res, next, userId) {
 
         // If latest message in the thread was to current user, mark thread read
         if (
+          messages[0].userTo &&
           messages[0].userTo._id &&
           req.user._id.equals(messages[0].userTo._id)
         ) {

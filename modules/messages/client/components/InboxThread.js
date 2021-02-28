@@ -18,7 +18,7 @@ export default function InboxThread({ user, thread }) {
         !read ? 'threadlist-thread-unread' : ''
       }`}
     >
-      <a href={`/messages/${otherUser.username}`}>
+      <a href={`/messages/${otherUser.username}?userId=${otherUser._id}`}>
         <div className="media">
           <div className="media-left">
             <Avatar user={otherUser} size={32} link={false} />
