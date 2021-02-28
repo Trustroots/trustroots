@@ -300,6 +300,15 @@ export default function Thread({ user, profileMinimumLength }) {
                   onSend={content => sendMessage(content)}
                 />
               )}
+              {removed && (
+                <div className="panel panel-default">
+                  <div className="panel-body">
+                    <em className="text-danger">
+                      {t('Member is not available anymore.')}
+                    </em>
+                  </div>
+                </div>
+              )}
             </ThreadContainer>
           )}
         </div>
