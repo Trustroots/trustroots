@@ -83,7 +83,7 @@ export default function ThreadMessage({ message, user }) {
               {message.userFrom.displayName}
             </a>
           ) : (
-            <span>Unknown User</span>
+            <span>{t('Unknown member')}</span>
           )}
           —
           <TimeAgo date={new Date(message.created)} />
