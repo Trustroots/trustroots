@@ -104,6 +104,8 @@ function Loading() {
 }
 
 export default function Thread({ user, profileMinimumLength }) {
+  const { t } = useTranslation('messages');
+
   if (!user.public) {
     return (
       <section className="container-spacer">
@@ -162,7 +164,7 @@ export default function Thread({ user, profileMinimumLength }) {
   function createFakeUserObject(userId) {
     return {
       _id: userId,
-      displayName: 'Unknown User',
+      displayName: t('Unknown member'),
       username: null,
       member: [],
       languages: [],
