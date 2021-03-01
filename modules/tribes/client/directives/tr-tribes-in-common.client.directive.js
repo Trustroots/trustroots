@@ -35,27 +35,29 @@ function trTribesInCommonDirective(Authentication, TribeService) {
      * Initialize directive controller
      */
     function activate() {
-      const tribesInCommon = [];
+      $scope.$watch('trTribesInCommon', function () {
+        const tribesInCommon = [];
 
-      // Loop all tribes memberships
-      if (
-        angular.isDefined($scope.trTribesInCommon) &&
-        angular.isArray($scope.trTribesInCommon) &&
-        Authentication.user.memberIds &&
-        Authentication.user.memberIds.length > 0
-      ) {
-        angular.forEach($scope.trTribesInCommon, function (membership) {
-          // If authenticated user has it as well, add to list
-          if (
-            membership.tribe &&
-            Authentication.user.memberIds.indexOf(membership.tribe._id) > -1
-          ) {
-            tribesInCommon.push(membership);
-          }
-        });
-      }
+        // Loop all tribes memberships
+        if (
+          angular.isDefined($scope.trTribesInCommon) &&
+          angular.isArray($scope.trTribesInCommon) &&
+          Authentication.user.memberIds &&
+          Authentication.user.memberIds.length > 0
+        ) {
+          angular.forEach($scope.trTribesInCommon, function (membership) {
+            // If authenticated user has it as well, add to list
+            if (
+              membership.tribe &&
+              Authentication.user.memberIds.indexOf(membership.tribe._id) > -1
+            ) {
+              tribesInCommon.push(membership);
+            }
+          });
+        }
 
-      vm.memberships = tribesInCommon;
+        vm.memberships = tribesInCommon;
+      });
     }
 
     /**
