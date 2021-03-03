@@ -1,1 +1,20 @@
-{}
+{
+    "{{count, number}} members_0": "{{count, number}} Vienas asmuo",
+    "{{count, number}} members_1": "Sekantis asmuo",
+    "{{count, number}} members_2": "Keletas asmenų",
+    "Sign up with Trustroots": "Prisijungti į Trustroots",
+    "Send us suggestions!": "Siųsti pasiūlymus!",
+    "No members yet": "Nėra narių",
+    "New circle!": "Nauja grupė!",
+    "Missing your circle?": "Nėra tavo grupės?",
+    "Leave this circle?": "Palikti grupę?",
+    "Leave circle": "Palikti Grupę",
+    "Joining circles helps you find likeminded Trustroots members.": "Prisjungus atrasite Trustroot narius",
+    "Joined": "Prisijungėte",
+    "Join Trustroots to find members behind circles.": "Prisijunk prie trustroots kad atrastum narius grupėse",
+    "Join ({{label}})": "Prijungti ({{label}})",
+    "Join": "Prisijungti",
+    "Do you want to leave \"{{label}}\"?": "Ar palikti \"{{label}}\"?",
+    "Discover circles": "Atraskite Grupes",
+    "Cancel": "Baigti"
+}
