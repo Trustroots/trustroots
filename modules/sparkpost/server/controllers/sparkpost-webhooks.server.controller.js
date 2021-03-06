@@ -82,26 +82,32 @@ exports.processAndSendMetrics = function (event, callback) {
   // Validate against these event types
   // E.g. `{ msys: message_event: { type: 'bounce' } }`
   const eventTypes = [
+    'ab_test_cancelled',
+    'ab_test_completed',
+    'amp_click',
+    'amp_initial_open',
+    'amp_open',
     'bounce',
     'click',
     'delay',
     'delivery',
+    'error',
     'generation_failure',
     'generation_rejection',
+    'initial_open',
     'injection',
     'link_unsubscribe',
     'list_unsubscribe',
     'open',
     'out_of_band',
     'policy_rejection',
-    'policy_Rejection',
     'relay_delivery',
     'relay_injection',
     'relay_permfail',
     'relay_rejection',
     'relay_tempfail',
-    'sms_status',
     'spam_complaint',
+    'success',
   ];
 
   // Get what's in first key of `msys` object
