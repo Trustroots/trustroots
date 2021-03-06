@@ -119,7 +119,11 @@ exports.processAndSendMetrics = (event, callback) => {
     return callback();
   }
 
-  const mailboxProvider = eventData?.mailbox_provider ?? 'unknown';
+  // Mailbox Provider of the recipient, e.g. "Gsuite"
+  const mailboxProvider = String(eventData?.mailbox_provider ?? 'unknown');
+
+  // Canonicalized text of the response returned by the remote server due to a failed delivery attempt.
+  const reason = String(eventData?.reason ?? '');
 
   // Add campaign id to tags if present
   let campaignId = String(eventData?.campaign_id ?? '');
@@ -150,6 +154,7 @@ exports.processAndSendMetrics = (event, callback) => {
       eventCategory,
       eventType,
       mailboxProvider,
+      reason,
     },
     meta: {},
   };
