@@ -171,7 +171,7 @@ exports.processAndSendMetrics = (event, callback) => {
 /**
  * Basic authentication middleware
  */
-exports.basicAuthenticate = function (req, res, next) {
+exports.basicAuthenticate = (req, res, next) => {
   // Get the basic auth credentials from the request.
   // The Authorization header is parsed and if the header is invalid,
   // undefined is returned, otherwise an object with name and pass properties.
