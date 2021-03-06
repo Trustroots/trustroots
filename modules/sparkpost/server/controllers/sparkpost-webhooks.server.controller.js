@@ -37,16 +37,14 @@ const config = require(path.resolve('./config/config'));
  *
  * @todo Prevent processing duplicate batches.
  */
-exports.receiveBatch = function (req, res) {
-  if (!_.isArray(req.body) || !req.body.length) {
+exports.receiveBatch = (req, res) => {
+  if (_.isarray(req.body) || !req.body.length) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('bad-request'),
     });
   }
 
-  // eslint-disable-next-line no-unused-vars
-  async.map(req.body, exports.processAndSendMetrics, function (err) {
-    // @TODO what should happen when writing to stats api errors?
+  async.map(req.body, exports.processAndSendMetrics, () => {
     res.status(200).end();
   });
 };
@@ -54,18 +52,11 @@ exports.receiveBatch = function (req, res) {
 /**
  * Process event and send it to InfluxDB
  */
-exports.processAndSendMetrics = function (event, callback) {
+exports.processAndSendMetrics = (event, callback) => {
   // When adding a webhook, Sparkpost sends us `[{"msys":{}}]`
-  if (!_.has(event, 'msys') || _.isEmpty(event.msys)) {
+  if (!event?.msys) {
     return callback();
   }
-
-  const meta = {};
-
-  const tags = {
-    country: '',
-    campaignId: '',
-  };
 
   // Validate against these event categories
   // E.g. `{ msys: message_event: { } }`
@@ -109,25 +100,18 @@ exports.processAndSendMetrics = function (event, callback) {
   ];
 
   // Get what's in first key of `msys` object
-  const eventCategory = _.keys(event.msys)[0];
+  const eventCategory = Object.keys(event?.msys ?? {})[0];
+
+  const eventData = event?.msys[eventCategory];
 
   // Get what's the `type` of that event
-  const eventType = _.get(event, 'msys.' + eventCategory + '.type');
-
-  // Validate event category
-  tags.category = _.find(eventCategories, function (category) {
-    // Returns first match from array
-    return category === eventCategory;
-  });
-
-  // Validate event type
-  tags.type = _.find(eventTypes, function (type) {
-    // Returns first match from array
-    return type === eventType;
-  });
+  const eventType = eventData?.type ?? 'unknown';
 
   // Didn't validate, don't continue
-  if (!tags.category || !tags.type) {
+  if (
+    !eventCategories.includes(eventCategory) ||
+    !eventTypes.includes(eventType)
+  ) {
     log('error', 'Could not validate SparkPost event webhook.', {
       type: eventType,
       category: eventCategory,
@@ -135,12 +119,14 @@ exports.processAndSendMetrics = function (event, callback) {
     return callback();
   }
 
+  const mailboxProvider = eventData?.mailbox_provider ?? 'unknown';
+
   // Add campaign id to tags if present
-  const campaignId = _.get(event, 'msys.' + eventCategory + '.campaign_id');
-  if (_.isString(campaignId) && campaignId.length > 0) {
+  let campaignId = String(eventData?.campaign_id ?? '');
+  if (campaignId.length > 0) {
     // "Slugify" `campaignId` to ensure we don't get any carbage
     // Allows only `A-Za-z0-9_-`
-    tags.campaignId = speakingurl(campaignId, {
+    campaignId = speakingurl(campaignId, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // don't maintain case
       truncate: 255, // truncate to 255 chars
@@ -148,9 +134,9 @@ exports.processAndSendMetrics = function (event, callback) {
   }
 
   // Add country if present
-  const country = _.get(event, 'msys.' + eventCategory + '.geo_ip.country');
-  if (_.isString(country) && country.length > 0 && country.length <= 3) {
-    tags.country = country.replace(/\W/g, '').toUpperCase();
+  let country = String(eventData?.geo_ip?.country ?? '');
+  if (country.length > 0 && country.length <= 3) {
+    country = country.replace(/\W/g, '').toUpperCase();
   }
 
   const statObj = {
@@ -158,17 +144,22 @@ exports.processAndSendMetrics = function (event, callback) {
     counts: {
       count: 1,
     },
-    tags,
-    meta,
+    tags: {
+      campaignId,
+      country,
+      eventCategory,
+      eventType,
+      mailboxProvider,
+    },
+    meta: {},
   };
 
   // Set `time` field to event's timestamp
-  const timestamp = _.get(event, 'msys.' + eventCategory + '.timestamp');
-  if (timestamp) {
-    statObj.time = new Date(parseInt(timestamp, 10) * 1000);
+  if (eventData?.timestamp) {
+    statObj.time = new Date(parseInt(eventData?.timestamp, 10) * 1000);
   }
 
-  // send the stats via generalized stat api
+  // Send the stats via generalized stat api
   statService.stat(statObj, callback);
 };
 
@@ -181,7 +172,7 @@ exports.basicAuthenticate = function (req, res, next) {
   // undefined is returned, otherwise an object with name and pass properties.
   const credentials = basicAuth(req);
 
-  const enabled = _.get(config, 'sparkpostWebhook.enabled');
+  const enabled = config?.sparkpostWebhook?.enabled;
 
   // Access denied
   if (
