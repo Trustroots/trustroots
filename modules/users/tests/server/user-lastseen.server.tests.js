@@ -96,17 +96,17 @@ describe('User last seen CRUD tests', function () {
           if (err) return done(err);
 
           // read user from database
-          User.findOne({ username: _confirmedUser.username }, function (
-            err,
-            user,
-          ) {
-            try {
-              should(user.seen).eql(new Date());
-              return done();
-            } catch (err) {
-              return done(err);
-            }
-          });
+          User.findOne(
+            { username: _confirmedUser.username },
+            function (err, user) {
+              try {
+                should(user.seen).eql(new Date());
+                return done();
+              } catch (err) {
+                return done(err);
+              }
+            },
+          );
         });
     });
 

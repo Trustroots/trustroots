@@ -480,55 +480,56 @@ describe('Offer search tests', function () {
 
   // Tests different regions in the globe (Asia, USA, North Pole etc)
   _.forEach(testLocations, function (testLocation, area) {
-    it('should be able to get offer from an area (' + area + ')', function (
-      done,
-    ) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
+    it(
+      'should be able to get offer from an area (' + area + ')',
+      function (done) {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
 
-          // Clean out the DB from other offers
-          Offer.deleteMany().exec(function () {
-            // Create new offer to target location
-            const testLocationOffer = new Offer(offer1);
-            testLocationOffer.location = testLocation.location;
+            // Clean out the DB from other offers
+            Offer.deleteMany().exec(function () {
+              // Create new offer to target location
+              const testLocationOffer = new Offer(offer1);
+              testLocationOffer.location = testLocation.location;
 
-            testLocationOffer.save(function (saveErr, saveRes) {
-              if (saveErr) return done(saveErr);
+              testLocationOffer.save(function (saveErr, saveRes) {
+                if (saveErr) return done(saveErr);
 
-              // Get offers (around Berlin)
-              agent
-                .get('/api/offers' + testLocation.queryBoundingBox)
-                .expect(200)
-                .end(function (offersGetErr, offersGetRes) {
-                  // Handle offer get error
-                  if (offersGetErr) return done(offersGetErr);
+                // Get offers (around Berlin)
+                agent
+                  .get('/api/offers' + testLocation.queryBoundingBox)
+                  .expect(200)
+                  .end(function (offersGetErr, offersGetRes) {
+                    // Handle offer get error
+                    if (offersGetErr) return done(offersGetErr);
 
-                  // Set assertions
-                  offersGetRes.body.features.should.have.lengthOf(1);
+                    // Set assertions
+                    offersGetRes.body.features.should.have.lengthOf(1);
 
-                  const offerA = offersGetRes.body.features[0];
-                  offerA.properties.id.should.equal(saveRes._id.toString());
-                  offerA.geometry.coordinates[0].should.be.approximately(
-                    testLocation.location[1],
-                    0.1,
-                  );
-                  offerA.geometry.coordinates[1].should.be.approximately(
-                    testLocation.location[0],
-                    0.1,
-                  );
+                    const offerA = offersGetRes.body.features[0];
+                    offerA.properties.id.should.equal(saveRes._id.toString());
+                    offerA.geometry.coordinates[0].should.be.approximately(
+                      testLocation.location[1],
+                      0.1,
+                    );
+                    offerA.geometry.coordinates[1].should.be.approximately(
+                      testLocation.location[0],
+                      0.1,
+                    );
 
-                  // Call the assertion callback
-                  return done();
-                });
+                    // Call the assertion callback
+                    return done();
+                  });
+              });
             });
           });
-        });
-    });
+      },
+    );
   });
 
   it('should include both meet and host offers when getting a list of offers from an area', function (done) {
