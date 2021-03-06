@@ -52,6 +52,8 @@ describe('Sparkpost Webhooks - Integration Test', function () {
         },
         timestamp: 1234567890,
         campaign_id: 'this is a campaign id',
+        mailbox_provider: 'Gsuite',
+        reason: 'MAIL REFUSED - IP (a.b.c.d) is in black list',
       },
     },
   };
@@ -83,9 +85,15 @@ describe('Sparkpost Webhooks - Integration Test', function () {
 
           should(measurement).eql('transactionalEmailEvent');
           should(point).have.propertyByPath('fields', 'count').eql(1);
-          should(point).have.propertyByPath('fields', 'country').eql('ABC');
+          should(point).have.propertyByPath('tags', 'country').eql('ABC');
           should(point)
-            .have.propertyByPath('fields', 'campaignId')
+            .have.propertyByPath('tags', 'mailboxProvider')
+            .eql('Gsuite');
+          should(point)
+            .have.propertyByPath('tags', 'reason')
+            .eql('MAIL REFUSED - IP (a.b.c.d) is in black list');
+          should(point)
+            .have.propertyByPath('tags', 'campaignId')
             .eql('this-is-a-campaign-id');
           should(point)
             .have.propertyByPath('tags', 'category')
