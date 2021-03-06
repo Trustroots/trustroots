@@ -33,9 +33,7 @@ const config = require(path.resolve('./config/config'));
  * - Each webhook batch contains the header X-MessageSystems-Batch-ID, which
  *   is useful for auditing and prevention of processing duplicate batches.
  *
- * @link https://www.sparkpost.com/blog/webhooks-beyond-the-basics/
- * @link https://developers.sparkpost.com/api/webhooks.html
- * @link https://support.sparkpostelite.com/customer/en/portal/articles/2232381-sparkpost-event-and-metrics-definitions
+ * @link https://developers.sparkpost.com/api/webhooks/
  *
  * @todo Prevent processing duplicate batches.
  */
@@ -84,26 +82,26 @@ exports.processAndSendMetrics = function (event, callback) {
   // Validate against these event types
   // E.g. `{ msys: message_event: { type: 'bounce' } }`
   const eventTypes = [
-    'injection',
-    'delivery',
-    'policy_Rejection',
-    'delay',
     'bounce',
-    'out_of_band',
-    'spam_complaint',
+    'click',
+    'delay',
+    'delivery',
     'generation_failure',
     'generation_rejection',
-    'policy_rejection',
-    'sms_status',
+    'injection',
     'link_unsubscribe',
     'list_unsubscribe',
+    'open',
+    'out_of_band',
+    'policy_rejection',
+    'policy_Rejection',
     'relay_delivery',
     'relay_injection',
+    'relay_permfail',
     'relay_rejection',
     'relay_tempfail',
-    'relay_permfail',
-    'open',
-    'click',
+    'sms_status',
+    'spam_complaint',
   ];
 
   // Get what's in first key of `msys` object
