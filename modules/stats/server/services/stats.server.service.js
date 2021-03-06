@@ -25,11 +25,9 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const async = require('async');
 // path = require('path'),
 // config = require(path.resolve('./config/config')),
 const influxService = require('./influx.server.service.js');
-const stathatService = require('./stathat.server.service.js');
 
 /**
  * The object which stats api .stat method expects as parameter
@@ -271,55 +269,12 @@ function stat(stat, callback) {
   // validateStat will throw an error if invalid
   try {
     validateStat(stat); // Wrap in if() or make it throw depend on implementation
-  } catch (e) {
-    return callback(e);
-  }
-  // send the stat to InfluxDB
-  // send the stat to Stathat
-  // let them both finish or fail and then report errors
-  let influxErr;
-  let stathatErr;
-
-  // The wrap functions keep the errors in influxErr and stathatErr
-  // and always finish without failing. Why? We want to finish all and report
-  // errors after all have finished or errored.
-  //
-  function influxServiceStatWrap(stat, done) {
-    influxService.stat(stat, function (e) {
-      if (e) influxErr = e;
-      return done();
-    });
+  } catch (err) {
+    return callback(err);
   }
 
-  function stathatServiceStatWrap(stat, done) {
-    stathatService.stat(stat, function (e) {
-      if (e) stathatErr = e;
-      return done();
-    });
-  }
-
-  async.applyEach(
-    [stathatServiceStatWrap, influxServiceStatWrap],
-    stat,
-    function (e) {
-      if (e) return callback(e); // this should not happen
-
-      if (influxErr || stathatErr) {
-        const finalErr = new Error(
-          'Writing to Influx or Stathat service failed.',
-        );
-
-        finalErr.errors = {
-          influx: influxErr,
-          stathat: stathatErr,
-        };
-
-        return callback(finalErr);
-      }
-
-      return callback();
-    },
-  );
+  // You can add other stats services here
+  influxService.stat(stat, callback);
 }
 
 // Public exports
