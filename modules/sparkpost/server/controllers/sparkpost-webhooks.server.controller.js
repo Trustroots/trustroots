@@ -60,14 +60,12 @@ exports.processAndSendMetrics = function (event, callback) {
     return callback();
   }
 
-  // we changed fields to meta
-  // only numbers can be saved as count/value in stathat, so every string value must be either tag (saved) or meta (ignored)
-  const meta = {
+  const meta = {};
+
+  const tags = {
     country: '',
     campaignId: '',
   };
-
-  const tags = {};
 
   // Validate against these event categories
   // E.g. `{ msys: message_event: { } }`
@@ -137,12 +135,12 @@ exports.processAndSendMetrics = function (event, callback) {
     return callback();
   }
 
-  // Add campaign id to meta if present
+  // Add campaign id to tags if present
   const campaignId = _.get(event, 'msys.' + eventCategory + '.campaign_id');
   if (_.isString(campaignId) && campaignId.length > 0) {
     // "Slugify" `campaignId` to ensure we don't get any carbage
     // Allows only `A-Za-z0-9_-`
-    meta.campaignId = speakingurl(campaignId, {
+    tags.campaignId = speakingurl(campaignId, {
       separator: '-', // char that replaces the whitespaces
       maintainCase: false, // don't maintain case
       truncate: 255, // truncate to 255 chars
@@ -152,7 +150,7 @@ exports.processAndSendMetrics = function (event, callback) {
   // Add country if present
   const country = _.get(event, 'msys.' + eventCategory + '.geo_ip.country');
   if (_.isString(country) && country.length > 0 && country.length <= 3) {
-    meta.country = country.replace(/\W/g, '').toUpperCase();
+    tags.country = country.replace(/\W/g, '').toUpperCase();
   }
 
   const statObj = {
