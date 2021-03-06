@@ -3,7 +3,6 @@
 const should = require('should');
 const path = require('path');
 const influx = require('influx');
-const stathat = require('stathat');
 const sinon = require('sinon');
 const config = require(path.resolve('./config/config'));
 const sparkpostWebhooks = require(path.resolve(
@@ -36,10 +35,6 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       protocol: 'http',
       database: 'trustroots-test',
     });
-
-    // stub the stathat endpoints
-    sinon.stub(stathat, 'trackEZCountWithTime');
-    stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
   });
 
   const testEvent = {
