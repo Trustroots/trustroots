@@ -111,7 +111,7 @@ describe('<CreateExperience />', () => {
 
     await waitForLoader();
 
-    expect(queryByLabelText('How do you know them?')).toBeInTheDocument();
+    expect(getAllByText('How do you know them?')[1]).toBeInTheDocument();
     fireEvent.click(getByLabelText('They hosted me'));
 
     fireEvent.click(getAllByText('Next')[0]);
@@ -169,7 +169,7 @@ describe('<CreateExperience />', () => {
 
     await waitForLoader();
 
-    expect(queryByLabelText('How do you know them?')).toBeInTheDocument();
+    expect(getAllByText('How do you know them?')[1]).toBeInTheDocument();
     fireEvent.click(getByLabelText('They hosted me'));
 
     fireEvent.click(getAllByText('Next')[0]);
