@@ -127,14 +127,14 @@ describe('User password CRUD tests', function () {
             'We sent you an email with further instructions.',
           );
 
-          User.findOne({ username: user.username.toLowerCase() }, function (
-            err,
-            userRes,
-          ) {
-            userRes.resetPasswordToken.should.not.be.empty();
-            should.exist(userRes.resetPasswordExpires);
-            return done();
-          });
+          User.findOne(
+            { username: user.username.toLowerCase() },
+            function (err, userRes) {
+              userRes.resetPasswordToken.should.not.be.empty();
+              should.exist(userRes.resetPasswordExpires);
+              return done();
+            },
+          );
         });
     });
   });
@@ -160,14 +160,14 @@ describe('User password CRUD tests', function () {
             'We sent you an email with further instructions.',
           );
 
-          User.findOne({ username: user.username.toLowerCase() }, function (
-            err,
-            userRes,
-          ) {
-            userRes.resetPasswordToken.should.not.be.empty();
-            should.exist(userRes.resetPasswordExpires);
-            return done();
-          });
+          User.findOne(
+            { username: user.username.toLowerCase() },
+            function (err, userRes) {
+              userRes.resetPasswordToken.should.not.be.empty();
+              should.exist(userRes.resetPasswordExpires);
+              return done();
+            },
+          );
         });
     });
   });
@@ -193,14 +193,14 @@ describe('User password CRUD tests', function () {
             'We sent you an email with further instructions.',
           );
 
-          User.findOne({ email: user.email.toLowerCase() }, function (
-            err,
-            userRes,
-          ) {
-            userRes.resetPasswordToken.should.not.be.empty();
-            should.exist(userRes.resetPasswordExpires);
-            return done();
-          });
+          User.findOne(
+            { email: user.email.toLowerCase() },
+            function (err, userRes) {
+              userRes.resetPasswordToken.should.not.be.empty();
+              should.exist(userRes.resetPasswordExpires);
+              return done();
+            },
+          );
         });
     });
   });
@@ -226,14 +226,14 @@ describe('User password CRUD tests', function () {
             'We sent you an email with further instructions.',
           );
 
-          User.findOne({ email: user.email.toLowerCase() }, function (
-            err,
-            userRes,
-          ) {
-            userRes.resetPasswordToken.should.not.be.empty();
-            should.exist(userRes.resetPasswordExpires);
-            return done();
-          });
+          User.findOne(
+            { email: user.email.toLowerCase() },
+            function (err, userRes) {
+              userRes.resetPasswordToken.should.not.be.empty();
+              should.exist(userRes.resetPasswordExpires);
+              return done();
+            },
+          );
         });
     });
   });
@@ -255,26 +255,26 @@ describe('User password CRUD tests', function () {
             return done(err);
           }
 
-          User.findOne({ username: user.username.toLowerCase() }, function (
-            err,
-            userRes,
-          ) {
-            userRes.resetPasswordToken.should.not.be.empty();
-            should.exist(userRes.resetPasswordExpires);
-            agent
-              .get('/api/auth/reset/' + userRes.resetPasswordToken)
-              .expect(302)
-              .end(function (err, res) {
-                // Handle error
-                if (err) {
-                  return done(err);
-                }
-                res.headers.location.should.be.equal(
-                  '/password/reset/' + userRes.resetPasswordToken,
-                );
-                return done();
-              });
-          });
+          User.findOne(
+            { username: user.username.toLowerCase() },
+            function (err, userRes) {
+              userRes.resetPasswordToken.should.not.be.empty();
+              should.exist(userRes.resetPasswordExpires);
+              agent
+                .get('/api/auth/reset/' + userRes.resetPasswordToken)
+                .expect(302)
+                .end(function (err, res) {
+                  // Handle error
+                  if (err) {
+                    return done(err);
+                  }
+                  res.headers.location.should.be.equal(
+                    '/password/reset/' + userRes.resetPasswordToken,
+                  );
+                  return done();
+                });
+            },
+          );
         });
     });
   });

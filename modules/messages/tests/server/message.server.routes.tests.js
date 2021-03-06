@@ -660,33 +660,35 @@ describe('Message CRUD tests', function () {
   });
 
   it('should not be able to send a message to non-public user', function (done) {
-    User.findByIdAndUpdate(userToId, { $set: { public: false } }, function (
-      err,
-    ) {
-      if (err) return done(err);
+    User.findByIdAndUpdate(
+      userToId,
+      { $set: { public: false } },
+      function (err) {
+        if (err) return done(err);
 
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
 
-          agent
-            .post('/api/messages')
-            .send(message)
-            .expect(404)
-            .end(function (messageSaveErr, messageSaveRes) {
-              messageSaveRes.body.message.should.equal(
-                'Member you are writing to does not exist.',
-              );
+            agent
+              .post('/api/messages')
+              .send(message)
+              .expect(404)
+              .end(function (messageSaveErr, messageSaveRes) {
+                messageSaveRes.body.message.should.equal(
+                  'Member you are writing to does not exist.',
+                );
 
-              // Call the assertion callback
-              return done(messageSaveErr);
-            });
-        });
-    });
+                // Call the assertion callback
+                return done(messageSaveErr);
+              });
+          });
+      },
+    );
   });
 
   it('should not be able to send a message when I have too short description', function (done) {
