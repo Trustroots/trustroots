@@ -29,6 +29,8 @@ describe('Sparkpost CRUD tests', function () {
               type: 'delivery',
               campaign_id: 'example',
               timestamp: '1454442600',
+              mailbox_provider: 'Gsuite',
+              reason: 'MAIL REFUSED - IP (a.b.c.d) is in black list',
             },
           },
         },
