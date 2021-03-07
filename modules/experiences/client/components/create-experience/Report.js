@@ -22,6 +22,11 @@ export default function Report({
 
   return (
     <ReportContainer>
+      <p>
+        {t(
+          "It's extremely important you report anyone behaving against rules and community values to us.",
+        )}
+      </p>
       <Switch isSmall checked={report} onChange={onChangeReport}>
         {t('Privately report this person to moderators')}
       </Switch>

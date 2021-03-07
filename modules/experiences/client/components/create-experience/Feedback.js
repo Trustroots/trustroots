@@ -57,7 +57,7 @@ export default function Feedback({
         ></textarea>
         <span className="help-block">
           {t(
-            'The answer you write will be publicaly available on their profile',
+            'The answer you write will be publicly available on their profile.',
           )}
           <br />
         </span>

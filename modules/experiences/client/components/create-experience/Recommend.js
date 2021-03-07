@@ -25,9 +25,15 @@ export default function Recommend({
   const { t } = useTranslation('experiences');
 
   const recommendQuestions = {
-    guest: t('Would you recommend others to stay with them?'),
-    host: t('Would you recommend others to host them?'),
-    met: t('Would you recommend others to meet them?'),
+    guest: t(
+      'Based on your experience, would you recommend others to stay with them?',
+    ),
+    host: t(
+      'Based on your experience, would you recommend others to host them?',
+    ),
+    met: t(
+      'Based on your experience, would you recommend others to meet them?',
+    ),
   };
 
   const question = recommendQuestions[primaryInteraction];
@@ -69,7 +75,7 @@ export default function Recommend({
             bsStyle="default"
             bsSize="large"
           >
-            {t("I don't know")}
+            {t('Skip')}
           </ToggleButton>
         </ToggleButtonGroup>
         {recommend === 'no' && (
@@ -78,10 +84,6 @@ export default function Recommend({
               "We're sad to hear you didn't have a great experience using Trustroots!",
             )}
             {' 😞'}
-            <br />
-            {t(
-              "It's extremely important you report anyone behaving against rules to us.",
-            )}
           </SadNotice>
         )}
         <Report

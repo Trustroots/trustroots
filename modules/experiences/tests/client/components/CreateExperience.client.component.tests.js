@@ -117,7 +117,9 @@ describe('<CreateExperience />', () => {
     fireEvent.click(getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText('Would you recommend others to stay with them?'),
+      queryByLabelText(
+        'Based on your experience, would you recommend others to stay with them?',
+      ),
     ).toBeInTheDocument();
     fireEvent.click(getByText('Yes'));
 
@@ -175,7 +177,9 @@ describe('<CreateExperience />', () => {
     fireEvent.click(getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText('Would you recommend others to stay with them?'),
+      queryByLabelText(
+        'Based on your experience, would you recommend others to stay with them?',
+      ),
     ).toBeInTheDocument();
     fireEvent.click(getByText('No'));
 
