@@ -111,11 +111,12 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
             {filteredLocales.map(({ code, label }) => (
               <li key={code}>
                 {code === currentLanguageCode && (
-                  <SelectedLanguage>{label}</SelectedLanguage>
+                  <SelectedLanguage lang={code}>{label}</SelectedLanguage>
                 )}
                 {code !== currentLanguageCode && (
                   <button
                     className="btn btn-link"
+                    lang={code}
                     onClick={() => {
                       onLanguageChange(code);
                       onModalHide();
