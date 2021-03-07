@@ -38,37 +38,3 @@ describe('default presentation', () => {
     expect(api.users.update).toHaveBeenCalledWith({ locale: 'cs' });
   });
 });
-
-describe('select presentation', () => {
-  it('has an option for each language', async () => {
-    const { getAllByRole } = render(<LanguageSwitch presentation="select" />);
-    const items = getAllByRole('option');
-    expect(items).toHaveLength(locales.length);
-    const names = items.map(item => item.innerHTML);
-    expect(names).toEqual(localeNames);
-  });
-
-  it('can change language', async () => {
-    const { getByRole, getByText } = render(
-      <LanguageSwitch presentation="select" />,
-    );
-    expect(selectedOption(getByRole('combobox'))).toHaveTextContent('English');
-    fireEvent.change(getByRole('combobox'), { target: getByText('česky') });
-    expect(selectedOption(getByRole('combobox'))).toHaveTextContent('česky');
-  });
-
-  it('can save the language to the API', async () => {
-    const { getByRole, getByText } = render(
-      <LanguageSwitch presentation="select" saveToAPI={true} />,
-    );
-    fireEvent.change(getByRole('combobox'), {
-      target: { value: getByText('česky').value },
-    });
-    expect(api.users.update).toHaveBeenCalledWith({ locale: 'cs' });
-  });
-});
-
-function selectedOption(selectElement) {
-  if (!selectElement) return null;
-  return Array.from(selectElement.options).find(option => option.selected);
-}
