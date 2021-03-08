@@ -156,17 +156,6 @@ export default function Statistics({ isAuthenticated }) {
                 </a>
               </Stat>
 
-              <Stat title={t('Most messages get replies')} className="is-graph">
-                <a href="https://grafana.trustroots.org/d/000000004/messages-detailed">
-                  <img
-                    className="img-responsive"
-                    src="https://grafana.trustroots.org/render/d-solo/000000004/messages-detailed?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
-                    width="100%"
-                    alt={t('Weekly messages')}
-                  />
-                </a>
-              </Stat>
-
               <Stat title={t('Connected to networks')}>
                 <ul className="list-unstyled text-right">
                   {!statistics
@@ -221,11 +210,23 @@ export default function Statistics({ isAuthenticated }) {
                   </>
                 )}
               </Stat>
+
+              <Stat title={t('Most messages get replies')} className="is-graph">
+                <a href="https://grafana.trustroots.org/d/000000004/messages-detailed">
+                  <img
+                    className="img-responsive"
+                    src="https://grafana.trustroots.org/render/d-solo/000000004/messages-detailed?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
+                    width="100%"
+                    alt={t('Weekly messages')}
+                  />
+                </a>
+              </Stat>
+
               <Stat title={t('Translations status')} className="is-graph">
                 <a href="https://hosted.weblate.org/engage/trustroots/">
                   <img
                     alt={t('Translations status')}
-                    src="https://hosted.weblate.org/widgets/trustroots/-/multi-auto.svg"
+                    src="https://hosted.weblate.org/widgets/trustroots/-/horizontal-auto.svg"
                   />
                 </a>
               </Stat>
