@@ -10,6 +10,7 @@ const escapeStringRegexp = require('escape-string-regexp');
 const mongoose = require('mongoose');
 const log = require(path.resolve('./config/lib/logger'));
 
+const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
 const Message = mongoose.model('Message');
 const Offer = mongoose.model('Offer');
@@ -291,9 +292,12 @@ exports.changeRole = async (req, res) => {
       });
     }
 
+    let roleChangeMessage = `Role "${role}" added.`;
+
     // If adding role 'volunteer-alumni', remove 'volunteer' role
     if (role === 'volunteer-alumni') {
       await User.updateOne({ _id: userId }, { $pull: { roles: 'volunteer' } });
+      roleChangeMessage = 'User made into volunteer-alumni.';
     }
 
     // If adding role 'volunteer', remove 'volunteer-alumni' role
@@ -302,17 +306,28 @@ exports.changeRole = async (req, res) => {
         { _id: userId },
         { $pull: { roles: 'volunteer-alumni' } },
       );
+      roleChangeMessage = 'User made into volunteer.';
     }
 
     // If adding role 'shadowban', remove 'suspended' role
     if (role === 'shadowban') {
       await User.updateOne({ _id: userId }, { $pull: { roles: 'suspended' } });
+      roleChangeMessage = 'User shadowbanned.';
     }
 
     // If adding role 'suspended', remove 'shadowban' role
     if (role === 'suspended') {
       await User.updateOne({ _id: userId }, { $pull: { roles: 'shadowban' } });
+      roleChangeMessage = 'User suspended.';
     }
+
+    // Add new admin-note about role change
+    const adminNoteItem = new AdminNote({
+      admin: req.user._id,
+      note: `<p><b>Performed action:</b></p><p><i>${roleChangeMessage}</i></p>`,
+      user: userId,
+    });
+    await adminNoteItem.save();
 
     res.send({ message: 'Role changed.' });
   } catch (err) {
