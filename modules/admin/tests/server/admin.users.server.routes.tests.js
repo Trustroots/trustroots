@@ -71,9 +71,9 @@ describe('Admin User CRUD tests', () => {
       });
 
       const { _id: _userAdminId } = await userAdmin.save();
-      userAdminId = _userAdminId;
+      userAdminId = _userAdminId.toString();
       const { _id: _userRegularId } = await userRegular.save();
-      userRegularId = _userRegularId;
+      userRegularId = _userRegularId.toString();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error(err);
@@ -355,12 +355,10 @@ describe('Admin User CRUD tests', () => {
           .get(`/api/admin/notes?userId=${userRegularId}`)
           .expect(200);
 
-        // Script tag gets stripped out
-        // URL is turned into a link
         body[0].note.should.equal(
           '<p><b>Performed action:</b></p><p><i>User suspended.</i></p>',
         );
-        body[0].admin._id.equal(userAdminId);
+        body[0].admin._id.should.equal(userAdminId);
       });
     });
   });
