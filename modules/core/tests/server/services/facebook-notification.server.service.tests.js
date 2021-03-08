@@ -77,18 +77,19 @@ describe('Service: facebook notifications', function () {
   it('should not allow rendered templates to be longer than 180 characters', function (done) {
     // FB templates are in directory:
     // `./modules/core/server/views/facebook-notifications/`
-    facebookNotificationService.renderNotification('test', {}, function (
-      err,
-      res,
-    ) {
-      if (err) return done(err);
+    facebookNotificationService.renderNotification(
+      'test',
+      {},
+      function (err, res) {
+        if (err) return done(err);
 
-      // Set assertions
-      res.template.length.should.equal(180);
-      res.template.slice(-1).should.equal('…');
+        // Set assertions
+        res.template.length.should.equal(180);
+        res.template.slice(-1).should.equal('…');
 
-      done();
-    });
+        done();
+      },
+    );
   });
 
   describe('unread messages notifications', function () {

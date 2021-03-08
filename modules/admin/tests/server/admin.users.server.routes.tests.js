@@ -1,10 +1,12 @@
-const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
-const User = mongoose.model('User');
-const express = require(path.resolve('./config/lib/express'));
+const path = require('path');
+const request = require('supertest');
 const should = require('should');
+
+const express = require(path.resolve('./config/lib/express'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
 
 /**
  * Globals
@@ -12,6 +14,7 @@ const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 let credentialsAdmin;
 let credentialsRegular;
 let userAdmin;
+let userAdminId;
 let userRegular;
 let userRegularId;
 
@@ -67,9 +70,10 @@ describe('Admin User CRUD tests', () => {
         ...credentialsRegular,
       });
 
-      await userAdmin.save();
+      const { _id: _userAdminId } = await userAdmin.save();
+      userAdminId = _userAdminId.toString();
       const { _id: _userRegularId } = await userRegular.save();
-      userRegularId = _userRegularId;
+      userRegularId = _userRegularId.toString();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error(err);
@@ -337,6 +341,24 @@ describe('Admin User CRUD tests', () => {
           .expect(400);
 
         should(body.message).equal('Cannot interpret id.');
+      });
+
+      it(`changing role should show up as an admin note`, async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'suspended' })
+          .expect(200);
+
+        const { body } = await agent
+          .get(`/api/admin/notes?userId=${userRegularId}`)
+          .expect(200);
+
+        body[0].note.should.equal(
+          '<p><b>Performed action:</b></p><p><i>User suspended.</i></p>',
+        );
+        body[0].admin._id.should.equal(userAdminId);
       });
     });
   });

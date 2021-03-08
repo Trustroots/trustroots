@@ -78,33 +78,39 @@ describe('Service: influx', function () {
       });
 
       it('Writing point returns error with no value', function (done) {
-        influxService._writeMeasurement('test', null, { tag: 'tag' }, function (
-          err,
-        ) {
-          try {
-            err.message.should.equal(
-              'InfluxDB Service: no `fields` defined. #ghugGJ',
-            );
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+        influxService._writeMeasurement(
+          'test',
+          null,
+          { tag: 'tag' },
+          function (err) {
+            try {
+              err.message.should.equal(
+                'InfluxDB Service: no `fields` defined. #ghugGJ',
+              );
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
       });
 
       it('Writing point returns error with no tag', function (done) {
-        influxService._writeMeasurement('test', { value: 1 }, null, function (
-          err,
-        ) {
-          try {
-            err.message.should.equal(
-              'InfluxDB Service: no `tags` defined. #ghj3ig',
-            );
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        });
+        influxService._writeMeasurement(
+          'test',
+          { value: 1 },
+          null,
+          function (err) {
+            try {
+              err.message.should.equal(
+                'InfluxDB Service: no `tags` defined. #ghj3ig',
+              );
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
       });
 
       it('Writing point returns error with wrong time format (nanoseconds)', function (done) {

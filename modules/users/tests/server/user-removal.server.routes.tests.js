@@ -116,18 +116,18 @@ describe('User removal CRUD tests', function () {
         jobs.length.should.equal(0);
 
         // User should still exist
-        User.findOne({ username: userA.username }, function (
-          findUsersErr,
-          findUser,
-        ) {
-          if (findUsersErr) {
-            return done(findUsersErr);
-          }
+        User.findOne(
+          { username: userA.username },
+          function (findUsersErr, findUser) {
+            if (findUsersErr) {
+              return done(findUsersErr);
+            }
 
-          findUser.username.should.equal(userA.username);
+            findUser.username.should.equal(userA.username);
 
-          done();
-        });
+            done();
+          },
+        );
       });
   });
 
@@ -188,23 +188,23 @@ describe('User removal CRUD tests', function () {
             );
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function (
-              findUsersErr,
-              findUser,
-            ) {
-              if (findUsersErr) {
-                return done(findUsersErr);
-              }
+            User.findById(
+              signedInUser.body._id,
+              function (findUsersErr, findUser) {
+                if (findUsersErr) {
+                  return done(findUsersErr);
+                }
 
-              jobs[0].data.text.should.containEql(
-                '/remove/' + findUser.removeProfileToken,
-              );
+                jobs[0].data.text.should.containEql(
+                  '/remove/' + findUser.removeProfileToken,
+                );
 
-              should.exist(findUser.removeProfileExpires);
-              should.exist(findUser.removeProfileToken);
+                should.exist(findUser.removeProfileExpires);
+                should.exist(findUser.removeProfileToken);
 
-              done();
-            });
+                done();
+              },
+            );
           });
       });
   });
@@ -240,62 +240,62 @@ describe('User removal CRUD tests', function () {
             );
             jobs[0].data.to.address.should.equal(_userA.email);
 
-            User.findById(signedInUser.body._id, function (
-              findUsersErr1,
-              findUser1,
-            ) {
-              if (findUsersErr1) {
-                return done(findUsersErr1);
-              }
+            User.findById(
+              signedInUser.body._id,
+              function (findUsersErr1, findUser1) {
+                if (findUsersErr1) {
+                  return done(findUsersErr1);
+                }
 
-              jobs[0].data.text.should.containEql(
-                '/remove/' + findUser1.removeProfileToken,
-              );
+                jobs[0].data.text.should.containEql(
+                  '/remove/' + findUser1.removeProfileToken,
+                );
 
-              should.exist(findUser1.removeProfileExpires);
-              should.exist(findUser1.removeProfileToken);
+                should.exist(findUser1.removeProfileExpires);
+                should.exist(findUser1.removeProfileToken);
 
-              // Send another delete request
-              // This should refresh token to new one so check everything again
-              agent
-                .del('/api/users')
-                .expect(200)
-                .end(function (deleteErr2, deleteRes2) {
-                  // Handle signup error
-                  if (deleteErr2) {
-                    return done(deleteErr2);
-                  }
-
-                  deleteRes2.body.message.should.equal(
-                    'We sent you an email with further instructions.',
-                  );
-
-                  jobs.length.should.equal(2); // now two because earlier we sent already one
-                  jobs[1].type.should.equal('send email');
-                  jobs[1].data.subject.should.equal(
-                    'Confirm removing your Trustroots profile',
-                  );
-                  jobs[1].data.to.address.should.equal(_userA.email);
-
-                  User.findById(signedInUser.body._id, function (
-                    findUsersErr2,
-                    findUser2,
-                  ) {
-                    if (findUsersErr2) {
-                      return done(findUsersErr2);
+                // Send another delete request
+                // This should refresh token to new one so check everything again
+                agent
+                  .del('/api/users')
+                  .expect(200)
+                  .end(function (deleteErr2, deleteRes2) {
+                    // Handle signup error
+                    if (deleteErr2) {
+                      return done(deleteErr2);
                     }
 
-                    jobs[1].data.text.should.containEql(
-                      '/remove/' + findUser2.removeProfileToken,
+                    deleteRes2.body.message.should.equal(
+                      'We sent you an email with further instructions.',
                     );
 
-                    should.exist(findUser2.removeProfileExpires);
-                    should.exist(findUser2.removeProfileToken);
+                    jobs.length.should.equal(2); // now two because earlier we sent already one
+                    jobs[1].type.should.equal('send email');
+                    jobs[1].data.subject.should.equal(
+                      'Confirm removing your Trustroots profile',
+                    );
+                    jobs[1].data.to.address.should.equal(_userA.email);
 
-                    done();
+                    User.findById(
+                      signedInUser.body._id,
+                      function (findUsersErr2, findUser2) {
+                        if (findUsersErr2) {
+                          return done(findUsersErr2);
+                        }
+
+                        jobs[1].data.text.should.containEql(
+                          '/remove/' + findUser2.removeProfileToken,
+                        );
+
+                        should.exist(findUser2.removeProfileExpires);
+                        should.exist(findUser2.removeProfileToken);
+
+                        done();
+                      },
+                    );
                   });
-                });
-            });
+              },
+            );
           });
       });
   });
@@ -559,20 +559,20 @@ describe('User removal CRUD tests', function () {
                 );
 
                 // Signed in user should still exist
-                User.findOne({ username: userB.username }, function (
-                  findUsersErr,
-                  findUser,
-                ) {
-                  if (findUsersErr) {
-                    return done(findUsersErr);
-                  }
+                User.findOne(
+                  { username: userB.username },
+                  function (findUsersErr, findUser) {
+                    if (findUsersErr) {
+                      return done(findUsersErr);
+                    }
 
-                  findUser.username.should.equal(userB.username);
-                  should.not.exist(userB.removeProfileExpires);
-                  should.not.exist(userB.removeProfileToken);
+                    findUser.username.should.equal(userB.username);
+                    should.not.exist(userB.removeProfileExpires);
+                    should.not.exist(userB.removeProfileToken);
 
-                  done();
-                });
+                    done();
+                  },
+                );
               });
             });
         });

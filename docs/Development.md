@@ -81,6 +81,7 @@ Slowly getting there. Any help/experiences appreciated! [#228](https://github.co
 ... mainly for the API routes ([example](https://github.com/Trustroots/trustroots/blob/master/modules/messages/tests/server/message.server.routes.tests.js)).
 
 ##### Clientside Component tests
+
 - Look for `modules/*/tests/client/components`
 - Written with [React Testing Library](https://www.npmjs.com/package/@testing-library/react)
 
@@ -115,7 +116,7 @@ You might want to read the [folder structure](http://meanjs.org/docs.html#folder
   - `/directives` contains the [Angular directives](https://docs.angularjs.org/guide/directive)
   - `/controllers` contains the angular client side [controllers](https://docs.angularjs.org/guide/controller)
   - `/components` contains React components. [Read more about our React migration](./React.md)
-  - `/utils` containts utility functions used mostly with React components. 
+  - `/utils` containts utility functions used mostly with React components.
   - `/images` Images for the module.
 - `config/` ta-da, configs! Server side.
   - `/assets` Defines paths for assets (serverside JS, frontend CSS/JS/LESS, lib files etc)
@@ -129,8 +130,8 @@ You might want to read the [folder structure](http://meanjs.org/docs.html#folder
   - `/lib/firebase-messaging.js` Sets up Firebase for push notifications
   - `/lib/mongoose.js` Sets up database connection and related utilities.
   - `/lib/render.js` Configuration for Nunjucs, a serverside template renderer
-  - `/lib/logger.js` Configures error logging service 
-  - `/lib/exponent-notifications.js` Expo.io based mobile app push notifications 
-- `server.js` server entrypoint; for APIs and serving the fontend client 
+  - `/lib/logger.js` Configures error logging service
+  - `/lib/exponent-notifications.js` Expo.io based mobile app push notifications
+- `server.js` server entrypoint; for APIs and serving the fontend client
 - `worker.js` background job runner entrypoint, for running Agenda
 - `package.js` dependencies, managed with [NPM](https://www.npmjs.com/)

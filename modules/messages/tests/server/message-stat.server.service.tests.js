@@ -184,24 +184,25 @@ describe('Count Message Statistics of User', function () {
   });
 
   it('[> 10 messages in last 30 days] should use last 30 days', function (done) {
-    messageStatService.readMessageStatsOfUser(users[0]._id, NOW, function (
-      err,
-      stats,
-    ) {
-      // expected statistics values
-      // out of last month 6/12 messages are replied; all within 2 days
-      const expectedReplyRate = 6 / 12;
-      const expectedReplyTime = 2 * DAY;
+    messageStatService.readMessageStatsOfUser(
+      users[0]._id,
+      NOW,
+      function (err, stats) {
+        // expected statistics values
+        // out of last month 6/12 messages are replied; all within 2 days
+        const expectedReplyRate = 6 / 12;
+        const expectedReplyTime = 2 * DAY;
 
-      if (err) return done(err);
-      try {
-        should(stats).have.property('replyRate', expectedReplyRate);
-        should(stats).have.property('replyTime', expectedReplyTime);
-        return done();
-      } catch (e) {
-        return done(e);
-      }
-    });
+        if (err) return done(err);
+        try {
+          should(stats).have.property('replyRate', expectedReplyRate);
+          should(stats).have.property('replyTime', expectedReplyTime);
+          return done();
+        } catch (e) {
+          return done(e);
+        }
+      },
+    );
   });
 
   it('[no messages] reply rate and time should be null', function (done) {
