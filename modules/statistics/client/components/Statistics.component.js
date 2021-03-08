@@ -221,6 +221,11 @@ export default function Statistics({ isAuthenticated }) {
                   </>
                 )}
               </Stat>
+              <Stat title={t('Translations status')}>
+                <a href="https://hosted.weblate.org/engage/trustroots/">
+                  <img src="https://hosted.weblate.org/widgets/trustroots/-/multi-auto.svg" alt={t('Translations status')} />
+                </a>
+              </Stat>
             </Grid>
 
             <hr />
