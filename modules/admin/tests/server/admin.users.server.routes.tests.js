@@ -358,7 +358,7 @@ describe('Admin User CRUD tests', () => {
         // Script tag gets stripped out
         // URL is turned into a link
         body[0].note.should.equal(
-          '<p><strong>Performed action:</strong></p><p><em>User suspended.</em></p>',
+          '<p><b>Performed action:</b></p><p><i>User suspended.</i></p>',
         );
         body[0].admin._id.equal(userAdminId);
       });
