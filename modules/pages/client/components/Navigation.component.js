@@ -79,9 +79,6 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
         <a className="list-group-item" href="https://ideas.trustroots.org/">
           {t('Blog')}
         </a>
-        <a className="list-group-item" href="https://shop.trustroots.org/">
-          {t('Shop')}
-        </a>
         <a className="list-group-item" href="/media">
           {t('Media')}
         </a>
