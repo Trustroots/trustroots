@@ -34,5 +34,10 @@
     },
     "{{amount}} contacts": "{{amount}} kontakter",
     "{{count}} contacts in common": "{{count}} kontakt gemensamt",
-    "{{count}} contacts in common_plural": "{{count}} gemensamma kontakter"
+    "{{count}} contacts in common_plural": "{{count}} gemensamma kontakter",
+    "{{count}} contacts": "{{count}} kontakt",
+    "{{count}} contacts_plural": "{{count}} kontakter",
+    "Search contacts": "Sök efter kontakter",
+    "(additional {{count}} pending)": "(ytterligare {{count}} väntar)",
+    "(additional {{count}} pending)_plural": "(ytterligare {{count}} väntar)"
 }
