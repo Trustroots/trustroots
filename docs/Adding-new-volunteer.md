@@ -6,7 +6,7 @@ Remember that starting volunteering is hard! Handhold folks as much as possible,
 
 ### For everyone
 
-- **Add _volunteer_ role in admin tool.** At Trustroots admin tool, find their profile and add "volunteer" role to them. This won't give them any special access, but it makes folks show up at [the team page](https://www.trustroots.org/team) and highlights them as volunteers in their profile. This is important for trust, so that community members can check if they're dealing with someone who truly is with Trustroots.
+- Add _volunteer_ role in admin tool. At Trustroots admin tool, find their profile and add "volunteer" role to them. This won't give them any special access, but it makes folks show up at [the team page](https://www.trustroots.org/team) and highlights them as volunteers in their profile. This is important for trust, so that community members can check if they're dealing with someone who truly is with Trustroots.
 - Ensure they're invited in [volunteer chat](./Chat.md).
 
 ### Working on social media
@@ -21,7 +21,7 @@ Remember that starting volunteering is hard! Handhold folks as much as possible,
 
 ### Support volunteers
 - Ask them to sign NDA because they will have access to private member data, see more below.
-- *Add _admin_ role in admin tool. This will give them access to Trustroots admin tool.
+- Add _admin_ role in admin tool. This will give them access to Trustroots admin tool.
 - Add them to private `#safety` channel on Slack.
 - Add them to ["Safety" team on Github](https://github.com/orgs/Trustroots/teams/safety) — this will give them access to few private repositories with more information.
 - Create them a ZD account. (Ask [Mikael](https://www.trustroots.org/profile/mikael))
