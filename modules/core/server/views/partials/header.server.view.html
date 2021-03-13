@@ -32,11 +32,12 @@
         Read more
       </a>
 
-      <language-switch
+      <div
         class="flex-side language-switch"
-        aria-label="Localization"
         ng-if="app.appSettings.i18nEnabled"
-      ></language-switch>
+      >
+        <language-switch buttonStyle="'inverse'"></language-switch>
+      </div>
     </nav>
   </div>
   <!-- /Header for non-authenticated users -->

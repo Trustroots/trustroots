@@ -21,7 +21,7 @@
     "Member has not written description about themself": {
         "": "Questa persona non ha scritto alcuna descrizione di se stessa."
     },
-    "Member since {{date, MMM Do, YYYY}}": "Membro dal{{date, MMM Do, YYYY}}",
+    "Member since {{date, MMM Do, YYYY}}": "Membro dal {{date, MMM Do, YYYY}}",
     "Online long ago": "Non si connette da tempo",
     "Online {{ date, fromNow }}": "Ultima connessione {{ date, fromNow }}",
     "Open user profile for {{name}}": "Apri il profilo del membro {{name}}",
@@ -80,5 +80,8 @@
     "{{count}} contacts_plural": "{{count}} contatti",
     "Trustroots volunteer alumni": "\"Alumni\" volontari di Trustroots",
     "Trustroots volunteer": "Volontariə di Trustroots",
-    "Experiences": "Esperienze"
+    "Experiences": "Esperienze",
+    "Hey, welcome!": "Benvenutə!",
+    "Go travel & spread the word!": "Viaggia & diffondi il verbo!",
+    "Being able to rely on strangers, on communities, on trust, are values that are worth preserving.": "Poter fare affidamento su stranieri, sulle comunità, sulla fiducia, sono valori che vanno preservati."
 }

@@ -10,11 +10,6 @@ const isTest = process.env.NODE_ENV === 'test';
  * The locales currently supported by the app are specified in /config/shared/locales.json
  * Add a language there if you want to support a new translation.
  * Read more at /config/shared/README.md
- *
- * @TODO For a nice user experience we may want to sort the languages by their actual usage,
- * or alphabetically,
- * or allow searching for them.
- * This will be relevant when we have a lot of translations done or in progress. Not now.
  */
 
 /**

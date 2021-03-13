@@ -44,7 +44,7 @@
     },
     "Tribes in common": "Tribus en commun",
     "Write a reference": "Rédiger une recommandation",
-    "You can help us out!": "Vous pouvez nous aider !",
+    "You can help us out!": "Vous pouvez nous aider !",
     "Your profile description should be longer so that you can send messages": {
         "": "La description de votre profil doit être plus longue afin que vous puissiez envoyer des messages."
     },
@@ -80,5 +80,8 @@
     "{{count}} contacts_plural": "{{count}} contacts",
     "Trustroots volunteer": "Bénévole Trustroots",
     "Trustroots volunteer alumni": "Ancien bénévole Trustroots",
-    "Experiences": "Expériences"
+    "Experiences": "Expériences",
+    "Hey, welcome!": "Salut, bienvenue !",
+    "Go travel & spread the word!": "Voyagez et faites passer le mot !",
+    "Being able to rely on strangers, on communities, on trust, are values that are worth preserving.": "Pouvoir compter sur les étrangers, sur les communautés, sur la confiance, sont des valeurs qui méritent d'être préservées."
 }
