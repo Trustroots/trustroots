@@ -1,14 +1,114 @@
 [
-  { "code": "en", "label": "English" },
-  { "code": "de", "label": "Deutsch" },
-  { "code": "es", "label": "español, castellano" },
-  { "code": "fr", "label": "français" },
-  { "code": "it", "label": "Italiano" },
-  { "code": "nb", "label": "Norsk bokmål" },
-  { "code": "pl", "label": "polski" },
-  { "code": "fi", "label": "suomi" },
-  { "code": "sv", "label": "svenska" },
-  { "code": "cs", "label": "česky" },
-  { "code": "pt", "label": "português" },
-  { "code": "ru", "label": "русский" }
+  { "label": "česky", "code": "cs", "english": "Czech", "production": false },
+  { "label": "Deutsch", "code": "de", "english": "German", "production": true },
+  {
+    "label": "English",
+    "code": "en",
+    "english": "English",
+    "production": true
+  },
+  {
+    "label": "español, castellano",
+    "code": "es",
+    "english": "Spanish, Castilian",
+    "production": true
+  },
+  {
+    "label": "français",
+    "code": "fr",
+    "english": "French",
+    "production": true
+  },
+  {
+    "label": "Italiano",
+    "code": "it",
+    "english": "Italian",
+    "production": true
+  },
+  {
+    "label": "Lietuvių",
+    "code": "lt",
+    "english": "Lithuanian",
+    "production": false
+  },
+  {
+    "label": "Norsk bokmål",
+    "code": "nb",
+    "english": "Norwegian (bokmål)",
+    "production": false
+  },
+  { "label": "polski", "code": "pl", "english": "Polish", "production": false },
+  {
+    "label": "português",
+    "code": "pt",
+    "english": "Portuguese",
+    "production": false
+  },
+  { "label": "suomi", "code": "fi", "english": "Finnish", "production": false },
+  {
+    "label": "svenska",
+    "code": "sv",
+    "english": "Swedish",
+    "production": false
+  },
+  {
+    "label": "Ελληνικά",
+    "code": "el",
+    "english": "Greek",
+    "production": false
+  },
+  {
+    "label": "русский",
+    "code": "ru",
+    "english": "Russian",
+    "production": false
+  },
+  {
+    "label": "Українська",
+    "code": "uk",
+    "english": "Ukrainian",
+    "production": false
+  },
+  {
+    "label": "עִבְרִית",
+    "code": "he",
+    "english": "Hebrew",
+    "production": false
+  },
+  {
+    "label": "Türkçe",
+    "code": "tr",
+    "english": "Turkish",
+    "production": false
+  },
+  {
+    "label": "Slovenščina",
+    "code": "sl",
+    "english": "Slovene",
+    "production": false
+  },
+  {
+    "label": "Română",
+    "code": "ro",
+    "english": "Romanian",
+    "production": false
+  },
+  {
+    "label": "Bahasa Indonesia",
+    "code": "id",
+    "english": "Indonesian",
+    "production": false
+  },
+  {
+    "label": "Magyar",
+    "code": "hu",
+    "english": "Hungarian",
+    "production": false
+  },
+  {
+    "label": "Nederlands",
+    "code": "nl",
+    "english": "Dutch",
+    "production": false
+  }
 ]

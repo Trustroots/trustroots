@@ -19,24 +19,20 @@ export default function InterfaceLanguagePanel() {
               <div className="col-sm-9">
                 <div className="form-group">
                   <div className="col-sm-9 col-md-7 col-lg-6">
-                    <LanguageSwitch presentation="select" saveToAPI={true} />
+                    <LanguageSwitch buttonStyle="primary" saveToAPI />
                   </div>
                 </div>
 
                 <p className="help-block">
-                  <small>
-                    {t(
-                      'This is the language of the interface you see across the site.',
-                    )}
-                  </small>
+                  {t(
+                    'This is the language of the interface you see across the site.',
+                  )}
                 </p>
                 <p className="help-block">
-                  <small>
-                    {t(
-                      'Thanks to all our community members who helped translate!',
-                    )}{' '}
-                    <a href="/volunteering">{t('You can help us out!')}</a>
-                  </small>
+                  {t(
+                    'Thanks to all our community members who helped translate!',
+                  )}{' '}
+                  <a href="/volunteering">{t('You can help us out!')}</a>
                 </p>
               </div>
             </div>
