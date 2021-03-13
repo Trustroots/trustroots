@@ -6,7 +6,3 @@ AppConfig.registerModule('pages', ['core']);
 
 // config
 require('@/modules/pages/client/config/pages.client.routes');
-
-// controllers
-require('@/modules/pages/client/controllers/faq.client.controller');
-require('@/modules/pages/client/controllers/home.client.controller');
