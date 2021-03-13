@@ -8,6 +8,7 @@ Remember that starting volunteering is hard! Handhold folks as much as possible,
 
 - Add _volunteer_ role in admin tool. At Trustroots admin tool, find their profile and add "volunteer" role to them. This won't give them any special access, but it makes folks show up at [the team page](https://www.trustroots.org/team) and highlights them as volunteers in their profile. This is important for trust, so that community members can check if they're dealing with someone who truly is with Trustroots.
 - Ensure they're invited in [volunteer chat](./Chat.md).
+- Ask them [to request account at the wiki](https://wiki.trustroots.org/en/Special:RequestAccount), which you then need to [accept from the list](https://wiki.trustroots.org/w/index.php?title=Special:ConfirmAccounts/authors&wpShowHeld=0).
 
 ### Working on social media
 - Give access to specific social media accounts. Each account should have shared `@trustroots.org` email so that they're not locked behind individuals. Passwords are kept in LastPass — ask [Mikael](https://www.trustroots.org/profile/mikael).
@@ -18,6 +19,11 @@ Remember that starting volunteering is hard! Handhold folks as much as possible,
 - MailPoet access is together with the blog.
 - See [newsletter docs](./Newsletter.md) for more.
 - Invite to #newsletter channel on Slack.
+
+### Translators
+- Point them at [Weblate](https://hosted.weblate.org/projects/trustroots/) for translations. Ensure their language is listed there, and add them admin access if needed.
+- See [translation docs](./Translating-Getting-Started.md) for more.
+- Invite to #i18n channel on Slack.
 
 ### Support volunteers
 - Ask them to sign NDA because they will have access to private member data, see more below.
