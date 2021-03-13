@@ -28,6 +28,7 @@ title: Trustroots Team Guide
 
 ## Guides
 
+- [Adding new volunteer](Adding-new-volunteer.md)
 - [Design principles](Design-principles.md)
 - [Photos](Photos.md)
 
