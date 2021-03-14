@@ -38,6 +38,7 @@ function AppController(
   vm.isHeaderHidden = false;
   vm.isAboutPage = false;
   vm.isNativeMobileApp = trNativeAppBridge.isNativeMobileApp();
+  vm.path = $location.path();
 
   // Default options for Medium-Editor directive used site wide
   // @link https://github.com/yabwe/medium-editor/blob/master/OPTIONS.md
@@ -286,9 +287,6 @@ function AppController(
         angular.isDefined(toState.headerHidden) &&
         toState.headerHidden === true;
 
-      // Indicate we are browsing primary landing page
-      vm.isHomePage = toState.name === 'home';
-
       // Reset photo copyrights on each page change
       // trBoards directive hits in after this and we'll fill this with potential photo credits
       vm.photoCredits = {};
@@ -296,6 +294,8 @@ function AppController(
 
       // Reset page scroll on page change
       $window.scrollTo(0, 0);
+
+      vm.path = location.path();
     });
 
     /**
