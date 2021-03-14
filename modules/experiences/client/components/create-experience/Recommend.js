@@ -13,6 +13,15 @@ const SadNotice = styled.div`
   margin: 30px 0;
 `;
 
+const RecommendationDivider = styled.div`
+  height: 20px;
+  width: 1px;
+  background: #ccc;
+  display: inline-block;
+  float: left;
+  margin: 12px 5px 0 5px;
+`;
+
 export default function Recommend({
   primaryInteraction,
   recommend,
@@ -69,6 +78,7 @@ export default function Recommend({
           >
             {t('No')}
           </ToggleButton>
+          <RecommendationDivider />
           <ToggleButton
             aria-checked={recommend === 'unknown'}
             value="unknown"
