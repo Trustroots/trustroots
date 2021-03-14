@@ -13,6 +13,15 @@ const SadNotice = styled.div`
   margin: 30px 0;
 `;
 
+const RecommendationDivider = styled.div`
+  height: 20px;
+  width: 1px;
+  background: #ccc;
+  display: inline-block;
+  float: left;
+  margin: 12px 5px 0 5px;
+`;
+
 export default function Recommend({
   primaryInteraction,
   recommend,
@@ -25,17 +34,23 @@ export default function Recommend({
   const { t } = useTranslation('experiences');
 
   const recommendQuestions = {
-    guest: t('Would you recommend others to stay with them?'),
-    host: t('Would you recommend others to host them?'),
-    met: t('Would you recommend others to meet them?'),
+    guest: t(
+      'Besides your personal experience, would you recommend others to stay with them?',
+    ),
+    host: t(
+      'Besides your personal experience, would you recommend others to host them?',
+    ),
+    met: t(
+      'Besides your personal experience, would you recommend others to meet them?',
+    ),
   };
-
-  const question = recommendQuestions[primaryInteraction];
 
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
-        <h4 id="would-you-recommend-them-question">{question}</h4>
+        <h4 id="would-you-recommend-them-question">
+          {recommendQuestions[primaryInteraction]}
+        </h4>
       </div>
       <div className="panel-body">
         <ToggleButtonGroup
@@ -63,13 +78,14 @@ export default function Recommend({
           >
             {t('No')}
           </ToggleButton>
+          <RecommendationDivider />
           <ToggleButton
             aria-checked={recommend === 'unknown'}
             value="unknown"
             bsStyle="default"
             bsSize="large"
           >
-            {t("I don't know")}
+            {t('Skip')}
           </ToggleButton>
         </ToggleButtonGroup>
         {recommend === 'no' && (
@@ -78,10 +94,6 @@ export default function Recommend({
               "We're sad to hear you didn't have a great experience using Trustroots!",
             )}
             {' 😞'}
-            <br />
-            {t(
-              "It's extremely important you report anyone behaving against rules to us.",
-            )}
           </SadNotice>
         )}
         <Report

@@ -48,8 +48,8 @@ export default function TopNavigationSmall({
 
     if (referencesEnabled) {
       links.push({
-        id: 'write-reference',
-        label: t('Write a reference'),
+        id: 'share-experience',
+        label: t('Share your experience'),
         link: `/profile/${username}/experiences/new`,
       });
     }
