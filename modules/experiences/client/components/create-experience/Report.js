@@ -24,18 +24,18 @@ export default function Report({
     <ReportContainer>
       <p>
         {t(
-          "It's extremely important you report anyone behaving against rules and community values to us.",
+          "It's extremely important you report anyone behaving against community rules or values to us.",
         )}
       </p>
       <Switch isSmall checked={report} onChange={onChangeReport}>
-        {t('Privately report this person to moderators')}
+        {t('Privately report this person to the moderators')}
       </Switch>
       {report && (
         <>
           <br />
           <br />
           <label htmlFor="report-message" className="control-label">
-            {t('Message to moderators')}
+            {t('Message to the moderators')}
           </label>
           <textarea
             className="form-control input-lg"
@@ -45,7 +45,7 @@ export default function Report({
             value={reportMessage}
           ></textarea>
           <span className="help-block">
-            {t('Please write in English if possible.')}
+            {t('Please write in English if possible, thank you.')}
             <br />
           </span>
         </>
