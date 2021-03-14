@@ -26,22 +26,22 @@ export default function Recommend({
 
   const recommendQuestions = {
     guest: t(
-      'Based on your experience, would you recommend others to stay with them?',
+      'Besides your personal experience, would you recommend others to stay with them?',
     ),
     host: t(
-      'Based on your experience, would you recommend others to host them?',
+      'Besides your personal experience, would you recommend others to host them?',
     ),
     met: t(
-      'Based on your experience, would you recommend others to meet them?',
+      'Besides your personal experience, would you recommend others to meet them?',
     ),
   };
-
-  const question = recommendQuestions[primaryInteraction];
 
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
-        <h4 id="would-you-recommend-them-question">{question}</h4>
+        <h4 id="would-you-recommend-them-question">
+          {recommendQuestions[primaryInteraction]}
+        </h4>
       </div>
       <div className="panel-body">
         <ToggleButtonGroup
