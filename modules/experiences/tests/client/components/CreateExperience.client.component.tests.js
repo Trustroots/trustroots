@@ -118,7 +118,7 @@ describe('<CreateExperience />', () => {
 
     expect(
       queryByLabelText(
-        'Based on your experience, would you recommend others to stay with them?',
+        'Besides your personal experience, would you recommend others to stay with them?',
       ),
     ).toBeInTheDocument();
     fireEvent.click(getByText('Yes'));
@@ -127,7 +127,7 @@ describe('<CreateExperience />', () => {
 
     expect(
       queryByLabelText(
-        'Would you like to describe something about them? (Optional)',
+        'Would you like to describe something about your experience with them? (Optional)',
       ),
     ).toBeInTheDocument();
     fireEvent.change(getByLabelText('Public feedback'), {
@@ -178,13 +178,15 @@ describe('<CreateExperience />', () => {
 
     expect(
       queryByLabelText(
-        'Based on your experience, would you recommend others to stay with them?',
+        'Besides your personal experience, would you recommend others to stay with them?',
       ),
     ).toBeInTheDocument();
     fireEvent.click(getByText('No'));
 
-    fireEvent.click(getByText('Privately report this person to moderators'));
-    fireEvent.change(getByLabelText('Message to moderators'), {
+    fireEvent.click(
+      getByText('Privately report this person to the moderators'),
+    );
+    fireEvent.change(getByLabelText('Message to the moderators'), {
       target: { value: 'they were mean to me' },
     });
 
