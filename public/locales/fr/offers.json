@@ -27,5 +27,6 @@
     },
     "Start hosting travellers": "Commencer à accueillir des voyageurs",
     "At most {{count}} guests.": "Maximum {{count}} invité.",
-    "At most {{count}} guests._plural": "Maximum {{count}} invités."
+    "At most {{count}} guests._plural": "Maximum {{count}} invités.",
+    "Send a message": "Envoyer un message"
 }
