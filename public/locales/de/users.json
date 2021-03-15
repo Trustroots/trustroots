@@ -33,7 +33,7 @@
     "Reply rate {{replyRate}}": {
         "": "Antwortquote {{replyRate}}."
     },
-    "Send a message": "Verschick eine Nachricht",
+    "Send a message": "Schick eine Nachricht",
     "Sorry, you need to first activate your profile by confirming your email": {
         "": "Sorry, du musst erst dein Profil aktivieren, indem du deine E-Mail bestätigst."
     },
@@ -82,5 +82,9 @@
     "Anonymous member": "Anonymes Mitglied",
     "Being able to rely on strangers, on communities, on trust, are values that are worth preserving.": "Sich verlassen können auf Fremde, auf Gemeinschaften, auf Vertrauen und auf erhaltenswerte Werte.",
     "Hey, welcome!": "Hey, willkommen!",
-    "Go travel & spread the word!": "Geh auf Reisen und sag's weiter!"
+    "Go travel & spread the word!": "Geh auf Reisen und sag's weiter!",
+    "Share your experience": "Teil dein Erlebnis",
+    "Modify your meet locations": "Verändere deine Treff-Standorte",
+    "Modify your hosting location": "Verändere deinen Hosting-Standort",
+    "Hosting & meet": "Gastgeber sein & treffen"
 }
