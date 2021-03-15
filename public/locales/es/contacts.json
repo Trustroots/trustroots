@@ -18,7 +18,7 @@
     "Requested {{created, MMM D, YYYY}}": "Solicitado {{created, D de MMM, YYYY}}",
     "Revoke Request": "Anular solicitud",
     "Revoke contact request?": "¿Anular solicitud de contacto?",
-    "Since {{created, MMM D, YYYY}}": "",
+    "Since {{created, MMM D, YYYY}}": "Desde {{created, D MMM, YYYY}}",
     "Wait a moment": {
         "": {
             "": {
