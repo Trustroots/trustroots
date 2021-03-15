@@ -15,7 +15,7 @@
     },
     "One contact": "Un contacto",
     "Remove contact?": "¿Eliminar contacto?",
-    "Requested {{created, MMM D, YYYY}}": "Solicitado {{created, MMM D, YYYY}}",
+    "Requested {{created, MMM D, YYYY}}": "Solicitado {{created, D de MMM, YYYY}}",
     "Revoke Request": "Anular solicitud",
     "Revoke contact request?": "¿Anular solicitud de contacto?",
     "Since {{created, MMM D, YYYY}}": "",
@@ -37,5 +37,7 @@
     "{{count}} contacts in common_plural": "{{count}} contactos en común",
     "{{count}} contacts": "{{count}} contacto",
     "{{count}} contacts_plural": "{{count}} contactos",
-    "Search contacts": "Búsqueda de contactos"
+    "Search contacts": "Búsqueda de contactos",
+    "(additional {{count}} pending)": "({{count}} más pendiente)",
+    "(additional {{count}} pending)_plural": "({{count}} más pendientes)"
 }
