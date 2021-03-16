@@ -47,5 +47,12 @@
     },
     "{{count}} unread messages": "{{count}} ulest melding",
     "{{count}} unread messages_plural": "{{count}} uleste meldinger",
-    "License": "Lisens"
+    "License": "Lisens",
+    "Your response won't be visible to them.": "Ditt svar vil ikke være synlig for dem.",
+    "Yes": "Ja",
+    "No": "Nei",
+    "Member is not available anymore.": "Medlemm er ikke lenger tilgjengelig.",
+    "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Synes du at meldinger fra denne personen er høflig, respektfull og i Trustroots ånd?",
+    "Change": "Endre",
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...forklarer at du er interessert i å møte dem, ikke bare å lete etter gratis overnatting."
 }
