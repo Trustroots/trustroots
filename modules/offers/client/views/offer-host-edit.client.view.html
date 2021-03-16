@@ -124,6 +124,30 @@
                     </span>
                   </div>
                 </fieldset>
+
+                <br /><br />
+
+                <fieldset
+                  class="offer-showOnlyInMyCircles"
+                  ng-if="offerHostEdit.offer.status !== 'no'"
+                >
+                  <legend>
+                    <h4 id="showOnlyInMyCircles">
+                      Available only in my circles?
+                    </h4>
+                  </legend>
+                  <div class="checkbox">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="newsletter"
+                        ng-model="offerHostEdit.offer.showOnlyInMyCircles"
+                      />
+                      People that are not in any of my circles should not find
+                      me.
+                    </label>
+                  </div>
+                </fieldset>
               </div>
             </div>
           </div>

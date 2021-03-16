@@ -140,6 +140,7 @@ describe('Offer CRUD tests', function () {
       noOfferDescription: '<p>1 I cannot host... :(</p>',
       maxGuests: 5,
       location: testLocations.Europe.location,
+      showOnlyInMyCircles: false,
     };
 
     offer2 = new Offer({
@@ -888,6 +889,7 @@ describe('Offer CRUD tests', function () {
                   // Modify offer
                   offer.description = 'MODIFIED';
                   offer.noOfferDescription = 'MODIFIED';
+                  offer.showOnlyInMyCircles = true;
 
                   // Store this for later comparison
                   const previousUpdated = offer.updated;
@@ -911,6 +913,7 @@ describe('Offer CRUD tests', function () {
                           offerNew.description.should.equal('MODIFIED');
                           offerNew.noOfferDescription.should.equal('MODIFIED');
                           offerNew.updated.should.not.equal(previousUpdated);
+                          offerNew.showOnlyInMyCircles.should.equal(true);
                           return done(err);
                         },
                       );

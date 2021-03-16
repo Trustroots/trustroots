@@ -46,6 +46,7 @@ function OfferHostEditController(
       noOfferDescription: '',
       location: defaultLocation,
       maxGuests: 1,
+      showOnlyInMyCircles: false,
     };
 
     // Make sure offer is there
