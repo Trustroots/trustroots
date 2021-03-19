@@ -44,5 +44,12 @@
     },
     "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
         "": "Din referens kommer bli offentlig när <1></1> ger dig en referens tillbaka, eller om {{daysToReply}} dagar."
-    }
+    },
+    "Did you enjoy their cooking? singing?": "Tyckte du om matlagningen? Sångerna?",
+    "Did not meet with anyone.": "Jag mötte ingen.",
+    "Besides your personal experience, would you recommend others to stay with them?": "Utöver din egen upplevelse, skulle du rekommendera andra att bo över hos dem?",
+    "Besides your personal experience, would you recommend others to meet them?": "Utöver din egen upplevelse, skulle du rekommendera andra att träffa hen?",
+    "Besides your personal experience, would you recommend others to host them?": "Utöver din egen upplevelse, skulle du rekommendera hen som gäst för andra?",
+    "All experiences are by male members.": "Alla upplevelser har skrivits av manliga medlemmar.",
+    "All experiences are by female members.": "Alla upplevelser har skrivits av kvinnliga medlemmar."
 }
