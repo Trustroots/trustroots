@@ -19,5 +19,12 @@
     "Send us suggestions!": "Skicka förslag till oss!",
     "Sign up with Trustroots": "Registrera dig på Trustroots",
     "{{count, number}} members": "{{count, number}} medlem",
-    "{{count, number}} members_plural": "{{count, number}} medlemmar"
+    "{{count, number}} members_plural": "{{count, number}} medlemmar",
+    "New circle!": "Ny cirkel!",
+    "Missing your circle?": "Saknas en cirkel?",
+    "Leave this circle?": "Vill du lämna cirkeln?",
+    "Leave circle": "Lämna cirkel",
+    "Joining circles helps you find likeminded Trustroots members.": "Genom att gå med i cirklar kan du hitta likasinnade Trustroots-medlemmar.",
+    "Join Trustroots to find members behind circles.": "Gå med i Trustroots för att hitta medlemmar i olika cirklar.",
+    "Discover circles": "Upptäck cirklar"
 }
