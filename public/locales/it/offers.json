@@ -4,7 +4,7 @@
         "At most {{count}} guests.": "Massimo{{count}}ospite.",
         "At most {{count}} guests._plural": "Massimo{{count}}ospiti."
     },
-    "Bigger map": "",
+    "Bigger map": "Mappa più grande",
     "Can host": "Posso ospitare",
     "Cannot host currently": "Non posso ospitare",
     "Change": "Cambia",
@@ -12,7 +12,7 @@
     "I can host": "Posso ospitare",
     "I can't host currently": "Ora non posso ospitare",
     "I might be able to host": "Forse posso ospitare",
-    "Meet people": "",
+    "Meet people": "Incontra gente",
     "Might be able to host": "Potrebbe accettare ospiti",
     "Modify hosting offer": "Modifica offerta di ospitalità",
     "No guests": {
@@ -21,11 +21,12 @@
     "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
         "": "Offrire ospitalità e accogliere \"stranieri\" a casa nostra rafforza la nostra fede negli altri."
     },
-    "Open on device": "",
+    "Open on device": "Apri sul dispositivo",
     "Sorry, user is not hosting currently": {
         "": "Spiacenti, l'utente non accetta ospiti al momento."
     },
-    "Start hosting travellers": "Inizia ad ospitare!",
+    "Start hosting travellers": "Inizia a ospitare",
     "At most {{count}} guests.": "Massimo un ospite.",
-    "At most {{count}} guests._plural": "Massimo {{count}} ospiti."
+    "At most {{count}} guests._plural": "Massimo {{count}} ospiti.",
+    "Send a message": "Manda un messaggio"
 }

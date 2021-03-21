@@ -1,1 +1,22 @@
-{}
+{
+    "{{count}} unread messages": "{{count}} lukematon viesti",
+    "{{count}} unread messages_plural": "{{count}} lukematonta viestiä",
+    "Your profile seems quite empty.": "Profiilisi vaikuttaa tyhjältä.",
+    "You replied": "Vastasit",
+    "You haven't been talking yet.": "Ette ole keskustelleet vielä.",
+    "You": "Sinä",
+    "Yes, I can host!": "Kyllä, voin majoittaa!",
+    "Yes": "Kyllä",
+    "Write back": "Kirjoita takaisin",
+    "Unknown member": "Tuntematon käyttäjä",
+    "Tip": "Vinkki",
+    "Send": "Lähetä",
+    "Please write longer profile description before sending messages.": "Kirjoitathan pidemmän profiilikuvauksen ennen viestien lähettämistä.",
+    "No conversations yet.": "Ei keskusteluja.",
+    "No": "Ei",
+    "More messages": "Lisää viestejä",
+    "License": "Lisenssi",
+    "Edit your profile": "Muokkaa profiiliasi",
+    "Conversation started {{ date }}": "Keskustelu alkoi {{ date }}",
+    "Change": "Vaihda"
+}
