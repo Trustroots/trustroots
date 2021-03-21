@@ -15,8 +15,6 @@ const SubMenuDivider = () => <li className="divider" role="presentation"></li>;
 export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
   const { t } = useTranslation('core');
 
-  console.log('currentPath:', currentPath); //eslint-disable-line
-
   return (
     <div className="container" role="navigation">
       <div className="navbar-header">
