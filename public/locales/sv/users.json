@@ -21,7 +21,7 @@
     "Member has not written description about themself": {
         "": "Medlemmen har inte skrivit en beskrivning om sig själv."
     },
-    "Member since {{date, MMM Do, YYYY}}": "Medlem sedan {{date, MMM Do, YYYY}}",
+    "Member since {{date, ll}}": "Medlem sedan {{date, ll}}",
     "Online long ago": "Senast inloggad för länge sedan",
     "Online {{ date, fromNow }}": "Inloggad {{ date, fromNow }}",
     "Open user profile for {{name}}": "Öppna användarprofil för {{name}}",

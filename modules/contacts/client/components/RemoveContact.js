@@ -21,23 +21,23 @@ export default function RemoveContact({
 
   const isFromMe = contact.userFrom === selfId;
   const isConfirmed = contact.confirmed;
-  const created = new Date(contact.created);
+  const date = new Date(contact.created);
 
   if (isConfirmed) {
     // Remove confirmed contact
     labelTitle = t('Remove contact?');
     labelConfirm = t('Yes, remove contact');
-    labelTime = t('Connected since {{created, LL}}', { created });
+    labelTime = t('Connected since {{date, LL}}', { date });
   } else if (isFromMe) {
     // Revoke contact request
     labelTitle = t('Revoke contact request?');
     labelConfirm = t('Yes, revoke request');
-    labelTime = t('Requested {{created, LL}}', { created });
+    labelTime = t('Requested {{date, LL}}', { date });
   } else {
     // Decline received contact request
     labelTitle = t('Decline contact request?');
     labelConfirm = t('Yes, decline request');
-    labelTime = t('Requested {{created, LL}}', { created });
+    labelTime = t('Requested {{date, LL}}', { date });
   }
 
   return (

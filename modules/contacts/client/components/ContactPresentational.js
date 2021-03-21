@@ -52,11 +52,11 @@ export default function ContactPresentational({
       {!hideMeta && (
         <small className="text-muted">
           {contact.confirmed === true &&
-            t('Since {{created, MMM D, YYYY}}', {
+            t('Since {{created, LL}}', {
               created: new Date(contact.created),
             })}
           {contact.confirmed === false &&
-            t('Requested {{created, MMM D, YYYY}}', {
+            t('Requested {{created, LL}}', {
               created: new Date(contact.created),
             })}
         </small>
