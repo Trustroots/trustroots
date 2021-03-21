@@ -27,17 +27,17 @@ export default function RemoveContact({
     // Remove confirmed contact
     labelTitle = t('Remove contact?');
     labelConfirm = t('Yes, remove contact');
-    labelTime = t('Connected since {{created, MMM D, YYYY}}', { created });
+    labelTime = t('Connected since {{created, LL}}', { created });
   } else if (isFromMe) {
     // Revoke contact request
     labelTitle = t('Revoke contact request?');
     labelConfirm = t('Yes, revoke request');
-    labelTime = t('Requested {{created, MMM D, YYYY}}', { created });
+    labelTime = t('Requested {{created, LL}}', { created });
   } else {
     // Decline received contact request
     labelTitle = t('Decline contact request?');
     labelConfirm = t('Yes, decline request');
-    labelTime = t('Requested {{created, MMM D, YYYY}}', { created });
+    labelTime = t('Requested {{created, LL}}', { created });
   }
 
   return (
