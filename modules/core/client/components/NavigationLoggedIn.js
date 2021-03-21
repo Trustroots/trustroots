@@ -1,6 +1,5 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import classnames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
 
@@ -8,17 +7,15 @@ import React from 'react';
 import { userType } from '@/modules/users/client/users.prop-types';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
 import Icon from './Icon';
-import SubMenuItem from './NavigationSubMenuItem';
+import MenuItem from './NavigationMenuItem';
 import SubMenuList from './NavigationSubMenuList';
 
 const SubMenuDivider = () => <li className="divider" role="presentation"></li>;
 
-export default function NavigationLoggedIn({
-  user,
-  onSignout,
-  path: currentPath,
-}) {
+export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
   const { t } = useTranslation('core');
+
+  console.log('currentPath:', currentPath); //eslint-disable-line
 
   return (
     <div className="container" role="navigation">
@@ -42,10 +39,9 @@ export default function NavigationLoggedIn({
       </div>
 
       <ul className="nav navbar-nav hidden-xs">
-        <li className="hidden-xs dropdown" uib-dropdown>
+        <li className="hidden-xs dropdown">
           <a
             className="dropdown-toggle cursor-pointer"
-            uib-dropdown-toggle
             tabIndex="0"
             role="button"
             aria-haspopup="true"
@@ -54,74 +50,75 @@ export default function NavigationLoggedIn({
             {t('Support')}
           </a>
           <ul className="dropdown-menu" aria-label="submenu">
-            <SubMenuItem
-              path="/faq"
-              label={t('FAQ')}
-              currentPath={currentPath}
-            />
-            <SubMenuItem
-              path="/support"
-              label={t('Contact us')}
-              currentPath={currentPath}
-            />
+            <MenuItem currentPath={currentPath} path="/faq">
+              {t('FAQ')}
+            </MenuItem>
+            <MenuItem currentPath={currentPath} path="/support">
+              {t('Contact us')}
+            </MenuItem>
           </ul>
         </li>
       </ul>
 
       <ul className="nav navbar-nav nav-header-primary">
-        <li className={classnames({ active: currentPath === '/circles' })}>
-          <a href="/circles" aria-label={t('Circles')}>
-            <Icon
-              className="visible-xs-block"
-              fixedWidth
-              icon="tribes"
-              size="lg"
-            />
-            <span className="hidden-xs">{t('Circles')}</span>
-          </a>
-        </li>
-        <li className={classnames({ active: currentPath === '/search' })}>
-          <a href="/search" aria-label={t('Search hosts')}>
-            <Icon
-              className="visible-xs-block"
-              fixedWidth
-              icon="search"
-              size="lg"
-            />
-            <span className="hidden-xs">{t('Search')}</span>
-          </a>
-        </li>
-        <li className={classnames({ active: currentPath === '/messages' })}>
-          <a href="/messages" aria-label={t('Messages')}>
-            <Icon
-              className="visible-xs-block"
-              fixedWidth
-              icon="messages"
-              size="lg"
-            />
-            <span className="hidden-xs">{t('Messages')}</span>
-            <unread-count></unread-count>
-          </a>
-        </li>
-        <li
-          className={classnames('hidden-xs', {
-            active: currentPath === '/offer/host',
-          })}
+        <MenuItem
+          currentPath={currentPath}
+          path="/circles"
+          aria-label={t('Circles')}
         >
-          <a href="/offer/host">{t('Host')}</a>
-        </li>
-        <li
-          className={classnames('hidden-xs', {
-            active: currentPath === '/offer/meet',
-          })}
+          <Icon
+            className="visible-xs-block"
+            fixedWidth
+            icon="tribes"
+            size="lg"
+          />
+          <span className="hidden-xs">{t('Circles')}</span>
+        </MenuItem>
+        <MenuItem
+          currentPath={currentPath}
+          path="/search"
+          aria-label={t('Search hosts')}
         >
-          <a href="/offer/meet">{t('Meet')}</a>
-        </li>
-        <li className="dropdown dropdown-user hidden-xs" uib-dropdown>
+          <Icon
+            className="visible-xs-block"
+            fixedWidth
+            icon="search"
+            size="lg"
+          />
+          <span className="hidden-xs">{t('Search')}</span>
+        </MenuItem>
+        <MenuItem
+          currentPath={currentPath}
+          path="/messages"
+          aria-label={t('Messages')}
+        >
+          <Icon
+            className="visible-xs-block"
+            fixedWidth
+            icon="messages"
+            size="lg"
+          />
+          <span className="hidden-xs">{t('Messages')}</span>
+          <unread-count></unread-count>
+        </MenuItem>
+        <MenuItem
+          currentPath={currentPath}
+          path="/offer/host"
+          className="hidden-xs"
+        >
+          {t('Host')}
+        </MenuItem>
+        <MenuItem
+          currentPath={currentPath}
+          path="/offer/meet"
+          className="hidden-xs"
+        >
+          {t('Meet')}
+        </MenuItem>
+        <li className="dropdown dropdown-user hidden-xs">
           <a
             className="dropdown-toggle cursor-pointer"
             role="button"
-            uib-dropdown-toggle
             aria-label={t('My profile')}
             tabIndex="0"
             aria-haspopup="true"
@@ -145,24 +142,28 @@ export default function NavigationLoggedIn({
               {user.displayName}
             </li>
             <SubMenuDivider />
-            <SubMenuItem
+            <MenuItem
+              currentPath={currentPath}
               path={`/profile/${user.username}`}
-              label={t('My profile')}
+            >
+              {t('My profile')}
+            </MenuItem>
+            <MenuItem currentPath={currentPath} path="/profile/edit">
+              {t('Edit profile')}
+            </MenuItem>
+            <MenuItem
               currentPath={currentPath}
-            />
-            <SubMenuItem path="/profile/edit" label={t('Edit profile')} />
-            <SubMenuItem
               path={`/profile/${user.username}/contacts`}
-              label={t('Contacts')}
-              currentPath={currentPath}
-            />
-            <SubMenuItem path="/search/members" label={t('Find people')} />
+            >
+              {t('Contacts')}
+            </MenuItem>
+            <MenuItem currentPath={currentPath} path="/search/members">
+              {t('Find people')}
+            </MenuItem>
             <SubMenuDivider />
-            <SubMenuItem
-              path="/profile/edit/account"
-              label={t('Account')}
-              currentPath={currentPath}
-            />
+            <MenuItem currentPath={currentPath} path="/profile/edit/account">
+              {t('Account')}
+            </MenuItem>
             <li>
               <a
                 onClick={event => onSignout(event)}
@@ -235,18 +236,21 @@ export default function NavigationLoggedIn({
             />
           </ul>
         </li>
-        <li ui-sref-active="active" className="visible-xs-block">
-          <a href="/navigation" aria-label={t('My profile, info and support')}>
-            <Icon icon="menu" fixedWidth size="lg" />
-          </a>
-        </li>
+        <MenuItem
+          aria-label={t('My profile, info and support')}
+          className="visible-xs-block"
+          currentPath={currentPath}
+          path="/navigation"
+        >
+          <Icon icon="menu" fixedWidth size="lg" />
+        </MenuItem>
       </ul>
     </div>
   );
 }
 
 NavigationLoggedIn.propTypes = {
+  currentPath: PropTypes.string.isRequired,
   onSignout: PropTypes.func.isRequired,
   user: userType,
-  path: PropTypes.string.isRequired,
 };

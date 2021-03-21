@@ -38,7 +38,6 @@ function AppController(
   vm.isHeaderHidden = false;
   vm.isAboutPage = false;
   vm.isNativeMobileApp = trNativeAppBridge.isNativeMobileApp();
-  vm.path = $location.path();
 
   // Default options for Medium-Editor directive used site wide
   // @link https://github.com/yabwe/medium-editor/blob/master/OPTIONS.md
@@ -294,8 +293,6 @@ function AppController(
 
       // Reset page scroll on page change
       $window.scrollTo(0, 0);
-
-      vm.path = location.path();
     });
 
     /**

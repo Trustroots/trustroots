@@ -6,7 +6,7 @@ import React from 'react';
 // Internal dependencies
 import LanguageSwitch from './LanguageSwitch';
 
-export default function NavigationLoggedOut({ path, isI18nEnabled }) {
+export default function NavigationLoggedOut({ currentPath, isI18nEnabled }) {
   const { t } = useTranslation('core');
 
   return (
@@ -27,7 +27,7 @@ export default function NavigationLoggedOut({ path, isI18nEnabled }) {
         <a href="/signin" className="btn btn-lg btn-inverse">
           {t('Login')}
         </a>
-        {path !== '/' && (
+        {currentPath !== '/' && (
           <a
             aria-label={t('Read more about Trustroots')}
             className="btn btn-link header-more-text"
@@ -47,6 +47,6 @@ export default function NavigationLoggedOut({ path, isI18nEnabled }) {
 }
 
 NavigationLoggedOut.propTypes = {
-  path: PropTypes.string,
+  currentPath: PropTypes.string.isRequired,
   isI18nEnabled: PropTypes.bool,
 };
