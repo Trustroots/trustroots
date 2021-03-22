@@ -610,11 +610,8 @@ exports.list = function (req, res) {
 
   // Filter out users that do not share any circles with the authenticated user
   // and chose to not appear in those searches.
-  const showOnlyInMyCirclesQueries = [
-    { showOnlyInMyCircles: false },
-    { showOnlyInMyCircles: { $exists: false } },
-  ];
-  req.user.member.forEach(function (membership) {
+  const showOnlyInMyCirclesQueries = [{ showOnlyInMyCircles: false }];
+  req.user.member?.forEach(function (membership) {
     // Add all the circles that the authenticated user is member of. One of them
     // must match for an offer to appear in the search result.
     showOnlyInMyCirclesQueries.push({

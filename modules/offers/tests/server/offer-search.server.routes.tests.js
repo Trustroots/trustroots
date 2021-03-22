@@ -1147,7 +1147,7 @@ describe('Offer search tests', function () {
     });
   });
 
-  it('should be able to get offers from users with circles in common and have "showOnlyMyCircles" set', function (done) {
+  it('should be able to get offers from users with circles in common and have "showOnlyInMyCircles" set', function (done) {
     // Verify that offers where showOnlyInMyCircles is true are only appearing
     // in searches where the authenticated user (user1) has at least one circle
     // in common with the user that owns the offer.
@@ -1205,10 +1205,12 @@ describe('Offer search tests', function () {
         // Update the hosting offers.
         function (user3, done) {
           // Save hosting offer 1 (user2, showOnlyInMyCircles=true).
-          const o1 = new Offer(offer1);
-          o1.user = user2Id;
-          o1.location = testLocations.Europe.location;
-          o1.showOnlyInMyCircles = true;
+          const o1 = new Offer({
+            ...offer1,
+            user: user2Id,
+            location: testLocations.Europe.location,
+            showOnlyInMyCircles: true,
+          });
           o1.save(function (err, offer1) {
             offer1Id = offer1._id;
             done(err);
