@@ -10,12 +10,7 @@ import { userType } from '@/modules/users/client/users.prop-types';
 import NavigationLoggedIn from './NavigationLoggedIn';
 import NavigationLoggedOut from './NavigationLoggedOut';
 
-export default function AppHeader({
-  user,
-  onSignout,
-  isI18nEnabled,
-  onNavigation, //eslint-disable-line
-}) {
+export default function AppHeader({ isI18nEnabled, onSignout, user }) {
   const { t } = useTranslation('core');
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
