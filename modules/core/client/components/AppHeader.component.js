@@ -2,6 +2,7 @@
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Navbar } from 'react-bootstrap';
 
 // Internal dependencies
 import { $on } from '@/modules/core/client/services/angular-compat';
@@ -27,13 +28,9 @@ export default function AppHeader({
   }, []);
 
   return (
-    <header
-      className="navbar navbar-default navbar-fixed-top hidden-print"
-      id="tr-header"
-      role="banner"
-    >
+    <Navbar className="hidden-print" id="tr-header" fixedTop>
       <a
-        className="btn btn-default sr-only sr-only-focusable sr-helper"
+        className="btn btn-primary sr-only sr-only-focusable sr-helper"
         href="#tr-main"
       >
         {t('Skip to main content')}
@@ -50,7 +47,7 @@ export default function AppHeader({
           currentPath={currentPath}
         />
       )}
-    </header>
+    </Navbar>
   );
 }
 

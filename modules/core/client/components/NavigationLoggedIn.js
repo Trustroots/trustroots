@@ -2,6 +2,12 @@
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
+import {
+  Navbar,
+  NavDropdown,
+  Nav,
+  MenuItem as DropMenuItem,
+} from 'react-bootstrap';
 
 // Internal dependencies
 import { userType } from '@/modules/users/client/users.prop-types';
@@ -10,55 +16,46 @@ import Icon from './Icon';
 import MenuItem from './NavigationMenuItem';
 import SubMenuList from './NavigationSubMenuList';
 
-const SubMenuDivider = () => <li className="divider" role="presentation"></li>;
-
 export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
   const { t } = useTranslation('core');
 
   return (
-    <div className="container" role="navigation">
-      <div className="navbar-header">
-        <a href="/" className="navbar-brand hidden-xs" aria-hidden="true">
-          <img
-            className="hidden-xs hidden-sm"
-            src="/img/logo/horizontal-white.svg"
-            alt="Trustroots"
-            width="177"
-            height="31"
-          />
-          <img
-            className="hidden-md hidden-lg"
-            src="/img/tree-white.svg"
-            alt="Trustroots"
-            width="31"
-            height="31"
-          />
-        </a>
-      </div>
-
-      <ul className="nav navbar-nav hidden-xs">
-        <li className="hidden-xs dropdown">
-          <a
-            className="dropdown-toggle cursor-pointer"
-            tabIndex="0"
-            role="button"
-            aria-haspopup="true"
-            aria-expanded="false"
-          >
-            {t('Support')}
+    <div className="container">
+      <Navbar.Header>
+        <Navbar.Brand>
+          <a href="/" className="hidden-xs" aria-hidden="true">
+            <img
+              className="hidden-xs hidden-sm"
+              src="/img/logo/horizontal-white.svg"
+              alt="Trustroots"
+              width="177"
+              height="31"
+            />
+            <img
+              className="hidden-md hidden-lg"
+              src="/img/tree-white.svg"
+              alt="Trustroots"
+              width="31"
+              height="31"
+            />
           </a>
-          <ul className="dropdown-menu" aria-label="submenu">
-            <MenuItem currentPath={currentPath} path="/faq">
-              {t('FAQ')}
-            </MenuItem>
-            <MenuItem currentPath={currentPath} path="/support">
-              {t('Contact us')}
-            </MenuItem>
-          </ul>
-        </li>
-      </ul>
+        </Navbar.Brand>
+      </Navbar.Header>
 
-      <ul className="nav navbar-nav nav-header-primary">
+      <Nav className="hidden-xs">
+        <NavDropdown
+          className="hidden-xs cursor-pointer"
+          id="support-dropdown"
+          title={t('Support')}
+        >
+          <DropMenuItem href="/faq">
+            {t('Frequently Asked Questions')}
+          </DropMenuItem>
+          <DropMenuItem href="/support">{t('Contact us')}</DropMenuItem>
+        </NavDropdown>
+      </Nav>
+
+      <Nav className="nav-header-primary">
         <MenuItem
           currentPath={currentPath}
           path="/circles"
@@ -113,127 +110,108 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         >
           {t('Meet')}
         </MenuItem>
-        <li className="dropdown dropdown-user hidden-xs">
-          <a
-            className="dropdown-toggle cursor-pointer"
-            role="button"
-            aria-label={t('My profile')}
-            tabIndex="0"
-            aria-haspopup="true"
+        <NavDropdown
+          className="dropdown-user hidden-xs cursor-pointer"
+          id="support-dropdown"
+          title={
+            <>
+              <Avatar user={user} link={false} size={24} />
+              <span className="visible-xs-inline" aria-hidden="true">
+                <Icon icon="user" fixedWidth size="lg" />
+                {user.displayName}
+              </span>
+            </>
+          }
+        >
+          <li
+            role="presentation"
+            className="dropdown-header"
+            aria-hidden="true"
           >
-            <Avatar user={user} link={false} size={24} />
-            <span className="visible-xs-inline" aria-hidden="true">
-              <Icon icon="user" fixedWidth size="lg" />
-              {user.displayName}
-            </span>
-            <b className="caret" role="presentation"></b>
-          </a>
-          <ul
-            className="dropdown-menu dropdown-menu-right"
-            aria-label="submenu"
+            {user.displayName}
+          </li>
+          <DropMenuItem divider />
+          <DropMenuItem href={`/profile/${user.username}`}>
+            {t('My profile')}
+          </DropMenuItem>
+          <DropMenuItem href="/profile/edit">{t('Edit profile')}</DropMenuItem>
+          <DropMenuItem href={`/profile/${user.username}/contacts`}>
+            {t('Contacts')}
+          </DropMenuItem>
+          <DropMenuItem href="/search/members">{t('Find people')}</DropMenuItem>
+          <DropMenuItem divider />
+          <DropMenuItem href="/profile/edit/account">
+            {t('Account')}
+          </DropMenuItem>
+          <DropMenuItem
+            onClick={event => onSignout(event)}
+            href="/api/auth/signout"
+            target="_top"
           >
-            <li
-              role="presentation"
-              className="dropdown-header"
-              aria-hidden="true"
-            >
-              {user.displayName}
-            </li>
-            <SubMenuDivider />
-            <MenuItem
-              currentPath={currentPath}
-              path={`/profile/${user.username}`}
-            >
-              {t('My profile')}
-            </MenuItem>
-            <MenuItem currentPath={currentPath} path="/profile/edit">
-              {t('Edit profile')}
-            </MenuItem>
-            <MenuItem
-              currentPath={currentPath}
-              path={`/profile/${user.username}/contacts`}
-            >
-              {t('Contacts')}
-            </MenuItem>
-            <MenuItem currentPath={currentPath} path="/search/members">
-              {t('Find people')}
-            </MenuItem>
-            <SubMenuDivider />
-            <MenuItem currentPath={currentPath} path="/profile/edit/account">
-              {t('Account')}
-            </MenuItem>
-            <li>
-              <a
-                onClick={event => onSignout(event)}
-                href="/api/auth/signout"
-                target="_top"
-              >
-                {t('Sign out')}
-              </a>
-            </li>
-            <SubMenuDivider />
-            <SubMenuList
-              list={[
-                {
-                  href: '/',
-                  label: t('About'),
-                },
-                {
-                  href: '/volunteering',
-                  label: t('Volunteering'),
-                },
-                {
-                  href: '/contribute',
-                  label: t('Contribute'),
-                },
-                {
-                  href: '/media',
-                  label: t('Media'),
-                },
-                {
-                  href: '/foundation',
-                  label: t('Foundation'),
-                },
-                {
-                  href: '/team',
-                  label: t('Team'),
-                },
-                {
-                  href: '/privacy',
-                  label: t('Privacy'),
-                },
-                {
-                  href: '/rules',
-                  label: t('Rules'),
-                },
-              ]}
-            />
-            <SubMenuDivider />
-            <SubMenuList
-              list={[
-                {
-                  href: 'https://www.facebook.com/trustroots.org',
-                  ariaLabel: t('Trustroots at Facebook'),
-                  label: 'Facebook',
-                },
-                {
-                  href: 'https://twitter.com/trustroots',
-                  ariaLabel: t('Trustroots at Twitter'),
-                  label: 'Twitter',
-                },
-                {
-                  href: 'https://www.instagram.com/trustroots/',
-                  ariaLabel: t('Trustroots at Instagram'),
-                  label: 'Instagram',
-                },
-                {
-                  href: 'https://ideas.trustroots.org/',
-                  label: t('Blog'),
-                },
-              ]}
-            />
-          </ul>
-        </li>
+            {t('Sign out')}
+          </DropMenuItem>
+          <DropMenuItem divider />
+          <SubMenuList
+            list={[
+              {
+                href: '/',
+                label: t('About'),
+              },
+              {
+                href: '/volunteering',
+                label: t('Volunteering'),
+              },
+              {
+                href: '/contribute',
+                label: t('Contribute'),
+              },
+              {
+                href: '/media',
+                label: t('Media'),
+              },
+              {
+                href: '/foundation',
+                label: t('Foundation'),
+              },
+              {
+                href: '/team',
+                label: t('Team'),
+              },
+              {
+                href: '/privacy',
+                label: t('Privacy'),
+              },
+              {
+                href: '/rules',
+                label: t('Rules'),
+              },
+            ]}
+          />
+          <DropMenuItem divider />
+          <SubMenuList
+            list={[
+              {
+                href: 'https://www.facebook.com/trustroots.org',
+                ariaLabel: t('Trustroots at Facebook'),
+                label: 'Facebook',
+              },
+              {
+                href: 'https://twitter.com/trustroots',
+                ariaLabel: t('Trustroots at Twitter'),
+                label: 'Twitter',
+              },
+              {
+                href: 'https://www.instagram.com/trustroots/',
+                ariaLabel: t('Trustroots at Instagram'),
+                label: 'Instagram',
+              },
+              {
+                href: 'https://ideas.trustroots.org/',
+                label: t('Blog'),
+              },
+            ]}
+          />
+        </NavDropdown>
         <MenuItem
           aria-label={t('My profile, info and support')}
           className="visible-xs-block"
@@ -242,7 +220,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         >
           <Icon icon="menu" fixedWidth size="lg" />
         </MenuItem>
-      </ul>
+      </Nav>
     </div>
   );
 }
