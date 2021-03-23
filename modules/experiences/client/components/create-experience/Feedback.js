@@ -12,8 +12,6 @@ export default function Feedback({
 
   /*
    * Functions passing strings to translation fuction for translation scripts
-   * Added not, hate, maybe to differenciate between the 4 options.
-   * This should be changed to something more fitting (perferably fitting experiences concept)
    */
   const getRecommend = (recommendCode, report) => {
     switch (recommendCode) {
@@ -21,7 +19,7 @@ export default function Feedback({
         return t('Did you enjoy their cooking? singing?');
       case 'no':
         return report
-          ? t('Did you hate their cooking? singing?')
+          ? t('Did you not like their cooking? singing?')
           : t('Did you not enjoy their cooking? singing?');
       case 'unknown':
         return t('Did you maybe enjoy their cooking? singing?');
@@ -34,8 +32,10 @@ export default function Feedback({
     <div className="panel panel-default">
       <div className="panel-heading">
         <h4 id="feedback-public-question">
-          {t('Would you like to describe something about them?')} (
-          {t('Optional')})
+          {t(
+            'Would you like to describe something about your experience with them?',
+          )}{' '}
+          ({t('Optional')})
         </h4>
       </div>
       <div
@@ -57,7 +57,7 @@ export default function Feedback({
         ></textarea>
         <span className="help-block">
           {t(
-            'The answer you write will be publicaly available on their profile',
+            'The answer you write will be publicly available on their profile.',
           )}
           <br />
         </span>

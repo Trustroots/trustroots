@@ -1,5 +1,4 @@
 // External dependencies
-import { Button, DropdownButton, MenuItem, ButtonGroup } from 'react-bootstrap';
 import { withTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React, { Component } from 'react';
@@ -7,14 +6,13 @@ import React, { Component } from 'react';
 // Internal dependencies
 import '@/config/client/i18n';
 import OfferLocation from './OfferLocation.component';
+import OfferStatusButton from './OfferStatusButton';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
-import Tooltip from '@/modules/core/client/components/Tooltip';
 
 export class OffersPresentational extends Component {
   constructor(props) {
     super(props);
     this.renderOffer = this.renderOffer.bind(this);
-    this.renderButtonOwn = this.renderButtonOwn.bind(this);
     this.renderHostingYesMaybe = this.renderHostingYesMaybe.bind(this);
     this.state = {
       isLoading: true,
@@ -26,96 +24,7 @@ export class OffersPresentational extends Component {
 
   isHosting() {
     const { offer } = this.props;
-    return (
-      offer &&
-      offer.status &&
-      (offer.status === 'yes' || offer.status === 'maybe')
-    );
-  }
-
-  hostingStatusLabel(status) {
-    const { t } = this.props;
-    switch (status) {
-      case 'yes':
-        return t('Can host');
-      case 'maybe':
-        return t('Might be able to host');
-      default:
-        return t('Cannot host currently');
-    }
-  }
-
-  /* Render Functions */
-  renderButtonOwn() {
-    const { t } = this.props;
-    const { offer } = this.props;
-
-    {
-      /* Hosting status dropdown logged in user */
-    }
-    return (
-      <ButtonGroup className="pull-right dropdown-menu-offers">
-        <Tooltip
-          tooltip={t('Change')}
-          placement="left"
-          className="in"
-          id="tooltip-change-host-offer"
-        >
-          <DropdownButton
-            pullRight
-            className={`btn-offer-hosting, btn-offer-hosting-${offer.status}`}
-            bsSize="small"
-            bsStyle="success"
-            title={this.hostingStatusLabel(offer.status)}
-            id="dropdown-offers-button"
-          >
-            <MenuItem
-              href="/offer/host?status=yes"
-              eventKey="1"
-              className="cursor-pointer offer-hosting-yes"
-            >
-              {t('I can host')}
-            </MenuItem>
-            <MenuItem
-              href="/offer/host?status=maybe"
-              eventKey="2"
-              className="cursor-pointer offer-hosting-maybe"
-            >
-              {t('I might be able to host')}
-            </MenuItem>
-            <MenuItem
-              href="/offer/host?status=no"
-              eventKey="3"
-              className="cursor-pointer offer-hosting-no"
-            >
-              {t(`I can't host currently`)} {/* eslint-disable-line quotes */}
-            </MenuItem>
-          </DropdownButton>
-        </Tooltip>
-      </ButtonGroup>
-    );
-  }
-
-  renderButtonOther() {
-    const { offer, t } = this.props;
-    {
-      /* Hosting status button other user */
-    }
-    return (
-      <Button
-        tag="a"
-        href={`/messages/${this.props.username}`}
-        aria-label={t('Hosting status: {{statusLabel}}', {
-          statusLabel: this.hostingStatusLabel(status),
-        })}
-        bsSize="small"
-        bsStyle="success"
-        className={`btn-offer-hosting btn-offer-hosting-${offer.status} pull-right`}
-        id="offers-button"
-      >
-        {this.hostingStatusLabel(offer.status)}
-      </Button>
-    );
+    return offer?.status === 'yes' || offer?.status === 'maybe';
   }
 
   renderHostingYesMaybe() {
@@ -247,15 +156,16 @@ export class OffersPresentational extends Component {
 
   renderOffer() {
     const { t } = this.props;
-    const { isOwnOffer } = this.props;
+    const { isOwnOffer, offer, username } = this.props;
     return (
       <div className="panel panel-default offer-view">
         <div className="panel-heading">
           {t('Accommodation')}
-          {/* Button + dropdown for user's own profile */}
-          {isOwnOffer && this.renderButtonOwn()}
-          {/* Button for other profiles */}
-          {!isOwnOffer && this.renderButtonOther()}
+          <OfferStatusButton
+            isOwnOffer={isOwnOffer}
+            status={offer?.status}
+            username={username}
+          />
         </div>
 
         {/* Show offer */}
