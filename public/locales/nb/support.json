@@ -1,5 +1,25 @@
 {
     "Report member": "Rapporter medlem",
     "Report member {{username}} to support": "Rapporter medlemmet {{username}} til brukerstøtte",
-    "Contact us": "Kontakt oss"
+    "Contact us": "Kontakt oss",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Du kunne fortsette til <1> hjemmesiden</1> eller se <4> ofte stilte spørsmål</4>.",
+    "Wait…": "Vent…",
+    "Username": "Brukernavn",
+    "Trustroots Support Robot": "Trustroots Support Robot",
+    "Trustroots Support": "Trustroots Support",
+    "Something went wrong sending your message.": "Noe gikk galt med å sende din melding.",
+    "Send": "Send",
+    "Reporting member": "Melder medlem",
+    "Removing your account": "Fjerner din konto",
+    "Please write in English if possible.": "Vennligst skriv på engelsk, hvis mulig.",
+    "Please ensure you are connected to internet and try again.": "Vennligst sørg for at du er koblet til internett og prøv på nytt.",
+    "Name": "Navn",
+    "Message": "Melding",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Jeg er bare en liten nettsiderobot, men jeg har sendt din melding til våre støttefolk. Forvent at de kommer tilbake til deg veldig snart!",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Hvis du eller noen du kjenner har vært vitne til eller et offer for en forbrytelse, vennligst meld det til politiet med en gang.",
+    "Email": "E-post",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Bli frivillig</0> og gjør en forskjell!",
+    "Thank you!": "Tusen takk!",
+    "See also": "Se også",
+    "Frequently Asked Questions": "Hyppig stilte spørsmål"
 }
