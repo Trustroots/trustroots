@@ -48,6 +48,12 @@ If the translation has been completed, the next step is a review by another pers
 
 Occasionally there might be disagreements on how to translate certain terms or what register to use etc. In these situations you should try to explain your point of view while listening to that of others - aiming to finding common ground to make a decision from. If it, for some reason, is not possible to come to an agreement we would recommend getting in touch with the others in the localisation team (through Slack or any other communications channel) in order to get more neutral opinions on the matter and, if needed, a moderated video conversation or a similar solution to find a way to resolve the conflict.
 
+## Deploying changes
+
+- After you make changes on Weblate, they appear at [GitHub as a pull request](https://github.com/Trustroots/trustroots/pulls?q=is%3Apr+author%3Aweblate+). Changes get piled into one pull request until that gets "merged". You can subscribe to the pull request in Github to get notified when the pull request gets merged.
+- After merging, changes will appear on the developer's local setups as well on [the dev2](https://dev2.trustroots.org/) environment.
+- Changes need manual deployment to appear on the production site, which we do every now and then, usually within a week or two. Feel free to ask for a new deployment if you think there is a need.
+
 ## Tech
 
 - Strings are located in json files: https://github.com/Trustroots/trustroots/tree/master/public/locales
