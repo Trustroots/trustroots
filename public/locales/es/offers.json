@@ -27,5 +27,6 @@
     },
     "Start hosting travellers": "Empieza a alojar viajeros",
     "At most {{count}} guests.": "Como máximo un invitado.",
-    "At most {{count}} guests._plural": "Como máximo {{count}} invitados."
+    "At most {{count}} guests._plural": "Como máximo {{count}} invitados.",
+    "Send a message": "Envía un mensaje"
 }

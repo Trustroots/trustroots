@@ -13,5 +13,14 @@
     "Type your text": "Escribe tu texto",
     "Streets": "Calles",
     "Satellite": "Satélite",
-    "Map style": "Estilo de Mapa"
+    "Map style": "Estilo de Mapa",
+    "Contact us": "Contáctanos",
+    "This page cannot be found.": "Esta página no se puede encontrar.",
+    "Select a language": "Selecciona un idioma",
+    "Search languages…": "Buscar idiomas…",
+    "Language: {{code}}": "Idioma: {{code}}",
+    "Help us translate.": "Ayúdanos a traducir.",
+    "Continue…": "Continuar…",
+    "Change map style": "Cambiar el estilo del mapa",
+    "Cancel": "Cancelar"
 }
