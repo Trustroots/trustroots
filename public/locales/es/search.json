@@ -7,5 +7,6 @@
     "Type name, username…": "Escriba nombre, usuario…",
     "{{count}} members found": "Un miembro encontrado",
     "{{count}} members found_plural": "{{count}} miembros encontrados",
-    "Search": "Búsqueda"
+    "Search": "Búsqueda",
+    "Zoom closer to find members.": "Haz zoom para encontrar miembros."
 }

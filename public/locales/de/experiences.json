@@ -71,7 +71,7 @@
     "The answer you write will be publicly available on their profile.": "Deine Antwort wird öffentlich auf ihrem oder seinem Profil sichtbar.",
     "Thank you for sharing your experience!": "Danke, dass du dein Erlebnis mit anderen geteilt hast!",
     "Sorry, you can't share experience only with yourself.": "Sorry, du kannst ein Erlebnis nicht ausschließlich mit dir selbst teilen.",
-    "Share your experience": "Dein Erlebnis teilen",
+    "Share your experience": "Teil dein Erlebnis",
     "See their experiences": "Ihre Erlebnisse sehen",
     "Recommend": "Empfehlen",
     "Public feedback": "Öffentliches Feedback",
@@ -106,5 +106,15 @@
     "All experiences are by male members.": "Alle Erlebnisse sind von männlichen Mitgliedern.",
     "All experiences are by female members.": "Alle Erlebnisse sind von weiblichen Mitgliedern.",
     "Everyone said they would not recommend them.": "Alle sagten, sie würden dieses Mitglied nicht empfehlen.",
-    "Everyone recommends them.": "Alle empfehlen dieses Mitglied."
+    "Everyone recommends them.": "Alle empfehlen dieses Mitglied.",
+    "Would you like to describe something about your experience with them?": "Möchtest du etwas von deinem Erlebnis mit diesem Mitglied beschreiben?",
+    "Skip": "Überspringen",
+    "Privately report this person to the moderators": "Melde diese Person vertraulich den Moderatoren",
+    "Please write in English if possible, thank you.": "Bitte schreib auf Englisch, wenn möglich. Danke.",
+    "Message to the moderators": "Nachricht an die Moderatoren",
+    "It's extremely important you report anyone behaving against community rules or values to us.": "Es ist sehr wichtig, dass du jeden meldest, der Gemeinschaftsregeln oder -werte verletzt.",
+    "Did you not like their cooking? singing?": "Hat es dir nicht gefallen, wie dieses Mitglied gekocht hat? wie es gesungen hat?",
+    "Besides your personal experience, would you recommend others to stay with them?": "Würdest du anderen empfehlen, bei diesem Mitglied unterzukommen – abgesehen von deinem persönlichen Erlebnis?",
+    "Besides your personal experience, would you recommend others to meet them?": "Würdest du anderen empfehlen, dieses Mitglied zu treffen – abgesehen von deinem persönlichen Erlebnis?",
+    "Besides your personal experience, would you recommend others to host them?": "Würdest du anderen empfehlen, dieses Mitglied als Gast aufzunehmen – abgesehen von deinem persönlichen Erlebnis?"
 }
