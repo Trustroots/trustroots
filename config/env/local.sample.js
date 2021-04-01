@@ -41,16 +41,6 @@ module.exports = {
     }
   },
   */
-  // Uncomment if you have a stathat account and would like to collect statistics.
-  // You need to provide your stathat key
-  /*
-  // Configuration of stathat.
-  // www.stathat.com is a tool/service for tracking statistics
-  stathat: {
-    enabled: true,
-    key: ''
-  },
-  */
   // Uncomment to configure Google FCM push
   // serviceAccount comes from a json file downloaded from the fcm console
   /*

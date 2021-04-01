@@ -3,9 +3,7 @@
 const should = require('should');
 const path = require('path');
 const influx = require('influx');
-const stathat = require('stathat');
 const sinon = require('sinon');
-const _ = require('lodash');
 const config = require(path.resolve('./config/config'));
 const sparkpostWebhooks = require(path.resolve(
   './modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller',
@@ -37,10 +35,6 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       protocol: 'http',
       database: 'trustroots-test',
     });
-
-    // stub the stathat endpoints
-    sinon.stub(stathat, 'trackEZCountWithTime');
-    stathat.trackEZCountWithTime.callsArgWithAsync(4, 200, null);
   });
 
   const testEvent = {
@@ -93,63 +87,6 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           should(point).have.propertyByPath('tags', 'type').eql('click');
 
           should(point).have.property('timestamp', new Date(1234567890000));
-
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      });
-    });
-  });
-
-  context('stathat configured', function () {
-    beforeEach(function () {
-      // stub the config.stathat.key
-      sinon.stub(config.stathat, 'key').value('stathatkey');
-
-      // stub enable stathat in config
-      sinon.stub(config.stathat, 'enabled').value(true);
-
-      // stub enable influx in config
-      sinon.stub(config.influxdb, 'enabled').value(false);
-    });
-
-    it('should reach stathat with data in correct format', function (done) {
-      sparkpostWebhooks.processAndSendMetrics(testEvent, function (e) {
-        if (e) return done(e);
-
-        try {
-          // test stathat endpoint
-          sinon.assert.callCount(stathat.trackEZCountWithTime, 3);
-
-          const calledWith = _.map(_.range(3), function (n) {
-            return stathat.trackEZCountWithTime.getCall(n).args;
-          });
-
-          const groupedArgs = _.zip.apply(this, calledWith);
-
-          // the 2nd argument to the endpoint should be the name
-          _.forEach(
-            [
-              'transactionalEmailEvent.count',
-              'transactionalEmailEvent.count.category.message_event',
-              'transactionalEmailEvent.count.type.click',
-            ],
-            function (value) {
-              should(groupedArgs[1]).containEql(value);
-            },
-          );
-
-          // the 3rd argument to the endpoint should be a value (values)
-          should(groupedArgs[2]).deepEqual([1, 1, 1]);
-
-          // the 4th argument to the endpoint is a timestamp in seconds
-          should(groupedArgs[3]).containEql(1234567890);
-
-          // the 5th argument is a callback function
-          _.forEach(groupedArgs[4], function (arg) {
-            should(arg).be.Function();
-          });
 
           return done();
         } catch (e) {

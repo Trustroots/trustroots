@@ -112,12 +112,6 @@ module.exports = {
       database: 'trustroots',
     },
   },
-  // Configuration of stathat.
-  // www.stathat.com is a tool/service for tracking statistics
-  stathat: {
-    enabled: false,
-    key: '',
-  },
   limits: {
     // Maximum length for public feedback for an experience
     maximumExperienceFeedbackPublicLength: 2000,
