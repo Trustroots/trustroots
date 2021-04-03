@@ -1,3 +1,9 @@
 {
-    "Clear members search": "Hapus pencarian anggota"
+    "Clear members search": "Hapus pencarian anggota",
+    "Zoom closer to find members.": "Perbesar untuk menemukan anggota.",
+    "Type name, username…": "Ketik nama, username…",
+    "Search members": "Cari anggota",
+    "Search": "Cari",
+    "{{count}} members found": "{{count}} anggota ditemukan",
+    "No members found by this name.": "Tidak ada anggota yang ditemukan dengan nama ini."
 }
