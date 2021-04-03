@@ -195,7 +195,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "0.4.3",
     "@sinonjs/fake-timers": "7.0.2",
     "@testing-library/jest-dom": "5.11.9",
-    "@testing-library/react": "11.2.5",
+    "@testing-library/react": "11.2.6",
     "@wordpress/browserslist-config": "3.0.1",
     "agendash": "2.0.0",
     "autoprefixer": "10.2.5",
