@@ -219,7 +219,7 @@
     "eslint-watch": "7.0.0",
     "faker": "5.4.0",
     "file-loader": "6.2.0",
-    "gulp-mocha": "3.0.1",
+    "gulp-mocha": "8.0.0",
     "gulp-nodemon": "2.5.0",
     "html-loader": "0.5.5",
     "husky": "4.3.8",
