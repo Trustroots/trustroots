@@ -157,6 +157,10 @@ const OfferSchema = new Schema({
   reactivateReminderSent: {
     type: Date,
   },
+  showOnlyInMyCircles: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 // Geospatial index (lat,lon)
