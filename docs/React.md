@@ -105,7 +105,7 @@ Testing is done with [`jest`](https://jestjs.io/en/) and [`React Testing Library
 
 React tests are ones that match the path `modules/*/tests/client/components/*.test.js`.
 
-e.g. [modules/core/tests/client/components/LanguageSwitch.component.test.js](../modules/core/tests/client/components/LanguageSwitch.component.test.js)
+e.g. [modules/core/tests/client/components/LanguageSwitch.test.js](../modules/core/tests/client/components/LanguageSwitch.test.js)
 
 We loosely follow the philosophy from Kent C. Dodds, summed up as:
 
