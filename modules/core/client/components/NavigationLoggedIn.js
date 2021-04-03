@@ -113,6 +113,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         <NavDropdown
           className="dropdown-user hidden-xs cursor-pointer"
           id="support-dropdown"
+          pullRight
           title={
             <>
               <Avatar user={user} link={false} size={24} />
