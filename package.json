@@ -60,7 +60,8 @@
     "webpack": "webpack --config config/webpack/webpack.config.js",
     "webpack:server": "webpack serve --hot --config config/webpack/webpack.config.js",
     "webpack:service-worker": "webpack --config config/webpack/webpack.push-messaging-sw.config.js",
-    "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js"
+    "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@sentry/browser": "6.2.5",
