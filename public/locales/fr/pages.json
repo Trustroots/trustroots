@@ -318,5 +318,9 @@
     "You can remove your account via <2>account page</2>. We will not store your profile in our systems after removal.": "Vous pouvez supprimer votre compte via la <2>page du compte</2>. Nous ne conserverons pas vos informations dans nos systèmes une fois la suppression effectuée.",
     "You are able to remove your info from the system by asking us to delete your account through the": "Vous pouvez supprimer vos informations du système en nous demandant de supprimer votre compte par le biais de",
     "Style guide": "Guide de style",
-    "Find people": "Rechercher des personnes"
+    "Find people": "Rechercher des personnes",
+    "{{date, MMMM Do}}": "{{date, Do MMMM}}",
+    "Trustroots page at Facebook": "Page Trustroots sur Facebook",
+    "Trustroots group at Facebook": "Groupe Trustroots sur Facebook",
+    "Launched {{date, MMMM Do YYYY}}": "Lancé le {{date, Do MMMM YYYY}}"
 }
