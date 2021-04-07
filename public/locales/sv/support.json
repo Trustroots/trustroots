@@ -1,5 +1,25 @@
 {
     "Report member": "Rapportera medlem",
     "Report member {{username}} to support": "Rapportera medlemmen {{username}} till supporten",
-    "Contact us": "Kontakta oss"
+    "Contact us": "Kontakta oss",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Du kan gå vidare till <1>startsidan</1> eller ta en titt på <4>vanliga frågor</4>.",
+    "Wait…": "Vänta…",
+    "Username": "Användarnamn",
+    "Trustroots Support Robot": "Trustroots supportrobot",
+    "Trustroots Support": "Trustroots Support",
+    "Thank you!": "Tack!",
+    "Something went wrong sending your message.": "Något gick fel när ditt meddelande skickades.",
+    "Send": "Skicka",
+    "See also": "Se även",
+    "Reporting member": "Rapportera medlem",
+    "Removing your account": "Ta bort ditt konto",
+    "Please write in English if possible.": "Skriv på engelska om det går.",
+    "Please ensure you are connected to internet and try again.": "Kontrollera att du är ansluten till internet och försök igen.",
+    "Name": "Namn",
+    "Message": "Meddelande",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Jag är bara en liten webbrobot, men jag har skickat ditt meddelande till vår support. Du kommer höra tillbaka från dem snart!",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Om du eller någon du känner har utsatts för ett brott ska du rapportera det till polisen omedelbart.",
+    "Frequently Asked Questions": "Vanliga frågor",
+    "Email": "E-post",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Hjälp till som volontär</0>och gör skillnad!"
 }
