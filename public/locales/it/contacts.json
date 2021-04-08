@@ -39,5 +39,6 @@
     "{{count}} contacts_plural": "{{count}} contatti",
     "Search contacts": "Ricerca contatti",
     "(additional {{count}} pending)": "(ancora {{count}} in attesa)",
-    "(additional {{count}} pending)_plural": "(ancora {{count}} in attesa)"
+    "(additional {{count}} pending)_plural": "(ancora {{count}} in attesa)",
+    "Wait a moment…": "Si prega di attendere…"
 }
