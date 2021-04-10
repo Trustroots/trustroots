@@ -39,5 +39,6 @@
     "{{count}} contacts_plural": "{{count}} kontakter",
     "Search contacts": "Sök efter kontakter",
     "(additional {{count}} pending)": "(ytterligare {{count}} väntar)",
-    "(additional {{count}} pending)_plural": "(ytterligare {{count}} väntar)"
+    "(additional {{count}} pending)_plural": "(ytterligare {{count}} väntar)",
+    "Wait a moment…": "Vänta en stund…"
 }

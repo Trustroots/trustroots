@@ -1,3 +1,18 @@
 {
-    "Cancel": "Batal"
+    "Cancel": "Batal",
+    "{{count, number}} members": "{{count, number}} anggota",
+    "Sign up with Trustroots": "Daftar dengan Trustroots",
+    "Send us suggestions!": "Kirimkan kami saran!",
+    "No members yet": "Belum ada anggota",
+    "New circle!": "Kelompok baru!",
+    "Missing your circle?": "Kehilangan kelompokmu?",
+    "Leave this circle?": "Meninggalkan kelompok ini?",
+    "Leave circle": "Tinggalkan kelompok",
+    "Joining circles helps you find likeminded Trustroots members.": "Bergabung dengan lingkaran membantumu menemukan anggota Trustroots yang berpikiran sama.",
+    "Joined": "Bergabung",
+    "Join Trustroots to find members behind circles.": "Bergabunglah dengan Trustroots untuk menemukan anggota di balik lingkaran.",
+    "Join ({{label}})": "Gabung ({{label}})",
+    "Join": "Gabung",
+    "Do you want to leave \"{{label}}\"?": "Kamu ingin keluar dari \"{{label}}\"?",
+    "Discover circles": "Temukan kelompok"
 }
