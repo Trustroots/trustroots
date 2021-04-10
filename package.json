@@ -60,7 +60,8 @@
     "webpack": "webpack --config config/webpack/webpack.config.js",
     "webpack:server": "webpack serve --hot --config config/webpack/webpack.config.js",
     "webpack:service-worker": "webpack --config config/webpack/webpack.push-messaging-sw.config.js",
-    "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js"
+    "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.js",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@sentry/browser": "6.2.5",
@@ -222,7 +223,7 @@
     "gulp-mocha": "3.0.1",
     "gulp-nodemon": "2.5.0",
     "html-loader": "0.5.5",
-    "husky": "4.3.8",
+    "husky": "6.0.0",
     "imports-loader": "1.2.0",
     "jasmine-core": "3.7.1",
     "jest": "26.6.3",
