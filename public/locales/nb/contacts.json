@@ -34,5 +34,10 @@
     },
     "{{amount}} contacts": "{{amount}} kontakter",
     "{{count}} contacts in common": "{{count}} kontakt til felles",
-    "{{count}} contacts in common_plural": "{{count}} felles kontakter"
+    "{{count}} contacts in common_plural": "{{count}} felles kontakter",
+    "{{count}} contacts": "{{count}} kontakt",
+    "{{count}} contacts_plural": "{{count}} kontakter",
+    "Search contacts": "Søk kontakter",
+    "(additional {{count}} pending)": "(flere {{count}} venter)",
+    "(additional {{count}} pending)_plural": "(flere {{count}} venter)"
 }

@@ -1,1 +1,18 @@
-{}
+{
+    "Wait a moment…": "Odota hetki…",
+    "Streets": "Kadut",
+    "Select a language": "Valitse kieli",
+    "Search languages…": "Etsi kieliä…",
+    "Satellite": "Satelliitti",
+    "Read more…": "Lue lisää…",
+    "Previous section": "Edellinen osio",
+    "Next section": "Seuraava osio",
+    "Next": "Seuraava",
+    "Language: {{code}}": "Kieli: {{code}}",
+    "Help us translate.": "Auta kääntämään.",
+    "Finish": "Valmis",
+    "Continue…": "Jatka…",
+    "Contact us": "Ota yhteyttä",
+    "Cancel": "Peruuta",
+    "Back": "Takaisin"
+}

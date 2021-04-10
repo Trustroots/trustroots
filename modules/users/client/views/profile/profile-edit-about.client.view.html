@@ -122,9 +122,7 @@
               ng-model="profileEditAbout.user.tagline"
               ng-change="profileEdit.unsavedModifications=true"
             />
-            <p class="help-block">
-              What is your mission or life motto?
-            </p>
+            <p class="help-block">What is your mission or life motto?</p>
           </div>
         </div>
 
@@ -139,29 +137,36 @@
               ng-model="profileEditAbout.user.gender"
               ng-change="profileEdit.unsavedModifications=true"
             >
-              <option ng-selected="profileEditAbout.user.gender === ''" value=""
-                >I'd rather not tell</option
+              <option
+                ng-selected="profileEditAbout.user.gender === ''"
+                value=""
               >
+                I'd rather not tell
+              </option>
               <option
                 ng-selected="profileEditAbout.user.gender === 'female'"
                 value="female"
-                >Female</option
               >
+                Female
+              </option>
               <option
                 ng-selected="profileEditAbout.user.gender === 'male'"
                 value="male"
-                >Male</option
               >
+                Male
+              </option>
               <option
                 ng-selected="profileEditAbout.user.gender === 'non-binary'"
                 value="non-binary"
-                >Non-binary</option
               >
+                Non-binary
+              </option>
               <option
                 ng-selected="profileEditAbout.user.gender === 'other'"
                 value="other"
-                >Other</option
               >
+                Other
+              </option>
             </select>
           </div>
         </div>

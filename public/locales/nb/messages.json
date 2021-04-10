@@ -7,13 +7,13 @@
         "": "Ikke skriv til folk to måneder i forveien."
     },
     "Edit your profile": "Rediger profilen din",
-    "Explain to them why you are choosing them": "Fortell dem hvorfor du velger dem",
+    "Explain to them why you are choosing them": "Forklar dem hvorfor du velger dem",
     "Highlight text to add links or change its appearance": {
         " Ctrl+Enter to send": {
             "": "Framhev tekst eller legg til lenker for å endre dets utseende. Ctrl+Enter for å sende."
         }
     },
-    "Make sure your profile is complete": "Forsikre deg om at profilen din er fullført",
+    "Make sure your profile is complete": "Sørg for at din profil er komplett",
     "More messages": "Flere meldinger",
     "No conversations yet": {
         "": "Ingen samtaler enda."
@@ -24,12 +24,12 @@
     "Send": "Send",
     "Sorry I can't host": "Kan ikke beverte",
     "Tell a little bit about yourself": "Fortell litt om deg selv",
-    "Tell your host why you're on a trip": "Fortell hvorfor du er på reise",
+    "Tell your host why you're on a trip": "Fortell din vert hvorfor du reiser",
     "This user isn't a member anymore": {
         "": "Denne brukeren er ikke lenger et medlem."
     },
     "Tip": "Tips",
-    "Trustroots is very much about spontaneous travel": "Trustroot er i stor grad myntet på spontanreising",
+    "Trustroots is very much about spontaneous travel": "Trustroots er veldig mye om spontan reise",
     "Unknown member": "Ukjent medlem",
     "What are your expectations in regards with going through their town?": "Hva slags forventninger har du ved å besøke deres område?",
     "Write back": "Skriv tilbake",
@@ -40,12 +40,19 @@
     },
     "You replied": "Du svarte",
     "You're much more likely to get a positive response if you have written a bit about yourself": {
-        "": "Det er mye mer sannsynlig at du får et positivt svar hvis du har skrevet litt om deg selv."
+        "": "Det er mye mer sannsynlig at du får et positivt svar, hvis du har skrevet litt om deg."
     },
     "Your profile seems quite empty": {
         "": "Profilen din ser ganske tom ut."
     },
     "{{count}} unread messages": "{{count}} ulest melding",
     "{{count}} unread messages_plural": "{{count}} uleste meldinger",
-    "License": "Lisens"
+    "License": "Lisens",
+    "Your response won't be visible to them.": "Ditt svar vil ikke være synlig for dem.",
+    "Yes": "Ja",
+    "No": "Nei",
+    "Member is not available anymore.": "Medlemm er ikke lenger tilgjengelig.",
+    "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Synes du at meldinger fra denne personen er høflig, respektfull og i Trustroots ånd?",
+    "Change": "Endre",
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...forklarer at du er interessert i å møte dem, ikke bare å lete etter gratis overnatting."
 }

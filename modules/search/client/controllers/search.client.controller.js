@@ -78,28 +78,28 @@ function SearchController(
     }
 
     // Watch for changes at types filters
-    $scope.$watchCollection('search.filters.types', function (
-      newTypesFilters,
-      oldTypesFilters,
-    ) {
-      if (!angular.equals(newTypesFilters, oldTypesFilters)) {
-        // Save new value to cache
-        FiltersService.set('types', newTypesFilters);
-        onFiltersUpdated();
-      }
-    });
+    $scope.$watchCollection(
+      'search.filters.types',
+      function (newTypesFilters, oldTypesFilters) {
+        if (!angular.equals(newTypesFilters, oldTypesFilters)) {
+          // Save new value to cache
+          FiltersService.set('types', newTypesFilters);
+          onFiltersUpdated();
+        }
+      },
+    );
 
     // Watch for changes at tribes filters
-    $scope.$watchCollection('search.filters.tribes', function (
-      newTribeFilters,
-      oldTribeFilters,
-    ) {
-      if (!angular.equals(newTribeFilters, oldTribeFilters)) {
-        // Save new value to cache
-        FiltersService.set('tribes', newTribeFilters);
-        onFiltersUpdated();
-      }
-    });
+    $scope.$watchCollection(
+      'search.filters.tribes',
+      function (newTribeFilters, oldTribeFilters) {
+        if (!angular.equals(newTribeFilters, oldTribeFilters)) {
+          // Save new value to cache
+          FiltersService.set('tribes', newTribeFilters);
+          onFiltersUpdated();
+        }
+      },
+    );
 
     // `SearchMap` controller sends these signals down to this controller
     $scope.$on('search.loadingOffer', function () {

@@ -5,9 +5,7 @@
   tr-confirm-exit
 >
   <div class="panel panel-default">
-    <div class="panel-heading">
-      Locations
-    </div>
+    <div class="panel-heading">Locations</div>
     <div class="panel-body">
       <div class="form-horizontal">
         <div class="form-group">
@@ -66,32 +64,4 @@
   </p>
 </form>
 
-<div class="panel panel-default">
-  <div class="panel-heading">
-    Hosting & meet
-  </div>
-  <div class="panel-body">
-    <div class="form-horizontal">
-      <p>
-        <a
-          role="button"
-          ui-sref="offer.host.edit"
-          class="btn btn-inverse-primary"
-        >
-          <i class="icon-sofa"></i>
-          &nbsp;&nbsp;&nbsp; Modify your hosting location
-        </a>
-      </p>
-      <p>
-        <a
-          role="button"
-          ui-sref="offer.meet.list"
-          class="btn btn-inverse-primary"
-        >
-          <i class="icon-users"></i>
-          Modify your meet locations
-        </a>
-      </p>
-    </div>
-  </div>
-</div>
+<hosting-and-meet-panel></hosting-and-meet-panel>

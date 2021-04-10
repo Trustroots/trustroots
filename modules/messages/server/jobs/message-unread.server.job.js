@@ -163,11 +163,12 @@ function sendUnreadMessageReminders(reminder, callback) {
       function (notifications, done) {
         // we pick only notifications which already have count > 0
         // the first ones we want to send for sure, so we keep `notification.dontSend` undefined
-        const furtherNotifications = _.filter(notifications, function (
-          notification,
-        ) {
-          return notification.notificationCount > 0;
-        });
+        const furtherNotifications = _.filter(
+          notifications,
+          function (notification) {
+            return notification.notificationCount > 0;
+          },
+        );
 
         // check whether the thread is non-replied
         async.eachSeries(
@@ -185,11 +186,12 @@ function sendUnreadMessageReminders(reminder, callback) {
                 // find out whether it is too late to send the further notification
                 // we just wrap it to function for clearer organisation
                 const isTooLate = (function () {
-                  const lastMessage = _.maxBy(notification.messages, function (
-                    msg,
-                  ) {
-                    return msg.created;
-                  });
+                  const lastMessage = _.maxBy(
+                    notification.messages,
+                    function (msg) {
+                      return msg.created;
+                    },
+                  );
                   const tooLate = config.limits.unreadMessageRemindersTooLate;
                   const tooOld = moment()
                     .subtract(moment.duration(tooLate))

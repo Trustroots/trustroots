@@ -207,6 +207,28 @@ describe('Message CRUD tests', function () {
     });
   });
 
+  it('should be able to read messages from user with role "shadowban"', function (done) {
+    userTo.roles = ['user', 'shadowban'];
+
+    userTo.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          // Get a list of messages
+          agent
+            .get('/api/messages/' + userToId)
+            .expect(200)
+            .end(done);
+        });
+    });
+  });
+
   it('should not be able to send messages to user with role "shadowban"', function (done) {
     userTo.roles = ['user', 'shadowban'];
 
@@ -226,127 +248,29 @@ describe('Message CRUD tests', function () {
     });
   });
 
-  it('should be able to read messages from user with role "shadowban" when with role "admin"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-    userFrom.roles = ['user', 'admin'];
+  ['admin', 'moderator'].forEach(role => {
+    it(`should be able to send messages to user with role "shadowban" when with role "${role}"`, function (done) {
+      userTo.roles = ['user', 'shadowban'];
+      userFrom.roles = ['user', role];
 
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-
-      userTo.save(function (saveErr) {
+      userFrom.save(function (saveErr) {
         should.not.exist(saveErr);
 
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            should.not.exist(signinErr);
+        userTo.save(function (saveErr) {
+          should.not.exist(saveErr);
 
-            // Get a list of messages
-            agent
-              .get('/api/messages/' + userToId)
-              .expect(200)
-              .end(done);
-          });
-      });
-    });
-  });
-
-  it('should be able to send messages to user with role "shadowban" when with role "admin"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-    userFrom.roles = ['user', 'admin'];
-
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-
-      userTo.save(function (saveErr) {
-        should.not.exist(saveErr);
-
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            should.not.exist(signinErr);
-
-            // Save a new message
-            agent.post('/api/messages').send(message).expect(200).end(done);
-          });
-      });
-    });
-  });
-
-  it('should be able to read messages from user with role "shadowban" when with role "moderator"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-    userFrom.roles = ['user', 'moderator'];
-
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-
-      userTo.save(function (saveErr) {
-        should.not.exist(saveErr);
-
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            should.not.exist(signinErr);
-
-            // Get a list of messages
-            agent
-              .get('/api/messages/' + userToId)
-              .expect(200)
-              .end(done);
-          });
-      });
-    });
-  });
-
-  it('should be able to send messages to user with role "shadowban" when with role "moderator"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-    userFrom.roles = ['user', 'moderator'];
-
-    userFrom.save(function (saveErr) {
-      should.not.exist(saveErr);
-
-      userTo.save(function (saveErr) {
-        should.not.exist(saveErr);
-
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            should.not.exist(signinErr);
-
-            // Save a new message
-            agent.post('/api/messages').send(message).expect(200).end(done);
-          });
-      });
-    });
-  });
-
-  it('should not be able to read messages from user with role "shadowban"', function (done) {
-    userTo.roles = ['user', 'shadowban'];
-
-    userTo.save(function (saveErr) {
-      should.not.exist(saveErr);
-
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          should.not.exist(signinErr);
-
-          // Get a list of messages
           agent
-            .get('/api/messages/' + userToId)
-            .expect(404)
-            .end(done);
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(function (signinErr) {
+              should.not.exist(signinErr);
+
+              // Save a new message
+              agent.post('/api/messages').send(message).expect(200).end(done);
+            });
         });
+      });
     });
   });
 
@@ -736,33 +660,35 @@ describe('Message CRUD tests', function () {
   });
 
   it('should not be able to send a message to non-public user', function (done) {
-    User.findByIdAndUpdate(userToId, { $set: { public: false } }, function (
-      err,
-    ) {
-      if (err) return done(err);
+    User.findByIdAndUpdate(
+      userToId,
+      { $set: { public: false } },
+      function (err) {
+        if (err) return done(err);
 
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
 
-          agent
-            .post('/api/messages')
-            .send(message)
-            .expect(404)
-            .end(function (messageSaveErr, messageSaveRes) {
-              messageSaveRes.body.message.should.equal(
-                'Member you are writing to does not exist.',
-              );
+            agent
+              .post('/api/messages')
+              .send(message)
+              .expect(404)
+              .end(function (messageSaveErr, messageSaveRes) {
+                messageSaveRes.body.message.should.equal(
+                  'Member you are writing to does not exist.',
+                );
 
-              // Call the assertion callback
-              return done(messageSaveErr);
-            });
-        });
-    });
+                // Call the assertion callback
+                return done(messageSaveErr);
+              });
+          });
+      },
+    );
   });
 
   it('should not be able to send a message when I have too short description', function (done) {

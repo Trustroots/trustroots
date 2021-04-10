@@ -1,6 +1,0 @@
-singleQuote: true
-trailingComma: all
-jsxBracketSameLine: false
-semi: true
-arrowParens: avoid
-bracketSpacing: true

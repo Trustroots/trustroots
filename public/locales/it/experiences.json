@@ -1,0 +1,120 @@
+{
+    "<0>Your reference</0> for <3></3> is public now": {
+        "": "La tua referenza è ora pubblica."
+    },
+    "Also, <1></1> was reported": {
+        "": ""
+    },
+    "Choose your interaction": "Scegli la tua interazione",
+    "Choose your recommendation": "Scegli la tua raccomandazione",
+    "Done!": "Fatto!",
+    "How do you know them": "Come vi conoscete",
+    "How do you know them?": "Come vi conoscete?",
+    "I don't know": "Non lo so",
+    "I hosted them": "Li ho ospitati",
+    "Message to moderators": "Messaggio ai moderatori",
+    "Met in person": "Incontrati di persona",
+    "No": "No",
+    "Please write in English if possible": {
+        "": "Se possibile, scrivi in inglese."
+    },
+    "Recommendation": "Raccomandazione",
+    "Report this person to moderators": "Segnala questa persona ai moderatori",
+    "See the reference from {{name}} to you": {
+        "": "Leggi la referenza da parte di {{name}}."
+    },
+    "Sorry, you can't give a reference to yourself": {
+        "": "Non puoi scrivere una referenza a te stesso."
+    },
+    "They hosted me": "Mi hanno ospitato",
+    "Wait a moment": {
+        "": {
+            "": {
+                "": "Aspetta un momento..."
+            }
+        }
+    },
+    "We're sad to hear you didn't have a great experience using Trustroots!": "Ci spiace sapere che la tua esperienza usando Trustroots non sia stata positiva!",
+    "Would you recommend others to host them?": "Consiglieresti ad altri di ospitarli?",
+    "Would you recommend others to meet them?": "Consiglieresti ad altri di incontrarli?",
+    "Would you recommend others to stay with them?": "Consiglieresti ad altri di farsi ospitare da loro?",
+    "Yes": "Sì",
+    "You've already given a reference to <1></1>": {
+        "": "Hai già scritto una referenza a <1></1>."
+    },
+    "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
+        "": "La tua referenza sarà pubblicata quando <1></1> scriverà la sua, oppure tra{{daysToReply}} giorni."
+    },
+    "It's extremely important you report anyone behaving against rules to us.": "È molto importante che ci segnali chiunque vada contro le regole.",
+    "{{count}} unknown": "{{count}} sconosciutə",
+    "{{count}} unknown_plural": "{{count}} sconosciut3",
+    "{{count}} recommend": "{{count}} raccomandazione",
+    "{{count}} recommend_plural": "{{count}} raccomandazioni",
+    "{{count}} not recommend": "{{count}} raccomandazione negativa",
+    "{{count}} not recommend_plural": "{{count}} raccomandazioni negative",
+    "You have {{count}} days left to respond before their experience will become public.": "Hai ancora un giorno per rispondere prima che la loro esperienza diventi pubblica.",
+    "You have {{count}} days left to respond before their experience will become public._plural": "Hai ancora {{count}} giorni rimanenti per rispondere prima che la loro esperienza diventi pubblica.",
+    "Sorry, you can't share experience only with yourself.": "Ci dispiace, non puoi condividere un'esperienza solo con te stesso.",
+    "See their experiences": "Vedi le loro esperienze",
+    "Your experience with {{name}} is public now.": "La tua esperienza con {{name}} è ora pubblica.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.": "La tua esperienza diventerà pubblica quando {{name}} condividerà la sua, o al più in un giorno.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._plural": "La tua esperienza diventerà pubblica quando {{name}} condividerà la sua, o al più in {{count}} giorni.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you.": "La tua esperienza diventerà pubblica in un giorno, o quando condivideranno la loro esperienza con te.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you._plural": "La tua esperienza diventerà pubblica in {{count}} giorni, o quando condivideranno la loro esperienza con te.",
+    "You also reported them to us. Please do <2>get in touch with us</2> if you have any further info to add.": "Ce li hai anche segnalati. Per piacere <2>entra in contatto con noi</2> se hai qualcosa da aggiungere.",
+    "You already shared your experience with them": "Hai già condiviso la tua esperienza con loro",
+    "Write about your experience with them": "Scrivi la tua esperienza con loro",
+    "Write about your experience": "Scrivi la tua esperienza",
+    "Would you like to describe something about them?": "Ti piacerebbe dire qualcosa di più su di loro?",
+    "The answer you write will be publicly available on their profile.": "La risposta che hai scritto sarà disponibile pubblicamente sul loro profilo.",
+    "Thank you for sharing your experience!": "Grazie per aver condiviso la tua esperienza!",
+    "Share your experience": "Condividi la tua esperienza",
+    "Not recommend": "Non raccomandare",
+    "Recommend": "Raccomanda",
+    "Public feedback": "Riscontri pubblici",
+    "Public experiences": "Esperienze pubbliche",
+    "Privately report this person to moderators": "Segnala privatamente questa persona ai moderatori",
+    "Optional": "Facoltativo",
+    "No experiences yet.": "Ancora nessuna esperienza.",
+    "Member since {{date, YYYY}}.": "Membro dal {{date, YYYY}}.",
+    "Host": "Ospite",
+    "Guest": "Ospite",
+    "Feedback": "Riscontri",
+    "Experiences pending publishing": "Esperienze in attesa di pubblicazione",
+    "Did you not enjoy their cooking? singing?": "Non ti è piaciuto il loro modo di cucinare? O come cantano?",
+    "Did you maybe enjoy their cooking? singing?": "Forse ti è piaciuto il loro modo di cucinare? O come cantano?",
+    "Did you hate their cooking? singing?": "Hai odiato il loro modo di cucinare? O come cantano?",
+    "Did you enjoy their cooking? singing?": "Ti è piaciuto il loro modo di cucinare? O come cantano?",
+    "{{percentage}}% of experiences are by male members.": "Il {{percentage}}% delle esperienze è da parte di maschi.",
+    "{{percentage}}% of experiences are by female members.": "Il {{percentage}}% delle esperienze è da parte di femmine.",
+    "{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.": "Il {{percentageFemales}}% delle esperienze proviene da femmine, e il {{percentageMales}}% da maschi.",
+    "{{count}} recommended them.": "Raccomandatə da un membro.",
+    "{{count}} recommended them._plural": "Raccomandatə da {{count}} membri.",
+    "{{count}} members shared their experiences.": "Un membro ha condiviso la sua esperienza.",
+    "{{count}} members shared their experiences._plural": "{{count}} membri hanno condiviso la loro esperienza.",
+    "{{count}} did not recommend.": "Non raccomandatə da un membro.",
+    "{{count}} did not recommend._plural": "Non raccomandatə da {{count}} membri.",
+    "Was hosted by {{percentage}}% of members.": "È statə ospitatə dal {{percentage}}% dei membri.",
+    "Was hosted by everyone.": "È statə ospitatə da qualcuno.",
+    "They hosted {{percentage}}% of members.": "Hanno ospitato il {{percentage}}% dei membri.",
+    "They hosted everyone.": "Hanno ospitato qualcuno.",
+    "One member shared their experience and they would not recommend them.": "Un membro ha condiviso la sua esperienza e non lə raccomandano.",
+    "One member shared their experience and they recommended them.": "Un membro ha condiviso la sua esperienza e lə raccomandano.",
+    "Met with {{percentage}}% of members.": "Ha incontrato il {{percentage}}% dei membri.",
+    "Met with everyone.": "Ha incontrato qualcuno.",
+    "Everyone said they would not recommend them.": "Nessunə lə raccomanda.",
+    "Everyone recommends them.": "Raccomandatə da tutt3.",
+    "Did not meet with anyone.": "Non ha incontrato nessuno.",
+    "All experiences are by male members.": "Tutte le esperienze sono da parte di uomini.",
+    "All experiences are by female members.": "Tutte le esperienze sono da parte di donne.",
+    "Would you like to describe something about your experience with them?": "Ti piacerebbe scrivere qualcosa a proposito della tua esperienza con loro?",
+    "Skip": "Salta",
+    "Privately report this person to the moderators": "Segnala privatamente questa persona ai moderatori",
+    "Please write in English if possible, thank you.": "Per piacere scrivi in inglese se possibile, grazie.",
+    "Message to the moderators": "Invia un messaggio ai moderatori",
+    "It's extremely important you report anyone behaving against community rules or values to us.": "È fondamentale che segnali chiunque non rispetti le regole o i valori della comunità.",
+    "Did you not like their cooking? singing?": "Ti è piaciuto come cucinano? O come cantano?",
+    "Besides your personal experience, would you recommend others to stay with them?": "A parte la tua esperienza personale, raccomanderesti ad altri di stare da loro?",
+    "Besides your personal experience, would you recommend others to meet them?": "A parte la tua esperienza personale, raccomanderesti ad altri di incontrarli?",
+    "Besides your personal experience, would you recommend others to host them?": "A parte la tua esperienza personale, raccomanderesti ad altri di ospitarli?"
+}

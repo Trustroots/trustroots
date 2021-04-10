@@ -69,23 +69,23 @@ angular
             updateDateOptions();
           });
 
-          scope.$watchCollection('[val.date, val.month, val.year]', function (
-            newDate,
-            oldDate,
-          ) {
-            if (scope.val.year && scope.val.month && scope.val.date) {
-              if (!angular.equals(newDate, oldDate)) {
-                const m = moment([
-                  scope.val.year,
-                  scope.val.month - 1,
-                  scope.val.date,
-                ]);
-                ngModel.$setViewValue(m.format('YYYY-MM-DD'));
+          scope.$watchCollection(
+            '[val.date, val.month, val.year]',
+            function (newDate, oldDate) {
+              if (scope.val.year && scope.val.month && scope.val.date) {
+                if (!angular.equals(newDate, oldDate)) {
+                  const m = moment([
+                    scope.val.year,
+                    scope.val.month - 1,
+                    scope.val.date,
+                  ]);
+                  ngModel.$setViewValue(m.format('YYYY-MM-DD'));
+                }
+              } else {
+                ngModel.$setViewValue(null);
               }
-            } else {
-              ngModel.$setViewValue(null);
-            }
-          });
+            },
+          );
 
           function updateMonthOptions() {
             // Values begin at 1 to permit easier boolean testing

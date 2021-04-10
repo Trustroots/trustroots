@@ -23,15 +23,15 @@
     },
     "Send": "Enviar",
     "Sorry I can't host": "Disculpa no puedo hospedar",
-    "Tell a little bit about yourself": "Cuenta un poco acerca de tí",
+    "Tell a little bit about yourself": "Cuenta un poco acerca de ti",
     "Tell your host why you're on a trip": "Cuéntale a tu anfitrión porque estás de viaje",
     "This user isn't a member anymore": {
         "": "Este usuario no es más miembro."
     },
     "Tip": "Sugerencia",
-    "Trustroots is very much about spontaneous travel": "Trustroots es ante todo acerca de viajar espontáneamente",
+    "Trustroots is very much about spontaneous travel": "Trustroots es más que nada acerca del viaje espontáneo",
     "Unknown member": "Miembro desconocido",
-    "What are your expectations in regards with going through their town?": "¿Cuáles son tus expectativas respecto a recorrer su pueblo?",
+    "What are your expectations in regards with going through their town?": "¿Cuáles son tus expectativas respecto a visitar su pueblo?",
     "Write back": "Responde",
     "Yes, I can host!": "Sí, puedo alojar!",
     "You": "Tu",
@@ -40,13 +40,19 @@
     },
     "You replied": "Tu has respondido",
     "You're much more likely to get a positive response if you have written a bit about yourself": {
-        "": "Tienes muchas más posibilidades de obtener una respuesta positiva si has escrito un poco acerca de tí mismo."
+        "": "Tienes muchas más posibilidades de obtener una respuesta positiva si has escrito un poco acerca de ti mismo."
     },
     "Your profile seems quite empty": {
         "": "Tu perfil parece estar bastante vacío."
     },
-    "{{count}} unread messages": "mensaje sin leer",
+    "{{count}} unread messages": "{{count}} mensaje sin leer",
     "{{count}} unread messages_plural": "{{count}} mensajes sin leer",
     "License": "Licencia",
-    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...explicando que tienes interés en conocerlos, no que solo estás buscando alojamiento gratis."
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...explicando que tienes interés en conocerlos, no que solo estás buscando alojamiento gratis.",
+    "No": "No",
+    "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "¿Encuentras que los mensajes de esta persona son corteses, respetuosos y en el espíritu de Trustroots?",
+    "Change": "Cambiar",
+    "Your response won't be visible to them.": "Tu respuesta no será visible para elles.",
+    "Yes": "Sí",
+    "Member is not available anymore.": "Este perfil ya no está disponible."
 }

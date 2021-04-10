@@ -17,5 +17,10 @@
     "Map style": "Kartenstil",
     "Continue…": "Weiter…",
     "Contact us": "Kontaktiere uns",
-    "Change map style": "Kartenstil ändern"
+    "Change map style": "Kartenstil ändern",
+    "Select a language": "Wähle eine Sprache aus",
+    "Search languages…": "Suche nach Sprachen…",
+    "Language: {{code}}": "Sprache: {{code}}",
+    "Help us translate.": "Hilf uns beim Übersetzen.",
+    "Cancel": "Abbrechen"
 }

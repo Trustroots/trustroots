@@ -1,1 +1,19 @@
-{}
+{
+    "Contact us": "Ota yhteyttä",
+    "Wait…": "Odota…",
+    "Username": "Käyttäjätunnus",
+    "Trustroots Support Robot": "Trustroots Tuki Robotti",
+    "Trustroots Support": "Trustroots Tuki",
+    "Thank you!": "Kiitos!",
+    "See also": "Katso myös",
+    "Reporting member": "Ilmiaannetaan käyttäjä",
+    "Report member {{username}} to support": "Ilmianna käyttäjä {{username}} tukitiimille",
+    "Report member": "Ilmianna käyttäjä",
+    "Please write in English if possible.": "Kirjoitathan Englanniksi jos mahdollista.",
+    "Name": "Nimi",
+    "Message": "Viesti",
+    "Frequently Asked Questions": "Usein Kysytyt Kysymykset",
+    "Email": "Sähköposti",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Tule vapaaehtoiseksi</0> ja tee jotain merkityksellistä!",
+    "Send": "Lähetä"
+}

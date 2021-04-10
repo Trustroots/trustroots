@@ -70,22 +70,26 @@ export default function ThreadMessage({ message, user }) {
     return otherUser._id === user._id;
   }
 
+  const deletedUser = !message.userFrom.username;
+
   return (
     <MessageContainer message={message}>
       <div className="message-main">
         <div className="message-meta">
           {isMe(message.userFrom) ? (
             <span>{t('You')}</span>
-          ) : (
+          ) : !deletedUser ? (
             <a href={`/profile/${message.userFrom.username}`}>
               {message.userFrom.displayName}
             </a>
+          ) : (
+            <span>{t('Unknown member')}</span>
           )}
           —
           <TimeAgo date={new Date(message.created)} />
         </div>
         <div className="panel panel-default">
-          <Avatar user={message.userFrom} size={24} />
+          <Avatar user={message.userFrom} size={24} link={!deletedUser} />
           <div
             className="panel-body"
             dangerouslySetInnerHTML={{ __html: message.content }}
@@ -93,7 +97,7 @@ export default function ThreadMessage({ message, user }) {
         </div>
       </div>
       <div className="message-author">
-        <Avatar user={message.userFrom} size={32} />
+        <Avatar user={message.userFrom} size={32} link={!deletedUser} />
       </div>
     </MessageContainer>
   );

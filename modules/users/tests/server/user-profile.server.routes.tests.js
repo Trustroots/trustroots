@@ -1016,13 +1016,13 @@ describe('User profile CRUD tests', function () {
 
               res.body.usernameUpdateAllowed.should.equal(false);
 
-              User.findOne({ username: credentials.username }, function (
-                err,
-                newUser,
-              ) {
-                should.not.exist(newUser.usernameUpdateAllowed);
-                done(err);
-              });
+              User.findOne(
+                { username: credentials.username },
+                function (err, newUser) {
+                  should.not.exist(newUser.usernameUpdateAllowed);
+                  done(err);
+                },
+              );
             });
         });
     });
@@ -1046,13 +1046,13 @@ describe('User profile CRUD tests', function () {
               if (err) {
                 return done(err);
               }
-              User.findOne({ username: credentials.username }, function (
-                err,
-                newUser,
-              ) {
-                should.not.exist(newUser.usernameUpdated);
-                done(err);
-              });
+              User.findOne(
+                { username: credentials.username },
+                function (err, newUser) {
+                  should.not.exist(newUser.usernameUpdated);
+                  done(err);
+                },
+              );
             });
         });
     });

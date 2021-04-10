@@ -30,7 +30,7 @@ export default function ThreadMessages({
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
   return (
     <InfiniteMessages component={MessagesContainer} onFetchMore={onFetchMore}>
-      {isExtraSmall && (
+      {isExtraSmall && otherUser.username && (
         <div className="message">
           <div className="message-recipient panel panel-default">
             <a className="panel-body" href={`/profile/${otherUser.username}`}>

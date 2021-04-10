@@ -13,7 +13,7 @@ function MessagesRoutes($stateProvider) {
       },
     })
     .state('messageThread', {
-      url: '/messages/:username',
+      url: '/messages/:username?userId',
       template:
         '<thread user="app.user" profileMinimumLength="app.appSettings.profileMinimumLength"></thread>',
       requiresAuth: true,

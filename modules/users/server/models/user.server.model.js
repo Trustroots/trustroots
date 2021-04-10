@@ -337,6 +337,7 @@ const UserSchema = new Schema({
   /* Tribes user is member of */
   member: {
     type: [UserMemberSchema],
+    default: [],
   },
   pushRegistration: {
     type: [UserPushRegistrationSchema],

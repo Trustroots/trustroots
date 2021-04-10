@@ -17,5 +17,10 @@
     "This page cannot be found.": "Cette page ne peut pas être trouvée.",
     "Continue…": "Continuer…",
     "Contact us": "Nous contacter",
-    "Change map style": "Modifier le style de carte"
+    "Change map style": "Modifier le style de carte",
+    "Select a language": "Sélectionner une langue",
+    "Search languages…": "Rechercher une langue…",
+    "Language: {{code}}": "Langue : {{code}}",
+    "Help us translate.": "Aidez-nous à traduire.",
+    "Cancel": "Annuler"
 }

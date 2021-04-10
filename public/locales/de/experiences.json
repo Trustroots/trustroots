@@ -1,0 +1,120 @@
+{
+    "<0>Your reference</0> for <3></3> is public now": {
+        "": ""
+    },
+    "Also, <1></1> was reported": {
+        "": ""
+    },
+    "Choose your interaction": "Wähle eine Interaktion",
+    "Choose your recommendation": "Wähle deine Empfehlung",
+    "Done!": "",
+    "How do you know them": "Woher kennst du sie oder ihn",
+    "How do you know them?": "Woher kennst du sie oder ihn?",
+    "I don't know": "Ich weiß nicht",
+    "I hosted them": "Ich habe sie oder ihn als Gast aufgenommen",
+    "Message to moderators": "Nachricht an die Moderatoren",
+    "Met in person": "Persönlich getroffen",
+    "No": "Nein",
+    "Please write in English if possible": {
+        "": "Bitte schreib auf englisch, wenn möglich."
+    },
+    "Recommendation": "Empfehlung",
+    "Report this person to moderators": "",
+    "See the reference from {{name}} to you": {
+        "": ""
+    },
+    "Sorry, you can't give a reference to yourself": {
+        "": ""
+    },
+    "They hosted me": "Sie oder er hat mich als Gast aufgenommen",
+    "Wait a moment": {
+        "": {
+            "": {
+                "": "Warte einen Moment ..."
+            }
+        }
+    },
+    "We're sad to hear you didn't have a great experience using Trustroots!": "Tut uns leid, dass du eine nicht so gute Erfahrung mit Trustroots gemacht hast!",
+    "Would you recommend others to host them?": "Würdest du anderen empfehlen, sie oder ihn als Gast aufzunehmen?",
+    "Would you recommend others to meet them?": "Würdest du anderen empfehlen, sie oder ihn zu treffen?",
+    "Would you recommend others to stay with them?": "Würdest du anderen empfehlen, bei ihr oder ihm zu übernachten?",
+    "Yes": "Ja",
+    "You've already given a reference to <1></1>": {
+        "": ""
+    },
+    "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
+        "": ""
+    },
+    "{{count}} unknown": "{{count}} unbekannt",
+    "{{count}} unknown_plural": "{{count}} unbekannt",
+    "Experiences pending publishing": "Auf Veröffentlichung wartende Erlebnisse",
+    "Did you not enjoy their cooking? singing?": "Hat es dir nicht gefallen, wie dieses Mitglied gekocht hat? wie es gesungen hat?",
+    "Did you maybe enjoy their cooking? singing?": "Hat es dir vielleicht gefallen, wie dieses Mitglied gekocht hat? wie es gesungen hat?",
+    "Did you hate their cooking? singing?": "Hat es dir nicht gefallen, wie dieses Mitglied gekocht hat? wie es gesungen hat?",
+    "Did you enjoy their cooking? singing?": "Hat dir gefallen, wie dieses Mitglied gekocht hat? wie es gesungen hat?",
+    "{{count}} recommend": "{{count}} empfiehlt",
+    "{{count}} recommend_plural": "{{count}} empfehlen",
+    "{{count}} not recommend": "{{count}} empfiehlt nicht",
+    "{{count}} not recommend_plural": "{{count}} empfehlen nicht",
+    "Your experience with {{name}} is public now.": "Dein Erlebnis mit {{name}} ist jetzt öffentlich.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.": "Dein Erlebnis wird öffentlich, wenn {{name}} ihr oder sein Erlebnis teilt, spätestens aber morgen.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._plural": "Dein Erlebnis wird öffentlich, wenn {{name}} ihr oder sein Erlebnis teilt, spätestens aber in {{count}} Tagen.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you.": "Dein Erlebnis wird öffentlich in {{count}} Tag, oder wenn das Mitglied seine Erfahrung mit dir teilt.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you._plural": "Dein Erlebnis wird öffentlich in {{count}} Tagen, oder wenn das Mitglied seine Erfahrung mit dir teilt.",
+    "You have {{count}} days left to respond before their experience will become public.": "Du hast {{count}} Tag zum Antworten, bevor ihr oder sein Erlebnis öffentlich wird.",
+    "You have {{count}} days left to respond before their experience will become public._plural": "Du hast {{count}} Tage zum Antworten, bevor ihr oder sein Erlebnis öffentlich wird.",
+    "You also reported them to us. Please do <2>get in touch with us</2> if you have any further info to add.": "Du hast dieses Mitglied auch an uns gemeldet. Bitte <2>trete mit uns in Verbindung</2>, wenn du weitere Infos hinzufügen möchtest.",
+    "You already shared your experience with them": "Du hast schon ein Erlebnis mit diesem Mitglied geteilt",
+    "Write about your experience with them": "Erzähl von deinem Erlebnis mit ihr oder ihm",
+    "Write about your experience": "Erzähl von deinem Erlebnis",
+    "Would you like to describe something about them?": "Möchtest du etwas an ihr oder ihm beschreiben?",
+    "The answer you write will be publicly available on their profile.": "Deine Antwort wird öffentlich auf ihrem oder seinem Profil sichtbar.",
+    "Thank you for sharing your experience!": "Danke, dass du dein Erlebnis mit anderen geteilt hast!",
+    "Sorry, you can't share experience only with yourself.": "Sorry, du kannst ein Erlebnis nicht ausschließlich mit dir selbst teilen.",
+    "Share your experience": "Teil dein Erlebnis",
+    "See their experiences": "Ihre Erlebnisse sehen",
+    "Recommend": "Empfehlen",
+    "Public feedback": "Öffentliches Feedback",
+    "Public experiences": "Öffentliche Erlebnisse",
+    "Privately report this person to moderators": "Mitglied vertraulich den Moderatoren melden",
+    "Optional": "Optional",
+    "Not recommend": "Nicht empfehlen",
+    "No experiences yet.": "Noch keine gemeinsamen Erlebnisse.",
+    "Member since {{date, YYYY}}.": "Mitglied seit {{date, YYYY}}.",
+    "It's extremely important you report anyone behaving against rules to us.": "Es ist sehr wichtig, dass du uns meldest, wenn jemand unsere Regeln bricht.",
+    "Host": "Gastgeber",
+    "Guest": "Gast",
+    "Feedback": "Feedback",
+    "{{count}} recommended them.": "Ein Mitglied empfiehlt sein Erlebnis weiter.",
+    "{{count}} recommended them._plural": "{{count}} Mitglieder empfehlen ihr Erlebnis weiter.",
+    "{{count}} did not recommend.": "Ein Mitglied hat sein Erlebnis nicht empfohlen.",
+    "{{count}} did not recommend._plural": "{{count}} Mitglieder haben ihre Erlebnisse nicht empfohlen.",
+    "Was hosted by {{percentage}}% of members.": "Wurde von {{percentage}} % als Gast aufgenommen.",
+    "Was hosted by everyone.": "Wurde von allen als Gast aufgenommen.",
+    "They hosted {{percentage}}% of members.": "Hat {{percentage}} % als Gäste aufgenommen.",
+    "They hosted everyone.": "Hat alle als Gäste aufgenommen.",
+    "Met with {{percentage}}% of members.": "Hat sich mit {{percentage}} % der Mitglieder getroffen.",
+    "Met with everyone.": "Hat sich mit allen getroffen.",
+    "Did not meet with anyone.": "Hat sich mit niemandem getroffen.",
+    "{{percentage}}% of experiences are by male members.": "{{percentage}} % der Erlebnisse sind von männlichen Mitgliedern.",
+    "{{percentage}}% of experiences are by female members.": "{{percentage}} % der Erlebnisse sind von weiblichen Mitgliedern.",
+    "{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.": "{{percentageFemales}} % der Erlebnisse sind von weiblichen, {{percentageMales}} % von männlichen Mitgliedern.",
+    "{{count}} members shared their experiences.": "Ein Mitglied teilte sein Erlebnis.",
+    "{{count}} members shared their experiences._plural": "{{count}} Mitglieder teilten ihre Erlebnisse.",
+    "One member shared their experience and they would not recommend them.": "Ein Mitglied hat sein Erlebnis geteilt und dieses Mitglied nicht empfohlen.",
+    "One member shared their experience and they recommended them.": "Ein Mitglied hat sein Erlebnis geteilt und hat dieses Mitglied empfohlen.",
+    "All experiences are by male members.": "Alle Erlebnisse sind von männlichen Mitgliedern.",
+    "All experiences are by female members.": "Alle Erlebnisse sind von weiblichen Mitgliedern.",
+    "Everyone said they would not recommend them.": "Alle sagten, sie würden dieses Mitglied nicht empfehlen.",
+    "Everyone recommends them.": "Alle empfehlen dieses Mitglied.",
+    "Would you like to describe something about your experience with them?": "Möchtest du etwas von deinem Erlebnis mit diesem Mitglied beschreiben?",
+    "Skip": "Überspringen",
+    "Privately report this person to the moderators": "Melde diese Person vertraulich den Moderatoren",
+    "Please write in English if possible, thank you.": "Bitte schreib auf Englisch, wenn möglich. Danke.",
+    "Message to the moderators": "Nachricht an die Moderatoren",
+    "It's extremely important you report anyone behaving against community rules or values to us.": "Es ist sehr wichtig, dass du jeden meldest, der Gemeinschaftsregeln oder -werte verletzt.",
+    "Did you not like their cooking? singing?": "Hat es dir nicht gefallen, wie dieses Mitglied gekocht hat? wie es gesungen hat?",
+    "Besides your personal experience, would you recommend others to stay with them?": "Würdest du anderen empfehlen, bei diesem Mitglied unterzukommen – abgesehen von deinem persönlichen Erlebnis?",
+    "Besides your personal experience, would you recommend others to meet them?": "Würdest du anderen empfehlen, dieses Mitglied zu treffen – abgesehen von deinem persönlichen Erlebnis?",
+    "Besides your personal experience, would you recommend others to host them?": "Würdest du anderen empfehlen, dieses Mitglied als Gast aufzunehmen – abgesehen von deinem persönlichen Erlebnis?"
+}

@@ -77,7 +77,7 @@ export default function RemoveContact({
             {!inProgress && <span>{labelConfirm}</span>}
             {inProgress && (
               <span role="alertdialog" aria-busy="true" aria-live="assertive">
-                {t('Wait a moment...')}
+                {t('Wait a moment…')}
               </span>
             )}
           </button>

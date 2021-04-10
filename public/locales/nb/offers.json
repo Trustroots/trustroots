@@ -27,5 +27,8 @@
     "Sorry, user is not hosting currently": {
         "": "Beklager, brukeren tilbyr ikke husvære for øyeblikket."
     },
-    "Start hosting travellers": "Begynn å huse reisende"
+    "Start hosting travellers": "Begynn å huse reisende",
+    "Send a message": "Send en melding",
+    "At most {{count}} guests.": "Maksimalt en gjest.",
+    "At most {{count}} guests._plural": "Maksimalt {{count}} gjester."
 }

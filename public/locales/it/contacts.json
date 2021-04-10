@@ -11,7 +11,7 @@
     "From <2>{{locationFrom}}</2>": "Da <2>{{locationFrom}}</2>",
     "Lives in <2>{{locationLiving}}</2>": "Vive a <2>{{locationLiving}}</2>",
     "No contacts yet": {
-        "": "Non ha ancora contatti."
+        "": "Ancora nessun contatto."
     },
     "One contact": "Un contatto",
     "Remove contact?": "Rimuovere il contatto?",
@@ -35,7 +35,7 @@
     "{{amount}} contacts": "{{amount}} contatti",
     "{{count}} contacts in common": "Un contatto in comune",
     "{{count}} contacts in common_plural": "{{count}} contatti in comune",
-    "{{count}} contacts": "Un contatto",
+    "{{count}} contacts": "{{count}} contatto",
     "{{count}} contacts_plural": "{{count}} contatti",
     "Search contacts": "Ricerca contatti",
     "(additional {{count}} pending)": "(ancora {{count}} in attesa)",

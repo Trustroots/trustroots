@@ -73,14 +73,14 @@ function trOfferValidUntilDirective() {
         setValidUntilDays(vm.offerValidityInDays);
       }
 
-      $scope.$watch('trOfferValidUntil.offerValidityInDays', function (
-        newValue,
-        oldValue,
-      ) {
-        if (newValue !== oldValue) {
-          setValidUntilDays(newValue);
-        }
-      });
+      $scope.$watch(
+        'trOfferValidUntil.offerValidityInDays',
+        function (newValue, oldValue) {
+          if (newValue !== oldValue) {
+            setValidUntilDays(newValue);
+          }
+        },
+      );
 
       // Update $scope when view model updates
       $scope.$watch('trOfferValidUntil.validUntil', function (date) {

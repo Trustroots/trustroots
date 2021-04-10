@@ -288,7 +288,8 @@ module.exports.initHelmetHeaders = function (app) {
         // Defines the origins from which images can be loaded.
         imgSrc: [
           "'self'",
-          'grafana.trustroots.org',
+          'https://hosted.weblate.org', // Translation tool, used on /statistics page
+          'grafana.trustroots.org', // Stats tool, used on /statistics page
           'https://*.tiles.mapbox.com', // Map tiles
           'https://api.mapbox.com', // Map tiles/Geocoding
           'https://events.mapbox.com',

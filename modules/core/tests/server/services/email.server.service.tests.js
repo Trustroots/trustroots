@@ -159,30 +159,33 @@ describe('Service: email', function () {
         },
       ],
     };
-    emailService.sendMessagesUnread(userFrom, userTo, notification, function (
-      err,
-    ) {
-      if (err) return done(err);
-      jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.subject.should.equal(
-        userFrom.displayName + ' wrote you from Trustroots',
-      );
-      jobs[0].data.text.should.containEql(
-        'You have one unread message from ' +
-          userFrom.displayName +
-          ' at Trustroots.',
-      );
-      notification.messages.forEach(function (notification) {
-        jobs[0].data.text.should.containEql(notification.content);
-      });
-      jobs[0].data.text.should.containEql('/messages/' + userFrom.username);
-      jobs[0].data.text.should.containEql('/profile/' + userFrom.username);
-      jobs[0].data.html.should.containEql('/messages/' + userFrom.username);
-      jobs[0].data.to.name.should.equal(userTo.displayName);
-      jobs[0].data.to.address.should.equal(userTo.email);
-      done();
-    });
+    emailService.sendMessagesUnread(
+      userFrom,
+      userTo,
+      notification,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.subject.should.equal(
+          userFrom.displayName + ' wrote you from Trustroots',
+        );
+        jobs[0].data.text.should.containEql(
+          'You have one unread message from ' +
+            userFrom.displayName +
+            ' at Trustroots.',
+        );
+        notification.messages.forEach(function (notification) {
+          jobs[0].data.text.should.containEql(notification.content);
+        });
+        jobs[0].data.text.should.containEql('/messages/' + userFrom.username);
+        jobs[0].data.text.should.containEql('/profile/' + userFrom.username);
+        jobs[0].data.html.should.containEql('/messages/' + userFrom.username);
+        jobs[0].data.to.name.should.equal(userTo.displayName);
+        jobs[0].data.to.address.should.equal(userTo.email);
+        done();
+      },
+    );
   });
 
   it('can send support request email', function (done) {
@@ -379,17 +382,18 @@ describe('Service: email', function () {
         },
         subject: 'test',
       };
-      emailService.renderEmail('support-request', params, function (
-        err,
-        email,
-      ) {
-        if (err) return done(err);
+      emailService.renderEmail(
+        'support-request',
+        params,
+        function (err, email) {
+          if (err) return done(err);
 
-        email.text.should.containEql('> Foo & foobar bar');
-        email.text.should.not.containEql('script');
+          email.text.should.containEql('> Foo & foobar bar');
+          email.text.should.not.containEql('script');
 
-        done();
-      });
+          done();
+        },
+      );
     });
   });
 

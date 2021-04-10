@@ -86,7 +86,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
-  const memberCount = new Intl.NumberFormat().format(52000);
+  const memberCount = new Intl.NumberFormat().format(53000);
 
   // TODO get header height instead of magic number 56
   // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
@@ -410,9 +410,6 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 </li>
                 <li>
                   <a href="https://ideas.trustroots.org/">{t('Blog')}</a>
-                </li>
-                <li>
-                  <a href="https://shop.trustroots.org/">{t('Shop')}</a>
                 </li>
                 <li>
                   <a href="/volunteering">{t('Volunteering')}</a>

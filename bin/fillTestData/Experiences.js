@@ -44,7 +44,7 @@ const argv = yargs.usage(
       )
       .example(
         '$0 10 0.8 --re-create',
-        'Adds on average 10 experiences (8 of them having replies) to each profile to the database after removing all existing references from the db ',
+        'Adds on average 10 experiences (8 of them having replies) to each profile to the database after removing all existing experiences from the db ',
       )
       .example(
         '$0 10 0.8 --debug',
@@ -101,8 +101,8 @@ const profileType = {
 const experienceGenerator = {
   interactions: (to, from) => ({
     met: true,
-    hostedMe: to < from,
-    hostedThem: from < to,
+    guest: to < from,
+    host: from < to,
   }),
 
   recommendation: () => {
@@ -134,7 +134,7 @@ const experienceGenerator = {
  * {averageExpNumber} and {replyRate}.
  *
  * @param {number} nUsers - the number of users in the db
- * @param {number} averageExpNumber - the average number of references a randomly populated profile has
+ * @param {number} averageExpNumber - the average number of experiences a randomly populated profile has
  * @param {number} replyRate - the probability for a randomly populated experience to have a reply
  * @returns {*[]} user experience sharing matrix
  */
@@ -236,7 +236,7 @@ function seedExperiences() {
 
   mongooseService.connect(() => {
     mongooseService.loadModels(async () => {
-      const Reference = mongoose.model('Reference');
+      const Experience = mongoose.model('Experience');
       const User = mongoose.model('User');
 
       const users = await User.find().sort('username');
@@ -251,7 +251,7 @@ function seedExperiences() {
         return;
       }
 
-      const experience = await Reference.findOne();
+      const experience = await Experience.findOne();
       if (experience && !argv.reCreate) {
         console.log(
           chalk.red(
@@ -265,7 +265,7 @@ function seedExperiences() {
               'Running with --re-create option. Removing existing Experiences ...',
             ),
           );
-          await Reference.deleteMany();
+          await Experience.deleteMany();
         }
         console.log(
           `Profile with many experiences (username): ${
@@ -322,7 +322,7 @@ function seedExperiences() {
       }
 
       function createExperience(userTo, userFrom) {
-        const experience = new Reference();
+        const experience = new Experience();
         experience.userTo = userTo;
         experience.userFrom = userFrom;
         experience.created = experienceGenerator.created();

@@ -132,12 +132,13 @@ exports.renderNotification = function (templateName, params, callback) {
 };
 
 exports.renderNotificationAndSend = function (templateName, params, callback) {
-  exports.renderNotification(templateName, params, function (
-    err,
-    notification,
-  ) {
-    if (err) return callback(err);
-    // Add to Agenda queue
-    agenda.now('send facebook notification', notification, callback);
-  });
+  exports.renderNotification(
+    templateName,
+    params,
+    function (err, notification) {
+      if (err) return callback(err);
+      // Add to Agenda queue
+      agenda.now('send facebook notification', notification, callback);
+    },
+  );
 };

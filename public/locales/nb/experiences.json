@@ -1,0 +1,108 @@
+{
+    "<0>Your reference</0> for <3></3> is public now": {
+        "": "<0>Referansen din</0> av <3></3> er offentlig nå."
+    },
+    "Also, <1></1> was reported": {
+        "": "<1></1> ble også rapportert."
+    },
+    "Choose your interaction": "Velg handling",
+    "Choose your recommendation": "Velg din anbefaling",
+    "Done!": "Ferdig!",
+    "How do you know them": "Hvordan du kjenner vedkommende",
+    "How do you know them?": "Hvordan kjenner du vedkommende?",
+    "I don't know": "Jeg vet ikke",
+    "I hosted them": "Jeg tjente som husvære",
+    "Message to moderators": "Melding til moderatorer",
+    "Met in person": "Møttes",
+    "No": "Nei",
+    "Please write in English if possible": {
+        "": "Skriv på Engelsk om mulig."
+    },
+    "Recommendation": "Anbefaling",
+    "Report this person to moderators": "Rapporter denne personen til moderatorene",
+    "See the reference from {{name}} to you": {
+        "": "Se referansen fra {{name}} til deg."
+    },
+    "Sorry, you can't give a reference to yourself": {
+        "": "Du kan ikke gi deg selv en referanse."
+    },
+    "They hosted me": "Gav meg husvære",
+    "Wait a moment": {
+        "": {
+            "": {
+                "": "Vent…"
+            }
+        }
+    },
+    "We're sad to hear you didn't have a great experience using Trustroots!": "Det er beklagelig at du ikke hadde en tillitvekkende opplevelse av Trustroots.",
+    "Would you recommend others to host them?": "Ønsker du å anbefale at andre gir dem husvære?",
+    "Would you recommend others to meet them?": "Ønsker du å anbefale andre å møte vedkommende?",
+    "Would you recommend others to stay with them?": "Ønsker du å anbefale andre å besøke dem?",
+    "Yes": "Ja",
+    "You've already given a reference to <1></1>": {
+        "": "Du har allerede gitt en referanse til <1></1>."
+    },
+    "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
+        "": "Din referanse offentliggjøres når <1></1> gjengjelder din referanse, eller om {{daysToReply}} dager."
+    },
+    "{{percentage}}% of experiences are by male members.": "{{percentage}} opplevelser er av mannlige medlemmer.",
+    "{{percentage}}% of experiences are by female members.": "{{percentage}} opplevelser er av kvinnelige medlemmer.",
+    "{{percentageFemales}}% of experiences are by females, and {{percentageMales}}% are by males.": "{{percentageFemales}} opplevelser er av kvinner, og {{percentageMales}} er av menn.",
+    "{{count}} recommended them.": "En anbefalte dem.",
+    "{{count}} recommended them._plural": "{{count}} anbefalte dem.",
+    "{{count}} members shared their experiences.": "Et medlem delte sin opplevelse.",
+    "{{count}} members shared their experiences._plural": "{{count}} medlemmer delte deres opplevelser.",
+    "{{count}} did not recommend.": "En anbefalte ikke.",
+    "{{count}} did not recommend._plural": "{{count}} anbefalte ikke.",
+    "Your experience with {{name}} is public now.": "Din opplevelse med {{name}} er offentlig nå.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.": "Din opplevelse vil bli offentlig når {{name}} deler sin opplevelse, eller senest om {{count}} dager.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._plural": "Din opplevelse vil bli offentlig når {{name}} deler sin opplevelse, eller senest om {{count}} dager.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you.": "Din opplevelse vil bli offentlig om {{count}} dager, eller når de deler deres opplevelse med deg.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you._plural": "Din opplevelse vil bli offentlig om {{count}} dager, eller når de deler deres opplevelse med deg.",
+    "You have {{count}} days left to respond before their experience will become public.": "Du har {{count}} dager igjen til å svare før deres opplevelse blir offentlig.",
+    "You have {{count}} days left to respond before their experience will become public._plural": "Du har {{count}} dager igjen til å svare før deres opplevelse blir offtenlig.",
+    "You also reported them to us. Please do <2>get in touch with us</2> if you have any further info to add.": "Du meldte også dem til oss. Vennligst <2> ta i kontakt med oss </2> hvis du har mer informasjon å tillegge.",
+    "You already shared your experience with them": "Du har allerede delt din opplevelse med dem",
+    "Write about your experience with them": "Skriv om din opplevelse med dem",
+    "Write about your experience": "Skriv om din opplevelse",
+    "Would you like to describe something about your experience with them?": "Vil du beskrive noe om din opplevelse med dem?",
+    "Was hosted by {{percentage}}% of members.": "Var akseptert som gjest av {{percentage}} medlemmer.",
+    "They hosted {{percentage}}% of members.": "De var vert for {{percentage}} medlemmer.",
+    "They hosted everyone.": "De var vert for dem.",
+    "The answer you write will be publicly available on their profile.": "Ditt svar vil være offentlig tilgjengelig på profilen deres.",
+    "Thank you for sharing your experience!": "Takk for at du delte din opplevelse!",
+    "Sorry, you can't share experience only with yourself.": "Beklager, du kan ikke dele en opplevelse kun med deg.",
+    "Skip": "Hopp over",
+    "Share your experience": "Del din opplevelse",
+    "See their experiences": "Se deres opplevelser",
+    "Recommend": "Anbefal",
+    "Public feedback": "Offentlig tilbakemelding",
+    "Privately report this person to the moderators": "Meld denne personen privat til moderatorene",
+    "Please write in English if possible, thank you.": "Vennligst skriv på engelsk, hvis mulig, takk.",
+    "Optional": "Valgfri",
+    "One member shared their experience and they would not recommend them.": "En medlem delte sin opplevelse og de ville ikke anbefale dem.",
+    "One member shared their experience and they recommended them.": "En medlem delte sin opplevelse og de anbefalte dem.",
+    "Not recommend": "Ikke anbefale",
+    "No experiences yet.": "Ingen opplevelser ennå.",
+    "Met with {{percentage}}% of members.": "Møtet med{{percentage}} medlemmer.",
+    "Met with everyone.": "Møtet med alle.",
+    "Message to the moderators": "Send melding til moderatorene",
+    "Member since {{date, YYYY}}.": "Medlem siden {{date, YYYY}}.",
+    "It's extremely important you report anyone behaving against community rules or values to us.": "Det er svært viktig at du anmelder noen som oppfører seg mot felleskapregler eller verdier til oss.",
+    "Host": "Vert",
+    "Guest": "Gjest",
+    "Feedback": "Tilbakemelding",
+    "Experiences pending publishing": "Opplevelser venter på utgivelse",
+    "Everyone said they would not recommend them.": "Alle sier at de ikke ville anbefale dem.",
+    "Everyone recommends them.": "Alle anbefaler dem.",
+    "Did you not like their cooking? singing?": "Likte du ikke deres matlaging? Singing?",
+    "Did you not enjoy their cooking? singing?": "Trivdes du ikke deres matlaging? Singing?",
+    "Did you maybe enjoy their cooking? singing?": "Trivdes du kanskje deres matlaging? Singing?",
+    "Did you enjoy their cooking? singing?": "Trivdes du deres matlaging? Singing?",
+    "Did not meet with anyone.": "Møtet ingen.",
+    "Besides your personal experience, would you recommend others to stay with them?": "I tillegg til din personlige opplevelse, ville du anbefale andre å bli hos dem?",
+    "Besides your personal experience, would you recommend others to meet them?": "I tillegg til din personlige opplevelse, ville du anbefale andre å være vert for dem?",
+    "Besides your personal experience, would you recommend others to host them?": "I tillegg til din personlige opplevelser, ville du anbefale andre å være vert for dem?",
+    "All experiences are by male members.": "Alle opplevelser er fra mannlige medlemmer.",
+    "All experiences are by female members.": "Alle opplevelser er fra kvinnelige medlemmer."
+}

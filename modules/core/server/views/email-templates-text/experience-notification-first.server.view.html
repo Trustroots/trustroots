@@ -1,0 +1,17 @@
+{% extends './email.server.view.html' %}
+
+{% block content %}
+Hello {{userTo.firstName}},
+
+{{userFrom.displayName}} ({{userFromProfileUrlPlainText}}) has shared their experience with you on Trustroots.
+
+Would you like to share yours as well? You can write about your experience here and both experiences will become public right after that:
+
+{{giveExperienceUrlPlainText}}
+
+Not in the mood to do it now? You have {{days}} days to share your experience with them. After that their experience will become public and you will only be able to share your experience with limited choices.
+
+If you think this message is an error or if you don’t know this person, let us know ({{urlSupportPlainText}}) so our Trust & Safety team can look into it.
+
+Thanks!
+{% endblock content %}

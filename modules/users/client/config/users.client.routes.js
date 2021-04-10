@@ -1,4 +1,3 @@
-import welcomeTemplateUrl from '@/modules/users/client/views/authentication/welcome.client.view.html';
 import profileEditTemplateUrl from '@/modules/users/client/views/profile/profile-edit.client.view.html';
 import profileEditAboutTemplateUrl from '@/modules/users/client/views/profile/profile-edit-about.client.view.html';
 import profileEditLocationsTemplateUrl from '@/modules/users/client/views/profile/profile-edit-locations.client.view.html';
@@ -30,7 +29,7 @@ function UsersRoutes($stateProvider) {
     // Users state routing
     .state('welcome', {
       url: '/welcome',
-      templateUrl: welcomeTemplateUrl,
+      template: '<welcome />',
       requiresAuth: true,
       footerHidden: true,
       data: {

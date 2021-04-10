@@ -480,55 +480,56 @@ describe('Offer search tests', function () {
 
   // Tests different regions in the globe (Asia, USA, North Pole etc)
   _.forEach(testLocations, function (testLocation, area) {
-    it('should be able to get offer from an area (' + area + ')', function (
-      done,
-    ) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
+    it(
+      'should be able to get offer from an area (' + area + ')',
+      function (done) {
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            // Handle signin error
+            if (signinErr) return done(signinErr);
 
-          // Clean out the DB from other offers
-          Offer.deleteMany().exec(function () {
-            // Create new offer to target location
-            const testLocationOffer = new Offer(offer1);
-            testLocationOffer.location = testLocation.location;
+            // Clean out the DB from other offers
+            Offer.deleteMany().exec(function () {
+              // Create new offer to target location
+              const testLocationOffer = new Offer(offer1);
+              testLocationOffer.location = testLocation.location;
 
-            testLocationOffer.save(function (saveErr, saveRes) {
-              if (saveErr) return done(saveErr);
+              testLocationOffer.save(function (saveErr, saveRes) {
+                if (saveErr) return done(saveErr);
 
-              // Get offers (around Berlin)
-              agent
-                .get('/api/offers' + testLocation.queryBoundingBox)
-                .expect(200)
-                .end(function (offersGetErr, offersGetRes) {
-                  // Handle offer get error
-                  if (offersGetErr) return done(offersGetErr);
+                // Get offers (around Berlin)
+                agent
+                  .get('/api/offers' + testLocation.queryBoundingBox)
+                  .expect(200)
+                  .end(function (offersGetErr, offersGetRes) {
+                    // Handle offer get error
+                    if (offersGetErr) return done(offersGetErr);
 
-                  // Set assertions
-                  offersGetRes.body.features.should.have.lengthOf(1);
+                    // Set assertions
+                    offersGetRes.body.features.should.have.lengthOf(1);
 
-                  const offerA = offersGetRes.body.features[0];
-                  offerA.properties.id.should.equal(saveRes._id.toString());
-                  offerA.geometry.coordinates[0].should.be.approximately(
-                    testLocation.location[1],
-                    0.1,
-                  );
-                  offerA.geometry.coordinates[1].should.be.approximately(
-                    testLocation.location[0],
-                    0.1,
-                  );
+                    const offerA = offersGetRes.body.features[0];
+                    offerA.properties.id.should.equal(saveRes._id.toString());
+                    offerA.geometry.coordinates[0].should.be.approximately(
+                      testLocation.location[1],
+                      0.1,
+                    );
+                    offerA.geometry.coordinates[1].should.be.approximately(
+                      testLocation.location[0],
+                      0.1,
+                    );
 
-                  // Call the assertion callback
-                  return done();
-                });
+                    // Call the assertion callback
+                    return done();
+                  });
+              });
             });
           });
-        });
-    });
+      },
+    );
   });
 
   it('should include both meet and host offers when getting a list of offers from an area', function (done) {
@@ -1144,6 +1145,137 @@ describe('Offer search tests', function () {
           });
       });
     });
+  });
+
+  it('should be able to get offers from users with circles in common and have "showOnlyInMyCircles" set', function (done) {
+    // Verify that offers where showOnlyInMyCircles is true are only appearing
+    // in searches where the authenticated user (user1) has at least one circle
+    // in common with the user that owns the offer.
+    //
+    // Makes the users members of the following tribes:
+    //   - user1: tribe1, tribe2  (the authenticated user)
+    //   - user2: tribe2, tribe3  (overlaps with user1)
+    //   - user3: tribe3          (does not overlap with user1)
+    // The following hosting offers are available:
+    //   - offer1 is owned by user2 and should appear as user1's circles overlap
+    //     with the ones of user2 while showOnlyInMyCircles is true.
+    //   - offer2 is owned by user3 and should *not* appear as user1's circles
+    //     do not overlap with the ones of user3 while showOnlyInMyCircles is true.
+    //   - offer3 is owned by user3 and should appear despite user1's circles not
+    //     overlapping with the ones of user3 since showOnlyInMyCircles is false.
+    let tribe3Id;
+    let offer1Id;
+    async.waterfall(
+      [
+        // Save tribe 3.
+        function (done) {
+          const tribe3 = new Tribe({
+            slug: 'tribe3',
+            label: 'tribe3',
+            color: '333333',
+            count: 1,
+            public: true,
+          });
+          tribe3.save(function (err, tribe3) {
+            tribe3Id = tribe3._id;
+            done(err);
+          });
+        },
+
+        // Set the users' memberships.
+        function (done) {
+          user1.member = [
+            { tribe: tribe1Id, since: new Date() },
+            { tribe: tribe2Id, since: new Date() },
+          ];
+          user1.save(done);
+        },
+        function (user1, done) {
+          user2.member = [
+            { tribe: tribe2Id, since: new Date() },
+            { tribe: tribe3Id, since: new Date() },
+          ];
+          user2.save(done);
+        },
+        function (user2, done) {
+          user3.member = { tribe: tribe3Id, since: new Date() };
+          user3.save(done);
+        },
+
+        // Update the hosting offers.
+        function (user3, done) {
+          // Save hosting offer 1 (user2, showOnlyInMyCircles=true).
+          const o1 = new Offer({
+            ...offer1,
+            user: user2Id,
+            location: testLocations.Europe.location,
+            showOnlyInMyCircles: true,
+          });
+          o1.save(function (err, offer1) {
+            offer1Id = offer1._id;
+            done(err);
+          });
+        },
+        function (done) {
+          // Save hosting offer 2 (user3, showOnlyInMyCircles=true).
+          offer2.user = user3Id;
+          offer2.location = testLocations.Europe.location;
+          offer2.showOnlyInMyCircles = true;
+          offer2.save(done);
+        },
+        function (offer2, done) {
+          // Save hosting offer 3 (user3, showOnlyInMyCircles=false).
+          offer3.user = user3Id;
+          offer3.location = testLocations.Europe.location;
+          offer3.showOnlyInMyCircles = false;
+          offer3.save(done);
+        },
+
+        // The actual test.
+        function (offer3, done) {
+          // Sign in.
+          agent
+            .post('/api/auth/signin')
+            .send(credentials)
+            .expect(200)
+            .end(done);
+        },
+        function (res, done) {
+          // Fetch the offers.
+          agent
+            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+            .expect(200)
+            .end(done);
+        },
+        function (offersGetRes, done) {
+          // Verify the offers.
+
+          // Offer 1 and 3 should match. See the test description above for why.
+          const features = offersGetRes.body.features;
+          features.should.have.lengthOf(2);
+
+          // The offers are returned in any order.
+          let offerRes1;
+          let offerRes3;
+          if (features[0].properties.id === offer1Id.toString()) {
+            offerRes1 = features[0];
+            offerRes3 = features[1];
+          } else {
+            offerRes1 = features[1];
+            offerRes3 = features[0];
+          }
+
+          offerRes1.properties.id.should.equal(offer1Id.toString());
+          offerRes3.properties.id.should.equal(offer3Id.toString());
+
+          return done();
+        },
+      ],
+      function (err) {
+        should.not.exist(err);
+        done(err);
+      },
+    );
   });
 
   afterEach(function (done) {

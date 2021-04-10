@@ -11,10 +11,25 @@ export default function Admin() {
           <img src={bmoDancing} alt="" width="200" />
         </p>
         <p>Welcome, friend! 👋</p>
-        <p>
-          See our <a href="https://team.trustroots.org/">Team Guide</a> &{' '}
-          <a href="https://trustroots.zendesk.com/inbox/">Support queue</a>.
-        </p>
+        <ul>
+          <li>
+            <a href="https://team.trustroots.org/">Team Guide</a>
+          </li>
+          <li>
+            <a href="https://trustroots.zendesk.com/inbox/">Support queue</a>
+          </li>
+          <li>
+            <a href="https://ideas.trustroots.org/wp-admin/">Blog admin</a>
+          </li>
+          <li>
+            <a href="https://ideas.trustroots.org/wp-admin/admin.php?page=mailpoet-newsletters">
+              Newsletter admin
+            </a>
+          </li>
+          <li>
+            <a href="https://grafana.trustroots.org/">Statistics</a>
+          </li>
+        </ul>
         <p>
           <strong>
             <em>Remember to logout on public computers!</em>

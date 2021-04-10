@@ -104,6 +104,8 @@ function Loading() {
 }
 
 export default function Thread({ user, profileMinimumLength }) {
+  const { t } = useTranslation('messages');
+
   if (!user.public) {
     return (
       <section className="container-spacer">
@@ -124,6 +126,7 @@ export default function Thread({ user, profileMinimumLength }) {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
   const [doesNotExist, setDoesNotExist] = useState(false);
+  const [removed, setRemoved] = useState(false);
   const [messages, setMessages] = useState([]);
   const cacheKey = `messages.thread.${user._id}-${username}`;
 
@@ -135,7 +138,7 @@ export default function Thread({ user, profileMinimumLength }) {
   const userHasReplied = Boolean(
     messages.find(message => message.userFrom._id === user._id),
   );
-  const showReply = messages.length > 0 || !hasEmptyProfile;
+  const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
   const showQuickReply = showReply && !userHasReplied;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
@@ -158,24 +161,63 @@ export default function Thread({ user, profileMinimumLength }) {
     }
   }
 
+  function createFakeUserObject(userId) {
+    return {
+      _id: userId,
+      displayName: t('Unknown member'),
+      username: null,
+      member: [],
+      languages: [],
+    };
+  }
+
   async function fetchData() {
     if (isFetching) return;
-    const username = getRouteParams().username;
     try {
       setIsFetching(true);
-      const otherUser = await api.users.fetch(username);
+      let otherUser;
+      let userRemoved = false;
+      try {
+        otherUser = await api.users.fetch(username);
+      } catch (error) {
+        if (error.response?.status === 404) {
+          const userId = getRouteParams().userId;
+          if (userId !== undefined) {
+            otherUser = createFakeUserObject(userId);
+            userRemoved = true;
+          } else {
+            setDoesNotExist(true);
+            throw error;
+          }
+        } else {
+          throw error;
+        }
+      }
+      setRemoved(userRemoved);
+
       const { messages, nextParams } = await api.messages.fetchMessages(
         otherUser._id,
       );
       setOtherUser(otherUser);
-      setMessages(messages.sort((a, b) => a.created.localeCompare(b.created)));
-      setNextParams(nextParams);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setDoesNotExist(true);
+      const sortedMessages = messages.sort((a, b) =>
+        a.created.localeCompare(b.created),
+      );
+      // TODO should be done at the back-end?
+      if (userRemoved) {
+        const filledMessages = messages.map(message => {
+          if (!message.userTo) {
+            message.userTo = { _id: otherUser._id };
+          }
+          if (!message.userFrom) {
+            message.userFrom = { _id: otherUser._id };
+          }
+          return message;
+        });
+        setMessages(filledMessages);
       } else {
-        throw error;
+        setMessages(sortedMessages);
       }
+      setNextParams(nextParams);
     } finally {
       setIsFetching(false);
     }
@@ -258,10 +300,19 @@ export default function Thread({ user, profileMinimumLength }) {
                   onSend={content => sendMessage(content)}
                 />
               )}
+              {removed && (
+                <div className="panel panel-default">
+                  <div className="panel-body">
+                    <em className="text-danger">
+                      {t('Member is not available anymore.')}
+                    </em>
+                  </div>
+                </div>
+              )}
             </ThreadContainer>
           )}
         </div>
-        {otherUser && !isExtraSmall && (
+        {otherUser && !isExtraSmall && !removed && (
           <div className="col-sm-3 text-center">
             <Monkeybox user={otherUser} otherUser={user} />
             {messages.length > 0 && (

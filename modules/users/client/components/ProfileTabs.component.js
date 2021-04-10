@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { $on } from '@/modules/core/client/services/angular-compat';
-import { getCount as getExperiencesCount } from '@/modules/references/client/api/references.api';
+import { getCount as getExperiencesCount } from '@/modules/experiences/client/api/experiences.api';
 import Badge from '@/modules/core/client/components/Badge';
 
 export default function ProfileTabs({
