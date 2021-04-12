@@ -225,7 +225,6 @@
     "gulp-nodemon": "2.5.0",
     "html-loader": "0.5.5",
     "husky": "6.0.0",
-    "imports-loader": "1.2.0",
     "jasmine-core": "3.7.1",
     "jest": "26.6.3",
     "jest-environment-jsdom-sixteen": "1.0.3",
