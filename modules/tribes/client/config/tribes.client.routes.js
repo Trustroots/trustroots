@@ -1,4 +1,4 @@
-import showTemplateUrl from '@/modules/tribes/client/views/tribe.client.view.html';
+// import showTemplateUrl from '@/modules/tribes/client/views/tribe.client.view.html';
 
 angular.module('tribes').config(TribesRoutes);
 
@@ -27,9 +27,13 @@ function TribesRoutes($stateProvider) {
     .state('circles.circle', {
       url: '/:circle',
       footerHidden: true,
-      templateUrl: showTemplateUrl,
+      // templateUrl: showTemplateUrl,
       controller: 'TribeController',
       controllerAs: 'tribeCtrl',
+      template: `<circle-page
+          user="app.user"
+          goBack=tribeCtrl.goBack         
+        ></circle-page>`,
       resolve: {
         // A string value resolves to a service
         TribeService: 'TribeService',
