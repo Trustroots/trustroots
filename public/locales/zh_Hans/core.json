@@ -1,1 +1,25 @@
-{}
+{
+    "Zoom out": "缩小",
+    "Zoom in": "放大",
+    "Wait a moment…": "等等…",
+    "Type your text": "输入你的话",
+    "This page cannot be found.": "找不到这个页面欸。",
+    "Streets": "街道",
+    "Select a language": "选择语言",
+    "Search languages…": "查看语言…",
+    "Satellite": "卫星",
+    "Read more…": "了解更多…",
+    "Previous section": "上个区域",
+    "Outdoors": "户外",
+    "Next section": "下个区域",
+    "Next": "下一个",
+    "Language: {{code}}": "语言：{{code}}",
+    "Help us translate.": "协助我们翻译。",
+    "Finish editing and save": "编辑完成并保存",
+    "Finish": "完成",
+    "Continue…": "继续…",
+    "Contact us": "联系我们",
+    "Change map style": "改变地图样式",
+    "Cancel": "取消",
+    "Back": "返回"
+}
