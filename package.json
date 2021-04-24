@@ -198,7 +198,7 @@
     "@sinonjs/fake-timers": "7.0.2",
     "@testing-library/jest-dom": "5.11.10",
     "@testing-library/react": "11.2.6",
-    "@wordpress/browserslist-config": "3.0.1",
+    "@wordpress/browserslist-config": "3.0.3",
     "agendash": "2.1.1",
     "autoprefixer": "10.2.5",
     "babel-eslint": "10.1.0",
