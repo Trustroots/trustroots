@@ -11,7 +11,6 @@
 module.exports = {
   featureFlags: {
     reference: true,
-    i18n: true,
   },
   db: {
     uri:

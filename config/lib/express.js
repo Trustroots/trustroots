@@ -60,7 +60,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.https = config.https;
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
-  app.locals.appSettings.i18nEnabled = config.featureFlags.i18n;
   app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.appSettings.limits = {
