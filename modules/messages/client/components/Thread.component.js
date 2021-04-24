@@ -13,7 +13,7 @@ import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
 import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
-import BlockMemberLink from '@/modules/support/client/components/BlockMemberLink.component';
+import BlockMemberLink from '@/modules/users/client/components/BlockMemberLink.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import Activate from '@/modules/users/client/components/Activate';
 import ThreadMessages from '@/modules/messages/client/components/ThreadMessages';

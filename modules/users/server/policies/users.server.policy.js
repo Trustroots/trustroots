@@ -133,7 +133,7 @@ exports.invokeRolesPolicies = function () {
         },
         {
           resources: '/api/blocked-users/:username',
-          permissions: ['post', 'delete'],
+          permissions: ['put', 'delete'],
         },
       ],
     },
