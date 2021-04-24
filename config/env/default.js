@@ -12,7 +12,7 @@
 
 module.exports = {
   featureFlags: {
-    reference: false,
+    reference: true,
     i18n: true,
   },
   app: {
