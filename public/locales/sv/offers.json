@@ -25,5 +25,8 @@
     "Sorry, user is not hosting currently": {
         "": "Tyvärr har inte användaren husrum tillgängligt för tillfället."
     },
-    "Start hosting travellers": "Börja ta emot resande"
+    "Start hosting travellers": "Börja ta emot resande",
+    "Send a message": "Skicka ett meddelande",
+    "At most {{count}} guests.": "Högst {{count}} gäst.",
+    "At most {{count}} guests._plural": "Högst {{count}} gäster."
 }

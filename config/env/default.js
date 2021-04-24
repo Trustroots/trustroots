@@ -12,7 +12,7 @@
 
 module.exports = {
   featureFlags: {
-    reference: false,
+    reference: true,
   },
   app: {
     title: 'Trustroots',
@@ -226,6 +226,7 @@ module.exports = {
     enabled: false,
     options: {
       dsn: '',
+      // Note: integrations are defined directly at `Sentry.init()`, don't add them here.
     },
   },
   // Webpack bundle analyzer

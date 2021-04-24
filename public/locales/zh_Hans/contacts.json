@@ -1,11 +1,11 @@
 {
+    "Wait a moment…": "等等…",
     "{{count}} contacts in common": "{{count}}个共同好友",
     "{{count}} contacts": "{{count}}个好友",
     "You received a contact request.": "你收到一条好友申请。",
     "Yes, revoke request": "是的，撤回申请",
     "Yes, remove contact": "是，删除此好友",
     "Yes, decline request": "是，拒绝此申请",
-    "Wait a moment…": "等一等…",
     "Since {{created, MMM D, YYYY}}": "自从 {{created, MMM D, YYYY}}",
     "Search contacts": "查找好友",
     "Revoke contact request?": "要撤回好友申请吗？",
@@ -19,7 +19,7 @@
     "Decline Request": "拒绝申请",
     "Contact request sent and pending.": "好友请求已发送，请等待回复。",
     "Connected since {{created, MMM D, YYYY}}": "于{{created, MMM D, YYYY}}加为好友",
-    "(additional {{count}} pending)": "（其余{{count}}条待定）",
     "Confirm Request": "确认申请",
-    "Cancel": "取消"
+    "Cancel": "取消",
+    "(additional {{count}} pending)": "（其余{{count}}条待定）"
 }

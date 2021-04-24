@@ -327,5 +327,7 @@
     "Trustroots is over <2>{{memberCount}} members</2> strong and growing!": "Trustroots ha più di <2>{{memberCount}} membri</2>, e continua a crescere!",
     "Find people": "Trova persone",
     "{{date, MMMM Do}}": "{{date, MMMM Do}}",
-    "Launched {{date, MMMM Do YYYY}}": "Lanciato il {{date, MMMM Do YYYY}}"
+    "Launched {{date, MMMM Do YYYY}}": "Lanciato il {{date, MMMM Do YYYY}}",
+    "Trustroots page at Facebook": "Pagina Trustroots su Facebook",
+    "Trustroots group at Facebook": "Gruppo Trustroots su Facebook"
 }

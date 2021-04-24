@@ -6,9 +6,13 @@ const mongoose = require('./mongoose');
 const express = require('./express');
 const chalk = require('chalk');
 const Sentry = require('@sentry/node');
+const Tracing = require('@sentry/tracing');
 
 if (config.sentry.enabled) {
-  Sentry.init(config.sentry.options);
+  Sentry.init({
+    ...config.sentry.options,
+    integrations: [new Tracing.Integrations.Mongo({ useMongoose: true })],
+  });
 }
 
 // Initialize Models
@@ -76,6 +80,12 @@ module.exports.start = function start(callback) {
             (config.influxdb && config.influxdb.enabled === true
               ? 'on'
               : 'off'),
+        ),
+      );
+      console.log(
+        chalk.green(
+          'Sentry:\t\t' +
+            (config.sentry && config.sentry.enabled === true ? 'on' : 'off'),
         ),
       );
 

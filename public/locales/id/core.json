@@ -1,4 +1,25 @@
 {
     "Cancel": "Batal",
-    "Back": "Kembali"
+    "Back": "Kembali",
+    "Zoom out": "Perkecil",
+    "Zoom in": "Perbesar",
+    "Type your text": "Ketik teks Anda",
+    "This page cannot be found.": "Halaman ini tidak ditemukan.",
+    "Streets": "Jalan",
+    "Select a language": "Pilih bahasa",
+    "Search languages…": "Telusuri bahasa …",
+    "Satellite": "Satelit",
+    "Read more…": "Baca selengkapnya…",
+    "Previous section": "Bagian sebelumnya",
+    "Outdoors": "Di luar rumah",
+    "Next section": "Bagian berikutnya",
+    "Next": "Selanjutnya",
+    "Language: {{code}}": "Bahasa: {{code}}",
+    "Help us translate.": "Bantu kami menerjemahkan.",
+    "Finish editing and save": "Selesaikan pengeditan dan simpan",
+    "Finish": "Selesai",
+    "Continue…": "Lanjutkan…",
+    "Contact us": "Kontak kami",
+    "Change map style": "Ubah gaya peta",
+    "Wait a moment…": "Tunggu sebentar…"
 }
