@@ -45,5 +45,14 @@
     "Your profile seems quite empty": {
         "": "Din profil ser lite tom ut."
     },
-    "Yes": "Ja"
+    "Yes": "Ja",
+    "{{count}} unread messages": "{{count}} oläst meddelande",
+    "{{count}} unread messages_plural": "{{count}} olästa meddelanden",
+    "Your response won't be visible to them.": "Ditt svar kommer inte att visas för personen.",
+    "No": "Nej",
+    "Member is not available anymore.": "Medlemmen är inte längre tillgänglig.",
+    "License": "Licens",
+    "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Tycker du att meddelanden från den här personen är trevliga och i Trustroots anda?",
+    "Change": "Ändra",
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...förklarar att du är intresserad av att träffa personen, inte bara hitta någonstans att bo gratis."
 }

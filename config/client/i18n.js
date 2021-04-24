@@ -86,4 +86,8 @@ i18n
     // debug: true, // show missing translation keys in console.log
   });
 
+i18n.on('languageChanged', languageCode => {
+  moment.locale(languageCode);
+});
+
 export default i18n;

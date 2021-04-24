@@ -1,3 +1,17 @@
 {
-    "Accommodation": "Akomodasi"
+    "Accommodation": "Akomodasi",
+    "At most {{count}} guests.": "Paling banyak {{count}} tamu.",
+    "Start hosting travellers": "Mulai menerima wisatawan",
+    "Sorry, user is not hosting currently.": "Maaf, pengguna tidak sedang menjadi tuan rumah.",
+    "Send a message": "Kirim pesan",
+    "Open on device": "Buka di perangkat",
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "Menawarkan keramahan dan menyambut \"orang asing\" ke rumah kita memperkuat kepercayaan kita satu sama lain.",
+    "No guests.": "Tidak ada tamu.",
+    "Modify hosting offer": "Ubah penawaran tuan rumah",
+    "Might be able to host": "Mungkin bisa menjadi tuan rumah",
+    "Meet people": "Bertemu orang",
+    "Change": "Ubah",
+    "Cannot host currently": "Saat ini tidak dapat menjadi tuan rumah",
+    "Can host": "Dapat menjadi tuan rumah",
+    "Bigger map": "Peta yang lebih besar"
 }

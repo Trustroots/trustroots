@@ -6,5 +6,7 @@
     "Search members": "Sök efter medlemmar",
     "Type name, username…": "Skriv namn, användarnamn…",
     "{{count}} members found": "Hittade {{count}} medlem",
-    "{{count}} members found_plural": "Hittade {{count}} medlemmar"
+    "{{count}} members found_plural": "Hittade {{count}} medlemmar",
+    "Zoom closer to find members.": "Zooma in för att se medlemmar.",
+    "Search": "Sök"
 }

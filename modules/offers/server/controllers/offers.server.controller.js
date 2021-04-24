@@ -36,6 +36,7 @@ const publicOfferFields = [
   'location',
   'updated',
   'validUntil',
+  'showOnlyInMyCircles',
 ];
 
 // Offer fields users can modify
@@ -46,6 +47,7 @@ const allowedOfferFields = [
   'maxGuests',
   'location',
   'validUntil',
+  'showOnlyInMyCircles',
 ];
 
 /**
@@ -516,25 +518,23 @@ exports.list = function (req, res) {
   }
 
   // Some of the filters are based on `user` schema
-  if (
-    filters.hasArrayFilter('languages') ||
-    filters.hasArrayFilter('tribes') ||
-    filters.hasObjectFilter('seen')
-  ) {
-    query.push({
-      $lookup: {
-        from: 'users',
-        localField: 'user',
-        foreignField: '_id',
-        as: 'user',
-      },
-    });
-    // Because above `$lookup` returns an array with one user
-    // `[{userObject}]`, we have to unwind it back to `{userObject}`
-    query.push({
-      $unwind: '$user',
-    });
-  }
+  query.push({
+    $lookup: {
+      from: 'users',
+      localField: 'user',
+      foreignField: '_id',
+      as: 'user',
+    },
+  });
+  // Because above `$lookup` returns an array with one user
+  // `[{userObject}]`, we have to unwind it back to `{userObject}`
+  // Preserve the entry in case the user mapping fails.
+  query.push({
+    $unwind: {
+      path: '$user',
+      preserveNullAndEmptyArrays: true,
+    },
+  });
 
   // Last seen filter
   if (filters.hasObjectFilter('seen')) {
@@ -607,6 +607,22 @@ exports.list = function (req, res) {
       });
     }
   }
+
+  // Filter out users that do not share any circles with the authenticated user
+  // and chose to not appear in those searches.
+  const showOnlyInMyCirclesQueries = [{ showOnlyInMyCircles: false }];
+  req.user.member?.forEach(function (membership) {
+    // Add all the circles that the authenticated user is member of. One of them
+    // must match for an offer to appear in the search result.
+    showOnlyInMyCirclesQueries.push({
+      'user.member.tribe': membership.tribe._id,
+    });
+  });
+  query.push({
+    $match: {
+      $or: showOnlyInMyCirclesQueries,
+    },
+  });
 
   // Pick fields and convert to GeoJson Feature
   query.push({

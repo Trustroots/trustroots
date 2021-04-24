@@ -1,0 +1,18 @@
+{
+    "Sign up with Trustroots": "登录Trustroots",
+    "{{count, number}} members": "{{count, number}}位成员",
+    "Send us suggestions!": "给我们点建议吧！",
+    "No members yet": "尚无成员",
+    "New circle!": "新的圈子！",
+    "Missing your circle?": "想念你的圈子吗？",
+    "Leave this circle?": "退出这个圈子？",
+    "Leave circle": "退出圈子",
+    "Joining circles helps you find likeminded Trustroots members.": "加入圈子可以帮你找到志同道合的Trustroots成员。",
+    "Joined": "已加入",
+    "Join Trustroots to find members behind circles.": "加入Trustroots来认识圈子里的成员。",
+    "Join ({{label}})": "加入{{label}}",
+    "Join": "加入",
+    "Do you want to leave \"{{label}}\"?": "确定要离开{{label}}？",
+    "Discover circles": "发现圈子",
+    "Cancel": "取消"
+}

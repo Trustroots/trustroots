@@ -16,7 +16,6 @@ require('@/modules/offers/client/controllers/offer-meet-list.client.controller')
 require('@/modules/offers/client/controllers/offer.client.controller');
 
 // directives
-require('@/modules/offers/client/directives/tr-offer-host-view.client.directive');
 require('@/modules/offers/client/directives/tr-offer-valid-until.client.directive');
 
 // services
