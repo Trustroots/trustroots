@@ -267,11 +267,6 @@
     "url": "https://github.com/Trustroots/trustroots/issues"
   },
   "license": "MIT",
-  "husky": {
-    "hooks": {
-      "pre-commit": "npx lint-staged"
-    }
-  },
   "lint-staged": {
     "*.js": [
       "npm run reformat-files",
