@@ -131,7 +131,7 @@
     "gulp-uglify": "3.0.2",
     "he": "1.2.0",
     "helmet": "4.5.0",
-    "html-to-text": "7.0.0",
+    "html-to-text": "7.1.1",
     "i18next": "20.2.1",
     "i18next-browser-languagedetector": "6.1.0",
     "i18next-xhr-backend": "3.2.2",
