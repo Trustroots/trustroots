@@ -10,7 +10,7 @@ import { userType } from '@/modules/users/client/users.prop-types';
 import NavigationLoggedIn from './NavigationLoggedIn';
 import NavigationLoggedOut from './NavigationLoggedOut';
 
-export default function AppHeader({ isI18nEnabled, onSignout, user }) {
+export default function AppHeader({ onSignout, user }) {
   const { t } = useTranslation('core');
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
 
@@ -37,17 +37,13 @@ export default function AppHeader({ isI18nEnabled, onSignout, user }) {
           currentPath={currentPath}
         />
       ) : (
-        <NavigationLoggedOut
-          isI18nEnabled={isI18nEnabled}
-          currentPath={currentPath}
-        />
+        <NavigationLoggedOut currentPath={currentPath} />
       )}
     </Navbar>
   );
 }
 
 AppHeader.propTypes = {
-  isI18nEnabled: PropTypes.bool,
   onSignout: PropTypes.func.isRequired,
   user: userType,
 };

@@ -6,7 +6,7 @@ import React from 'react';
 // Internal dependencies
 import LanguageSwitch from './LanguageSwitch';
 
-export default function NavigationLoggedOut({ currentPath, isI18nEnabled }) {
+export default function NavigationLoggedOut({ currentPath }) {
   const { t } = useTranslation('core');
 
   return (
@@ -36,11 +36,9 @@ export default function NavigationLoggedOut({ currentPath, isI18nEnabled }) {
             {t('Read more')}
           </a>
         )}
-        {isI18nEnabled && (
-          <div className="flex-side language-switch">
-            <LanguageSwitch buttonStyle="inverse" />
-          </div>
-        )}
+        <div className="flex-side language-switch">
+          <LanguageSwitch buttonStyle="inverse" />
+        </div>
       </nav>
     </div>
   );
@@ -48,5 +46,4 @@ export default function NavigationLoggedOut({ currentPath, isI18nEnabled }) {
 
 NavigationLoggedOut.propTypes = {
   currentPath: PropTypes.string.isRequired,
-  isI18nEnabled: PropTypes.bool,
 };
