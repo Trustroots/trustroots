@@ -3,12 +3,16 @@
 
 <profile-overview profile="profileCtrl.profile"> </profile-overview>
 
-<report-member-link
-  ng-if="::app.user._id !== profileCtrl.profile._id"
-  username="::profileCtrl.profile.username"
-></report-member-link>
-<br>
-<block-member-link
-  ng-if="::app.user._id !== profileCtrl.profile._id"
-  username="::profileCtrl.profile.username"
-></block-member-link>
+<div ng-if="::app.user._id !== profileCtrl.profile._id">
+  <report-member-link
+    username="::profileCtrl.profile.username"
+  ></report-member-link>
+
+  <br /><br />
+
+  <block-member
+    className="btn-xs btn-link text-muted"
+    username="::profileCtrl.profile.username"
+    isBlocked="::app.user.blocked.includes(profileCtrl.profile._id)"
+  ></block-member>
+</div>
