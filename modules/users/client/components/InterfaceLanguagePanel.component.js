@@ -1,5 +1,5 @@
 import React from 'react';
-import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch.component';
+import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 
