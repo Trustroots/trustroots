@@ -182,7 +182,7 @@
     "use-debounce": "3.4.3",
     "use-persisted-state": "0.3.3",
     "uuid": "8.3.2",
-    "validator": "13.5.2",
+    "validator": "13.6.0",
     "winston": "2.4.5",
     "winston-papertrail": "1.0.5"
   },
