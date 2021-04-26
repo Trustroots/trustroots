@@ -1,9 +1,9 @@
 <!-- Avatar+Name for mobile screens -->
 <avatar-name-mobile profile="profileCtrl.profile"></avatar-name-mobile>
 
-<profile-overview profile="profileCtrl.profile"> </profile-overview>
+<profile-overview profile="profileCtrl.profile"></profile-overview>
 
-<div ng-if="::app.user._id !== profileCtrl.profile._id">
+<div class="profile-flags" ng-if="::app.user._id !== profileCtrl.profile._id">
   <report-member-link
     username="::profileCtrl.profile.username"
   ></report-member-link>
@@ -11,7 +11,7 @@
   <br /><br />
 
   <block-member
-    className="btn-xs btn-link text-muted"
+    className="'btn btn-xs btn-link text-muted'"
     username="::profileCtrl.profile.username"
     isBlocked="::app.user.blocked.includes(profileCtrl.profile._id)"
   ></block-member>

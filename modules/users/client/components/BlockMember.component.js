@@ -5,6 +5,7 @@ import React from 'react';
 import '@/config/client/i18n';
 import * as api from '../api/block.api';
 
+// eslint-disable-next-line
 export default function BlockMember({ username, isBlocked, className }) {
   const { t } = useTranslation('users');
 
@@ -62,26 +63,26 @@ export default function BlockMember({ username, isBlocked, className }) {
     }
   }
 
+  if (isBlocked) {
+    return (
+      <button
+        className={className}
+        aria-label={t('Unblock member "{{username}}"', { username })}
+        onClick={() => handleUnBlockMember(username)}
+      >
+        {t('Unblock member')}
+      </button>
+    );
+  }
+
   return (
-    <>
-      {isBlocked ? (
-        <button
-          aria-label={t('Unblock member "{{username}}"', { username })}
-          className={className}
-          onClick={() => handleUnBlockMember(username)}
-        >
-          {t('Unblock member')}
-        </button>
-      ) : (
-        <button
-          aria-label={t('Block member "{{username}}"', { username })}
-          className={className}
-          onClick={() => handleBlockMember(username)}
-        >
-          {t('Block member')}
-        </button>
-      )}
-    </>
+    <button
+      className={className}
+      aria-label={t('Block member "{{username}}"', { username })}
+      onClick={() => handleBlockMember(username)}
+    >
+      {t('Block member')}
+    </button>
   );
 }
 
