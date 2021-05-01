@@ -5,7 +5,6 @@ import React from 'react';
 import '@/config/client/i18n';
 import * as api from '../api/block.api';
 
-// eslint-disable-next-line
 export default function BlockMember({ username, isBlocked, className }) {
   const { t } = useTranslation('users');
 
@@ -24,10 +23,9 @@ export default function BlockMember({ username, isBlocked, className }) {
     );
 
     if (confirmation) {
-      const unblock = await api.unblock(username);
-      console.log('unblock:', unblock); //eslint-disable-line
+      const response = await api.unblock(username);
 
-      if (unblock) {
+      if (response) {
         refreshUser();
       } else {
         window.alert(
@@ -48,10 +46,9 @@ export default function BlockMember({ username, isBlocked, className }) {
     );
 
     if (confirmation) {
-      const block = await api.block(username);
-      console.log('blocked:', block); //eslint-disable-line
+      const response = await api.block(username);
 
-      if (block) {
+      if (response) {
         refreshUser();
       } else {
         alert(
