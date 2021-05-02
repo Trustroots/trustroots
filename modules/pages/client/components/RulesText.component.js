@@ -23,8 +23,15 @@ export default function RulesText() {
       </p>
 
       <ul>
-        <li>{t('Be friendly and know when to stop messaging someone.')}</li>
-        <li>{t('Keep our community clean from spam and ads.')}</li>
+        <li>
+          {t('Be friendly and know when to stop messaging someone.')}{' '}
+          {t('We have no tolerance for abusive members.')}
+        </li>
+        <li>
+          {t(
+            'We have no tolerance for spam, ads and other objectionable content.',
+          )}
+        </li>
         <li>
           {t(
             'Be a human being: write messages specifically for their recipient.',
@@ -37,12 +44,13 @@ export default function RulesText() {
         </li>
         <li>
           {t(
-            'Make your own profile. One person, one profile — use your alias or real name.',
+            'Make your own profile. One person, one profile — use your alias or real name; but never impersonate someone else, real or imaginary.',
           )}
         </li>
+        <li>{t('Be yourself, helpful, kind, responsible.')}</li>
         <li>
           {t(
-            'Be yourself, helpful, kind, responsible and respectful of others.',
+            'Be respectful of others and restrain from any kind of abusive behaviour.',
           )}
         </li>
       </ul>
