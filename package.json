@@ -155,7 +155,7 @@
     "mongoose-url-slugs": "1.0.2",
     "morgan": "1.10.0",
     "multer": "1.4.2",
-    "natural": "2.4.5",
+    "natural": "5.0.3",
     "ng-file-upload": "12.2.13",
     "nodemailer": "6.6.0",
     "nunjucks": "3.2.3",
