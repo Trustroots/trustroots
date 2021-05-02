@@ -37,7 +37,7 @@
   "Male": "Male",
   "Map search": "Map search",
   "Member has not written description about themself.": "Member has not written description about themself.",
-  "Member since {{date, MMM Do, YYYY}}": "Member since {{date, MMM Do, YYYY}}",
+  "Member since {{date, ll}}": "Member since {{date, ll}}",
   "Modify your hosting location": "Modify your hosting location",
   "Modify your meet locations": "Modify your meet locations",
   "Non-binary": "Non-binary",

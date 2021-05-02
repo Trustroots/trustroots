@@ -2,7 +2,7 @@
     "(additional {{amount}} pending)": "({{amount}} adicional en espera)",
     "Cancel": "Cancelar",
     "Confirm Request": "Confirmar solicitud",
-    "Connected since {{created, MMM D, YYYY}}": "Conectado desde {{created, D MMM, YYYY}}",
+    "Connected since {{created, LL}}": "Conectado desde {{created, D MMM, YYYY}}",
     "Contact request sent and pending": {
         "": "Solicitud de contacto enviada y pendiente de respuesta."
     },
@@ -15,10 +15,10 @@
     },
     "One contact": "Un contacto",
     "Remove contact?": "¿Eliminar contacto?",
-    "Requested {{created, MMM D, YYYY}}": "Solicitado {{created, D de MMM, YYYY}}",
+    "Requested {{created, LL}}": "Solicitado {{created, LL}}",
     "Revoke Request": "Anular solicitud",
     "Revoke contact request?": "¿Anular solicitud de contacto?",
-    "Since {{created, MMM D, YYYY}}": "Desde {{created, D MMM, YYYY}}",
+    "Since {{created, LL}}": "Desde {{created, LL}}",
     "Wait a moment": {
         "": {
             "": {

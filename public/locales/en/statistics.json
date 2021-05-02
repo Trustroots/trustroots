@@ -2,7 +2,7 @@
   "Check <1>our Grafana</1> for stats galore.": "Check <1>our Grafana</1> for stats galore.",
   "Connected to networks": "Connected to networks",
   "Consider volunteering!": "Consider volunteering!",
-  "Enabling the latent trust between humans since {{date, MMM Do, YYYY}}": "Enabling the latent trust between humans since {{date, MMM Do, YYYY}}",
+  "Enabling the latent trust between humans since {{date, LL}}": "Enabling the latent trust between humans since {{date, LL}}",
   "Hosts": "Hosts",
   "Member growth": "Member growth",
   "Member retention": "Member retention",

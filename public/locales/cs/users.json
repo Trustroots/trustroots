@@ -17,7 +17,7 @@
   "Languages": "Jazyky",
   "Lives in <2>{{locationLiving}}</2>": "",
   "Member has not written description about themself.": "Člen o sobě ještě nic nenapsal.",
-  "Member since {{date, MMM Do, YYYY}}": "Členem od {{date, Do MMM YYYY}}",
+  "Member since {{date, ll}}": "Členem od {{date, ll}}",
   "Online long ago": "Online dávno",
   "Online {{ date, fromNow }}": "",
   "Open user profile for {{name}}": "",
