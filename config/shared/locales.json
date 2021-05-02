@@ -35,7 +35,7 @@
     "label": "Norsk bokmål",
     "code": "nb",
     "english": "Norwegian (bokmål)",
-    "production": false
+    "production": true
   },
   { "label": "polski", "code": "pl", "english": "Polish", "production": false },
   {
@@ -49,7 +49,7 @@
     "label": "svenska",
     "code": "sv",
     "english": "Swedish",
-    "production": false
+    "production": true
   },
   {
     "label": "Ελληνικά",
@@ -97,7 +97,7 @@
     "label": "Bahasa Indonesia",
     "code": "id",
     "english": "Indonesian",
-    "production": false
+    "production": true
   },
   {
     "label": "Magyar",
