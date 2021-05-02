@@ -101,7 +101,7 @@
     "classnames": "2.3.1",
     "compression": "1.7.4",
     "connect-flash": "0.1.1",
-    "connect-mongo": "3.2.0",
+    "connect-mongo": "4.4.1",
     "cookie-parser": "1.4.5",
     "del": "6.0.0",
     "escape-string-regexp": "4.0.0",
