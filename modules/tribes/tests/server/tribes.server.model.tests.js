@@ -14,7 +14,7 @@ const Tribe = mongoose.model('Tribe');
  * Globals
  */
 let tribe1;
-let tribe2;
+// let tribe2;
 let tribe3;
 
 /**
@@ -25,9 +25,11 @@ describe('Tribe Model Unit Tests:', function () {
     tribe1 = new Tribe({
       label: 'Tribe label',
     });
+    /*
     tribe2 = new Tribe({
       label: 'Tribe label',
     });
+    */
     tribe3 = new Tribe({
       label: 'Different tribe label',
     });
