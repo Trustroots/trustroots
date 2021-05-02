@@ -43,6 +43,11 @@ this is a fallback when the contacts are loading
 ></bottom-navigation-small>
 
 <section class="container container-spacer profile-view">
+  <blocked-member-banner
+    username="profileCtrl.profile.username"
+    ng-if="app.user.blocked.includes(profileCtrl.profile._id)"
+  ></blocked-member-banner>
+
   <!-- Loading -->
   <div
     class="row content-wait"
