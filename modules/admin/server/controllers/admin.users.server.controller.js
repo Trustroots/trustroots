@@ -1,13 +1,16 @@
 /**
  * Module dependencies.
  */
+// Pure ESM package and cannot be require()'d
+import escapeStringRegexp from 'escape-string-regexp';
+
 const _ = require('lodash');
+const mongoose = require('mongoose');
 const path = require('path');
+
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
-const escapeStringRegexp = require('escape-string-regexp');
-const mongoose = require('mongoose');
 const log = require(path.resolve('./config/lib/logger'));
 
 const AdminNote = mongoose.model('AdminNote');
