@@ -1,120 +1,46 @@
 @import '~less/global-variables';
-@import '~bootstrap/less/mixins/buttons';
 
-.experience-new-tabs {
+.create-experience-tabs {
+  margin-top: @padding-base-horizontal;
   .nav-pills {
-    margin-bottom: @padding-base-horizontal;
     margin-right: 1px;
     > li {
       clear: both;
       width: 100%;
-      opacity: 0.5;
-      &.active,
-      &.experience-new-tabs-tab-processed {
-        opacity: 1;
-      }
       + li {
         margin-left: 0;
-      }
-      // This is here just so that we can apply `text-decoration:none` to it later
-      > a:before {
-        display: none;
-      }
-      &.active > a {
-        color: @brand-primary;
-        background: transparent;
-      }
-      &.disabled > a {
-        text-decoration: line-through;
-        color: @gray-light;
-        &:before {
-          text-decoration: none;
-        }
       }
       > a {
         color: @gray;
         background: transparent;
         font-style: italic;
-        padding: 3px 6px;
+        padding: 3px 6px @padding-base-horizontal 6px;
         cursor: default;
         &:hover {
           background: none;
         }
       }
-      &.experience-new-tabs-tab-processed > a {
-        cursor: pointer;
+      &.active > a {
+        color: @brand-primary;
+        background: transparent;
       }
     }
-    @media (min-width: @screen-xs-min) {
+  }
+  @media (min-width: @screen-xs-min) {
+    margin-top: 0;
+    .nav-pills {
       > li {
         clear: none;
         width: auto;
         margin: 0;
-        > a {
-          padding: 0;
-          &:before {
-            display: inline-block;
-            content: '›';
-            margin: 0 10px;
-            color: @gray-light;
-          }
-        }
-        &:first-child a:before {
-          display: none;
+        &:not(:first-child) a:before {
+          display: list-item;
+          content: '—';
+          margin: 0 10px 0 0;
+          color: @gray-light;
+          float: left;
         }
       }
-    }
-  }
-}
-
-.btn-group {
-  > .btn-experience-recommend {
-    &,
-    &:hover {
-      border-color: transparent;
-    }
-    span {
-      border-bottom: 2px solid transparent;
-      padding: 1px 2px;
-      margin: 0 5px;
-    }
-  }
-  > .btn-experience-recommend-unknown {
-    .button-variant(@experience-recommend-unknown-color; @experience-recommend-unknown-bg; @experience-recommend-unknown-bg);
-    &.active {
-      span {
-        border-color: @experience-recommend-unknown-color;
-      }
-    }
-  }
-  > .btn-experience-recommend-no {
-    .button-variant(@experience-recommend-no-color; @experience-recommend-no-bg; @experience-recommend-no-bg);
-    &.active {
-      span {
-        border-color: @experience-recommend-no-color;
-      }
-    }
-  }
-  > .btn-experience-recommend-yes {
-    .button-variant(@experience-recommend-yes-color; @experience-recommend-yes-bg; @experience-recommend-yes-bg);
-    &.active {
-      span {
-        border-color: @experience-recommend-yes-color;
-      }
-    }
-  }
-}
-
-.experience-new-tabs-alert {
-  margin-top: @padding-base-horizontal;
-}
-
-.experience-new-endorsement-selector {
-  button.list-group-item {
-    width: 50%;
-    float: left;
-    &[disabled] {
-      color: @gray-light;
     }
   }
 }

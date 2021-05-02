@@ -1,18 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+// External dependencies
 import { Tab, Tabs } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
+import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
+
+// Internal dependencies
 import '@/config/client/i18n';
-import * as experiencesApi from '../api/experiences.api';
-import StepNavigation from '@/modules/core/client/components/StepNavigation';
-import Interaction from './create-experience/Interaction';
-import Recommend from './create-experience/Recommend';
-import Feedback from './create-experience/Feedback';
-import ExperienceWithSelfInfo from './create-experience/ExperienceWithSelfInfo';
-import DuplicateInfo from './create-experience/DuplicateInfo';
-import SubmittedInfo from './create-experience/SubmittedInfo';
-import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createValidator } from '@/modules/core/client/utils/validation';
+import * as experiencesApi from '../api/experiences.api';
+import DuplicateInfo from './create-experience/DuplicateInfo';
+import ExperienceWithSelfInfo from './create-experience/ExperienceWithSelfInfo';
+import Feedback from './create-experience/Feedback';
+import Interaction from './create-experience/Interaction';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import Recommend from './create-experience/Recommend';
+import StepNavigation from '@/modules/core/client/components/StepNavigation';
+import SubmittedInfo from './create-experience/SubmittedInfo';
 
 export default function CreateExperience({ userFrom, userTo }) {
   const { t } = useTranslation('experiences');
@@ -195,11 +198,11 @@ export default function CreateExperience({ userFrom, userTo }) {
         activeKey={step}
         bsStyle="pills"
         onSelect={() => {}}
-        id="create-experience-tabs"
+        className="create-experience-tabs"
       >
         {tabs.map(({ id, component, title }, i) => {
           return (
-            <Tab eventKey={i} key={id} title={title} disabled>
+            <Tab disabled eventKey={i} key={id} title={title}>
               {component}
             </Tab>
           );
