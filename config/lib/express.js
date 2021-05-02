@@ -9,7 +9,7 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const mongoStore = require('connect-mongo');
 const favicon = require('serve-favicon');
 const compress = require('compression');
 const methodOverride = require('method-override');
@@ -204,8 +204,8 @@ module.exports.initSession = function (app, connection) {
         // closes the browser the cookie (and session) will be removed.
         maxAge: 2419200000, // (in milliseconds) 28 days
       },
-      store: new MongoStore({
-        mongooseConnection: connection,
+      store: mongoStore.create({
+        client: connection.client,
         collection: config.sessionCollection,
       }),
     }),
