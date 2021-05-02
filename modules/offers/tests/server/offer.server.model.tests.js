@@ -3,6 +3,9 @@
  */
 const should = require('should');
 const mongoose = require('mongoose');
+const path = require('path');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');
 
@@ -57,6 +60,8 @@ describe('Offer Model Unit Tests:', function () {
       return done();
     });
   });
+
+  afterEach(utils.clearDatabase);
 
   describe('Method Save', function () {
     it('should be able to save host offer without problems', function (done) {
@@ -196,12 +201,6 @@ describe('Offer Model Unit Tests:', function () {
           return done();
         });
       });
-    });
-  });
-
-  afterEach(function (done) {
-    Offer.deleteMany().exec(function () {
-      User.deleteMany().exec(done);
     });
   });
 });

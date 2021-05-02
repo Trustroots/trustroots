@@ -2,9 +2,11 @@ const should = require('should');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
+const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
-const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
@@ -83,6 +85,8 @@ describe('Tribe CRUD tests', function () {
       });
     });
   });
+
+  afterEach(utils.clearDatabase);
 
   it('should be able to read tribes when not logged in', function (done) {
     // Read tribes
@@ -238,12 +242,6 @@ describe('Tribe CRUD tests', function () {
           });
         });
       });
-    });
-  });
-
-  afterEach(function (done) {
-    User.deleteMany().exec(function () {
-      Tribe.deleteMany().exec(done);
     });
   });
 });

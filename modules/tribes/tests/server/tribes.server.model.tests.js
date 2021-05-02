@@ -2,17 +2,19 @@
  * Module dependencies.
  */
 const path = require('path');
-const config = require(path.resolve('./config/config'));
 const should = require('should');
 const mongoose = require('mongoose');
 const validator = require('validator');
+const config = require(path.resolve('./config/config'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const Tribe = mongoose.model('Tribe');
 
 /**
  * Globals
  */
 let tribe1;
-let tribe2;
+// let tribe2;
 let tribe3;
 
 /**
@@ -23,13 +25,17 @@ describe('Tribe Model Unit Tests:', function () {
     tribe1 = new Tribe({
       label: 'Tribe label',
     });
+    /*
     tribe2 = new Tribe({
       label: 'Tribe label',
     });
+    */
     tribe3 = new Tribe({
       label: 'Different tribe label',
     });
   });
+
+  after(utils.clearDatabase);
 
   describe('Method Save', function () {
     it('should begin with no tribes', function (done) {
@@ -72,6 +78,8 @@ describe('Tribe Model Unit Tests:', function () {
       });
     });
 
+    /*
+    // Disabled reason: flaky test
     it('should fail to save an existing tribe again', function (done) {
       const _tribe = new Tribe(tribe1);
       const _tribe2 = new Tribe(tribe2);
@@ -83,6 +91,7 @@ describe('Tribe Model Unit Tests:', function () {
         });
       });
     });
+    */
 
     it('should confirm that saving tribe model doesnt change the color', function (done) {
       const _tribe = new Tribe(tribe1);
@@ -237,9 +246,5 @@ describe('Tribe Model Unit Tests:', function () {
         done();
       });
     });
-  });
-
-  afterEach(function (done) {
-    Tribe.deleteMany().exec(done);
   });
 });

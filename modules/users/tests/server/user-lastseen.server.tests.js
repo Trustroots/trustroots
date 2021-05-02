@@ -4,9 +4,11 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const should = require('should');
 const sinon = require('sinon');
-const User = mongoose.model('User');
 const config = require(path.resolve('./config/config'));
 const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
 
 describe('User last seen CRUD tests', function () {
   /**
@@ -53,38 +55,24 @@ describe('User last seen CRUD tests', function () {
     confirmedUser.save(done);
   });
 
-  afterEach(function (done) {
-    User.deleteMany().exec(done);
-  });
+  afterEach(utils.clearDatabase);
 
   context('logged in', function () {
     // Sign in
-    beforeEach(function (done) {
+    beforeEach(async () => {
       const credentials = {
         username: _confirmedUser.username,
         password: _confirmedUser.password,
       };
-
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (err) {
-          if (err) return done(err);
-          return done();
-        });
+      await utils.signIn(credentials, agent);
     });
 
     // Sign out
-    afterEach(function (done) {
-      agent
-        .get('/api/auth/signout')
-        .expect(302)
-        .end(function (err) {
-          if (err) return done(err);
-          return done();
-        });
+    afterEach(async () => {
+      await utils.signOut(agent);
     });
+
+    afterEach(utils.clearDatabase);
 
     it('should update the last seen date of logged user when accessing api', function (done) {
       // Read statistics

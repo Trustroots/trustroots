@@ -124,23 +124,11 @@ describe('Statistics CRUD tests', () => {
       const { body } = await agent.get('/api/statistics').expect(200);
       assertStats(body);
     });
-
-    it('should be able to read statistics when logged in', async () => {
-      await utils.signIn(
-        {
-          password: _users[0].password,
-          username: _users[0].username,
-        },
-        agent,
-      );
-
-      const res = await agent.get('/api/statistics');
-      assertStats(res.body);
-      await utils.signOut(agent);
-    });
   });
 
   describe('Writing statistics', () => {
+    after(utils.clearDatabase);
+
     it('should be able to write to statistics endpoint', async () => {
       const { body, headers } = await agent
         .post('/api/statistics')

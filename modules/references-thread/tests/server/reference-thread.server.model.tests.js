@@ -3,6 +3,9 @@
  */
 const should = require('should');
 const mongoose = require('mongoose');
+const path = require('path');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const Thread = mongoose.model('Thread');
 const Message = mongoose.model('Message');
@@ -88,6 +91,8 @@ describe('Reference Thread Model Unit Tests:', function () {
     });
   });
 
+  afterEach(utils.clearDatabase);
+
   describe('Method Save', function () {
     it('should be able to save without problems', function (done) {
       referenceThread.save(function (err) {
@@ -112,12 +117,6 @@ describe('Reference Thread Model Unit Tests:', function () {
         should.exist(err);
         return done();
       });
-    });
-  });
-
-  afterEach(function (done) {
-    ReferenceThread.deleteMany().exec(function () {
-      User.deleteMany().exec(done);
     });
   });
 });

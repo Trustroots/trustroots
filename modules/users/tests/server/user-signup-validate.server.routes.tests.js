@@ -2,9 +2,11 @@ const should = require('should');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
-const User = mongoose.model('User');
 const express = require(path.resolve('./config/lib/express'));
 const config = require(path.resolve('./config/config'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
 
 /**
  * Globals
@@ -62,6 +64,8 @@ describe('User signup validation CRUD tests', function () {
 
     done();
   });
+
+  afterEach(utils.clearDatabase);
 
   describe('Username validation', function () {
     it('should show an error when missing username info', function (done) {
@@ -173,9 +177,5 @@ describe('User signup validation CRUD tests', function () {
         validationSuccess({ username: 'log.in' }, done);
       });
     });
-  });
-
-  afterEach(function (done) {
-    User.deleteMany().exec(done);
   });
 });

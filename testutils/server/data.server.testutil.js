@@ -65,32 +65,17 @@ async function saveExperiences(_docs, done = () => {}) {
 }
 
 /**
- * Clear specified database collections
- * @param {string[]} collections - array of collection names to have all documents removed
- * @returns {Promise<void>}
- */
-async function clearDatabaseCollections(collections) {
-  const models = collections.map(collection => mongoose.model(collection));
-
-  for (const Model of models) {
-    await Model.deleteMany().exec();
-  }
-}
-
-/**
- * This is a list of the collections to clear
- * The new collections should be added as needed
- * Eventually this list shall become complete
- */
-const collections = ['User', 'Experience', 'ReferenceThread'];
-
-/**
  * Clear all collections in a database
  * Usage in mocha: afterEach(clearDatabase)
  * @returns {Promise<void>}
  */
 async function clearDatabase() {
-  await clearDatabaseCollections(collections);
+  const collections = mongoose.modelNames();
+  const models = collections.map(collection => mongoose.model(collection));
+
+  for (const Model of models) {
+    await Model.deleteMany().exec();
+  }
 }
 
 /**

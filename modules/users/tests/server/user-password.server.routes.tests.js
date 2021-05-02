@@ -2,8 +2,10 @@ const should = require('should');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
-const User = mongoose.model('User');
 const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
 
 /**
  * Globals
@@ -53,6 +55,8 @@ describe('User password CRUD tests', function () {
     // Save a user to the test db
     user.save(done);
   });
+
+  afterEach(utils.clearDatabase);
 
   it('forgot password should return 400 for non-existent username', function (done) {
     user.roles = ['user'];
@@ -456,9 +460,5 @@ describe('User password CRUD tests', function () {
         res.body.message.should.equal('Forbidden.');
         return done();
       });
-  });
-
-  afterEach(function (done) {
-    User.deleteMany().exec(done);
   });
 });

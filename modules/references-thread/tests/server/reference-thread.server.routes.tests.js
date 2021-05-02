@@ -4,11 +4,13 @@ const request = require('supertest');
 const path = require('path');
 const moment = require('moment');
 const mongoose = require('mongoose');
+const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const ReferenceThread = mongoose.model('ReferenceThread');
-const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
@@ -185,6 +187,8 @@ describe('Reference Thread CRUD tests', function () {
       },
     );
   });
+
+  afterEach(utils.clearDatabase);
 
   it('should not be able to read references if not logged in', function (done) {
     agent
@@ -533,16 +537,5 @@ describe('Reference Thread CRUD tests', function () {
             });
         });
       });
-  });
-
-  afterEach(function (done) {
-    // Uggggly pyramid revenge!
-    User.deleteMany().exec(function () {
-      Message.deleteMany().exec(function () {
-        Thread.deleteMany().exec(function () {
-          ReferenceThread.deleteMany().exec(done);
-        });
-      });
-    });
   });
 });

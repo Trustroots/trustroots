@@ -5,11 +5,13 @@ const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const should = require('should');
-const User = mongoose.model('User');
 const config = require(path.resolve('./config/config'));
 const userHandler = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
 
 describe('Search users: GET /users?search=string', function () {
   let agent;
@@ -33,16 +35,7 @@ describe('Search users: GET /users?search=string', function () {
     User.ensureIndexes(done);
   });
 
-  // clear the database
-  afterEach(function (done) {
-    async.each(
-      [User],
-      function (collection, cb) {
-        collection.remove().exec(cb);
-      },
-      done,
-    );
-  });
+  afterEach(utils.clearDatabase);
 
   after(function () {
     sinon.restore();

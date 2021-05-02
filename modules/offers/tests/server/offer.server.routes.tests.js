@@ -4,10 +4,12 @@ const path = require('path');
 const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');
+const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');
 const Tribe = mongoose.model('Tribe');
-const express = require(path.resolve('./config/lib/express'));
 
 /**
  * Globals
@@ -260,6 +262,8 @@ describe('Offer CRUD tests', function () {
       },
     );
   });
+
+  afterEach(utils.clearDatabase);
 
   describe('Read offer by offer id:', function () {
     it('should not be able to read offer by offer id if not authenticated', function (done) {
@@ -1253,14 +1257,6 @@ describe('Offer CRUD tests', function () {
               });
           });
         });
-    });
-  });
-
-  afterEach(function (done) {
-    User.deleteMany().exec(function () {
-      Tribe.deleteMany().exec(function () {
-        Offer.deleteMany().exec(done);
-      });
     });
   });
 });

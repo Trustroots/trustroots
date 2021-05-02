@@ -3,9 +3,11 @@ const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
 const moment = require('moment');
-const User = mongoose.model('User');
 const config = require(path.resolve('./config/config'));
 const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
 
 /**
  * Globals
@@ -102,6 +104,8 @@ describe('User profile CRUD tests', function () {
     // Save a user to the test db
     unConfirmedUser.save(done);
   });
+
+  afterEach(utils.clearDatabase);
 
   it('should be able to get own user details successfully even when profile is still non-public', function (done) {
     agent
@@ -1056,9 +1060,5 @@ describe('User profile CRUD tests', function () {
             });
         });
     });
-  });
-
-  afterEach(function (done) {
-    User.deleteMany().exec(done);
   });
 });

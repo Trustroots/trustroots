@@ -5,12 +5,13 @@ const request = require('supertest');
 const path = require('path');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const User = mongoose.model('User');
-const Message = mongoose.model('Message');
-const MessageStat = mongoose.model('MessageStat');
-const Thread = mongoose.model('Thread');
 const config = require(path.resolve('./config/config'));
 const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
 
 /**
  * Globals
@@ -86,6 +87,8 @@ describe('Message CRUD tests', function () {
       });
     });
   });
+
+  afterEach(utils.clearDatabase);
 
   it('should not be able to read inbox if not logged in', function (done) {
     agent
@@ -1106,17 +1109,6 @@ describe('Message CRUD tests', function () {
                   return done(syncReadErr);
                 });
             });
-        });
-      });
-    });
-  });
-
-  afterEach(function (done) {
-    // Uggggly pyramid revenge!
-    User.deleteMany().exec(function () {
-      Message.deleteMany().exec(function () {
-        Thread.deleteMany().exec(function () {
-          MessageStat.deleteMany().exec(done);
         });
       });
     });
