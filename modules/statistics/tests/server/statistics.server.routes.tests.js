@@ -128,8 +128,8 @@ describe('Statistics CRUD tests', () => {
     it('should be able to read statistics when logged in', async () => {
       await utils.signIn(
         {
-          password: _users[0].password,
-          username: _users[0].username,
+          password: _usersPublic1[0].password,
+          username: _usersPublic1[0].username,
         },
         agent,
       );
@@ -141,6 +141,8 @@ describe('Statistics CRUD tests', () => {
   });
 
   describe('Writing statistics', () => {
+    after(utils.clearDatabase);
+
     it('should be able to write to statistics endpoint', async () => {
       const { body, headers } = await agent
         .post('/api/statistics')
