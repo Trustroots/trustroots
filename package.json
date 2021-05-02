@@ -183,7 +183,7 @@
     "use-persisted-state": "0.3.3",
     "uuid": "8.3.2",
     "validator": "13.6.0",
-    "winston": "2.4.5",
+    "winston": "3.3.3",
     "winston-papertrail": "1.0.5"
   },
   "devDependencies": {
