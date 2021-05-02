@@ -1,9 +1,6 @@
 /**
  * Module dependencies.
  */
-// Pure ESM package and cannot be require()'d
-import escapeStringRegexp from 'escape-string-regexp';
-
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const path = require('path');
@@ -70,6 +67,20 @@ function obfuscateTokens(user) {
   });
 
   return _user;
+}
+
+/**
+ * From https://github.com/sindresorhus/escape-string-regexp/blob/ba9a4473850cb367936417e97f1f2191b7cc67dd/index.js
+ * Import as a package once we support ESM modules
+ */
+function escapeStringRegexp(string) {
+  if (typeof string !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+
+  // Escape characters with special meaning either inside or outside character sets.
+  // Use a simple backslash escape when it’s always valid, and a `\xnn` escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
+  return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
 }
 
 /*
