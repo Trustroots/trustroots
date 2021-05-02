@@ -124,20 +124,6 @@ describe('Statistics CRUD tests', () => {
       const { body } = await agent.get('/api/statistics').expect(200);
       assertStats(body);
     });
-
-    it('should be able to read statistics when logged in', async () => {
-      await utils.signIn(
-        {
-          password: _usersPublic1[0].password,
-          username: _usersPublic1[0].username,
-        },
-        agent,
-      );
-
-      const res = await agent.get('/api/statistics');
-      assertStats(res.body);
-      await utils.signOut(agent);
-    });
   });
 
   describe('Writing statistics', () => {
