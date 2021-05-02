@@ -313,7 +313,7 @@ export default function Thread({ user, profileMinimumLength }) {
                 </div>
               )}
               {isBlocked && (
-                <BlockedMemberBanner username="otherUser.username" />
+                <BlockedMemberBanner username={otherUser.username} />
               )}
             </ThreadContainer>
           )}
