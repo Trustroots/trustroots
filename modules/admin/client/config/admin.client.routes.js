@@ -39,6 +39,20 @@ function AdminRoutes($stateProvider) {
         pageTitle: 'Admin - Acquisition stories',
       },
     })
+    .state('admin-acquisition-stories-analysis', {
+      url: '/admin/acquisition-stories/analysis',
+      // `template` is Angular state so
+      // it should be lowercase, with dashes
+      // This is the bridge towards (and from) React
+      template:
+        '<admin-acquisition-stories-analysis></admin-acquisition-stories-analysis>',
+      requiresRole: 'admin',
+      requiresAuth: true,
+      footerHidden: true,
+      data: {
+        pageTitle: 'Admin - Acquisition stories analysis',
+      },
+    })
     .state('admin-messages', {
       url: '/admin/messages',
       // `template` is Angular state so
