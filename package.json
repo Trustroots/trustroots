@@ -220,7 +220,7 @@
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-jest-dom": "3.7.0",
     "eslint-plugin-prettier": "3.4.0",
-    "eslint-plugin-react": "7.23.1",
+    "eslint-plugin-react": "7.23.2",
     "eslint-plugin-testing-library": "3.1.3",
     "eslint-watch": "7.0.0",
     "faker": "5.5.2",
