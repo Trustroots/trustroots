@@ -5,7 +5,6 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require(path.resolve('./config/lib/express'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
-afterEach(utils.clearDatabase);
 
 const User = mongoose.model('User');
 const MessageStat = mongoose.model('MessageStat');
@@ -118,28 +117,14 @@ describe('Display Message Statistics in User Route', function () {
   after(utils.clearDatabase);
 
   // Sign in
-  beforeEach(function (done) {
+  beforeEach(async () => {
     const credentials = { username: users[4].username, password };
-
-    agent
-      .post('/api/auth/signin')
-      .send(credentials)
-      .expect(200)
-      .end(function (err) {
-        if (err) return done(err);
-        return done();
-      });
+    await utils.signIn(credentials, agent);
   });
 
   // Sign out
-  afterEach(function (done) {
-    agent
-      .get('/api/auth/signout')
-      .expect(302)
-      .end(function (err) {
-        if (err) return done(err);
-        return done();
-      });
+  afterEach(async () => {
+    await utils.signOut(agent);
   });
 
   it("should show replyRate and replyTime in user's profile", function (done) {
