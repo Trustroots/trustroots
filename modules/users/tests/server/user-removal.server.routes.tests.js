@@ -5,14 +5,18 @@ const sinon = require('sinon');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
+const config = require(path.resolve('./config/config'));
+const express = require(path.resolve('./config/lib/express'));
+const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const dataUtils = require(path.resolve(
+  './testutils/server/data.server.testutil',
+));
+
 const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');
 const Message = mongoose.model('Message');
 const Offer = mongoose.model('Offer');
 const Tribe = mongoose.model('Tribe');
-const config = require(path.resolve('./config/config'));
-const express = require(path.resolve('./config/lib/express'));
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
 
 /**
  * Globals
@@ -50,7 +54,6 @@ describe('User removal CRUD tests', function () {
   });
 
   // Create an user A
-
   beforeEach(function (done) {
     // Create user credentials for user A
     credentialsA = {
@@ -77,7 +80,6 @@ describe('User removal CRUD tests', function () {
   });
 
   // Create user B
-
   beforeEach(function (done) {
     // Create user credentials for user B
     credentialsB = {
@@ -102,6 +104,8 @@ describe('User removal CRUD tests', function () {
     // Save a user to the test db
     userB.save(done);
   });
+
+  afterEach(dataUtils.clearDatabase);
 
   it('should not be able to initiate removing profile when not logged in', function (done) {
     agent
@@ -932,18 +936,5 @@ describe('User removal CRUD tests', function () {
         done,
       );
     });
-  });
-
-  // clear database
-  afterEach(function (done) {
-    const collectionsToClear = [User, Contact, Message, Offer, Tribe];
-
-    async.each(
-      collectionsToClear,
-      function (collection, cb) {
-        collection.deleteMany().exec(cb);
-      },
-      done,
-    );
   });
 });

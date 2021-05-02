@@ -261,7 +261,7 @@ export default function Media() {
             <h3 id="fact-sheet">{t('Fact sheet')}</h3>
             <ul>
               <li>
-                {t('Launched {{date, MMMM Do YYYY}}', {
+                {t('Launched {{date, LL}}', {
                   // Dec 23rd
                   date: new Date(2014, 11, 23),
                 })}

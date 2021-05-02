@@ -4,15 +4,17 @@ const path = require('path');
 const _ = require('lodash');
 const sinon = require('sinon');
 const config = require(path.resolve('./config/config'));
-const User = mongoose.model('User');
-const EventEmitter = require('events');
-const Message = mongoose.model('Message');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const messageStatService = require(path.resolve(
   './modules/messages/server/services/message-stat.server.service',
 ));
 const messageController = require(path.resolve(
   './modules/messages/server/controllers/messages.server.controller',
 ));
+
+const User = mongoose.model('User');
+const EventEmitter = require('events');
+const Message = mongoose.model('Message');
 
 describe('Integration of the MessageStat service', function () {
   // stubbing the updateMessageStat
@@ -75,12 +77,7 @@ describe('Integration of the MessageStat service', function () {
     });
   });
 
-  // after each test removing all the messages and users (cleaning the database)
-  afterEach(function (done) {
-    Message.deleteMany().exec(function () {
-      User.deleteMany().exec(done);
-    });
-  });
+  afterEach(utils.clearDatabase);
 
   it('should reach the service with correct data when sending a new message', function (done) {
     // we're stubbing the express.response here

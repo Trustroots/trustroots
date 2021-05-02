@@ -17,7 +17,7 @@
   "Languages": "",
   "Lives in <2>{{locationLiving}}</2>": "",
   "Member has not written description about themself.": "",
-  "Member since {{date, MMM Do, YYYY}}": "",
+  "Member since {{date, ll}}": "",
   "Online long ago": "",
   "Online {{ date, fromNow }}": "",
   "Open user profile for {{name}}": "",

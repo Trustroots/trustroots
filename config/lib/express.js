@@ -9,7 +9,7 @@ const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
 const session = require('express-session');
-const MongoStore = require('connect-mongo')(session);
+const mongoStore = require('connect-mongo');
 const favicon = require('serve-favicon');
 const compress = require('compression');
 const methodOverride = require('method-override');
@@ -60,7 +60,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.https = config.https;
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
-  app.locals.appSettings.i18nEnabled = config.featureFlags.i18n;
   app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
   app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.appSettings.limits = {
@@ -205,8 +204,8 @@ module.exports.initSession = function (app, connection) {
         // closes the browser the cookie (and session) will be removed.
         maxAge: 2419200000, // (in milliseconds) 28 days
       },
-      store: new MongoStore({
-        mongooseConnection: connection,
+      store: mongoStore.create({
+        client: connection.client,
         collection: config.sessionCollection,
       }),
     }),

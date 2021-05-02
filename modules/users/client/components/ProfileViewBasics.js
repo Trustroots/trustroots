@@ -26,7 +26,7 @@ export default function ProfileViewBasics({ profile }) {
     t('Replies within {{replyTime, fromNow}}.', { replyTime });
 
   const getMemberSince = created =>
-    t('Member since {{date, MMM Do, YYYY}}', { date: new Date(created) });
+    t('Member since {{date, ll}}', { date: new Date(created) });
 
   const getSeenOnline = seen => {
     if (seen) {

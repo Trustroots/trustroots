@@ -5,11 +5,12 @@ const path = require('path');
 const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');
+const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');
 const Tribe = mongoose.model('Tribe');
-const express = require(path.resolve('./config/lib/express'));
-
 /**
  * Globals
  */
@@ -263,6 +264,8 @@ describe('Offer search tests', function () {
       },
     );
   });
+
+  afterEach(utils.clearDatabase);
 
   it('should be able to get empty list from an area where there are no offers', function (done) {
     agent
@@ -1276,13 +1279,5 @@ describe('Offer search tests', function () {
         done(err);
       },
     );
-  });
-
-  afterEach(function (done) {
-    User.deleteMany().exec(function () {
-      Tribe.deleteMany().exec(function () {
-        Offer.deleteMany().exec(done);
-      });
-    });
   });
 });

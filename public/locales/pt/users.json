@@ -18,7 +18,7 @@
     "Online {{ date, fromNow }}": "Online {{ date, fromNow }}",
     "Online long ago": "Online há muito tempo",
     "Non-binary": "Não-binário",
-    "Member since {{date, MMM Do, YYYY}}": "Membro desde {{date, MMM Do, YYYY}}",
+    "Member since {{date, ll}}": "Membro desde {{date, ll}}",
     "Member has not written description about themself.": "O membro não tem uma descrição escrita sobre si próprio.",
     "Map search": "Pesquisa no mapa",
     "Male": "Masculino",

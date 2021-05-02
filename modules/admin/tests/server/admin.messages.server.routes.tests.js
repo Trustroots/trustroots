@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
 const User = mongoose.model('User');
 const express = require(path.resolve('./config/lib/express'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 require('should');
 
 /**
@@ -111,6 +112,8 @@ describe('Admin Message CRUD tests', () => {
     }
   });
 
+  afterEach(utils.clearDatabase);
+
   describe('Read messages between two users', () => {
     it('non-authenticated users should not be allowed to read messages', done => {
       agent
@@ -165,12 +168,6 @@ describe('Admin Message CRUD tests', () => {
               return done(err);
             });
         });
-    });
-  });
-
-  afterEach(done => {
-    User.deleteMany().exec(() => {
-      Message.deleteMany().exec(done);
     });
   });
 });

@@ -286,9 +286,6 @@ function AppController(
         angular.isDefined(toState.headerHidden) &&
         toState.headerHidden === true;
 
-      // Indicate we are browsing primary landing page
-      vm.isHomePage = toState.name === 'home';
-
       // Reset photo copyrights on each page change
       // trBoards directive hits in after this and we'll fill this with potential photo credits
       vm.photoCredits = {};

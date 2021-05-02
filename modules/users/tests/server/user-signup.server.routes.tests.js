@@ -2,9 +2,13 @@ const should = require('should');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
-const User = mongoose.model('User');
 const express = require(path.resolve('./config/lib/express'));
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const dataUtils = require(path.resolve(
+  './testutils/server/data.server.testutil',
+));
+
+const User = mongoose.model('User');
 
 /**
  * Globals
@@ -85,6 +89,8 @@ describe('User signup and authentication CRUD tests', function () {
     // Save a user to the test db
     unConfirmedUser.save(done);
   });
+
+  afterEach(dataUtils.clearDatabase);
 
   it('should be able to register a new user', function (done) {
     _unConfirmedUser.username = 'Register_New_User';
@@ -578,9 +584,5 @@ describe('User signup and authentication CRUD tests', function () {
           );
         });
     });
-  });
-
-  afterEach(function (done) {
-    User.deleteMany().exec(done);
   });
 });

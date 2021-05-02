@@ -3,6 +3,9 @@
  */
 const should = require('should');
 const mongoose = require('mongoose');
+const path = require('path');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
 
@@ -36,6 +39,8 @@ describe('Message Model Unit Tests:', function () {
       password: 'password123',
       provider: 'local',
     });
+
+    afterEach(utils.clearDatabase);
 
     // Create users
     userFrom.save(function () {
@@ -78,12 +83,6 @@ describe('Message Model Unit Tests:', function () {
         should.exist(err);
         return done();
       });
-    });
-  });
-
-  afterEach(function (done) {
-    Message.deleteMany().exec(function () {
-      User.deleteMany().exec(done);
     });
   });
 });

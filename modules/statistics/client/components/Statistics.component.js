@@ -66,7 +66,7 @@ export default function Statistics({ isAuthenticated }) {
               <p className="lead">
                 {/* Dec 23, 2014 */}
                 {t(
-                  'Enabling the latent trust between humans since {{date, MMM Do, YYYY}}',
+                  'Enabling the latent trust between humans since {{date, LL}}',
                   { date: new Date(2014, 11, 23) },
                 )}
               </p>

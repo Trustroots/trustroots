@@ -3,6 +3,9 @@
  */
 const should = require('should');
 const mongoose = require('mongoose');
+const path = require('path');
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
 const User = mongoose.model('User');
 const SupportRequest = mongoose.model('SupportRequest');
 
@@ -45,6 +48,8 @@ describe('Support request Model Unit Tests:', function () {
       return done();
     });
   });
+
+  after(utils.clearDatabase);
 
   describe('Method Save', function () {
     it('should be able to save without problems', function (done) {
@@ -96,12 +101,6 @@ describe('Support request Model Unit Tests:', function () {
         should.not.exist(supportRes.userAgent);
         return done();
       });
-    });
-  });
-
-  afterEach(function (done) {
-    SupportRequest.deleteMany().exec(function () {
-      User.deleteMany().exec(done);
     });
   });
 });

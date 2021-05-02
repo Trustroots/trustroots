@@ -21,7 +21,7 @@
     "Member has not written description about themself": {
         "": "Dieses Mitglied hat noch keine Selbstbeschreibung verfasst."
     },
-    "Member since {{date, MMM Do, YYYY}}": "Mitglied seit {{date, MMM Do, YYYY}}",
+    "Member since {{date, ll}}": "Mitglied seit {{date, ll}}",
     "Online long ago": "Vor langer Zeit online",
     "Online {{ date, fromNow }}": "Vor {{ date, fromNow }} online",
     "Open user profile for {{name}}": "Profil von {{name}} öffnen",

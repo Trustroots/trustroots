@@ -13,7 +13,6 @@
 module.exports = {
   featureFlags: {
     reference: true,
-    i18n: true,
   },
   app: {
     title: 'Trustroots',

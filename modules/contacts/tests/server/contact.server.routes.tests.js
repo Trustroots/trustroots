@@ -2,11 +2,13 @@ const should = require('should');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
-const User = mongoose.model('User');
-const Contact = mongoose.model('Contact');
 const express = require(path.resolve('./config/lib/express'));
 const agenda = require(path.resolve('./config/lib/agenda'));
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+
+const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
 
 /**
  * Globals
@@ -168,6 +170,8 @@ describe('Contact CRUD tests', function () {
       });
     });
   });
+
+  afterEach(utils.clearDatabase);
 
   it('should not be able to read contact list if not logged in', function (done) {
     agent
@@ -573,13 +577,6 @@ describe('Contact CRUD tests', function () {
               .end(done);
           });
       });
-    });
-  });
-
-  afterEach(function (done) {
-    // Uggggly pyramid revenge!
-    User.deleteMany().exec(function () {
-      Contact.deleteMany().exec(done);
     });
   });
 });
