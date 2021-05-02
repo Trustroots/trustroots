@@ -244,7 +244,7 @@
     "nodemon": "2.0.7",
     "npm-merge-driver": "2.3.6",
     "parse-link-header": "1.0.1",
-    "postcss": "8.2.9",
+    "postcss": "8.2.13",
     "postcss-loader": "4.2.0",
     "prettier": "2.2.1",
     "promise": "8.1.0",
