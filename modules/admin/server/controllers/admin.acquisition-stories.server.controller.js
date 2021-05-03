@@ -17,19 +17,18 @@ const User = mongoose.model('User');
  */
 function joinCompoundWords(value) {
   // List of compounds, misspelled
-  const compounds = {
-    'be welcome': 'bewelcome',
-    'couch surfing': 'couchsurfing',
-    'hitch hiking': 'hitchhiking',
-    'hitch wiki': 'hitchwiki',
-    'warm shower': 'warmshower',
-    'you tube': 'youtube',
-    'hitch gathering': 'hitchgathering',
-  };
+  const compounds = [
+    'be welcome',
+    'couch surfing',
+    'hitch hiking',
+    'hitch wiki',
+    'warm shower',
+    'you tube',
+    'hitch gathering',
+  ];
 
-  _.forEach(compounds, (replace, replacement) => {
-    const re = new RegExp(`/${replace}/g`);
-    value = value.replace(re, replacement);
+  compounds.forEach(compound => {
+    value = value.replace(compound, compound.replace(' ', ''));
   });
 
   return value;
