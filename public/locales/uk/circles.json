@@ -1,3 +1,19 @@
 {
-    "Join": "Приєднатися"
+    "Join": "Приєднатися",
+    "Discover circles": "Знайти кола",
+    "{{count, number}} members_0": "{{count,number}} учасник",
+    "{{count, number}} members_1": "{{count, number}} учасника",
+    "{{count, number}} members_2": "{{count, number}} учасників",
+    "Sign up with Trustroots": "Зареєструватися з Trustroots",
+    "Send us suggestions!": "Запропонуй нам!",
+    "No members yet": "Ще немає учасників",
+    "New circle!": "Нове коло!",
+    "Missing your circle?": "Немає бажаного кола?",
+    "Leave this circle?": "Залишити коло?",
+    "Leave circle": "Залишити коло",
+    "Joining circles helps you find likeminded Trustroots members.": "Участь в колах допоможе тобі знайти однодумців на Trustroots",
+    "Joined": "Приєднано",
+    "Join Trustroots to find members behind circles.": "Приєднайся до Trustroots, щоб знайти учасників кіл",
+    "Join ({{label}})": "Приєднатися {{label}}",
+    "Cancel": "Скасувати"
 }
