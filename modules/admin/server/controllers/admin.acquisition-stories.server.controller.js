@@ -228,7 +228,7 @@ function analyseStories(stories) {
       // - one alphabet strings (even if there are other symbols)
       //
       // This is only after synonym handling because some "tag:alien" terms are replaced as synonyms
-      const skipTerms = ['www', 'com', 'net', 'org'];
+      const skipTerms = ['www', 'com', 'net', 'org', 'via'];
 
       /**
        * Types of tokens to skip
