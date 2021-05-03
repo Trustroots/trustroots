@@ -1,6 +1,6 @@
-const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
+const path = require('path');
+const request = require('supertest');
 const express = require(path.resolve('./config/lib/express'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 
@@ -9,13 +9,34 @@ describe('Admin acquisition stories CRUD tests', () => {
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
 
-  const users = utils.generateUsers(5);
+  // Variation on stories to catch
+  const acquisitionStories = [
+    '123', // Test ignoring numbers
+    'Google', // Test conversion to lowercase
+    'facebook',
+    'googling', // Test synonym
+    'googl', // test Levenshtein distance test
+    'singles', // Test conversion from plural to singulara
+    'ws', // Test synonyms
+    'warmshower',
+    'www.warmshowers.com',
+    'warm showers', // Test combound misspelling
+    'something else ... :)', // Should capture only two terms and ignore rest
+    'example.org', // Url normalization to "example"
+    'http://example.org', // Url normalization to "example"
+    'www example org', // Ignore www and org
+    'www.example.org', // Url normalization to "example"
+  ];
+
+  // Generate one user per story
+  let users = utils.generateUsers(acquisitionStories.length);
   users[0].roles = ['user', 'admin'];
-  users[0].acquisitionStory = 'google';
-  users[1].acquisitionStory = 'facebook';
-  users[2].acquisitionStory = 'googling';
-  users[3].acquisitionStory = 'googl';
-  users[4].acquisitionStory = 'something else ... :)';
+
+  // Apply acquisition stories one per user
+  users = users.map((user, i) => {
+    user.acquisitionStory = acquisitionStories[i];
+    return user;
+  });
 
   before(async () => {
     await utils.saveUsers(users);
@@ -44,7 +65,7 @@ describe('Admin acquisition stories CRUD tests', () => {
           .post('/api/admin/acquisition-stories')
           .expect(200);
 
-        body.length.should.equal(5);
+        body.length.should.equal(users.length);
       });
     });
   });
@@ -70,16 +91,50 @@ describe('Admin acquisition stories CRUD tests', () => {
           .post('/api/admin/acquisition-stories/analysis')
           .expect(200);
 
-        body.table.length.should.equal(4);
-        body.table[0].category.should.equal('google');
-        body.table[0].observed.should.equal(3);
-        body.table[0].percentage.should.equal(50);
-        body.table[0].expected.should.equal(1.5);
-        body.size.should.equal(4);
-        body.sum.should.equal(6);
-        body.x2.should.equal(2);
-        body.df.should.equal(3);
-        body.entropy.should.equal(1.7925);
+        body.table.should.match([
+          {
+            category: 'example',
+            observed: 4,
+            percentage: 26.6667,
+            expected: 2.1429,
+          },
+          {
+            category: 'warmshowers',
+            observed: 4,
+            percentage: 26.6667,
+            expected: 2.1429,
+          },
+          { category: 'google', observed: 3, percentage: 20, expected: 2.1429 },
+          {
+            category: 'something',
+            observed: 1,
+            percentage: 6.6667,
+            expected: 2.1429,
+          },
+          {
+            category: 'else',
+            observed: 1,
+            percentage: 6.6667,
+            expected: 2.1429,
+          },
+          {
+            category: 'single',
+            observed: 1,
+            percentage: 6.6667,
+            expected: 2.1429,
+          },
+          {
+            category: 'facebook',
+            observed: 1,
+            percentage: 6.6667,
+            expected: 2.1429,
+          },
+        ]);
+        body.size.should.be.Number();
+        body.sum.should.be.Number();
+        body.x2.should.be.Number();
+        body.df.should.be.Number();
+        body.entropy.should.be.Number();
       });
     });
   });

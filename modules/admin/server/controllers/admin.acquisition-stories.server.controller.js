@@ -1,4 +1,5 @@
 // External dependencies
+const _ = require('lodash');
 const mongoose = require('mongoose');
 const natural = require('natural');
 const pluralize = require('pluralize');
@@ -7,6 +8,31 @@ const winkStatistics = require('wink-statistics');
 const winkTokenizer = require('wink-tokenizer');
 
 const User = mongoose.model('User');
+
+/**
+ * Detect commonly misspelled compound terms
+ *
+ * @param value {string} Term to check
+ * @return {string} Correct term, or false if nothing found
+ */
+function joinCompoundWords(value) {
+  // List of compounds, misspelled
+  const compounds = [
+    'be welcome',
+    'couch surfing',
+    'hitch hiking',
+    'hitch wiki',
+    'warm shower',
+    'you tube',
+    'hitch gathering',
+  ];
+
+  compounds.forEach(compound => {
+    value = value.replace(compound, compound.replace(' ', ''));
+  });
+
+  return value;
+}
 
 /**
  * Detect synonyms
@@ -19,6 +45,7 @@ function getSynonym(value) {
   const synonyms = {
     browsing: 'internet',
     bw: 'bewelcome',
+    couchsurf: 'couchsurfing',
     cs: 'couchsurfing',
     fb: 'facebook',
     googled: 'google',
@@ -34,11 +61,13 @@ function getSynonym(value) {
     online: 'internet',
     searched: 'search',
     searching: 'search',
+    subreddit: 'reddit',
     traveler: 'traveller',
     traveling: 'travelling',
     tube: 'youtube',
     vk: 'vkontakte',
     wa: 'whatsapp',
+    warmschower: 'warmshowers',
     warmshower: 'warmshowers',
     web: 'internet',
     website: 'internet',
@@ -69,6 +98,7 @@ function getCorrectTerm(value) {
     'bewelcome',
     'comment',
     'community',
+    'couchspinner',
     'couchsurfing',
     'duckduckgo',
     'facebook',
@@ -76,17 +106,19 @@ function getCorrectTerm(value) {
     'friend',
     'github',
     'google',
+    'googleplay',
     'hitchhiker',
     'hitchhiking',
     'hitchwiki',
     'hospitality',
     'instagram',
     'internet',
+    'interrail',
     'looking',
     'member',
     'nomadwiki',
     'playstore',
-    'googleplay',
+    'rainbow',
     'recommendation',
     'reddit',
     'social',
@@ -138,6 +170,33 @@ function removeStopwords(string) {
   return stopword.removeStopwords(lowerCaseString.split(' ')).join(' ');
 }
 
+/**
+ * Strip out TLD, so "www.hitchwiki.org" becomes "hitchwiki" etc
+ */
+function getDomain(hostname) {
+  // Just some common ones, add more if you notice something getting to top lists
+  const tld = [
+    '.au',
+    '.co',
+    '.com',
+    '.de',
+    '.fr',
+    '.ir',
+    '.net',
+    '.org',
+    '.ru',
+    '.ua',
+    '.uk',
+    '.us',
+  ];
+  const re = new RegExp(`(${tld.join('|').replace('.', '\\.')})$`);
+  return hostname
+    .replace('www.', '')
+    .replace(re, '')
+    .replace(/\.$/, '')
+    .replace(/^(\w+\.)*/, '');
+}
+
 /*
  * Does some language manipulation to analyse common terms from answers
  *
@@ -148,8 +207,11 @@ function analyseStories(stories) {
   const ft = winkStatistics.streaming.freqTable();
 
   stories.forEach(({ acquisitionStory }) => {
-    const cleaned = removeStopwords(acquisitionStory);
-    const tokens = tokenizer.tokenize(cleaned);
+    const tokens = _.chain(acquisitionStory)
+      .thru(removeStopwords)
+      .thru(joinCompoundWords)
+      .thru(tokenizer.tokenize)
+      .value();
 
     // Loop and log each word (or "token")
     tokens.forEach(({ value, tag }) => {
@@ -166,7 +228,7 @@ function analyseStories(stories) {
       // - one alphabet strings (even if there are other symbols)
       //
       // This is only after synonym handling because some "tag:alien" terms are replaced as synonyms
-      const skipTerms = ['www', 'com', 'net', 'org'];
+      const skipTerms = ['www', 'com', 'net', 'org', 'via'];
 
       /**
        * Types of tokens to skip
@@ -202,7 +264,8 @@ function analyseStories(stories) {
       if (tag === 'url') {
         try {
           const url = new URL(value);
-          ft.build(url.hostname.replace('www.', ''));
+          const domain = getDomain(url.hostname); // www.hitchwiki.org → hitchwiki
+          ft.build(domain);
           return;
         } catch {
           return;
