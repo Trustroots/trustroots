@@ -17,18 +17,19 @@ const User = mongoose.model('User');
  */
 function joinCompoundWords(value) {
   // List of compounds, misspelled
-  const compounds = [
-    'be welcome',
-    'couch surfing',
-    'hitch hiking',
-    'hitch wiki',
-    'warm shower',
-    'you tube',
-    'hitch gathering',
-  ];
+  const compounds = {
+    'be welcome': 'bewelcome',
+    'couch surfing': 'couchsurfing',
+    'hitch hiking': 'hitchhiking',
+    'hitch wiki': 'hitchwiki',
+    'warm shower': 'warmshower',
+    'you tube': 'youtube',
+    'hitch gathering': 'hitchgathering',
+  };
 
-  compounds.forEach(compound => {
-    value = value.replace(compound, compound.replace(' ', ''));
+  _.forEach(compounds, (replace, replacement) => {
+    const re = new RegExp(`/${replace}/g`);
+    value = value.replace(re, replacement);
   });
 
   return value;
@@ -171,7 +172,7 @@ function removeStopwords(string) {
 }
 
 /**
- * Strip out TLD, so "hitchwiki.org" becomes "hitchwiki" etc
+ * Strip out TLD, so "www.hitchwiki.org" becomes "hitchwiki" etc
  */
 function getDomain(hostname) {
   // Just some common ones, add more if you notice something getting to top lists
@@ -191,6 +192,7 @@ function getDomain(hostname) {
   ];
   const re = new RegExp(`(${tld.join('|').replace('.', '\\.')})$`);
   return hostname
+    .replace('www.', '')
     .replace(re, '')
     .replace(/\.$/, '')
     .replace(/^(\w+\.)*/, '');
@@ -263,8 +265,7 @@ function analyseStories(stories) {
       if (tag === 'url') {
         try {
           const url = new URL(value);
-          const host = url.hostname.replace('www.', ''); // → hitchwiki.org
-          const domain = getDomain(host); // → hitchwiki
+          const domain = getDomain(url.hostname); // www.hitchwiki.org → hitchwiki
           ft.build(domain);
           return;
         } catch {
