@@ -1,5 +1,5 @@
 {
-    "About": "A proposito di",
+    "About": "Su di",
     "About me": "Su di me",
     "Add contact": "Aggiungi contatto",
     "Change language": "Cambia lingua",
@@ -87,5 +87,16 @@
     "Share your experience": "Condividi la tua esperienza",
     "Modify your meet locations": "Modifica dove incontri",
     "Modify your hosting location": "Modifica dove ospiti",
-    "Hosting & meet": "Ospitalità & incontri"
+    "Hosting & meet": "Ospitalità & incontri",
+    "Are you sure you want to unblock them? They will be able to see your profile and messaage you again.": "Sei sicurə di volerlə sbloccare? Sarà nuovamente in grado di vedere il tuo profilo e di scriverti.",
+    "You have blocked this member.": "Hai bloccato questo membro.",
+    "Unblock member \"{{username}}\"": "Sblocca membro \"{{username}}\"",
+    "Unblock member": "Sblocca membro",
+    "They cannot see or message you.": "Non può vederti né scriverti.",
+    "Could not unblock this member.": "Questo membro non può essere sbloccato.",
+    "Could not block this member.": "Questo membro non può essere bloccato.",
+    "Block member \"{{username}}\"": "Blocca membro \"{{username}}\"",
+    "Block member": "Blocca membro",
+    "Are you sure you want to block them? They will not be able to see or message you.": "Sei sicuro di volerlə bloccare? Non sarà più in grado di vederti né scriverti.",
+    "Please ensure you are connected to internet and try again.": "Per piacere assicurati di essere connesso a internet e riprova."
 }
