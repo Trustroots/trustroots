@@ -15,7 +15,7 @@
     },
     "One contact": "Un contatto",
     "Remove contact?": "Rimuovere il contatto?",
-    "Requested {{created, LL}}": "Richiesto il {{created, LL}}",
+    "Requested {{created, LL}}": "Richiesta del {{created, LL}}",
     "Revoke Request": "Annulla la richiesta",
     "Revoke contact request?": "Annullare la richiesta di contatto?",
     "Since {{created, LL}}": "Dal {{created, LL}}",
@@ -40,5 +40,7 @@
     "Search contacts": "Ricerca contatti",
     "(additional {{count}} pending)": "(ancora {{count}} in attesa)",
     "(additional {{count}} pending)_plural": "(ancora {{count}} in attesa)",
-    "Wait a moment…": "Si prega di attendere…"
+    "Wait a moment…": "Si prega di attendere…",
+    "Requested {{date, LL}}": "Richiesta del {{date, LL}}",
+    "Connected since {{date, LL}}": "Connessi dal {{date, LL}}"
 }
