@@ -1,4 +1,6 @@
 {
     "Search": "Пошук",
-    "Search members": "Пошук користувачів"
+    "Search members": "Пошук користувачів",
+    "No members found by this name.": "Не знайдено учасників з таким іменем",
+    "Clear members search": "Очистити пошук за учасниками"
 }
