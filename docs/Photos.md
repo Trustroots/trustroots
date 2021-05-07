@@ -6,14 +6,14 @@ Trustroots needs fresh photos every now and then. Would be great if you could **
 
 ## Photos to use
 
-- [Friends in Sierra nevada](https://www.trustroots.org/modules/core/img/board/sierranevada2-full.jpg) by [Simona](http://www.wanderlust.lt)
-- [Hitchhiker playing guitar](https://raw.githubusercontent.com/Trustroots/trustroots/master/public/modules/core/img/board/hitchroad.jpg) by [Andrew W Bugelli](http://www.containstraces.blogspot.com.tr/)
+- [Friends in Sierra nevada](https://github.com/Trustroots/trustroots/blob/917843c21d73d7548db971619857fffb8d07ff2e/public/img/board/ss-sierranevada.jpg) by [Simona](http://www.wanderlust.lt)
+- [Hitchhiker playing guitar](https://github.com/Trustroots/trustroots/blob/917843c21d73d7548db971619857fffb8d07ff2e/public/img/board/ab-hitchroad.jpg) by [Andrew W Bugelli](http://www.containstraces.blogspot.com.tr/)
 
 ## Photo donations
 
 - [Wesley Stanford](http://instagram.com/dualhorizons/) ([Dualhorizons](http://www.dualhorizons.blogspot.co.uk/))
 - [Michele](https://500px.com/mcolombo) ([contact](http://about.me/amcolombo))
-- [Andrea](https://www.flickr.com/photos/andreanieblas/sets/72157651420097125/) ([contact](https://www.trustroots.org/#!/profile/alenieblas))
+- [Andrea](https://www.flickr.com/photos/andreanieblas/sets/72157651420097125/) ([contact](https://www.trustroots.org/profile/alenieblas))
 - [Jess Hunt](https://instagram.com/fortysixxandtwo)
 - [@thetravellersjournal](https://instagram.com/thetravellersjournal/)
 - [@serialhikers](https://www.instagram.com/serialhikers/) (contact them for higher resolution)
