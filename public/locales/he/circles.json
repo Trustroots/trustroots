@@ -1,3 +1,21 @@
 {
-    "Cancel": "ביטול"
+    "Cancel": "בטלי",
+    "Join ({{label}})": "הצטרפי ({{label}})",
+    "Do you want to leave \"{{label}}\"?": "האם את מעוניינת לעזוב את {{label}} ?",
+    "Discover circles": "גלה שבטים",
+    "{{count, number}} members_0": "משתמשת, אחת",
+    "{{count, number}} members_1": "משתמשת, שתיים",
+    "{{count, number}} members_2": "משתמשת, כמה",
+    "{{count, number}} members_3": "משתמשת, אחרת",
+    "Sign up with Trustroots": "הרשמי עם טראסטרוטס",
+    "Send us suggestions!": "שלחי לנו הצעות!",
+    "No members yet": "אין חברים כעת",
+    "New circle!": "שבט חדש!",
+    "Missing your circle?": "השבט שלך חסר?",
+    "Leave this circle?": "מעוניינת לעזוב את השבט?",
+    "Leave circle": "עזבי את השבט",
+    "Joining circles helps you find likeminded Trustroots members.": "הצטרפי וגלי חברים חדשים עם אותם תחומי עניין.",
+    "Joined": "הצטרפי לשבט",
+    "Join Trustroots to find members behind circles.": "הצטרפי אלינו וגלי שבטים חדשים.",
+    "Join": "הרשמה"
 }
