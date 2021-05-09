@@ -89,9 +89,16 @@ export default function Privacy({ user }) {
                   )}
                 </li>
               </ul>
-              {t(
-                "Via mobile devices you may also share content to Trustroots via your device's camera, location sensor or address book. This data is never published or used without your consent and it is always clarified when you are about to give this information to us.",
-              )}
+              <p>
+                {t(
+                  "Via mobile devices you may also share content to Trustroots via your device's camera, location sensor or address book. This data is never published or used without your consent and it is always clarified when you are about to give this information to us.",
+                )}
+              </p>
+              <p>
+                {t(
+                  'Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk\'s servers. You can find their privacy policy <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">here</a>. In the future, we would like to host a support ticket system on our own servers.'
+                )}
+              </p>
               <h3>{t('Analytics & opting out')}</h3>
               <p>
                 {t(
