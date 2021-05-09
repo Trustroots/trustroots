@@ -259,7 +259,7 @@
     "url-loader": "4.1.1",
     "webpack": "4.46.0",
     "webpack-bundle-analyzer": "4.4.1",
-    "webpack-cli": "4.3.1",
+    "webpack-cli": "4.7.0",
     "webpack-dev-server": "3.11.2",
     "webpack-merge": "5.7.3",
     "yargs": "16.2.0"
