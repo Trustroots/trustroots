@@ -1,1 +1,8 @@
-{}
+{
+    "Lives in <2>{{locationLiving}}</2>": "מתגורר ב<2>{{locationLiving}}</2>",
+    "Please ensure you are connected to internet and try again.": "אני יודעת שהתשתיות באזור לא משהו אבל נא וודאי שיש לך חיבור לאינטרנט ונסי שוב.",
+    "Send a message": "שלח הודעה",
+    "Support": "תמיכה",
+    "Find people": "חפש",
+    "Contacts": "חברים שלי"
+}
