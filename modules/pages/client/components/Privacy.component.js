@@ -95,9 +95,15 @@ export default function Privacy({ user }) {
                 )}
               </p>
               <p>
-                {t(
-                  'Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk\'s servers. You can <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">see their privacy policy</a>.',
-                )}{' '}
+                <Trans t={t} ns="pages">
+                  Communication with our support team (via e-mail or contact
+                  form) is managed via Zendesk and stored on Zendesk servers.
+                  You can{' '}
+                  <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">
+                    see their privacy policy
+                  </a>
+                  .
+                </Trans>{' '}
                 {t(
                   'In the future, we would like to host a support ticket system on our own servers.',
                 )}
