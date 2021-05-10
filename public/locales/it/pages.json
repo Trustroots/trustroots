@@ -336,5 +336,7 @@
     "Make your own profile. One person, one profile — use your alias or real name; but never impersonate someone else, real or imaginary.": "Crea il tuo profilo. Una persona, un profilo — usa uno pseudonimo o il tuo nome reale; non impersonare mai qualcun altro, reale o immaginario che sia.",
     "Launched {{date, LL}}": "Lanciato il {{date, LL}}",
     "Be yourself, helpful, kind, responsible.": "Sii te stesso, utile, gentile, responsabile.",
-    "Be respectful of others and restrain from any kind of abusive behaviour.": "Sii rispettoso degli altri e trattieniti dal comportarti in modo inappropriato."
+    "Be respectful of others and restrain from any kind of abusive behaviour.": "Sii rispettoso degli altri e trattieniti dal comportarti in modo inappropriato.",
+    "In the future, we would like to host a support ticket system on our own servers.": "In futuro, vorremo ospitare il sistema di assistenza agli utenti sui nostri server.",
+    "Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk servers. You can <2>see their privacy policy</2>.": "Le comunicazioni con la nostra squadra di assistenza (via email o tramite modulo di contatto) sono gestite con Zendesk e memorizzate sui server di Zendesk. Puoi <2>vedere il loro regolamento sul trattamento dei dati</2>."
 }
