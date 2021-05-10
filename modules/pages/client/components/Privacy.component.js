@@ -96,7 +96,7 @@ export default function Privacy({ user }) {
               </p>
               <p>
                 {t(
-                  'Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk\'s servers. You can find their privacy policy <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">here</a>. In the future, we would like to host a support ticket system on our own servers.'
+                  'Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk\'s servers. You can find their privacy policy <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">here</a>. In the future, we would like to host a support ticket system on our own servers.',
                 )}
               </p>
               <h3>{t('Analytics & opting out')}</h3>
