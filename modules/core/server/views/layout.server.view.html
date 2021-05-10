@@ -17,8 +17,14 @@
     <meta name="fragment" content="!" />
     {% for cssFile in cssFiles %}
     <link
-      data="main-stylesheet"
-      href="/{{cssFile}}?c={{appSettings.commit}}"
+      {%
+      if
+      cssFile.id
+      %}id="{{ cssFile.id }}"
+      {%
+      endif
+      %}
+      href="/{{cssFile.file}}?c={{appSettings.commit}}"
       rel="stylesheet"
     />
     {% endfor %} {# Sentry DSN - make sure this is above scripts #} {% if

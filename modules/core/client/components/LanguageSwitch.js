@@ -40,35 +40,33 @@ const SearchInput = styled.input`
 `;
 
 /**
- * Loads a CSS stylesheet into the page.
+ * Ensures RTL CSS stylesheet has been loaded into the page.
  *
- * @param {string} cssUrl URL of a CSS stylesheet to be loaded into the page
- * @param {window.Element} currentLink an existing <link> DOM element before which we want to insert the new one
- * @returns {Promise<string>} the new <link> DOM element after the CSS has been loaded
+ * @returns {Promise} Resolves once loaded
  */
-function loadCSS(cssUrl, currentLink) {
+function loadRtlCSS() {
   return new Promise(resolve => {
+    // Check if RTL style has already been loaded
+    if (document.getElementById('rtl-style')) {
+      return resolve();
+    }
+
+    // Find main stylesheet, used to build RTL CSS URL
+    const rtlUrl = new URL(document.getElementById('main-style').href);
+    rtlUrl.pathname = rtlUrl.pathname.replace('.css', '.rtl.css');
+
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.type = 'text/css';
-    link.href = cssUrl;
+    link.id = 'rtl-style';
+    link.href = rtlUrl.toString();
 
-    if ('onload' in link) {
-      link.onload = () => {
-        link.onload = null;
-        resolve(link);
-      };
-    } else {
-      // just wait 500ms if the browser doesn't support link.onload
-      // https://pie.gd/test/script-link-events/
-      // https://github.com/ariya/phantomjs/issues/12332
-      setTimeout(() => resolve(link), 500);
-    }
+    link.onload = () => {
+      link.onload = null;
+      resolve();
+    };
 
-    document.head.insertBefore(
-      link,
-      currentLink ? currentLink.nextSibling : null,
-    );
+    document.head.append(link);
   });
 }
 
@@ -92,18 +90,15 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
 
   useEffect(async () => {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-    document.body.classList[isRtl ? 'add' : 'remove']('rtl');
-    await loadCSS('/assets/main.rtl.css');
+    if (isRtl) {
+      await loadRtlCSS();
+    }
   }, [isRtl]);
 
   const onLanguageChange = async (code, rtl) => {
     setCurrentLanguageCode(code);
     i18n.changeLanguage(code);
     setIsRtl(rtl);
-
-    console.log('RTL:', rtl); //eslint-disable-line
-    // if (rtl) {
-    // }
 
     // save the user's choice to api
     if (saveToAPI) {
