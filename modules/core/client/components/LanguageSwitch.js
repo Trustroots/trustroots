@@ -78,7 +78,6 @@ function loadRtlCSS() {
 export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
   const { t } = useTranslation('core');
   const locales = getLocales();
-  console.log('locales:', locales); //eslint-disable-line
   const [search, setSearch] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentLanguageCode, setCurrentLanguageCode] = useState(i18n.language);
