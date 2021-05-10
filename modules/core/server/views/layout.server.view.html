@@ -16,7 +16,11 @@
     <base href="/" />
     <meta name="fragment" content="!" />
     {% for cssFile in cssFiles %}
-    <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
+    <link
+      data="main-stylesheet"
+      href="/{{cssFile}}?c={{appSettings.commit}}"
+      rel="stylesheet"
+    />
     {% endfor %} {# Sentry DSN - make sure this is above scripts #} {% if
     sentry.enabled === true %}
     <script nonce="{{ nonce }}">

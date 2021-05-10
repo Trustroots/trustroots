@@ -73,7 +73,8 @@
     "label": "עִבְרִית",
     "code": "he",
     "english": "Hebrew",
-    "production": false
+    "production": true,
+    "rtl": true
   },
   {
     "label": "Türkçe",
