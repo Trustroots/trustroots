@@ -28,7 +28,7 @@
     "My profile": "פרופיל",
     "Messages": "הודעות",
     "Meet": "פגוש חברים",
-    "Language: {{code}}": "עברית",
+    "Language: {{code}}": "עברית: {{code}}",
     "Join": "הרשמה",
     "Frequently Asked Questions": "שאלות נפוצות",
     "Finish editing and save": "סיום",
