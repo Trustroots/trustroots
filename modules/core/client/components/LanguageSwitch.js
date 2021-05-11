@@ -81,23 +81,23 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
   const [search, setSearch] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentLanguageCode, setCurrentLanguageCode] = useState(i18n.language);
-  const [isRtl, setIsRtl] = useState(false);
+  const [direction, setDirection] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = currentLanguageCode;
   }, [currentLanguageCode]);
 
   useEffect(async () => {
-    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
-    if (isRtl) {
+    document.documentElement.dir = direction;
+    if (direction === 'rtl') {
       await loadRtlCSS();
     }
-  }, [isRtl]);
+  }, [direction]);
 
-  const onLanguageChange = async (code, rtl) => {
+  const onLanguageChange = async code => {
     setCurrentLanguageCode(code);
     i18n.changeLanguage(code);
-    setIsRtl(rtl);
+    setDirection(i18n.dir(code)); // `rtl` (right-to-left), or `ltr` (left-to-right)
 
     // save the user's choice to api
     if (saveToAPI) {
@@ -152,7 +152,7 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
             />
           )}
           <LanguageList>
-            {filteredLocales.map(({ code, label, rtl = false }) => (
+            {filteredLocales.map(({ code, label }) => (
               <li key={code}>
                 {code === currentLanguageCode && (
                   <SelectedLanguage lang={code}>{label}</SelectedLanguage>
@@ -160,10 +160,10 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
                 {code !== currentLanguageCode && (
                   <button
                     className="btn btn-link"
+                    dir={i18n.dir(code)}
                     lang={code}
-                    dir={rtl ? 'rtl' : 'ltr'}
                     onClick={() => {
-                      onLanguageChange(code, rtl);
+                      onLanguageChange(code);
                       onModalHide();
                     }}
                   >
