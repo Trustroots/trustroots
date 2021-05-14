@@ -1,1 +1,6 @@
-{}
+{
+    "Send a message": "Enviar uma mensagem",
+    "At most {{count}} guests.": "No máximo, um hóspede.",
+    "At most {{count}} guests._plural": "No máximo, {{count}} hóspedes.",
+    "Accommodation": "Alojamento"
+}
