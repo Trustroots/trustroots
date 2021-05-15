@@ -214,7 +214,7 @@
     "css-loader": "3.6.0",
     "eslint": "7.26.0",
     "eslint-config-prettier": "8.3.0",
-    "eslint-import-resolver-webpack": "0.13.0",
+    "eslint-import-resolver-webpack": "0.13.1",
     "eslint-loader": "4.0.2",
     "eslint-plugin-angular": "4.0.1",
     "eslint-plugin-import": "2.22.1",
