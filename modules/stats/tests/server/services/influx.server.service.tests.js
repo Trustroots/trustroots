@@ -193,11 +193,10 @@ describe('Service: influx', function () {
           try {
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
 
-            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(
-              0,
-            ).args[0];
-            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0)
-              .args[1];
+            const measurement =
+              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points =
+              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 
@@ -246,11 +245,10 @@ describe('Service: influx', function () {
           try {
             sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
 
-            const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(
-              0,
-            ).args[0];
-            const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0)
-              .args[1];
+            const measurement =
+              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+            const points =
+              influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
             should(points.length).eql(1);
             const point = points[0];
 

@@ -65,12 +65,10 @@ describe('Daily Statistics Job - Unit Test', function () {
           );
 
           // Member count stat point
-          const memberMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(
-            0,
-          ).args[0];
-          const memberPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(
-            0,
-          ).args[1];
+          const memberMeasurement =
+            influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+          const memberPoints =
+            influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
           const memberPoint = memberPoints[0];
           should(memberPoints.length).eql(1);
           should(memberMeasurement).eql('members');
@@ -81,12 +79,10 @@ describe('Daily Statistics Job - Unit Test', function () {
           should(memberPoint).not.have.property('timestamp');
 
           // Push registration count stat point
-          const pushMeasurement = influx.InfluxDB.prototype.writeMeasurement.getCall(
-            1,
-          ).args[0];
-          const pushPoints = influx.InfluxDB.prototype.writeMeasurement.getCall(
-            1,
-          ).args[1];
+          const pushMeasurement =
+            influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[0];
+          const pushPoints =
+            influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[1];
           const pushPoint = pushPoints[0];
           should(pushPoints.length).eql(1);
           should(pushMeasurement).eql('pushRegistrations');

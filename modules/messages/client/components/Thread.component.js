@@ -150,10 +150,8 @@ export default function Thread({ user, profileMinimumLength }) {
     if (isFetchingMore || !nextParams) return;
     setIsFetchingMore(true);
     try {
-      const {
-        messages: moreMessages,
-        nextParams: moreNextParams,
-      } = await api.messages.fetchMessages(otherUser._id, nextParams);
+      const { messages: moreMessages, nextParams: moreNextParams } =
+        await api.messages.fetchMessages(otherUser._id, nextParams);
       setMessages(messages => [
         ...moreMessages.sort((a, b) => a.created.localeCompare(b.created)),
         ...messages,

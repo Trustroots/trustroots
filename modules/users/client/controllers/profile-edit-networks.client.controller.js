@@ -22,7 +22,8 @@ function ProfileEditNetworksController(
   vm.removingSocialAccount = false;
   vm.removeUserSocialAccount = removeUserSocialAccount;
   vm.isConnectedSocialAccount = isConnectedSocialAccount;
-  vm.hasConnectedAdditionalSocialAccounts = hasConnectedAdditionalSocialAccounts;
+  vm.hasConnectedAdditionalSocialAccounts =
+    hasConnectedAdditionalSocialAccounts;
   vm.isWarmshowersId = isWarmshowersId;
 
   /**

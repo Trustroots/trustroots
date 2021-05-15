@@ -44,14 +44,12 @@ export default function SearchMap({
   /**
    * Store map location in browser cache
    */
-  const [
-    persistentMapLocation,
-    setPersistentMapLocation,
-  ] = usePersistentMapLocation({
-    latitude: DEFAULT_LOCATION.lat,
-    longitude: DEFAULT_LOCATION.lng,
-    zoom: DEFAULT_LOCATION.zoom,
-  });
+  const [persistentMapLocation, setPersistentMapLocation] =
+    usePersistentMapLocation({
+      latitude: DEFAULT_LOCATION.lat,
+      longitude: DEFAULT_LOCATION.lng,
+      zoom: DEFAULT_LOCATION.zoom,
+    });
 
   /**
    * Debounce setting persistent map state to avoid performance issues

@@ -173,7 +173,8 @@ function generateExperienceSharingMatrix(nUsers, averageExpNumber, replyRate) {
   }
 
   function populateOneProfileWithLotsOfExperiences(expMatrix, replyRate) {
-    const profileWithManyExperiences = profileType.getSeqNumWithManyExperiences();
+    const profileWithManyExperiences =
+      profileType.getSeqNumWithManyExperiences();
     for (let from = 0; from < expMatrix.length; from++) {
       if (
         profileWithManyExperiences !== from &&

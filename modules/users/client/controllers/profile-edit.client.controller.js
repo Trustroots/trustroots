@@ -26,8 +26,7 @@ function ProfileEditController($scope, $confirm, $state) {
       // Ask for confirmation
       $confirm({
         title: 'Are you sure?',
-        text:
-          'Your changes would be lost. Return and press "Save" to keep the changes, or press "Continue" to discard them.',
+        text: 'Your changes would be lost. Return and press "Save" to keep the changes, or press "Continue" to discard them.',
         ok: 'Continue',
         cancel: 'Cancel',
       })

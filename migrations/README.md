@@ -26,6 +26,7 @@ On new installations the file is missing, **so all the migrations are run.**
 ### Database maintenance
 
 You can drop your entire database by running:
+
 ```bash
 npm run dropdb
 ```

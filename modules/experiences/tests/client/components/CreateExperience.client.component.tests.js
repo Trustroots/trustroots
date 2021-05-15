@@ -102,12 +102,8 @@ describe('<CreateExperience />', () => {
     experiencesApi.readMine.mockResolvedValueOnce(null);
     experiencesApi.create.mockResolvedValueOnce({ public: false });
 
-    const {
-      getByText,
-      getAllByText,
-      getByLabelText,
-      queryByLabelText,
-    } = render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    const { getByText, getAllByText, getByLabelText, queryByLabelText } =
+      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
@@ -162,12 +158,8 @@ describe('<CreateExperience />', () => {
     experiencesApi.readMine.mockResolvedValueOnce(null);
     experiencesApi.create.mockResolvedValueOnce({ public: false });
 
-    const {
-      getByText,
-      getAllByText,
-      getByLabelText,
-      queryByLabelText,
-    } = render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    const { getByText, getAllByText, getByLabelText, queryByLabelText } =
+      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
