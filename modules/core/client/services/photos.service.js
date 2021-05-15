@@ -154,8 +154,7 @@ const photos = {
   },
   cyclist: {
     name: 'Scott & Emily',
-    url:
-      'https://www.flickr.com/photos/snordq/6440512215/in/album-72157628461235121/',
+    url: 'https://www.flickr.com/photos/snordq/6440512215/in/album-72157628461235121/',
     license: 'CC BY-NC 2.0',
     license_url: 'https://creativecommons.org/licenses/by-nc/2.0/',
     file: 'cyclist.jpg',

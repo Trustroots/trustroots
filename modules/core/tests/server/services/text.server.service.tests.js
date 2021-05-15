@@ -171,20 +171,17 @@ describe('Text processor tests', function () {
           {
             scheme: 'irc',
             in: 'irc://example.com:80/channel?key',
-            out:
-              '<a href="irc://example.com:80/channel?key">irc://example.com:80/channel?key</a>',
+            out: '<a href="irc://example.com:80/channel?key">irc://example.com:80/channel?key</a>',
           },
           {
             scheme: 'ge0 (Maps.me)',
             in: 'ge0://w4aP1NSjwS/My_Position',
-            out:
-              '<a href="ge0://w4aP1NSjwS/My_Position">ge0://w4aP1NSjwS/My_Position</a>',
+            out: '<a href="ge0://w4aP1NSjwS/My_Position">ge0://w4aP1NSjwS/My_Position</a>',
           },
           {
             scheme: 'tg (Telegram)',
             in: 'tg://resolve?domain=trustroots',
-            out:
-              '<a href="tg://resolve?domain=trustroots">tg://resolve?domain=trustroots</a>',
+            out: '<a href="tg://resolve?domain=trustroots">tg://resolve?domain=trustroots</a>',
           },
         ].forEach(function (schemeTest) {
           it(

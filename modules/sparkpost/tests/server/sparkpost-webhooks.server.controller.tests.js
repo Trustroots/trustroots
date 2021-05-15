@@ -73,11 +73,10 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           // test influx endpoint
           sinon.assert.callCount(influx.InfluxDB.prototype.writeMeasurement, 1);
 
-          const measurement = influx.InfluxDB.prototype.writeMeasurement.getCall(
-            0,
-          ).args[0];
-          const points = influx.InfluxDB.prototype.writeMeasurement.getCall(0)
-            .args[1];
+          const measurement =
+            influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+          const points =
+            influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[1];
           should(points.length).eql(1);
           const point = points[0];
 

@@ -164,8 +164,7 @@ function MapLayersFactory(SettingsFactory, LocationService) {
       layers.satellite = {
         name: 'Satellite',
         type: 'xyz',
-        url:
-          '//gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
+        url: '//gibs-{s}.earthdata.nasa.gov/wmts/epsg3857/best/{layer}/default/{time}/{tileMatrixSet}/{z}/{y}/{x}.jpg',
         layerOptions: {
           layer: 'Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual',
           tileMatrixSet: 'GoogleMapsCompatible_Level12',
