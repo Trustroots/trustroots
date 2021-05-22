@@ -1,3 +1,5 @@
 {
-    "Lives in <2>{{locationLiving}}</2>": "Vive em <2>{{locationLiving}}</2>"
+    "Lives in <2>{{locationLiving}}</2>": "Vive em <2>{{locationLiving}}</2>",
+    "Wait a moment…": "Espera um momento…",
+    "Cancel": "Cancelar"
 }
