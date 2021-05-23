@@ -55,9 +55,8 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
     setCurrentLanguageCode(code);
     i18n.changeLanguage(code);
 
-    // save the user's choice to api
+    // Save the user's choice to API.
     if (saveToAPI) {
-      // @TODO this needs some feedback. Currently no feedback to user that this was saved.
       await usersApi.update({ locale: code });
     }
   };
