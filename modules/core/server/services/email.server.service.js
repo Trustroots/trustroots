@@ -403,8 +403,10 @@ exports.sendWelcomeSequenceThird = function (user, callback) {
   // For members with empty profiles,
   // remind them how important it is to fill their profile.
   // Ask for feedback from the rest.
-  const descriptionLength = textService.plainText(user.description || '', true)
-    .length;
+  const descriptionLength = textService.plainText(
+    user.description || '',
+    true,
+  ).length;
   const messageTopic =
     descriptionLength < config.profileMinimumLength
       ? 'fill-profile'

@@ -1,1 +1,25 @@
-{}
+{
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "את יכולה להמשיך <1> בית</1> או <4> שאלות  נפוצות </4>",
+    "Wait…": "חכי…",
+    "Username": "שם משתמש",
+    "Trustroots Support Robot": "רובוט התמיכה שלנו",
+    "Trustroots Support": "תמיכה טראסטרוטס",
+    "Thank you!": "תודה לך, אנחנו מאוד מעריכים את זה!",
+    "Something went wrong sending your message.": "משהו השתבש בזמן שליחת ההודעה שלך.",
+    "Send": "שלחי",
+    "See also": "ראי עוד",
+    "Reporting member": "דווחי על משתמש/ת",
+    "Report member {{username}} to support": "דווחי על משתמש {{username}} לצוות התמיכה",
+    "Report member": "דווחי על משתמש/ת",
+    "Removing your account": "הסירי את חשבונך",
+    "Please write in English if possible.": "אנחנו דיי אינטרנשיונל אז תכתבי באנגלית בבקשה.",
+    "Please ensure you are connected to internet and try again.": "אני יודעת שהתשתיות באזור לא משהו אבל נא וודאי שיש לך חיבור לאינטרנט ונסי שוב.",
+    "Name": "שם",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "אם את או מישהי שאת מכירה הייתן עדות לפשע, נא דווחי למשטרה.",
+    "Message": "הודעות",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "אני רק רובוט קטן ומשועמם אבל שלחתי את ההודעה שלך לאנשי התמיכה. אל חשש הם אולי יחזרו אלייך בקרוב מאוד!",
+    "<0>Become a volunteer</0> and make a difference!": "<0>הצטרפי למתנדבים</0> ועשי את השינוי!",
+    "Email": "דואר אלקטרוני",
+    "Frequently Asked Questions": "שאלות נפוצות",
+    "Contact us": "צור קשר"
+}

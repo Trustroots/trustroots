@@ -217,9 +217,8 @@ describe('job: send push message', () => {
   function proxyquireFirebaseMessaging(shouldResponseWithError) {
     messages.length = 0;
     const stubs = {};
-    stubs[
-      path.resolve('./config/lib/firebase-messaging')
-    ] = createFirebaseMessagingStub(shouldResponseWithError);
+    stubs[path.resolve('./config/lib/firebase-messaging')] =
+      createFirebaseMessagingStub(shouldResponseWithError);
     return proxyquire(
       path.resolve('./modules/core/server/jobs/send-push-message.server.job'),
       stubs,

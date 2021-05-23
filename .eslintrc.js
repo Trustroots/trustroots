@@ -1,8 +1,9 @@
 const semver = require('semver');
 
 // Converts semver range `~16.6.0` to strict version `16.6.0`
-const reactVersion = semver.coerce(require('./package.json').dependencies.react)
-  .version;
+const reactVersion = semver.coerce(
+  require('./package.json').dependencies.react,
+).version;
 
 const rules = {
   'comma-dangle': [2, 'always-multiline'],

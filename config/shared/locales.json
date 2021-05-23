@@ -110,5 +110,11 @@
     "code": "nl",
     "english": "Dutch",
     "production": false
+  },
+  {
+    "label": "简体中文",
+    "code": "zh_Hans",
+    "english": "Chinese (simplified)",
+    "production": false
   }
 ]

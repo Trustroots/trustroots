@@ -29,7 +29,7 @@ function generateServerUser(overrides = {}) {
   return {
     ...generateBaseUser(),
     locale: '',
-    public: faker.random.boolean(),
+    public: faker.datatype.boolean(),
     roles: ['user'],
     password: faker.internet.password(),
     ...overrides,
@@ -100,9 +100,9 @@ function generateExperiences(users, experienceData) {
       userTo: users[data[1]]._id,
       public: true,
       interactions: {
-        met: faker.random.boolean(),
-        guest: faker.random.boolean(),
-        host: faker.random.boolean(),
+        met: faker.datatype.boolean(),
+        guest: faker.datatype.boolean(),
+        host: faker.datatype.boolean(),
       },
       recommend: _.sample(['yes', 'no', 'unknown']),
     };

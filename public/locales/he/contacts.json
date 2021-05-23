@@ -1,3 +1,23 @@
 {
-    "Cancel": "ביטול"
+    "Cancel": "בטלי",
+    "You received a contact request.": "קיבלת בקשה חברות.",
+    "Yes, revoke request": "כן, בטל בקשה",
+    "Yes, remove contact": "כן, הסר משתמש",
+    "Yes, decline request": "כן, דחיית בקשה",
+    "Since {{created, LL}}": "מאז {{created, LL}}",
+    "Search contacts": "חיפוש משתמש",
+    "Revoke contact request?": "מעוניין לדחות בקשת חברות?",
+    "Revoke Request": "דחיית בקשה",
+    "Requested {{date, LL}}": "מבקשת {{date, LL}}",
+    "Requested {{created, LL}}": "מבקשת {{created, LL}}",
+    "Remove contact?": "הסרת משתמש?",
+    "No contacts yet.": "אין חברים כעת.",
+    "Lives in <2>{{locationLiving}}</2>": "מתגורר ב<2>{{locationLiving}}</2>",
+    "From <2>{{locationFrom}}</2>": "מ <2>{{locationFrom}}</2>",
+    "Decline contact request?": "דחיית בקשת חברות?",
+    "Decline Request": "דחיית בקשה",
+    "Contact request sent and pending.": "בקשת חברות נשלחה.",
+    "Connected since {{date, LL}}": "מחוברים מאז {{date, LL}}",
+    "Confirm Request": "אישור בקשה",
+    "Wait a moment…": "חכי רק שנייה, כבר חוזרים אליך…"
 }

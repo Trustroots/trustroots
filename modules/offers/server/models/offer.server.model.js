@@ -80,7 +80,8 @@ const validateLocation = function (coordinates) {
 
   // Test longitude range (-180—+180)
   // Maximum length of digits after `.` is 30
-  const lonRegexp = /^\s?[+-]?(180(\.0+)?|1[0-7]\d(\.\d+)?|\d{1,2}(\.\d{1,30})?)\)?$/;
+  const lonRegexp =
+    /^\s?[+-]?(180(\.0+)?|1[0-7]\d(\.\d+)?|\d{1,2}(\.\d{1,30})?)\)?$/;
 
   return latRegexp.test(coordinates[0]) && lonRegexp.test(coordinates[1]);
 };

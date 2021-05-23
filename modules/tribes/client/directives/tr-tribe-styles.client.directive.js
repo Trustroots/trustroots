@@ -27,8 +27,6 @@ function trTribeStylesDirective() {
       let style = '';
       const tribe = angular.fromJson(attrs.trTribeStyles);
 
-      console.log(tribe); //eslint-disable-line
-
       // Set background image
       if (tribe.image) {
         const dimensions =
