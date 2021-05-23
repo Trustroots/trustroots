@@ -16,17 +16,7 @@
     <base href="/" />
     <meta name="fragment" content="!" />
     {% for cssFile in cssFiles %}
-    <link
-      {%
-      if
-      cssFile.id
-      %}id="{{ cssFile.id }}"
-      {%
-      endif
-      %}
-      href="/{{cssFile.file}}?c={{appSettings.commit}}"
-      rel="stylesheet"
-    />
+    <link href="/{{cssFile.file}}?c={{appSettings.commit}}" rel="stylesheet" />
     {% endfor %} {# Sentry DSN - make sure this is above scripts #} {% if
     sentry.enabled === true %}
     <script nonce="{{ nonce }}">

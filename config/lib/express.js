@@ -70,7 +70,7 @@ module.exports.initLocalVariables = function (app) {
   // Assets
   if (process.env.NODE_ENV === 'production') {
     app.locals.jsFiles = ['assets/main.js'];
-    app.locals.cssFiles = [{ file: 'assets/main.css', id: 'main-style' }];
+    app.locals.cssFiles = ['assets/main.css'];
   } else {
     app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = []; // style is bundled with javascript

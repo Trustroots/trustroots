@@ -3,7 +3,7 @@ import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import PropTypes from 'prop-types';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 
 // Internal dependencies
@@ -11,8 +11,8 @@ import {
   getLocales,
   getSearchedLocales,
 } from '@/modules/core/client/utils/locales';
-import i18n from '@/config/client/i18n';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import i18n from '@/config/client/i18n';
 
 const SelectedLanguage = styled.strong`
   padding: 7px 13px;
@@ -40,37 +40,6 @@ const SearchInput = styled.input`
 `;
 
 /**
- * Ensures RTL CSS stylesheet has been loaded into the page.
- *
- * @returns {Promise} Resolves once loaded
- */
-function loadRtlCSS() {
-  return new Promise(resolve => {
-    // Check if RTL style has already been loaded
-    if (document.getElementById('rtl-style')) {
-      return resolve();
-    }
-
-    // Find main stylesheet, used to build RTL CSS URL
-    const rtlUrl = new URL(document.getElementById('main-style').href);
-    rtlUrl.pathname = rtlUrl.pathname.replace('.css', '.rtl.css');
-
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.type = 'text/css';
-    link.id = 'rtl-style';
-    link.href = rtlUrl.toString();
-
-    link.onload = () => {
-      link.onload = null;
-      resolve();
-    };
-
-    document.head.append(link);
-  });
-}
-
-/**
  * LanguageSwitch component.
  * @param {String} buttonStyle - Button style: inverse, default, primary
  * @param {Boolean} [saveToAPI=false] - should we save selected language to API?
@@ -81,23 +50,10 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
   const [search, setSearch] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentLanguageCode, setCurrentLanguageCode] = useState(i18n.language);
-  const [direction, setDirection] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.lang = currentLanguageCode;
-  }, [currentLanguageCode]);
-
-  useEffect(async () => {
-    document.documentElement.dir = direction;
-    if (direction === 'rtl') {
-      await loadRtlCSS();
-    }
-  }, [direction]);
 
   const onLanguageChange = async code => {
     setCurrentLanguageCode(code);
     i18n.changeLanguage(code);
-    setDirection(i18n.dir(code)); // `rtl` (right-to-left), or `ltr` (left-to-right)
 
     // save the user's choice to api
     if (saveToAPI) {
