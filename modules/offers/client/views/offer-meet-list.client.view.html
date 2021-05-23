@@ -17,26 +17,7 @@
   <hr class="hr-gray hr-tight" />
 
   <!-- No meetings -->
-  <div class="content-empty" ng-if="!offerListMeet.offers.length">
-    <div class="icon-users icon-3x text-muted"></div>
-    <br />
-    <p class="lead text-center">
-      Travelling? Organising an event? <br />
-      Just making a dinner and would like to invite people over?
-      <br />
-      <br />
-    </p>
-    <p>
-      <a ui-sref="offer.meet.add" class="btn btn-action btn-inverse-primary">
-        Add it to map!
-      </a>
-      <br />
-      <br />
-    </p>
-    <p class="lead text-center">
-      Meetups stay visible on map at most one month.
-    </p>
-  </div>
+  <no-meets ng-if="!offerListMeet.offers.length"></no-meets>
 
   <!-- List of meetings -->
   <div
