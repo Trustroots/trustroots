@@ -1,1 +1,10 @@
-{}
+{
+    "{{count, number}} members": "Um membro",
+    "{{count, number}} members_plural": "{{count, number}} membros",
+    "Send us suggestions!": "Envia-nos sugestões!",
+    "New circle!": "Novo círculo!",
+    "Leave this circle?": "Abandonar este círculo?",
+    "Leave circle": "Abandonar círculo",
+    "Discover circles": "Descobrir círculos",
+    "Cancel": "Cancelar"
+}
