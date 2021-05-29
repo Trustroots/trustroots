@@ -211,7 +211,7 @@
     "babel-plugin-i18next-extract": "0.8.3",
     "canvas": "2.8.0",
     "concurrently": "6.1.0",
-    "css-loader": "5.2.5",
+    "css-loader": "5.2.6",
     "eslint": "7.27.0",
     "eslint-config-prettier": "8.3.0",
     "eslint-import-resolver-webpack": "0.13.1",
