@@ -217,7 +217,7 @@
     "eslint-import-resolver-webpack": "0.13.1",
     "eslint-loader": "4.0.2",
     "eslint-plugin-angular": "4.0.1",
-    "eslint-plugin-import": "2.23.3",
+    "eslint-plugin-import": "2.23.4",
     "eslint-plugin-jest-dom": "3.9.0",
     "eslint-plugin-prettier": "3.4.0",
     "eslint-plugin-react": "7.23.2",
