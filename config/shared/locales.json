@@ -116,5 +116,47 @@
     "code": "zh_Hans",
     "english": "Chinese (simplified)",
     "production": false
+  },
+  {
+    "label": "日本語",
+    "code": "ja",
+    "english": "Japanese",
+    "production": false
+  },
+  {
+    "label": "اَلْعَرَبِيَّةُ",
+    "code": "ar",
+    "english": "Arabic",
+    "production": false
+  },
+  {
+    "label": "hrvatski",
+    "code": "hr",
+    "english": "Croatian",
+    "production": false
+  },
+  {
+    "label": "latviešu",
+    "code": "lv",
+    "english": "Latvian",
+    "production": false
+  },
+  {
+    "label": "српски / srpski",
+    "code": "sr",
+    "english": "Serbian",
+    "production": false
+  },
+  {
+    "label": "slovenščina",
+    "code": "sl",
+    "english": "Slovenian",
+    "production": false
+  },
+  {
+    "label": "català",
+    "code": "ca",
+    "english": "Catalan",
+    "production": false
   }
 ]
