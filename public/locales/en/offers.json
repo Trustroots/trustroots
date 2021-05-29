@@ -1,12 +1,15 @@
 {
   "Accommodation": "Accommodation",
+  "Add it to map!": "Add it to map!",
   "At most {{count}} guests.": "At most one guest.",
   "At most {{count}} guests._plural": "At most {{count}} guests.",
   "Bigger map": "Bigger map",
   "Can host": "Can host",
   "Cannot host currently": "Cannot host currently",
   "Change": "Change",
+  "Just making a dinner and would like to invite people over?": "Just making a dinner and would like to invite people over?",
   "Meet people": "Meet people",
+  "Meetups stay visible on map at most one month.": "Meetups stay visible on map at most one month.",
   "Might be able to host": "Might be able to host",
   "Modify hosting offer": "Modify hosting offer",
   "No guests.": "No guests.",
@@ -14,5 +17,7 @@
   "Open on device": "Open on device",
   "Send a message": "Send a message",
   "Sorry, user is not hosting currently.": "Sorry, user is not hosting currently.",
-  "Start hosting travellers": "Start hosting travellers"
+  "Start hosting travellers": "Start hosting travellers",
+  "Travelling? Organising an event?": "Travelling? Organising an event?",
+  "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Travelling? Organising an event? Just making a dinner and would like to invite people over?"
 }
