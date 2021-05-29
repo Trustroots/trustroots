@@ -210,7 +210,7 @@
     "babel-plugin-angularjs-annotate": "0.10.0",
     "babel-plugin-i18next-extract": "0.8.3",
     "canvas": "2.8.0",
-    "concurrently": "6.1.0",
+    "concurrently": "6.2.0",
     "css-loader": "5.2.6",
     "eslint": "7.27.0",
     "eslint-config-prettier": "8.3.0",
