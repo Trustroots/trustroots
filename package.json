@@ -204,7 +204,7 @@
     "@testing-library/react": "11.2.7",
     "@wordpress/browserslist-config": "4.0.0",
     "agendash": "2.1.1",
-    "autoprefixer": "10.2.5",
+    "autoprefixer": "10.2.6",
     "babel-eslint": "10.1.0",
     "babel-loader": "8.2.2",
     "babel-plugin-angularjs-annotate": "0.10.0",
