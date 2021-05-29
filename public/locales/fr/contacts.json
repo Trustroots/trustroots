@@ -40,5 +40,7 @@
     "Search contacts": "Rechercher des contacts",
     "(additional {{count}} pending)": "({{count}} supplémentaire en attente)",
     "(additional {{count}} pending)_plural": "({{count}} supplémentaires en attente)",
-    "Wait a moment…": "Veuillez patienter…"
+    "Wait a moment…": "Veuillez patienter…",
+    "Requested {{date, LL}}": "Demande en date du {{date,LL}}",
+    "Connected since {{date, LL}}": "Connecté depuis {{date,LL}}"
 }
