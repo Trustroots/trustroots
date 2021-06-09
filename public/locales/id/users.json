@@ -13,7 +13,7 @@
     "This is the language of the interface you see across the site.": "Ini adalah bahasa antarmuka yang Anda lihat di seluruh situs.",
     "The person you are looking for is not available.": "Orang yang Anda cari tidak tersedia.",
     "Thanks to all our community members who helped translate!": "Terima kasih kepada semua anggota komunitas kami yang membantu menerjemahkan!",
-    "Support": "Bantuan",
+    "Support": "Dukungan",
     "Sorry, you need to first activate your profile by confirming your email.": "Maaf, Anda harus terlebih dahulu mengaktifkan profil Anda dengan mengonfirmasi email Anda.",
     "Reply rate {{replyRate}}.": "Tingkat balasan {{replyRate}}.",
     "Replies within {{replyTime, fromNow}}.": "Balasan dalam {{replyTime, fromNow}}.",
@@ -61,5 +61,17 @@
     "Being able to rely on strangers, on communities, on trust, are values that are worth preserving.": "Mampu mengandalkan orang asing, pada komunitas, pada kepercayaan, adalah nilai-nilai yang layak dipertahankan.",
     "Anonymous member": "Anggota anonim",
     "Add contact": "Tambah kontak",
-    "About me": "Tentang saya"
+    "About me": "Tentang saya",
+    "You have blocked this member.": "Anda telah memblokir anggota ini.",
+    "Unblock member \"{{username}}\"": "Buka blokir anggota \"{{username}}\"",
+    "Unblock member": "Buka blokir anggota",
+    "They cannot see or message you.": "Mereka tidak dapat melihat atau mengirimi Anda pesan.",
+    "Please ensure you are connected to internet and try again.": "Pastikan Anda terhubung ke internet dan coba kembali.",
+    "Member since {{date, ll}}": "Anggota sejak {{date, ll}}",
+    "Could not unblock this member.": "Tak bisa membuka blokir anggota ini.",
+    "Could not block this member.": "Tidak dapat memblokir anggota ini.",
+    "Block member \"{{username}}\"": "Blokir anggota \"{{username}}\"",
+    "Block member": "Blokir anggota",
+    "Are you sure you want to unblock them? They will be able to see your profile and messaage you again.": "Yakin ingin membuka blokirnya? Mereka akan dapat melihat profil Anda dan mengirim pesan kepada Anda lagi.",
+    "Are you sure you want to block them? They will not be able to see or message you.": "Yakin ingin memblokirnya? Mereka tidak akan bisa melihat atau mengirim pesan kepada Anda."
 }
