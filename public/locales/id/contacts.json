@@ -21,5 +21,9 @@
     "Decline Request": "Tolak Permintaan",
     "Contact request sent and pending.": "Permintaan kontak terkirim dan menunggu keputusan.",
     "Connected since {{created, MMM D, YYYY}}": "Terhubung sejak {{created, MMM D, YYYY}}",
-    "Confirm Request": "Terima Permintaan"
+    "Confirm Request": "Terima Permintaan",
+    "Since {{created, LL}}": "Sejak {{created, LL}}",
+    "Requested {{date, LL}}": "Diminta {{date, LL}}",
+    "Requested {{created, LL}}": "Diminta {{created, LL}}",
+    "Connected since {{date, LL}}": "Terhubung sejak {{date, LL}}"
 }
