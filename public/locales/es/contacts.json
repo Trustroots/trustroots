@@ -39,5 +39,8 @@
     "{{count}} contacts_plural": "{{count}} contactos",
     "Search contacts": "Búsqueda de contactos",
     "(additional {{count}} pending)": "({{count}} más pendiente)",
-    "(additional {{count}} pending)_plural": "({{count}} más pendientes)"
+    "(additional {{count}} pending)_plural": "({{count}} más pendientes)",
+    "Requested {{date, LL}}": "Solicitado {{date, LL}}",
+    "Connected since {{date, LL}}": "Conectado desde {{date, LL}}",
+    "Wait a moment…": "Espera un momento…"
 }
