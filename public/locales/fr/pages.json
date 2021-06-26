@@ -322,5 +322,14 @@
     "{{date, MMMM Do}}": "{{date, Do MMMM}}",
     "Trustroots page at Facebook": "Page Trustroots sur Facebook",
     "Trustroots group at Facebook": "Groupe Trustroots sur Facebook",
-    "Launched {{date, MMMM Do YYYY}}": "Lancé le {{date, Do MMMM YYYY}}"
+    "Launched {{date, MMMM Do YYYY}}": "Lancé le {{date, Do MMMM YYYY}}",
+    "Whether you’re a hardcore techie or know nothing of coding, we can use your help! See <2>volunteer page</2> get an idea of what’s in the making and what you can do to help out. You could help Trustroots out with as little effort as donating your photo's to use for our website or create content. If you're a (semi-)professional photographer or have any questions you can <5>contact us</5>.": "Que vous soyez un technicien acharné ou que vous ne connaissiez rien au code, nous avons besoin de votre aide ! Voir la page <2>volontariat</2> pour avoir une idée de ce qui est en train de se faire et de ce que vous pouvez faire pour nous aider. Vous pouvez aider Trustroots avec aussi peu d'effort que de donner vos photos pour les utiliser sur notre site Web ou créer du contenu. Si vous êtes un photographe (semi-)professionnel ou si vous avez des questions, vous pouvez <5>nous contacter</5>.",
+    "We have no tolerance for abusive members.": "Nous ne tolérons pas les membres abusifs.",
+    "We have no tolerance for spam, ads and other objectionable content.": "Nous ne tolérons pas les spams, les publicités et autres contenus répréhensibles.",
+    "Make your own profile. One person, one profile — use your alias or real name; but never impersonate someone else, real or imaginary.": "Créez votre propre profil. Une personne, un profil - utilisez votre pseudonyme ou votre vrai nom, mais ne vous faites jamais passer pour quelqu'un d'autre, qu'il soit réel ou imaginaire.",
+    "Launched {{date, LL}}": "Lancé en {{date, LL}}",
+    "In the future, we would like to host a support ticket system on our own servers.": "À l'avenir, nous souhaiterions héberger un système de tickets d'assistance sur nos propres serveurs.",
+    "Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk servers. You can <2>see their privacy policy</2>.": "La communication avec notre équipe d'assistance (par e-mail ou via le formulaire de contact) est gérée via Zendesk et stockée sur les serveurs de Zendesk. Vous pouvez <2>consulter leur politique de confidentialité</2>.",
+    "Be yourself, helpful, kind, responsible.": "Soyez vous-même, utile, gentil, responsable.",
+    "Be respectful of others and restrain from any kind of abusive behaviour.": "Soyez respectueux des autres et abstenez-vous de toute forme de comportement abusif."
 }
