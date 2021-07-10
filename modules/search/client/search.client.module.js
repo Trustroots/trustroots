@@ -4,6 +4,11 @@ import '@/modules/core/client/core.client.module';
 
 AppConfig.registerModule('search', ['core']);
 
+// Templates used in `ng-include`s
+require('@/modules/search/client/views/search-sidebar-results.client.view.html');
+require('@/modules/search/client/views/search-sidebar-filters.client.view.html');
+require('@/modules/search/client/views/search-input.client.view.html');
+
 // config
 require('@/modules/search/client/config/search.client.routes');
 

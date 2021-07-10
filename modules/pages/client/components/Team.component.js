@@ -40,7 +40,7 @@ export default function Team({ user }) {
               alt="Trustroots"
               className="hidden-xs"
               height="120"
-              src="/img/tree-color.svg"
+              src="/public/img/tree-color.svg"
               width="120"
             />
             <br />
