@@ -11,8 +11,8 @@ import {
   getLocales,
   getSearchedLocales,
 } from '@/modules/core/client/utils/locales';
-import i18n from '@/config/client/i18n';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import i18n from '@/config/client/i18n';
 
 const SelectedLanguage = styled.strong`
   padding: 7px 13px;
@@ -55,9 +55,8 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
     setCurrentLanguageCode(code);
     i18n.changeLanguage(code);
 
-    // save the user's choice to api
+    // Save the user's choice to API.
     if (saveToAPI) {
-      // @TODO this needs some feedback. Currently no feedback to user that this was saved.
       await usersApi.update({ locale: code });
     }
   };
@@ -116,6 +115,7 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
                 {code !== currentLanguageCode && (
                   <button
                     className="btn btn-link"
+                    dir={i18n.dir(code)}
                     lang={code}
                     onClick={() => {
                       onLanguageChange(code);

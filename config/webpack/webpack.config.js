@@ -5,6 +5,9 @@ const webpackMerge = require('webpack-merge');
 const compact = require('lodash/compact');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+// When upgrading to Webpack 5, you might consider swapping this to `@automattic/webpack-rtl-plugin` (fork) because the original isn't maintained anymore
+const WebpackRTLPlugin = require('webpack-rtl-plugin');
+
 // This is very experimental library
 // There might be another favourite react-refresh webpack plugin at some point ...
 // See https://github.com/facebook/react/issues/16604 for discussion
@@ -155,6 +158,13 @@ module.exports = webpackMerge.merge(shims, {
     isProduction &&
       new MiniCssExtractPlugin({
         filename: 'main.css',
+      }),
+    // @TODO: run RTL also on inlined CSS?
+    isProduction &&
+      new WebpackRTLPlugin({
+        diffOnly: true, // The stylesheet created will only contain the css that differs from the source stylesheet.
+        filename: 'main.rtl.css',
+        minify: isProduction,
       }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
