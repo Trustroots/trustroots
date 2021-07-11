@@ -1,5 +1,5 @@
 {
-    "About": "À propos",
+    "About": "À propos",
     "About me": "À propos de moi",
     "Add contact": "Ajouter le contact",
     "Change language": "Modifier la langue",
@@ -37,7 +37,7 @@
     "Sorry, you need to first activate your profile by confirming your email": {
         "": "Désolé, vous devez d'abord activer votre profil en confirmant votre adresse e-mail."
     },
-    "Support": "Assistance",
+    "Support": "Support",
     "Thanks to all our community members who helped translate!": "Merci à tous nos membres de la communauté qui ont aidé aux traductions !",
     "This is the language of the interface you see across the site": {
         "": "Il s'agit de la langue de l'interface que vous voyez à travers le site."
@@ -61,7 +61,7 @@
     "The person you are looking for is not available.": "La personne que vous cherchez n'est pas disponible.",
     "Oops!": "Oups !",
     "Map search": "Rechercher sur la carte",
-    "Find people": "Rechercher des personnes",
+    "Find people": "Trouver des personnes",
     "{{birthdate, age}} years.": "{{birthdate, age}} ans.",
     "Other gender": "Autre genre",
     "Non-binary": "Non binaire",
@@ -87,5 +87,16 @@
     "Share your experience": "Partagez votre expérience",
     "Hosting & meet": "Accueil et rencontres",
     "Modify your meet locations": "Modifier l'emplacement de vos lieux de rencontre",
-    "Modify your hosting location": "Modifier l'emplacement de votre lieu d'accueil"
+    "Modify your hosting location": "Modifier l'emplacement de votre lieu d'accueil",
+    "Are you sure you want to unblock them? They will be able to see your profile and messaage you again.": "Êtes-vous sûr de vouloir débloquer cet·te utilisateur·ice ? Il ne lui sera plus possible de vous voir ou vous écrire.",
+    "Are you sure you want to block them? They will not be able to see or message you.": "Êtes-vous sûr de vouloir bloquer cet·te utilisateur·rice ? Il ne lui sera plus possible de vous voir ou vous écrire.",
+    "You have blocked this member.": "Vous avez bloqué ce membre.",
+    "Unblock member \"{{username}}\"": "Débloquer le membre \"{{username}}\"",
+    "Unblock member": "Débloquer ce membre",
+    "They cannot see or message you.": "Ils ne peuvent pas vous voir ou vous écrire.",
+    "Please ensure you are connected to internet and try again.": "SVP, vérifiez votre connexion à internet et réessayez.",
+    "Could not unblock this member.": "Il n'a pas été possible de débloquer cet·te utilisateur·ice.",
+    "Could not block this member.": "Il n'a pas été possible de bloquer cet·te utilisateur·ice.",
+    "Block member \"{{username}}\"": "Bloquer le membre \"{{username}}\"",
+    "Block member": "Bloquer ce membre"
 }

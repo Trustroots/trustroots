@@ -1,6 +1,6 @@
-import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import Backend from 'i18next-xhr-backend';
+import i18n from 'i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 import moment from 'moment';
 
@@ -15,6 +15,35 @@ const isTest = process.env.NODE_ENV === 'test';
 /**
  * translations are specified in /public/locales/{language-code}/translation.json
  */
+
+/**
+ * Ensures RTL CSS stylesheet has been loaded into the page.
+ *
+ * @returns {Promise} Resolves once loaded
+ */
+export function loadRtlCSS() {
+  return new Promise(resolve => {
+    const id = 'rtl-style';
+
+    // Check if RTL style has already been loaded
+    if (document.getElementById(id)) {
+      return resolve();
+    }
+
+    const link = document.createElement('link');
+    link.href = `assets/main.rtl.css?c=${window?.settings?.commit ?? ''}`;
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.type = 'text/css';
+
+    link.onload = () => {
+      link.onload = null;
+      resolve();
+    };
+
+    document.head.append(link);
+  });
+}
 
 /**
  * Format a translation parameter
@@ -86,7 +115,17 @@ i18n
     // debug: true, // show missing translation keys in console.log
   });
 
-i18n.on('languageChanged', languageCode => {
+i18n.on('languageChanged', async languageCode => {
+  const direction = i18n.dir(languageCode); // `rtl` (right-to-left), or `ltr` (left-to-right)
+
+  document.documentElement.lang = languageCode;
+  document.documentElement.dir = direction;
+
+  if (direction === 'rtl') {
+    await loadRtlCSS();
+  }
+
+  // Date+time library
   moment.locale(languageCode);
 });
 
