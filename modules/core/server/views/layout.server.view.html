@@ -281,7 +281,6 @@
     <script nonce="{{ nonce }}">
       var title = "{{title}}",
           settings = {{ appSettings | dump | safe }},
-          languages = {{ languages | dump | safe }},
           {% if facebookAppId !== '' %}facebookAppId = "{{facebookAppId}}",{% endif %}
           {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
           env = "{{ env }}",

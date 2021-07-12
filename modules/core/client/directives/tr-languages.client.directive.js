@@ -1,3 +1,5 @@
+import * as languages from '@/config/languages/languages.json';
+
 /**
  * Directive to select languages
  *
@@ -43,13 +45,30 @@ function trLanguagesDirective() {
 
   return directive;
 
+  /**
+   * Format languages from object format into array; some Angular directives require this in UI
+   */
+  function languagesObjectToArray(languages) {
+    const langsArr = [];
+
+    angular.forEach(
+      languages,
+      function (value, key) {
+        this.push({ key, name: value });
+      },
+      langsArr,
+    );
+
+    return langsArr;
+  }
+
   /* @ngInject */
-  function trLanguagesDirectiveController($scope, Languages) {
+  function trLanguagesDirectiveController($scope) {
     // View model
     const vm = this;
 
     // Exposed to the view
-    vm.languages = Languages.get('array');
+    vm.languages = languagesObjectToArray(languages);
     vm.selectedLanguages = [];
 
     activate();

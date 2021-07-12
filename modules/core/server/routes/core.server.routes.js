@@ -48,6 +48,8 @@ module.exports = function (app) {
     .route('/api/report-expect-ct-violation')
     .post(core.receiveExpectCTViolationReport);
 
+  app.route('/api/languages').get(core.getLanguages);
+
   // Return a 404 for all undefined api, module or lib routes
   app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);
 

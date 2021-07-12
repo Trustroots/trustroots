@@ -94,3 +94,8 @@ exports.renderServiceWorkerConfig = function (req, res) {
     .set('Content-Type', 'text/javascript')
     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
 };
+
+exports.getLanguages = (req, res) => {
+  const languages = require(path.resolve('config/languages/languages.json'));
+  res.json(languages);
+};

@@ -5,9 +5,6 @@
  *
  * node generate.js
  */
-
-// Dependencies
-const _ = require('lodash');
 const fs = require('fs');
 
 /**
@@ -37,14 +34,14 @@ function fixName(name) {
 /**
  * Determine if language should be picked and used at Trustroots
  */
-function includeLanguage(language) {
+function includeLanguage({ iso_639_2b, iso_639_2t, type, name, scope }) {
   // Add individually picked languages if these languages have
   // significant "hobbyist" community around them
   if (
     [
       'grc', // Ancient Greek
       'lat', // Latin
-    ].indexOf(language.iso_639_2b) > -1
+    ].indexOf(iso_639_2b) > -1
   ) {
     return true;
   }
@@ -52,32 +49,32 @@ function includeLanguage(language) {
   // Include all "living" languages
   // Include 19 constructed languages such as "Esperanto"
   // Ignores all other types (e.g. extinct)
-  if (['constructed', 'living'].indexOf(language.type) === -1) {
-    return false;
+  if (['constructed', 'living'].includes(type)) {
+    return true;
   }
 
   // Include all 37 creole languages
   // `i` in regexp means "ignore case"
-  if (/creole/i.test(language.name)) {
+  if (/creole/i.test(name)) {
     return true;
   }
 
   // Include all 135 sign languages
   // Their names always end to "Sign Language" in our data
   // e.g. "Finnish Sign Language"
-  if (_.endsWith(language.name, 'Sign Language')) {
+  if (name.endsWith('Sign Language')) {
     return true;
   }
 
   // Include everything with `iso_639_2b/b` code available
   // @link https://en.wikipedia.org/wiki/ISO_639-2#B_and_T_codes
-  if (language.iso_639_2b || language.iso_639_2t) {
+  if (iso_639_2b || iso_639_2t) {
     return true;
   }
 
-  // Include languages such as "Serbo-Croatian"
-  // which don't necessarily have `iso_639_2b` code.
-  if (language.scope === 'macro_language') {
+  // Include umbarella languages such as "Serbo-Croatian", "Arabic", "Chinese"
+  // These don't necessarily have `iso_639_2b` code.
+  if (scope === 'macro_language') {
     return true;
   }
 
@@ -90,21 +87,21 @@ function includeLanguage(language) {
  * otherwise looks for other keys and prefixes them with ISO used, e.g.:
  * `iso_639_3-LANGUAGECODE`
  */
-function getKey(language) {
-  if (language.iso_639_2b) {
-    return language.iso_639_2b;
+function getKey({ iso_639_2b, iso_639_2t, iso_639_3, iso_639_1 }) {
+  if (iso_639_2b) {
+    return iso_639_2b;
   }
 
-  if (language.iso_639_2t) {
-    return 'iso_639_2t-' + language.iso_639_2t;
+  if (iso_639_2t) {
+    return 'iso_639_2t-' + iso_639_2t;
   }
 
-  if (language.iso_639_3) {
-    return 'iso_639_3-' + language.iso_639_3;
+  if (iso_639_3) {
+    return 'iso_639_3-' + iso_639_3;
   }
 
-  if (language.iso_639_1) {
-    return 'iso_639_1-' + language.iso_639_1;
+  if (iso_639_1) {
+    return 'iso_639_1-' + iso_639_1;
   }
 
   // Failed to find key
@@ -118,7 +115,8 @@ function collectLanguages() {
   const languagesOrig = require('./languages_orig.json');
   const languagesNew = {};
 
-  _.forEach(languagesOrig, function (language) {
+  // Loop main source for languages
+  languagesOrig.forEach(language => {
     // Pick a key
     // Most of the time `iso_639_2b` is what we need but it's not always available
     const key = getKey(language);
@@ -136,7 +134,7 @@ function collectLanguages() {
 
     // Ensure we're not overwriting anything
     if (languagesNew[key]) {
-      console.warn('Language for key ' + key + ' exists already:');
+      console.warn(`Language for key ${key} exists already:`);
       console.log(languagesNew[key]);
       console.log('Attempted to collect language:');
       console.log(language);
@@ -147,13 +145,7 @@ function collectLanguages() {
     languagesNew[key] = fixName(language.name);
   });
 
-  console.log(
-    'Picked ' +
-      _.keys(languagesNew).length +
-      ' languages from total ' +
-      languagesOrig.length +
-      ' languages.',
-  );
+  console.log(`Picked total ${Object.keys(languagesNew).length} languages.`);
 
   return languagesNew;
 }
@@ -162,19 +154,18 @@ function collectLanguages() {
  * Generate languages and write them to a file
  */
 function generate(targetFile) {
-  console.log('');
-  console.log('Generating languages...');
+  console.log('\nGenerating languages...');
 
   const languages = collectLanguages();
   const languagesString = JSON.stringify(languages);
 
-  fs.writeFile(targetFile, languagesString, function (err) {
-    if (err) {
-      console.error('Failed saving languages to file `' + targetFile + '`');
-      console.error(err);
+  fs.writeFile(targetFile, languagesString, error => {
+    if (error) {
+      console.error(`Failed saving languages to file ${targetFile}`);
+      console.error(error);
       return;
     }
-    console.log('Languages saved to file `' + targetFile + '`');
+    console.log(`Languages saved to file ${targetFile}`);
   });
 }
 
