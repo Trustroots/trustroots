@@ -95,7 +95,26 @@ exports.renderServiceWorkerConfig = function (req, res) {
     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
 };
 
+/**
+ * Format languages from object format into array compatible with React component used in UI
+ */
+function languageObjectToArray(languages) {
+  const langsArr = [];
+
+  Object.entries(languages).forEach(language => {
+    langsArr.push({ value: language[0], label: language[1] });
+  });
+
+  return langsArr;
+}
+
 exports.getLanguages = (req, res) => {
-  const languages = require(path.resolve('config/languages/languages.json'));
+  let languages = require(path.resolve('config/languages/languages.json'));
+
+  // Reformat object into array if so requested
+  if (req?.query?.format === 'array') {
+    languages = languageObjectToArray(languages);
+  }
+
   res.json(languages);
 };

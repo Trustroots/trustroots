@@ -14,7 +14,10 @@ const rules = {
   'guard-for-in': 2,
   'key-spacing': [2, { beforeColon: false, afterColon: true }],
   'keyword-spacing': [2, { before: true, after: true }],
-  'new-cap': [2, { newIsCapExceptions: ['acl.memoryBackend', 'acl'] }],
+  'new-cap': [
+    2,
+    { newIsCapExceptions: ['acl.memoryBackend', 'acl', 'useQueryClient'] },
+  ],
   'no-caller': 2,
   'no-console': isDevelopment ? 1 : 2,
   'no-duplicate-imports': 2,
