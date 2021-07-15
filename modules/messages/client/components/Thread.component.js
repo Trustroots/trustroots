@@ -225,7 +225,12 @@ export default function Thread({ user, profileMinimumLength }) {
   }
 
   async function sendMessage(content) {
-    const message = await api.messages.sendMessage(otherUser._id, content);
+    const message = await api.messages
+      .sendMessage(otherUser._id, content)
+      .catch((error, net) => {
+        console.log('send fail:', error, net); //eslint-disable-line
+        return [];
+      });
     setMessages(messages => [...messages, message]);
     focus();
   }
