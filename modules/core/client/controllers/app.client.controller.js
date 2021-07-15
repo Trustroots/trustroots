@@ -239,10 +239,7 @@ function AppController(
           toState.requiresAuth = true;
         }
         // Check if user has the required role
-        else if (
-          Authentication.user &&
-          !Authentication.user.roles.includes(toState.requiresRole)
-        ) {
+        else if (!Authentication?.user?.roles?.includes(toState.requiresRole)) {
           event.preventDefault();
           $window.alert(
             'This page would require you to be a Trustroots volunteer. Wanna help us build Trustroots?',
