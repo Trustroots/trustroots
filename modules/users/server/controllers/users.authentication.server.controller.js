@@ -81,6 +81,7 @@ exports.signup = function (req, res) {
         // (from where it's then again moved to email field)
         user.emailTemporary = user.email;
 
+        user.emailTokenDate = Date.now();
         user.emailToken = authenticationService.generateEmailToken(user, salt);
 
         // Then save the user
@@ -650,14 +651,32 @@ exports.extendFBAccessToken = function (shortAccessToken, callback) {
  * Confirm email GET from email token
  */
 exports.validateEmailToken = function (req, res) {
+  console.log('🛑 validateEmailToken:'); //eslint-disable-line
   User.findOne(
     {
       emailToken: req.params.token,
     },
     function (err, user) {
       if (!user) {
+        // Add failure tracking
         return res.redirect('/confirm-email-invalid');
       }
+      // Success tracking here
+
+      const isSignup = !user.public;
+
+      console.log('🛑 user:validateEmailToken', user); //eslint-disable-line
+      console.log('🛑 emailTokenDate:', user.emailTokenDate); //eslint-disable-line
+
+      // did we say this code is never used?
+      const timeFromEmail = moment().diff(
+        moment(user.emailTokenDate),
+        'seconds',
+      );
+
+      console.log('🛑 isSignup:', isSignup); //eslint-disable-line
+      console.log('🛑 timeFromEmail:', timeFromEmail); //eslint-disable-line
+
       res.redirect('/confirm-email/' + req.params.token);
     },
   );
@@ -685,12 +704,65 @@ exports.confirmEmail = function (req, res) {
 
               done(null, result, user);
             } else {
+              // I think this should NOT be here but I'm not sure where to get the user from so maybe it shoudl?.
+
+              const timeSinceEmail = moment().diff(
+                moment(user.emailTokenDate),
+                'seconds',
+              );
+              const statsObject = {
+                namespace: 'email-confirm',
+                counts: {
+                  count: 1,
+                  timeSinceEmail: timeSinceEmail,
+                },
+                tags: {
+                  state: 'failed',
+                  err_message: 'bad token',
+                  signup: user.public ? 'no' : 'yes',
+                },
+              };
+
+              statService.stat(statsObject, function () {});
+
               return res.status(400).send({
                 message: 'Email confirm token is invalid or has expired.',
               });
             }
           },
         );
+      },
+
+      // @TODO:
+      // - tags: do they need to be strings or are booleans ok? made them strings for now
+      // - add failure logging here - how do I get the user in the error function?
+
+      function (result, user, done) {
+        // @TODO: remove
+        const isSignup = !user.public;
+        console.log('🛑 emailTokenDate:', user.emailTokenDate); //eslint-disable-line
+        const timeSinceEmail = moment().diff(
+          moment(user.emailTokenDate),
+          'seconds',
+        );
+        console.log('🛑 isSignup:', isSignup); //eslint-disable-line
+        console.log('🛑 timeSinceEmail:', timeSinceEmail); //eslint-disable-line
+
+        const statsObject = {
+          namespace: 'email-confirm',
+          counts: {
+            count: 1,
+            timeSinceEmail: timeSinceEmail,
+          },
+          tags: {
+            state: 'success',
+            signup: user.public ? 'no' : 'yes',
+          },
+        };
+
+        statService.stat(statsObject, function () {
+          done(null, result, user);
+        });
       },
 
       // Update user
@@ -703,6 +775,7 @@ exports.confirmEmail = function (req, res) {
             $unset: {
               emailTemporary: 1,
               emailToken: 1,
+              emailTokenDate: 1,
               // Note that `publicReminderCount` and `publicReminderSent` get reset now each
               // time user confirms any email change, even if they didn't confirm their profile yet.
               // That's fine: we'll just start sending 'finish signup' notifications from scratch
@@ -749,6 +822,27 @@ exports.confirmEmail = function (req, res) {
     ],
     function (err) {
       if (err) {
+        // I think this should also be here but I'm not sure where to get the user from.
+        // have to be carefull because the data we rely on gets set in the database beforehand
+        /*
+          const timeSinceEmail = moment().diff(
+          moment(user.emailTokenDate),
+          'seconds',
+          );
+          const statsObject = {
+          namespace: 'email-confirm',
+          counts: {
+            count: 1,
+            timeSinceEmail: timeSinceEmail,
+          },
+          tags: {
+            state: 'failed',
+            err_message: 'bad token',
+            signup: user.public ? 'no' : 'yes',
+          },
+        };
+
+        statService.stat(statsObject, function () {}); */
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
         });
@@ -795,6 +889,7 @@ exports.resendConfirmation = function (req, res) {
       function (salt, done) {
         const user = req.user;
         user.updated = Date.now();
+        user.emailTokenDate = Date.now();
         user.emailToken = authenticationService.generateEmailToken(user, salt);
         user.save(function (err) {
           if (err) return done(err);
