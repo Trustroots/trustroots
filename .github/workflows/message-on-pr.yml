@@ -1,8 +1,9 @@
-name: Send a hello world to matrix every 5 minutes
+name: Notify matrix when pull request was opened
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'
+  workflow_dispatch:
+  pull_request:
+      types: [opened, reopened]
 
 jobs:
   ping_matrix:
