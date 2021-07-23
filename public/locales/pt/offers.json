@@ -2,5 +2,22 @@
     "Send a message": "Enviar uma mensagem",
     "At most {{count}} guests.": "No máximo, um hóspede.",
     "At most {{count}} guests._plural": "No máximo, {{count}} hóspedes.",
-    "Accommodation": "Alojamento"
+    "Accommodation": "Alojamento",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Viajando? Organizando um evento? Apenas fazendo um jantar e gostaria de convidar pessoas?",
+    "Travelling? Organising an event?": "Viajando? Organizando um evento?",
+    "Start hosting travellers": "Começar a hospedar viajantes",
+    "Sorry, user is not hosting currently.": "Desculpe, o usuário não está hospedando atualmente.",
+    "Open on device": "Abrir no dispositivo",
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "Oferecer hospitalidade e acolher \"estranhos\" em nossas casas fortalece nossa fé uns nos outros.",
+    "No guests.": "Nenhum hóspede.",
+    "Modify hosting offer": "Modificar oferta de hospedagem",
+    "Might be able to host": "Talvez possa hospedar",
+    "Meetups stay visible on map at most one month.": "Encontros permanecem visíveis no mapa por no máximo um mês.",
+    "Meet people": "Conhecer pessoas",
+    "Just making a dinner and would like to invite people over?": "Apenas preparando um jantar e gostaria de convidar pessoas para participar?",
+    "Cannot host currently": "Não posso hospedar agora",
+    "Can host": "Posso hospedar",
+    "Bigger map": "Mapa ampliado",
+    "Add it to map!": "Adicionar ao mapa!",
+    "Change": "Alterar"
 }
