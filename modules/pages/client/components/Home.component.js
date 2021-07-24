@@ -22,6 +22,7 @@ import screenshotSearchPng2x from '../img/screenshot-search-2x.png';
 import screenshotSearchWebp from '../img/screenshot-search.webp';
 import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
+import { brandName } from '@/modules/core/client/components/Map/constants.js';
 
 /**
  * List of photos to randomly pick as cover photo for homepage
@@ -158,7 +159,9 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     href={getSignupUrl(circleRoute)}
                     className="btn btn-action btn-default home-join hidden-xs"
                   >
-                    {t('Join Trustroots now')}
+                    {t('Join {{brandName}} now', {
+                      brandName,
+                    })}
                   </a>
                   {!isNativeMobileApp && (
                     <div className="home-apps">
