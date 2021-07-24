@@ -2,6 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
+import { brandName } from './Map/constants';
 
 // Internal dependencies
 import LanguageSwitch from './LanguageSwitch';
@@ -18,7 +19,11 @@ export default function NavigationLoggedOut({ currentPath }) {
       >
         {/* a span for centering the main header content */}
         <span className="flex-side"></span>
-        <span className="header-welcome-text hidden-xs">Testing</span>
+        <span className="header-welcome-text hidden-xs">
+          {t('New to {{brandName}}?', {
+            brandName,
+          })}
+        </span>
         <a href="/signup" className="btn btn-lg btn-default">
           {t('Join')}
         </a>
