@@ -64,10 +64,10 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@sentry/browser": "6.9.0",
-    "@sentry/integrations": "6.9.0",
-    "@sentry/node": "6.9.0",
-    "@sentry/tracing": "6.9.0",
+    "@sentry/browser": "6.10.0",
+    "@sentry/integrations": "6.10.0",
+    "@sentry/node": "6.10.0",
+    "@sentry/tracing": "6.10.0",
     "acl": "0.4.11",
     "agenda": "1.0.3",
     "angular": "1.6.10",
