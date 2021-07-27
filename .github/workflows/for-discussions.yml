@@ -1,0 +1,18 @@
+name: Notify matrix when a discussion is started
+
+on:
+  discussion:
+      types: [opened, transferred]
+
+jobs:
+  ping_matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: send message for a discussion
+        uses: s3krit/matrix-message-action@v0.0.3
+        with:
+          room_id: ${{ secrets.MATRIX_ROOM_ID }}
+          access_token: ${{ secrets.MATRIX_ACCESS_TOKEN }}
+          message: "${{ github.event.discussion.user.login }} has just opened an issue: _\"${{ github.event.discussion.title }}\"_\n
+          ${{ github.event.discussion.html_url }}"
+          server: "matrix.org"
