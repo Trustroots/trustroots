@@ -1,13 +1,11 @@
 {
-    "Lives in <2>{{locationLiving}}</2>": "Vive em <2>{{locationLiving}}</2>",
-    "Wait a moment…": "Espera um momento…",
-    "Cancel": "Cancelar",
     "{{count}} contacts": "{{count}} contato",
     "{{count}} contacts_plural": "{{count}} contatos",
     "You received a contact request.": "Você recebeu uma solicitação de contato.",
     "Yes, revoke request": "Sim, anular solicitação",
     "Yes, remove contact": "Sim, remover contato",
     "Yes, decline request": "Sim, recusar solicitação",
+    "Wait a moment…": "Espera um momento…",
     "Since {{created, LL}}": "Desde {{created, LL}}",
     "Search contacts": "Buscar contatos",
     "Revoke contact request?": "Anular solicitação de contato?",
@@ -16,10 +14,12 @@
     "Requested {{created, LL}}": "Solicitado {{created, LL}}",
     "Remove contact?": "Remover contato?",
     "No contacts yet.": "Sem contatos por enquanto.",
+    "Lives in <2>{{locationLiving}}</2>": "Vive em <2>{{locationLiving}}</2>",
     "From <2>{{locationFrom}}</2>": "De <2>{{locationFrom}}</2>",
     "Decline contact request?": "Recusar solicitação de contato?",
     "Decline Request": "Recusar Solicitação",
     "Contact request sent and pending.": "Solicitação de contato enviada e pendente.",
     "Connected since {{date, LL}}": "Conectado desde {{date, LL}}",
-    "Confirm Request": "Confirmar Solicitação"
+    "Confirm Request": "Confirmar Solicitação",
+    "Cancel": "Cancelar"
 }
