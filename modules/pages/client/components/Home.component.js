@@ -80,23 +80,25 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
+function rounded(number, round = 5000) {
+  return parseInt(number / round) * round;
+}
+
 export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
   const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
   const circleRoute = circleRouteParam || tribeRouteParam;
 
-  const [stats, setStats] = useState([]);
-  useEffect(() => {
-    async function fetchData() {
-      const stats = await statisticsAPI.get({ limit: 3 });
-      setStats(stats);
-    }
-    fetchData();
+  const [statistics, setStats] = useState(false);
+  useEffect(async () => {
+    const { data } = await statisticsAPI.get();
+    setStats(data);
   }, []);
   // @TODO change this to be based on UI language rather than browser locale
+  const lastKnownMemberCount = 60000;
   const memberCount = new Intl.NumberFormat().format(
-    !stats ? 60000 : stats?.total,
+    rounded(statistics ? statistics?.total : lastKnownMemberCount),
   );
 
   // TODO get header height instead of magic number 56
