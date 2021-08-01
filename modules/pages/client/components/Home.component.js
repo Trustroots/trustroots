@@ -9,6 +9,7 @@ import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
+import * as statisticsAPI from '@/modules/statistics/client/api/statistics.api';
 import Board from '@/modules/core/client/components/Board.js';
 import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
 import ManifestoText from './ManifestoText.component.js';
@@ -85,8 +86,18 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
   const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
   const circleRoute = circleRouteParam || tribeRouteParam;
 
+  const [stats, setStats] = useState([]);
+  useEffect(() => {
+    async function fetchData() {
+      const stats = await statisticsAPI.get({ limit: 3 });
+      setStats(stats);
+    }
+    fetchData();
+  }, []);
   // @TODO change this to be based on UI language rather than browser locale
-  const memberCount = new Intl.NumberFormat().format(60000);
+  const memberCount = new Intl.NumberFormat().format(
+    !stats ? 60000 : stats?.total,
+  );
 
   // TODO get header height instead of magic number 56
   // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
