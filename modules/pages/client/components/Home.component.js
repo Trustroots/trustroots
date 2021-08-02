@@ -80,7 +80,7 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
-function rounded(number, round = 5000) {
+function rounded(number, round = 1000) {
   return parseInt(number / round) * round;
 }
 
