@@ -22,7 +22,6 @@ import 'leaflet-active-area/src/leaflet.activearea';
 
 import ngFileUpload from 'ng-file-upload';
 
-import 'angular-chosen-localytics';
 import 'angular-loading-bar';
 import trTrustpass from 'angular-trustpass';
 import 'mailcheck'; // required for angular-mailcheck
@@ -30,9 +29,6 @@ import 'angular-mailcheck'; // provides 'angular-mailcheck' module
 import angularLocker from 'angular-locker';
 import 'angular-confirm'; // provides 'angular-confirm' module
 import angularGrid from 'angulargrid';
-
-import 'chosen-js/chosen.jquery.js';
-import 'angular-chosen-localytics/dist/angular-chosen.js';
 
 import ngreact from 'ngreact';
 
@@ -64,7 +60,6 @@ const appModuleVendorDependencies = compact([
   'nemLogging',
   'ui-leaflet',
   ngFileUpload,
-  'localytics.directives',
   'angular-loading-bar',
   trTrustpass,
   'angular-mailcheck',

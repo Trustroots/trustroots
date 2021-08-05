@@ -133,15 +133,11 @@ function SearchController(
   /**
    * Fired for changes at languages filters
    */
-  function onLanguageFiltersChange() {
-    // `vm.filters.languages` is still out of sync at this point,
-    // but in next cycle after `$timeout` we have updated version.
-    $timeout(function () {
-      // Save new value to cache
-      FiltersService.set('languages', vm.filters.languages || []);
-
-      onFiltersUpdated();
-    });
+  function onLanguageFiltersChange(languages) {
+    console.log('onLanguageFiltersChange:', languages); //eslint-disable-line
+    vm.filters.languages = languages;
+    FiltersService.set('languages', languages);
+    onFiltersUpdated();
   }
 
   /**

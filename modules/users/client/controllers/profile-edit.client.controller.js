@@ -10,6 +10,11 @@ function ProfileEditController($scope, $confirm, $state) {
   // Exposed to the view
   vm.unsavedModifications = false;
 
+  // Set that there are modifications
+  $scope.$on('userChanged', function () {
+    vm.unsavedModifications = true;
+  });
+
   // Clear modifications
   $scope.$on('userUpdated', function () {
     vm.unsavedModifications = false;

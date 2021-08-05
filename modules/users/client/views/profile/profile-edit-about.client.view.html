@@ -212,23 +212,11 @@
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="col-sm-3 text-right control-label" id="label-languages"
-            >Languages (old)</label
-          >
-          <div class="col-sm-9 col-md-7 col-lg-6">
-            <div
-              tr-languages="profileEditAbout.user.languages"
-              ng-change="profileEdit.unsavedModifications = true"
-              aria-labelledby="label-languages"
-            ></div>
-            <p class="help-block">Add languages you speak.</p>
-          </div>
-        </div>
-
-        <languages-panel
+        <profile-edit-languages
+          onChangeLanguages="profileEditAbout.onChangeLanguages"
+          ng-change="profileEdit.unsavedModifications = true"
           profileLanguages="profileEditAbout.user.languages"
-        ></languages-panel>
+        ></profile-edit-languages>
       </div>
     </div>
   </div>
