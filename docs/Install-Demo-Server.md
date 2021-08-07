@@ -23,8 +23,9 @@ Source: https://www.digitalocean.com/community/tutorials/how-to-install-nginx-on
 ```
 sudo apt install nginx
 sudo ufw allow 'Nginx HTTP'
-Passenger
 ```
+
+## Passenger
 
 Now we setup Passenger by running these commands one at a time.
 Source: https://www.phusionpassenger.com/library/install/nginx/install/oss/bionic/
