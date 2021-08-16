@@ -1,8 +1,8 @@
 {
     "{{count}} unread messages": "{{count}} mensagem não lida",
     "{{count}} unread messages_plural": "{{count}} mensagens não lidas",
-    "Your response won't be visible to them.": "Sua resposta não ficará visível para ele.",
-    "Your profile seems quite empty.": "Seu perfil parece muito vazio.",
+    "Your response won't be visible to them.": "Sua resposta não ficará visível.",
+    "Your profile seems quite empty.": "Seu perfil parece bastante vazio.",
     "You're much more likely to get a positive response if you have written a bit about yourself.": "É mais provável que você receba uma resposta positiva se escrever um pouco sobre você.",
     "You replied": "Você respondeu",
     "You": "Você",
@@ -11,7 +11,7 @@
     "Write back": "Responder",
     "What are your expectations in regards with going through their town?": "Quais são suas expectativas em relação à visita à cidade deste membro?",
     "Unknown member": "Membro desconhecido",
-    "Trustroots is very much about spontaneous travel": "Trustroots é sobre viajar de modo espontâneo",
+    "Trustroots is very much about spontaneous travel": "Trustroots tem tudo a ver com viagens espontâneas",
     "Tip": "Dica",
     "This user isn't a member anymore.": "Este usuário não é mais um membro.",
     "Tell your host why you're on a trip": "Conte ao seu anfitrião por que você está viajando",
@@ -29,8 +29,9 @@
     "Explain to them why you are choosing them": "Explique a ele por que você o escolheu",
     "Edit your profile": "Editar o seu perfil",
     "Don't write to people 2 months ahead.": "Não escreva para as pessoas com 2 meses de antecedência.",
-    "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Você acha as mensagens dessa pessoa educadas, respeitosas e no espírito do Trustroots?",
-    "Conversation started {{ date }}": "Conversa iniciada {{ date }}",
+    "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Você acha que as mensagens dessa pessoa são educadas, respeitosas e no espírito do Trustroots?",
+    "Conversation started {{ date }}": "Conversa iniciada em {{ date }}",
     "Change": "Alterar",
-    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "... explicando que você está interessado em conhecê-lo, não apenas procurando acomodação de graça."
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "... explicando que você está interessado em conhecê-lo, não apenas procurando acomodação de graça.",
+    "You haven't been talking yet.": "Vocês ainda não trocaram mensagens."
 }
