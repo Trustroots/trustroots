@@ -54,5 +54,20 @@
     "Besides your personal experience, would you recommend others to meet them?": "Além de sua experiência pessoal, você recomendaria que outras pessoas se encontrassem com ele?",
     "Besides your personal experience, would you recommend others to host them?": "Além de sua experiência pessoal, você recomendaria que outras pessoas o hospedassem?",
     "All experiences are by male members.": "Todas as experiências são de membros do sexo masculino.",
-    "All experiences are by female members.": "Todas as experiências são de membros do sexo feminino."
+    "All experiences are by female members.": "Todas as experiências são de membros do sexo feminino.",
+    "{{count}} recommended them.": "Um membro o recomendou.",
+    "{{count}} recommended them._plural": "{{count}} membros o recomendaram.",
+    "{{count}} members shared their experiences.": "Um membro compartilhou sua experiência.",
+    "{{count}} members shared their experiences._plural": "{{count}} membros compartilharam suas experiências.",
+    "{{count}} did not recommend.": "Um membro não recomendou.",
+    "{{count}} did not recommend._plural": "{{count}} membros não recomendaram.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.": "Sua experiência se tornará pública quando {{name}} compartilhar sua própria experiência, ou no máximo em {{count}} dia.",
+    "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._plural": "Sua experiência se tornará pública quando {{name}} compartilhar sua própria experiência, ou no máximo em {{count}} dias.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you.": "Sua experiência se tornará pública em {{count}} dia, ou quando ele compartilhar a experiência dele com você.",
+    "Your experience will become public in {{count}} days, or when they share their experience with you._plural": "Sua experiência se tornará pública em {{count}} dias, ou quando ele compartilhar a experiência dele com você.",
+    "You have {{count}} days left to respond before their experience will become public.": "Você tem {{count}} dia para responder antes que a experiência se torne pública.",
+    "You have {{count}} days left to respond before their experience will become public._plural": "Você tem {{count}} dias para responder antes que a experiência se torne pública.",
+    "You also reported them to us. Please do <2>get in touch with us</2> if you have any further info to add.": "Você também reportou esse membro. Por favor, <2>entre em contato conosco</2> se você tiver mais informações a adicionar.",
+    "Was hosted by {{percentage}}% of members.": "Foi hospedado por {{percentage}}% dos membros.",
+    "They hosted {{percentage}}% of members.": "Eles hospedaram {{percentage}}% dos membros."
 }
