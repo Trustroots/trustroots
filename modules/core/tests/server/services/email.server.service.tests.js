@@ -35,7 +35,7 @@ describe('Service: email', function () {
         jobs[0].data[format].should.containEql(
           'Confirm your email address (' +
             user.emailTemporary +
-            ') to complete your Trustroots account.',
+            ') to complete your account.',
         );
         jobs[0].data[format].should.containEql(
           '/confirm-email/' + user.emailToken,
