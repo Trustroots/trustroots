@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { brandName } from './Map/constants';
+import { brandName } from '@/modules/core/client/utils/constants';
 
 // Internal dependencies
 import LanguageSwitch from './LanguageSwitch';

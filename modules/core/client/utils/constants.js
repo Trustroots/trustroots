@@ -4,3 +4,4 @@ export const DEFAULT_LOCATION = {
   lng: 9.14055555556,
   zoom: 6,
 };
+export const brandName = 'Bicycle Touring Community';

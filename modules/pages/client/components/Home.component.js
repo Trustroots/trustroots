@@ -22,7 +22,7 @@ import screenshotSearchPng2x from '../img/screenshot-search-2x.png';
 import screenshotSearchWebp from '../img/screenshot-search.webp';
 import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
-import { brandName } from '@/modules/core/client/components/Map/constants.js';
+import { brandName } from '@/modules/core/client/utils/constants';
 
 /**
  * List of photos to randomly pick as cover photo for homepage
