@@ -10,8 +10,8 @@ export function enable() {
         favicon.href = '/img/favicon-notification.png';
         favicon2x.href = '/img/favicon-notification@2x.png';
       } else {
-        favicon.href = '/img/favicon.png';
-        favicon2x.href = '/img/favicon@2x.png';
+        favicon.href = '/img/placeholder.png';
+        favicon2x.href = '/img/placeholder.png';
       }
     });
   });

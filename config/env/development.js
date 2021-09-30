@@ -35,8 +35,8 @@ module.exports = {
     checkCompatibility: true,
   },
   app: {
-    title: 'Trustroots Development version',
-    description: 'Trustroots development version.',
+    title: 'Federated platform xyz',
+    description: 'Federated platform xyz is about abc',
   },
   // Configuration to work with default MailDev dev setup
   // https://github.com/djfarrelly/MailDev

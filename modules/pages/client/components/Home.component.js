@@ -136,7 +136,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 <div className="col-xs-12 col-sm-8 col-sm-offset-2">
                   <img
                     className="home-logo hidden-xs center-block"
-                    src="/img/logo/white.svg"
+                    src="/img/logo/Placeholder_view_vector.svg"
                     alt="Trustroots"
                     width="210"
                     height="210"
@@ -144,7 +144,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   />
                   <img
                     className="home-logo visible-xs-block center-block"
-                    src="/img/logo/white.svg"
+                    src="/img/logo/Placeholder_view_vector.svg"
                     alt="Trustroots"
                     width="130"
                     height="130"
@@ -332,7 +332,9 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                     href={getSignupUrl(circleRoute)}
                     className="btn btn-lg btn-action btn-default"
                   >
-                    {t('Join Trustroots')}
+                    {t('Join {{brandName}}', {
+                      brandName,
+                    })}
                   </a>
                 </p>
               )}

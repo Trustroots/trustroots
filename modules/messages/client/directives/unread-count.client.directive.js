@@ -75,12 +75,12 @@ function messagesUnreadCountDirective(PollMessagesCount, Authentication) {
 
       if (newUnreadCount > 0) {
         // Change favicon to special notification icon
-        favicon1xElem.prop('href', faviconPath + 'favicon-notification.png');
-        favicon2xElem.prop('href', faviconPath + 'favicon-notification@2x.png');
+        favicon1xElem.prop('href', faviconPath + 'placeholder.png');
+        favicon2xElem.prop('href', faviconPath + 'placeholder.png');
       } else {
         // Change favicon back to normal
-        favicon1xElem.prop('href', faviconPath + 'favicon.png');
-        favicon2xElem.prop('href', faviconPath + 'favicon@2x.png');
+        favicon1xElem.prop('href', faviconPath + 'placeholder.png');
+        favicon2xElem.prop('href', faviconPath + 'placeholder.png');
       }
     }
   }
