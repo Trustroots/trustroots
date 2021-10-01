@@ -56,7 +56,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
       </Nav>
 
       <Nav className="nav-header-primary">
-        <MenuItem
+        {/*         <MenuItem
           currentPath={currentPath}
           path="/circles"
           aria-label={t('Circles')}
@@ -68,7 +68,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
             size="lg"
           />
           <span className="hidden-xs">{t('Circles')}</span>
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem
           currentPath={currentPath}
           path="/search"
@@ -158,7 +158,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 href: '/',
                 label: t('About'),
               },
-              {
+              /*               {
                 href: '/volunteering',
                 label: t('Volunteering'),
               },
@@ -185,10 +185,10 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
               {
                 href: '/rules',
                 label: t('Rules'),
-              },
+              }, */
             ]}
           />
-          <DropMenuItem divider />
+          {/*           <DropMenuItem divider />
           <SubMenuList
             list={[
               {
@@ -211,7 +211,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('Blog'),
               },
             ]}
-          />
+          /> */}
         </NavDropdown>
         <MenuItem
           aria-label={t('My profile, info and support')}
