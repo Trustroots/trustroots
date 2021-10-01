@@ -10,7 +10,7 @@ export default function Welcome() {
         <div className="col-xs-offset-2 col-xs-8 col-md-offset-3 col-md-6 text-center">
           <img
             className="hidden-xs"
-            src="/img/tree-color.svg"
+            src="/placeholder.png"
             alt="Trustroots"
             width="120"
             height="120"
@@ -18,7 +18,7 @@ export default function Welcome() {
           />
           <img
             className="visible-xs-inline-block"
-            src="/img/tree-color.svg"
+            src="/placeholder.png"
             alt="Trustroots"
             width="80"
             height="80"
