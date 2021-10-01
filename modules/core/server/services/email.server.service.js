@@ -18,6 +18,7 @@ const agenda = require(path.resolve('./config/lib/agenda'));
 const config = require(path.resolve('./config/config'));
 const log = require(path.resolve('./config/lib/logger'));
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+const brandName = config.brandName;
 
 /**
  * Get a randomized name from a list of support volunteer names.
@@ -41,8 +42,8 @@ exports.sendMessagesUnread = function (
 
   // Generate mail subject
   const mailSubject = isFirst
-    ? userFrom.displayName + ' wrote you from Trustroots'
-    : userFrom.displayName + ' is still waiting for a reply on Trustroots';
+    ? userFrom.displayName + ' wrote you from ' + brandName
+    : userFrom.displayName + ' is still waiting for a reply on ' + brandName;
 
   // URLs to use at email templates
   const urlUserFromProfile = url + '/profile/' + userFrom.username;
@@ -128,7 +129,7 @@ exports.sendRemoveProfile = function (user, callback) {
   const campaign = 'remove-profile';
 
   const params = exports.addEmailBaseTemplateParams({
-    subject: 'Confirm removing your Trustroots profile',
+    subject: 'Confirm removing your ' + brandName + ' profile',
     name: user.displayName,
     email: user.email,
     utmCampaign: campaign,
@@ -150,7 +151,7 @@ exports.sendRemoveProfileConfirmed = function (user, callback) {
   const campaign = 'remove-profile-confirmed';
 
   const params = exports.addEmailBaseTemplateParams({
-    subject: 'Your Trustroots profile has been removed',
+    subject: 'Your ' + brandName + ' profile has been removed',
     name: user.displayName,
     email: user.email,
     utmCampaign: campaign,
@@ -225,7 +226,7 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
   const campaign = 'confirm-email';
 
   const params = exports.addEmailBaseTemplateParams({
-    subject: 'Confirm Email',
+    subject: 'Confirm ' + brandName + ' Registration',
     name: user.displayName,
     email: user.emailTemporary || user.email,
     urlConfirmPlainText: urlConfirm,
@@ -253,8 +254,8 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
   }
 
   const params = {
-    from: 'Trustroots Support <' + config.supportEmail + '>',
-    name: 'Trustroots Support', // `To:`
+    from: brandName + ' Support <' + config.supportEmail + '>',
+    name: brandName + ' Support', // `To:`
     email: config.supportEmail, // `To:`
     replyTo,
     subject,
@@ -278,7 +279,7 @@ exports.sendSignupEmailReminder = function (user, callback) {
     : 1;
 
   const params = exports.addEmailBaseTemplateParams({
-    subject: 'Complete your signup to Trustroots',
+    subject: 'Complete your signup to ' + brandName,
     name: user.displayName,
     email: user.emailTemporary || user.email,
     urlConfirmPlainText: urlConfirm,
@@ -296,7 +297,8 @@ exports.sendSignupEmailReminder = function (user, callback) {
 
   // This will be the last reminder, mention that at the email subject line
   if (user.publicReminderCount + 1 === config.limits.maxSignupReminders) {
-    params.subject = 'Last chance to complete your signup to Trustroots!';
+    params.subject =
+      'Last chance to complete your signup to ' + brandName + '!';
   }
 
   exports.renderEmailAndSend('signup-reminder', params, callback);
@@ -312,7 +314,7 @@ exports.sendReactivateHosts = function (user, callback) {
   };
 
   const params = exports.addEmailBaseTemplateParams({
-    subject: user.firstName + ', start hosting on Trustroots again?',
+    subject: user.firstName + ', start hosting on ' + brandName + ' again?',
     firstName: user.firstName,
     name: user.displayName,
     email: user.email,
@@ -346,7 +348,7 @@ exports.sendWelcomeSequenceFirst = function (user, callback) {
   };
 
   const params = exports.addEmailBaseTemplateParams({
-    subject: '👋 Welcome to Trustroots ' + user.firstName + '!',
+    subject: '👋 Welcome to ' + brandName + ' ' + user.firstName + '!',
     from: {
       name: getSupportVolunteerName(),
       // Use support email instead of default "no-reply@":
@@ -378,7 +380,7 @@ exports.sendWelcomeSequenceSecond = function (user, callback) {
   };
 
   const params = exports.addEmailBaseTemplateParams({
-    subject: 'Meet new people at Trustroots, ' + user.firstName,
+    subject: 'Meet new people at ' + brandName + ', ' + user.firstName,
     from: {
       name: getSupportVolunteerName(),
       // Use support email instead of default "no-reply@":
@@ -622,7 +624,7 @@ exports.renderEmail = function (templateName, params, callback) {
           name: params.name,
           address: params.email,
         },
-        from: params.from || 'Trustroots <' + config.mailer.from + '>',
+        from: params.from || brandName + ' <' + config.mailer.from + '>',
         subject: params.subject,
         text: result.text,
       };
