@@ -14,6 +14,7 @@ module.exports = {
   featureFlags: {
     reference: true,
   },
+  brandName: 'ohn brandname',
   app: {
     title: 'Trustroots',
     description:

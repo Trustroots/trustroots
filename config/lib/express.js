@@ -55,6 +55,7 @@ module.exports.initLocalVariables = function (app) {
       ? process.env.NODE_ENV
       : 'development';
   app.locals.appSettings = config.app;
+  app.locals.appSettings.brandName = config.brandName;
   app.locals.appSettings.mapbox = config.mapbox;
   app.locals.appSettings.time = new Date().toISOString();
   app.locals.appSettings.https = config.https;
