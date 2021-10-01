@@ -48,9 +48,9 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           id="support-dropdown"
           title={t('Support')}
         >
-          <DropMenuItem href="/faq">
+          {/*           <DropMenuItem href="/faq">
             {t('Frequently Asked Questions')}
-          </DropMenuItem>
+          </DropMenuItem> */}
           <DropMenuItem href="/support">{t('Contact us')}</DropMenuItem>
         </NavDropdown>
       </Nav>

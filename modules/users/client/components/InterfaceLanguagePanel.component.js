@@ -32,7 +32,9 @@ export default function InterfaceLanguagePanel() {
                   {t(
                     'Thanks to all our community members who helped translate!',
                   )}{' '}
-                  <a href="/volunteering">{t('You can help us out!')}</a>
+                  <a href="https://openhospitality.network/">
+                    {t('You can help us out!')}
+                  </a>
                 </p>
               </div>
             </div>

@@ -6,85 +6,6 @@
   <div class="panel panel-default">
     <div class="panel-heading">Elsewhere</div>
     <div class="panel-body">
-      <div
-        ng-if="!profileEditNetworks.isConnectedSocialAccount('facebook') ||
-                !profileEditNetworks.isConnectedSocialAccount('twitter') ||
-                !profileEditNetworks.isConnectedSocialAccount('github')"
-      >
-        <h4>Connect to</h4>
-        <ul class="list-unstyled social-profiles">
-          <li
-            class="social-profile social-profile-connect"
-            ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
-            ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)"
-          >
-            <i class="icon-lg icon-{{::providerName}} social-profile-icon"></i>
-            <a
-              class="btn btn-default text-capitalize social-profile-handle"
-              target="_top"
-              ng-href="/api/auth/{{::providerName}}"
-              ng-data-aria-label="Connect your profile to {{::providerName}}"
-            >
-              {{::providerName}}
-            </a>
-          </li>
-        </ul>
-        <br /><br />
-      </div>
-
-      <div ng-if="profileEditNetworks.hasConnectedAdditionalSocialAccounts()">
-        <h4>Connected to networks</h4>
-        <ul class="list-unstyled social-profiles">
-          <li
-            class="social-profile social-profile-connect"
-            ng-repeat="(providerName, providerData) in profileEditNetworks.user.additionalProvidersData track by providerName"
-            ng-class="{
-              'bg-danger social-profile-active': profileEditNetworks.removingSocialAccount === providerName
-            }"
-          >
-            <i
-              class="icon-fw icon-lg icon-{{::providerName}} social-profile-icon"
-            ></i>
-
-            <!-- Connection name -->
-            <button
-              class="btn btn-default text-capitalize social-profile-handle"
-              type="button"
-              ng-click="profileEditNetworks.removingSocialAccount = providerName"
-              ng-if="profileEditNetworks.removingSocialAccount !== providerName"
-              ng-data-aria-label="Disconnect your profile from {{::providerName}}"
-            >
-              {{::providerName}} (disconnect)
-            </button>
-
-            <!-- Confirm disconnecting -->
-            <span
-              class="text-danger"
-              ng-if="profileEditNetworks.removingSocialAccount === providerName"
-            >
-              Disconnect from
-              <span class="text-capitalize" ng-bind="::providerName"></span
-              >?<br />
-              <button
-                class="btn btn-danger"
-                type="button"
-                ng-click="profileEditNetworks.removeUserSocialAccount(providerName)"
-              >
-                Yes, disconnect
-              </button>
-              <button
-                class="btn btn-link"
-                type="button"
-                ng-click="profileEditNetworks.removingSocialAccount = false"
-              >
-                Cancel
-              </button>
-            </span>
-          </li>
-        </ul>
-        <br /><br />
-      </div>
-
       <div class="extsites">
         <h4>Other hospitality networks</h4>
         <!--
@@ -260,10 +181,9 @@
       <small class="text-muted">
         Connecting your profile to these networks is absolutely
         <strong>optional</strong>.<br />
-        If you do, other members in Trustroots will be able to see a link to
-        your other profile and some basic info about you and content you like
-        there. In future you will be able to use e.g. your contact list here in
-        Trustroots. We will never send any of your profile data to them.
+        If you do, other members will be able to see a link to your other
+        profile and some basic info about you and content you like there. We
+        will never send them any of your profile data.
       </small>
     </div>
   </div>

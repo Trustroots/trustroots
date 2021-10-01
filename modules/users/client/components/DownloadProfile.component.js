@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
+import { brandName } from '@/modules/core/client/utils/constants';
 
 export default function DownloadProfile({ username, userId }) {
   const { t } = useTranslation('users');
@@ -13,7 +14,10 @@ export default function DownloadProfile({ username, userId }) {
           <div className="col-xs-12 col-sm-5">
             <p className="text-muted">
               {t(
-                'Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.',
+                'Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, {{brandName}} at any time.',
+                {
+                  brandName,
+                },
               )}
             </p>
           </div>

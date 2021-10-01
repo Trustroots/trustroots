@@ -67,7 +67,7 @@
   "Unblock member \"{{username}}\"": "Unblock member \"{{username}}\"",
   "You can help us out!": "You can help us out!",
   "You have blocked this member.": "You have blocked this member.",
-  "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.",
+  "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, {{brandName}} at any time.": "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, {{brandName}} at any time.",
   "Your profile description should be longer so that you can send messages.": "Your profile description should be longer so that you can send messages.",
   "{{birthdate, age}} years.": "{{birthdate, age}} years.",
   "{{count}} contacts": "{{count}} contacts",
