@@ -164,6 +164,18 @@ this is a fallback when the contacts are loading
                 <a
                   ui-sref="profile.experiences.new({username: profileCtrl.profile.username})"
                 >
+                  <img
+                    src="https://chagai.website/WhatsApp.png"
+                    alt="Spotify"
+                    style="width: 20px; height: 20px; border: 0"
+                  />
+                  Contact me on WhatsApp
+                </a>
+              </li>
+              <li ng-if="app.appSettings.referencesEnabled">
+                <a
+                  ui-sref="profile.experiences.new({username: profileCtrl.profile.username})"
+                >
                   <i class="icon-plus-squared-alt"></i>
                   Share your experience
                 </a>
