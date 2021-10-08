@@ -173,6 +173,7 @@
     "react-i18next": "11.11.3",
     "react-map-gl": "5.3.16",
     "react-medium-editor": "1.8.1",
+    "react-phone-number-input": "3.1.32",
     "react-responsive": "8.2.0",
     "sanitize-html": "2.4.0",
     "serve-favicon": "2.5.0",
