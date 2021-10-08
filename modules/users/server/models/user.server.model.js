@@ -353,6 +353,9 @@ const UserSchema = new Schema({
     default: '',
     set: setPlainTextFieldAndLimit(500),
   },
+  externalContact: {
+    type: String,
+  },
 });
 
 /**
