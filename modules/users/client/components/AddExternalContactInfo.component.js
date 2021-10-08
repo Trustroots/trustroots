@@ -3,25 +3,16 @@ import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
+import { update } from '@/modules/users/client/api/users.api.js';
 
 export default function AddExternalContactInfo() {
   const { t } = useTranslation('users');
   // `value` will be the parsed phone number in E.164 format.
   // Example: "+12133734253".
   const [value, setValue] = useState();
-  function save() {
-    const body = {
-      user: this.state.user,
-      externalContact: value,
-    };
-
-    fetch('http://localhost:3000/addexternalcontact', {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }).then(res => res.json());
+  async function save() {
+    this.state.user.externalContact = value; // this is broken because there is no state.user here
+    await update(this.state.user);
   }
 
   return (
