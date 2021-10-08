@@ -160,9 +160,9 @@ this is a fallback when the contacts are loading
                   Send a message
                 </a>
               </li>
-              <li ng-if="app.appSettings.referencesEnabled">
+              <li ng-if="app.user.externalContact">
                 <a
-                  ui-sref="profile.experiences.new({username: profileCtrl.profile.username})"
+                  href="https://api.whatsapp.com/send?phone={app.user.externalContact}"
                 >
                   <img
                     src="https://chagai.website/WhatsApp.png"
