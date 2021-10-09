@@ -188,7 +188,6 @@ module.exports = {
     clientSecret: false,
     clientAccessToken: false,
     callbackURL: '/api/auth/facebook/callback',
-    notificationsEnabled: false,
   },
   twitter: {
     username: '',
