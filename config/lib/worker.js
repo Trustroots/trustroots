@@ -1,9 +1,41 @@
-const path = require('path');
-const config = require('../config');
 const format = require('util').format;
+const path = require('path');
+
+const config = require('../config');
 const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
+const sendEmailJob = require(path.resolve(
+  './modules/core/server/jobs/send-email.server.job',
+));
+const sendPushMessageJob = require(path.resolve(
+  './modules/core/server/jobs/send-push-message.server.job',
+));
+const messageUnreadJob = require(path.resolve(
+  './modules/messages/server/jobs/message-unread.server.job',
+));
+const dailyStatisticsJob = require(path.resolve(
+  './modules/statistics/server/jobs/daily-statistics.server.job',
+));
+const userFinishSignupJob = require(path.resolve(
+  './modules/users/server/jobs/user-finish-signup.server.job',
+));
+const reactivateHostsJob = require(path.resolve(
+  './modules/offers/server/jobs/reactivate-hosts.server.job',
+));
+const userWelcomeSequenceFirstJob = require(path.resolve(
+  './modules/users/server/jobs/user-welcome-sequence-first.server.job',
+));
+const userWelcomeSequenceSecondJob = require(path.resolve(
+  './modules/users/server/jobs/user-welcome-sequence-second.server.job',
+));
+const userWelcomeSequenceThirdJob = require(path.resolve(
+  './modules/users/server/jobs/user-welcome-sequence-third.server.job',
+));
+const experiencesPublishJob = require(path.resolve(
+  './modules/experiences/server/jobs/experiences-publish.server.job',
+));
+
 const MongoClient = require('mongodb').MongoClient;
 
 let agenda;
@@ -18,79 +50,61 @@ exports.start = (options, callback) => {
     agenda.define(
       'send email',
       { priority: 'high', concurrency: 10 },
-      require(path.resolve('./modules/core/server/jobs/send-email.server.job')),
+      sendEmailJob,
     );
 
     agenda.define(
       'send push message',
       { priority: 'high', concurrency: 10 },
-      require(path.resolve(
-        './modules/core/server/jobs/send-push-message.server.job',
-      )),
+      sendPushMessageJob,
     );
 
     agenda.define(
       'check unread messages',
       { lockLifetime: 10000 },
-      require(path.resolve(
-        './modules/messages/server/jobs/message-unread.server.job',
-      )),
+      messageUnreadJob,
     );
 
     agenda.define(
       'daily statistics',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve(
-        './modules/statistics/server/jobs/daily-statistics.server.job',
-      )),
+      dailyStatisticsJob,
     );
 
     agenda.define(
       'send signup reminders',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve(
-        './modules/users/server/jobs/user-finish-signup.server.job',
-      )),
+      userFinishSignupJob,
     );
 
     agenda.define(
       'reactivate hosts',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve(
-        './modules/offers/server/jobs/reactivate-hosts.server.job',
-      )),
+      reactivateHostsJob,
     );
 
     agenda.define(
       'welcome sequence first',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve(
-        './modules/users/server/jobs/user-welcome-sequence-first.server.job',
-      )),
+      userWelcomeSequenceFirstJob,
     );
 
     agenda.define(
       'welcome sequence second',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve(
-        './modules/users/server/jobs/user-welcome-sequence-second.server.job',
-      )),
+      userWelcomeSequenceSecondJob,
     );
 
     agenda.define(
       'welcome sequence third',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve(
-        './modules/users/server/jobs/user-welcome-sequence-third.server.job',
-      )),
+      userWelcomeSequenceThirdJob,
     );
 
     agenda.define(
       'publish expired experiences',
       { lockLifetime: 10000, concurrency: 1 },
-      require(path.resolve(
-        './modules/experiences/server/jobs/experiences-publish.server.job',
-      )),
+      experiencesPublishJob,
     );
 
     // Schedule job(s)
