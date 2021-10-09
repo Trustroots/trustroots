@@ -15,13 +15,13 @@
  *  npm run agenda-maintenance -- reverse
  */
 
-const MongoClient = require('mongodb').MongoClient;
+const { MongoClient } = require('mongodb');
 const path = require('path');
 const chalk = require('chalk');
 const async = require('async');
 const config = require(path.resolve('./config/config'));
 
-let dbConnection;
+let dbClient;
 let sourceCollection;
 let targetCollection;
 const filter = { nextRunAt: null, lockedAt: null };
@@ -104,18 +104,17 @@ async.waterfall(
     // Connect
     function (done) {
       // Use connect method to connect to the server
-      MongoClient.connect(config.db.uri, function (err, db) {
+      MongoClient.connect(config.db.uri, function (err, client) {
         if (err) {
           console.log(chalk.red('Could not connect to MongoDB!'));
           return done(err);
         }
 
-        dbConnection = db;
-
+        dbClient = client;
         console.log(chalk.green('Connected to MongoDB:'), config.db.uri);
 
-        (sourceCollection = dbConnection.collection(sourceCollectionName)),
-          (targetCollection = dbConnection.collection(targetCollectionName));
+        sourceCollection = client.db().collection(sourceCollectionName);
+        targetCollection = client.db().collection(targetCollectionName);
 
         done();
       });
@@ -285,9 +284,9 @@ async.waterfall(
     );
 
     // Disconnect
-    if (dbConnection) {
+    if (dbClient) {
       console.log('Closing db...');
-      dbConnection.close().then(
+      dbClient.close().then(
         function () {
           console.log('\nDisconnected from MongoDB');
           process.exit(0);
