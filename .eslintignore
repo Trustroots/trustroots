@@ -7,5 +7,4 @@ public
 scripts
 modules/core/server/views/email-templates/
 modules/core/server/views/email-templates-text/
-modules/core/server/views/facebook-notifications/
 .github/**/*.md
