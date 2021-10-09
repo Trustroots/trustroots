@@ -3,9 +3,6 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const facebookNotificationService = require(path.resolve(
-  './modules/core/server/services/facebook-notification.server.service',
-));
 const core = require('../controllers/core.server.controller');
 const tribes = require(path.resolve(
   './modules/tribes/server/controllers/tribes.server.controller',
@@ -60,13 +57,6 @@ module.exports = function (app) {
 
   // Define application route
   app.route('/*').get(core.renderIndex);
-
-  // When Facebook notifications are enabled
-  // Embedding app in Facebook canvas iframe is enabled, but it uses `POST`
-
-  if (facebookNotificationService.isNotificationsEnabled()) {
-    app.route('/*').post(core.renderIndex);
-  }
 
   // Finish by binding the tribes middleware
   app.param('tribe', tribes.tribeBySlug);
