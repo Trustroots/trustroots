@@ -161,7 +161,7 @@ exports.start = (options, callback) => {
   });
 
   // Error reporting and retry logic
-  agenda.on('fail', (err, job) => {
+  agenda.on('fail', async (err, job) => {
     let extraMessage = '';
 
     if (job.attrs.failCount >= options.maxAttempts) {
@@ -175,7 +175,7 @@ exports.start = (options, callback) => {
         job.attrs.nextRunAt.toISOString(),
       );
 
-      job.save();
+      await job.save();
     }
 
     const statsObject = {

@@ -2,10 +2,12 @@ const _ = require('lodash');
 const path = require('path');
 const agenda = require(path.resolve('./config/lib/agenda'));
 const config = require(path.resolve('./config/config'));
-const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 const analyticsHandler = require(path.resolve(
   './modules/core/server/controllers/analytics.server.controller',
 ));
+const log = require(path.resolve('./config/lib/logger'));
+
+const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 exports.notifyPushDeviceAdded = function (user, platform, callback) {
   if (_.get(user, 'pushRegistration', []).length === 0) return callback();
@@ -135,12 +137,19 @@ exports.notifyNewExperienceSecond = function (
   exports.sendUserNotification(userTo, notification, callback);
 };
 
-exports.sendUserNotification = function (user, notification, callback) {
+exports.sendUserNotification = async (user, notification, callback) => {
   const data = {
     userId: user._id,
     pushServices: user.pushRegistration,
     notification,
   };
 
-  agenda.now('send push message', data, callback);
+  try {
+    await agenda.now('send push message', data);
+  } catch (err) {
+    log('error', 'Failed to create push message send job in Agenda.', err);
+    return callback(err);
+  }
+
+  callback();
 };
