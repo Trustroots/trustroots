@@ -1,4 +1,3 @@
-const _ = require('lodash');
 const nodemailer = require('nodemailer');
 const path = require('path');
 const config = require(path.resolve('./config/config'));
@@ -9,12 +8,12 @@ module.exports = function (job, done) {
 
   // Get job id from Agenda job attributes
   // Agenda stores Mongo `ObjectId` so turning that into a string here
-  const jobId = _.get(job, 'attrs._id').toString();
+  const jobId = job.attrs._id.toString();
 
   // Log that we're sending an email
   log('debug', 'Starting `send email` job #wGcxmQ', { jobId });
 
-  smtpTransport.sendMail(job.attrs.data, function (err) {
+  smtpTransport.sendMail(job.attrs.data, err => {
     smtpTransport.close(); // close the connection pool
 
     if (err) {
