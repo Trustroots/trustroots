@@ -8,20 +8,34 @@ import plainTextLength from '@/modules/core/client/filters/plain-text-length.cli
 export default function ThreadReply({ onSend, cacheKey }) {
   const { t } = useTranslation('messages');
 
+  const [sending, setSending] = useState(false);
   const [editorKeyCounter, setEditorKeyCounter] = useState(0);
   const [content, setContent] = useState(() => getDraft() || '');
 
-  function send(event) {
+  async function send(event) {
     event.preventDefault();
     event.stopPropagation();
+
+    if (sending) {
+      return;
+    }
+
+    setSending(true);
+
     if (plainTextLength(content) > 0) {
-      onSend(content);
-      setContent('');
-      // There is a bug somewhere that means just setting content to '' does not
-      // set the text in the editor after pressing send, we can work around that by
-      // recreating the TrEditor component after each send by setting a fresh key
-      setEditorKeyCounter(n => n + 1);
-      clearDraft();
+      const sent = await onSend(content);
+
+      // Clear only when really sent to avoid data loss
+      if (sent) {
+        setContent('');
+        // There is a bug somewhere that means just setting content to '' does not
+        // set the text in the editor after pressing send, we can work around that by
+        // recreating the TrEditor component after each send by setting a fresh key
+        setEditorKeyCounter(n => n + 1);
+        clearDraft();
+      }
+
+      setSending(false);
     }
   }
 
@@ -80,6 +94,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
           id="messageReplySubmit"
           className="btn btn-md btn-primary message-reply-btn"
           type="submit"
+          disabled={sending}
         >
           <i className="icon-send" />
           <span className="hidden-xs">&nbsp;{t('Send')}</span>

@@ -44,12 +44,11 @@ export async function fetchMessages(userId, params = {}) {
 }
 
 export async function sendMessage(userToId, content) {
-  const { data: message } = await axios.post('/api/messages', {
+  return await axios.post('/api/messages', {
     userTo: userToId,
     content,
     read: false,
   });
-  return message;
 }
 
 export async function markRead(messageIds) {
