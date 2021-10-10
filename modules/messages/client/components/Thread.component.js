@@ -225,14 +225,35 @@ export default function Thread({ user, profileMinimumLength }) {
   }
 
   async function sendMessage(content) {
-    const message = await api.messages
+    const apiResponse = await api.messages
       .sendMessage(otherUser._id, content)
-      .catch((error, net) => {
-        console.log('send fail:', error, net); //eslint-disable-line
-        return [];
+      .catch(error => {
+        // Too many requests - error
+        if (error?.response?.status === 429) {
+          window.alert(
+            t(
+              'You are writing to too many people too fast. Slow down and try later again.',
+            ),
+          );
+        } else {
+          window.alert(
+            t(
+              'Failed to send the message. Perhaps your internet went down? Please try again.',
+            ),
+          );
+        }
       });
+
+    // Failed to send message
+    if (!apiResponse?.data) {
+      return false;
+    }
+
+    // Append in thread the formatted message we got as a response from API
+    const { data: message } = apiResponse;
     setMessages(messages => [...messages, message]);
     focus();
+    return true;
   }
 
   function focus() {

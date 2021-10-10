@@ -9,6 +9,7 @@ const paginate = require('express-paginate');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const config = require(path.resolve('./config/config'));
+const log = require(path.resolve('./config/lib/logger'));
 const messageToStatsService = require(path.resolve(
   './modules/messages/server/services/message-to-stats.server.service',
 ));
@@ -24,6 +25,10 @@ const textService = require(path.resolve(
 const userProfile = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));
+const statService = require(path.resolve(
+  './modules/stats/server/services/stats.server.service',
+));
+
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
@@ -239,9 +244,30 @@ exports.inbox = function (req, res) {
 };
 
 /**
+ * Should we throttle this user sending messages?
+ *
+ * @param  {String} userId Message sender user ID
+ * @return {boolean} True if user should be throttled; sending messages to too many people. Otherwise false.
+ */
+async function shouldThottleUser(userId) {
+  const { duration, count } = config.limits.messagesToIndividualsThrottle;
+  const timeLimit = moment().subtract(moment.duration(duration)).toDate();
+
+  // Count how many persons this user has already written within the limit
+  const writtenTo = await Message.distinct('userTo', {
+    created: {
+      $gte: timeLimit,
+    },
+    userFrom: userId,
+  });
+
+  return writtenTo.length > count;
+}
+
+/**
  * Send a message
  */
-exports.send = function (req, res) {
+exports.send = async function (req, res) {
   // No user
   if (!req.user) {
     return res.status(403).send({
@@ -277,54 +303,42 @@ exports.send = function (req, res) {
     });
   }
 
-  // Only moderator and admin roles can send messages to banned users. For others they stay hidden.
-  const publicityLimit =
-    req.user.roles.includes('moderator') || req.user.roles.includes('admin')
-      ? {}
-      : {
-          public: true,
-          roles: { $nin: ['suspended', 'shadowban'] },
-        };
+  // Throttle
+  const shouldThrottle = await shouldThottleUser(req.user._id);
+  if (shouldThrottle) {
+    // Record thottle hit in stats
+    statService.stat(
+      {
+        namespace: 'message-throttle',
+        counts: {
+          count: 1,
+        },
+        tags: {},
+      },
+      () => {},
+    );
+
+    return res.status(429).send({
+      message: 'You are writing too many messages.',
+    });
+  }
 
   async.waterfall(
     [
-      async function (done) {
-        // Throttle
-        const { duration, count } = config.limits.messagesToIndividuals;
-        console.log('Testing limit: ', duration, count); //eslint-disable-line
-        const timeLimit = moment().subtract(moment.duration(duration)).toDate();
-        const writtenTo = await Message.distinct('userTo', {
-          created: {
-            $gte: timeLimit,
-          },
-          userFrom: req.user,
-        });
-
-        // eslint-disable-next-line
-        console.log(
-          'Written to:',
-          writtenTo,
-          '...since:',
-          timeLimit,
-          'Time now: ',
-          moment().toDate(),
-        );
-
-        if (writtenTo.length > count) {
-          console.log('🛑 Limit hit!', writtenTo.length, count); //eslint-disable-line
-          return res.status(429).send({
-            message: 'You are writing too many messages.',
-          });
-        } else {
-          console.log('🚩 Limit pass!', writtenTo.length, count); //eslint-disable-line
-        }
-        done();
-      },
-
       // Check that receiving user is legitimate:
       // - Has to be confirmed their email (hence be public)
       // - Not suspended profile
       function (done) {
+        // Only moderator and admin roles can send messages to banned users. For others they stay hidden.
+        const publicityLimit =
+          req.user.roles.includes('moderator') ||
+          req.user.roles.includes('admin')
+            ? {}
+            : {
+                public: true,
+                roles: { $nin: ['suspended', 'shadowban'] },
+              };
+
         User.findOne({
           _id: req.body.userTo,
           ...publicityLimit,
@@ -509,6 +523,7 @@ exports.send = function (req, res) {
     ],
     function (err) {
       if (err) {
+        log('error', 'Message failed to send. #sa239', err);
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
         });
