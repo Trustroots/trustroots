@@ -1,138 +1,122 @@
-const format = require('util').format;
 const path = require('path');
-
 const config = require('../config');
+const format = require('util').format;
 const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
-const sendEmailJob = require(path.resolve(
-  './modules/core/server/jobs/send-email.server.job',
-));
-const sendPushMessageJob = require(path.resolve(
-  './modules/core/server/jobs/send-push-message.server.job',
-));
-const messageUnreadJob = require(path.resolve(
-  './modules/messages/server/jobs/message-unread.server.job',
-));
-const dailyStatisticsJob = require(path.resolve(
-  './modules/statistics/server/jobs/daily-statistics.server.job',
-));
-const userFinishSignupJob = require(path.resolve(
-  './modules/users/server/jobs/user-finish-signup.server.job',
-));
-const reactivateHostsJob = require(path.resolve(
-  './modules/offers/server/jobs/reactivate-hosts.server.job',
-));
-const userWelcomeSequenceFirstJob = require(path.resolve(
-  './modules/users/server/jobs/user-welcome-sequence-first.server.job',
-));
-const userWelcomeSequenceSecondJob = require(path.resolve(
-  './modules/users/server/jobs/user-welcome-sequence-second.server.job',
-));
-const userWelcomeSequenceThirdJob = require(path.resolve(
-  './modules/users/server/jobs/user-welcome-sequence-third.server.job',
-));
-const experiencesPublishJob = require(path.resolve(
-  './modules/experiences/server/jobs/experiences-publish.server.job',
-));
-
 const MongoClient = require('mongodb').MongoClient;
 
 let agenda;
 
-exports.start = (options, callback) => {
+exports.start = function (options, callback) {
   // Don't initialise Agenda outisde `start()`, because we might miss `ready` event otherwise.
   agenda = require(path.resolve('./config/lib/agenda'));
 
-  agenda.on('ready', async () => {
+  agenda.on('ready', function () {
     // Define jobs
 
     agenda.define(
       'send email',
       { priority: 'high', concurrency: 10 },
-      sendEmailJob,
+      require(path.resolve('./modules/core/server/jobs/send-email.server.job')),
     );
 
     agenda.define(
       'send push message',
       { priority: 'high', concurrency: 10 },
-      sendPushMessageJob,
+      require(path.resolve(
+        './modules/core/server/jobs/send-push-message.server.job',
+      )),
     );
 
     agenda.define(
       'check unread messages',
       { lockLifetime: 10000 },
-      messageUnreadJob,
+      require(path.resolve(
+        './modules/messages/server/jobs/message-unread.server.job',
+      )),
     );
 
     agenda.define(
       'daily statistics',
       { lockLifetime: 10000, concurrency: 1 },
-      dailyStatisticsJob,
+      require(path.resolve(
+        './modules/statistics/server/jobs/daily-statistics.server.job',
+      )),
     );
 
     agenda.define(
       'send signup reminders',
       { lockLifetime: 10000, concurrency: 1 },
-      userFinishSignupJob,
+      require(path.resolve(
+        './modules/users/server/jobs/user-finish-signup.server.job',
+      )),
     );
 
     agenda.define(
       'reactivate hosts',
       { lockLifetime: 10000, concurrency: 1 },
-      reactivateHostsJob,
+      require(path.resolve(
+        './modules/offers/server/jobs/reactivate-hosts.server.job',
+      )),
     );
 
     agenda.define(
       'welcome sequence first',
       { lockLifetime: 10000, concurrency: 1 },
-      userWelcomeSequenceFirstJob,
+      require(path.resolve(
+        './modules/users/server/jobs/user-welcome-sequence-first.server.job',
+      )),
     );
 
     agenda.define(
       'welcome sequence second',
       { lockLifetime: 10000, concurrency: 1 },
-      userWelcomeSequenceSecondJob,
+      require(path.resolve(
+        './modules/users/server/jobs/user-welcome-sequence-second.server.job',
+      )),
     );
 
     agenda.define(
       'welcome sequence third',
       { lockLifetime: 10000, concurrency: 1 },
-      userWelcomeSequenceThirdJob,
+      require(path.resolve(
+        './modules/users/server/jobs/user-welcome-sequence-third.server.job',
+      )),
     );
 
     agenda.define(
       'publish expired experiences',
       { lockLifetime: 10000, concurrency: 1 },
-      experiencesPublishJob,
+      require(path.resolve(
+        './modules/experiences/server/jobs/experiences-publish.server.job',
+      )),
     );
 
     // Schedule job(s)
 
-    await agenda.every('5 minutes', 'check unread messages');
-    await agenda.every('24 hours', 'daily statistics');
-    await agenda.every('30 minutes', 'send signup reminders');
-    await agenda.every('30 minutes', 'reactivate hosts');
-    await agenda.every('15 minutes', 'welcome sequence first');
-    await agenda.every('60 minutes', 'welcome sequence second');
-    await agenda.every('60 minutes', 'welcome sequence third');
-    await agenda.every('23 minutes', 'publish expired experiences');
+    agenda.every('5 minutes', 'check unread messages');
+    agenda.every('24 hours', 'daily statistics');
+    agenda.every('30 minutes', 'send signup reminders');
+    agenda.every('30 minutes', 'reactivate hosts');
+    agenda.every('15 minutes', 'welcome sequence first');
+    agenda.every('60 minutes', 'welcome sequence second');
+    agenda.every('60 minutes', 'welcome sequence third');
+    agenda.every('23 minutes', 'publish expired experiences');
 
     // Start worker
 
-    await agenda.start();
+    agenda.start();
 
     if (process.env.NODE_ENV !== 'test') {
       console.log('[Worker] Agenda started processing background jobs');
     }
 
-    if (callback) {
-      callback();
-    }
+    if (callback) callback();
   });
 
   // Log finished jobs
-  agenda.on('success', job => {
+  agenda.on('success', function (job) {
     if (process.env.NODE_ENV !== 'test') {
       const statsObject = {
         namespace: 'agendaJob',
@@ -147,7 +131,7 @@ exports.start = (options, callback) => {
       };
 
       // Send job failure to stats servers
-      statService.stat(statsObject, () => {
+      statService.stat(statsObject, function () {
         // Log also to console
         if (process.env.NODE_ENV !== 'test') {
           console.log(
@@ -161,7 +145,7 @@ exports.start = (options, callback) => {
   });
 
   // Error reporting and retry logic
-  agenda.on('fail', async (err, job) => {
+  agenda.on('fail', function (err, job) {
     let extraMessage = '';
 
     if (job.attrs.failCount >= options.maxAttempts) {
@@ -175,7 +159,7 @@ exports.start = (options, callback) => {
         job.attrs.nextRunAt.toISOString(),
       );
 
-      await job.save();
+      job.save();
     }
 
     const statsObject = {
@@ -191,7 +175,7 @@ exports.start = (options, callback) => {
     };
 
     // Send job failure to stats servers
-    statService.stat(statsObject, () => {
+    statService.stat(statsObject, function () {
       // Log also to console
 
       if (process.env.NODE_ENV !== 'test') {
@@ -215,7 +199,7 @@ exports.start = (options, callback) => {
  * Attempt to unlock Agenda jobs that were stuck due server restart
  * See https://github.com/agenda/agenda/issues/410
  */
-exports.unlockAgendaJobs = callback => {
+exports.unlockAgendaJobs = function (callback) {
   if (process.env.NODE_ENV !== 'test') {
     console.log('[Worker] Attempting to unlock locked Agenda jobs...');
   }
@@ -226,6 +210,8 @@ exports.unlockAgendaJobs = callback => {
       console.error(err);
       return callback(err);
     }
+
+    // agenda.on('ready', function() {
 
     // Re-use Agenda's MongoDB connection
     // var agendaJobs = agenda._mdb.collection('agendaJobs');
@@ -253,7 +239,7 @@ exports.unlockAgendaJobs = callback => {
       {
         multi: true,
       },
-      (err, numUnlocked) => {
+      function (err, numUnlocked) {
         if (err) {
           console.error(err);
         }
@@ -272,7 +258,7 @@ exports.unlockAgendaJobs = callback => {
 /**
  * Used for testing
  */
-exports.removeExitListeners = () => {
+exports.removeExitListeners = function () {
   process.removeListener('SIGTERM', gracefulExit);
   process.removeListener('SIGINT', gracefulExit);
 };
@@ -288,16 +274,20 @@ function addExitListeners() {
 /**
  * Gracefully exit Agenda
  */
-async function gracefulExit() {
+function gracefulExit() {
   console.log('[Worker] Stopping Agenda...');
-  await agenda.stop();
-  console.log('[Worker] Agenda stopped.');
-  process.exit(0);
+  agenda.stop(function () {
+    console.log('[Worker] Agenda stopped.');
+    process.exit(0);
+  });
 }
 
 function shouldRetry(err) {
   // Retry on connection errors as they may just be temporary
-  return /(ECONNRESET|ECONNREFUSED)/.test(err.message);
+  if (/(ECONNRESET|ECONNREFUSED)/.test(err.message)) {
+    return true;
+  }
+  return false;
 }
 
 function secondsFromNowDate(seconds) {
