@@ -223,6 +223,16 @@ module.exports.process = function (message, callback) {
         const msgLenType =
           msgLen < config.limits.longMessageMinimumLength ? 'short' : 'long';
 
+        // Message's spam detection
+        let spam;
+        if (message.spam === true) {
+          spam = 'yes';
+        } else if (message.spam === false) {
+          spam = 'no';
+        } else {
+          spam = 'unknown';
+        }
+
         // values for stats
         const statObject = {
           namespace: 'messages',
@@ -231,6 +241,7 @@ module.exports.process = function (message, callback) {
           },
           values: {},
           tags: {
+            spam, // spam (yes|no|unknown)
             position, // position (first|firstReply|other)
             messageLengthType: msgLenType, // (short|long) content (shortness defined in a config)
           },

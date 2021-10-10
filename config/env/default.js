@@ -236,6 +236,13 @@ module.exports = {
       // Note: integrations are defined directly at `Sentry.init()`, don't add them here.
     },
   },
+  // Spam detection
+  // https://akismet.com/
+  akismet: {
+    enabled: false,
+    key: '',
+    url: 'https://www.trustroots.org',
+  },
   // Webpack bundle analyzer
   // Visualize size of webpack output files with an interactive zoomable treemap.
   // https://www.npmjs.com/package/webpack-bundle-analyzer
