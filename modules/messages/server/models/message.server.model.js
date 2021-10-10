@@ -33,6 +33,10 @@ const MessageSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  spam: {
+    type: Boolean,
+    // No default; lack of value means no definitive check has been done
+  },
   /* Count and the latest date of notifications sent to `userTo`
      about unread messages (`read:false`) */
   notificationCount: {

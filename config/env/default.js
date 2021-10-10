@@ -236,6 +236,11 @@ module.exports = {
       // Note: integrations are defined directly at `Sentry.init()`, don't add them here.
     },
   },
+  akismet: {
+    key: '',
+    url: 'https://www.trustroots.org',
+    enabled: false,
+  },
   // Webpack bundle analyzer
   // Visualize size of webpack output files with an interactive zoomable treemap.
   // https://www.npmjs.com/package/webpack-bundle-analyzer

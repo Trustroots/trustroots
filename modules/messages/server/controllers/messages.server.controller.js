@@ -22,6 +22,9 @@ const errorService = require(path.resolve(
 const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));
+const spamService = require(path.resolve(
+  './modules/core/server/services/spam.server.service',
+));
 const userProfile = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));
@@ -146,6 +149,7 @@ function sanitizeThreads(threads, authenticatedUserId, callback) {
               .substring(0, 100)
           : '…';
         delete thread.message.content;
+        delete thread.message.spam; // Don't reveal spam status
       } else {
         // Ensure this works even if messages couldn't be found for some reason
         thread.message = {
@@ -410,13 +414,41 @@ exports.send = async function (req, res) {
           });
         } else {
           // It wasn't first message to this thread
-          done(null);
+          done();
         }
       },
 
-      // Save message
+      // Spam filter
       function (done) {
-        const message = new Message(req.body);
+        if (!config.akismet.enabled) {
+          return done(null, 'unknown');
+        }
+
+        const test = {
+          content: req.body.content,
+          ip: req._remoteAddress,
+          useragent: req.headers['user-agent'],
+          email: req.user.email,
+          name: req.user.displayName,
+        };
+
+        spamService
+          .check(test)
+          .then(spamStatus => {
+            done(null, spamStatus);
+          })
+          .catch(() => {
+            // Continue normally regardless of error, just skip spam check
+            done(null, 'unknown');
+          });
+      },
+
+      // Save message
+      function (spamStatus, done) {
+        const message = new Message({
+          content: req.body.content,
+          userTo: req.body.userTo,
+        });
 
         // Allow some HTML
         message.content = textService.html(message.content);
@@ -425,9 +457,14 @@ exports.send = async function (req, res) {
         message.read = false;
         message.notified = false;
 
-        message.save(function (err, message) {
-          done(err, message);
-        });
+        // Include spam status only if we have definitive yes or no, otherwise it's unknown
+        if (spamStatus === 'spam') {
+          message.spam = true;
+        } else if (spamStatus === 'not-spam') {
+          message.spam = false;
+        }
+
+        message.save(done);
       },
 
       // Create/upgrade Thread handle between these two users
@@ -450,7 +487,7 @@ exports.send = async function (req, res) {
         // _id = thread.id, then create a new doc using upsertData.
         // Otherwise, update the existing doc with upsertData
         // @link http://stackoverflow.com/a/7855281
-        Thread.update(
+        Thread.updateOne(
           {
             // User id's can be either way around in old thread handle, so we gotta test for both situations
             $or: [
@@ -466,7 +503,7 @@ exports.send = async function (req, res) {
           },
           upsertData,
           { upsert: true },
-          function (err) {
+          err => {
             done(err, message);
           },
         );
@@ -512,8 +549,9 @@ exports.send = async function (req, res) {
               // Turn to object to be able to delete fields
               message = message.toObject();
 
-              // Don't return this field
+              // Don't return these fields
               delete message.notified;
+              delete message.spam;
 
               // Finally return saved message
               return res.json(message);
