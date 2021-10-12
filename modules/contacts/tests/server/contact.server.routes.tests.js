@@ -544,11 +544,12 @@ describe('Contact CRUD tests', function () {
 
       beforeEach(function () {
         // Set the agenda.now() function to fail
-        // eslint-disable-next-line no-unused-vars
-        agenda.now = (type, data) =>
-          new Promise((resolve, reject) => {
-            reject(new Error('fail!'));
+        originalNow = agenda.now;
+        agenda.now = function (type, data, callback) {
+          process.nextTick(function () {
+            callback(new Error('fail!'));
           });
+        };
       });
 
       afterEach(function () {

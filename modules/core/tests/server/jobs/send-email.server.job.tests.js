@@ -7,7 +7,7 @@ const testutils = require(path.resolve('./testutils/server/server.testutil'));
  */
 let sendEmailJobHandler;
 
-describe('job: send email', () => {
+describe('job: send email', function () {
   const sentEmails = testutils.catchEmails();
 
   before(function () {
@@ -16,7 +16,7 @@ describe('job: send email', () => {
     ));
   });
 
-  it('will send an email', done => {
+  it('will send an email', function (done) {
     const job = {
       attrs: {
         // eslint-disable-next-line new-cap
@@ -33,10 +33,8 @@ describe('job: send email', () => {
         },
       },
     };
-    sendEmailJobHandler(job, err => {
-      if (err) {
-        return done(err);
-      }
+    sendEmailJobHandler(job, function (err) {
+      if (err) return done(err);
       sentEmails.length.should.equal(1);
       sentEmails[0].data.subject.should.equal(job.attrs.data.subject);
       sentEmails[0].data.html.should.equal(job.attrs.data.html);
