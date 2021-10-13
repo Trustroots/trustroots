@@ -10,8 +10,13 @@ exports.check = async message => {
     return 'unknown';
   }
 
-  if (!message.ip || !message.useragent) {
-    log('info', 'Akismet requires IP and useragent. Spam check skipped.');
+  if (!message.ip) {
+    log('info', 'Akismet requires IP. Spam check skipped.');
+    return 'unknown';
+  }
+
+  if (!message.ip) {
+    log('info', 'Akismet requires useragent. Spam check skipped.');
     return 'unknown';
   }
 

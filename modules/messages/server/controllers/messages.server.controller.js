@@ -424,16 +424,25 @@ exports.send = async function (req, res) {
           return done(null, 'unknown');
         }
 
-        const test = {
-          content: req.body.content,
-          ip: req._remoteAddress,
-          useragent: req.headers['user-agent'],
-          email: req.user.email,
-          name: req.user.displayName,
-        };
+        const userIp =
+          // https://www.phusionpassenger.com/library/indepth/nodejs/secure_http_headers.html#passenger-client-address
+          // Note that Passenger also appends the X-Forwarded-For header, which serves the same function.
+          // But since X-Forwarded-For can be spoofed by the client, you should prefer !~Passenger-Client-Address instead.
+          req.headers['!~passenger-client-address'] ||
+          req.headers['x-forwarded-for'] ||
+          req.ip || // http://expressjs.com/en/5x/api.html#req.ip — can be spoofed by client
+          '';
+
+        const userAgent = req.headers['user-agent'] || '';
 
         spamService
-          .check(test)
+          .check({
+            content: req.body.content,
+            ip: userIp,
+            useragent: userAgent,
+            email: req.user.email,
+            name: req.user.displayName,
+          })
           .then(spamStatus => {
             done(null, spamStatus);
           })
