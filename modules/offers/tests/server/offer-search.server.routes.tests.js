@@ -154,7 +154,7 @@ describe('Offer search tests', function () {
       noOfferDescription: '<p>2 I cannot host... :(</p>',
       maxGuests: 3,
       updated: new Date(),
-      location: [52.498981209298776, 13.418329954147339],
+      location: [52.49898120929857, 13.41832995414733],
     });
 
     offer3 = new Offer({
@@ -164,7 +164,7 @@ describe('Offer search tests', function () {
       noOfferDescription: '<p>3 I cannot host... :(</p>',
       maxGuests: 1,
       updated: new Date(),
-      location: [52.498981209298775, 13.418329954147338],
+      location: [52.49898120929877, 13.41832995414732],
     });
 
     offerMeet = new Offer({
@@ -172,7 +172,7 @@ describe('Offer search tests', function () {
       description: '<p>Dinner party!</p>',
       validUntil: moment().add(30, 'day').toDate(),
       updated: new Date(),
-      location: [52.498981209298887, 13.418329954147449],
+      location: [52.49898120929888, 13.41832995414744],
     });
 
     tribe1 = new Tribe({
