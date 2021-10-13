@@ -67,5 +67,16 @@
     "Add contact": "הוסיפי אשת קשר",
     "About me": "קצת עלי",
     "Fill your profile": "מלאי את הפרופיל שלך",
-    "Share your experience": "שתפי את החוויות שלך"
+    "Share your experience": "שתפי את החוויות שלך",
+    "{{count}} contacts_0": "איש קשר אחד",
+    "{{count}} contacts_1": "{{count}} אנשי קשר",
+    "{{count}} contacts_2": "{{count}} אנשי קשר",
+    "{{count}} contacts_3": "{{count}} אנשי קשר",
+    "Being able to rely on strangers, on communities, on trust, are values that are worth preserving.": "היכולת לסמוך על זרים, על קהילות, על אמון, הם ערכים שכדאי לשמר.",
+    "From <1>{{locationFrom}}</1>": "מ־<1>{{locationFrom}}</1>",
+    "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "אם לא קיבלת את ההודעה, כדאי לבדוק את תיקיית הספאם שלך או לשלוח אותה מחדש דרך <1>הגדרות הדוא״ל</1>.",
+    "{{count}} experiences_0": "חוויה אחת",
+    "{{count}} experiences_1": "{{count}} חוויות",
+    "{{count}} experiences_2": "{{count}} חוויות",
+    "{{count}} experiences_3": "{{count}} חוויות"
 }
