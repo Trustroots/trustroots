@@ -56,7 +56,6 @@ module.exports = {
   },
   parserOptions: {
     ecmaVersion: 2018,
-    requireConfigFile: false,
   },
   parser: '@babel/eslint-parser',
   overrides: [
@@ -141,7 +140,7 @@ module.exports = {
       parser: '@babel/eslint-parser',
       parserOptions: {
         ecmaVersion: 2018,
-        requireConfigFile: false,
+
         sourceType: 'module',
       },
     },
@@ -175,7 +174,7 @@ module.exports = {
           jsx: true,
         },
         ecmaVersion: 2018,
-        requireConfigFile: false,
+
         sourceType: 'module',
       },
       rules: {
