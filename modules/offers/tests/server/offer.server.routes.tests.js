@@ -162,7 +162,7 @@ describe('Offer CRUD tests', function () {
       noOfferDescription: '<p>3 I cannot host... :(</p>',
       maxGuests: 1,
       updated: new Date(),
-      location: [52.498981209298775, 13.418329954147338],
+      location: [52.49898120929877, 13.41832995414733],
     });
 
     offerMeet = new Offer({
@@ -170,7 +170,7 @@ describe('Offer CRUD tests', function () {
       description: '<p>Dinner party!</p>',
       validUntil: moment().add(30, 'day').toDate(),
       updated: new Date(),
-      location: [52.498981209298887, 13.418329954147449],
+      location: [52.49898120929888, 13.41832995414744],
     });
 
     tribe1 = new Tribe({
