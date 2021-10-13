@@ -123,6 +123,14 @@ module.exports = {
     // Messages shorter than this will be tagged 'short' in influxdb,
     // otherwise 'long'
     longMessageMinimumLength: 170,
+    messagesToIndividualsThrottle: {
+      // Moment.js `duration` object literal http://momentjs.com/docs/#/durations/
+      duration: {
+        minutes: 60,
+      },
+      // How many individuals users are allowed to message within duration window
+      count: 15,
+    },
     // How many signup reminders to send before giving up
     maxSignupReminders: 3,
     // How many signup reminders to process at once
@@ -188,7 +196,6 @@ module.exports = {
     clientSecret: false,
     clientAccessToken: false,
     callbackURL: '/api/auth/facebook/callback',
-    notificationsEnabled: false,
   },
   twitter: {
     username: '',
@@ -228,6 +235,13 @@ module.exports = {
       dsn: '',
       // Note: integrations are defined directly at `Sentry.init()`, don't add them here.
     },
+  },
+  // Spam detection
+  // https://akismet.com/
+  akismet: {
+    enabled: false,
+    key: '',
+    url: 'https://www.trustroots.org',
   },
   // Webpack bundle analyzer
   // Visualize size of webpack output files with an interactive zoomable treemap.

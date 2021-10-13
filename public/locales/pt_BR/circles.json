@@ -1,19 +1,19 @@
 {
     "{{count, number}} members": "Um membro",
     "{{count, number}} members_plural": "{{count, number}} membros",
+    "Sign up with Trustroots": "Inscreva-se no Trustroots",
     "Send us suggestions!": "Envia-nos sugestões!",
+    "No members yet": "Sem membros ainda",
     "New circle!": "Novo círculo!",
+    "Missing your circle?": "Sentindo falta do seu círculo?",
     "Leave this circle?": "Abandonar este círculo?",
     "Leave circle": "Abandonar círculo",
-    "Discover circles": "Descobrir círculos",
-    "Cancel": "Cancelar",
     "Joining circles helps you find likeminded Trustroots members.": "Ingressar nos círculos ajuda você a encontrar membros do Trustroots que compartilham das mesmas ideias.",
-    "Sign up with Trustroots": "Inscreva-se no Trustroots",
-    "No members yet": "Sem membros ainda",
-    "Missing your circle?": "Sentindo falta do seu círculo?",
     "Joined": "Você ingressou",
     "Join Trustroots to find members behind circles.": "Junte-se ao Trustroots para encontrar membros participantes dos círculos.",
     "Join ({{label}})": "Ingressar ({{label}})",
     "Join": "Ingressar",
-    "Do you want to leave \"{{label}}\"?": "Você quer sair de \"{{label}}\"?"
+    "Do you want to leave \"{{label}}\"?": "Você quer sair de \"{{label}}\"?",
+    "Discover circles": "Descobrir círculos",
+    "Cancel": "Cancelar"
 }

@@ -29,9 +29,6 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const facebookNotificationService = require(path.resolve(
-  './modules/core/server/services/facebook-notification.server.service',
-));
 const pushService = require(path.resolve(
   './modules/core/server/services/push.server.service',
 ));
@@ -239,10 +236,6 @@ function sendUnreadMessageReminders(reminder, callback) {
               // Used for web/mobile push notifications:
               'pushRegistration.token',
               'pushRegistration.platform',
-              // Used for FB notifications:
-              'additionalProvidersData.facebook.id',
-              'additionalProvidersData.facebook.accessToken',
-              'additionalProvidersData.facebook.accessTokenExpires',
             ].join(' '),
           ).exec(function (err, users) {
             // Re-organise users into more handy array (`collectedUsers`)
@@ -311,14 +304,6 @@ function sendUnreadMessageReminders(reminder, callback) {
             {
               email(callback) {
                 emailService.sendMessagesUnread(
-                  userFrom,
-                  userTo,
-                  notification,
-                  callback,
-                );
-              },
-              facebook(callback) {
-                facebookNotificationService.notifyMessagesUnread(
                   userFrom,
                   userTo,
                   notification,

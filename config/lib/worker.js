@@ -22,14 +22,6 @@ exports.start = function (options, callback) {
     );
 
     agenda.define(
-      'send facebook notification',
-      { priority: 'high', concurrency: 10 },
-      require(path.resolve(
-        './modules/core/server/jobs/send-facebook-notification.server.job',
-      )),
-    );
-
-    agenda.define(
       'send push message',
       { priority: 'high', concurrency: 10 },
       require(path.resolve(
