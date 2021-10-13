@@ -1,10 +1,10 @@
 {
     "{{count}} members found": "Um membro encontrado",
     "{{count}} members found_plural": "{{count}} membros encontrados",
-    "Zoom closer to find members.": "Aproxima para encontrar membros.",
-    "Type name, username…": "Escreve nome, utilizador…",
-    "Search members": "Buscar membros",
+    "Zoom closer to find members.": "Dê um zoom para encontrar membros.",
+    "Type name, username…": "Digite um nome, nome de usuário…",
+    "Search members": "Pesquisar membros",
     "Search": "Pesquisar",
-    "No members found by this name.": "Não foram encontrados membros com este nome.",
-    "Clear members search": "Limpar a pesquisa de membros"
+    "No members found by this name.": "Não foram encontrados membros com esse nome.",
+    "Clear members search": "Redefinir pesquisa de membro"
 }

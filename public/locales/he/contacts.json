@@ -19,5 +19,17 @@
     "Contact request sent and pending.": "בקשת חברות נשלחה.",
     "Connected since {{date, LL}}": "מחוברים מאז {{date, LL}}",
     "Confirm Request": "אישור בקשה",
-    "Wait a moment…": "חכי רק שנייה, כבר חוזרים אליך…"
+    "Wait a moment…": "חכי רק שנייה, כבר חוזרים אליך…",
+    "{{count}} contacts_0": "איש קשר אחד",
+    "{{count}} contacts_1": "{{count}} אנשי קשר",
+    "{{count}} contacts_2": "{{count}} אנשי קשר",
+    "{{count}} contacts_3": "{{count}} אנשי קשר",
+    "(additional {{count}} pending)_0": "(עוד {{count}} ממתין)",
+    "(additional {{count}} pending)_1": "(עוד {{count}} ממתינים)",
+    "(additional {{count}} pending)_2": "(עוד {{count}} ממתינים)",
+    "(additional {{count}} pending)_3": "(עוד {{count}} ממתינים)",
+    "{{count}} contacts in common_0": "איש קשר אחד במשותף",
+    "{{count}} contacts in common_1": "{{count}} אנשי קשר במשותף",
+    "{{count}} contacts in common_2": "{{count}} אנשי קשר במשותף",
+    "{{count}} contacts in common_3": "{{count}} אנשי קשר במשותף"
 }

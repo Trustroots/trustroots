@@ -2,7 +2,11 @@
     "Clear members search": "ניקוי חיפוש",
     "Search": "חפשי",
     "Zoom closer to find members.": "התקרבי כד למצוא חברים.",
-    "Type name, username…": "כתבי שם, שם משתמש…",
+    "Type name, username…": "נא לכתוב שם, שם משתמש…",
     "Search members": "חפשי חברים",
-    "No members found by this name.": "לא נמצאו חברים."
+    "No members found by this name.": "לא נמצאו חברים.",
+    "{{count}} members found_0": "חבר אחד נמצא",
+    "{{count}} members found_1": "{{count}} חברים נמצאו",
+    "{{count}} members found_2": "{{count}} חברים נמצאו",
+    "{{count}} members found_3": "{{count}} חברים נמצאו"
 }

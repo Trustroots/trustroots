@@ -42,7 +42,13 @@
     "label": "português",
     "code": "pt",
     "english": "Portuguese",
-    "production": false
+    "production": true
+  },
+  {
+    "label": "português",
+    "code": "pt_BR",
+    "english": "Portuguese (Brazil)",
+    "production": true
   },
   { "label": "suomi", "code": "fi", "english": "Finnish", "production": false },
   {
@@ -67,7 +73,7 @@
     "label": "Українська",
     "code": "uk",
     "english": "Ukrainian",
-    "production": false
+    "production": true
   },
   {
     "label": "עִבְרִית",
@@ -115,7 +121,7 @@
     "label": "简体中文",
     "code": "zh_Hans",
     "english": "Chinese (simplified)",
-    "production": false
+    "production": true
   },
   {
     "label": "日本語",
