@@ -5,7 +5,7 @@ module.exports = {
     '^.+\\.(css|jpg|png|gif|webp|svg)$': '<rootDir>/jest/jest.empty-module.js',
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.js'],
-  testEnvironment: 'jest-environment-jsdom-sixteen',
+  testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
   transform: {
     '^.+\\.js$': 'babel-jest',

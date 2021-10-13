@@ -57,7 +57,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 2018,
   },
-  parser: 'babel-eslint',
+  parser: '@babel/eslint-parser',
   overrides: [
     /**
      * Overrides for server side app files
@@ -137,9 +137,10 @@ module.exports = {
         L: true,
         moment: true,
       },
-      parser: 'babel-eslint',
+      parser: '@babel/eslint-parser',
       parserOptions: {
         ecmaVersion: 2018,
+
         sourceType: 'module',
       },
     },
@@ -167,12 +168,13 @@ module.exports = {
           version: reactVersion,
         },
       },
-      parser: 'babel-eslint',
+      parser: '@babel/eslint-parser',
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
         },
         ecmaVersion: 2018,
+
         sourceType: 'module',
       },
       rules: {
