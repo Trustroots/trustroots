@@ -420,7 +420,9 @@ exports.send = async function (req, res) {
 
       // Spam filter
       function (done) {
-        if (!config.akismet.enabled) {
+        // Skip filter when disabled or when running a test
+        // @TODO: instead of skipping on test, mock the service
+        if (!config.akismet.enabled || process.env.NODE_ENV === 'test') {
           return done(null, 'unknown');
         }
 
