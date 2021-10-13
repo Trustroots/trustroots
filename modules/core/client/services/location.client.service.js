@@ -208,6 +208,13 @@ function LocationService($log, $http, SettingsFactory) {
             title += ', ' + geolocation.context[i].text;
           } else if (geolocation.context[i].id.substring(0, 8) === 'country.') {
             title += ', ' + geolocation.context[i].text;
+            if (
+              geolocation.context[i].short_code === 'us' &&
+              geolocation.place_name
+            ) {
+              // override for US where we need region to disambiguate (e.g. Portland, Oregon & Portland, Maine)
+              title = geolocation.place_name;
+            }
           }
         }
       }
