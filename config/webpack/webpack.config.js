@@ -4,6 +4,7 @@ const webpack = require('webpack');
 const webpackMerge = require('webpack-merge');
 const compact = require('lodash/compact');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 // When upgrading to Webpack 5, you might consider swapping this to `@automattic/webpack-rtl-plugin` (fork) because the original isn't maintained anymore
 const WebpackRTLPlugin = require('webpack-rtl-plugin');
@@ -81,12 +82,6 @@ module.exports = webpackMerge.merge(shims, {
   module: {
     rules: [
       {
-        enforce: 'pre',
-        exclude: /node_modules/,
-        test: /\.js$/,
-        loader: 'eslint-loader',
-      },
-      {
         test: /\.js$/,
         exclude: /node_modules/,
         use: [
@@ -153,6 +148,7 @@ module.exports = webpackMerge.merge(shims, {
     ],
   },
   plugins: compact([
+    new ESLintPlugin(),
     config.bundleAnalyzer.enabled &&
       new BundleAnalyzerPlugin(config.bundleAnalyzer.options),
     isProduction &&
