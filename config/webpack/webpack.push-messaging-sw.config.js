@@ -1,4 +1,5 @@
 const { join } = require('path');
+const ESLintPlugin = require('eslint-webpack-plugin');
 
 const basedir = join(__dirname, '../..');
 
@@ -14,16 +15,11 @@ module.exports = {
   module: {
     rules: [
       {
-        enforce: 'pre',
-        test: /\.js$/,
-        exclude: /node_modules/,
-        loader: 'eslint-loader',
-      },
-      {
         test: /\.js$/,
         exclude: /node_modules/,
         loader: 'babel-loader',
       },
     ],
   },
+  plugins: [new ESLintPlugin()],
 };
