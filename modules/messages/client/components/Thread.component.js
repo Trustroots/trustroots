@@ -12,7 +12,7 @@ import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
-import ReportMemberLink from '@/modules/support/client/components/ReportMemberLink.component';
+import ReportMember from '@/modules/support/client/components/ReportMember.component';
 import BlockMember from '@/modules/users/client/components/BlockMember.component';
 import BlockedMemberBanner from '@/modules/users/client/components/BlockedMemberBanner.component';
 import ThreadReply from '@/modules/messages/client/components/ThreadReply';
@@ -348,11 +348,14 @@ export default function Thread({ user, profileMinimumLength }) {
             {messages.length > 0 && (
               <ReferenceThread userToId={otherUser._id} />
             )}
-            <ReportMemberLink username={otherUser.username} />
+            <ReportMember
+              className="btn btn-sm btn-default"
+              username={otherUser.username}
+            />
             <br />
             <br />
             <BlockMember
-              className="btn btn-xs btn-link text-muted"
+              className="btn btn-sm btn-default"
               username={otherUser.username}
               isBlocked={isBlocked}
             />
