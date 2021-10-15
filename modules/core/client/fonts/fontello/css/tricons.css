@@ -1,11 +1,11 @@
 @font-face {
   font-family: 'tricons';
-  src: url('../font/tricons.eot?53632891');
-  src: url('../font/tricons.eot?53632891#iefix') format('embedded-opentype'),
-    url('../font/tricons.woff2?53632891') format('woff2'),
-    url('../font/tricons.woff?53632891') format('woff'),
-    url('../font/tricons.ttf?53632891') format('truetype'),
-    url('../font/tricons.svg?53632891#tricons') format('svg');
+  src: url('../font/tricons.eot?19666065');
+  src: url('../font/tricons.eot?19666065#iefix') format('embedded-opentype'),
+    url('../font/tricons.woff2?19666065') format('woff2'),
+    url('../font/tricons.woff?19666065') format('woff'),
+    url('../font/tricons.ttf?19666065') format('truetype'),
+    url('../font/tricons.svg?19666065#tricons') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -15,17 +15,16 @@
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   @font-face {
     font-family: 'tricons';
-    src: url('../font/tricons.svg?53632891#tricons') format('svg');
+    src: url('../font/tricons.svg?19666065#tricons') format('svg');
   }
 }
 */
-
 [class^='icon-']:before,
 [class*=' icon-']:before {
   font-family: 'tricons';
   font-style: normal;
   font-weight: normal;
-  speak: none;
+  speak: never;
 
   display: inline-block;
   text-decoration: inherit;
@@ -224,6 +223,9 @@
 .icon-android:before {
   content: '\e837';
 } /* '' */
+.icon-flag:before {
+  content: '\e838';
+} /* '' */
 .icon-instagram:before {
   content: '\f16d';
 } /* '' */
