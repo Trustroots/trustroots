@@ -43,6 +43,6 @@ jobs:
           git status
           git add ./public/locales/en/*.json
           if ! git diff --staged --exit-code -- ./public/locales >/dev/null; then
-            git commit -m 'Extract locales' -F ./public/locales/**
+            git commit -m 'Extract locales'
             git push --quiet
           fi
