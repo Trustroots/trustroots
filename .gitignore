@@ -61,6 +61,7 @@ logs
 log
 *.log
 npm-debug.*
+eslint_report.json
 
 # Docs
 public/developers/api
