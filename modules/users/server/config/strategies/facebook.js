@@ -16,15 +16,17 @@ module.exports = function (config) {
 
   // Don't configure the strategy if missing configuration
   if (!clientID || !clientSecret || !callbackURL) {
-    log(
-      'error',
-      'Cannot configure Facebook strategy due missing configuration #38h1jv',
-      {
-        clientIDExists: Boolean(clientID),
-        clientSecretExists: Boolean(clientSecret),
-        callbackURLExists: Boolean(callbackURL),
-      },
-    );
+    if (process.env.NODE_ENV !== 'test') {
+      log(
+        'error',
+        'Cannot configure Facebook strategy due missing configuration #38h1jv',
+        {
+          clientIDExists: Boolean(clientID),
+          clientSecretExists: Boolean(clientSecret),
+          callbackURLExists: Boolean(callbackURL),
+        },
+      );
+    }
     return;
   }
 

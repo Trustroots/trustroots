@@ -56,25 +56,31 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
   if (!measurementName || !_.isString(measurementName)) {
     errorMessage = 'InfluxDB Service: no `measurementName` defined. #ghi3kH';
     // Log the failure
-    log('error', errorMessage);
+    if (process.env.NODE_ENV !== 'test') {
+      log('error', errorMessage);
+    }
     return callback(new Error(errorMessage));
   }
 
   if (!_.isPlainObject(fields)) {
     errorMessage = 'InfluxDB Service: no `fields` defined. #ghugGJ';
     // Log the failure
-    log('error', errorMessage, {
-      measurement: measurementName,
-    });
+    if (process.env.NODE_ENV !== 'test') {
+      log('error', errorMessage, {
+        measurement: measurementName,
+      });
+    }
     return callback(new Error(errorMessage));
   }
 
   if (!_.isPlainObject(tags)) {
     errorMessage = 'InfluxDB Service: no `tags` defined. #ghj3ig';
     // Log the failure
-    log('error', errorMessage, {
-      measurement: measurementName,
-    });
+    if (process.env.NODE_ENV !== 'test') {
+      log('error', errorMessage, {
+        measurement: measurementName,
+      });
+    }
     return callback(new Error(errorMessage));
   }
 
@@ -91,10 +97,12 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
       errorMessage =
         'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh';
       // Log the failure
-      log('error', errorMessage, {
-        measurement: measurementName,
-        time: fields.time,
-      });
+      if (process.env.NODE_ENV !== 'test') {
+        log('error', errorMessage, {
+          measurement: measurementName,
+          time: fields.time,
+        });
+      }
 
       // callback with error
       return callback(new Error(errorMessage));
@@ -117,16 +125,18 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
       })
       .catch(function (err) {
         // Log the failure
-        log(
-          'error',
-          'InfluxDB Service: Error while writing to InfluxDB #fj38hh',
-          {
-            error: err,
-            measurement: measurementName,
-            fields,
-            tags,
-          },
-        );
+        if (process.env.NODE_ENV !== 'test') {
+          log(
+            'error',
+            'InfluxDB Service: Error while writing to InfluxDB #fj38hh',
+            {
+              error: err,
+              measurement: measurementName,
+              fields,
+              tags,
+            },
+          );
+        }
 
         return callback(err);
       });
