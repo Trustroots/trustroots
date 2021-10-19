@@ -47,7 +47,6 @@ export default function ThreadMessages({
             {t('Conversation started {{ date }}', {
               date: moment(messages[0].created).format('LL'),
             })}
-            {t('test')}
           </small>
         </div>
       </div>
