@@ -107,7 +107,7 @@ module.exports.save = function (message, callback) {
       },
     ],
     function (err) {
-      if (err) {
+      if (err && process.env.NODE_ENV !== 'test') {
         log('error', 'Saving message stats failed.', err);
       }
       if (typeof callback === 'function') {
