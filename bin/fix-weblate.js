@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+// Reformat JSON structure to be suitable for Weblate.
+// Context https://github.com/Trustroots/trustroots/issues/1487#issuecomment-636060326
+
 const { readFileSync, writeFileSync } = require('fs');
 const isObject = require('lodash/isObject');
 const first = require('lodash/first');
@@ -7,7 +10,7 @@ const first = require('lodash/first');
 const filenames = process.argv.slice(2);
 
 if (filenames.length === 0) {
-  console.log('Usage: node scripts/weblate-fix.js [filename, filename...]');
+  console.log('Usage: node ./bin/weblate-fix.js [filename, filename...]');
   process.exit(0);
 }
 
@@ -39,7 +42,7 @@ function convert(obj) {
              "foo._plural": "{{count}} foos"
            }
       */
-      for (let key2 of Object.keys(value)) {
+      for (const key2 of Object.keys(value)) {
         result[key2] = value[key2];
       }
     } else {
