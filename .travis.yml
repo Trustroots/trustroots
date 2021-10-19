@@ -5,12 +5,6 @@ matrix:
   fast_finish: true
   # Generally using active LTS versions here, see https://github.com/nodejs/Release
   include:
-    - name: Test client
-      node_js: 14
-      env: RUN="npm run test:client"
-    - name: Test server
-      node_js: 14
-      env: RUN="npm run test:server"
     - name: Build
       node_js: 14
       env: RUN="npx concurrently --kill-others-on-fail 'npm:build:tarball'" DEPLOY="true"
@@ -26,8 +20,6 @@ addons:
     packages:
       - graphicsmagick
 before_script:
-  - mongo --version
-  - mongod --version
   # Ensure stable NPM version (avoids `-next.0` tags)
   - npm install -g npm
   - ./scripts/ci/update-locales
