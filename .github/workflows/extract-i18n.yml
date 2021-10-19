@@ -28,15 +28,21 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Extract strings
-        run: npm run i18n:extract
+        run: |
+          npm run i18n:extract
+          git status
       - name: Reformat plural strings for Weblate
-        run: npm run i18n:fix-weblate
+        run: |
+          npm run i18n:fix-weblate
+          git status
       - name: Commit changes
         # We only add the Englsih strings, as that is the source language, and Weblate effectively owns the others
         run: |
           git config --local user.email "$(git log --format='%ae' HEAD^!)"
           git config --local user.name "$(git log --format='%an' HEAD^!)"
-          git add public/locales/en/*.json
-          if ! git diff --staged --exit-code -- public/locales >/dev/null; then
+          git status
+          git add ./public/locales/en/*.json
+          if ! git diff --staged --exit-code -- ./public/locales >/dev/null; then
             git commit -F -m "Extract locales"
+            git push
           fi
