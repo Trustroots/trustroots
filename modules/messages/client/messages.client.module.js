@@ -9,5 +9,4 @@ require('@/modules/messages/client/config/messages.client.routes');
 
 if (process.env.NODE_ENV !== 'test') {
   require('@/modules/messages/client/config/messages.client.run');
-  let sdf;
 }
