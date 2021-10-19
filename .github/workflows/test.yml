@@ -37,6 +37,8 @@ jobs:
         uses: supercharge/mongodb-github-action@1.6.0
         with:
           mongodb-version: '4.4'
+      - name: Install graphicsmagick
+        run: sudo apt-get install -y graphicsmagick
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
