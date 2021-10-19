@@ -34,6 +34,7 @@
     "install-dependencies": "node ./bin/install-deps.js",
     "lint:watch": "esw --cache --watch --quiet .",
     "lint": "eslint .",
+    "lint:with-report": "eslint --output-file ./eslint_report.json --format json .",
     "migrate-down": "migrate down",
     "migrate": "migrate up",
     "postshrinkwrap": "node -e \"fs.utimesSync('./node_modules', new Date(), new Date());\"",

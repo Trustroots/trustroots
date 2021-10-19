@@ -15,7 +15,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: '14.x'
+          node-version: 14
       - name: Cache Node.js modules
         uses: actions/cache@v2
         with:
@@ -29,7 +29,7 @@ jobs:
         run: npm ci
       - name: Lint
         # See https://eslint.org/docs/user-guide/command-line-interface#options
-        run: npm run lint -- --output-file eslint_report.json --format json src
+        run: npm run lint:with-report
         # Continue to the next step even if this fails
         continue-on-error: true
       - name: Annotate Code Linting Results
