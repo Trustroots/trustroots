@@ -34,12 +34,8 @@ jobs:
         run: |
           npm run i18n:fix-weblate
       - name: Commit changes
-        # We only add the Englsih strings, as that is the source language, and Weblate effectively owns the others
-        run: |
-          git config --local user.email "$(git log --format='%ae' HEAD^!)"
-          git config --local user.name "$(git log --format='%an' HEAD^!)"
-          git add ./public/locales/en/*.json
-          if ! git diff --staged --exit-code -- ./public/locales >/dev/null; then
-            git commit -m 'Extract locales'
-            git push origin HEAD:${GITHUB_REF} --quiet
-          fi
+        uses: EndBug/add-and-commit@v7
+        with:
+          default_author: github_actions
+          message: 'Exctract locales'
+          add: 'public/locales/en/*.json'
