@@ -42,7 +42,6 @@ const influxService = require('./influx.server.service.js');
  * There should be limited amount of tags with limited amount of possible values
  * @property {Object} [meta] - object of a shape { <meta1>: string| number, ... }
  * Meta contains non-essential data, which will be saved only to some stat services
- * Meta will be saved into influx, not into stathat.
  * All string values which are not tags should go to meta.
  * @property {Date} [time] - time of the point if it is specified
  *

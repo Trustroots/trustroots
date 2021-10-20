@@ -41,12 +41,6 @@ describe('Stat API integration tests', function () {
 
   context('endpoints enabled', function () {
     beforeEach(function () {
-      // stub the config.stathat.key
-      sinon.stub(config.stathat, 'key').value('stathatkey');
-
-      // stub enable stathat in config
-      sinon.stub(config.stathat, 'enabled').value(true);
-
       // stub enable influx in config
       sinon.stub(config.influxdb, 'enabled').value(true);
     });

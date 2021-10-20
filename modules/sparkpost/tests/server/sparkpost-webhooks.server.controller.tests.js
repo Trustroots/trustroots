@@ -1,4 +1,4 @@
-// test whether the daily statistics job reaches influxdb and stathat via Stats api
+// test whether the daily statistics job reaches influxdb via Stats api
 
 const should = require('should');
 const path = require('path');
@@ -16,7 +16,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
     sinon.restore();
   });
 
-  // stub the influx and stathat endpoints
+  // stub the influx endpoint
   beforeEach(function () {
     // stub the influx endpoint(s)
     sinon.stub(influx.InfluxDB.prototype, 'writeMeasurement');
@@ -52,9 +52,6 @@ describe('Sparkpost Webhooks - Integration Test', function () {
 
   context('influxdb configured', function () {
     beforeEach(function () {
-      // stub enable stathat in config
-      sinon.stub(config.stathat, 'enabled').value(false);
-
       // stub enable influx in config
       sinon.stub(config.influxdb, 'enabled').value(true);
     });
