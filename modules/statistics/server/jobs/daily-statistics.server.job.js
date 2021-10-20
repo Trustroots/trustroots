@@ -282,25 +282,18 @@ module.exports = function (job, agendaDone) {
  * all those `log()`s.
  */
 function writeDailyStat(statObject, callback) {
-  // Save to influx and stathat via Stats api
+  // Save to influx via Stats api
   // eslint-disable-next-line no-unused-vars
   statsService.stat(statObject, function (err, result) {
     // Log errors
     if (err) {
       // if there exist stat-service specific errors, log them separately
-      if (err.message === 'Writing to Influx or Stathat service failed.') {
+      if (err.message === 'Writing to Influx service failed.') {
         if (err.errors && err.errors.influx) {
           log(
             'error',
             'Daily statistics: failed writing to influx',
             err.errors.influx,
-          );
-        }
-        if (err.errors && err.errors.stathat) {
-          log(
-            'error',
-            'Daily statistics: failed writing to stathat',
-            err.errors.stathat,
           );
         }
       } else {

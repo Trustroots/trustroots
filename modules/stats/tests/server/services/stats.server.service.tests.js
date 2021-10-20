@@ -3,22 +3,14 @@ const path = require('path');
 const statsService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
-const stathatService = require(path.resolve(
-  './modules/stats/server/services/stathat.server.service',
-));
 const influxService = require(path.resolve(
   './modules/stats/server/services/influx.server.service',
 ));
 const sinon = require('sinon');
 
 describe('General Stats API Service Unit Tests', function () {
-  // replace the influx & stathat service stat() functions with fake version
-
   beforeEach(function () {
-    // stub the service dependencies
-    sinon.stub(stathatService, 'stat');
-    stathatService.stat.callsArgAsync(1);
-
+    // replace the influx service stat() function with fake version
     sinon.stub(influxService, 'stat');
     influxService.stat.callsArgAsync(1);
   });
@@ -128,85 +120,45 @@ describe('General Stats API Service Unit Tests', function () {
           return done();
         });
       });
-
-      it('should reach stathatService.stat with correct data', function (done) {
-        statsService.stat(validData, function (e) {
-          if (e) return done(e);
-
-          sinon.assert.calledOnce(stathatService.stat);
-
-          const calledWith = stathatService.stat.getCall(0).args[0];
-
-          should(calledWith).have.property('namespace', 'test');
-          should(calledWith).have.propertyByPath('counts', 'testCount').eql(1);
-          should(calledWith)
-            .have.propertyByPath('values', 'testValue')
-            .eql(3.5);
-          should(calledWith).have.propertyByPath('meta', 'testMeta').eql(13);
-          should(calledWith)
-            .have.propertyByPath('tags', 'testTag')
-            .eql('testing');
-
-          return done();
-        });
-      });
     });
   });
 
   describe('The count(name, ?count, ?time) function', function () {
-    it('[count(name)] should reach the influx & stathat services with correct data', function (done) {
+    it('[count(name)] should reach the influx service with correct data', function (done) {
       statsService.count('testCount', function (e) {
         if (e) return done(e);
 
         sinon.assert.calledOnce(influxService.stat);
-        sinon.assert.calledOnce(stathatService.stat);
 
         const influxCalledWith = influxService.stat.getCall(0).args[0];
-        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', 'testCount');
-        should(stathatCalledWith).have.property('namespace', 'testCount');
-
         should(influxCalledWith).have.propertyByPath('counts', 'count').eql(1);
-        should(stathatCalledWith).have.propertyByPath('counts', 'count').eql(1);
-
         should(influxCalledWith).not.have.property('time');
-        should(stathatCalledWith).not.have.property('time');
-
         should(influxCalledWith).not.have.property('values');
-        should(stathatCalledWith).not.have.property('values');
 
         return done();
       });
     });
 
-    it('[count(name, count)] should reach the influx & stathat services with correct data', function (done) {
+    it('[count(name, count)] should reach the influx service with correct data', function (done) {
       statsService.count('testCount', 3, function (e) {
         if (e) return done(e);
 
         sinon.assert.calledOnce(influxService.stat);
-        sinon.assert.calledOnce(stathatService.stat);
 
         const influxCalledWith = influxService.stat.getCall(0).args[0];
-        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', 'testCount');
-        should(stathatCalledWith).have.property('namespace', 'testCount');
-
         should(influxCalledWith).have.propertyByPath('counts', 'count').eql(3);
-        should(stathatCalledWith).have.propertyByPath('counts', 'count').eql(3);
-
         should(influxCalledWith).not.have.property('time');
-        should(stathatCalledWith).not.have.property('time');
-
         should(influxCalledWith).not.have.property('values');
-        should(stathatCalledWith).not.have.property('values');
 
         return done();
       });
     });
 
-    it('[count(name, count, time)] should reach the influx & stathat services with correct data', function (done) {
+    it('[count(name, count, time)] should reach the influx service with correct data', function (done) {
       // a random testing time
       const time = new Date('2000-01-01');
 
@@ -214,22 +166,13 @@ describe('General Stats API Service Unit Tests', function () {
         if (e) return done(e);
 
         sinon.assert.calledOnce(influxService.stat);
-        sinon.assert.calledOnce(stathatService.stat);
 
         const influxCalledWith = influxService.stat.getCall(0).args[0];
-        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', 'testCount');
-        should(stathatCalledWith).have.property('namespace', 'testCount');
-
         should(influxCalledWith).have.propertyByPath('counts', 'count').eql(3);
-        should(stathatCalledWith).have.propertyByPath('counts', 'count').eql(3);
-
         should(influxCalledWith).have.property('time', time);
-        should(stathatCalledWith).have.property('time', time);
-
         should(influxCalledWith).not.have.property('values');
-        should(stathatCalledWith).not.have.property('values');
 
         return done();
       });
@@ -237,7 +180,7 @@ describe('General Stats API Service Unit Tests', function () {
   });
 
   describe('The value(name, value, ?time)', function () {
-    it('[value(name, value)] should reach the influx & stathat services with correct data', function (done) {
+    it('[value(name, value)] should reach the influx service with correct data', function (done) {
       const name = 'testValue';
       const value = -13.31;
 
@@ -245,32 +188,21 @@ describe('General Stats API Service Unit Tests', function () {
         if (e) return done(e);
 
         sinon.assert.calledOnce(influxService.stat);
-        sinon.assert.calledOnce(stathatService.stat);
 
         const influxCalledWith = influxService.stat.getCall(0).args[0];
-        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', name);
-        should(stathatCalledWith).have.property('namespace', name);
-
         should(influxCalledWith)
           .have.propertyByPath('values', 'value')
           .eql(value);
-        should(stathatCalledWith)
-          .have.propertyByPath('values', 'value')
-          .eql(value);
-
         should(influxCalledWith).not.have.property('time');
-        should(stathatCalledWith).not.have.property('time');
-
         should(influxCalledWith).not.have.property('counts');
-        should(stathatCalledWith).not.have.property('counm ,ts');
 
         return done();
       });
     });
 
-    it('[value(name, value, time)] should reach the influx & stathat services with correct data', function (done) {
+    it('[value(name, value, time)] should reach the influx service with correct data', function (done) {
       const name = 'testValue';
       const value = -13.31;
       const time = new Date('2000-01-01');
@@ -279,26 +211,15 @@ describe('General Stats API Service Unit Tests', function () {
         if (e) return done(e);
 
         sinon.assert.calledOnce(influxService.stat);
-        sinon.assert.calledOnce(stathatService.stat);
 
         const influxCalledWith = influxService.stat.getCall(0).args[0];
-        const stathatCalledWith = stathatService.stat.getCall(0).args[0];
 
         should(influxCalledWith).have.property('namespace', name);
-        should(stathatCalledWith).have.property('namespace', name);
-
         should(influxCalledWith)
           .have.propertyByPath('values', 'value')
           .eql(value);
-        should(stathatCalledWith)
-          .have.propertyByPath('values', 'value')
-          .eql(value);
-
         should(influxCalledWith).have.property('time', time);
-        should(stathatCalledWith).have.property('time', time);
-
         should(influxCalledWith).not.have.property('counts');
-        should(stathatCalledWith).not.have.property('counts');
 
         return done();
       });

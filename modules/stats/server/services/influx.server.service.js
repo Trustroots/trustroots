@@ -156,7 +156,6 @@ const writeMeasurement = function (measurementName, fields, tags, callback) {
  * There should be limited amount of tags with limited amount of possible values
  * @property {Object} [meta] - object of a shape { <meta1>: string| number, ... }
  * Meta contains non-essential data, which will be saved only to some stat services
- * Meta will be saved into influx, not into stathat.
  * All string values which are not tags should go to meta.
  * @property {Date} [time] - time of the point if it is specified
  *
@@ -215,6 +214,7 @@ const stat = function (stat, callback) {
   // of meta, values, counts and time.
   // We will move the time (optional) from (influx) IPoint.fields to
   // IPoint.timestamp in the writeMeasurement function.
+  // Meta field exists separately for historical reasons; we used to support "Stathat" service which couldn't handle string data.
   const fields = _.extend({}, meta, values, counts, timeExtend);
 
   writeMeasurement(name, fields, tags, callback);
