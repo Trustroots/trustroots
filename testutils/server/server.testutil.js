@@ -9,27 +9,22 @@ const agenda = require(path.resolve('./config/lib/agenda'));
 /**
  * Helper for testing Agenda jobs
  */
-exports.catchJobs = function () {
+exports.catchJobs = () => {
   const jobs = [];
   let originalNow;
 
-  beforeEach(function () {
+  beforeEach(() => {
     jobs.length = 0;
 
     // Make agenda.now() give us it's jobs
     originalNow = agenda.now;
-    agenda.now = function (type, data, callback) {
+    agenda.now = async (type, data) => {
       // ensure it is plain data by serializing to json and back
       jobs.push(JSON.parse(JSON.stringify({ type, data })));
-
-      // run in nextTick() to simulate async action that real agenda would do
-      process.nextTick(function () {
-        callback();
-      });
     };
   });
 
-  afterEach(function () {
+  afterEach(() => {
     // Revert all changes we made
     agenda.now = originalNow;
   });
@@ -41,11 +36,11 @@ exports.catchJobs = function () {
  * Helper for testing sending emails
  * This helper just catches them up without sending them anywhere.
  */
-exports.catchEmails = function () {
+exports.catchEmails = () => {
   const sentEmails = [];
   let originalMailerOptions;
 
-  beforeEach(function () {
+  beforeEach(() => {
     sentEmails.length = 0;
 
     // Make nodemailer give us it's emails
@@ -61,7 +56,7 @@ exports.catchEmails = function () {
     };
   });
 
-  afterEach(function () {
+  afterEach(() => {
     // Revert all changes we made
     config.mailer.options = originalMailerOptions;
   });

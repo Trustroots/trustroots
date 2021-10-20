@@ -647,9 +647,19 @@ exports.renderEmail = function (templateName, params, callback) {
   );
 };
 
-exports.renderEmailAndSend = function (templateName, params, callback) {
-  exports.renderEmail(templateName, params, function (err, email) {
-    if (err) return callback(err);
-    agenda.now('send email', email, callback);
+exports.renderEmailAndSend = (templateName, params, callback) => {
+  exports.renderEmail(templateName, params, async (err, email) => {
+    if (err) {
+      return callback(err);
+    }
+
+    try {
+      await agenda.now('send email', email);
+    } catch (err) {
+      log('error', 'Failed to create email send job in Agenda.', err);
+      return callback(err);
+    }
+
+    callback();
   });
 };

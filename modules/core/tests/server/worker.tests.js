@@ -2,7 +2,7 @@ const _ = require('lodash');
 const path = require('path');
 const sinon = require('sinon');
 
-describe('Worker tests', function () {
+describe('Worker tests', () => {
   const agenda = require(path.resolve('./config/lib/agenda'));
   const worker = require(path.resolve('./config/lib/worker'));
 
@@ -15,7 +15,7 @@ describe('Worker tests', function () {
   const definedJobs = [];
   const scheduledJobs = [];
 
-  beforeEach(function () {
+  beforeEach(() => {
     // Reset
 
     definedJobs.length = 0;
@@ -23,12 +23,12 @@ describe('Worker tests', function () {
 
     // Stub out all of agendas functionality as we are not testing agenda
 
-    sinon.stub(agenda, 'start').callsFake(function () {});
+    sinon.stub(agenda, 'start').callsFake(() => {});
 
     // Pass through agenda.on('ready')
     // Save handler for agenda.on('fail')
 
-    sinon.stub(agenda, 'on').callsFake(function (name, fn) {
+    sinon.stub(agenda, 'on').callsFake((name, fn) => {
       if (name === 'ready') {
         process.nextTick(fn);
       } else if (name === 'fail') {
@@ -38,11 +38,11 @@ describe('Worker tests', function () {
 
     // Collect calls to agenda.define() and agenda.every()
 
-    sinon.stub(agenda, 'define').callsFake(function (name, options, fn) {
+    sinon.stub(agenda, 'define').callsFake((name, options, fn) => {
       definedJobs.push({ name, options, fn });
     });
 
-    sinon.stub(agenda, 'every').callsFake(function (repeat, name) {
+    sinon.stub(agenda, 'every').callsFake((repeat, name) => {
       scheduledJobs.push({ repeat, name });
     });
 
@@ -51,16 +51,16 @@ describe('Worker tests', function () {
     sinon.useFakeTimers();
   });
 
-  afterEach(function () {
+  afterEach(() => {
     sinon.restore();
     worker.removeExitListeners();
   });
 
-  beforeEach(function (done) {
+  beforeEach(done => {
     worker.start(workerOptions, done);
   });
 
-  it('will not retry with a non-network error', function () {
+  it('will not retry with a non-network error', () => {
     const job = {
       attrs: {
         _id: 'jobid',
@@ -75,7 +75,7 @@ describe('Worker tests', function () {
     mock.verify();
   });
 
-  it('will retry on ECONNREFUSED', function () {
+  it('will retry on ECONNREFUSED', () => {
     const job = {
       attrs: {
         _id: 'jobid',
@@ -94,7 +94,7 @@ describe('Worker tests', function () {
     mock.verify();
   });
 
-  it('will retry on ECONNRESET', function () {
+  it('will retry on ECONNRESET', () => {
     const job = {
       attrs: {
         _id: 'jobid',
@@ -113,7 +113,7 @@ describe('Worker tests', function () {
     mock.verify();
   });
 
-  it('will not retry when max retries is reached', function () {
+  it('will not retry when max retries is reached', () => {
     const job = {
       attrs: {
         _id: 'jobid',
@@ -128,53 +128,53 @@ describe('Worker tests', function () {
     mock.verify();
   });
 
-  it('defines [send email] job', function () {
+  it('defines [send email] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('send email');
   });
 
-  it('defines [check unread messages] job', function () {
+  it('defines [check unread messages] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('check unread messages');
   });
 
-  it('defines [daily statistics] job', function () {
+  it('defines [daily statistics] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('daily statistics');
   });
 
-  it('defines [send signup reminders] job', function () {
+  it('defines [send signup reminders] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('send signup reminders');
   });
 
-  it('defines [reactivate hosts] job', function () {
+  it('defines [reactivate hosts] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('reactivate hosts');
   });
 
-  it('defines [welcome sequence first] job', function () {
+  it('defines [welcome sequence first] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('welcome sequence first');
   });
 
-  it('defines [welcome sequence second] job', function () {
+  it('defines [welcome sequence second] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('welcome sequence second');
   });
 
-  it('defines [welcome sequence third] job', function () {
+  it('defines [welcome sequence third] job', () => {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('welcome sequence third');
   });
 
-  it('defines right number of repeating jobs', function () {
+  it('defines right number of repeating jobs', () => {
     scheduledJobs.length.should.equal(8);
   });
 
-  it('only schedules defined jobs', function () {
+  it('only schedules defined jobs', () => {
     const jobNames = _.map(definedJobs, 'name');
-    scheduledJobs.forEach(function (job) {
+    scheduledJobs.forEach(job => {
       job.name.should.be.oneOf(jobNames);
     });
   });
