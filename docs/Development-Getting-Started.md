@@ -80,6 +80,9 @@ Make sure to familiarise yourself with our [pull request workflow](Pull-Request-
 - Project has [`.editorconfig`](https://github.com/Trustroots/trustroots/blob/master/.editorconfig) file — [download extension for your editor](http://editorconfig.org/#download).
 - Configure Eslint integration for your editor
 
+## Deeper Dive
+Check out the [Development docs](./Development.md) for more info about tooling, mock data, running tests, etc.
+
 ## Further studying
 
 If you feel like checking out some docs before diving in fixing bugs with old Angular -sections of the frontend codebase, we recommend getting familiar with [AngularJS documentation](https://angularjs.org/) as it intends to have steep learning curve.
