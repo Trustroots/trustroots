@@ -8,6 +8,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import BlockMember from './BlockMember.component';
+import ReportMember from '@/modules/support/client/components/ReportMember.component.js';
 
 export default function BlockedMemberBanner({ username }) {
   const { t } = useTranslation('users');
@@ -17,6 +18,7 @@ export default function BlockedMemberBanner({ username }) {
       <p>
         {t('You have blocked this member.')}{' '}
         {t('They cannot see or message you.')}
+        <ReportMember username={username} className="btn btn-link" />
         <BlockMember isBlocked username={username} className="btn btn-link" />
       </p>
     </div>
