@@ -45,14 +45,24 @@ function UsersRoutes($stateProvider) {
     })
     .state('profile-edit.about', {
       url: '',
-      templateUrl: profileEditAboutTemplateUrl,
-      controller: 'ProfileEditAboutController',
-      controllerAs: 'profileEditAbout',
+      profileEditAboutTemplateUrl, // TODO: rm this line,
+      // it's only here to allow compilation when switching to the angular version
+      template: '<profile-edit-about app="app" />',
       requiresAuth: true,
       data: {
         pageTitle: 'Edit profile',
       },
     })
+    // .state('profile-edit.about', {
+    //   url: '',
+    //   templateUrl: profileEditAboutTemplateUrl,
+    //   controller: 'ProfileEditAboutController',
+    //   controllerAs: 'profileEditAbout',
+    //   requiresAuth: true,
+    //   data: {
+    //     pageTitle: 'Edit profile',
+    //   },
+    // })
     .state('profile-edit.locations', {
       url: '/locations',
       templateUrl: profileEditLocationsTemplateUrl,

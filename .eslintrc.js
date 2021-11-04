@@ -14,7 +14,7 @@ const rules = {
   'keyword-spacing': [2, { before: true, after: true }],
   'new-cap': [2, { newIsCapExceptions: ['acl.memoryBackend', 'acl'] }],
   'no-caller': 2,
-  'no-console': 2,
+  'no-console': 1,
   'no-duplicate-imports': 2,
   'no-multi-spaces': 2,
   'no-process-exit': 2,
