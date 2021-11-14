@@ -2,7 +2,8 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^modules/(.*)$': '<rootDir>/modules/$1',
-    '^.+\\.(css|jpg|png|gif|webp|svg)$': '<rootDir>/jest/jest.empty-module.js',
+    '^.+\\.(css|jpg|png|gif|webp|svg|less)$':
+      '<rootDir>/jest/jest.empty-module.js',
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.js'],
   testEnvironment: 'jsdom',
