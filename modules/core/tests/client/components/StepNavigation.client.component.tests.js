@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react';
+import { screen, render, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
@@ -26,7 +26,7 @@ describe('Step Navigation through 3 steps', () => {
     it(`when currentStep=${currentStep} and numberOfSteps=${3} there is only ${buttons.join(
       ' and ',
     )} button`, () => {
-      const { getAllByRole } = render(
+      render(
         <StepNavigation
           currentStep={currentStep}
           numberOfSteps={numberOfSteps}
@@ -34,7 +34,7 @@ describe('Step Navigation through 3 steps', () => {
           {...handlers}
         />,
       );
-      const foundButtons = getAllByRole('button');
+      const foundButtons = screen.getAllByRole('button');
       // we have navigation for large and for small screen
       // so we have all buttons twice
       expect(foundButtons).toHaveLength(buttons.length * 2);
@@ -95,7 +95,7 @@ describe('Step Navigation through 3 steps', () => {
     it(`when currentStep=${currentStep}, numberOfSteps=${numberOfSteps} and disabled=${JSON.stringify(
       disabled,
     )}, ${expectations.join(' and ')}`, () => {
-      const { getAllByRole } = render(
+      render(
         <StepNavigation
           currentStep={currentStep}
           disabled={disabled}
@@ -103,7 +103,7 @@ describe('Step Navigation through 3 steps', () => {
           {...handlers}
         />,
       );
-      const foundButtons = getAllByRole('button');
+      const foundButtons = screen.getAllByRole('button');
       // we have navigation for large and for small screen
       // so we have all buttons twice
       expect(foundButtons).toHaveLength(buttons.length * 2);
@@ -158,7 +158,7 @@ describe('Step Navigation through 3 steps', () => {
     }) => {
       it(`when ${button} button is clicked, the ${testTrigger} should be triggered`, () => {
         const handler = jest.fn();
-        const { getAllByRole } = render(
+        render(
           <StepNavigation
             currentStep={currentStep}
             disabled={disabled}
@@ -167,7 +167,7 @@ describe('Step Navigation through 3 steps', () => {
             {...{ [testTrigger]: handler }}
           />,
         );
-        const testedButton = getAllByRole('button')[buttonIndex];
+        const testedButton = screen.getAllByRole('button')[buttonIndex];
         expect(testedButton).toHaveTextContent(button);
         expect(handler).not.toHaveBeenCalled();
         fireEvent.click(testedButton);

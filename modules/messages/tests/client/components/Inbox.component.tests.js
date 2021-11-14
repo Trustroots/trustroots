@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react';
+import { screen, render, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
@@ -23,8 +23,8 @@ const moreThreads = generateThreads(7);
 describe('<Inbox>', () => {
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByRole } = render(<Inbox user={me} />);
-    expect(await findByRole('alert')).toHaveTextContent(
+    render(<Inbox user={me} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
       'No conversations yet.',
     );
     expect(api.fetchThreads).toHaveBeenCalled();
@@ -32,8 +32,8 @@ describe('<Inbox>', () => {
 
   it('shows a list of threads with excerpts', async () => {
     api.fetchThreads.mockResolvedValue({ threads });
-    const { findAllByRole } = render(<Inbox user={me} />);
-    const items = await findAllByRole('listitem');
+    render(<Inbox user={me} />);
+    const items = await screen.findAllByRole('listitem');
     expect(items.length).toBe(threads.length);
     threads.forEach((thread, i) => {
       expect(items[i]).toHaveTextContent(thread.message.excerpt);
@@ -43,26 +43,25 @@ describe('<Inbox>', () => {
   it('shows that I have replied if the last message is from me', async () => {
     const threads = generateThreads(1, { userFrom: me });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me} />);
-    await findByRole('listitem');
-    const icon = container.querySelector('.icon-reply');
-    expect(icon).toBeInTheDocument();
-    expect(icon).toHaveAttribute('title', 'You replied');
+    render(<Inbox user={me} />);
+    await screen.findByRole('listitem');
+    expect(screen.getByTitle('You replied')).toBeInTheDocument();
   });
 
   it('does not show that I have replied if the last message is from them', async () => {
     const threads = generateThreads(1, { userTo: me });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me} />);
-    await findByRole('listitem');
-    const icon = container.querySelector('.icon-reply');
-    expect(icon).not.toBeInTheDocument();
+    render(<Inbox user={me} />);
+    await screen.findByRole('listitem');
+    expect(screen.queryByTitle('You replied')).not.toBeInTheDocument();
   });
 
   it('shows a read more button if there are more results', async () => {
     api.fetchThreads.mockResolvedValue({ threads, nextParams: { foo: 'bar' } });
-    const { findByRole } = render(<Inbox user={me} />);
-    expect(await findByRole('button')).toHaveTextContent('More messages');
+    render(<Inbox user={me} />);
+    expect(await screen.findByRole('button')).toHaveTextContent(
+      'More messages',
+    );
   });
 
   it('will load the next page on clicking the button', async () => {
@@ -73,8 +72,8 @@ describe('<Inbox>', () => {
           : { threads, nextParams: { page: 2 } },
       ),
     );
-    const { findByText, queryAllByRole } = render(<Inbox user={me} />);
-    const more = await findByText('More messages');
+    render(<Inbox user={me} />);
+    const more = await screen.findByText('More messages');
 
     // Not sure why I had to wrap this in act()
     //
@@ -88,9 +87,11 @@ describe('<Inbox>', () => {
       await fireEvent.click(more);
     });
 
-    await findByText(moreThreads[moreThreads.length - 1].message.excerpt);
+    await screen.findByText(
+      moreThreads[moreThreads.length - 1].message.excerpt,
+    );
 
-    const items = queryAllByRole('listitem');
+    const items = screen.queryAllByRole('listitem');
     expect(items.length).toBe(threads.length + moreThreads.length);
 
     expect(eventTrack).toHaveBeenCalledWith('inbox-pagination', {

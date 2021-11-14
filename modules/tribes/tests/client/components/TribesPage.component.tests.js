@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  fireEvent,
-  render,
-  waitForElement,
-  within,
-} from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import '@/config/client/i18n';
 import {
@@ -30,22 +25,10 @@ const isMember = (user, tribe) => user.memberIds.includes(tribe._id);
 const nestedTextMatch = text => (content, element) =>
   element.textContent.includes(text);
 
-// helper that renders the TribesPage, waits for the tribes to be loaded from API and returns the rendered page
-const renderAndWaitForTribes = async ({ user }) => {
-  const page = render(
-    <TribesPage onMembershipUpdated={onMembershipUpdated} user={user} />,
-  );
-
-  // the tribes should be displayed
-  await waitForElement(() => {
-    const items = page.getAllByRole('listitem');
-    // we always have the "Send us suggestions!" item
-    // so we need to wait (i.e. throw error) until the tribes appear, too...
-    expect(items.length).toBeGreaterThan(1);
-    return items;
-  });
-
-  return page;
+// Helper that waits for the tribes to be loaded from API
+const waitForTribes = async () => {
+  const items = await screen.findAllByRole('listitem');
+  expect(items.length).toBeGreaterThan(1);
 };
 
 describe('CirclesPage', () => {
@@ -56,8 +39,6 @@ describe('CirclesPage', () => {
       users: generateUsers(1, {}, 'client', tribes),
     };
   })();
-
-  let page;
 
   beforeEach(() => {
     api.tribes.read.mockImplementation(async () => fake.tribes);
@@ -74,13 +55,14 @@ describe('CirclesPage', () => {
   });
 
   describe('not signed in', () => {
-    beforeEach(async () => {
-      page = await renderAndWaitForTribes({ user: null });
-    });
-
     it('fetch circles from api and show circles on page', async () => {
+      render(
+        <TribesPage onMembershipUpdated={onMembershipUpdated} user={null} />,
+      );
+      await waitForTribes();
+
       // get tribes and omit the last one, which is "Missing your Tribe?"
-      const tribes = page.getAllByRole('listitem').slice(0, -1);
+      const tribes = screen.getAllByRole('listitem').slice(0, -1);
 
       expect(tribes).toHaveLength(fake.tribes.length);
 
@@ -94,8 +76,13 @@ describe('CirclesPage', () => {
     });
 
     it('the join button should be a link to circle page', async () => {
+      render(
+        <TribesPage onMembershipUpdated={onMembershipUpdated} user={null} />,
+      );
+      await waitForTribes();
+
       // get tribes and omit the last one, which is "Missing your Tribe?"
-      const buttons = page.getAllByText('Join', { selector: 'a' });
+      const buttons = screen.getAllByText('Join', { selector: 'a' });
 
       expect(buttons).toHaveLength(fake.tribes.length);
 
@@ -109,13 +96,17 @@ describe('CirclesPage', () => {
   });
 
   describe('signed in', () => {
-    beforeEach(async () => {
-      page = await renderAndWaitForTribes({ user: fake.users[0] });
-    });
-
     it('show circles on page', async () => {
+      render(
+        <TribesPage
+          onMembershipUpdated={onMembershipUpdated}
+          user={fake.users[0]}
+        />,
+      );
+      await waitForTribes();
+
       // get tribes and omit the last one, which is "Missing your Tribe?"
-      const tribes = page.getAllByRole('listitem').slice(0, -1);
+      const tribes = screen.getAllByRole('listitem').slice(0, -1);
 
       expect(tribes).toHaveLength(fake.tribes.length);
 
@@ -140,8 +131,16 @@ describe('CirclesPage', () => {
     });
 
     it('user is member of some circles and not member of others', async () => {
+      render(
+        <TribesPage
+          onMembershipUpdated={onMembershipUpdated}
+          user={fake.users[0]}
+        />,
+      );
+      await waitForTribes();
+
       fake.tribes.forEach(tribeData => {
-        const tribe = page.getByText(nestedTextMatch(tribeData.label), {
+        const tribe = screen.getByText(nestedTextMatch(tribeData.label), {
           selector: 'li',
         });
 
@@ -159,7 +158,7 @@ describe('CirclesPage', () => {
           expect(api.tribes.leave).toHaveBeenCalledTimes(0);
 
           // Find the tribe item...
-          const tribe = page.getByText(nestedTextMatch(tribeData.label), {
+          const tribe = screen.getByText(nestedTextMatch(tribeData.label), {
             selector: 'li',
           });
           // ...find the Joined button...
@@ -170,10 +169,11 @@ describe('CirclesPage', () => {
           fireEvent.click(joined);
 
           // Confirmation modal should open...
-          const modal = await waitForElement(() =>
-            page.getByText(nestedTextMatch('Leave this circle?'), {
+          const modal = await screen.findByText(
+            nestedTextMatch('Leave this circle?'),
+            {
               selector: '.modal-dialog',
-            }),
+            },
           );
 
           // ...and we click Leave Tribe button within it.
@@ -183,9 +183,7 @@ describe('CirclesPage', () => {
           fireEvent.click(confirm);
 
           // Wait until the Joined button changes to Join
-          await waitForElement(() =>
-            within(tribe).getByText('Join', { selector: 'button' }),
-          );
+          await within(tribe).findByText('Join', { selector: 'button' });
 
           // Check that api and onMembershipUpdated was called.
           expect(api.tribes.leave).toHaveBeenCalledTimes(1);
@@ -200,7 +198,7 @@ describe('CirclesPage', () => {
           expect(api.tribes.join).toHaveBeenCalledTimes(0);
 
           // Find the tribe item...
-          const tribe = page.getByText(nestedTextMatch(tribeData.label), {
+          const tribe = screen.getByText(nestedTextMatch(tribeData.label), {
             selector: 'li',
           });
           // ...find the Join button...
@@ -209,9 +207,7 @@ describe('CirclesPage', () => {
           fireEvent.click(join);
 
           // Wait until the Join button changes to Joined
-          await waitForElement(() =>
-            within(tribe).getByText('Joined', { selector: 'button' }),
-          );
+          await within(tribe).findByText('Joined', { selector: 'button' });
 
           // Check that api and onMembershipUpdated was called.
           expect(api.tribes.join).toHaveBeenCalledTimes(1);

@@ -42,7 +42,7 @@ getRouteParams.mockReturnValue({
 });
 
 async function waitForLoader() {
-  await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
+  await waitForElementToBeRemoved(() => screen.queryByText('Wait a moment…'));
 }
 
 describe('<Thread>', () => {
@@ -56,22 +56,20 @@ describe('<Thread>', () => {
     });
 
     it('does not allow sending a message when the profile is too short', async () => {
-      const { findByText, queryByRole } = render(
-        <Thread user={me} profileMinimumLength={9999} />,
-      );
-      await findByText(/Your profile seems quite empty/);
-      expect(queryByRole('textbox')).not.toBeInTheDocument();
+      render(<Thread user={me} profileMinimumLength={9999} />);
+      await screen.findByText(/Your profile seems quite empty/);
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
       expect(api.users.fetch).toHaveBeenCalledWith(otherUser.username);
       expect(api.messages.fetchMessages).toHaveBeenCalledWith(otherUser._id);
     });
 
     it('shows reply box if profile is long enough', async () => {
-      const { findByRole, queryByText } = render(
-        <Thread user={me} profileMinimumLength={0} />,
-      );
-      const form = await findByRole('form');
-      expect(queryByText(/You haven't been talking yet/)).toBeInTheDocument();
-      expect(within(form).queryByRole('textbox')).toBeInTheDocument();
+      render(<Thread user={me} profileMinimumLength={0} />);
+      const form = await screen.findByRole('form');
+      expect(
+        screen.getByText(/You haven't been talking yet/),
+      ).toBeInTheDocument();
+      expect(within(form).getByRole('textbox')).toBeInTheDocument();
     });
   });
 
@@ -83,11 +81,9 @@ describe('<Thread>', () => {
     });
 
     it.skip('shows quick reply buttons', async () => {
-      const { getByTestId } = render(
-        <Thread user={me} profileMinimumLength={0} />,
-      );
+      render(<Thread user={me} profileMinimumLength={0} />);
       await waitForLoader();
-      const quickReply = getByTestId('quick-reply');
+      const quickReply = screen.getByTestId('quick-reply');
       const buttons = within(quickReply).queryAllByRole('button');
       expect(buttons.length).toBe(3);
       ['Yes, I can host!', "Sorry I can't host", 'Write back'].forEach(
@@ -106,11 +102,9 @@ describe('<Thread>', () => {
     });
 
     it('does not show the quick reply buttons', async () => {
-      const { queryByTestId } = render(
-        <Thread user={me} profileMinimumLength={0} />,
-      );
+      render(<Thread user={me} profileMinimumLength={0} />);
       await waitForLoader();
-      expect(queryByTestId('quick-reply')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument();
     });
   });
 });

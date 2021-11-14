@@ -32,18 +32,22 @@ const Item = styled.li`
 export default function TribesList({ tribes, user, onMembershipUpdated }) {
   return (
     <List>
-      {tribes.map(tribe => (
-        <Item key={tribe._id}>
-          <Tribe
-            tribe={tribe}
-            user={user}
-            onMembershipUpdated={onMembershipUpdated}
-          />
-        </Item>
-      ))}
-      <Item>
-        <SuggestTribe />
-      </Item>
+      {tribes.length > 0 && (
+        <>
+          {tribes.map(tribe => (
+            <Item key={tribe._id}>
+              <Tribe
+                tribe={tribe}
+                user={user}
+                onMembershipUpdated={onMembershipUpdated}
+              />
+            </Item>
+          ))}
+          <Item>
+            <SuggestTribe />
+          </Item>
+        </>
+      )}
     </List>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { screen, render } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
@@ -41,8 +41,8 @@ describe('<UnreadCount>', () => {
     const unreadCount = faker.random.number({ min: 1, max: 100 });
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     enableUnreadMessageCountPolling();
-    const { findByLabelText } = render(<UnreadCount />);
-    const el = await findByLabelText(`${unreadCount} unread messages`);
+    render(<UnreadCount />);
+    const el = await screen.findByLabelText(`${unreadCount} unread messages`);
     expect(el).toHaveTextContent(unreadCount);
   });
 
@@ -50,7 +50,7 @@ describe('<UnreadCount>', () => {
     api.messages.unreadCount.mockResolvedValue(0);
     enableUnreadMessageCountPolling();
     await updateUnreadCount();
-    const { container } = render(<UnreadCount />);
-    expect(container).toBeEmptyDOMElement();
+    const utils = render(<UnreadCount />);
+    expect(utils.container).toBeEmptyDOMElement();
   });
 });

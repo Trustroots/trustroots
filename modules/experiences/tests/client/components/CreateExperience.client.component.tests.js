@@ -1,10 +1,9 @@
 import React from 'react';
 import {
+  screen,
   render,
   fireEvent,
-  waitForElement,
   waitForElementToBeRemoved,
-  screen,
 } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
@@ -16,7 +15,7 @@ jest.mock('@/modules/experiences/client/api/experiences.api');
 afterEach(() => jest.clearAllMocks());
 
 async function waitForLoader() {
-  await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
+  await waitForElementToBeRemoved(screen.queryByText('Wait a moment…'));
 }
 
 describe('<CreateExperience />', () => {
@@ -35,10 +34,8 @@ describe('<CreateExperience />', () => {
   it('should not be possible to leave an experience to self', () => {
     const me = { _id: '123456', username: 'username' };
     experiencesApi.readMine.mockResolvedValueOnce([]);
-    const { queryByRole } = render(
-      <CreateExperience userFrom={me} userTo={me} />,
-    );
-    expect(queryByRole('alert')).toHaveTextContent(
+    render(<CreateExperience userFrom={me} userTo={me} />);
+    expect(screen.getByRole('alert')).toHaveTextContent(
       "Sorry, you can't share experience only with yourself.",
     );
   });
@@ -57,11 +54,9 @@ describe('<CreateExperience />', () => {
       public: false,
       response: null,
     });
-    const { queryByRole } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
-    );
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     await waitForLoader();
-    expect(queryByRole('heading')).toHaveTextContent(
+    expect(screen.getByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
     expect(experiencesApi.readMine).toBeCalledWith({
@@ -75,11 +70,9 @@ describe('<CreateExperience />', () => {
       public: true,
       response: 'mocked response',
     });
-    const { queryByRole } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
-    );
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     await waitForLoader();
-    expect(queryByRole('heading')).toHaveTextContent(
+    expect(screen.getByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
     expect(experiencesApi.readMine).toBeCalledWith({
@@ -89,12 +82,10 @@ describe('<CreateExperience />', () => {
 
   it('can leave an experience (experience form is available)', async () => {
     experiencesApi.readMine.mockResolvedValueOnce(null);
-    const { queryByLabelText } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
-    );
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     await waitForLoader();
     for (const label of ['Met in person', 'I hosted them', 'They hosted me']) {
-      expect(queryByLabelText(label)).toBeInTheDocument();
+      expect(screen.getByLabelText(label)).toBeInTheDocument();
     }
   });
 
@@ -102,35 +93,34 @@ describe('<CreateExperience />', () => {
     experiencesApi.readMine.mockResolvedValueOnce(null);
     experiencesApi.create.mockResolvedValueOnce({ public: false });
 
-    const { getByText, getAllByText, getByLabelText, queryByLabelText } =
-      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
-    expect(getAllByText('How do you know them?')[1]).toBeInTheDocument();
-    fireEvent.click(getByLabelText('They hosted me'));
+    expect(screen.getAllByText('How do you know them?')[1]).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('They hosted me'));
 
-    fireEvent.click(getAllByText('Next')[0]);
+    fireEvent.click(screen.getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText(
+      screen.getByLabelText(
         'Besides your personal experience, would you recommend others to stay with them?',
       ),
     ).toBeInTheDocument();
-    fireEvent.click(getByText('Yes'));
+    fireEvent.click(screen.getByText('Yes'));
 
-    fireEvent.click(getAllByText('Next')[0]);
+    fireEvent.click(screen.getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText(
+      screen.getByLabelText(
         'Would you like to describe something about your experience with them? (Optional)',
       ),
     ).toBeInTheDocument();
-    fireEvent.change(getByLabelText('Public feedback'), {
+    fireEvent.change(screen.getByLabelText('Public feedback'), {
       target: { value: 'they made a tasty pie' },
     });
 
-    fireEvent.click(getAllByText('Finish')[0]);
+    fireEvent.click(screen.getAllByText('Finish')[0]);
 
     expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
@@ -143,48 +133,49 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    const successMessage = await waitForElement(() =>
-      getByText('Thank you for sharing your experience!').closest('div'),
-    );
-    expect(successMessage).toHaveTextContent(
-      `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
-    );
-    expect(successMessage).not.toHaveTextContent(
-      `You also reported them to us.`,
-    );
+    // Success message
+    expect(
+      screen.getByText(
+        `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
+      ),
+    ).toBeInTheDocument();
+
+    // Didn't report, no confirmation
+    expect(
+      screen.queryByText(`You also reported them to us.`),
+    ).not.toBeInTheDocument();
   });
 
   it('submit a report when recommend is no and user wants to send a report', async () => {
     experiencesApi.readMine.mockResolvedValueOnce(null);
     experiencesApi.create.mockResolvedValueOnce({ public: false });
 
-    const { getByText, getAllByText, getByLabelText, queryByLabelText } =
-      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
-    expect(getAllByText('How do you know them?')[1]).toBeInTheDocument();
-    fireEvent.click(getByLabelText('They hosted me'));
+    expect(screen.getAllByText('How do you know them?')[1]).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('They hosted me'));
 
-    fireEvent.click(getAllByText('Next')[0]);
+    fireEvent.click(screen.getAllByText('Next')[0]);
 
     expect(
-      queryByLabelText(
+      screen.getByLabelText(
         'Besides your personal experience, would you recommend others to stay with them?',
       ),
     ).toBeInTheDocument();
-    fireEvent.click(getByText('No'));
+    fireEvent.click(screen.getByText('No'));
 
     fireEvent.click(
-      getByText('Privately report this person to the moderators'),
+      screen.getByText('Privately report this person to the moderators'),
     );
-    fireEvent.change(getByLabelText('Message to the moderators'), {
+    fireEvent.change(screen.getByLabelText('Message to the moderators'), {
       target: { value: 'they were mean to me' },
     });
 
-    fireEvent.click(getAllByText('Next')[0]);
+    fireEvent.click(screen.getAllByText('Next')[0]);
 
-    fireEvent.click(getAllByText('Finish')[0]);
+    fireEvent.click(screen.getAllByText('Finish')[0]);
 
     expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
@@ -202,12 +193,16 @@ describe('<CreateExperience />', () => {
       'they were mean to me',
     );
 
-    const successMessage = await waitForElement(() =>
-      getByText('Thank you for sharing your experience!').closest('div'),
-    );
-    expect(successMessage).toHaveTextContent(
-      `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
-    );
-    expect(successMessage).toHaveTextContent(`You also reported them to us.`);
+    // Success message
+    expect(
+      screen.getByText(
+        `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
+      ),
+    ).toBeInTheDocument();
+
+    // Reported confirmation
+    expect(
+      screen.getByText(`You also reported them to us.`),
+    ).toBeInTheDocument();
   });
 });

@@ -14,6 +14,7 @@ export default function Icon({ className, icon, fixedWidth = false, size }) {
         'icon-4x': size === '4x',
         'icon-5x': size === '5x',
       })}
+      role="img"
     />
   );
 }
