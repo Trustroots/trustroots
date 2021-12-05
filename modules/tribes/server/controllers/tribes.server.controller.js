@@ -44,6 +44,14 @@ const setLinkHeader = function (req, res, pageCount) {
  * List all tribes
  */
 exports.listTribes = function (req, res) {
+  console.log('req.query.limit:', req.query.limit); //eslint-disable-line
+
+  // Sort either by count or alphabetically
+  const sort =
+    req?.query?.sortBy === 'alphabetically'
+      ? { label: 'desc' }
+      : { count: 'desc' };
+
   Tribe.paginate(
     {
       public: true,
@@ -51,9 +59,7 @@ exports.listTribes = function (req, res) {
     {
       page: parseInt(req.query.page, 10) || 1, // Note: `parseInt('0')` will return `NaN`, `page` will be set to `1` in such case.
       limit: parseInt(req.query.limit, 10) || 0, // `0` for infinite
-      sort: {
-        count: 'desc',
-      },
+      sort,
       select: exports.tribeFields,
     },
     function (err, data) {

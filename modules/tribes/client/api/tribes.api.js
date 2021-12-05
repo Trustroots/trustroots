@@ -10,6 +10,10 @@ export async function leave(tribeId) {
   return data;
 }
 
+/**
+ * @param {Number} limit
+ * @param {String} sortBy Values count|alphabetically. Sort either by count or by alphabetical label order; defaults to count.
+ */
 export async function read({ limit = 50 } = {}) {
   const { data } = await axios.get('/api/tribes', { params: { limit } });
   return data;
