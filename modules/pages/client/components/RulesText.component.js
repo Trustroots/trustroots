@@ -53,6 +53,11 @@ export default function RulesText() {
             'Be respectful of others and restrain from any kind of abusive behaviour.',
           )}
         </li>
+        <li>
+          {t(
+            "Our currency is hospitality: don't ask or accept any form of monetary exchange to use Trustroots.",
+          )}
+        </li>
       </ul>
 
       <p>
