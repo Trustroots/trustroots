@@ -54,5 +54,7 @@
     "License": "Licens",
     "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Tycker du att meddelanden från den här personen är trevliga och i Trustroots anda?",
     "Change": "Ändra",
-    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...förklarar att du är intresserad av att träffa personen, inte bara hitta någonstans att bo gratis."
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...förklarar att du är intresserad av att träffa personen, inte bara hitta någonstans att bo gratis.",
+    "Failed to send the message. Perhaps your internet went down? Please try again.": "Det gick inte att skicka meddelandet. Kanske försvann din uppkoppling? Försök igen.",
+    "You are writing to too many people too fast. Slow down and try later again.": "Du skriver till för många personer för snabbt. Ta det lite lugnare och försök igen senare."
 }
