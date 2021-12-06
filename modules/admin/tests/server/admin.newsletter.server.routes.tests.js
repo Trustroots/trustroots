@@ -100,7 +100,7 @@ describe('Admin Newsletter subscribers CRUD tests', () => {
 
     const { type, text } = await agent
       .get(
-        '/api/admin/newsletter-subscribers/circle?circle=5fbab4f7fed63c7ed73276d3',
+        '/api/admin/newsletter-subscribers/circle?circleId=5fbab4f7fed63c7ed73276d3',
       )
       .expect(200);
 
