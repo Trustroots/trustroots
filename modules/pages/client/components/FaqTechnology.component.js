@@ -14,7 +14,7 @@ export default function FaqTechnology() {
           <a href="https://github.com/Trustroots/trustroots/">GitHub</a> and
           licensed under the{' '}
           <a href="https://github.com/Trustroots/trustroots/blob/master/LICENSE.md">
-            MIT License
+            AGPL License
           </a>
           .
         </Trans>
