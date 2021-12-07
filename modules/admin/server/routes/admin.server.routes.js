@@ -76,4 +76,9 @@ module.exports = app => {
     .route('/api/admin/newsletter-subscribers')
     .all(adminPolicy.isAllowed)
     .get(adminNewsletter.list);
+
+  app
+    .route('/api/admin/newsletter-subscribers/circle')
+    .all(adminPolicy.isAllowed)
+    .get(adminNewsletter.listCircleMembers);
 };
