@@ -166,6 +166,9 @@
 .icon-android:before {
   content: '\e837';
 } /* '' */
+.icon-flag:before {
+  content: '\e838';
+} /* '' */
 .icon-instagram:before {
   content: '\f16d';
 } /* '' */

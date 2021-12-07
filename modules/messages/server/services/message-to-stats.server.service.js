@@ -6,7 +6,6 @@
  * Module dependencies.
  */
 const path = require('path');
-const _ = require('lodash');
 const async = require('async');
 const config = require(path.resolve('./config/config'));
 const mongoose = require('mongoose');
@@ -35,7 +34,6 @@ const Message = mongoose.model('Message');
  * There should be limited amount of tags with limited amount of possible values
  * @property {Object} [meta] - object of a shape { <meta1>: string| number, ... }
  * Meta contains non-essential data, which will be saved only to some stat services
- * Meta will be saved into influx, not into stathat.
  * All string values which are not tags should go to meta.
  * @property {Date} [time] - time of the point if it is specified
  *
@@ -76,16 +74,12 @@ const Message = mongoose.model('Message');
 module.exports.save = function (message, callback) {
   async.waterfall(
     [
-      // Check whether at least one of statistics services (influxdb, stathat)
-      // is enabled.
-      // Quit if all are disabled. The further computation is not necessary.
+      // Quit if InfluxDB stats are disabled. The further computation is not necessary.
       function (done) {
-        const areSomeStatsEnabled =
-          _.get(config, 'influxdb.enabled') || _.get(config, 'stathat.enabled');
-        if (areSomeStatsEnabled !== true) {
+        if (!config?.influxdb?.enabled) {
           return done(
             new Error(
-              'All stat services are disabled. Not creating a point for message statistics.',
+              'InfluxDB disabled. Not creating a point for message statistics.',
             ),
           );
         }
@@ -107,7 +101,7 @@ module.exports.save = function (message, callback) {
       },
     ],
     function (err) {
-      if (err) {
+      if (err && process.NODE_ENV !== 'test') {
         log('error', 'Saving message stats failed.', err);
       }
       if (typeof callback === 'function') {

@@ -45,7 +45,7 @@
     "production": true
   },
   {
-    "label": "português",
+    "label": "português (Brazil)",
     "code": "pt_BR",
     "english": "Portuguese (Brazil)",
     "production": true
@@ -79,7 +79,7 @@
     "label": "עִבְרִית",
     "code": "he",
     "english": "Hebrew",
-    "production": false
+    "production": true
   },
   {
     "label": "Türkçe",

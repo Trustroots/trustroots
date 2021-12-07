@@ -82,7 +82,7 @@ describe('<Thread>', () => {
       });
     });
 
-    it('shows quick reply buttons', async () => {
+    it.skip('shows quick reply buttons', async () => {
       const { getByTestId } = render(
         <Thread user={me} profileMinimumLength={0} />,
       );

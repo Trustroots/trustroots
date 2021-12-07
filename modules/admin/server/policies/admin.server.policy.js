@@ -37,6 +37,10 @@ exports.invokeRolesPolicies = () => {
           resources: '/api/admin/newsletter-subscribers',
           permissions: ['get'],
         },
+        {
+          resources: '/api/admin/newsletter-subscribers/circle',
+          permissions: ['get'],
+        },
       ],
     },
   ]);

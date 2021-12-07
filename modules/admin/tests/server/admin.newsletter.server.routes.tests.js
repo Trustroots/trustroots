@@ -24,6 +24,12 @@ describe('Admin Newsletter subscribers CRUD tests', () => {
   _users[2].lastName = 'Last," name ';
   _users[3].firstName = 'First name';
   _users[3].lastName = 'Last name ';
+  _users[3].member = [
+    {
+      tribe: new mongoose.Types.ObjectId('5fbab4f7fed63c7ed73276d3'),
+      since: new Date(),
+    },
+  ];
 
   const adminAuth = {
     username: _users[0].username,
@@ -66,6 +72,43 @@ describe('Admin Newsletter subscribers CRUD tests', () => {
     lines.length.should.equal(3);
     lines[0].should.equal('Email Address,First Name,Last Name');
     lines[1].should.equal(`${users[2].email},First oname,Last name`);
+    lines[2].should.equal(`${users[3].email},First name,Last name`);
+
+    await utils.signOut(agent);
+  });
+
+  it('non-authenticated users should not be allowed to read newsletter subscribers', async () => {
+    await agent
+      .get(
+        '/api/admin/newsletter-subscribers/circle?circle=5fbab4f7fed63c7ed73276d3',
+      )
+      .expect(403);
+  });
+
+  it('non-admin users should not be allowed to read newsletter subscribers for a circle', async () => {
+    await utils.signIn(nonAdminAuth, agent);
+    await agent
+      .get(
+        '/api/admin/newsletter-subscribers/circle?circle=5fbab4f7fed63c7ed73276d3',
+      )
+      .expect(403);
+    await utils.signOut(agent);
+  });
+
+  it('admin users should be allowed to read newsletter subscribers for a circle', async () => {
+    await utils.signIn(adminAuth, agent);
+
+    const { type, text } = await agent
+      .get(
+        '/api/admin/newsletter-subscribers/circle?circleId=5fbab4f7fed63c7ed73276d3',
+      )
+      .expect(200);
+
+    type.should.equal('text/csv');
+
+    const lines = text.split('\n');
+    lines.length.should.equal(2);
+    lines[0].should.equal('Email Address,First Name,Last Name');
     lines[2].should.equal(`${users[3].email},First name,Last name`);
 
     await utils.signOut(agent);
