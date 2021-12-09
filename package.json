@@ -272,7 +272,7 @@
   "bugs": {
     "url": "https://github.com/Trustroots/trustroots/issues"
   },
-  "license": "MIT",
+  "license": "AGPL",
   "lint-staged": {
     "*.js": [
       "npm run reformat-files",
