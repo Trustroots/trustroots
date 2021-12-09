@@ -12,7 +12,7 @@
     "I can host": "Jag kan erbjuda husrum",
     "I can't host currently": "Jag kan inte erbjuda husrum",
     "I might be able to host": "Jag kan kanske erbjuda husrum",
-    "Meet people": "Möt folk",
+    "Meet people": "Träffa folk",
     "Might be able to host": "Kan kanske erbjuda husrum",
     "Modify hosting offer": "Ändra tillgänglighet för husrum",
     "No guests": {
@@ -28,5 +28,10 @@
     "Start hosting travellers": "Börja ta emot resande",
     "Send a message": "Skicka ett meddelande",
     "At most {{count}} guests.": "Högst {{count}} gäst.",
-    "At most {{count}} guests._plural": "Högst {{count}} gäster."
+    "At most {{count}} guests._plural": "Högst {{count}} gäster.",
+    "Travelling? Organising an event?": "Reser du? Ordnar du ett event?",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Reser du? Ordnar du ett event? Lagar du bara middag och vill bjuda över lite folk?",
+    "Meetups stay visible on map at most one month.": "Möten syns som mest en månad på kartan.",
+    "Add it to map!": "Lägg till på kartan!",
+    "Just making a dinner and would like to invite people over?": "Lagar du bara middag och vill bjuda över lite folk?"
 }
