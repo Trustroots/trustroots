@@ -67,9 +67,7 @@
             class="form-group"
             ng-class="{'has-error': signup.firstName.$invalid && signup.firstName.$dirty}"
           >
-            <label for="firstName" class="col-sm-4 control-label"
-              >First Name</label
-            >
+            <label for="firstName" class="col-sm-4 control-label">First Name</label>
             <div class="col-sm-8">
               <input
                 type="text"
@@ -87,9 +85,7 @@
             class="form-group"
             ng-class="{'has-error': userForm.lastName.$invalid && userForm.lastName.$dirty}"
           >
-            <label for="lastName" class="col-sm-4 control-label"
-              >Last Name</label
-            >
+            <label for="lastName" class="col-sm-4 control-label">Last Name</label>
             <div class="col-sm-8">
               <input
                 type="text"
@@ -129,9 +125,7 @@
                 ng-if="signup.isEmailTaken"
               >
                 Account with this email exists already.
-                <a ui-sref="forgot({ userhandle: signup.credentials.email })"
-                  >Try recover password?</a
-                >
+                <a ui-sref="forgot({ userhandle: signup.credentials.email })">Try recover password?</a>
               </div>
             </div>
           </div>
@@ -139,9 +133,7 @@
             class="form-group"
             ng-class="{'has-error': userForm.username.$invalid && userForm.username.$dirty}"
           >
-            <label for="username" class="col-sm-4 control-label"
-              >Username</label
-            >
+            <label for="username" class="col-sm-4 control-label">Username</label>
             <div class="col-sm-8">
               <input
                 type="text"
@@ -169,9 +161,7 @@
             class="form-group"
             ng-class="{'has-error': userForm.password.$invalid && userForm.password.$dirty}"
           >
-            <label for="password" class="col-sm-4 control-label"
-              >Password</label
-            >
+            <label for="password" class="col-sm-4 control-label">Password</label>
             <div class="col-sm-8">
               <div class="input-group">
                 <input
@@ -221,7 +211,7 @@
                   ng-disabled="signup.isLoading"
                 />
                 Subscribe to community news
-              </label>
+               </label>
               <br /><br />
             </div>
           </div>
@@ -238,8 +228,7 @@
                   ng-click="signup.openRules($event);"
                   uib-tooltip="Read rules"
                   tooltip-placement="bottom"
-                  >rules</a
-                >
+                  >rules</a>
                 that include standards of behavior that apply to everyone.
               </p>
             </div>
@@ -257,9 +246,7 @@
 
           <!-- How did you hear about us -->
           <div class="form-group">
-            <label class="col-sm-4 control-label" for="acquisitionStory"
-              >How did you hear about us?</label
-            >
+            <label class="col-sm-4 control-label" for="acquisitionStory">How did you hear about us?</label>
             <div class="col-sm-8">
               <input
                 type="text"
