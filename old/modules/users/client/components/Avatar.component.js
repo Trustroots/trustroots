@@ -72,12 +72,14 @@ Avatar.propTypes = {
  * @returns {string} - the url
  */
 function facebookAvatarUrl(user, size) {
-  const isValid = has(user, 'additionalProvidersData.facebook.id');
 
-  return (
-    isValid &&
-    `https://graph.facebook.com/${user.additionalProvidersData.facebook.id}/picture/?width=${size}&height=${size}`
-  );
+  return 'fake-image-url.png'
+  // const isValid = has(user, 'additionalProvidersData.facebook.id');
+
+  // return (
+  //   isValid &&
+  //   `https://graph.facebook.com/${user.additionalProvidersData.facebook.id}/picture/?width=${size}&height=${size}`
+  // );
 }
 
 /**
