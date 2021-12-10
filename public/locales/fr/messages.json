@@ -54,5 +54,7 @@
     "No": "Non",
     "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Trouvez-vous que les messages de cette personne sont polis, respectueux et dans l'esprit de Trustroots ?",
     "Change": "Modifier",
-    "Member is not available anymore.": "Le membre n’est plus disponible."
+    "Member is not available anymore.": "Le membre n’est plus disponible.",
+    "You are writing to too many people too fast. Slow down and try later again.": "Vous écrivez à trop de personnes en peu de temps. Prenez votre temps et réessayez plus tard.",
+    "Failed to send the message. Perhaps your internet went down? Please try again.": "Échec de l'envoi du message. Peut-être que vous n'avez plus de connexion Internet ? Veuillez réessayer plus tard."
 }
