@@ -5,7 +5,7 @@ import ReactMapGL from 'react-map-gl';
 
 // Internal dependencies
 import './map.less';
-import { MAP_STYLE_DEFAULT } from './config/constants';
+import { MAP_STYLE_DEFAULT } from './lib/constants';
 import MapNavigationControl from './MapNavigationControl';
 import MapScaleControl from './MapScaleControl';
 import { getMapBoxToken } from './utils';

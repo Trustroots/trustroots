@@ -1,15 +1,12 @@
-import Header from "./components/Header";
-import Profile from "./pages/Profile";
-import Map from "./pages/Search/Map";
+import { BrowserRouter } from "react-router-dom";
+import AppRouter from "./AppRouter";
 
-const App = () => {
+const App = () => { 
   return (
     <div className="App">
-        {/* <Header />
-        <Profile />
-        <Map onOfferClose={() => {}} onOfferOpen={() => {}} isUserPublic={true} /> */}
-
-        
+    <BrowserRouter> 
+      <AppRouter />
+    </BrowserRouter>
     </div>
   );
 }
