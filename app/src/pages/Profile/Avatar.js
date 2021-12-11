@@ -1,8 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import has from 'lodash/has';
-import '@/config/client/i18n';
-import { useTranslation } from 'react-i18next';
 
 /**
  * User's avatar
@@ -18,7 +16,6 @@ export default function Avatar({
   link = true,
   onClick,
 }) {
-  const { t } = useTranslation('users');
 
   source = source || user.avatarSource;
   const defaultAvatar = '/img/avatar.png';
@@ -42,9 +39,7 @@ export default function Avatar({
       {link ? (
         <a
           href={`/profile/${user.username}`}
-          aria-label={t('Open user profile for {{name}}', {
-            name: user.displayName,
-          })}
+          aria-label={`Open user profile for&{user.displayName}`}
         >
           {img}
         </a>

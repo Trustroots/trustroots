@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import Avatar from './Avatar.component';
+import Avatar from './Avatar';
 import ProfileViewBasics from './ProfileViewBasics';
 import { Modal } from 'react-bootstrap';
 

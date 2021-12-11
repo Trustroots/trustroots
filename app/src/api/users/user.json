@@ -1,0 +1,203 @@
+{
+    "tagline": "FIRE",
+    "description": "Help other people get to know you by telling them about your life and the things you like.",
+    "gender": "non-binary",
+    "languages": [
+        "ger",
+        "eng",
+        "heb"
+    ],
+    "avatarSource": "gravatar",
+    "avatarUploaded": false,
+    "public": true,
+    "blocked": [],
+    "_id": "5ecf8aa6566b8d6f9799074e",
+    "username": "chagai95",
+    "created": "2020-05-28T09:55:50.725Z",
+    "member": [
+        {
+            "tribe": {
+                "count": 22250,
+                "image": true,
+                "slug": "nomads",
+                "_id": "5728ae64a6082f1996285157",
+                "label": "Nomads",
+                "color": "0b5e7c",
+                "created": "2016-05-03T15:15:15.900Z",
+                "attribution": "Gary St (CC BY-SA 3.0)",
+                "description": "Whether you find yourself in a place for a day, week, month or year, this is the circle for the vagabonds and wanderers who find home wherever their head may lie.",
+                "attribution_url": "http://nomadwiki.org/en/File:Nomadwiki-front.jpg"
+            },
+            "since": "2020-05-28T09:56:06.627Z"
+        },
+        {
+            "tribe": {
+                "count": 18858,
+                "image": true,
+                "slug": "dumpster-divers",
+                "_id": "5728ad1ea6082f199628514e",
+                "label": "Dumpster divers",
+                "color": "8e2c0b",
+                "created": "2016-05-03T15:15:15.900Z",
+                "description": "Love turning trash into treasure? This circle is for you! A circle for those finding value hidden in our waste bins. Whether recycling, skipping, saving food, rescuing furniture, gleaning or something else entirely, find others like you in this dumpster loving circle. (Did you know about <a href=\"https://trashwiki.org\">Trashwiki.org</a>?)",
+                "attribution": "Trashwiki (CC BY-NC-SA 3.0)",
+                "attribution_url": "http://trashwiki.org/en/File:Freshfromtrash.jpeg"
+            },
+            "since": "2020-05-28T09:56:10.874Z"
+        },
+        {
+            "tribe": {
+                "count": 34568,
+                "image": true,
+                "slug": "hitchhikers",
+                "_id": "5728ac5ba6082f199628514d",
+                "label": "Hitchhikers",
+                "color": "63930e",
+                "description": "Trustroots was started by hitchhikers for hitchhikers. Many people found out about Trustroots through <a href=\"https://hitchwiki.org\">Hitchwiki</a>. Meet new friends while you are heading in the same direction. Whether you are a person asking for rides or a person giving them this is the circle for you.",
+                "created": "2016-05-03T15:15:15.900Z",
+                "attribution": "Gytė",
+                "attribution_url": "https://www.facebook.com/upe.pati.teka"
+            },
+            "since": "2020-05-28T09:56:14.399Z"
+        },
+        {
+            "tribe": {
+                "count": 4818,
+                "image": true,
+                "slug": "hackers",
+                "_id": "5728ad93a6082f1996285153",
+                "label": "Hackers",
+                "color": "b816e5",
+                "created": "2016-05-03T15:15:15.900Z",
+                "description": "Not afraid of  :(){ :|:& };: - join fellow hackers this circle for ubergeeks. As a bonus, come <a href=\"https://github.com/Trustroots/trustroots\">help us build this site!</a>.",
+                "attribution": "Andrew Neel",
+                "attribution_url": "https://unsplash.com/photos/fkalryO4dUI"
+            },
+            "since": "2020-05-28T09:59:55.344Z"
+        },
+        {
+            "tribe": {
+                "count": 5163,
+                "image": true,
+                "slug": "lgbtq",
+                "_id": "5728adbfa6082f1996285154",
+                "label": "LGBTQ",
+                "color": "e5640d",
+                "description": "A circle for lesbian, gay, bi, trans, queer people and their allies.",
+                "created": "2016-05-03T15:15:15.900Z",
+                "attribution": "Wikipedia (CC BY 2.0)",
+                "attribution_url": "https://commons.wikimedia.org/wiki/File:Rainbow_flag_and_blue_skies.jpg#/media/File:Rainbow_flag_and_blue_skies.jpg"
+            },
+            "since": "2020-05-28T09:59:58.415Z"
+        },
+        {
+            "tribe": {
+                "count": 4370,
+                "image": true,
+                "slug": "vanlife",
+                "_id": "5b899bb5c3460ac6bf367f91",
+                "label": "Van life",
+                "description": "For folks hitting the nomadic road in their vans, camper vans, motorhomes, buses or what have you! If your van is big enough, consider hosting folks for a night.",
+                "color": "7c3b01",
+                "created": "2018-08-31T11:51:41.423Z",
+                "attribution": "Brina Blum",
+                "attribution_url": "https://unsplash.com/photos/LUfmqLfEAoE"
+            },
+            "since": "2020-05-28T10:00:03.070Z"
+        },
+        {
+            "tribe": {
+                "count": 11585,
+                "image": true,
+                "slug": "foodsharing",
+                "_id": "5800e3139037047fa8262c63",
+                "label": "Foodsharing",
+                "color": "4a3520",
+                "created": "2016-10-14T15:15:15.900Z",
+                "attribution": "Foodsharing.de & Offenblen.de: Foodsharing.de is a German website to rescue food in cooperation with stores. This circle was intended for Foodsharing activists and members, but by now, if you love sharing food with random strangers, join this, invite travellers to your home for lunch or dinner.",
+                "attribution_url": "http://offenblen.de/",
+                "description": "Foodsharing.de activists and members."
+            },
+            "since": "2020-07-17T23:37:50.426Z"
+        },
+        {
+            "tribe": {
+                "count": 3294,
+                "image": true,
+                "slug": "trustroots-volunteers",
+                "_id": "5c1d54b9c3460ac6bf89ea75",
+                "label": "Trustroots Volunteers",
+                "color": "63930e",
+                "description": "Join this circle if you want to help grow Trustroots — or if you are already helping. This makes it easier to work on Trustroots together, e.g. to organize an adhoc mini-collective. See also <a href=\"/volunteering\">our volunteering page</a>.",
+                "created": "2018-12-21T15:15:15.900Z",
+                "attribution": "Dani",
+                "attribution_url": ""
+            },
+            "since": "2020-11-24T21:25:40.668Z"
+        },
+        {
+            "tribe": {
+                "count": 15153,
+                "image": true,
+                "slug": "hikers",
+                "_id": "59961d6d3029689ef1f5d660",
+                "label": "Hikers",
+                "color": "82550f",
+                "created": "2017-08-17T18:57:22.210Z",
+                "attribution": "Nova Togatorop",
+                "attribution_url": "http://novatogatorop.com/",
+                "description": "For outdoorsy people who love hiking in nature. Would you like to find hosts who can recomend the best local hikes? Maybe they will join you on the hike. This circle is for those who love to be active on their feet outdoors."
+            },
+            "since": "2021-01-15T15:23:36.748Z"
+        },
+        {
+            "tribe": {
+                "count": 4724,
+                "image": true,
+                "slug": "cooking",
+                "_id": "5ee86e0141aa899acde5d610",
+                "label": "Cooking",
+                "color": "937b04",
+                "description": "From bon vivant to utter gluttony, as long as you make it yourself or together it’s all good!",
+                "created": "2020-06-16T06:54:13.035Z",
+                "attribution": "",
+                "attribution_url": ""
+            },
+            "since": "2021-01-15T15:43:06.411Z"
+        }
+    ],
+    "displayName": "Chagai Friedlander",
+    "emailHash": "a51a5d23f4dadbee7dd3a15f8d1bb204",
+    "seen": "2021-12-11T11:28:21.385Z",
+    "birthdate": "1995-03-25T00:00:00.000Z",
+    "updated": "2021-11-27T07:07:00.724Z",
+    "passwordUpdated": "2020-06-21T10:39:49.412Z",
+    "locationFrom": "Citizen of the world",
+    "locationLiving": "Bern, Switzerland",
+    "extSitesCS": "chagaif",
+    "additionalProvidersData": {
+        "twitter": {
+            "screen_name": "chagai95"
+        },
+        "github": {
+            "login": "chagai95"
+        }
+    },
+    "extSitesBW": "chagai95",
+    "memberIds": [
+        "5728ae64a6082f1996285157",
+        "5728ad1ea6082f199628514e",
+        "5728ac5ba6082f199628514d",
+        "5728ad93a6082f1996285153",
+        "5728adbfa6082f1996285154",
+        "5b899bb5c3460ac6bf367f91",
+        "5800e3139037047fa8262c63",
+        "5c1d54b9c3460ac6bf89ea75",
+        "59961d6d3029689ef1f5d660",
+        "5ee86e0141aa899acde5d610"
+    ],
+    "usernameUpdateAllowed": true,
+    "isVolunteer": true,
+    "replyRate": "100%",
+    "replyTime": "20 minutes"
+}

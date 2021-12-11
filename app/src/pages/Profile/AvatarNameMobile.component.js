@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 
-import Avatar from './Avatar.component';
+import Avatar from './Avatar';
 
 export default function AvatarNameMobile({ profile }) {
   const [isBiggerAvatar, setIsBiggerAvatar] = useState(false);

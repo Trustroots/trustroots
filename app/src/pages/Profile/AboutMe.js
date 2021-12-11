@@ -3,11 +3,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
-import '@/config/client/i18n';
-import { plainTextLength } from '@/modules/core/client/utils/filters';
-import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
+import { plainTextLength } from '../../utils/filters';
+import ReadMorePanel from '../../components/ReadMorePanel';
 
 export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
+  console.log(profile);
   return (
     <>
       <section className="panel panel-default">
@@ -26,8 +26,6 @@ export default function AboutMe({ profile, isSelf, profileMinimumLength }) {
               aria-label="Member has not written description about themself."
               className="profile-quote"
             >
-              {"&quot;Everyone is necessarily the hero of their own life
-              story&quot;}
             </blockquote>
           )}
         </div>

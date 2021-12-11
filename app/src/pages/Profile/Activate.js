@@ -1,9 +1,6 @@
 import React from 'react';
-import { Trans, useTranslation } from 'react-i18next';
-import '@/config/client/i18n';
 
 export default function Activate() {
-  const { t } = useTranslation('users');
 
   return (
     <div
@@ -12,21 +9,16 @@ export default function Activate() {
       aria-labelledby="activate-profile-message"
     >
       <div className="col-xs-12 text-center" role="document" tabIndex="0">
-        <h2>{t("Don't panic!")}</h2>
+        <h2>Don't panic!</h2>
         <p className="lead" id="activate-profile-message">
           <em>
-            {t(
-              'Sorry, you need to first activate your profile by confirming your email.',
-            )}
+            Sorry, you need to first activate your profile by confirming your email.
           </em>
         </p>
         <p>
-          {/* @TODO remove ns (issue #1368) */}
-          <Trans t={t} ns="users">
             If you didn&apos;t receive the message, check your spam folder or
-            resend it via
+            resend it via 
             <a href="/profile/edit/account">email settings</a>.
-          </Trans>
         </p>
         <p>
           <br />
@@ -34,9 +26,9 @@ export default function Activate() {
             <a
               className="btn btn-xs btn-link text-muted"
               href="/support"
-              aria-label={t('Support')}
+              aria-label="Support"
             >
-              {t('Help!')}
+              Help!
             </a>
           </small>
         </p>
