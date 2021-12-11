@@ -1,12 +1,14 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 // External dependencies
-import {FC} from 'react'
+import React, {createRef, FC} from 'react'
 import { useDebouncedCallback } from 'use-debounce';
-import { createRef, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
   Layer,
-  Source,
+  MapEvent,
+  MapRef,
+  Source ,
   WebMercatorViewport,
 } from 'react-map-gl';
 
@@ -23,6 +25,7 @@ import MapScaleControl from './MapScaleControl';
 import SearchMapNoContent from './SearchMapNoContent';
 
 import { ensureValidLat, ensureValidLng } from './utils';
+
 import {
   clusterCountLayerMapbox,
   clusterCountLayerOSM,
@@ -35,20 +38,19 @@ import { getOffer, queryOffers } from '../../../api/offers/offers.api';
 import usePersistentMapLocation from './lib/use-persisted-map-location';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-
+import {Location, LocationBounds, LocationBoundsParams, WebMercatorViewportOptions} from './lib/types'
+import { Offer } from '../../../api/offers/types';
 
 
 interface Props { 
-  filters: string,
-  isUserPublic: boolean,
-  location: Object,
-  locationBounds: Object,
-  onOfferClose: () => {},
-  onOfferOpen: () => {},
+  filters: string;
+  isUserPublic: boolean;
+  location?: Location;
+  locationBounds?: LocationBounds;
+  onOfferClose: () => void;
+  onOfferOpen: (offer?: Offer) => void;
   
 }
-
-
 
 const SearchMap:FC<Props> = ({
   filters,
@@ -79,19 +81,22 @@ const SearchMap:FC<Props> = ({
     { maxWait: 3000 },
   );
 
-  const [viewport, setViewport] = useState(persistentMapLocation);
+  const [viewport, setViewport] = useState<WebMercatorViewportOptions>(persistentMapLocation);
   const mapStyle = MAP_STYLE_DEFAULT
   const [map, setMap] = useState();
-  const [hoveredOffer, setHoveredOffer] = useState(false);
+  const [hoveredOffer, setHoveredOffer] = useState<any>(false); // FIXTYPE
   const [selectedOffer, setSelectedOffer] = useState(false);
-  const [offers, setOffers] = useState({
+  const [offers, setOffers] = useState<any>({
     features: [],
     type: 'FeatureCollection',
-  });
+  }); // Fixme add type
+
+
   const MAPBOX_TOKEN = getMapBoxToken();
   // If no mapbox token, and we're in production, don't show the style switcher
-  const sourceRef = createRef();
-  const mapRef = createRef();
+  const sourceRef = createRef<any>();
+
+  const mapRef = createRef<MapRef>()
 
   // Get the Mapbox object for direct map manipulation
   const getMapRef = () => map || mapRef?.current?.getMap();
@@ -99,18 +104,11 @@ const SearchMap:FC<Props> = ({
   /**
    * Zoom visible map to bounding box
    *
-   * @param  {object} bounds Bounding box coordinates with shape:
-   *   northEast.lat;
-   *   northEast.lng;
-   *   southWest.lat;
-   *   southWest.lng;
-   */
-  const zoomToBounds = ({ northEast, southWest }) => {
+  */ 
+  const zoomToBounds = ({ northEast, southWest }: LocationBounds) => {
     const newViewport = new WebMercatorViewport(viewport);
     const { longitude, latitude, zoom } = newViewport.fitBounds(
       [
-        // [minLng, minLat],
-        // [maxLng, maxLat],
         [northEast.lng, northEast.lat],
         [southWest.lng, southWest.lat],
       ],
@@ -131,6 +129,10 @@ const SearchMap:FC<Props> = ({
    * Hook on map interactions to update features
    */
   const updateOffers = () => {
+    if (!viewport?.zoom) {
+      console.warn("Viewport zoom is undefined")
+      return ;
+    }
     // Don't fetch if viewing the whole world
     if (viewport.zoom <= MIN_ZOOM) {
       return;
@@ -169,7 +171,7 @@ const SearchMap:FC<Props> = ({
   /**
    * Refresh persistent map state when viewport changes
    */
-  const onViewPortChange = viewport => {
+  const onViewPortChange = (viewport: WebMercatorViewportOptions) => {
     setViewport(viewport);
 
     const { latitude, longitude, zoom } = viewport;
@@ -190,7 +192,7 @@ const SearchMap:FC<Props> = ({
   /**
    * Update state for a feature on the map
    */
-  const updateFeatureState = (feature, newState) => {
+  const updateFeatureState = (feature: any, newState: any) => { // FIXTYPE
     const map = getMapRef();
     const { source, id } = feature;
     const previousState = map.getFeatureState({
@@ -231,7 +233,7 @@ const SearchMap:FC<Props> = ({
   /**
    * Set selected state for a feature
    */
-  const setSelectedState = offer => {
+  const setSelectedState = (offer: any) => { // FIXTYPE
     // Clear out previously selected offers
     if (selectedOffer) {
       updateFeatureState(selectedOffer, { selected: false });
@@ -245,7 +247,7 @@ const SearchMap:FC<Props> = ({
   /**
    * Handle feature hover states on map
    */
-  const onHover = event => {
+  const onHover = (event: MapEvent) => {
     if (!event?.features?.length) {
       return;
     }
@@ -275,7 +277,7 @@ const SearchMap:FC<Props> = ({
    * Zoom to cluster of features
    * @link https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
    */
-  const zoomToCluster = cluster => {
+  const zoomToCluster = (cluster: any) => { // FIXTYPE
     const clusterId = cluster?.properties?.cluster_id;
 
     if (!clusterId) {
@@ -301,7 +303,7 @@ const SearchMap:FC<Props> = ({
       return;
     }
 
-    source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+    source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => { // FIXTYPE
       if (err || zoom === undefined) {
         return;
       }
@@ -318,7 +320,7 @@ const SearchMap:FC<Props> = ({
   /**
    * React on any clicks on map or layers defined on `interactiveLayerIds` prop
    */
-  const onClickMap = event => {
+  const onClickMap = (event: MapEvent) => {
     const { features } = event;
     clearPreviouslySelectedState();
 
@@ -352,7 +354,7 @@ const SearchMap:FC<Props> = ({
   /**
    * Fetch offer data and open it on seach sidebar (handled by Angular)
    */
-  async function openOfferById(offerId) {
+  async function openOfferById(offerId: string) {
     if (!offerId) {
       return;
     }
@@ -369,7 +371,7 @@ const SearchMap:FC<Props> = ({
   /**
    * Fetch offers inside bounding box
    */
-  async function fetchOffers(boundingBox) {
+  async function fetchOffers(boundingBox: LocationBoundsParams) {
     if (!isUserPublic) {
       return;
     }
@@ -434,19 +436,20 @@ const SearchMap:FC<Props> = ({
     <ReactMapGL
       className="search-map"
       dragRotate={false}
-      height="100%"
       /*
-       * Pointer event callbacks will only query the features under the pointer
-       * of `interactiveLayerIds` layers. The getCursor callback will receive
-       * `isHovering:true` when hover over features of these layers.
-       *
-       * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
-       */
-      interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
-      location={[
-        persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
-        persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
-      ]}
+      * Pointer event callbacks will only query the features under the pointer
+      * of `interactiveLayerIds` layers. The getCursor callback will receive
+      * `isHovering:true` when hover over features of these layers.
+      *
+      * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
+      */
+     interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
+     
+      // location={[
+      //   persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
+      //   persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
+      // ]} FIXME DEFAULT MAP locaiton
+    
       mapboxApiAccessToken={MAPBOX_TOKEN}
       mapStyle={mapStyle}
       onClick={onClickMap}
@@ -457,34 +460,37 @@ const SearchMap:FC<Props> = ({
       ref={mapRef}
       touchRotate={false}
       {...viewport}
+      height="100%"
       width={
         '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
       }
     >
-      {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
+      {(viewport?.zoom || 0) <= MIN_ZOOM && <SearchMapNoContent />}
       <MapScaleControl />
       <MapNavigationControl />
       <Source
         buffer={512}
         cluster
         clusterMaxZoom={CLUSTER_MAX_ZOOM}
-        clusterMinPoints={3}
         clusterRadius={50}
-        data={offers}
+        data={offers} // FIXME add type
         id={SOURCE_OFFERS}
         promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
         ref={sourceRef}
         type="geojson"
+        // clusterMinPoints={3}
       >
-        <Layer {...clusterLayer} />
+        <Layer {...clusterLayer as any} />
         {/* OSM and Mapbox use different fonts for cluster numbers */}
         {mapStyle === MAP_STYLE_OSM ? (
-          <Layer {...clusterCountLayerOSM} />
+          <Layer {...clusterCountLayerOSM as any} />
         ) : (
-          <Layer {...clusterCountLayerMapbox} />
+          <Layer {...clusterCountLayerMapbox as any} />
         )}
-        <Layer {...unclusteredPointLayer} />
+        <Layer {...unclusteredPointLayer as any} />
       </Source>
     </ReactMapGL>
   );
 }
+
+export default SearchMap

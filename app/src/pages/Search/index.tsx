@@ -6,7 +6,10 @@ import Map from './Map'
 const Search:FC = () => {
 
     return (
-        <Map />
+        <>
+        <div> I am alive! </div>
+        <Map onOfferClose={() => {}} onOfferOpen={() => {}} filters={''} isUserPublic={true} location={undefined} locationBounds={undefined}/>
+        </>
     );
 }
 
