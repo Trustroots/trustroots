@@ -1,13 +1,10 @@
-import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import '@/config/client/i18n';
 import * as api from '../api/block.api';
-import Icon from '@/modules/core/client/components/Icon';
+import Icon from '../../components/Icon';
 
 export default function BlockMember({ username, isBlocked, className }) {
-  const { t } = useTranslation('users');
 
   function refreshUser() {
     // Refresh the page to reset global `window.app.user`
@@ -18,9 +15,7 @@ export default function BlockMember({ username, isBlocked, className }) {
   // Unblock member
   async function handleUnBlockMember(username) {
     const confirmation = window.confirm(
-      t(
-        'Are you sure you want to unblock them? They will be able to see your profile and messaage you again.',
-      ),
+      "Are you sure you want to unblock them? They will be able to see your profile and message you again.Are you sure you want to unblock them? They will be able to see your profile and messaage you again."
     );
 
     if (confirmation) {
@@ -30,9 +25,7 @@ export default function BlockMember({ username, isBlocked, className }) {
         refreshUser();
       } else {
         window.alert(
-          `${t('Could not unblock this member.')}\n\n${t(
-            'Please ensure you are connected to internet and try again.',
-          )}`,
+          "Could not unblock this member.\n\nPlease ensure you are connected to internet and try again."
         );
       }
     }
@@ -41,9 +34,7 @@ export default function BlockMember({ username, isBlocked, className }) {
   // Block member
   async function handleBlockMember(username) {
     const confirmation = window.confirm(
-      t(
-        'Are you sure you want to block them? They will not be able to see or message you.',
-      ),
+      "Are you sure you want to block them? They will not be able to see or message you."
     );
 
     if (confirmation) {
@@ -53,9 +44,7 @@ export default function BlockMember({ username, isBlocked, className }) {
         refreshUser();
       } else {
         alert(
-          `${t('Could not block this member.')}\n\n${t(
-            'Please ensure you are connected to internet and try again.',
-          )}`,
+            "Could not block this member.\n\nPlease ensure you are connected to internet and try again."
         );
       }
     }
@@ -65,11 +54,11 @@ export default function BlockMember({ username, isBlocked, className }) {
     return (
       <button
         className={className}
-        aria-label={t('Unblock member "{{username}}"', { username })}
+        aria-label={`Unblock member ${username}`}
         onClick={() => handleUnBlockMember(username)}
       >
         <Icon icon="invalid" />
-        {t('Unblock member')}
+        Unblock member
       </button>
     );
   }
@@ -77,11 +66,11 @@ export default function BlockMember({ username, isBlocked, className }) {
   return (
     <button
       className={className}
-      aria-label={t('Block member "{{username}}"', { username })}
+      aria-label={`Block member ${username}`}
       onClick={() => handleBlockMember(username)}
     >
       <Icon icon="invalid" />
-      {t('Block member')}
+      Block member
     </button>
   );
 }
