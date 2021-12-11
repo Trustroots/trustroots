@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 // External dependencies
 import React, {createRef, FC} from 'react'
 import { useDebouncedCallback } from 'use-debounce';
