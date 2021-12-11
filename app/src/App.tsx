@@ -7,7 +7,7 @@ const App = () => {
     <div className="App">
         <Header />
         <Profile />
-        <Map onOfferClose={() => {}} onOfferOpen={() => {}} isUserPublic={true} />
+        {/* <Map onOfferClose={() => {}} onOfferOpen={() => {}} isUserPublic={true} /> */}
     </div>
   );
 }
