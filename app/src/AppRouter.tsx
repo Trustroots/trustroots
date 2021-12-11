@@ -10,11 +10,8 @@ const Router = () => {
     <Routes>
      <Route element={<HomeLayout />}>
         {/* <Route index element={< />} /> */}
-        <Route path="search" element={<SearchPage />}>
-        <Route path="profile">
-          <Route path=":userId" element={<Profile />} />
-        </Route>
-        </Route>
+        <Route path="search" element={<SearchPage />}/>
+        <Route path="profile/:userId" element={<Profile />}/>
       </Route>
     </Routes>
   );
