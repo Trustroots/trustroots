@@ -1,3 +1,16 @@
 {
-    "Cancel": "Peruuta"
+    "Cancel": "Peruuta",
+    "Discover circles": "Löydä piirit",
+    "Do you want to leave \"{{label}}\"?": "Haluatko lähteä piiristä \"{{label}}\"?",
+    "Join": "Liity",
+    "Join ({{label}})": "Liity ({{label}})",
+    "Joined": "Liityit",
+    "Leave circle": "Lähde piiristä",
+    "Leave this circle?": "Lähde piiristä?",
+    "Missing your circle?": "Etkö löydä piiriäsi?",
+    "New circle!": "Uusi piiri!",
+    "No members yet": "Ei jäseniä",
+    "Send us suggestions!": "Lähetä meille ehdotuksesi!",
+    "{{count, number}} members": "Yksi jäsen",
+    "{{count, number}} members_plural": "{{count, number}} jäsentä"
 }
