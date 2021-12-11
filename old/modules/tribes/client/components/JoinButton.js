@@ -90,7 +90,7 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
       setIsUpdating(true);
 
       // join
-      const data = await api.join(tribe._id);
+ 
       // update the membership locally
       setIsMember(true);
 
