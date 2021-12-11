@@ -81,6 +81,7 @@ Make sure to familiarise yourself with our [pull request workflow](Pull-Request-
 - Configure Eslint integration for your editor
 
 ## Deeper Dive
+
 Check out the [Development docs](./Development.md) for more info about tooling, mock data, running tests, etc.
 
 ## Further studying
