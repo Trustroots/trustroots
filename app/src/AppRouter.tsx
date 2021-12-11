@@ -11,7 +11,6 @@ const Router = () => {
      <Route element={<HomeLayout />}>
         {/* <Route index element={< />} /> */}
         <Route path="search" element={<SearchPage />}>
-
         <Route path="profile">
           <Route path=":userId" element={<Profile />} />
         </Route>
