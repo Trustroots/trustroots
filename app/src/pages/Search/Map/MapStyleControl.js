@@ -10,7 +10,7 @@ import {
   MAP_STYLE_MAPBOX_SATELLITE,
   MAP_STYLE_MAPBOX_OUTDOORS,
   MAP_STYLE_OSM,
-} from './config/constants';
+} from './lib/constants';
 import { getMapBoxToken } from '../../utils/map';
 import MapIcon from './MapIcon';
 import MapStyleButton from './MapStyleButton';

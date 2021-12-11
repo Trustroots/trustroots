@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 // External dependencies
+import {FC} from 'react'
 import { useDebouncedCallback } from 'use-debounce';
-import PropTypes from 'prop-types';
 import { createRef, useEffect, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
@@ -11,14 +11,14 @@ import ReactMapGL, {
 } from 'react-map-gl';
 
 // Internal dependencies
-import { getMapBoxToken } from './config/getMapBoxToken';
+import { getMapBoxToken } from './lib/getMapBoxToken';
 import {
   MAP_STYLE_DEFAULT,
   MAP_STYLE_OSM,
   CLUSTER_MAX_ZOOM, MIN_ZOOM, SOURCE_OFFERS 
-} from './config/constants';
-import { DEFAULT_LOCATION } from './config/constants';
-import MapNavigationControl from './MapNavigatiXonControl';
+} from './lib/constants';
+import { DEFAULT_LOCATION } from './lib/constants';
+import MapNavigationControl from './MapNavigationControl';
 import MapScaleControl from './MapScaleControl';
 import SearchMapNoContent from './SearchMapNoContent';
 
@@ -28,21 +28,36 @@ import {
   clusterCountLayerOSM,
   clusterLayer,
   unclusteredPointLayer,
-} from './config/layers';
+} from './lib/layers';
 
-import { getOffer, queryOffers } from '../../../api/offers.api';
+import { getOffer, queryOffers } from '../../../api/offers/offers.api';
 
-import usePersistentMapLocation from './hooks/use-persisted-map-location';
+import usePersistentMapLocation from './lib/use-persisted-map-location';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-export default function SearchMap({
+
+
+
+interface Props { 
+  filters: string,
+  isUserPublic: boolean,
+  location: Object,
+  locationBounds: Object,
+  onOfferClose: () => {},
+  onOfferOpen: () => {},
+  
+}
+
+
+
+const SearchMap:FC<Props> = ({
   filters,
   isUserPublic,
   location,
   locationBounds: bounds,
   onOfferClose,
   onOfferOpen,
-}) {
+}) => {
   /**
    * Store map location in browser cache
    */
@@ -473,12 +488,3 @@ export default function SearchMap({
     </ReactMapGL>
   );
 }
-
-SearchMap.propTypes = {
-  filters: PropTypes.string,
-  isUserPublic: PropTypes.bool,
-  location: PropTypes.object,
-  locationBounds: PropTypes.object,
-  onOfferClose: PropTypes.func,
-  onOfferOpen: PropTypes.func,
-};
