@@ -5,9 +5,11 @@ import Map from "./pages/Search/Map";
 const App = () => {
   return (
     <div className="App">
-        <Header />
+        {/* <Header />
         <Profile />
-        <Map onOfferClose={() => {}} onOfferOpen={() => {}} isUserPublic={true} />
+        <Map onOfferClose={() => {}} onOfferOpen={() => {}} isUserPublic={true} /> */}
+
+        
     </div>
   );
 }

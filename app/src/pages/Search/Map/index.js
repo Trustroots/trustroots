@@ -2,7 +2,7 @@
 // External dependencies
 import { useDebouncedCallback } from 'use-debounce';
 import PropTypes from 'prop-types';
-import React, { createRef, useEffect, useState } from 'react';
+import { createRef, useEffect, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
   Layer,
@@ -18,7 +18,7 @@ import {
   CLUSTER_MAX_ZOOM, MIN_ZOOM, SOURCE_OFFERS 
 } from './config/constants';
 import { DEFAULT_LOCATION } from './config/constants';
-import MapNavigationControl from './MapNavigationControl';
+import MapNavigationControl from './MapNavigatiXonControl';
 import MapScaleControl from './MapScaleControl';
 import SearchMapNoContent from './SearchMapNoContent';
 
