@@ -1,0 +1,24 @@
+{
+  "version": 8,
+  "name": "OSM",
+  "metadata": {},
+  "glyphs": "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
+  "sources": {
+    "osm": {
+      "attribution": "<a href=\"https://www.openstreetmap.org/about/\" target=\"_blank\" rel=\"noopener\">&copy; OpenStreetMap</a>",
+      "mapbox_logo": true,
+      "maxzoom": 19,
+      "minzoom": 0,
+      "tiles": ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      "type": "raster"
+    }
+  },
+  "layers": [
+    {
+      "id": "osm",
+      "type": "raster",
+      "source": "osm"
+    }
+  ],
+  "id": "osm"
+}

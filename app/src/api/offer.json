@@ -1,0 +1,238 @@
+{
+    "_id": "5871289a88e1ab9af8a93fa1",
+    "type": "host",
+    "status": "yes",
+    "user": {
+        "tagline": "All tribes are welcome",
+        "gender": "female",
+        "avatarSource": "local",
+        "avatarUploaded": true,
+        "_id": "5863ad8787f4756e1880e54c",
+        "emailHash": "8b88be980c90bcd87d1b5d3841e94f5e",
+        "displayName": "Petra and Yassin",
+        "username": "yass",
+        "member": [
+            {
+                "since": "2016-12-28T12:18:21.379Z",
+                "tribe": {
+                    "count": 34564,
+                    "image": true,
+                    "slug": "hitchhikers",
+                    "_id": "5728ac5ba6082f199628514d",
+                    "label": "Hitchhikers",
+                    "color": "63930e",
+                    "description": "Trustroots was started by hitchhikers for hitchhikers. Many people found out about Trustroots through <a href=\"https://hitchwiki.org\">Hitchwiki</a>. Meet new friends while you are heading in the same direction. Whether you are a person asking for rides or a person giving them this is the circle for you.",
+                    "created": "2016-05-03T15:15:15.900Z",
+                    "attribution": "Gytė",
+                    "attribution_url": "https://www.facebook.com/upe.pati.teka"
+                }
+            },
+            {
+                "since": "2016-12-28T12:18:22.349Z",
+                "tribe": {
+                    "count": 18078,
+                    "image": true,
+                    "slug": "veg",
+                    "_id": "5728ad7ea6082f1996285152",
+                    "label": "Vegans & Vegetarians",
+                    "color": "02824f",
+                    "created": "2016-05-03T15:15:15.900Z",
+                    "description": "For health, for the animals or for the earth. Join this tribe if you're vegan or vegetarian. (Still a bit small, Veganwiki.info is a project related to Trustroots.)",
+                    "attribution": "Veganwiki (CC BY-SA 3.0)",
+                    "attribution_url": "http://veganwiki.info/en/File:Bibimbap-korea.jpg"
+                }
+            },
+            {
+                "since": "2017-01-07T17:36:31.086Z",
+                "tribe": {
+                    "count": 22246,
+                    "image": true,
+                    "slug": "nomads",
+                    "_id": "5728ae64a6082f1996285157",
+                    "label": "Nomads",
+                    "color": "0b5e7c",
+                    "created": "2016-05-03T15:15:15.900Z",
+                    "attribution": "Gary St (CC BY-SA 3.0)",
+                    "description": "Whether you find yourself in a place for a day, week, month or year, this is the circle for the vagabonds and wanderers who find home wherever their head may lie.",
+                    "attribution_url": "http://nomadwiki.org/en/File:Nomadwiki-front.jpg"
+                }
+            },
+            {
+                "since": "2017-01-07T17:36:39.852Z",
+                "tribe": {
+                    "count": 10914,
+                    "image": true,
+                    "slug": "cyclists",
+                    "_id": "5733ab4ba6082f19962851cc",
+                    "label": "Cyclists",
+                    "color": "0aa9b7",
+                    "created": "2016-05-12T17:15:15.900Z",
+                    "attribution": "Scott & Emily (CC BY-NC 2.0)",
+                    "description": "Legs of steel or maybe just some grand tour ambitions?  Cyclists connect with this circle, before, during and after you hit the road.",
+                    "attribution_url": "https://www.flickr.com/photos/snordq/6440512215/in/album-72157628461235121/"
+                }
+            },
+            {
+                "since": "2017-01-07T17:36:43.715Z",
+                "tribe": {
+                    "count": 11585,
+                    "image": true,
+                    "slug": "foodsharing",
+                    "_id": "5800e3139037047fa8262c63",
+                    "label": "Foodsharing",
+                    "color": "4a3520",
+                    "created": "2016-10-14T15:15:15.900Z",
+                    "attribution": "Foodsharing.de & Offenblen.de: Foodsharing.de is a German website to rescue food in cooperation with stores. This circle was intended for Foodsharing activists and members, but by now, if you love sharing food with random strangers, join this, invite travellers to your home for lunch or dinner.",
+                    "attribution_url": "http://offenblen.de/",
+                    "description": "Foodsharing.de activists and members."
+                }
+            },
+            {
+                "since": "2017-01-07T17:37:02.313Z",
+                "tribe": {
+                    "count": 14498,
+                    "image": true,
+                    "slug": "ecoliving",
+                    "_id": "5728addba6082f1996285155",
+                    "label": "Ecoliving",
+                    "color": "f4ce11",
+                    "created": "2016-05-03T15:15:15.900Z",
+                    "description": "Are you interested in living with less impact on our planet? Maybe you are already doing so and want to share and connect. For those who desire a life with less footprint, this circle welcomes you.",
+                    "attribution": "Michael Würfel (CC BY-SA 3.0)",
+                    "attribution_url": "https://commons.wikimedia.org/wiki/File:004A_mwuerfel.jpg"
+                }
+            },
+            {
+                "since": "2017-09-20T15:23:34.150Z",
+                "tribe": {
+                    "count": 1511,
+                    "image": true,
+                    "slug": "slackline",
+                    "_id": "59970cbf3029689ef1f5d6b4",
+                    "label": "Slackliners",
+                    "color": "e0cb3e",
+                    "description": "Joining this circle is as easy as falling off a 4cm piece of rope...",
+                    "created": "2017-09-07T15:51:41.423Z",
+                    "attribution": "Sven Kopf",
+                    "attribution_url": "http://www.challengingtheworld.de"
+                }
+            },
+            {
+                "tribe": {
+                    "count": 5478,
+                    "image": true,
+                    "slug": "rainbow-gathering",
+                    "_id": "59970ba53029689ef1f5d6b3",
+                    "label": "Rainbow gathering",
+                    "color": "e0cb3e",
+                    "description": "Join this circle if you feel part of the Rainbow Family. It's great to camp in nature with hippies. Food circle, now!",
+                    "created": "2017-08-18T15:51:41.423Z",
+                    "attribution": "Andreas Waguluz",
+                    "attribution_url": "https://unsplash.com/photos/t6t2-gXKxXM"
+                },
+                "since": "2018-10-25T15:29:49.087Z"
+            },
+            {
+                "tribe": {
+                    "count": 15149,
+                    "image": true,
+                    "slug": "hikers",
+                    "_id": "59961d6d3029689ef1f5d660",
+                    "label": "Hikers",
+                    "color": "82550f",
+                    "created": "2017-08-17T18:57:22.210Z",
+                    "attribution": "Nova Togatorop",
+                    "attribution_url": "http://novatogatorop.com/",
+                    "description": "For outdoorsy people who love hiking in nature. Would you like to find hosts who can recomend the best local hikes? Maybe they will join you on the hike. This circle is for those who love to be active on their feet outdoors."
+                },
+                "since": "2018-10-25T15:30:02.090Z"
+            },
+            {
+                "tribe": {
+                    "count": 9813,
+                    "image": true,
+                    "slug": "musicians",
+                    "_id": "5728ad4ba6082f1996285150",
+                    "label": "Musicians",
+                    "color": "ef098b",
+                    "created": "2016-05-03T15:15:15.900Z",
+                    "description": "Love jamming with other musicians? This circle can be good way to find them.",
+                    "attribution": "Guillaume Ohz",
+                    "attribution_url": ""
+                },
+                "since": "2018-10-25T15:30:05.753Z"
+            },
+            {
+                "tribe": {
+                    "count": 4722,
+                    "image": true,
+                    "slug": "cooking",
+                    "_id": "5ee86e0141aa899acde5d610",
+                    "label": "Cooking",
+                    "color": "937b04",
+                    "description": "From bon vivant to utter gluttony, as long as you make it yourself or together it’s all good!",
+                    "created": "2020-06-16T06:54:13.035Z",
+                    "attribution": "",
+                    "attribution_url": ""
+                },
+                "since": "2021-07-07T13:39:30.034Z"
+            },
+            {
+                "tribe": {
+                    "count": 3293,
+                    "image": true,
+                    "slug": "trustroots-volunteers",
+                    "_id": "5c1d54b9c3460ac6bf89ea75",
+                    "label": "Trustroots Volunteers",
+                    "color": "63930e",
+                    "description": "Join this circle if you want to help grow Trustroots — or if you are already helping. This makes it easier to work on Trustroots together, e.g. to organize an adhoc mini-collective. See also <a href=\"/volunteering\">our volunteering page</a>.",
+                    "created": "2018-12-21T15:15:15.900Z",
+                    "attribution": "Dani",
+                    "attribution_url": ""
+                },
+                "since": "2021-07-07T13:39:33.809Z"
+            },
+            {
+                "tribe": {
+                    "count": 2619,
+                    "image": true,
+                    "slug": "feminists",
+                    "_id": "5ee86dc841aa899acde5d52b",
+                    "label": "Feminists",
+                    "color": "933904",
+                    "description": "A feminst is anyone who recognizes the equality and full humanity of women and men.",
+                    "created": "2020-06-16T06:54:13.035Z",
+                    "attribution": "Lindsey LaMont",
+                    "attribution_url": "https://unsplash.com/photos/hUWINRMPvsc"
+                },
+                "since": "2021-07-07T13:39:44.407Z"
+            },
+            {
+                "tribe": {
+                    "count": 8680,
+                    "image": true,
+                    "slug": "artists",
+                    "_id": "599702773029689ef1f5d6ad",
+                    "label": "Artists",
+                    "color": "cf2727",
+                    "created": "2017-08-18T15:09:43.365Z",
+                    "attribution": "Kyson Dana",
+                    "attribution_url": "https://unsplash.com/photos/HR_jVFpAtWI",
+                    "description": "Creators & Creatives: love to talk about your latest project? Want a host or guest who can connect with you creatively? This is the circle for you."
+                },
+                "since": "2021-07-07T13:40:24.902Z"
+            }
+        ],
+        "birthdate": "1987-10-19T00:00:00.000Z",
+        "updated": "2021-07-30T09:58:46.437Z"
+    },
+    "description": "<p>We can host you in our kitchen/living room, we have a bedcouch. Not the most comfi in the world but it does the job.<br /></p>",
+    "noOfferDescription": "",
+    "maxGuests": 2,
+    "location": [
+        50.08987665670393,
+        14.472864451129016
+    ],
+    "updated": "2021-03-30T15:24:42.253Z",
+    "showOnlyInMyCircles": false
+}

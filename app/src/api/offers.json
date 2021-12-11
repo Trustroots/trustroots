@@ -1,0 +1,1061 @@
+{
+    "features": [
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "612e03bec9995c7876aeb200",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.149767733973377,
+                    49.32428056364485
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "611e63f1c9995c7876ae7305",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.062791307107078,
+                    49.702789513093244
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "580feb12cbb5e73163dfb02d",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.290050846970297,
+                    49.961987105967765
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6165cb9cd6a3c549db308d89",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.241245975852399,
+                    50.037930831956295
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5cefb00602a9d71a6c2456ba",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.251304441689344,
+                    50.08434719458301
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5edfa24af7b6ff0f945a8b61",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.339994103211607,
+                    50.083351838917075
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5d44318ee9a08d5bc3bb69ad",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.341050360524088,
+                    50.09741533716928
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "616c8759de2f987e0889e03e",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.369362444949317,
+                    50.082271064249305
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5bd22a1ea377d16575610bdb",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.379670909326155,
+                    50.07031892963378
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5597abaf4a330667db25a650",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.376276976171765,
+                    50.07430197374086
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "558095763708e8e5d7495d82",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.396172797034735,
+                    50.05513108390961
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5ecce418566b8d6f979905a1",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.39456672854585,
+                    50.07376700090244
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "586acbe60e15c9765902fa06",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.403651975604662,
+                    50.07295057356489
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5e21a252a11d413b737ce132",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.411953959096127,
+                    50.071671453121816
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "54a09b170a61cb339e27e372",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.375530521582299,
+                    50.08919803343177
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5f2ad97354fe1f3042eec70b",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.405915702596593,
+                    50.07896490587306
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "60f5f917ccafad7c2ddae9da",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.410988490043495,
+                    50.07949298622354
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5fb05d29a8a6625829f462c5",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.106173286874618,
+                    50.13791956181619
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5f6dcaa6e1a590029497f900",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.098407479857306,
+                    50.16221285345895
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5c90b51a44081d1f94bfaca9",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.096617268152512,
+                    50.16501410340376
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "59c65b3adc38a303178f40d6",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.10750261265934,
+                    50.14270990854443
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5b950b53d0d10c7fc1bd292e",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.26578245595176,
+                    50.169301882896875
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "593fe77d517ebaee2b4ffed4",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.402313020128195,
+                    50.09846506994767
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "60b216ec0d2e515d77869e9b",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.400971328976707,
+                    50.100400062979794
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61546818c9995c7876af2f84",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.402882042587487,
+                    50.108622137187346
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6179a796de2f987e088a0f14",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.410723872667269,
+                    50.1029755657959
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5702b2de3a1f062561bc0fb7",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.38094949185612,
+                    50.13168588764775
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "612b87f2c9995c7876aea90e",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.47585736715497,
+                    50.02936750708887
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61791ec4de2f987e088a0c41",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.481791583964096,
+                    50.035279617423335
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "610f05b5ccafad7c2ddb4ae8",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.48462026976327,
+                    50.0468162141991
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5bafd56a2adefd401b2393d4",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.426636649884598,
+                    50.063357275033866
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6130cc23c9995c7876aebc1b",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.41706950448619,
+                    50.07069953192612
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5f15b2e654fe1f3042ee9272",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.435820276912976,
+                    50.07419359608738
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61753d19de2f987e0889fc3b",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.445500626064204,
+                    50.0562423200225
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "619ab4aa4046d844833dfdf8",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.449851515220333,
+                    50.068735855015746
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6116546eccafad7c2ddb6a6f",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.447665826288324,
+                    50.07505325640373
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "57983cd66ea3822c15482217",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.43436141364529,
+                    50.07577330184979
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61059376ccafad7c2ddb2504",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.44218413360673,
+                    50.08271821957284
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5f1c2dfc54fe1f3042eea1e5",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.446386355572798,
+                    50.08304139513065
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5e10c5e7a11d413b737ccafb",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.456173464614972,
+                    50.081027066365806
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5d5edb47e9a08d5bc3bba516",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.436740341696604,
+                    50.09113740462968
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61717ce7de2f987e0889effc",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.45918481565119,
+                    50.08497692789025
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5f02d12c473d305877d33356",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.470130592320892,
+                    50.090323600784544
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5871289a88e1ab9af8a93fa1",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.472864451129016,
+                    50.08987665670393
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "554a3c56f4421c814771c247",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.522725327955566,
+                    50.05198154481851
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5f1c832754fe1f3042eea264",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.714780952970527,
+                    50.072224172359995
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5b2917831e63fe3613811562",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.42489917310544,
+                    50.099652736747096
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6134ab88c9995c7876aec804",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.42695584954406,
+                    50.098412670613065
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "555ffeb2f4421c814771c4f8",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.425902248098158,
+                    50.099803291900585
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61198a93c9995c7876ae5c39",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.42800147882698,
+                    50.099157202022674
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "610d47dbccafad7c2ddb434e",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.448934709045592,
+                    50.12110013554206
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "60d9e9ff0d2e515d7786f74e",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.451540171594438,
+                    50.13764643247231
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "60ce19580d2e515d7786d8f2",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.460231688674899,
+                    50.102405355462956
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6009cde744228a1c9be01fec",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.496940046613549,
+                    50.11231516559227
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5aa3bd681a5b5409007e2811",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.664335583383453,
+                    50.128944968780054
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5e70918aedabcb3c9aa1d938",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.274492780317194,
+                    50.425383144392086
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "610d963eccafad7c2ddb44f1",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.126657394275712,
+                    50.53440736833189
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5ecb6a3e566b8d6f97990493",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    15.031991711219217,
+                    50.182866373532995
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6176e714de2f987e088a0387",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.918184763938946,
+                    50.41227622365625
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "611381a7ccafad7c2ddb5b8e",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    13.847535276343478,
+                    51.00676141553646
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "5f1f18c254fe1f3042eea89b",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.704334292914064,
+                    50.996130700705116
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61773068de2f987e088a04cc",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    15.065170564001114,
+                    50.736634538966676
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "6171ed87de2f987e0889f2b4",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    15.0598303190735,
+                    50.75581171182032
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "61006bf0ccafad7c2ddb113c",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    15.072575217555848,
+                    50.77922592727505
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "60854fbc9f7c3145da788f1c",
+                "status": "yes",
+                "type": "host",
+                "offer": "host-yes"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.804025440553694,
+                    50.90653448780945
+                ],
+                "type": "Point"
+            }
+        },
+        {
+            "type": "Feature",
+            "properties": {
+                "id": "54c2c895a5d6915fba676ce5",
+                "status": "maybe",
+                "type": "host",
+                "offer": "host-maybe"
+            },
+            "geometry": {
+                "coordinates": [
+                    14.80845706784517,
+                    50.90682908905293
+                ],
+                "type": "Point"
+            }
+        }
+    ],
+    "type": "FeatureCollection"
+}
