@@ -38,6 +38,6 @@ to get started. Running Docker can be a little bit slower than running locally. 
 
 ## License
 
-- [The MIT License](LICENSE.md)
+- [The AGPL License](LICENSE.md)
 - Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons. Others are permitted to use only with Trustroots.
 - Logos of external communities are copyrighted work and may be subject to trademark laws.

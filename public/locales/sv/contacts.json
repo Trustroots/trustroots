@@ -40,5 +40,7 @@
     "Search contacts": "Sök efter kontakter",
     "(additional {{count}} pending)": "(ytterligare {{count}} väntar)",
     "(additional {{count}} pending)_plural": "(ytterligare {{count}} väntar)",
-    "Wait a moment…": "Vänta en stund…"
+    "Wait a moment…": "Vänta lite…",
+    "Requested {{date, LL}}": "Efterfrågat {{date, LL}}",
+    "Connected since {{date, LL}}": "Ansluten sen {{date, LL}}"
 }
