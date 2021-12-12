@@ -10,12 +10,8 @@ const async = require('async');
 const config = require('file:///../../config/config');
 const mongoose = require('mongoose');
 const log = require('file:///../../config/lib/logger');
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
+const textService = require('file:///../../modules/core/server/services/text.server.service');
 
 require('file:///../../modules/messages/server/models/message.server.model');
 

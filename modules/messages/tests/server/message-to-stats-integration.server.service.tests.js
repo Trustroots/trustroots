@@ -7,9 +7,7 @@ const config = require('file:///../../config/config');
 const EventEmitter = require('events');
 const influx = require('influx');
 const Promise = require('promise');
-const messageController = require(path.resolve(
-  './modules/messages/server/controllers/messages.server.controller',
-));
+const messageController = require('file:///../../modules/messages/server/controllers/messages.server.controller');
 const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');

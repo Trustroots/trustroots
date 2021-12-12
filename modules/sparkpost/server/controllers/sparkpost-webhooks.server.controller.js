@@ -15,12 +15,8 @@ const async = require('async');
 const basicAuth = require('basic-auth');
 const speakingurl = require('speakingurl');
 const log = require('file:///../../config/lib/logger');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
 const config = require('file:///../../config/config');
 
 /**

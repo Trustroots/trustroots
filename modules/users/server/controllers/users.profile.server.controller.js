@@ -4,38 +4,18 @@
 const _ = require('lodash');
 const path = require('path');
 const locales = require('file:///../../config/shared/locales');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const tribesHandler = require(path.resolve(
-  './modules/tribes/server/controllers/tribes.server.controller',
-));
-const contactHandler = require(path.resolve(
-  './modules/contacts/server/controllers/contacts.server.controller',
-));
-const messageHandler = require(path.resolve(
-  './modules/messages/server/controllers/messages.server.controller',
-));
-const offerHandler = require(path.resolve(
-  './modules/offers/server/controllers/offers.server.controller',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const pushService = require(path.resolve(
-  './modules/core/server/services/push.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const textService = require('file:///../../modules/core/server/services/text.server.service');
+const tribesHandler = require('file:///../../modules/tribes/server/controllers/tribes.server.controller');
+const contactHandler = require('file:///../../modules/contacts/server/controllers/contacts.server.controller');
+const messageHandler = require('file:///../../modules/messages/server/controllers/messages.server.controller');
+const offerHandler = require('file:///../../modules/offers/server/controllers/offers.server.controller');
+const emailService = require('file:///../../modules/core/server/services/email.server.service');
+const pushService = require('file:///../../modules/core/server/services/push.server.service');
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
 const log = require('file:///../../config/lib/logger');
 const del = require('del');
-const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service',
-));
+const messageStatService = require('file:///../../modules/messages/server/services/message-stat.server.service');
 const config = require('file:///../../config/config');
 const async = require('async');
 const crypto = require('crypto');

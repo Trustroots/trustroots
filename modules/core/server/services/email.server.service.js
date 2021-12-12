@@ -7,12 +7,8 @@ const async = require('async');
 const juice = require('juice');
 const moment = require('moment');
 const autolinker = require('autolinker');
-const analyticsHandler = require(path.resolve(
-  './modules/core/server/controllers/analytics.server.controller',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
+const analyticsHandler = require('file:///../../modules/core/server/controllers/analytics.server.controller');
+const textService = require('file:///../../modules/core/server/services/text.server.service');
 const render = require('file:///../../config/lib/render');
 const agenda = require('file:///../../config/lib/agenda');
 const config = require('file:///../../config/config');

@@ -6,9 +6,7 @@ const sinon = require('sinon');
 const mongoose = require('mongoose');
 const should = require('should');
 const config = require('file:///../../config/config');
-const userHandler = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
+const userHandler = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
 const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');

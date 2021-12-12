@@ -6,9 +6,7 @@ const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
 
-const statsService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const statsService = require('file:///../../modules/stats/server/services/stats.server.service');
 const config = require('file:///../../config/config');
 
 describe('Stat API integration tests', function () {

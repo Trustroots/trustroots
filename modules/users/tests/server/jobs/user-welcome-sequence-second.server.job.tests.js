@@ -26,15 +26,9 @@ describe('Job: welcome sequence, second email', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    userWelcomeSequenceFirstJobHandler = require(path.resolve(
-      './modules/users/server/jobs/user-welcome-sequence-first.server.job',
-    ));
-    userWelcomeSequenceSecondJobHandler = require(path.resolve(
-      './modules/users/server/jobs/user-welcome-sequence-second.server.job',
-    ));
-    userWelcomeSequenceThirdJobHandler = require(path.resolve(
-      './modules/users/server/jobs/user-welcome-sequence-third.server.job',
-    ));
+    userWelcomeSequenceFirstJobHandler = require('file:///../../modules/users/server/jobs/user-welcome-sequence-first.server.job');
+    userWelcomeSequenceSecondJobHandler = require('file:///../../modules/users/server/jobs/user-welcome-sequence-second.server.job');
+    userWelcomeSequenceThirdJobHandler = require('file:///../../modules/users/server/jobs/user-welcome-sequence-third.server.job');
   });
 
   // Create time points to test that welcome sequence is sent in correct time

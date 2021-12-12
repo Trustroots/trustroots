@@ -216,9 +216,7 @@ module.exports.initSession = function (app, connection) {
  * Wire in user last seen middleware
  */
 module.exports.initLastSeen = function (app) {
-  const lastSeenController = require(path.resolve(
-    './modules/users/server/controllers/users.lastseen.server.controller',
-  ));
+  const lastSeenController = require('file:///../../modules/users/server/controllers/users.lastseen.server.controller');
   app.use(lastSeenController);
 };
 

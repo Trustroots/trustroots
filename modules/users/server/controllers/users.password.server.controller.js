@@ -2,21 +2,11 @@
  * Module dependencies.
  */
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const analyticsHandler = require(path.resolve(
-  './modules/core/server/controllers/analytics.server.controller',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const profileHandler = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const analyticsHandler = require('file:///../../modules/core/server/controllers/analytics.server.controller');
+const emailService = require('file:///../../modules/core/server/services/email.server.service');
+const profileHandler = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
 const log = require('file:///../../config/lib/logger');
 const async = require('async');
 const crypto = require('crypto');

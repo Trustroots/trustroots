@@ -23,9 +23,7 @@ describe('Job: user finish signup', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    userFinishSignupJobHandler = require(path.resolve(
-      './modules/users/server/jobs/user-finish-signup.server.job',
-    ));
+    userFinishSignupJobHandler = require('file:///../../modules/users/server/jobs/user-finish-signup.server.job');
   });
 
   // Create an unconfirmed user

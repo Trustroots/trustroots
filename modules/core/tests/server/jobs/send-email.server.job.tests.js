@@ -11,9 +11,7 @@ describe('job: send email', function () {
   const sentEmails = testutils.catchEmails();
 
   before(function () {
-    sendEmailJobHandler = require(path.resolve(
-      './modules/core/server/jobs/send-email.server.job',
-    ));
+    sendEmailJobHandler = require('file:///../../modules/core/server/jobs/send-email.server.job');
   });
 
   it('will send an email', function (done) {

@@ -9,9 +9,7 @@ describe('Service: push', function () {
   let pushService;
 
   before(function () {
-    pushService = require(path.resolve(
-      './modules/core/server/services/push.server.service',
-    ));
+    pushService = require('file:///../../modules/core/server/services/push.server.service');
   });
 
   it('can send a user notification', function (done) {

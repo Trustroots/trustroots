@@ -4,9 +4,7 @@
 const _ = require('lodash');
 const path = require('path');
 const mongoose = require('mongoose');
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
+const textService = require('file:///../../modules/core/server/services/text.server.service');
 const Schema = mongoose.Schema;
 
 /**

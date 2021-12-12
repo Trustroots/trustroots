@@ -1,11 +1,7 @@
 const path = require('path');
 const errorService = require('../services/error.server.service');
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
+const userProfile = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
+const textService = require('file:///../../modules/core/server/services/text.server.service');
 const config = require('file:///../../config/config');
 const log = require('file:///../../config/lib/logger');
 

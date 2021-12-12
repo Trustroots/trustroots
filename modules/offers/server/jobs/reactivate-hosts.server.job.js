@@ -10,9 +10,7 @@
  * Module dependencies.
  */
 const path = require('path');
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
+const emailService = require('file:///../../modules/core/server/services/email.server.service');
 const config = require('file:///../../config/config');
 const async = require('async');
 const moment = require('moment');

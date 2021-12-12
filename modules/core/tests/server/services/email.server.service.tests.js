@@ -9,9 +9,7 @@ describe('Service: email', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    emailService = require(path.resolve(
-      './modules/core/server/services/email.server.service',
-    ));
+    emailService = require('file:///../../modules/core/server/services/email.server.service');
   });
 
   it('can send signup email confirmation', function (done) {

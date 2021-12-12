@@ -4,12 +4,8 @@
 const _ = require('lodash');
 const path = require('path');
 const moment = require('moment');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
 const async = require('async');
 const semver = require('semver');
 const mongoose = require('mongoose');

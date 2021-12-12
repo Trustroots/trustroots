@@ -1,11 +1,7 @@
 const path = require('path');
 const async = require('async');
-const firebaseMessaging = require(path.resolve(
-  './config/lib/firebase-messaging',
-));
-const exponentNotifications = require(path.resolve(
-  './config/lib/exponent-notifications',
-));
+const firebaseMessaging = require('file:///../../config/lib/firebase-messaging');
+const exponentNotifications = require('file:///../../config/lib/exponent-notifications');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const log = require('file:///../../config/lib/logger');

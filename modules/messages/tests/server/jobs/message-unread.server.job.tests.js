@@ -27,9 +27,7 @@ describe('Job: message unread', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    messageUnreadJobHandler = require(path.resolve(
-      './modules/messages/server/jobs/message-unread.server.job',
-    ));
+    messageUnreadJobHandler = require('file:///../../modules/messages/server/jobs/message-unread.server.job');
   });
 
   // Create an user

@@ -23,9 +23,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
   const jobs = testutils.catchJobs();
 
   before(function () {
-    reactivateHostsJobHandler = require(path.resolve(
-      './modules/offers/server/jobs/reactivate-hosts.server.job',
-    ));
+    reactivateHostsJobHandler = require('file:///../../modules/offers/server/jobs/reactivate-hosts.server.job');
   });
 
   // Create user

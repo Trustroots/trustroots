@@ -2,9 +2,7 @@ const path = require('path');
 const should = require('should');
 const async = require('async');
 const mongoose = require('mongoose');
-const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service',
-));
+const messageStatService = require('file:///../../modules/messages/server/services/message-stat.server.service');
 const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');

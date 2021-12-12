@@ -4,9 +4,7 @@
 const path = require('path');
 const _ = require('lodash');
 const mongoose = require('mongoose');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
 
 const User = mongoose.model('User');
 

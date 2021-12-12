@@ -10,27 +10,13 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const config = require('file:///../../config/config');
 const log = require('file:///../../config/lib/logger');
-const messageToStatsService = require(path.resolve(
-  './modules/messages/server/services/message-to-stats.server.service',
-));
-const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service',
-));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const spamService = require(path.resolve(
-  './modules/core/server/services/spam.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const messageToStatsService = require('file:///../../modules/messages/server/services/message-to-stats.server.service');
+const messageStatService = require('file:///../../modules/messages/server/services/message-stat.server.service');
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const textService = require('file:///../../modules/core/server/services/text.server.service');
+const spamService = require('file:///../../modules/core/server/services/spam.server.service');
+const userProfile = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
 
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');

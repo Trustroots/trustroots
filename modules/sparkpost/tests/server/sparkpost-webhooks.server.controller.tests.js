@@ -5,9 +5,7 @@ const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
 const config = require('file:///../../config/config');
-const sparkpostWebhooks = require(path.resolve(
-  './modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller',
-));
+const sparkpostWebhooks = require('file:///../../modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller');
 
 describe('Sparkpost Webhooks - Integration Test', function () {
   // restoring the stubs

@@ -5,9 +5,7 @@ const _ = require('lodash');
 const mongoose = require('mongoose');
 const path = require('path');
 
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
 const log = require('file:///../../config/lib/logger');
 
 const AdminNote = mongoose.model('AdminNote');

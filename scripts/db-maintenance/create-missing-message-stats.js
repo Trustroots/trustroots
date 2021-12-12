@@ -37,13 +37,10 @@ var path = require('path'),
     config = require('file:///../../config/config'),
     configMongoose = require('file:///../../config/lib/mongoose'),
     mongoose = require('mongoose'),
-    messageModels = require(path.resolve(
-      './modules/messages/server/models/message.server.model')),
-    messageStatModels = require(path.resolve(
-      './modules/messages/server/models/message-stat.server.model')),
+    messageModels = require('file:///../../modules/messages/server/models/message.server.model'),
+    messageStatModels = require('file:///../../modules/messages/server/models/message-stat.server.model'),
     Message = mongoose.model('Message'),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service'));
+    messageStatService = require('file:///../../modules/messages/server/services/message-stat.server.service');
 
     // the expression below uses ES6 Promises, so it shouldn't belong here.
     // there is a warning when one doesn't provide one's own library.

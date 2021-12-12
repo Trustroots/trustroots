@@ -5,12 +5,8 @@ const _ = require('lodash');
 const sinon = require('sinon');
 const config = require('file:///../../config/config');
 const utils = require('file:///../../testutils/server/data.server.testutil');
-const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service',
-));
-const messageController = require(path.resolve(
-  './modules/messages/server/controllers/messages.server.controller',
-));
+const messageStatService = require('file:///../../modules/messages/server/services/message-stat.server.service');
+const messageController = require('file:///../../modules/messages/server/controllers/messages.server.controller');
 
 const User = mongoose.model('User');
 const EventEmitter = require('events');

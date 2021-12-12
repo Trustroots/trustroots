@@ -5,18 +5,10 @@ const _ = require('lodash');
 const path = require('path');
 const async = require('async');
 const config = require('file:///../../config/config');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const tribes = require(path.resolve(
-  './modules/tribes/server/controllers/tribes.server.controller',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const userProfile = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
+const tribes = require('file:///../../modules/tribes/server/controllers/tribes.server.controller');
+const textService = require('file:///../../modules/core/server/services/text.server.service');
 const log = require('file:///../../config/lib/logger');
 const sanitizeHtml = require('sanitize-html');
 const moment = require('moment');

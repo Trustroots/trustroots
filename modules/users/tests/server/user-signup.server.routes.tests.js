@@ -4,9 +4,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const express = require('file:///../../config/lib/express');
 const testutils = require('file:///../../testutils/server/server.testutil');
-const dataUtils = require(path.resolve(
-  './testutils/server/data.server.testutil',
-));
+const dataUtils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 

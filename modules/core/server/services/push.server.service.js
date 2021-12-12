@@ -3,9 +3,7 @@ const path = require('path');
 const agenda = require('file:///../../config/lib/agenda');
 const config = require('file:///../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-const analyticsHandler = require(path.resolve(
-  './modules/core/server/controllers/analytics.server.controller',
-));
+const analyticsHandler = require('file:///../../modules/core/server/controllers/analytics.server.controller');
 
 exports.notifyPushDeviceAdded = function (user, platform, callback) {
   if (_.get(user, 'pushRegistration', []).length === 0) return callback();

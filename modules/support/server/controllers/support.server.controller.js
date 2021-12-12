@@ -2,15 +2,9 @@
  * Module dependencies.
  */
 const path = require('path');
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const textService = require('file:///../../modules/core/server/services/text.server.service');
+const emailService = require('file:///../../modules/core/server/services/email.server.service');
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
 const log = require('file:///../../config/lib/logger');
 const config = require('file:///../../config/config');
 const mongoose = require('mongoose');

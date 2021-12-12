@@ -3,13 +3,9 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
+const textService = require('file:///../../modules/core/server/services/text.server.service');
 const languages = require('file:///../../config/languages/languages.json');
-const authenticationService = require(path.resolve(
-  './modules/users/server/services/authentication.server.service',
-));
+const authenticationService = require('file:///../../modules/users/server/services/authentication.server.service');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const uniqueValidation = require('mongoose-beautiful-unique-validation');

@@ -5,9 +5,7 @@ const passport = require('passport');
 const User = require('mongoose').model('User');
 const path = require('path');
 const config = require('file:///../../config/config');
-const usersSuspended = require(path.resolve(
-  './modules/users/server/controllers/users.suspended.server.controller',
-));
+const usersSuspended = require('file:///../../modules/users/server/controllers/users.suspended.server.controller');
 
 module.exports = function (app) {
   // Serialize sessions

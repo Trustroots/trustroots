@@ -5,9 +5,7 @@ const request = require('supertest');
 const should = require('should');
 const sinon = require('sinon');
 const utils = require('file:///../../testutils/server/data.server.testutil');
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
+const userProfile = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
 const express = require('file:///../../config/lib/express');
 
 describe('Read a single experience by experience id', () => {

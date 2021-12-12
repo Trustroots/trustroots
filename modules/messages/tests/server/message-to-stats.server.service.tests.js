@@ -6,9 +6,7 @@ const path = require('path');
 const _ = require('lodash');
 const async = require('async');
 const config = require('file:///../../config/config');
-const messageToStatsService = require(path.resolve(
-  './modules/messages/server/services/message-to-stats.server.service',
-));
+const messageToStatsService = require('file:///../../modules/messages/server/services/message-to-stats.server.service');
 const utils = require('file:///../../testutils/server/data.server.testutil');
 require('should');
 

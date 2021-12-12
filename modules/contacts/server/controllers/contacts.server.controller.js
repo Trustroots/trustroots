@@ -4,18 +4,10 @@
 
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const textService = require('file:///../../modules/core/server/services/text.server.service');
+const emailService = require('file:///../../modules/core/server/services/email.server.service');
+const userProfile = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
 const sanitizeHtml = require('sanitize-html');
 const htmlToText = require('html-to-text');
 const async = require('async');

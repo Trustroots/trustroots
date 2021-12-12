@@ -6,9 +6,7 @@ const influx = require('influx');
 const sinon = require('sinon');
 
 const config = require('file:///../../config/config');
-const statsJob = require(path.resolve(
-  './modules/statistics/server/jobs/daily-statistics.server.job',
-));
+const statsJob = require('file:///../../modules/statistics/server/jobs/daily-statistics.server.job');
 
 describe('Daily Statistics Job - Unit Test', function () {
   afterEach(function () {

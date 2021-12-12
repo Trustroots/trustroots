@@ -3,21 +3,11 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const authenticationService = require(path.resolve(
-  './modules/users/server/services/authentication.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
+const emailService = require('file:///../../modules/core/server/services/email.server.service');
+const userProfile = require('file:///../../modules/users/server/controllers/users.profile.server.controller');
+const authenticationService = require('file:///../../modules/users/server/services/authentication.server.service');
+const statService = require('file:///../../modules/stats/server/services/stats.server.service');
 const facebook = require('file:///../../config/lib/facebook-api.js');
 const config = require('file:///../../config/config');
 const log = require('file:///../../config/lib/logger');

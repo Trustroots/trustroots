@@ -4,9 +4,7 @@ const sinon = require('sinon');
 const influx = require('influx');
 const Promise = require('promise');
 // influx = require('influx'),
-const influxService = require(path.resolve(
-  './modules/stats/server/services/influx.server.service',
-));
+const influxService = require('file:///../../modules/stats/server/services/influx.server.service');
 const config = require('file:///../../config/config');
 
 describe('Service: influx', function () {

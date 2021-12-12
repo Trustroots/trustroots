@@ -29,12 +29,8 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const pushService = require(path.resolve(
-  './modules/core/server/services/push.server.service',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
+const pushService = require('file:///../../modules/core/server/services/push.server.service');
+const emailService = require('file:///../../modules/core/server/services/email.server.service');
 const log = require('file:///../../config/lib/logger');
 const config = require('file:///../../config/config');
 const async = require('async');

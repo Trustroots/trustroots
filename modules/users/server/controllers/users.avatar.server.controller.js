@@ -7,12 +7,8 @@ const path = require('path');
 
 const log = require('file:///../../config/lib/logger');
 const config = require('file:///../../config/config');
-const fileUpload = require(path.resolve(
-  './modules/core/server/services/file-upload.service',
-));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const fileUpload = require('file:///../../modules/core/server/services/file-upload.service');
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
 
 const User = mongoose.model('User');
 

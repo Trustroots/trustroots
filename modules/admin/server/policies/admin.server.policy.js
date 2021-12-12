@@ -4,9 +4,7 @@
 const acl = require('acl');
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const errorService = require('file:///../../modules/core/server/services/error.server.service');
 
 // Using the memory backend
 const aclInstance = new acl(new acl.memoryBackend());
