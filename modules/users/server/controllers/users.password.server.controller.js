@@ -17,7 +17,7 @@ const profileHandler = require(path.resolve(
 const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const async = require('async');
 const crypto = require('crypto');
 const mongoose = require('mongoose');

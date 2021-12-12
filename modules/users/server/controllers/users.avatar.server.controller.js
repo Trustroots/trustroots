@@ -5,7 +5,7 @@ const mkdirRecursive = require('mkdir-recursive');
 const mongoose = require('mongoose');
 const path = require('path');
 
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const config = require('file:///../../config/config');
 const fileUpload = require(path.resolve(
   './modules/core/server/services/file-upload.service',

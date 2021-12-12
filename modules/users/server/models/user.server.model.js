@@ -6,7 +6,7 @@ const path = require('path');
 const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));
-const languages = require(path.resolve('./config/languages/languages.json'));
+const languages = require('file:///../../config/languages/languages.json');
 const authenticationService = require(path.resolve(
   './modules/users/server/services/authentication.server.service',
 ));

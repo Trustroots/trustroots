@@ -9,11 +9,11 @@
 var path = require('path'),
     async = require('async'),
     config = require('file:///../../config/config'),
-    configMongoose = require(path.resolve('./config/lib/mongoose')),
-    configExpress = require(path.resolve('./config/lib/express')),
+    configMongoose = require('file:///../../config/lib/mongoose'),
+    configExpress = require('file:///../../config/lib/express'),
     chalk = require('chalk'),
     mongoose = require('mongoose'),
-    contactsModels = require(path.resolve('./modules/contacts/server/models/contacts.server.model')),
+    contactsModels = require('file:///../../modules/contacts/server/models/contacts.server.model'),
     Contact = mongoose.model('Contact');
 
 console.log(chalk.white('--'));

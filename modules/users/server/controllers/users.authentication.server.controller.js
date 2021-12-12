@@ -18,9 +18,9 @@ const authenticationService = require(path.resolve(
 const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
-const facebook = require(path.resolve('./config/lib/facebook-api.js'));
+const facebook = require('file:///../../config/lib/facebook-api.js');
 const config = require('file:///../../config/config');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const moment = require('moment');
 const passport = require('passport');
 const async = require('async');

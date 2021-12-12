@@ -9,7 +9,7 @@ const config = require('file:///../../config/config');
 const userHandler = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 
@@ -24,7 +24,7 @@ describe('Search users: GET /users?search=string', function () {
     sinon.stub(config.limits, 'paginationLimit').value(limit);
 
     // the limit is used in this config, so we needed to stub limit before importing this
-    const express = require(path.resolve('./config/lib/express'));
+    const express = require('file:///../../config/lib/express');
     // Get application
     const app = express.init(mongoose.connection);
     agent = request.agent(app);

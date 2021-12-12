@@ -3,17 +3,17 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongooseService = require('file:///../../config/lib/mongoose');
 const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const config = require('file:///../../config/config');
-const cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
-const languages = require(path.resolve('./config/languages/languages.json'));
+const cities = require('file:///../../bin/fillTestData/data/Cities.json');
+const languages = require('file:///../../config/languages/languages.json');
 
-require(path.resolve('./modules/offers/server/models/offer.server.model'));
+require('file:///../../modules/offers/server/models/offer.server.model');
 
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.

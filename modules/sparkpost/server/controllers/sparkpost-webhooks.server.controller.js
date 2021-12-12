@@ -14,7 +14,7 @@ const path = require('path');
 const async = require('async');
 const basicAuth = require('basic-auth');
 const speakingurl = require('speakingurl');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));

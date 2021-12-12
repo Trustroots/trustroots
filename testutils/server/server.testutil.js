@@ -4,7 +4,7 @@
 
 const path = require('path');
 const config = require('file:///../../config/config');
-const agenda = require(path.resolve('./config/lib/agenda'));
+const agenda = require('file:///../../config/lib/agenda');
 
 /**
  * Helper for testing Agenda jobs

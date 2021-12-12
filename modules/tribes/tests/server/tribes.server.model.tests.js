@@ -6,7 +6,7 @@ const should = require('should');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const config = require('file:///../../config/config');
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const Tribe = mongoose.model('Tribe');
 

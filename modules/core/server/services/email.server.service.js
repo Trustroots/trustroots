@@ -13,10 +13,10 @@ const analyticsHandler = require(path.resolve(
 const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));
-const render = require(path.resolve('./config/lib/render'));
-const agenda = require(path.resolve('./config/lib/agenda'));
+const render = require('file:///../../config/lib/render');
+const agenda = require('file:///../../config/lib/agenda');
 const config = require('file:///../../config/config');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**

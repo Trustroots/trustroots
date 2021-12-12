@@ -5,7 +5,7 @@ const path = require('path');
 const should = require('should');
 const mongoose = require('mongoose');
 const config = require('file:///../../config/config');
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 

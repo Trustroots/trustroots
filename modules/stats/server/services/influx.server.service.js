@@ -5,7 +5,7 @@ const path = require('path');
 const Influx = require('influx');
 const _ = require('lodash');
 const config = require('file:///../../config/config');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 
 /**
  * Get InfluxDB Client

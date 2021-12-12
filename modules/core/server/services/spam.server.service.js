@@ -2,7 +2,7 @@ const path = require('path');
 
 const AkismetClient = require('akismet-api').AkismetClient;
 const config = require('file:///../../config/config');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 
 exports.check = async message => {
   if (!config.akismet.enabled) {

@@ -7,13 +7,13 @@
 const path = require('path');
 const async = require('async');
 const chalk = require('chalk');
-const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongooseService = require('file:///../../config/lib/mongoose');
 const mongoose = require('mongoose');
 // eslint-disable-next-line no-unused-vars
-const tribeModels = require(path.resolve('./modules/tribes/server/models/tribe.server.model'));
+const tribeModels = require('file:///../../modules/tribes/server/models/tribe.server.model');
 const Tribe = mongoose.model('Tribe');
 // eslint-disable-next-line no-unused-vars
-const userModels = require(path.resolve('./modules/users/server/models/user.server.model'));
+const userModels = require('file:///../../modules/users/server/models/user.server.model');
 const User = mongoose.model('User');
 
 exports.up = function (next) {

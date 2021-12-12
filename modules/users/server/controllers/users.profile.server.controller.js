@@ -3,7 +3,7 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const locales = require(path.resolve('./config/shared/locales'));
+const locales = require('file:///../../config/shared/locales');
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
@@ -31,7 +31,7 @@ const pushService = require(path.resolve(
 const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const del = require('del');
 const messageStatService = require(path.resolve(
   './modules/messages/server/services/message-stat.server.service',

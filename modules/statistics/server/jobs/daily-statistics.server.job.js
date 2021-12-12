@@ -17,7 +17,7 @@ const statsService = require(path.resolve(
 const statistics = require(path.resolve(
   './modules/statistics/server/controllers/statistics.server.controller',
 ));
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 
 module.exports = function (job, agendaDone) {
   let totalUserCount;

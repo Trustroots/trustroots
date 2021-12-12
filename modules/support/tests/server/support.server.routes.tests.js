@@ -3,9 +3,9 @@ const path = require('path');
 const request = require('supertest');
 const should = require('should');
 const config = require('file:///../../config/config');
-const express = require(path.resolve('./config/lib/express'));
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('file:///../../config/lib/express');
+const testutils = require('file:///../../testutils/server/server.testutil');
+const utils = require('file:///../../testutils/server/data.server.testutil');
 
 /**
  * Support routes tests

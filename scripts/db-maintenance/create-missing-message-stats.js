@@ -35,7 +35,7 @@ var path = require('path'),
     chalk = require('chalk'),
     async = require('async'),
     config = require('file:///../../config/config'),
-    configMongoose = require(path.resolve('./config/lib/mongoose')),
+    configMongoose = require('file:///../../config/lib/mongoose'),
     mongoose = require('mongoose'),
     messageModels = require(path.resolve(
       './modules/messages/server/models/message.server.model')),

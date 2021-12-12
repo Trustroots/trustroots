@@ -19,7 +19,7 @@ var path = require('path'),
     chalk = require('chalk'),
     nodemailer = require('nodemailer'),
     config = require('file:///../../config/config'),
-    emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
+    emailService = require('file:///../../modules/core/server/services/email.server.service');
 
 // Default temp folder
 var tempFolder = (process.argv[2] == null) ? path.resolve('./tmp/renderedEmails') : process.argv[2];

@@ -3,7 +3,7 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongooseService = require('file:///../../config/lib/mongoose');
 const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');

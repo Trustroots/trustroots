@@ -2,8 +2,8 @@ const mongoose = require('mongoose');
 const path = require('path');
 const should = require('should');
 const request = require('supertest');
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
-const express = require(path.resolve('./config/lib/express'));
+const utils = require('file:///../../testutils/server/data.server.testutil');
+const express = require('file:///../../config/lib/express');
 
 describe('Read count of experiences received by user', () => {
   // GET /experiences/count?userTo=:UserId

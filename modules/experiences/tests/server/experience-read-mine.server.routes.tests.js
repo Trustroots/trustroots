@@ -3,8 +3,8 @@ const path = require('path');
 const request = require('supertest');
 const should = require('should');
 const sinon = require('sinon');
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
-const express = require(path.resolve('./config/lib/express'));
+const utils = require('file:///../../testutils/server/data.server.testutil');
+const express = require('file:///../../config/lib/express');
 
 describe('Read my experience to userTo Id', () => {
   // GET /my-experience&userTo=:UserId

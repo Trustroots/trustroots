@@ -10,7 +10,7 @@ let agenda;
 
 exports.start = function (options, callback) {
   // Don't initialise Agenda outisde `start()`, because we might miss `ready` event otherwise.
-  agenda = require(path.resolve('./config/lib/agenda'));
+  agenda = require('file:///../../config/lib/agenda');
 
   agenda.on('ready', function () {
     // Define jobs
@@ -18,7 +18,7 @@ exports.start = function (options, callback) {
     agenda.define(
       'send email',
       { priority: 'high', concurrency: 10 },
-      require(path.resolve('./modules/core/server/jobs/send-email.server.job')),
+      require('file:///../../modules/core/server/jobs/send-email.server.job'),
     );
 
     agenda.define(

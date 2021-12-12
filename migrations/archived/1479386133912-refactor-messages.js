@@ -11,12 +11,12 @@
 
 const path = require('path');
 const async = require('async');
-const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongooseService = require('file:///../../config/lib/mongoose');
 const mongoose = require('mongoose');
 const chalk = require('chalk');
 const config = require('file:///../../config/config');
 // eslint-disable-next-line no-unused-vars
-const messageModels = require(path.resolve('./modules/messages/server/models/message.server.model'));
+const messageModels = require('file:///../../modules/messages/server/models/message.server.model');
 const Message = mongoose.model('Message');
 
 // define Promises for mongoose

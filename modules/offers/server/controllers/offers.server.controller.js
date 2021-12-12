@@ -17,7 +17,7 @@ const tribes = require(path.resolve(
 const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const sanitizeHtml = require('sanitize-html');
 const moment = require('moment');
 const mongoose = require('mongoose');
@@ -549,7 +549,7 @@ exports.list = function (req, res) {
 
   // Languages filter
   if (filters.hasArrayFilter('languages')) {
-    let languages = require(path.resolve('./config/languages/languages.json'));
+    let languages = require('file:///../../config/languages/languages.json');
 
     // Above json `languages` object contains language names, but we need just keys.
     languages = _.keys(languages);

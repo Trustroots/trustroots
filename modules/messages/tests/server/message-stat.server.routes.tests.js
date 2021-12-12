@@ -3,8 +3,8 @@ const should = require('should');
 const async = require('async');
 const request = require('supertest');
 const mongoose = require('mongoose');
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('file:///../../config/lib/express');
+const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 const MessageStat = mongoose.model('MessageStat');

@@ -7,7 +7,7 @@ const errorService = require(path.resolve(
 ));
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 
 /**
  * Get the list of blocked users by the logged in user

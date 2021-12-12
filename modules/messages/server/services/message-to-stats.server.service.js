@@ -9,7 +9,7 @@ const path = require('path');
 const async = require('async');
 const config = require('file:///../../config/config');
 const mongoose = require('mongoose');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
@@ -17,7 +17,7 @@ const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));
 
-require(path.resolve('./modules/messages/server/models/message.server.model'));
+require('file:///../../modules/messages/server/models/message.server.model');
 
 const Message = mongoose.model('Message');
 

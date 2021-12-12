@@ -8,7 +8,7 @@ const path = require('path');
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');

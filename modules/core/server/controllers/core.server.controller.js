@@ -7,7 +7,7 @@ const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));
 const config = require('file:///../../config/config');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 
 /**
  * Render the main application page

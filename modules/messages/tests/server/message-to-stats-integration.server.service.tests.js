@@ -10,7 +10,7 @@ const Promise = require('promise');
 const messageController = require(path.resolve(
   './modules/messages/server/controllers/messages.server.controller',
 ));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 

@@ -6,7 +6,7 @@ const sinon = require('sinon');
 const util = require('util');
 const config = require('file:///../../config/config');
 const jobPublishExperience = require('../../server/jobs/experiences-publish.server.job');
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const utils = require('file:///../../testutils/server/data.server.testutil');
 const Experience = mongoose.model('Experience');
 
 describe('Job: Set experience to public after a given period of time', () => {

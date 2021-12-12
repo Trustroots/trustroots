@@ -3,7 +3,7 @@
  */
 const path = require('path');
 const should = require('should');
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const testutils = require('file:///../../testutils/server/server.testutil');
 const config = require('file:///../../config/config');
 const moment = require('moment');
 const mongoose = require('mongoose');

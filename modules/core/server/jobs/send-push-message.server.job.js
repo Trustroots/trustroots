@@ -8,7 +8,7 @@ const exponentNotifications = require(path.resolve(
 ));
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 
 const UNREGISTERED_TOKEN_ERROR_CODE =
   'messaging/registration-token-not-registered';

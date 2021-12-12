@@ -16,7 +16,7 @@ const emailService = require(path.resolve(
 const config = require('file:///../../config/config');
 const async = require('async');
 const moment = require('moment');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('file:///../../config/lib/logger');
 const mongoose = require('mongoose');
 const Offer = mongoose.model('Offer');
 

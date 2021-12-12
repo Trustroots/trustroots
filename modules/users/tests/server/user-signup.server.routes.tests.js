@@ -2,8 +2,8 @@ const should = require('should');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
-const express = require(path.resolve('./config/lib/express'));
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const express = require('file:///../../config/lib/express');
+const testutils = require('file:///../../testutils/server/server.testutil');
 const dataUtils = require(path.resolve(
   './testutils/server/data.server.testutil',
 ));

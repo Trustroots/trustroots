@@ -6,8 +6,8 @@ const path = require('path');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const config = require('file:///../../config/config');
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('file:///../../config/lib/express');
+const utils = require('file:///../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
