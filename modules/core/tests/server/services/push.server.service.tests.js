@@ -1,5 +1,5 @@
 const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
 

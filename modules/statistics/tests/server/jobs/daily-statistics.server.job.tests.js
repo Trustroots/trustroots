@@ -5,7 +5,7 @@ const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
 
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const statsJob = require(path.resolve(
   './modules/statistics/server/jobs/daily-statistics.server.job',
 ));

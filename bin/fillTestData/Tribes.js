@@ -8,7 +8,7 @@ const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 
 /**
  * Configure the script usage using yargs to obtain parameters and enforce usage.

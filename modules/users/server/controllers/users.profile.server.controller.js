@@ -36,7 +36,7 @@ const del = require('del');
 const messageStatService = require(path.resolve(
   './modules/messages/server/services/message-stat.server.service',
 ));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const async = require('async');
 const crypto = require('crypto');
 const sanitizeHtml = require('sanitize-html');

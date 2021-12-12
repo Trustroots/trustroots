@@ -5,7 +5,7 @@ const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const should = require('should');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const userHandler = require(path.resolve(
   './modules/users/server/controllers/users.profile.server.controller',
 ));

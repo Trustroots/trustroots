@@ -7,7 +7,7 @@ const Promise = require('promise');
 const influxService = require(path.resolve(
   './modules/stats/server/services/influx.server.service',
 ));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 
 describe('Service: influx', function () {
   // restore the stubbed services

@@ -8,7 +8,7 @@ const Experience = mongoose.model('Experience');
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const express = require(path.resolve('./config/lib/express'));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 
 describe('Create an experience', () => {
   // user can leave an experience to anyone

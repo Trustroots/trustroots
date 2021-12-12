@@ -6,7 +6,7 @@ const userProfile = require(path.resolve(
 const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const log = require(path.resolve('./config/lib/logger'));
 
 /**

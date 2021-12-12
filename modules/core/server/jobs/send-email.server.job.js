@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const nodemailer = require('nodemailer');
 const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const log = require(path.resolve('./config/lib/logger'));
 
 module.exports = function (job, done) {

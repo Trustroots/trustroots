@@ -7,7 +7,7 @@
  */
 const path = require('path');
 const async = require('async');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const mongoose = require('mongoose');
 const log = require(path.resolve('./config/lib/logger'));
 const statService = require(path.resolve(

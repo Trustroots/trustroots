@@ -1,5 +1,5 @@
 const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const experiencesPolicy = require('../policies/experiences.server.policy');
 const experiences = require('../controllers/experiences.server.controller');
 

@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const _ = require('lodash');
 const async = require('async');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const messageToStatsService = require(path.resolve(
   './modules/messages/server/services/message-to-stats.server.service',
 ));

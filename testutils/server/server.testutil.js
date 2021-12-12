@@ -3,7 +3,7 @@
  */
 
 const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const agenda = require(path.resolve('./config/lib/agenda'));
 
 /**

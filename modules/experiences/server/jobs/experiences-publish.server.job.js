@@ -1,7 +1,7 @@
 const path = require('path');
 const mongoose = require('mongoose');
 const moment = require('moment');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const Experience = mongoose.model('Experience');
 
 /**

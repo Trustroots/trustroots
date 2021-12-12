@@ -1,7 +1,7 @@
 var path = require('path'),
     chalk = require('chalk'),
     async = require('async'),
-    config = require(path.resolve('./config/config')),
+    config = require('file:///../../config/config'),
     configMongoose = require(path.resolve('./config/lib/mongoose')),
     mongoose = require('mongoose'),
     messageToInflux = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),

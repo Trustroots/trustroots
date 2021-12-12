@@ -21,7 +21,7 @@ const errorService = require(path.resolve(
 const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 
 /**
  * Receive Sparkpost events webhook batch

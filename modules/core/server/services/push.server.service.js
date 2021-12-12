@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const path = require('path');
 const agenda = require(path.resolve('./config/lib/agenda'));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 const analyticsHandler = require(path.resolve(
   './modules/core/server/controllers/analytics.server.controller',

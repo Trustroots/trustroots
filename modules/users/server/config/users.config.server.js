@@ -4,7 +4,7 @@
 const passport = require('passport');
 const User = require('mongoose').model('User');
 const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const usersSuspended = require(path.resolve(
   './modules/users/server/controllers/users.suspended.server.controller',
 ));

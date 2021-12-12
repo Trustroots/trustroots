@@ -36,7 +36,7 @@ const emailService = require(path.resolve(
   './modules/core/server/services/email.server.service',
 ));
 const log = require(path.resolve('./config/lib/logger'));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');

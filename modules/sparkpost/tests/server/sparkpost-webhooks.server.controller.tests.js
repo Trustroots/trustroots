@@ -4,7 +4,7 @@ const should = require('should');
 const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const sparkpostWebhooks = require(path.resolve(
   './modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller',
 ));

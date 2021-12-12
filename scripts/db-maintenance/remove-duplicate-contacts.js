@@ -8,7 +8,7 @@
 
 var path = require('path'),
     async = require('async'),
-    config = require(path.resolve('./config/config')),
+    config = require('file:///../../config/config'),
     configMongoose = require(path.resolve('./config/lib/mongoose')),
     configExpress = require(path.resolve('./config/lib/express')),
     chalk = require('chalk'),

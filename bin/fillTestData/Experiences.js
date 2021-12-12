@@ -9,7 +9,7 @@ const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
 const queue = require('async/queue');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const moment = require('moment');
 
 /**

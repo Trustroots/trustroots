@@ -4,7 +4,7 @@
 const path = require('path');
 const Influx = require('influx');
 const _ = require('lodash');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const log = require(path.resolve('./config/lib/logger'));
 
 /**

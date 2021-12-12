@@ -26,7 +26,7 @@
  */
 const _ = require('lodash');
 // path = require('path'),
-// config = require(path.resolve('./config/config')),
+// config = require('file:///../../config/config'),
 const influxService = require('./influx.server.service.js');
 
 /**

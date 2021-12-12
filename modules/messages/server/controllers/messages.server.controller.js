@@ -8,7 +8,7 @@ const sanitizeHtml = require('sanitize-html');
 const paginate = require('express-paginate');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const log = require(path.resolve('./config/lib/logger'));
 const messageToStatsService = require(path.resolve(
   './modules/messages/server/services/message-to-stats.server.service',

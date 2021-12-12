@@ -4,7 +4,7 @@
 const _ = require('lodash');
 const fbgraph = require('fbgraph');
 const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 
 // Config vars
 // You can modify these from your `config/local.js`

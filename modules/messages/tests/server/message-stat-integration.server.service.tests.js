@@ -3,7 +3,7 @@ const should = require('should');
 const path = require('path');
 const _ = require('lodash');
 const sinon = require('sinon');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const utils = require(path.resolve('./testutils/server/data.server.testutil'));
 const messageStatService = require(path.resolve(
   './modules/messages/server/services/message-stat.server.service',

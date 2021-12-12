@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const _ = require('lodash');
 const path = require('path');
 const util = require('util');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const textService = require(path.resolve(
   './modules/core/server/services/text.server.service',
 ));

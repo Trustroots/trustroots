@@ -12,7 +12,7 @@ const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
 const log = require(path.resolve('./config/lib/logger'));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const mongoose = require('mongoose');
 const SupportRequest = mongoose.model('SupportRequest');
 const validator = require('validator');

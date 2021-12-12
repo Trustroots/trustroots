@@ -9,7 +9,7 @@ const sinon = require('sinon');
 const statsService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 
 describe('Stat API integration tests', function () {
   // restoring stubs

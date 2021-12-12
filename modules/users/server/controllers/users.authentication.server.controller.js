@@ -19,7 +19,7 @@ const statService = require(path.resolve(
   './modules/stats/server/services/stats.server.service',
 ));
 const facebook = require(path.resolve('./config/lib/facebook-api.js'));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const log = require(path.resolve('./config/lib/logger'));
 const moment = require('moment');
 const passport = require('passport');

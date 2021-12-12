@@ -1,7 +1,7 @@
 const path = require('path');
 const should = require('should');
 const testutils = require(path.resolve('./testutils/server/server.testutil'));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 
 let emailService;
 

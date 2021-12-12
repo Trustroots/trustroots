@@ -5,7 +5,7 @@ const path = require('path');
 const mmmagic = require('mmmagic');
 
 // Internal dependencies
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const errorService = require(path.resolve(
   './modules/core/server/services/error.server.service',
 ));

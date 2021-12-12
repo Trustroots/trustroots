@@ -9,7 +9,7 @@ const yargs = require('yargs');
 const faker = require('faker');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const cities = require(path.resolve('./bin/fillTestData/data/Cities.json'));
 const languages = require(path.resolve('./config/languages/languages.json'));
 

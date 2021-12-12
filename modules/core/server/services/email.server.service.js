@@ -15,7 +15,7 @@ const textService = require(path.resolve(
 ));
 const render = require(path.resolve('./config/lib/render'));
 const agenda = require(path.resolve('./config/lib/agenda'));
-const config = require(path.resolve('./config/config'));
+const config = require('file:///../../config/config');
 const log = require(path.resolve('./config/lib/logger'));
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 

@@ -18,7 +18,7 @@ var path = require('path'),
     async = require('async'),
     chalk = require('chalk'),
     nodemailer = require('nodemailer'),
-    config = require(path.resolve('./config/config')),
+    config = require('file:///../../config/config'),
     emailService = require(path.resolve('./modules/core/server/services/email.server.service'));
 
 // Default temp folder
