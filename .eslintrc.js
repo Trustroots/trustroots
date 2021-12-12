@@ -44,7 +44,9 @@ const rules = {
 
 module.exports = {
   extends: ['eslint:recommended', 'plugin:import/errors', 'prettier'],
-  rules,
+  rules: {
+    'no-unused-vars': 'off',
+  },
   plugins: ['angular', 'react', 'import', 'prettier'],
   settings: {
     'import/resolver': {
