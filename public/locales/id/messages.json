@@ -32,5 +32,7 @@
     "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Apakah Anda mendapat pesan sopan, hormat dan dalam semangat Trustroots dari orang ini?",
     "Conversation started {{ date }}": "Obrolan dimulai {{ date }}",
     "Send": "Kirim",
-    "Change": "Ubah"
+    "Change": "Ubah",
+    "Failed to send the message. Perhaps your internet went down? Please try again.": "Gagal mengirim pesan. Periksa koneksi internet anda? lalu coba lagi.",
+    "You are writing to too many people too fast. Slow down and try later again.": "Anda menulis untuk terlalu banyak orang terlalu cepat. Santai saja dan coba lagi nanti."
 }
