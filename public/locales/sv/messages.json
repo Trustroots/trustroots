@@ -7,7 +7,7 @@
         "": "Skriv inte till folk två månader i förväg."
     },
     "Edit your profile": "Redigera din profil",
-    "Explain to them why you are choosing them": "Förklara varför du valt att skriva till den personen",
+    "Explain to them why you are choosing them": "Förklara varför du har valt att skriva",
     "Highlight text to add links or change its appearance": {
         " Ctrl+Enter to send": {
             "": "Markera text eller lägg till länkar för att ändra hur det ser ut. Ctrl+Enter för att skicka."
@@ -22,7 +22,7 @@
         "": "Skriv en mer utförlig profilbeskrivning innan du skickar meddelanden."
     },
     "Send": "Skicka",
-    "Sorry I can't host": "Jag kan inte ta emot",
+    "Sorry I can't host": "Tyvärr, det går inte just nu",
     "Tell a little bit about yourself": "Berätta lite om dig själv",
     "Tell your host why you're on a trip": "Berätta om varför du reser",
     "This user isn't a member anymore": {
@@ -31,9 +31,9 @@
     "Tip": "Tips",
     "Trustroots is very much about spontaneous travel": "Trustroots handlar i mångt och mycket om spontana resor",
     "Unknown member": "Okänd medlem",
-    "What are your expectations in regards with going through their town?": "Vad har du för förvändningar för ditt besök där de bor?",
-    "Write back": "Skriv tillbaka",
-    "Yes, I can host!": "Ja, jag kan ta emot!",
+    "What are your expectations in regards with going through their town?": "Vad har du för förväntningar på ditt besök?",
+    "Write back": "Skriv ett meddelande",
+    "Yes, I can host!": "Du är välkommen!",
     "You": "Du",
     "You haven't been talking yet": {
         "": "Ni har inte pratats vid än."
@@ -54,7 +54,7 @@
     "License": "Licens",
     "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "Tycker du att meddelanden från den här personen är trevliga och i Trustroots anda?",
     "Change": "Ändra",
-    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...förklarar att du är intresserad av att träffa personen, inte bara hitta någonstans att bo gratis.",
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...förklara att du är intresserad av att träffa personen – dvs. inte bara är ute efter gratis boende.",
     "Failed to send the message. Perhaps your internet went down? Please try again.": "Det gick inte att skicka meddelandet. Kanske försvann din uppkoppling? Försök igen.",
     "You are writing to too many people too fast. Slow down and try later again.": "Du skriver till för många personer för snabbt. Ta det lite lugnare och försök igen senare."
 }
