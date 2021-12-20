@@ -19,7 +19,7 @@
         "": "Inga gäster."
     },
     "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
-        "": "Att visa gästfrihet och välkomna \"främlingar\" till våra hem stärker vår tillit till varandra."
+        "": "Att visa gästfrihet och välkomna \"främlingar\" till våra hem stärker vårt förtroende för varandra."
     },
     "Open on device": "Öppna på enhet",
     "Sorry, user is not hosting currently": {
@@ -29,9 +29,9 @@
     "Send a message": "Skicka ett meddelande",
     "At most {{count}} guests.": "Högst {{count}} gäst.",
     "At most {{count}} guests._plural": "Högst {{count}} gäster.",
-    "Travelling? Organising an event?": "Reser du? Ordnar du ett event?",
-    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Reser du? Ordnar du ett event? Lagar du bara middag och vill bjuda över lite folk?",
-    "Meetups stay visible on map at most one month.": "Möten syns som mest en månad på kartan.",
+    "Travelling? Organising an event?": "Reser du? Ordnar du något kul?",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Reser du? Ordnar du något kul? Lagar du bara middag och vill bjuda över lite folk?",
+    "Meetups stay visible on map at most one month.": "Möten visas på kartan i upp till en månad.",
     "Add it to map!": "Lägg till på kartan!",
     "Just making a dinner and would like to invite people over?": "Lagar du bara middag och vill bjuda över lite folk?"
 }
