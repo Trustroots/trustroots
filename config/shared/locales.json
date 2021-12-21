@@ -1,5 +1,5 @@
 [
-  { "label": "česky", "code": "cs", "english": "Czech", "production": false },
+  { "label": "Čeština", "code": "cs", "english": "Czech", "production": false },
   { "label": "Deutsch", "code": "de", "english": "German", "production": true },
   {
     "label": "English",
@@ -8,13 +8,13 @@
     "production": true
   },
   {
-    "label": "español, castellano",
+    "label": "Español, Castellano",
     "code": "es",
     "english": "Spanish, Castilian",
     "production": true
   },
   {
-    "label": "français",
+    "label": "Français",
     "code": "fr",
     "english": "French",
     "production": true
@@ -37,22 +37,22 @@
     "english": "Norwegian (bokmål)",
     "production": true
   },
-  { "label": "polski", "code": "pl", "english": "Polish", "production": false },
+  { "label": "Polski", "code": "pl", "english": "Polish", "production": false },
   {
-    "label": "português",
+    "label": "Português",
     "code": "pt",
     "english": "Portuguese",
     "production": true
   },
   {
-    "label": "português (Brazil)",
+    "label": "Português (Brasil)",
     "code": "pt_BR",
     "english": "Portuguese (Brazil)",
     "production": true
   },
-  { "label": "suomi", "code": "fi", "english": "Finnish", "production": false },
+  { "label": "Suomi", "code": "fi", "english": "Finnish", "production": false },
   {
-    "label": "svenska",
+    "label": "Svenska",
     "code": "sv",
     "english": "Swedish",
     "production": true
@@ -64,7 +64,7 @@
     "production": false
   },
   {
-    "label": "русский",
+    "label": "Русский",
     "code": "ru",
     "english": "Russian",
     "production": false
@@ -136,31 +136,31 @@
     "production": false
   },
   {
-    "label": "hrvatski",
+    "label": "Hhrvatski",
     "code": "hr",
     "english": "Croatian",
     "production": false
   },
   {
-    "label": "latviešu",
+    "label": "Latviešu",
     "code": "lv",
     "english": "Latvian",
     "production": false
   },
   {
-    "label": "српски / srpski",
+    "label": "Srpski (latinica)",
     "code": "sr",
     "english": "Serbian",
     "production": false
   },
   {
-    "label": "slovenščina",
+    "label": "Slovenščina",
     "code": "sl",
     "english": "Slovenian",
     "production": false
   },
   {
-    "label": "català",
+    "label": "Català",
     "code": "ca",
     "english": "Catalan",
     "production": false
