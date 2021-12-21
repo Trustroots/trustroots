@@ -51,15 +51,15 @@ export default function Privacy() {
               </p>
               <h3>{t('Your data is yours')}</h3>
               <Trans t={t} ns="pages">
-                Users on Trustroots can download their profile, contact and
+                Members on Trustroots can download their profile, contact and
                 hosting data through the <a href="/account">Account settings</a>
                 .
               </Trans>
               <br />
               <br />
               <Trans t={t} ns="pages">
-                You are able to remove your info from the system by asking us to
-                delete your account through the{' '}
+                You are able to remove your profile from the Trustroots by
+                asking us to delete your account through the{' '}
                 <a href="/account">Account settings</a>.
               </Trans>
               <br />
