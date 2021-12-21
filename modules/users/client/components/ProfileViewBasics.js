@@ -14,7 +14,7 @@ import { getGender } from '@/modules/core/client/utils/user_info';
 import LanguageList from './LanguageList';
 
 export default function ProfileViewBasics({ profile }) {
-  const { t } = useTranslation(['users']);
+  const { t } = useTranslation('users');
 
   const getBirthdate = birthdate =>
     t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });

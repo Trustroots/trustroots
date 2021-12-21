@@ -64,7 +64,7 @@ export default function ContactListPresentational({
                   type="text"
                   className="form-control"
                   onChange={event => onFilterChange(event.target.value)}
-                  placeholder="Search contacts..."
+                  placeholder={t('Search contacts')}
                 />
               </div>
             </div>
