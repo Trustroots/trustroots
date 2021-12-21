@@ -3,7 +3,7 @@ import Board from '@/modules/core/client/components/Board.js';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 
-export default function Privacy({ user }) {
+export default function Privacy() {
   const { t } = useTranslation('pages');
 
   return (
@@ -35,7 +35,9 @@ export default function Privacy({ user }) {
               dateTime="2014-12-23"
             >
               <time itemProp="dateModified" dateTime="2018-12-04">
-                {t('Last updated on December 4th, 2018')}
+                {t('Last updated on {{date, LL}}', {
+                  date: new Date(2018, 11, 4),
+                })}
               </time>
             </p>
 
@@ -48,20 +50,18 @@ export default function Privacy({ user }) {
                 </em>
               </p>
               <h3>{t('Your data is yours')}</h3>
-              {t(
-                'Users on Trustroots can download their profile, contact and hosting data through the',
-              )}{' '}
-              {!user && <span>{t('Account settings')}</span>}
-              {user && <a href="/account">Account settings</a>}
-              .
+              <Trans t={t} ns="pages">
+                Members on Trustroots can download their profile, contact and
+                hosting data through the <a href="/account">Account settings</a>
+                .
+              </Trans>
               <br />
               <br />
-              {t(
-                'You are able to remove your info from the system by asking us to delete your account through the',
-              )}{' '}
-              {!user && <span>{t('Account settings')}</span>}
-              {user && <a href="/account">Account settings</a>}
-              .
+              <Trans t={t} ns="pages">
+                You are able to remove your profile from the Trustroots by
+                asking us to delete your account through the{' '}
+                <a href="/account">Account settings</a>.
+              </Trans>
               <br />
               <br />
               {t(

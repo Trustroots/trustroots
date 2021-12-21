@@ -55,7 +55,9 @@ export default function Foundation({ user }) {
                 <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
                   {t('Announcement')}
                 </a>{' '}
-                <small className="text-muted">{t('(March, 2015)')}</small>
+                <small className="text-muted">
+                  ({t('{{date, LL}}', { date: new Date(2015, 2, 10) })})
+                </small>
               </li>
               <li>
                 <a href="/support">{t('Contact us')}</a>
@@ -132,7 +134,7 @@ export default function Foundation({ user }) {
                       </a>
                     </li>
                     <li>
-                      <a href="/profile/mikael">Trustroots profile</a>
+                      <a href="/profile/mikael">{t('Trustroots profile')}</a>
                     </li>
                   </ul>
                 </p>
@@ -165,7 +167,9 @@ export default function Foundation({ user }) {
                       </a>
                     </li>
                     <li>
-                      <a href="/profile/natalia_sevilla">Trustroots profile</a>
+                      <a href="/profile/natalia_sevilla">
+                        {t('Trustroots profile')}
+                      </a>
                     </li>
                   </ul>
                 </p>
@@ -206,7 +210,7 @@ export default function Foundation({ user }) {
                       <a href="https://guaka.org/">guaka.org</a>
                     </li>
                     <li>
-                      <a href="/profile/guaka">Trustroots profile</a>
+                      <a href="/profile/guaka">{t('Trustroots profile')}</a>
                     </li>
                   </ul>
                 </p>
@@ -253,7 +257,7 @@ export default function Foundation({ user }) {
                       </a>
                     </li>
                     <li>
-                      <a href="/profile/chmac">Trustroots profile</a>
+                      <a href="/profile/chmac">{t('Trustroots profile')}</a>
                     </li>
                   </ul>
                 </p>
@@ -284,7 +288,7 @@ export default function Foundation({ user }) {
                       </a>
                     </li>
                     <li>
-                      <a href="/profile/carlos">Trustroots profile</a>
+                      <a href="/profile/carlos">{t('Trustroots profile')}</a>
                     </li>
                   </ul>
                 </p>
