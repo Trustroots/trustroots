@@ -38,10 +38,7 @@ function PagesRoutes($stateProvider) {
     })
     .state('privacy', {
       url: '/privacy',
-      template: `
-        <privacy
-          user="app.user"
-        />`,
+      template: `<privacy />`,
       data: {
         pageTitle: 'Privacy policy',
       },
