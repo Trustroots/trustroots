@@ -55,7 +55,9 @@ export default function Foundation({ user }) {
                 <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
                   {t('Announcement')}
                 </a>{' '}
-                <small className="text-muted">{t('(March, 2015)')}</small>
+                <small className="text-muted">
+                  ({t('{{date, LL}}', { date: new Date(2015, 2, 10) })})
+                </small>
               </li>
               <li>
                 <a href="/support">{t('Contact us')}</a>
