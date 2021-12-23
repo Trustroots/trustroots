@@ -134,7 +134,6 @@ function SearchController(
    * Fired for changes at languages filters
    */
   function onLanguageFiltersChange(languages) {
-    console.log('onLanguageFiltersChange:', languages); //eslint-disable-line
     vm.filters.languages = languages;
     FiltersService.set('languages', languages);
     onFiltersUpdated();
