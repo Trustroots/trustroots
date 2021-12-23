@@ -19,6 +19,7 @@ function ProfileEditAboutController(
 
   // Exposed to view
   vm.updateUserProfile = updateUserProfile;
+  vm.onChangeLanguages = onChangeLanguages;
 
   // Get profile URL, i.e. `www.trustroots.org/profile/username`
   // - Remove `http(s)://`
@@ -27,6 +28,10 @@ function ProfileEditAboutController(
     .href('profile', { username: vm.user.username }, { absolute: true })
     .replace(/^(https?):\/\//, '')
     .replace(vm.user.username, '<strong>' + vm.user.username + '</strong>');
+
+  function onChangeLanguages(newLanguages) {
+    vm.user.languages = newLanguages;
+  }
 
   /**
    * Update a user profile

@@ -4,23 +4,26 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 // Internal dependencies
-import * as languageNames from '@/config/languages/languages.json';
+import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 
 export default function LanguageList({ languages = [], className }) {
   const { t } = useTranslation(['languages']);
+  const { data: languageNames, isLoading } = useLanguagesQuery();
+
+  if (isLoading || !languages.length) {
+    return null;
+  }
 
   return (
     <ul className={className}>
-      {languages.map(code => {
-        return (
-          <li key={code}>
-            {languageNames[code]
-              ? // i18next-extract-disable-next-line
-                t(languageNames[code], { ns: 'languages' })
-              : code}
-          </li>
-        );
-      })}
+      {languages.map(code => (
+        <li key={code}>
+          {languageNames[code]
+            ? // i18next-extract-disable-next-line
+              t(languageNames[code], { ns: 'languages' })
+            : code}
+        </li>
+      ))}
     </ul>
   );
 }

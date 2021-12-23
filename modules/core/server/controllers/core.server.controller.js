@@ -8,6 +8,12 @@ const textService = require(path.resolve(
 ));
 const config = require(path.resolve('./config/config'));
 const log = require(path.resolve('./config/lib/logger'));
+const languagesObject = require(path.resolve(
+  'config/languages/languages.json',
+));
+const languagesArray = require(path.resolve(
+  'config/languages/languages-array.json',
+));
 
 /**
  * Render the main application page
@@ -93,4 +99,14 @@ exports.renderServiceWorkerConfig = function (req, res) {
   res
     .set('Content-Type', 'text/javascript')
     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
+};
+
+exports.getLanguages = (req, res) => {
+  // Return language list in array format
+  if (req?.query?.format === 'array') {
+    return res.json(languagesArray);
+  }
+
+  // Return language list in object format
+  res.json(languagesObject);
 };

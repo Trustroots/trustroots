@@ -4,7 +4,6 @@
 const _ = require('lodash');
 const config = require('../config');
 const errorService = require('../../modules/core/server/services/error.server.service');
-const languages = require('../languages/languages.json');
 const express = require('express');
 const morgan = require('morgan');
 const bodyParser = require('body-parser');
@@ -49,7 +48,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.googlePage = config.google.page;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.sentry = config.sentry;
-  app.locals.languages = languages;
   app.locals.env =
     ['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1
       ? process.env.NODE_ENV

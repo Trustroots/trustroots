@@ -48,14 +48,10 @@
 
   <hr class="hr-gray hr-tight" />
 
-  <!-- Language filter -->
-  <h4 id="filter-languages">Spoken languages</h4>
-  <div
-    tr-languages="search.filters.languages"
-    ng-change="search.onLanguageFiltersChange()"
-    aria-labelledby="filter-languages"
-  ></div>
-  <!-- /Language filter -->
+  <search-filter-language
+    onChangeLanguages="search.onLanguageFiltersChange"
+    preSelectedLanguages="search.filters.languages"
+  ></search-filter-language>
 
   <!-- Sidebar closing toggle for small screens -->
   <button
