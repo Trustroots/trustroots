@@ -151,12 +151,30 @@ function collectLanguages() {
 }
 
 /**
+ * Format languages from object format into array compatible with React component used in UI
+ */
+function languageObjectToArray(languages) {
+  const langsArr = [];
+
+  Object.entries(languages).forEach(language => {
+    langsArr.push({ value: language[0], label: language[1] });
+  });
+
+  return langsArr;
+}
+
+/**
  * Generate languages and write them to a file
  */
-function generate(targetFile) {
+function generate(targetFile, format = 'object') {
   console.log('\nGenerating languages...');
 
-  const languages = collectLanguages();
+  let languages = collectLanguages();
+
+  if (format === 'array') {
+    languages = languageObjectToArray(languages);
+  }
+
   const languagesString = JSON.stringify(languages);
 
   fs.writeFile(targetFile, languagesString, error => {
@@ -169,5 +187,5 @@ function generate(targetFile) {
   });
 }
 
-// Initialize
 generate('languages.json');
+generate('languages-array.json', 'array');

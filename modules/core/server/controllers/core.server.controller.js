@@ -8,6 +8,12 @@ const textService = require(path.resolve(
 ));
 const config = require(path.resolve('./config/config'));
 const log = require(path.resolve('./config/lib/logger'));
+const languagesObject = require(path.resolve(
+  'config/languages/languages.json',
+));
+const languagesArray = require(path.resolve(
+  'config/languages/languages-array.json',
+));
 
 /**
  * Render the main application page
@@ -95,26 +101,12 @@ exports.renderServiceWorkerConfig = function (req, res) {
     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
 };
 
-/**
- * Format languages from object format into array compatible with React component used in UI
- */
-function languageObjectToArray(languages) {
-  const langsArr = [];
-
-  Object.entries(languages).forEach(language => {
-    langsArr.push({ value: language[0], label: language[1] });
-  });
-
-  return langsArr;
-}
-
 exports.getLanguages = (req, res) => {
-  let languages = require(path.resolve('config/languages/languages.json'));
-
-  // Reformat object into array if so requested
+  // Return language list in array format
   if (req?.query?.format === 'array') {
-    languages = languageObjectToArray(languages);
+    return res.json(languagesArray);
   }
 
-  res.json(languages);
+  // Return language list in object format
+  res.json(languagesObject);
 };
