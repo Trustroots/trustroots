@@ -1,10 +1,13 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import PropTypes from 'prop-types';
 import React from 'react';
 
 import { $broadcast } from '@/modules/core/client/services/angular-compat';
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';
+
+const queryClient = new QueryClient();
 
 export default function ProfileEditLanguages({
   onChangeLanguages,
@@ -27,12 +30,14 @@ export default function ProfileEditLanguages({
         {t('Languages')}
       </label>
       <div className="col-sm-9 col-md-7 col-lg-6">
-        <LanguageSelect
-          onChangeLanguages={onChange}
-          placeholder={t('Add languages you speak.')}
-          aria-label={t('Add languages you speak.')}
-          preSelectedLanguages={profileLanguages}
-        />
+        <QueryClientProvider client={queryClient}>
+          <LanguageSelect
+            onChangeLanguages={onChange}
+            placeholder={t('Add languages you speak.')}
+            aria-label={t('Add languages you speak.')}
+            preSelectedLanguages={profileLanguages}
+          />
+        </QueryClientProvider>
       </div>
     </div>
   );
