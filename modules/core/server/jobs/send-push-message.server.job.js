@@ -1,14 +1,10 @@
 const path = require('path');
 const async = require('async');
-const firebaseMessaging = require(path.resolve(
-  './config/lib/firebase-messaging',
-));
-const exponentNotifications = require(path.resolve(
-  './config/lib/exponent-notifications',
-));
+const firebaseMessaging = require('../../../../config/lib/firebase-messaging');
+const exponentNotifications = require('../../../../config/lib/exponent-notifications');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('../../../../config/lib/logger');
 
 const UNREGISTERED_TOKEN_ERROR_CODE =
   'messaging/registration-token-not-registered';

@@ -1,19 +1,11 @@
 const path = require('path');
 const errorService = require('../services/error.server.service');
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const config = require(path.resolve('./config/config'));
-const log = require(path.resolve('./config/lib/logger'));
-const languagesObject = require(path.resolve(
-  'config/languages/languages.json',
-));
-const languagesArray = require(path.resolve(
-  'config/languages/languages-array.json',
-));
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const textService = require('../services/text.server.service');
+const config = require('../../../../config/config');
+const log = require('../../../../config/lib/logger');
+const languagesObject = require('../../../../config/languages/languages.json');
+const languagesArray = require('../../../../config/languages/languages-array.json');
 
 /**
  * Render the main application page

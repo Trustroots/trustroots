@@ -34,16 +34,13 @@ var searchMessagesParam = {
 var path = require('path'),
     chalk = require('chalk'),
     async = require('async'),
-    config = require(path.resolve('./config/config')),
-    configMongoose = require(path.resolve('./config/lib/mongoose')),
+    config = require('../../config/config'),
+    configMongoose = require('../../config/lib/mongoose'),
     mongoose = require('mongoose'),
-    messageModels = require(path.resolve(
-      './modules/messages/server/models/message.server.model')),
-    messageStatModels = require(path.resolve(
-      './modules/messages/server/models/message-stat.server.model')),
+    messageModels = require('../../modules/messages/server/models/message.server.model'),
+    messageStatModels = require('../../modules/messages/server/models/message-stat.server.model'),
     Message = mongoose.model('Message'),
-    messageStatService = require(path.resolve(
-      './modules/messages/server/services/message-stat.server.service'));
+    messageStatService = require('../../modules/messages/server/services/message-stat.server.service');
 
     // the expression below uses ES6 Promises, so it shouldn't belong here.
     // there is a warning when one doesn't provide one's own library.

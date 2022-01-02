@@ -2,22 +2,12 @@ const mongoose = require('mongoose');
 const _ = require('lodash');
 const path = require('path');
 const util = require('util');
-const config = require(path.resolve('./config/config'));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const pushService = require(path.resolve(
-  './modules/core/server/services/push.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
+const config = require('../../../../config/config');
+const textService = require('../../../core/server/services/text.server.service');
+const errorService = require('../../../core/server/services/error.server.service');
+const emailService = require('../../../core/server/services/email.server.service');
+const pushService = require('../../../core/server/services/push.server.service');
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const Experience = mongoose.model('Experience');
 const User = mongoose.model('User');
 

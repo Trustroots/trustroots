@@ -1,8 +1,6 @@
 let acl = require('acl');
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const errorService = require('../../../core/server/services/error.server.service');
 
 acl = new acl(new acl.memoryBackend());
 

@@ -1,7 +1,7 @@
 const path = require('path');
 const should = require('should');
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
-const config = require(path.resolve('./config/config'));
+const testutils = require('../../../../../testutils/server/server.testutil');
+const config = require('../../../../../config/config');
 
 let emailService;
 
@@ -9,9 +9,7 @@ describe('Service: email', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    emailService = require(path.resolve(
-      './modules/core/server/services/email.server.service',
-    ));
+    emailService = require('../../../server/services/email.server.service');
   });
 
   it('can send signup email confirmation', function (done) {

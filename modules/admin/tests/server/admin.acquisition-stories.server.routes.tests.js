@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 const path = require('path');
 const request = require('supertest');
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('../../../../config/lib/express');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 describe('Admin acquisition stories CRUD tests', () => {
   // Get application

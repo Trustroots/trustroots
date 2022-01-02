@@ -3,8 +3,8 @@ const path = require('path');
 const sinon = require('sinon');
 
 describe('Worker tests', function () {
-  const agenda = require(path.resolve('./config/lib/agenda'));
-  const worker = require(path.resolve('./config/lib/worker'));
+  const agenda = require('../../../../config/lib/agenda');
+  const worker = require('../../../../config/lib/worker');
 
   const workerOptions = {
     maxAttempts: 3,

@@ -8,12 +8,12 @@
 
 var path = require('path'),
     async = require('async'),
-    config = require(path.resolve('./config/config')),
-    configMongoose = require(path.resolve('./config/lib/mongoose')),
-    configExpress = require(path.resolve('./config/lib/express')),
+    config = require('../../config/config'),
+    configMongoose = require('../../config/lib/mongoose'),
+    configExpress = require('../../config/lib/express'),
     chalk = require('chalk'),
     mongoose = require('mongoose'),
-    contactsModels = require(path.resolve('./modules/contacts/server/models/contacts.server.model')),
+    contactsModels = require('../../modules/contacts/server/models/contacts.server.model'),
     Contact = mongoose.model('Contact');
 
 console.log(chalk.white('--'));

@@ -4,11 +4,9 @@ const path = require('path');
 const request = require('supertest');
 const should = require('should');
 const sinon = require('sinon');
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const express = require(path.resolve('./config/lib/express'));
+const utils = require('../../../../testutils/server/data.server.testutil');
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const express = require('../../../../config/lib/express');
 
 describe('Read a single experience by experience id', () => {
   // GET /experiences/:experienceId

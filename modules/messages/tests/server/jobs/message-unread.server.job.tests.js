@@ -5,7 +5,7 @@ const path = require('path');
 // should = require('should'),
 const moment = require('moment');
 const sinon = require('sinon');
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const testutils = require('../../../../../testutils/server/server.testutil');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');
@@ -27,9 +27,7 @@ describe('Job: message unread', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    messageUnreadJobHandler = require(path.resolve(
-      './modules/messages/server/jobs/message-unread.server.job',
-    ));
+    messageUnreadJobHandler = require('../../../server/jobs/message-unread.server.job');
   });
 
   // Create an user

@@ -2,10 +2,10 @@ const should = require('should');
 const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
-const express = require(path.resolve('./config/lib/express'));
-const agenda = require(path.resolve('./config/lib/agenda'));
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('../../../../config/lib/express');
+const agenda = require('../../../../config/lib/agenda');
+const testutils = require('../../../../testutils/server/server.testutil');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');

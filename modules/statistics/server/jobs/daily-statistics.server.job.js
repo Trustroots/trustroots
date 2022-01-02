@@ -11,13 +11,9 @@
  */
 const async = require('async');
 const path = require('path');
-const statsService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
-const statistics = require(path.resolve(
-  './modules/statistics/server/controllers/statistics.server.controller',
-));
-const log = require(path.resolve('./config/lib/logger'));
+const statsService = require('../../../stats/server/services/stats.server.service');
+const statistics = require('../controllers/statistics.server.controller');
+const log = require('../../../../config/lib/logger');
 
 module.exports = function (job, agendaDone) {
   let totalUserCount;

@@ -4,8 +4,8 @@ const path = require('path');
 const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('../../../../config/lib/express');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');

@@ -3,14 +3,12 @@ const should = require('should');
 const path = require('path');
 const _ = require('lodash');
 const sinon = require('sinon');
-const config = require(path.resolve('./config/config'));
+const config = require('../../../../config/config');
 const EventEmitter = require('events');
 const influx = require('influx');
 const Promise = require('promise');
-const messageController = require(path.resolve(
-  './modules/messages/server/controllers/messages.server.controller',
-));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const messageController = require('../../server/controllers/messages.server.controller');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 

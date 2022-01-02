@@ -1,4 +1,4 @@
 const path = require('path');
-const defaultAssets = require(path.resolve('./config/assets/default'));
+const defaultAssets = require('./default');
 
 module.exports = defaultAssets;

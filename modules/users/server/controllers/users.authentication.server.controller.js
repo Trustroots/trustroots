@@ -3,24 +3,14 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const authenticationService = require(path.resolve(
-  './modules/users/server/services/authentication.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
-const facebook = require(path.resolve('./config/lib/facebook-api.js'));
-const config = require(path.resolve('./config/config'));
-const log = require(path.resolve('./config/lib/logger'));
+const errorService = require('../../../core/server/services/error.server.service');
+const emailService = require('../../../core/server/services/email.server.service');
+const userProfile = require('./users.profile.server.controller');
+const authenticationService = require('../services/authentication.server.service');
+const statService = require('../../../stats/server/services/stats.server.service');
+const facebook = require('../../../../config/lib/facebook-api.js');
+const config = require('../../../../config/config');
+const log = require('../../../../config/lib/logger');
 const moment = require('moment');
 const passport = require('passport');
 const async = require('async');

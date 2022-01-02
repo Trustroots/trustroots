@@ -3,14 +3,10 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const errorService = require('../../../core/server/services/error.server.service');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
-const MessagesController = require(path.resolve(
-  'modules/messages/server/controllers/messages.server.controller.js',
-));
+const MessagesController = require('../../../messages/server/controllers/messages.server.controller.js');
 
 /*
  * This middleware sends response with an array of found users
