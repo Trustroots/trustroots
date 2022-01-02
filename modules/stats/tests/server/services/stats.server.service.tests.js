@@ -1,5 +1,4 @@
 const should = require('should');
-const path = require('path');
 const statsService = require('../../../server/services/stats.server.service');
 const influxService = require('../../../server/services/influx.server.service');
 const sinon = require('sinon');

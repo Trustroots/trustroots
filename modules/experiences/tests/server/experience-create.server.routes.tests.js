@@ -1,6 +1,5 @@
 const should = require('should');
 const request = require('supertest');
-const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const faker = require('faker');

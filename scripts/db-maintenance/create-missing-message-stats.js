@@ -31,8 +31,7 @@ var searchMessagesParam = {
   // */
 };
 
-var path = require('path'),
-    chalk = require('chalk'),
+var chalk = require('chalk'),
     async = require('async'),
     config = require('../../config/config'),
     configMongoose = require('../../config/lib/mongoose'),

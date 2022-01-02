@@ -1,4 +1,3 @@
-const path = require('path');
 const async = require('async');
 const firebaseMessaging = require('../../../../config/lib/firebase-messaging');
 const exponentNotifications = require('../../../../config/lib/exponent-notifications');

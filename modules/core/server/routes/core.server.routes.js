@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const core = require('../controllers/core.server.controller');
 const tribes = require('../../../tribes/server/controllers/tribes.server.controller');
 

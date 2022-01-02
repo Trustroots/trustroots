@@ -1,4 +1,3 @@
-const path = require('path');
 const should = require('should');
 const async = require('async');
 const mongoose = require('mongoose');

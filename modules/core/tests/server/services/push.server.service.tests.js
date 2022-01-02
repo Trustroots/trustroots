@@ -1,4 +1,3 @@
-const path = require('path');
 const config = require('../../../../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 const testutils = require('../../../../../testutils/server/server.testutil');

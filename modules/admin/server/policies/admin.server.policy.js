@@ -3,7 +3,6 @@
  */
 const acl = require('acl');
 const _ = require('lodash');
-const path = require('path');
 const errorService = require('../../../core/server/services/error.server.service');
 
 // Using the memory backend

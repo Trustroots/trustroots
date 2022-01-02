@@ -2,7 +2,6 @@ const _ = require('lodash');
 const should = require('should');
 const async = require('async');
 const request = require('supertest');
-const path = require('path');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const config = require('../../../../config/config');

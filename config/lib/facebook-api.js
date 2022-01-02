@@ -3,7 +3,6 @@
  */
 const _ = require('lodash');
 const fbgraph = require('fbgraph');
-const path = require('path');
 const config = require('../config');
 
 // Config vars

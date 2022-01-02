@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const moment = require('moment');
 const errorService = require('../../../core/server/services/error.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');

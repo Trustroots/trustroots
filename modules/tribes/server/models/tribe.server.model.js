@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const config = require('../../../../config/config');
 const mongoose = require('mongoose');
 const moment = require('moment');

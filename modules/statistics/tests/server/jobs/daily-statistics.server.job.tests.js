@@ -1,7 +1,6 @@
 // test whether the daily statistics job reaches influxdb via Stats api
 
 const should = require('should');
-const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
 

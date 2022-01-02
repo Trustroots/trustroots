@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const nodemailer = require('nodemailer');
-const path = require('path');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 

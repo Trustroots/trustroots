@@ -1,5 +1,3 @@
-const path = require('path');
-
 const AkismetClient = require('akismet-api').AkismetClient;
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');

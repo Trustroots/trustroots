@@ -1,4 +1,3 @@
-const path = require('path');
 const log = require('../../../../config/lib/logger');
 
 // Default error message when unsure how to respond

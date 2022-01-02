@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const should = require('should');
 const testutils = require('../../../../../testutils/server/server.testutil');
 const config = require('../../../../../config/config');

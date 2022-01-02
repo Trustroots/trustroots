@@ -12,7 +12,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const emailService = require('../../../core/server/services/email.server.service');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');

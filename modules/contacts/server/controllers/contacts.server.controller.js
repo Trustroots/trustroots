@@ -3,7 +3,6 @@
  */
 
 const _ = require('lodash');
-const path = require('path');
 const errorService = require('../../../core/server/services/error.server.service');
 const textService = require('../../../core/server/services/text.server.service');
 const emailService = require('../../../core/server/services/email.server.service');

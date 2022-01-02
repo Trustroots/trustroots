@@ -1,6 +1,5 @@
 const should = require('should');
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const testutils = require('../../../../testutils/server/server.testutil');

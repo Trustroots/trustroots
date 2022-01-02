@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 let acl = require('acl');
-const path = require('path');
 const errorService = require('../../../core/server/services/error.server.service');
 
 // Using the memory backend

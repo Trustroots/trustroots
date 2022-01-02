@@ -1,6 +1,5 @@
 const moment = require('moment');
 const mongoose = require('mongoose');
-const path = require('path');
 const should = require('should');
 const sinon = require('sinon');
 const util = require('util');

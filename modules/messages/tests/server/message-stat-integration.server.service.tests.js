@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const should = require('should');
-const path = require('path');
 const _ = require('lodash');
 const sinon = require('sinon');
 const config = require('../../../../config/config');

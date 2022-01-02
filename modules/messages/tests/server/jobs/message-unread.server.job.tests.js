@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 // should = require('should'),
 const moment = require('moment');
 const sinon = require('sinon');

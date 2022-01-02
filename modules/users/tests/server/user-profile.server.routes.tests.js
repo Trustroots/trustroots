@@ -1,6 +1,5 @@
 const should = require('should');
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const config = require('../../../../config/config');

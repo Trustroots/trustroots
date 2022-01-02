@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const path = require('path');
 const request = require('supertest');
 const should = require('should');
 const config = require('../../../../config/config');

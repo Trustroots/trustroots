@@ -7,7 +7,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const _ = require('lodash');
 const winston = require('winston');
 const config = require('../config');

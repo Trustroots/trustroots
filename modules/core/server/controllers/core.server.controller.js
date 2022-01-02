@@ -1,4 +1,3 @@
-const path = require('path');
 const errorService = require('../services/error.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const textService = require('../services/text.server.service');

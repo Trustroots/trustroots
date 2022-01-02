@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const mongoose = require('mongoose');
 const textService = require('../../../core/server/services/text.server.service');
 const Schema = mongoose.Schema;

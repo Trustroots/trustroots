@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const errorService = require('../../../core/server/services/error.server.service');
 const log = require('../../../../config/lib/logger');
 const mongoose = require('mongoose');

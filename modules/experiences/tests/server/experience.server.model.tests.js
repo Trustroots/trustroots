@@ -1,6 +1,5 @@
 const should = require('should');
 const mongoose = require('mongoose');
-const path = require('path');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const User = mongoose.model('User');
 const Experience = mongoose.model('Experience');

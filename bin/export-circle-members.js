@@ -9,7 +9,6 @@
 
 const fs = require('fs');
 const mongoose = require('mongoose');
-const path = require('path');
 
 const mongooseService = require('../config/lib/mongoose');
 require('../config/lib/express');
