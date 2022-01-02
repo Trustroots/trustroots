@@ -1,7 +1,5 @@
 const path = require('path');
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
+const textService = require('../../../server/services/text.server.service');
 
 require('should');
 

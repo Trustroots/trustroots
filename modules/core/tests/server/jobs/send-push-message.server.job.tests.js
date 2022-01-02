@@ -5,7 +5,7 @@ const proxyquire = require('proxyquire');
 const should = require('should');
 
 // Internal dependencies
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const utils = require('../../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 

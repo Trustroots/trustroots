@@ -11,10 +11,10 @@ const fs = require('fs');
 const mongoose = require('mongoose');
 const path = require('path');
 
-const mongooseService = require(path.resolve('./config/lib/mongoose'));
-require(path.resolve('./config/lib/express'));
-require(path.resolve('./modules/users/server/models/user.server.model'));
-require(path.resolve('./modules/tribes/server/models/tribe.server.model'));
+const mongooseService = require('../config/lib/mongoose');
+require('../config/lib/express');
+require('../modules/users/server/models/user.server.model');
+require('../modules/tribes/server/models/tribe.server.model');
 
 // This is where CSV lines are generated
 // First line is the header

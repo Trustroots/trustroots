@@ -1,5 +1,5 @@
 const path = require('path');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('../../../../config/lib/logger');
 
 // Default error message when unsure how to respond
 const defaultErrorMessage =

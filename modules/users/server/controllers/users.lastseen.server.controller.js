@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const moment = require('moment');
 const path = require('path');
 const User = mongoose.model('User');
-const config = require(path.resolve('config/config'));
+const config = require('../../../../config/config');
 
 /**
  * When user is logged in, update her last seen to Now in database

@@ -4,10 +4,8 @@ const sinon = require('sinon');
 const influx = require('influx');
 const Promise = require('promise');
 // influx = require('influx'),
-const influxService = require(path.resolve(
-  './modules/stats/server/services/influx.server.service',
-));
-const config = require(path.resolve('./config/config'));
+const influxService = require('../../../server/services/influx.server.service');
+const config = require('../../../../../config/config');
 
 describe('Service: influx', function () {
   // restore the stubbed services

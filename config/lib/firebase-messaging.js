@@ -1,6 +1,6 @@
 const path = require('path');
 const firebase = require('firebase-admin');
-const config = require(path.resolve('./config/config'));
+const config = require('../config');
 const serviceAccount = config.fcm.serviceAccount;
 
 if (serviceAccount) {

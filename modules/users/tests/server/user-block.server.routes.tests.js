@@ -3,8 +3,8 @@ const request = require('supertest');
 const path = require('path');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
-const express = require(path.resolve('./config/lib/express'));
-const log = require(path.resolve('./config/lib/logger'));
+const express = require('../../../../config/lib/express');
+const log = require('../../../../config/lib/logger');
 
 /**
  * Globals

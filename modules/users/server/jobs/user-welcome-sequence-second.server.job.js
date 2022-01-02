@@ -11,11 +11,9 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const log = require(path.resolve('./config/lib/logger'));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const config = require(path.resolve('./config/config'));
+const log = require('../../../../config/lib/logger');
+const emailService = require('../../../core/server/services/email.server.service');
+const config = require('../../../../config/config');
 const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');

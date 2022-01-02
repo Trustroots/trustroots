@@ -1,5 +1,5 @@
 const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('../../../../config/config');
 
 exports.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;

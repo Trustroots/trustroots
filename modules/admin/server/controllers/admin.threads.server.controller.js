@@ -3,9 +3,7 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const errorService = require('../../../core/server/services/error.server.service');
 const mongoose = require('mongoose');
 const Thread = mongoose.model('Thread');
 

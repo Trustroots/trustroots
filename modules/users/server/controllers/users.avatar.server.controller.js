@@ -5,14 +5,10 @@ const mkdirRecursive = require('mkdir-recursive');
 const mongoose = require('mongoose');
 const path = require('path');
 
-const log = require(path.resolve('./config/lib/logger'));
-const config = require(path.resolve('./config/config'));
-const fileUpload = require(path.resolve(
-  './modules/core/server/services/file-upload.service',
-));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const log = require('../../../../config/lib/logger');
+const config = require('../../../../config/config');
+const fileUpload = require('../../../core/server/services/file-upload.service');
+const errorService = require('../../../core/server/services/error.server.service');
 
 const User = mongoose.model('User');
 

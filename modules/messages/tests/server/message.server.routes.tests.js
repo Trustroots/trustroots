@@ -5,9 +5,9 @@ const request = require('supertest');
 const path = require('path');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const config = require(path.resolve('./config/config'));
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const config = require('../../../../config/config');
+const express = require('../../../../config/lib/express');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 const Message = mongoose.model('Message');

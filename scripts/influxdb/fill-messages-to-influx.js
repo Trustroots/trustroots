@@ -1,11 +1,11 @@
 var path = require('path'),
     chalk = require('chalk'),
     async = require('async'),
-    config = require(path.resolve('./config/config')),
-    configMongoose = require(path.resolve('./config/lib/mongoose')),
+    config = require('../../config/config'),
+    configMongoose = require('../../config/lib/mongoose'),
     mongoose = require('mongoose'),
-    messageToInflux = require(path.resolve('./modules/messages/server/services/message-to-influx.server.service')),
-    messageModels = require(path.resolve('./modules/messages/server/models/message.server.model')),
+    messageToInflux = require('../../modules/messages/server/services/message-to-influx.server.service'),
+    messageModels = require('../../modules/messages/server/models/message.server.model'),
     Message = mongoose.model('Message');
 
     // the expression below uses ES6 Promises, so it shouldn't belong here.

@@ -7,16 +7,12 @@ const async = require('async');
 const juice = require('juice');
 const moment = require('moment');
 const autolinker = require('autolinker');
-const analyticsHandler = require(path.resolve(
-  './modules/core/server/controllers/analytics.server.controller',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const render = require(path.resolve('./config/lib/render'));
-const agenda = require(path.resolve('./config/lib/agenda'));
-const config = require(path.resolve('./config/config'));
-const log = require(path.resolve('./config/lib/logger'));
+const analyticsHandler = require('../controllers/analytics.server.controller');
+const textService = require('./text.server.service');
+const render = require('../../../../config/lib/render');
+const agenda = require('../../../../config/lib/agenda');
+const config = require('../../../../config/config');
+const log = require('../../../../config/lib/logger');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**

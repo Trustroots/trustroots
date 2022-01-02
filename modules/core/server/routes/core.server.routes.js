@@ -4,9 +4,7 @@
 const _ = require('lodash');
 const path = require('path');
 const core = require('../controllers/core.server.controller');
-const tribes = require(path.resolve(
-  './modules/tribes/server/controllers/tribes.server.controller',
-));
+const tribes = require('../../../tribes/server/controllers/tribes.server.controller');
 
 module.exports = function (app) {
   const redirect = function (src, dst) {

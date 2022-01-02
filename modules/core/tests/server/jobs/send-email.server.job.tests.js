@@ -1,6 +1,6 @@
 const path = require('path');
 const mongoose = require('mongoose');
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const testutils = require('../../../../../testutils/server/server.testutil');
 
 /**
  * Globals
@@ -11,9 +11,7 @@ describe('job: send email', function () {
   const sentEmails = testutils.catchEmails();
 
   before(function () {
-    sendEmailJobHandler = require(path.resolve(
-      './modules/core/server/jobs/send-email.server.job',
-    ));
+    sendEmailJobHandler = require('../../../server/jobs/send-email.server.job');
   });
 
   it('will send an email', function (done) {

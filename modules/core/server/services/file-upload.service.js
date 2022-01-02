@@ -5,10 +5,8 @@ const path = require('path');
 const mmmagic = require('mmmagic');
 
 // Internal dependencies
-const config = require(path.resolve('./config/config'));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
+const config = require('../../../../config/config');
+const errorService = require('./error.server.service');
 
 /**
  * Upload file handler and validator using Multer and Mmmagic.

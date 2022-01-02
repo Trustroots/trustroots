@@ -5,10 +5,8 @@ const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
 
-const config = require(path.resolve('./config/config'));
-const statsJob = require(path.resolve(
-  './modules/statistics/server/jobs/daily-statistics.server.job',
-));
+const config = require('../../../../../config/config');
+const statsJob = require('../../../server/jobs/daily-statistics.server.job');
 
 describe('Daily Statistics Job - Unit Test', function () {
   afterEach(function () {

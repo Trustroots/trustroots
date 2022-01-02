@@ -1,11 +1,9 @@
 const _ = require('lodash');
 const path = require('path');
-const agenda = require(path.resolve('./config/lib/agenda'));
-const config = require(path.resolve('./config/config'));
+const agenda = require('../../../../config/lib/agenda');
+const config = require('../../../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-const analyticsHandler = require(path.resolve(
-  './modules/core/server/controllers/analytics.server.controller',
-));
+const analyticsHandler = require('../controllers/analytics.server.controller');
 
 exports.notifyPushDeviceAdded = function (user, platform, callback) {
   if (_.get(user, 'pushRegistration', []).length === 0) return callback();

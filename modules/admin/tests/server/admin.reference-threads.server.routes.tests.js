@@ -3,8 +3,8 @@ const path = require('path');
 const mongoose = require('mongoose');
 require('should');
 
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('../../../../config/lib/express');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 const ReferenceThread = mongoose.model('ReferenceThread');
 

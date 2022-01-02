@@ -3,8 +3,8 @@
  */
 const path = require('path');
 const should = require('should');
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
-const config = require(path.resolve('./config/config'));
+const testutils = require('../../../../../testutils/server/server.testutil');
+const config = require('../../../../../config/config');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
@@ -23,9 +23,7 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
   const jobs = testutils.catchJobs();
 
   before(function () {
-    reactivateHostsJobHandler = require(path.resolve(
-      './modules/offers/server/jobs/reactivate-hosts.server.job',
-    ));
+    reactivateHostsJobHandler = require('../../../server/jobs/reactivate-hosts.server.job');
   });
 
   // Create user
