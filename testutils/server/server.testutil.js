@@ -1,8 +1,6 @@
 /**
  * Utility helpers for testing backend code
  */
-
-const path = require('path');
 const config = require('../../config/config');
 const agenda = require('../../config/lib/agenda');
 

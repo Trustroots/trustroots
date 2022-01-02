@@ -2,7 +2,6 @@
 // the correct data will arrive to the InfluxDB endpoint
 
 const should = require('should');
-const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
 

@@ -2,7 +2,6 @@
  * Refactors `users` array to `userTo` and `userFrom` keys from Contact collection
  */
 
-const path = require('path');
 const async = require('async');
 const mongooseService = require('../../config/lib/mongoose');
 const mongoose = require('mongoose');

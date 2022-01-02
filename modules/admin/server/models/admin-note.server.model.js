@@ -1,6 +1,5 @@
 // External dependencies
 const mongoose = require('mongoose');
-const path = require('path');
 
 // Internal dependencies
 const textService = require('../../../core/server/services/text.server.service');

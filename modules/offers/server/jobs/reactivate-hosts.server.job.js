@@ -9,7 +9,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const emailService = require('../../../core/server/services/email.server.service');
 const config = require('../../../../config/config');
 const async = require('async');

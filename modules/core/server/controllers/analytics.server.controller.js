@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const url = require('url');
-const path = require('path');
 const log = require('../../../../config/lib/logger');
 
 /**

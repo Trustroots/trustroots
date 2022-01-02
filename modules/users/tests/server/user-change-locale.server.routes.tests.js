@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const path = require('path');
 const request = require('supertest');
 const should = require('should');
 const utils = require('../../../../testutils/server/data.server.testutil');

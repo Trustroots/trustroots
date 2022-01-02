@@ -1,4 +1,3 @@
-const path = require('path');
 const config = require('../../../../config/config');
 const experiencesPolicy = require('../policies/experiences.server.policy');
 const experiences = require('../controllers/experiences.server.controller');

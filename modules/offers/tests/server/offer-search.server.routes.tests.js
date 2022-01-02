@@ -1,7 +1,6 @@
 const _ = require('lodash');
 const should = require('should');
 const request = require('supertest');
-const path = require('path');
 const async = require('async');
 const moment = require('moment');
 const mongoose = require('mongoose');

@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const errorService = require('../../../core/server/services/error.server.service');
 const analyticsHandler = require('../../../core/server/controllers/analytics.server.controller');
 const emailService = require('../../../core/server/services/email.server.service');

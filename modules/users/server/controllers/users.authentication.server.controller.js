@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const errorService = require('../../../core/server/services/error.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const userProfile = require('./users.profile.server.controller');

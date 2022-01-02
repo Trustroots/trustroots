@@ -1,4 +1,3 @@
-const path = require('path');
 const textService = require('../../../server/services/text.server.service');
 
 require('should');

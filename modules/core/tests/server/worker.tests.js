@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const path = require('path');
 const sinon = require('sinon');
 
 describe('Worker tests', function () {

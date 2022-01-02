@@ -10,7 +10,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const async = require('async');
 const basicAuth = require('basic-auth');
 const speakingurl = require('speakingurl');

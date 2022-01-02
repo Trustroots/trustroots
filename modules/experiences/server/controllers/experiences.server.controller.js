@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
-const path = require('path');
 const util = require('util');
 const config = require('../../../../config/config');
 const textService = require('../../../core/server/services/text.server.service');

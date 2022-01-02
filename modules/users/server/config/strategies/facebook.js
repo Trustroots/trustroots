@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const usersAuthentication = require('../../controllers/users.authentication.server.controller');

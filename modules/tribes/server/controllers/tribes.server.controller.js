@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const errorService = require('../../../core/server/services/error.server.service');
 const paginate = require('express-paginate');
 const mongoose = require('mongoose');

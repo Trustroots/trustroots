@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const testutils = require('../../../../../testutils/server/server.testutil');
 const config = require('../../../../../config/config');
 const moment = require('moment');

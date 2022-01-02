@@ -7,7 +7,6 @@ const config = require('./config/config');
 const async = require('async');
 const mongooseService = require('./config/lib/mongoose');
 const worker = require('./config/lib/worker');
-const path = require('path');
 const log = require('./config/lib/logger');
 const Sentry = require('@sentry/node');
 

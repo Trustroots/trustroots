@@ -3,7 +3,6 @@
  */
 const mongoose = require('mongoose');
 const moment = require('moment');
-const path = require('path');
 const User = mongoose.model('User');
 const config = require('../../../../config/config');
 

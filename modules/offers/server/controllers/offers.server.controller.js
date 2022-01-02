@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const async = require('async');
 const config = require('../../../../config/config');
 const errorService = require('../../../core/server/services/error.server.service');

@@ -1,5 +1,4 @@
 var _ = require('lodash'),
-    path = require('path'),
     async = require('async'),
     moment = require('moment'),
     mongooseService = require('../../config/lib/mongoose'),

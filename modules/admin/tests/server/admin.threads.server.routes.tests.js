@@ -1,5 +1,4 @@
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
 const Thread = mongoose.model('Thread');
 const express = require('../../../../config/lib/express');

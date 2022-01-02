@@ -16,8 +16,7 @@
 /**
  * Script dependencies
  */
-var path = require('path'),
-    async = require('async'),
+var async = require('async'),
     mongoose = require('mongoose'),
     argv = require('yargs').argv,
     mongooseHelper = require('../../config/lib/mongoose'),

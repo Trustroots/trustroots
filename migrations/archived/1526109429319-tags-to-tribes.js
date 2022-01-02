@@ -4,7 +4,6 @@
  * - Removes `tribe` keys
  */
 
-const path = require('path');
 const async = require('async');
 const chalk = require('chalk');
 const mongooseService = require('../../config/lib/mongoose');

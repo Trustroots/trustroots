@@ -3,7 +3,6 @@
  */
 const _ = require('lodash');
 const mongoose = require('mongoose');
-const path = require('path');
 
 const errorService = require('../../../core/server/services/error.server.service');
 const log = require('../../../../config/lib/logger');

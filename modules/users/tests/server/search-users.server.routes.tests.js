@@ -1,7 +1,6 @@
 const request = require('supertest');
 const async = require('async');
 const _ = require('lodash');
-const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const should = require('should');

@@ -1,5 +1,4 @@
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
 const User = mongoose.model('User');

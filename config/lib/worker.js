@@ -1,4 +1,3 @@
-const path = require('path');
 const config = require('../config');
 const format = require('util').format;
 const statService = require('../../modules/stats/server/services/stats.server.service');

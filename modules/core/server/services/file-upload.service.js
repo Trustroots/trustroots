@@ -1,7 +1,6 @@
 // External dependencies
 const multer = require('multer');
 const os = require('os');
-const path = require('path');
 const mmmagic = require('mmmagic');
 
 // Internal dependencies

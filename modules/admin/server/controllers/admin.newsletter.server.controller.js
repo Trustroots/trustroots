@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const mongoose = require('mongoose');
-const path = require('path');
 
 const errorService = require('../../../core/server/services/error.server.service');
 

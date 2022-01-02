@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const Influx = require('influx');
 const _ = require('lodash');
 const config = require('../../../../config/config');

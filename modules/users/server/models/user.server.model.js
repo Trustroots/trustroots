@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const textService = require('../../../core/server/services/text.server.service');
 const languages = require('../../../../config/languages/languages.json');
 const authenticationService = require('../services/authentication.server.service');

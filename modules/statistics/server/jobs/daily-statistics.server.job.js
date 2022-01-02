@@ -10,7 +10,6 @@
  * Module dependencies.
  */
 const async = require('async');
-const path = require('path');
 const statsService = require('../../../stats/server/services/stats.server.service');
 const statistics = require('../controllers/statistics.server.controller');
 const log = require('../../../../config/lib/logger');

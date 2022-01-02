@@ -1,4 +1,3 @@
-const path = require('path');
 const mongoose = require('mongoose');
 const testutils = require('../../../../../testutils/server/server.testutil');
 

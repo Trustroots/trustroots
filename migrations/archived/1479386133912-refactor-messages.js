@@ -9,7 +9,6 @@
  * notifications configured in config/env/default.js.limits.unreadMessageReminders
  */
 
-const path = require('path');
 const async = require('async');
 const mongooseService = require('../../config/lib/mongoose');
 const mongoose = require('mongoose');

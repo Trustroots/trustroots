@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const textService = require('../../../core/server/services/text.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');

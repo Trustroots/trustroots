@@ -2,7 +2,6 @@
  * Module dependencies.
  */
 const mongoose = require('mongoose');
-const path = require('path');
 const _ = require('lodash');
 const async = require('async');
 const config = require('../../../../config/config');

@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const config = require('../../../../config/config');

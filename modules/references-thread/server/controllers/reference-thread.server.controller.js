@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const async = require('async');
 const mongoose = require('mongoose');
 

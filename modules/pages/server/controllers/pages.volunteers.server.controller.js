@@ -1,7 +1,6 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const _ = require('lodash');
 const mongoose = require('mongoose');
 const errorService = require('../../../core/server/services/error.server.service');

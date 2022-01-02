@@ -3,7 +3,6 @@
  * Determines if avatars exist at users upload folder
  */
 
-const path = require('path');
 const mongooseService = require('../../config/lib/mongoose');
 const chalk = require('chalk');
 const mongoose = require('mongoose');

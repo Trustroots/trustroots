@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const path = require('path');
 const agenda = require('../../../../config/lib/agenda');
 const config = require('../../../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;

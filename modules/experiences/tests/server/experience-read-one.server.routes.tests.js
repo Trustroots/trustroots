@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const mongoose = require('mongoose');
-const path = require('path');
 const request = require('supertest');
 const should = require('should');
 const sinon = require('sinon');
