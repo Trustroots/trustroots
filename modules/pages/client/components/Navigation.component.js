@@ -67,23 +67,23 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
       </div>
 
       <div className="list-group font-brand-regular">
-        <a className="list-group-item" href="/support">
-          {t('Contact & Support')}
-        </a>
-        <a className="list-group-item" href="/faq">
-          {t('FAQ')}
-        </a>
         <a className="list-group-item" href="/about">
           {t('About')}
         </a>
         <a className="list-group-item" href="https://ideas.trustroots.org/">
           {t('Blog')}
         </a>
-        <a className="list-group-item" href="/media">
-          {t('Media')}
+        <a className="list-group-item" href="/support">
+          {t('Contact & Support')}
+        </a>
+        <a className="list-group-item" href="/faq">
+          {t('FAQ')}
         </a>
         <a className="list-group-item" href="/foundation">
           {t('Foundation')}
+        </a>
+        <a className="list-group-item" href="/media">
+          {t('Media')}
         </a>
         <a className="list-group-item" href="/privacy">
           {t('Privacy')}
