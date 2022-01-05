@@ -136,7 +136,7 @@ export default function ProfileViewBasics({ profile }) {
         {/* Couchers.org */}
         {profile.extSitesCouchers && (
           <li className="social-profile">
-            <i className="social-profile-icon icon-fw icon-lg icon-bw"></i>
+            <i className="social-profile-icon icon-fw icon-lg icon-couchers"></i>
             <a
               rel="noopener"
               className="social-profile-handle"
