@@ -67,6 +67,7 @@ exports.userProfileFields = [
   'member',
   'replyRate',
   'replyTime',
+  'extSitesCouchers', // BeWelcome username
   'extSitesBW', // BeWelcome username
   'extSitesCS', // CouchSurfing username
   'extSitesWS', // WarmShowers username

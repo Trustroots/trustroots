@@ -50,6 +50,9 @@ exports.getExternalSiteCount = function (site, callback) {
   const query = { public: true };
 
   switch (site) {
+    case 'couchers':
+      query.extSitesCouchers = { $exists: true, $ne: '' };
+      break;
     case 'bewelcome':
       query.extSitesBW = { $exists: true, $ne: '' };
       break;
