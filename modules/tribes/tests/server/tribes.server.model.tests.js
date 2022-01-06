@@ -1,12 +1,11 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const should = require('should');
 const mongoose = require('mongoose');
 const validator = require('validator');
-const config = require(path.resolve('./config/config'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const config = require('../../../../config/config');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 const Tribe = mongoose.model('Tribe');
 

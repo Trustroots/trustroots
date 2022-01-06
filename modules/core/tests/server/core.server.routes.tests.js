@@ -1,9 +1,8 @@
 const _ = require('lodash');
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
-const express = require(path.resolve('./config/lib/express'));
-const config = require(path.resolve('./config/config'));
+const express = require('../../../../config/lib/express');
+const config = require('../../../../config/config');
 const should = require('should');
 
 /**

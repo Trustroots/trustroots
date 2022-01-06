@@ -2,22 +2,13 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const async = require('async');
-const config = require(path.resolve('./config/config'));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const tribes = require(path.resolve(
-  './modules/tribes/server/controllers/tribes.server.controller',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const log = require(path.resolve('./config/lib/logger'));
+const config = require('../../../../config/config');
+const errorService = require('../../../core/server/services/error.server.service');
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const tribes = require('../../../tribes/server/controllers/tribes.server.controller');
+const textService = require('../../../core/server/services/text.server.service');
+const log = require('../../../../config/lib/logger');
 const sanitizeHtml = require('sanitize-html');
 const moment = require('moment');
 const mongoose = require('mongoose');
@@ -549,7 +540,7 @@ exports.list = function (req, res) {
 
   // Languages filter
   if (filters.hasArrayFilter('languages')) {
-    let languages = require(path.resolve('./config/languages/languages.json'));
+    let languages = require('../../../../config/languages/languages.json');
 
     // Above json `languages` object contains language names, but we need just keys.
     languages = _.keys(languages);

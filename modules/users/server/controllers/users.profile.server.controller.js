@@ -3,40 +3,20 @@
  */
 const _ = require('lodash');
 const path = require('path');
-const locales = require(path.resolve('./config/shared/locales'));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const tribesHandler = require(path.resolve(
-  './modules/tribes/server/controllers/tribes.server.controller',
-));
-const contactHandler = require(path.resolve(
-  './modules/contacts/server/controllers/contacts.server.controller',
-));
-const messageHandler = require(path.resolve(
-  './modules/messages/server/controllers/messages.server.controller',
-));
-const offerHandler = require(path.resolve(
-  './modules/offers/server/controllers/offers.server.controller',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const pushService = require(path.resolve(
-  './modules/core/server/services/push.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
-const log = require(path.resolve('./config/lib/logger'));
+const locales = require('../../../../config/shared/locales');
+const errorService = require('../../../core/server/services/error.server.service');
+const textService = require('../../../core/server/services/text.server.service');
+const tribesHandler = require('../../../tribes/server/controllers/tribes.server.controller');
+const contactHandler = require('../../../contacts/server/controllers/contacts.server.controller');
+const messageHandler = require('../../../messages/server/controllers/messages.server.controller');
+const offerHandler = require('../../../offers/server/controllers/offers.server.controller');
+const emailService = require('../../../core/server/services/email.server.service');
+const pushService = require('../../../core/server/services/push.server.service');
+const statService = require('../../../stats/server/services/stats.server.service');
+const log = require('../../../../config/lib/logger');
 const del = require('del');
-const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service',
-));
-const config = require(path.resolve('./config/config'));
+const messageStatService = require('../../../messages/server/services/message-stat.server.service');
+const config = require('../../../../config/config');
 const async = require('async');
 const crypto = require('crypto');
 const sanitizeHtml = require('sanitize-html');
@@ -67,6 +47,7 @@ exports.userProfileFields = [
   'member',
   'replyRate',
   'replyTime',
+  'extSitesCouchers', // BeWelcome username
   'extSitesBW', // BeWelcome username
   'extSitesCS', // CouchSurfing username
   'extSitesWS', // WarmShowers username

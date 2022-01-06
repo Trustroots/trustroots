@@ -2,11 +2,10 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const passport = require('passport');
 const FacebookStrategy = require('passport-facebook').Strategy;
 const usersAuthentication = require('../../controllers/users.authentication.server.controller');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('../../../../../config/lib/logger');
 
 module.exports = function (config) {
   // Get config parameters for the strategy

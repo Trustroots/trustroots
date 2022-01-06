@@ -1,10 +1,9 @@
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
 const User = mongoose.model('User');
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('../../../../config/lib/express');
+const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 /**

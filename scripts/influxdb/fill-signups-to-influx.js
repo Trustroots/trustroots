@@ -16,14 +16,13 @@
 /**
  * Script dependencies
  */
-var path = require('path'),
-    async = require('async'),
+var async = require('async'),
     mongoose = require('mongoose'),
     argv = require('yargs').argv,
-    mongooseHelper = require(path.resolve('./config/lib/mongoose')),
-    statService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+    mongooseHelper = require('../../config/lib/mongoose'),
+    statService = require('../../modules/stats/server/services/stats.server.service');
 
-require(path.resolve('./modules/users/server/models/user.server.model'));
+require('../../modules/users/server/models/user.server.model');
 
 var User = mongoose.model('User');
 

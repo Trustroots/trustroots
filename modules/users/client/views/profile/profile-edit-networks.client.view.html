@@ -102,6 +102,53 @@
                 class="icon-help cursor-help tr-help"
                 popover-placement="bottom-left"
                 popover-trigger="'mouseenter'"
+                uib-popover-template="'couchersGuidePopover.html'"
+              ></a>
+              <script type="text/ng-template" id="couchersGuidePopover.html">
+                <div>
+                  Go to your <a href="https://app.couchers.org/account-settings">Couchers.org account settings</a> and copy the username.
+                  <br><br>
+                  <img class="img-responsive clearfix" src="/img/guide-couchers.png" alt="" width="319" height="32" aria-hidden="true">
+                </div>
+              </script>
+            </div>
+            <label class="input-group-addon" for="extSitesCouchers">
+              <span class="hidden-xs">app.couchers.org/user/</span>
+              <span class="visible-xs-inline">Couchers.org:</span>
+            </label>
+            <input
+              id="extSitesCouchers"
+              type="text"
+              class="form-control"
+              ng-model="profileEditNetworks.user.extSitesCouchers"
+              ng-change="profileEdit.unsavedModifications=true"
+              placeholder="your-username"
+              aria-label="Couchers.org username"
+            />
+            <span
+              class="input-group-btn"
+              ng-if="profileEditNetworks.user.extSitesCouchers.length"
+            >
+              <a
+                ng-href="https://app.couchers.org/user/{{ profileEditNetworks.user.extSitesCouchers }}"
+                target="_blank"
+                class="btn btn-primary"
+                role="button"
+                rel="noopener"
+              >
+                <small>Test</small>
+              </a>
+            </span>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">
+              <a
+                tabindex="0"
+                class="icon-help cursor-help tr-help"
+                popover-placement="bottom-left"
+                popover-trigger="'mouseenter'"
                 uib-popover-template="'bwGuidePopover.html'"
               ></a>
               <script type="text/ng-template" id="bwGuidePopover.html">

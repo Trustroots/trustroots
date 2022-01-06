@@ -2,14 +2,9 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const moment = require('moment');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const errorService = require('../../../core/server/services/error.server.service');
+const statService = require('../../../stats/server/services/stats.server.service');
 const async = require('async');
 const semver = require('semver');
 const mongoose = require('mongoose');
@@ -50,6 +45,9 @@ exports.getExternalSiteCount = function (site, callback) {
   const query = { public: true };
 
   switch (site) {
+    case 'couchers':
+      query.extSitesCouchers = { $exists: true, $ne: '' };
+      break;
     case 'bewelcome':
       query.extSitesBW = { $exists: true, $ne: '' };
       break;

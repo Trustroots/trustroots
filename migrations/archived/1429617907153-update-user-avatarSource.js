@@ -2,12 +2,11 @@
  * Replaces "locale" with "local" from User.avatarSource
  */
 
-const path = require('path');
-const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongooseService = require('../../config/lib/mongoose');
 const chalk = require('chalk');
 const mongoose = require('mongoose');
 // eslint-disable-next-line no-unused-vars
-const userModels = require(path.resolve('./modules/users/server/models/user.server.model'));
+const userModels = require('../../modules/users/server/models/user.server.model');
 const User = mongoose.model('User');
 
 exports.up = function (next) {

@@ -53,6 +53,7 @@ function generateUsers(
   count,
   {
     additionalProvidersData,
+    extSitesCouchers,
     extSitesBW,
     extSitesCS,
     extSitesWS,
@@ -69,6 +70,7 @@ function generateUsers(
       case 'server':
         return generateServerUser({
           additionalProvidersData,
+          extSitesCouchers,
           extSitesBW,
           extSitesCS,
           extSitesWS,

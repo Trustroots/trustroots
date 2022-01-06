@@ -1,16 +1,11 @@
 const mongoose = require('mongoose');
 const should = require('should');
-const path = require('path');
 const _ = require('lodash');
 const sinon = require('sinon');
-const config = require(path.resolve('./config/config'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
-const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service',
-));
-const messageController = require(path.resolve(
-  './modules/messages/server/controllers/messages.server.controller',
-));
+const config = require('../../../../config/config');
+const utils = require('../../../../testutils/server/data.server.testutil');
+const messageStatService = require('../../server/services/message-stat.server.service');
+const messageController = require('../../server/controllers/messages.server.controller');
 
 const User = mongoose.model('User');
 const EventEmitter = require('events');

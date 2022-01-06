@@ -25,8 +25,7 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-// path = require('path'),
-// config = require(path.resolve('./config/config')),
+// const config = require('../../../../config/config');
 const influxService = require('./influx.server.service.js');
 
 /**

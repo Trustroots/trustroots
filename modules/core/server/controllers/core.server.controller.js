@@ -1,13 +1,10 @@
-const path = require('path');
 const errorService = require('../services/error.server.service');
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const config = require(path.resolve('./config/config'));
-const log = require(path.resolve('./config/lib/logger'));
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const textService = require('../services/text.server.service');
+const config = require('../../../../config/config');
+const log = require('../../../../config/lib/logger');
+const languagesObject = require('../../../../config/languages/languages.json');
+const languagesArray = require('../../../../config/languages/languages-array.json');
 
 /**
  * Render the main application page
@@ -93,4 +90,14 @@ exports.renderServiceWorkerConfig = function (req, res) {
   res
     .set('Content-Type', 'text/javascript')
     .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
+};
+
+exports.getLanguages = (req, res) => {
+  // Return language list in array format
+  if (req?.query?.format === 'array') {
+    return res.json(languagesArray);
+  }
+
+  // Return language list in object format
+  res.json(languagesObject);
 };

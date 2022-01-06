@@ -2,14 +2,13 @@
  * Required dependencies
  */
 const _ = require('lodash');
-const path = require('path');
-const mongooseService = require(path.resolve('./config/lib/mongoose'));
+const mongooseService = require('../../config/lib/mongoose');
 const chalk = require('chalk');
 const yargs = require('yargs');
 const faker = require('faker');
 const mongoose = require('mongoose');
 const queue = require('async/queue');
-const config = require(path.resolve('./config/config'));
+const config = require('../../config/config');
 const moment = require('moment');
 
 /**

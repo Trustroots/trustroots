@@ -2,14 +2,11 @@
 // the correct data will arrive to the InfluxDB endpoint
 
 const should = require('should');
-const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
 
-const statsService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
-const config = require(path.resolve('./config/config'));
+const statsService = require('../../server/services/stats.server.service');
+const config = require('../../../../config/config');
 
 describe('Stat API integration tests', function () {
   // restoring stubs

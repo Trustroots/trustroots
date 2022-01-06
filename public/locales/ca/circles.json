@@ -1,1 +1,14 @@
-{}
+{
+    "Discover circles": "Descobrir cercles",
+    "Joining circles helps you find likeminded Trustroots members.": "Unir-se a cercles permet trobar membres de Trustroots com tu.",
+    "Sign up with Trustroots": "Registra't amb Trustroots",
+    "{{count, number}} members": "Un membre",
+    "{{count, number}} members_plural": "membres",
+    "Cancel": "Cancel·lar",
+    "Leave this circle?": "Vols abandonar aquest cercle?",
+    "No members yet": "Encara no hi ha membres",
+    "Leave circle": "Abandonar cercle",
+    "New circle!": "Nou cercle!",
+    "Join": "Uneix-te",
+    "Send us suggestions!": "Envia'ns suggerències!"
+}

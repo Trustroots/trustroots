@@ -1,15 +1,12 @@
 const request = require('supertest');
 const async = require('async');
 const _ = require('lodash');
-const path = require('path');
 const sinon = require('sinon');
 const mongoose = require('mongoose');
 const should = require('should');
-const config = require(path.resolve('./config/config'));
-const userHandler = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const config = require('../../../../config/config');
+const userHandler = require('../../server/controllers/users.profile.server.controller');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 
@@ -24,7 +21,7 @@ describe('Search users: GET /users?search=string', function () {
     sinon.stub(config.limits, 'paginationLimit').value(limit);
 
     // the limit is used in this config, so we needed to stub limit before importing this
-    const express = require(path.resolve('./config/lib/express'));
+    const express = require('../../../../config/lib/express');
     // Get application
     const app = express.init(mongoose.connection);
     agent = request.agent(app);

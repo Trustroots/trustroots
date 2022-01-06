@@ -1,17 +1,12 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const async = require('async');
 const mongoose = require('mongoose');
 
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
-const log = require(path.resolve('./config/lib/logger'));
+const errorService = require('../../../core/server/services/error.server.service');
+const statService = require('../../../stats/server/services/stats.server.service');
+const log = require('../../../../config/lib/logger');
 
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');

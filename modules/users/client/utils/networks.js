@@ -40,6 +40,8 @@ export function socialAccountLink(providerName, providerData) {
  */
 export function getNetworkName(network) {
   switch (network) {
+    case 'couchers':
+      return 'Couchers.org';
     case 'bewelcome':
       return 'BeWelcome';
     case 'couchsurfing':

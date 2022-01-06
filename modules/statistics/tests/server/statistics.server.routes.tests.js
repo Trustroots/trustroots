@@ -1,8 +1,7 @@
 const request = require('supertest');
-const path = require('path');
 const mongoose = require('mongoose');
-const express = require(path.resolve('./config/lib/express'));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const express = require('../../../../config/lib/express');
+const utils = require('../../../../testutils/server/data.server.testutil');
 
 require('should');
 
@@ -47,6 +46,7 @@ describe('Statistics CRUD tests', () => {
     const _usersPublic2 = utils.generateUsers(2, {
       public: true,
       newsletter: true,
+      extSitesCouchers: 'username',
       extSitesCS: 'username',
       extSitesBW: 'username',
       extSitesWS: '12312312',

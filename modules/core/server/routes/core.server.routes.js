@@ -2,11 +2,8 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const core = require('../controllers/core.server.controller');
-const tribes = require(path.resolve(
-  './modules/tribes/server/controllers/tribes.server.controller',
-));
+const tribes = require('../../../tribes/server/controllers/tribes.server.controller');
 
 module.exports = function (app) {
   const redirect = function (src, dst) {
@@ -47,6 +44,8 @@ module.exports = function (app) {
   app
     .route('/api/report-expect-ct-violation')
     .post(core.receiveExpectCTViolationReport);
+
+  app.route('/api/languages').get(core.getLanguages);
 
   // Return a 404 for all undefined api, module or lib routes
   app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);

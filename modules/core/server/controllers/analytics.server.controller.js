@@ -2,8 +2,7 @@
  * Module dependencies.
  */
 const url = require('url');
-const path = require('path');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('../../../../config/lib/logger');
 
 /**
  * Append UTM parameters to URL for Analytics

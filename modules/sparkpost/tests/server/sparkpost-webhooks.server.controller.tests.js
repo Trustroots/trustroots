@@ -1,13 +1,10 @@
 // test whether the daily statistics job reaches influxdb via Stats api
 
 const should = require('should');
-const path = require('path');
 const influx = require('influx');
 const sinon = require('sinon');
-const config = require(path.resolve('./config/config'));
-const sparkpostWebhooks = require(path.resolve(
-  './modules/sparkpost/server/controllers/sparkpost-webhooks.server.controller',
-));
+const config = require('../../../../config/config');
+const sparkpostWebhooks = require('../../server/controllers/sparkpost-webhooks.server.controller');
 
 describe('Sparkpost Webhooks - Integration Test', function () {
   // restoring the stubs

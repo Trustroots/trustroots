@@ -94,7 +94,7 @@ module.exports.connect = function (callback) {
           return done();
         }
 
-        const engines = require(path.resolve('./package.json')).engines;
+        const engines = require('../../package.json').engines;
         const admin = new mongoose.mongo.Admin(mongoose.connection.db);
         admin.buildInfo(function (err, info) {
           log('info', 'MongoDB', {

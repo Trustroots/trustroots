@@ -9,14 +9,11 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const config = require(path.resolve('./config/config'));
+const emailService = require('../../../core/server/services/email.server.service');
+const config = require('../../../../config/config');
 const async = require('async');
 const moment = require('moment');
-const log = require(path.resolve('./config/lib/logger'));
+const log = require('../../../../config/lib/logger');
 const mongoose = require('mongoose');
 const Offer = mongoose.model('Offer');
 

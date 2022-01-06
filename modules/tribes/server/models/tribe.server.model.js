@@ -1,8 +1,7 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('../../../../config/config');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const mongoosePaginate = require('mongoose-paginate');

@@ -1,7 +1,6 @@
-const path = require('path');
-const config = require(path.resolve('./config/config'));
+const config = require('../../../../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
+const testutils = require('../../../../../testutils/server/server.testutil');
 
 describe('Service: push', function () {
   const jobs = testutils.catchJobs();
@@ -9,9 +8,7 @@ describe('Service: push', function () {
   let pushService;
 
   before(function () {
-    pushService = require(path.resolve(
-      './modules/core/server/services/push.server.service',
-    ));
+    pushService = require('../../../server/services/push.server.service');
   });
 
   it('can send a user notification', function (done) {

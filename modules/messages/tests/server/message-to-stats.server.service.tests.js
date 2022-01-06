@@ -2,14 +2,11 @@
  * Module dependencies.
  */
 const mongoose = require('mongoose');
-const path = require('path');
 const _ = require('lodash');
 const async = require('async');
-const config = require(path.resolve('./config/config'));
-const messageToStatsService = require(path.resolve(
-  './modules/messages/server/services/message-to-stats.server.service',
-));
-const utils = require(path.resolve('./testutils/server/data.server.testutil'));
+const config = require('../../../../config/config');
+const messageToStatsService = require('../../server/services/message-to-stats.server.service');
+const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User');

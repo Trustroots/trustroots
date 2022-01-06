@@ -1,12 +1,11 @@
 var _ = require('lodash'),
-    path = require('path'),
     async = require('async'),
     moment = require('moment'),
-    mongooseService = require(path.resolve('./config/lib/mongoose')),
+    mongooseService = require('../../config/lib/mongoose'),
     mongoose = require('mongoose'),
-    statsService = require(path.resolve('./modules/stats/server/services/stats.server.service'));
+    statsService = require('../../modules/stats/server/services/stats.server.service');
 
-require(path.resolve('./modules/users/server/models/user.server.model'));
+require('../../modules/users/server/models/user.server.model');
 var User = mongoose.model('User');
 
 var cumulativeUserCount = 0;

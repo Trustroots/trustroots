@@ -1,11 +1,6 @@
 const should = require('should');
-const path = require('path');
-const statsService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
-const influxService = require(path.resolve(
-  './modules/stats/server/services/influx.server.service',
-));
+const statsService = require('../../../server/services/stats.server.service');
+const influxService = require('../../../server/services/influx.server.service');
 const sinon = require('sinon');
 
 describe('General Stats API Service Unit Tests', function () {

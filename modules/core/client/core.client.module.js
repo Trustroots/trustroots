@@ -19,7 +19,6 @@ require('@/modules/core/client/directives/tr-editor.client.directive');
 require('@/modules/core/client/directives/tr-flashcards.client.directive');
 require('@/modules/core/client/directives/tr-focustip.client.directive');
 require('@/modules/core/client/directives/tr-highlight-on-focus.client.directive');
-require('@/modules/core/client/directives/tr-languages.client.directive');
 require('@/modules/core/client/directives/tr-location.client.directive');
 require('@/modules/core/client/directives/tr-page-title.client.directive');
 require('@/modules/core/client/directives/tr-placeholder.client.directive');

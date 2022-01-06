@@ -7,10 +7,9 @@
 /**
  * Module dependencies.
  */
-const path = require('path');
 const _ = require('lodash');
 const winston = require('winston');
-const config = require(path.resolve('./config/config'));
+const config = require('../config');
 
 // Requiring `winston-papertrail` will expose
 // `winston.transports.Papertrail`

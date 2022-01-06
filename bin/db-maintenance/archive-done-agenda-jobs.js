@@ -16,10 +16,9 @@
  */
 
 const { MongoClient } = require('mongodb');
-const path = require('path');
 const chalk = require('chalk');
 const async = require('async');
-const config = require(path.resolve('./config/config'));
+const config = require('../../config/config');
 
 let dbClient;
 let sourceCollection;

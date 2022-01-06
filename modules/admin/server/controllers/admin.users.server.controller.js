@@ -3,12 +3,9 @@
  */
 const _ = require('lodash');
 const mongoose = require('mongoose');
-const path = require('path');
 
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const log = require(path.resolve('./config/lib/logger'));
+const errorService = require('../../../core/server/services/error.server.service');
+const log = require('../../../../config/lib/logger');
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');

@@ -2,14 +2,9 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const languages = require(path.resolve('./config/languages/languages.json'));
-const authenticationService = require(path.resolve(
-  './modules/users/server/services/authentication.server.service',
-));
+const textService = require('../../../core/server/services/text.server.service');
+const languages = require('../../../../config/languages/languages.json');
+const authenticationService = require('../services/authentication.server.service');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const uniqueValidation = require('mongoose-beautiful-unique-validation');
@@ -201,6 +196,12 @@ const UserSchema = new Schema({
   },
   usernameUpdated: {
     type: Date,
+  },
+  // Couchers.org username
+  extSitesCouchers: {
+    type: String,
+    trim: true,
+    set: setPlainTextField,
   },
   // Bewelcome.org username
   extSitesBW: {

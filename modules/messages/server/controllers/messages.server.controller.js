@@ -2,35 +2,20 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const async = require('async');
 const sanitizeHtml = require('sanitize-html');
 const paginate = require('express-paginate');
 const moment = require('moment');
 const mongoose = require('mongoose');
-const config = require(path.resolve('./config/config'));
-const log = require(path.resolve('./config/lib/logger'));
-const messageToStatsService = require(path.resolve(
-  './modules/messages/server/services/message-to-stats.server.service',
-));
-const messageStatService = require(path.resolve(
-  './modules/messages/server/services/message-stat.server.service',
-));
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const spamService = require(path.resolve(
-  './modules/core/server/services/spam.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
-const statService = require(path.resolve(
-  './modules/stats/server/services/stats.server.service',
-));
+const config = require('../../../../config/config');
+const log = require('../../../../config/lib/logger');
+const messageToStatsService = require('../services/message-to-stats.server.service');
+const messageStatService = require('../services/message-stat.server.service');
+const errorService = require('../../../core/server/services/error.server.service');
+const textService = require('../../../core/server/services/text.server.service');
+const spamService = require('../../../core/server/services/spam.server.service');
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const statService = require('../../../stats/server/services/stats.server.service');
 
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');

@@ -1,10 +1,8 @@
 /**
  * Utility helpers for testing backend code
  */
-
-const path = require('path');
-const config = require(path.resolve('./config/config'));
-const agenda = require(path.resolve('./config/lib/agenda'));
+const config = require('../../config/config');
+const agenda = require('../../config/lib/agenda');
 
 /**
  * Helper for testing Agenda jobs

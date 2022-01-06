@@ -3,19 +3,10 @@
  */
 
 const _ = require('lodash');
-const path = require('path');
-const errorService = require(path.resolve(
-  './modules/core/server/services/error.server.service',
-));
-const textService = require(path.resolve(
-  './modules/core/server/services/text.server.service',
-));
-const emailService = require(path.resolve(
-  './modules/core/server/services/email.server.service',
-));
-const userProfile = require(path.resolve(
-  './modules/users/server/controllers/users.profile.server.controller',
-));
+const errorService = require('../../../core/server/services/error.server.service');
+const textService = require('../../../core/server/services/text.server.service');
+const emailService = require('../../../core/server/services/email.server.service');
+const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const sanitizeHtml = require('sanitize-html');
 const htmlToText = require('html-to-text');
 const async = require('async');

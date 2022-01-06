@@ -2,10 +2,9 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const path = require('path');
 const should = require('should');
-const testutils = require(path.resolve('./testutils/server/server.testutil'));
-const config = require(path.resolve('./config/config'));
+const testutils = require('../../../../../testutils/server/server.testutil');
+const config = require('../../../../../config/config');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
@@ -23,9 +22,7 @@ describe('Job: user finish signup', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {
-    userFinishSignupJobHandler = require(path.resolve(
-      './modules/users/server/jobs/user-finish-signup.server.job',
-    ));
+    userFinishSignupJobHandler = require('../../../server/jobs/user-finish-signup.server.job');
   });
 
   // Create an unconfirmed user
