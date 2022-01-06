@@ -46,6 +46,7 @@ describe('Statistics CRUD tests', () => {
     const _usersPublic2 = utils.generateUsers(2, {
       public: true,
       newsletter: true,
+      extSitesCouchers: 'username',
       extSitesCS: 'username',
       extSitesBW: 'username',
       extSitesWS: '12312312',

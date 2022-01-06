@@ -197,6 +197,12 @@ const UserSchema = new Schema({
   usernameUpdated: {
     type: Date,
   },
+  // Couchers.org username
+  extSitesCouchers: {
+    type: String,
+    trim: true,
+    set: setPlainTextField,
+  },
   // Bewelcome.org username
   extSitesBW: {
     type: String,
