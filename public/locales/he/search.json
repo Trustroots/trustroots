@@ -1,6 +1,6 @@
 {
     "Clear members search": "ניקוי חיפוש",
-    "Search": "חפשי",
+    "Search": "חיפוש",
     "Zoom closer to find members.": "התקרבי כד למצוא חברים.",
     "Type name, username…": "נא לכתוב שם, שם משתמש…",
     "Search members": "חפשי חברים",
@@ -8,5 +8,7 @@
     "{{count}} members found_0": "חבר אחד נמצא",
     "{{count}} members found_1": "{{count}} חברים נמצאו",
     "{{count}} members found_2": "{{count}} חברים נמצאו",
-    "{{count}} members found_3": "{{count}} חברים נמצאו"
+    "{{count}} members found_3": "{{count}} חברים נמצאו",
+    "Select languages…": "בחירת שפות…",
+    "Spoken languages": "שפות שיש לך שליטה בהן"
 }
