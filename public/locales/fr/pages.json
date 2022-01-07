@@ -331,5 +331,11 @@
     "In the future, we would like to host a support ticket system on our own servers.": "À l'avenir, nous souhaiterions héberger un système de tickets d'assistance sur nos propres serveurs.",
     "Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk servers. You can <2>see their privacy policy</2>.": "La communication avec notre équipe d'assistance (par e-mail ou via le formulaire de contact) est gérée via Zendesk et stockée sur les serveurs de Zendesk. Vous pouvez <2>consulter leur politique de confidentialité</2>.",
     "Be yourself, helpful, kind, responsible.": "Soyez vous-même, utile, gentil, responsable.",
-    "Be respectful of others and restrain from any kind of abusive behaviour.": "Soyez respectueux des autres et abstenez-vous de toute forme de comportement abusif."
+    "Be respectful of others and restrain from any kind of abusive behaviour.": "Soyez respectueux des autres et abstenez-vous de toute forme de comportement abusif.",
+    "Last updated on {{date, LL}}": "Dernière mise à jour le {{date, LL}}",
+    "Our currency is hospitality: don't ask or accept any form of monetary exchange to use Trustroots.": "Notre devise est l'hospitalité : ne demandez ni n'acceptez aucune forme d'échange d'argent pour utiliser Trustroots.",
+    "Trustroots profile": "Profil Trustroots",
+    "Members on Trustroots can download their profile, contact and hosting data through the <1>Account settings</1>.": "Les membres de Trustroots peuvent télécharger leurs informations de profil, de contact et d'hébergement depuis les <1>Paramètres du compte</1>.",
+    "You are able to remove your profile from the Trustroots by asking us to delete your account through the <2>Account settings</2>.": "Vous avez la possibilité de supprimer votre profil Trustroots en nous demandant de supprimer votre compte via les <2>Paramètres du compte</2>.",
+    "{{date, LL}}": "{{date, LL}}"
 }
