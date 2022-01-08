@@ -179,6 +179,10 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('Rules'),
               },
               {
+                href: 'https://trustroots.teemill.com',
+                label: t('Shop'),
+              },
+              {
                 href: '/team',
                 label: t('Team'),
               },
