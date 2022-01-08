@@ -91,6 +91,9 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
         <a className="list-group-item" href="/rules">
           {t('Rules')}
         </a>
+        <a className="list-group-item" href="https://trustroots.teemill.com">
+          {t('Shop')}
+        </a>
       </div>
 
       <div className="container font-brand-regular">
