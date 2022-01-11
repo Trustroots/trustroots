@@ -338,5 +338,11 @@
     "Be yourself, helpful, kind, responsible.": "Sii te stesso, utile, gentile, responsabile.",
     "Be respectful of others and restrain from any kind of abusive behaviour.": "Sii rispettoso degli altri e trattieniti dal comportarti in modo inappropriato.",
     "In the future, we would like to host a support ticket system on our own servers.": "In futuro, vorremo ospitare il sistema di assistenza agli utenti sui nostri server.",
-    "Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk servers. You can <2>see their privacy policy</2>.": "Le comunicazioni con la nostra squadra di assistenza (via email o tramite modulo di contatto) sono gestite con Zendesk e memorizzate sui server di Zendesk. Puoi <2>vedere il loro regolamento sul trattamento dei dati</2>."
+    "Communication with our support team (via e-mail or contact form) is managed via Zendesk and stored on Zendesk servers. You can <2>see their privacy policy</2>.": "Le comunicazioni con la nostra squadra di assistenza (via email o tramite modulo di contatto) sono gestite con Zendesk e memorizzate sui server di Zendesk. Puoi <2>vedere il loro regolamento sul trattamento dei dati</2>.",
+    "Last updated on {{date, LL}}": "Aggiornato il {{date, LL}}",
+    "Members on Trustroots can download their profile, contact and hosting data through the <1>Account settings</1>.": "I membri di Trustroots possono scaricare il loro profilo, contatti e dati sull'ospitalità dalle <1>Impostazioni del profilo</1>.",
+    "Trustroots profile": "Profilo Trustroots",
+    "{{date, LL}}": "{{date, LL}}",
+    "You are able to remove your profile from the Trustroots by asking us to delete your account through the <2>Account settings</2>.": "Puoi eliminare il tuo profilo da Trustroots chiedendocelo dalle <2>Impostazioni del profilo</2>.",
+    "Our currency is hospitality: don't ask or accept any form of monetary exchange to use Trustroots.": "La nostra valuta è l'ospitalità; non chiedere né accettare nessuna forma di compenso monetario per usare Trustroots."
 }
