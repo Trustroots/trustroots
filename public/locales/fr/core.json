@@ -56,5 +56,10 @@
     "Circles": "Cercles",
     "Blog": "Blog",
     "Account": "Compte",
-    "About": "À propos"
+    "About": "À propos",
+    "Start typing a language…": "Commencez à taper une langue…",
+    "No languages found; try typing something else.": "Aucune langue trouvée, essayez de taper autre chose.",
+    "Loading…": "Chargement…",
+    "Select…": "Sélectionner…",
+    "Snap! Something went wrong. If this keeps happening, please contact us.": "Oups ! Une erreur s'est produite. Si cela se reproduit, veuillez nous contacter."
 }

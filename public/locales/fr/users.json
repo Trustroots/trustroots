@@ -98,5 +98,6 @@
     "Could not unblock this member.": "Il n'a pas été possible de débloquer cet·te utilisateur·ice.",
     "Could not block this member.": "Il n'a pas été possible de bloquer cet·te utilisateur·ice.",
     "Block member \"{{username}}\"": "Bloquer le membre \"{{username}}\"",
-    "Block member": "Bloquer ce membre"
+    "Block member": "Bloquer ce membre",
+    "Add languages you speak.": "Ajoutez les langues que vous parlez."
 }
