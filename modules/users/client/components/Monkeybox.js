@@ -51,6 +51,8 @@ TribesInCommon.propTypes = {
   otherUser: userType.isRequired,
 };
 
+// Required by LanguageList
+// @TODO: move this to higher up in the React tree once we no longer deal with Angular
 const queryClient = new QueryClient();
 
 export default function Monkeybox({ user, otherUser }) {
