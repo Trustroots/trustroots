@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import { useTranslation } from 'react-i18next';
+import { QueryClient, QueryClientProvider } from 'react-query';
 
 import {
   getRouteParams,
@@ -24,6 +25,10 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
 import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
+
+// Required by LanguageList in Monkeybox component
+// @TODO: move this to higher up in the React tree once we no longer deal with Angular
+const queryClient = new QueryClient();
 
 const api = {
   messages: messagesAPI,
@@ -344,7 +349,9 @@ export default function Thread({ user, profileMinimumLength }) {
         </div>
         {otherUser && !isExtraSmall && !removed && (
           <div className="col-sm-3 text-center">
-            <Monkeybox user={otherUser} otherUser={user} />
+            <QueryClientProvider client={queryClient}>
+              <Monkeybox user={otherUser} otherUser={user} />
+            </QueryClientProvider>
             {messages.length > 0 && (
               <ReferenceThread userToId={otherUser._id} />
             )}

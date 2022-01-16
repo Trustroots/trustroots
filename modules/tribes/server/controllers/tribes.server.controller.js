@@ -41,8 +41,6 @@ const setLinkHeader = function (req, res, pageCount) {
  * List all tribes
  */
 exports.listTribes = function (req, res) {
-  console.log('req.query.limit:', req.query.limit); //eslint-disable-line
-
   // Sort either by count or alphabetically
   const sort =
     req?.query?.sortBy === 'alphabetically'
