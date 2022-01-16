@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 // Internal dependencies
 import { userType } from '@/modules/users/client/users.prop-types';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import LanguageList from './LanguageList';
 
@@ -50,27 +51,33 @@ TribesInCommon.propTypes = {
   otherUser: userType.isRequired,
 };
 
+// Required by LanguageList
+// @TODO: move this to higher up in the React tree once we no longer deal with Angular
+const queryClient = new QueryClient();
+
 export default function Monkeybox({ user, otherUser }) {
   const { t } = useTranslation('users');
   return (
-    <div className="monkeybox panel panel-default">
-      <div className="panel-body">
-        <Avatar user={user} size={64} />
-        <h3>
-          <a href={`/profile/${user.username}`}>{user.displayName}</a>
-        </h3>
-        <TribesInCommon user={user} otherUser={otherUser} />
-        {user.languages.length > 0 && (
-          <div className="monkeybox-section">
-            <h4>{t('Languages')}</h4>
-            <LanguageList
-              className="list-unstyled"
-              languages={user.languages}
-            />
-          </div>
-        )}
+    <QueryClientProvider client={queryClient}>
+      <div className="monkeybox panel panel-default">
+        <div className="panel-body">
+          <Avatar user={user} size={64} />
+          <h3>
+            <a href={`/profile/${user.username}`}>{user.displayName}</a>
+          </h3>
+          <TribesInCommon user={user} otherUser={otherUser} />
+          {user.languages.length > 0 && (
+            <div className="monkeybox-section">
+              <h4>{t('Languages')}</h4>
+              <LanguageList
+                className="list-unstyled"
+                languages={user.languages}
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </QueryClientProvider>
   );
 }
 

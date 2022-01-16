@@ -1,12 +1,12 @@
 {
-    "Lives in <2>{{locationLiving}}</2>": "מתגורר ב<2>{{locationLiving}}</2>",
+    "Lives in <2>{{locationLiving}}</2>": "מגורים ב<2>{{locationLiving}}</2>",
     "Please ensure you are connected to internet and try again.": "אני יודעת שהתשתיות באזור לא משהו אבל נא וודאי שיש לך חיבור לאינטרנט ונסי שוב.",
     "Send a message": "שלחי הודעה",
     "Support": "תמיכה",
-    "Find people": "חפשי אנשים",
-    "Contacts": "חברים",
+    "Find people": "חיפוש אנשים",
+    "Contacts": "אנשי קשר",
     "Edit your profile": "עריכת פרופיל",
-    "About": "אודות",
+    "About": "על אודות",
     "“Everyone is necessarily the hero of their own life story.”": "\"את הגיבורה בסיפור החיים שלך!\"",
     "Open user profile for {{name}}": "פתחי את הפרופיל של {{name}}",
     "Don't panic!": "צ'יל אאוט!",
@@ -78,5 +78,6 @@
     "{{count}} experiences_0": "חוויה אחת",
     "{{count}} experiences_1": "{{count}} חוויות",
     "{{count}} experiences_2": "{{count}} חוויות",
-    "{{count}} experiences_3": "{{count}} חוויות"
+    "{{count}} experiences_3": "{{count}} חוויות",
+    "Add languages you speak.": "הוספות ששפות שיש לך שליטה בהן."
 }
