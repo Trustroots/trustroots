@@ -8,15 +8,7 @@ import * as api from '../api/tribes.api';
 import JoinButton from './JoinButton';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import { canUseWebP } from '@/modules/core/client/utils/dom';
-import { getCircleBackgroundUrl } from '@/modules/tribes/client/utils';
-
-const imageFormat = canUseWebP() ? 'webp' : 'jpg';
-const imageUrl = getCircleBackgroundUrl(circle.slug, '1400x900', imageFormat);
-
-const CircleBoard = styled.section`
-  background-image: url(${imageUrl});
-`;
+// import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 
 export default function CirclePage({ user }) {
   const [circle, setCircle] = useState(null);
@@ -57,6 +49,11 @@ export default function CirclePage({ user }) {
     );
   }
 
+  // const circleStyles = getCircleBackgroundStyle(circle, '1400x900');
+  //  background-image: url(${circleStyles.backgroundImage});
+  //  background-color: ${circleStyles.backgroundColor};
+  const CircleBoard = styled.section``;
+
   return (
     <CircleBoard
       className={classnames('board tribe-image tribe-header', {
@@ -92,7 +89,13 @@ export default function CirclePage({ user }) {
                 )}
                 <br />
                 <br />
-                <JoinButton tribe={circle} user={user} onUpdated={() => {}} />
+                <JoinButton
+                  icon={false}
+                  size="lg"
+                  style="primary"
+                  tribe={circle}
+                  user={user}
+                />
                 &nbsp;
                 <a
                   className="btn btn-lg btn-default"

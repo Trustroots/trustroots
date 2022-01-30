@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import classnames from 'classnames';
 import { useTranslation } from 'react-i18next';
+
 import LeaveTribeModal from './LeaveTribeModal';
 import Tooltip from '@/modules/core/client/components/Tooltip';
-
 import * as api from '../api/tribes.api';
 
 function JoinButtonPresentational({
+  icon = true,
+  size = 'sm',
+  style = 'default',
   isMember,
   isLoading,
   tribe,
   isLoggedIn,
-  onToggle,
+  onToggle = () => {},
 }) {
   const { t } = useTranslation('circles');
 
@@ -20,15 +24,26 @@ function JoinButtonPresentational({
     : t('Join ({{label}})', { label: tribe.label });
   const buttonLabel = isMember ? t('Joined') : t('Join');
 
+  const className = classnames(
+    'btn',
+    `btn-${size}`,
+    `btn-${style}`,
+    'tribe-join',
+    {
+      'btn-active': isMember,
+    },
+  );
+
   // a button to be shown when user is signed out
   if (!isLoggedIn) {
     return (
       <a
         href={`/signup?tribe=${tribe.slug}`}
         type="button"
-        className="btn btn-sm btn-default tribe-join"
+        className={className}
       >
-        <i className="icon-plus" /> {buttonLabel}
+        {icon && <i className="icon-plus" />}
+        {buttonLabel}
       </a>
     );
   }
@@ -38,24 +53,26 @@ function JoinButtonPresentational({
       tooltip={t('Leave circle')}
       placement="bottom"
       hidden={!isMember}
-      id={`tribe-${tribe._id}`}
+      id={`circle-${tribe._id}`}
     >
       <button
         type="button"
-        className={`${
-          isMember ? 'btn-active' : ''
-        } btn btn-sm btn-default tribe-join`}
+        className={className}
         disabled={isLoading}
         aria-label={ariaLabel}
         onClick={onToggle}
       >
-        <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
+        {icon && <i className={isMember ? 'icon-ok' : 'icon-plus'} />}
+        {buttonLabel}
       </button>
     </Tooltip>
   );
 }
 
 JoinButtonPresentational.propTypes = {
+  size: PropTypes.string,
+  style: PropTypes.string,
+  icon: PropTypes.bool,
   isMember: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool,
   isLoggedIn: PropTypes.bool.isRequired,
@@ -64,7 +81,15 @@ JoinButtonPresentational.propTypes = {
 };
 
 // @TODO this can (and should) be replaced by other container, when we finish the migration; when we start using redux etc.
-export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
+export default function JoinButton({
+  tribe,
+  user,
+  onUpdated = () => {},
+  style,
+  size,
+  icon,
+  ...rest
+}) {
   // isLeaving controls whether the modal for leaving a tribe is shown
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -131,6 +156,9 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
         isLoggedIn={!!user}
         isMember={isMember}
         isLoading={isUpdating}
+        size={size}
+        style={style}
+        icon={icon}
         {...rest}
         onToggle={handleToggleMembership}
       />
@@ -139,6 +167,9 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 }
 
 JoinButton.propTypes = {
+  icon: PropTypes.bool,
+  size: PropTypes.string,
+  style: PropTypes.string,
   tribe: PropTypes.object.isRequired,
   user: PropTypes.object,
   onUpdated: PropTypes.func.isRequired,

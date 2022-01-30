@@ -8,7 +8,6 @@ AppConfig.registerModule('tribes', ['core']);
 require('@/modules/tribes/client/config/tribes.client.routes');
 
 // controllers
-require('@/modules/tribes/client/controllers/tribe.client.controller');
 require('@/modules/tribes/client/controllers/tribes-list.client.controller');
 
 // directives
