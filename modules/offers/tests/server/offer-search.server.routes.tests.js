@@ -1148,7 +1148,43 @@ describe('Offer search tests', function () {
       });
     });
   });
+  /*
+  describe('Exclude offers from shadowbanned, suspended and non-public users', () => {
+    afterEach(async () => {
+      await utils.signOut(agent);
+    });
 
+    ['shadowban', 'suspended'].forEach(role => {
+      it(`should not see users with "${role}"`, async () => {
+        user3.roles = [role];
+        await user3.save();
+        await utils.signIn(credentials, agent);
+
+        const { body } = await agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          .expect(200)
+          .end();
+
+        // body.features.should.have.lengthOf(1);
+        console.log('🚀', role, body); //eslint-disable-line
+      });
+    });
+
+    it(`should not see users which are not public`, async () => {
+      user3.public = false;
+      await user3.save();
+      await utils.signIn(credentials, agent);
+
+      const { body } = await agent
+        .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+        .expect(200)
+        .end();
+
+      // body.features.should.have.lengthOf(1);
+      console.log('🚀 non public', body); //eslint-disable-line
+    });
+  });
+*/
   it('should be able to get offers from users with circles in common and have "showOnlyInMyCircles" set', function (done) {
     // Verify that offers where showOnlyInMyCircles is true are only appearing
     // in searches where the authenticated user (user1) has at least one circle
