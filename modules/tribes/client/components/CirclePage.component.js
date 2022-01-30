@@ -1,12 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
+import classnames from 'classnames';
+import styled from 'styled-components';
 
 import * as api from '../api/tribes.api';
 import JoinButton from './JoinButton';
 import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import { canUseWebP } from '@/modules/core/client/utils/dom';
+import { getCircleBackgroundUrl } from '@/modules/tribes/client/utils';
 
-export default function CirclePage({ user, goBack }) {
+const imageFormat = canUseWebP() ? 'webp' : 'jpg';
+const imageUrl = getCircleBackgroundUrl(circle.slug, '1400x900', imageFormat);
+
+const CircleBoard = styled.section`
+  background-image: url(${imageUrl});
+`;
+
+export default function CirclePage({ user }) {
   const [circle, setCircle] = useState(null);
   const { t } = useTranslation('tribes');
 
@@ -21,19 +33,11 @@ export default function CirclePage({ user, goBack }) {
 
   // Circle loading
   if (!circle) {
-    return (
-      <div className="container container-spacer text-muted text-center">
-        {/* <!-- tr-spinner will have `aria-busy` etc --> */}
-        {/* <tr-spinner size="sm"></tr-spinner> */}
-        <br />
-        <br />
-        <small aria-hidden="true">{t('Wait a moment...')}</small>
-      </div>
-    );
+    return <LoadingIndicator />;
   }
 
   // Circle not found
-  if (!circle._id) {
+  if (!circle?._id) {
     return (
       <section className="container container-spacer">
         <div className="row">
@@ -44,7 +48,7 @@ export default function CirclePage({ user, goBack }) {
                 `The circle you're seeking isn't here. Check if your address is correct.`,
               )}
             </p>
-            <a onClick={goBack} className="btn btn-primary">
+            <a href="/circles" className="btn btn-primary">
               {t('See other circles')}
             </a>
           </div>
@@ -53,19 +57,18 @@ export default function CirclePage({ user, goBack }) {
     );
   }
 
-  // Circle found
   return (
-    <section
-      className={`board tribe-image tribe-header ${!user ? 'is-guest' : ''}`}
-      tr-tribe-styles="{{::tribeCtrl.tribe}}"
-      tr-tribe-styles-dimensions="1400x900"
+    <CircleBoard
+      className={classnames('board tribe-image tribe-header', {
+        'is-guest': !user,
+      })}
     >
       <div className="tribe-header-info">
         <div className="container">
           <div className="row no-gutters">
             <div className="col-xs-12">
               <a
-                onClick={goBack}
+                href="/circles"
                 className="btn btn-lg btn-link tribe-header-back"
               >
                 <i className="icon-left"></i>
@@ -76,21 +79,16 @@ export default function CirclePage({ user, goBack }) {
           <div className="row">
             {/* For authenticated members */}
             {user && (
-              <div
-                className="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5"
-                // ng-if="app.user"
-              >
+              <div className="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5">
                 <p className="lead tribe-pre">{t('Circle')}</p>
                 <h2 className="font-brand-regular tribe-title">
                   {circle.label}
                 </h2>
                 <div className="tribe-meta">
-                  {circle.count === 0 && t('No members yet')}
-                  {circle.count === 1 && t('One memeber')}
-                  {circle.count > 1 && t(`${circle.count} members`)}
+                  {t('{{count}} members', { count: circle.count })}
                 </div>
                 {circle.description && (
-                  <div className="lead tribe-meta">{t(circle.description)}</div>
+                  <div className="lead tribe-meta">{circle.description}</div>
                 )}
                 <br />
                 <br />
@@ -110,20 +108,6 @@ export default function CirclePage({ user, goBack }) {
                     'Trustroots is built on communities. Share this page within your community and invite them to join!',
                   )}
                 </p>
-                {circle.label && (
-                  <>
-                    {/* Twitter share button */}
-                    <div
-                      className="tribe-share"
-                      tr-share-twitter
-                      data-text={t(
-                        `Join to meet, host and get hosted by Trustroots circle ${circle.label} — I'm in!`,
-                      )}
-                    ></div>
-                    {/* FB share button */}
-                    <div className="tribe-share" tr-share-fb></div>
-                  </>
-                )}
               </div>
             )}
             {/* For non authenticated members */}
@@ -131,12 +115,10 @@ export default function CirclePage({ user, goBack }) {
               <div className="col-xs-12 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5">
                 <p className="lead tribe-pre">{t('Trustroots circle')}</p>
                 <h2 className="font-brand-regular tribe-title">
-                  {t(circle.label)}
+                  {circle.label}
                 </h2>
                 <div className="lead tribe-meta">
-                  {circle.count === 0 && t('No members yet')}
-                  {circle.count === 1 && t('One memeber')}
-                  {circle.count > 1 && t(`${circle.count} members`)}
+                  {t('{{count}} members', { count: circle.count })}
                 </div>
                 <br />
                 <br />
@@ -153,14 +135,16 @@ export default function CirclePage({ user, goBack }) {
                   <br />
                   <a
                     className="btn btn-lg btn-primary btn-action tribe-join"
-                    ui-sref="signup({'tribe': tribeCtrl.tribe.slug})"
+                    href={`/signup?tribe=${circle.slug}`}
                   >
-                    {t(`Join ${circle.label} on Trustroots`)}
+                    {t(`Join {{circle}} on Trustroots`, {
+                      circle: circle.label,
+                    })}
                   </a>
                   <br />
                   <a
                     className="btn btn-lg btn-link tribe-readmore"
-                    ui-sref="home({'circle': tribeCtrl.tribe.slug})"
+                    href={`/?circle=${circle.slug}`}
                   >
                     <i className="icon-right"></i>
                     {t('How does it work?')}
@@ -172,19 +156,21 @@ export default function CirclePage({ user, goBack }) {
         </div>
         {circle.attribution && (
           <small className="hidden-xs font-brand-light tribe-attribution">
-            {t('Photo by')}
-            {circle.attribution._url && (
-              <a href={circle.attribution_url}>{circle.attribution}</a>
-            )}
-            {!circle.attribution_url && <span>{circle.attribution}</span>}
+            <Trans ns="tribes" t={t}>
+              Photo by
+              {circle.attribution._url ? (
+                <a href={circle.attribution_url}>{circle.attribution}</a>
+              ) : (
+                circle.attribution
+              )}
+            </Trans>
           </small>
         )}
       </div>
-    </section>
+    </CircleBoard>
   );
 }
 
 CirclePage.propTypes = {
   user: PropTypes.object,
-  goBack: PropTypes.func,
 };

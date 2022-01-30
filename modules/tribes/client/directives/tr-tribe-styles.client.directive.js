@@ -1,6 +1,8 @@
 import { canUseWebP } from '@/modules/core/client/utils/dom';
 import { getCircleBackgroundUrl } from '@/modules/tribes/client/utils';
 
+const imageFormat = canUseWebP() ? 'webp' : 'jpg';
+const imageUrl = getCircleBackgroundUrl(tribe.slug, dimensions, imageFormat);
 /**
  * Directive to apply tribe color + image styles to an element
  *

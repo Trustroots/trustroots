@@ -27,22 +27,7 @@ function TribesRoutes($stateProvider) {
     .state('circles.circle', {
       url: '/:circle',
       footerHidden: true,
-      // templateUrl: showTemplateUrl,
-      controller: 'TribeController',
-      controllerAs: 'tribeCtrl',
-      template: `<circle-page
-          user="app.user"
-          goBack=tribeCtrl.goBack         
-        ></circle-page>`,
-      resolve: {
-        // A string value resolves to a service
-        TribeService: 'TribeService',
-        tribe(TribeService, $stateParams) {
-          return TribeService.get({
-            tribeSlug: $stateParams.circle,
-          });
-        },
-      },
+      template: '<circle-page user="app.user"></circle-page>',
       data: {
         pageTitle: 'Circle',
       },
