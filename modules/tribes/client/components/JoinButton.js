@@ -7,94 +7,20 @@ import LeaveTribeModal from './LeaveTribeModal';
 import Tooltip from '@/modules/core/client/components/Tooltip';
 import * as api from '../api/tribes.api';
 
-function JoinButtonPresentational({
-  icon = true,
-  size = 'sm',
-  style = 'default',
-  isMember,
-  isLoading,
-  tribe,
-  isLoggedIn,
-  onToggle = () => {},
-}) {
-  const { t } = useTranslation('circles');
-
-  const ariaLabel = isMember
-    ? t('Leave circle')
-    : t('Join ({{label}})', { label: tribe.label });
-  const buttonLabel = isMember ? t('Joined') : t('Join');
-
-  const className = classnames(
-    'btn',
-    `btn-${size}`,
-    `btn-${style}`,
-    'tribe-join',
-    {
-      'btn-active': isMember,
-    },
-  );
-
-  // a button to be shown when user is signed out
-  if (!isLoggedIn) {
-    return (
-      <a
-        href={`/signup?tribe=${tribe.slug}`}
-        type="button"
-        className={className}
-      >
-        {icon && <i className="icon-plus" />}
-        {buttonLabel}
-      </a>
-    );
-  }
-
-  return (
-    <Tooltip
-      tooltip={t('Leave circle')}
-      placement="bottom"
-      hidden={!isMember}
-      id={`circle-${tribe._id}`}
-    >
-      <button
-        type="button"
-        className={className}
-        disabled={isLoading}
-        aria-label={ariaLabel}
-        onClick={onToggle}
-      >
-        {icon && <i className={isMember ? 'icon-ok' : 'icon-plus'} />}
-        {buttonLabel}
-      </button>
-    </Tooltip>
-  );
-}
-
-JoinButtonPresentational.propTypes = {
-  size: PropTypes.string,
-  style: PropTypes.string,
-  icon: PropTypes.bool,
-  isMember: PropTypes.bool.isRequired,
-  isLoading: PropTypes.bool,
-  isLoggedIn: PropTypes.bool.isRequired,
-  tribe: PropTypes.object.isRequired,
-  onToggle: PropTypes.func,
-};
-
-// @TODO this can (and should) be replaced by other container, when we finish the migration; when we start using redux etc.
 export default function JoinButton({
   tribe,
   user,
   onUpdated = () => {},
-  style,
-  size,
-  icon,
+  style = 'default',
+  size = 'sm',
+  icon = true,
   ...rest
 }) {
+  const { t } = useTranslation('circles');
+
   // isLeaving controls whether the modal for leaving a tribe is shown
   const [isLeaving, setIsLeaving] = useState(false);
-
   const [isUpdating, setIsUpdating] = useState(false);
-
   const isMemberInitial = (user?.memberIds || []).includes(tribe._id);
   const [isMember, setIsMember] = useState(isMemberInitial);
 
@@ -104,6 +30,11 @@ export default function JoinButton({
    * - Leave: show confirmation modal
    */
   async function handleToggleMembership() {
+    // Just redirect to signup if not logged in
+    if (!user) {
+      window.location = `/signup?tribe=${tribe.slug}`;
+    }
+
     if (isUpdating) {
       return;
     }
@@ -151,17 +82,37 @@ export default function JoinButton({
         onConfirm={handleLeave}
         onCancel={handleCancelLeave}
       />
-      <JoinButtonPresentational
-        tribe={tribe}
-        isLoggedIn={!!user}
-        isMember={isMember}
-        isLoading={isUpdating}
-        size={size}
-        style={style}
-        icon={icon}
-        {...rest}
-        onToggle={handleToggleMembership}
-      />
+      <Tooltip
+        tooltip={t('Leave circle')}
+        placement="bottom"
+        hidden={!isMember}
+        id={`tooltip-circle-${tribe._id}`}
+      >
+        <button
+          type="button"
+          className={classnames(
+            'btn',
+            `btn-${size}`,
+            `btn-${style}`,
+            'tribe-join',
+            {
+              'btn-active': isMember,
+              'btn-disabled': isUpdating,
+            },
+          )}
+          disabled={isUpdating}
+          aria-label={
+            isMember
+              ? t('Leave circle')
+              : t('Join ({{label}})', { label: tribe.label })
+          }
+          onClick={handleToggleMembership}
+          {...rest}
+        >
+          {icon && <i className={isMember ? 'icon-ok' : 'icon-plus'} />}
+          {isMember ? t('Joined') : t('Join')}
+        </button>
+      </Tooltip>
     </>
   );
 }
