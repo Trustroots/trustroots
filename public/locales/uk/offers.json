@@ -13,8 +13,8 @@
     "Change": "Змінити",
     "Cannot host currently": "Наразі не можу прийняти",
     "Can host": "Можу прийняти",
-    "At most {{count}} guests._0": "Максимум один гість.",
-    "At most {{count}} guests._1": "Максимум {{count}} гостей.",
-    "At most {{count}} guests._2": "Максимум {{count}} гостей.",
+    "At most {{count}} guests._0": "At most one guest.",
+    "At most {{count}} guests._1": "At most {{count}} guests.",
+    "At most {{count}} guests._2": "At most {{count}} guests.",
     "Accommodation": "Житло"
 }

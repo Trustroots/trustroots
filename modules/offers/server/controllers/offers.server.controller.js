@@ -527,6 +527,15 @@ exports.list = function (req, res) {
     },
   });
 
+  // Check for suspended and shadowbanned users
+  query.push({
+    $match: {
+      // We could simply do this as performance improvement, but shadowbanned users are "public".
+      'user.public': true,
+      'user.roles': { $nin: ['suspended', 'shadowban'] },
+    },
+  });
+
   // Last seen filter
   if (filters.hasObjectFilter('seen')) {
     query.push({

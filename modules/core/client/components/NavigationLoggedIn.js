@@ -159,24 +159,16 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('About'),
               },
               {
-                href: '/volunteering',
-                label: t('Volunteering'),
-              },
-              {
                 href: '/contribute',
                 label: t('Contribute'),
-              },
-              {
-                href: '/media',
-                label: t('Media'),
               },
               {
                 href: '/foundation',
                 label: t('Foundation'),
               },
               {
-                href: '/team',
-                label: t('Team'),
+                href: '/media',
+                label: t('Media'),
               },
               {
                 href: '/privacy',
@@ -185,6 +177,18 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
               {
                 href: '/rules',
                 label: t('Rules'),
+              },
+              {
+                href: 'https://trustroots.teemill.com',
+                label: t('Shop'),
+              },
+              {
+                href: '/team',
+                label: t('Team'),
+              },
+              {
+                href: '/volunteering',
+                label: t('Volunteering'),
               },
             ]}
           />
