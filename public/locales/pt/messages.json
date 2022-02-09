@@ -32,5 +32,8 @@
     "Conversation started {{ date }}": "Conversa iniciada {{ date }}",
     "Change": "Alterar",
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "... explicando que você está interessado em conhecê-lo, não apenas procurando acomodação de graça.",
-    "Yes": "Sim"
+    "Yes": "Sim",
+    "Failed to send the message. Perhaps your internet went down? Please try again.": "Falha no envio da mensagem. Talvez a sua conexão tenha caído? Por favor tente novamente.",
+    "You are writing to too many people too fast. Slow down and try later again.": "Está a escrever para muitas pessoas demasiado depressa. Por favor tente mais devagar mais tarde.",
+    "You haven't been talking yet.": "Você ainda não falou."
 }
