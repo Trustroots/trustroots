@@ -1,4 +1,12 @@
 {
     "Search": "Zoek",
-    "No members found by this name.": "Geen leden gevonden met deze naam."
+    "No members found by this name.": "Geen leden gevonden met deze naam.",
+    "Select languages…": "Kies talen…",
+    "Spoken languages": "Gesproken talen",
+    "Type name, username…": "Typ naam, gebruikersnaam…",
+    "{{count}} members found": "Eén lid gevonden",
+    "{{count}} members found_plural": "{{count}} leden gevonden",
+    "Search members": "Zoek leden",
+    "Clear members search": "Wis zoekopdracht",
+    "Zoom closer to find members.": "Zoom in om leden te vinden."
 }
