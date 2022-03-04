@@ -1,5 +1,25 @@
 {
     "Email": "Email",
     "Contact us": "Contacteer ons",
-    "<0>Become a volunteer</0> and make a difference!": "<0>Word vrijwilliger</0> en maak een verschil!"
+    "<0>Become a volunteer</0> and make a difference!": "<0>Word vrijwilliger</0> en maak een verschil!",
+    "Username": "Gebruikersnaam",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Je kan verder naar <1>home</1> of zie <4>frequently asked questions</4>",
+    "Send": "Verzend",
+    "Removing your account": "Verwijder je account",
+    "Report member": "Rapporteer lid",
+    "Frequently Asked Questions": "Veelgestelde Vragen",
+    "Please ensure you are connected to internet and try again.": "Wees er alsjeblieft zeker van dat je verbinding hebt met internet en probeer het opnieuw.",
+    "Please write in English if possible.": "Schrijft alsjeblieft in het Engels als het mogelijk is.",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Als jij of iemand je kent getuige of slachtoffer is geweest van een misdrijf, rapporteer dit alsjeblieft meteen bij de politie.",
+    "Message": "Bericht",
+    "Name": "Naam",
+    "Report member {{username}} to support": "Rapporteer lid {{username}} aan ondersteuningsteam",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Ik ben slechts een kleine website robot, maar ik heb je bericht naar ons ondersteuningsteam gestuurd. Verwacht snel een antwoord!",
+    "Reporting member": "Rapporteer lid",
+    "See also": "Zie ook",
+    "Something went wrong sending your message.": "Er ging iets fout met het verzenden van je bericht.",
+    "Trustroots Support": "Trustroots Ondersteuningsteam",
+    "Thank you!": "Bedankt!",
+    "Trustroots Support Robot": "Trustroots Ondersteuningsrobot",
+    "Wait…": "Wacht…"
 }
