@@ -55,5 +55,10 @@
     "Support": "Suporte",
     "Login": "Entrar",
     "Change map style": "Alterar estilo do mapa",
-    "Join": "Ingressar"
+    "Join": "Ingressar",
+    "Loading…": "A carregar…",
+    "No languages found; try typing something else.": "Nenhum idioma encontrado; tente digitar outra coisa.",
+    "Select…": "Selecionar…",
+    "Snap! Something went wrong. If this keeps happening, please contact us.": "Alguma coisa correu mal. Se isto continuar a acontecer, por favor contacte-nos.",
+    "Start typing a language…": "Comece a digitar um idioma…"
 }

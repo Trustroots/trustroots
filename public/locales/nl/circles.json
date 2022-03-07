@@ -1,4 +1,19 @@
 {
     "Discover circles": "Ontdek cirkels",
-    "Cancel": "Annuleer"
+    "Cancel": "Annuleer",
+    "Joining circles helps you find likeminded Trustroots members.": "Deelnemen aan cirkels helpt je gelijkgestemde Trustroots leden te vinden.",
+    "Joined": "Deelnemend",
+    "Join": "Deelnemen",
+    "Join ({{label}})": "Neem deel aan ({{label}})",
+    "Leave circle": "Verlaat cirkel",
+    "Leave this circle?": "Deze cirkel verlaten?",
+    "Missing your circle?": "Ontbreekt jouw cirkel?",
+    "No members yet": "Nog geen leden",
+    "Send us suggestions!": "Zend ons suggesties!",
+    "Sign up with Trustroots": "Meld je aan bij Trustroots",
+    "{{count, number}} members": "Eén lid",
+    "{{count, number}} members_plural": "{{count, number}} leden",
+    "Do you want to leave \"{{label}}\"?": "Wil je \"{{label}}\" verlaten?",
+    "Join Trustroots to find members behind circles.": "Meld je aan bij Trustroots om leden uit de cirkels te vinden.",
+    "New circle!": "Nieuwe cirkel!"
 }

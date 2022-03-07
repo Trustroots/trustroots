@@ -21,5 +21,9 @@
     "Decline Request": "Recusar Solicitação",
     "Contact request sent and pending.": "Solicitação de contato enviada e pendente.",
     "Connected since {{date, LL}}": "Conectado desde {{date, LL}}",
-    "Confirm Request": "Confirmar Solicitação"
+    "Confirm Request": "Confirmar Solicitação",
+    "(additional {{count}} pending)": "(mais {{count}} pendente)",
+    "(additional {{count}} pending)_plural": "(mais {{count}} pendentes)",
+    "{{count}} contacts in common": "Um contacto em comum",
+    "{{count}} contacts in common_plural": "{{count}} contactos em comum"
 }
