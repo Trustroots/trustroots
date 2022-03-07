@@ -37,7 +37,7 @@
     "english": "Norwegian (bokmål)",
     "production": true
   },
-  { "label": "Polski", "code": "pl", "english": "Polish", "production": false },
+  { "label": "Polski", "code": "pl", "english": "Polish", "production": true },
   {
     "label": "Português",
     "code": "pt",
@@ -67,7 +67,7 @@
     "label": "Русский",
     "code": "ru",
     "english": "Russian",
-    "production": false
+    "production": true
   },
   {
     "label": "Українська",
