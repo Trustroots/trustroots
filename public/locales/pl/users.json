@@ -8,7 +8,7 @@
     "Don't panic!": "",
     "Edit your profile": "Edytuj swój profil",
     "Elsewhere": "",
-    "Fill your profile": "",
+    "Fill your profile": "Uzupełnij swój profil",
     "From <1>{{locationFrom}}</1>": "",
     "Help!": "",
     "Hosting": "",
@@ -40,5 +40,8 @@
     "other": "",
     "{{birthdate, age}} years": "",
     "“Everyone is necessarily the hero of their own life story.”": "",
-    "Find people": "Szukaj ludzi"
+    "Find people": "Szukaj ludzi",
+    "{{count}} contacts_0": "{{count}} kontakt",
+    "{{count}} contacts_1": "{{count}} kontakty",
+    "{{count}} contacts_2": "{{count}} kontakty"
 }
