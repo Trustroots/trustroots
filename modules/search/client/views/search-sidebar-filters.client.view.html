@@ -6,6 +6,52 @@
   </div>
   <!-- /Offer type filter -->
 
+  <!-- Number of People offer maxGuests filter -->
+  <fieldset class="offer-maxguests">
+    <legend>
+      <h4 id="maxGuests">How many persons can the host accommodate?</h4>
+    </legend>
+    <div class="input-group input-group-stepper">
+      <span class="input-group-btn">
+        <button
+          type="button"
+          class="btn btn-lg btn-inverse-primary btn-round"
+          ng-click="search.filters.offer.maxGuests = search.filters.offer.maxGuests - 1"
+          ng-disabled="search.filters.offer.maxGuests <= 1"
+          aria-hidden="true"
+        >
+          <i class="icon-minus"></i>
+        </button>
+      </span>
+      <input
+        type="number"
+        aria-labelledby="maxGuests"
+        aria-required="true"
+        ng-disabled="!search.filters.offer"
+        ng-model="search.filters.offer.maxGuests"
+        class="form-control input-lg input-plain text-center font-brand-regular"
+        maxlength="2"
+        min="1"
+        max="10"
+        size="2"
+        step="1"
+        pattern="[0-9]{1,2}"
+      />
+      <span class="input-group-btn">
+        <button
+          type="button"
+          class="btn btn-lg btn-inverse-primary btn-round"
+          ng-click="search.filters.offer.maxGuests = search.filters.offer.maxGuests + 1"
+          ng-disabled="search.filters.offer.maxGuests >= 10"
+          aria-hidden="true"
+        >
+          <i class="icon-plus"></i>
+        </button>
+      </span>
+    </div>
+  </fieldset>
+  <!-- /Number of People offer maxGuests filter -->
+
   <hr class="hr-gray hr-tight" />
 
   <!-- Tribes type filter -->

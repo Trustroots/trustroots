@@ -13,6 +13,7 @@ function FiltersService($log, Authentication, locker) {
     seen: {
       months: 6,
     },
+    offer: { maxGuests: 1 },
   };
 
   // Make cache id unique for this user

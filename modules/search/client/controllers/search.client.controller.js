@@ -101,6 +101,18 @@ function SearchController(
       },
     );
 
+    // Watch for changes at tribes filters
+    $scope.$watchCollection(
+      'search.filters.offer',
+      function (newOfferFilters, oldOfferFilters) {
+        if (!angular.equals(newOfferFilters, oldOfferFilters)) {
+          // Save new value to cache
+          FiltersService.set('offer', newOfferFilters);
+          onFiltersUpdated();
+        }
+      },
+    );
+
     // `SearchMap` controller sends these signals down to this controller
     $scope.$on('search.loadingOffer', function () {
       vm.offer = false;

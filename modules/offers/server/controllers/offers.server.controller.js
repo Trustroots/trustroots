@@ -608,6 +608,21 @@ exports.list = function (req, res) {
     }
   }
 
+  // offer maxGuests filter
+  if (filters.hasObjectFilter('offer')) {
+    // Accept only valid values, ignore the rest
+    // @link https://lodash.com/docs/#filter
+    const maxGuestsReq = filters.offer.maxGuests;
+
+    query.push({
+      $match: {
+        maxGuests: {
+          $gte: maxGuestsReq,
+        },
+      },
+    });
+  }
+
   // Filter out users that do not share any circles with the authenticated user
   // and chose to not appear in those searches.
   const showOnlyInMyCirclesQueries = [{ showOnlyInMyCircles: false }];
