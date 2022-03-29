@@ -135,7 +135,7 @@
     "html-to-text": "8.1.0",
     "i18next": "20.3.2",
     "i18next-browser-languagedetector": "6.1.2",
-    "i18next-http-backend": "1.3.1",
+    "i18next-http-backend": "1.3.2",
     "imagesloaded": "4.1.4",
     "influx": "5.9.2",
     "juice": "8.0.0",
