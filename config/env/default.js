@@ -151,6 +151,9 @@ module.exports = {
     },
     // Up to how many days in future can meet offers be visible
     maxOfferValidFromNow: { days: 30 },
+    // Maximum number of guests the host can accomodate. Used in search filter
+    // front end search-sidebar-filters.client.view.html as associated val in html
+    maxGuestsReq: 10,
   },
   mailer: {
     from: 'trustroots@localhost',

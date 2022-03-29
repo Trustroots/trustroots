@@ -612,15 +612,18 @@ exports.list = function (req, res) {
   if (filters.hasObjectFilter('offer')) {
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
-    const maxGuestsReq = filters.offer.maxGuests;
+    let maxGuestsReq = parseInt(filters.offer.maxGuests);
+    maxGuestsReq = Math.min(config.limits.maxGuestsReq, maxGuestsReq);
 
-    query.push({
-      $match: {
-        maxGuests: {
-          $gte: maxGuestsReq,
+    if (!Number.isNaN(maxGuestsReq) && maxGuestsReq > 1) {
+      query.push({
+        $match: {
+          maxGuests: {
+            $gte: maxGuestsReq,
+          },
         },
-      },
-    });
+      });
+    }
   }
 
   // Filter out users that do not share any circles with the authenticated user
