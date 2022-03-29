@@ -1,1 +1,25 @@
-{}
+{
+    "Contact us": "संपर्क करें",
+    "Frequently Asked Questions": "नित्य पूछे जाने वाले प्रश्न",
+    "<0>Become a volunteer</0> and make a difference!": "<0>सहयोगी बनें</0> और परिवर्तन लाएँ!",
+    "Email": "ई-मेल",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "यदि आप या आपके किसी परिचित किसी अपराध के साक्षी अथवा शिकार हुए हैं, तो कृपया इसकी सूचना तुरंत पुलिस को दें।",
+    "Message": "संदेश",
+    "Name": "नाम",
+    "Something went wrong sending your message.": "आपका संदेश भेजने में कोई गड़बड़ी हुई.",
+    "Please ensure you are connected to internet and try again.": "कृपया सुनिश्चित करें कि आप इंटरनेट से कनेक्टेड हैं और पुनः प्रयास करें।",
+    "Please write in English if possible.": "कृपया अंग्रेजी में लिखने का प्रयास करें.",
+    "Report member": "सदस्य की रिपोर्ट करें",
+    "Report member {{username}} to support": "सहायक दल से सदस्य {{username}} की रिपोर्ट करें",
+    "Reporting member": "सदस्य की रिपोर्ट की जा रही है",
+    "See also": "और देखें",
+    "Send": "भेजें",
+    "Removing your account": "आपका अकाउंट हटाया जा रहा है",
+    "Thank you!": "धन्यवाद!",
+    "Trustroots Support": "Trustroots सहायक",
+    "Trustroots Support Robot": "Trustroots सहायक रोबोट",
+    "Username": "उपयोगकर्ता नाम",
+    "Wait…": "प्रतीक्षा करें …",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "आप <1>home</1>पर जा रख सकते हैं अथवा देखें <4>लगातार पूछे जाने वाले प्रश्न </4>.",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "मैं एक छोटा वेबसाइट रोबोट हूं लेकिन मैंने आपका संदेश हमारे सहायता दल को भेज दिया है। बहुत जल्द वे आपसे सम्पर्क स्थापित करेंगे!"
+}
