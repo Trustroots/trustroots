@@ -1,1 +1,24 @@
-{}
+{
+    "Member since {{date, YYYY}}.": "{{date, YYYY}} से सदस्य हैं।",
+    "Optional": "वैकल्पिक",
+    "Please write in English if possible, thank you.": "संभव हो तो कृपया अंग्रेजी में लिखें, धन्यवाद।",
+    "Skip": "छोड़ें",
+    "Did not meet with anyone.": "किसी से नहीं मिले।",
+    "Met with everyone.": "सभी से मिले।",
+    "Met in person": "व्यक्तिगत रूप से मिले",
+    "No": "नहीं",
+    "No experiences yet.": "अभी तक कोई अनुभव नहीं है।",
+    "See their experiences": "उनके अनुभव देखें",
+    "Choose your recommendation": "अपना सुझाव चुनें",
+    "Feedback": "प्रतिक्रिया",
+    "All experiences are by female members.": "सभी अनुभव महिला सदस्यों के द्वारा हैं।",
+    "All experiences are by male members.": "सभी अनुभव पुरुष सदस्यों के द्वारा हैं।",
+    "How do you know them?": "आपका उनसे परिचय कैसे है?",
+    "It's extremely important you report anyone behaving against community rules or values to us.": "यह अत्यंत महत्वपूर्ण है कि आप किसी के द्वारा समुदाय के नियमों या मूल्यों के विरुद्ध व्यवहार करने की सूचना हमें दें।",
+    "Guest": "अतिथि",
+    "Message to the moderators": "मॉडरेटर को संदेश भेजें",
+    "Met with {{percentage}}% of members.": "{{percentage}}% सदस्यों से मिले।",
+    "Privately report this person to the moderators": "इस व्यक्ति को निजी तौर पर मॉडरेटर को रिपोर्ट करें",
+    "Public feedback": "सार्वजनिक प्रतिक्रिया",
+    "Share your experience": "अपना अनुभव साझा करें"
+}
