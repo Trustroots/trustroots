@@ -22,3 +22,12 @@ export async function setUserRole(id, role) {
   });
   return data;
 }
+
+export async function unsetUserRole(id, role) {
+  const { data } = await axios.post('/api/admin/user/change-role', {
+    id,
+    role,
+    unset: true,
+  });
+  return data;
+}

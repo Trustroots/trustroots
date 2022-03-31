@@ -257,6 +257,48 @@ exports.getUser = async (req, res) => {
   }
 };
 
+exports.updateRoleDeps = async (role, userId, unset, status) => {
+  if (unset === true) {
+    // should suspend be handled by setting fields as true
+    // or left as shadow ban removes suspend status below ?
+    //  const additionalChangesForSuspended =
+    //    role === 'suspended' ? { $set: { newsletter: true, public: true } } : {};
+    //  await User.updateOne({ _id: userId }, { ...additionalChangesForSuspended });
+
+    status.roleChangeMessage = 'User removed from role:' + role + '.';
+    return;
+  }
+
+  status.roleChangeMessage = `Role "${role}" added.`;
+
+  // If adding role 'volunteer-alumni', remove 'volunteer' role
+  if (role === 'volunteer-alumni') {
+    await User.updateOne({ _id: userId }, { $pull: { roles: 'volunteer' } });
+    status.roleChangeMessage = 'User made into volunteer-alumni.';
+  }
+
+  // If adding role 'volunteer', remove 'volunteer-alumni' role
+  if (role === 'volunteer') {
+    await User.updateOne(
+      { _id: userId },
+      { $pull: { roles: 'volunteer-alumni' } },
+    );
+    status.roleChangeMessage = 'User made into volunteer.';
+  }
+
+  // If adding role 'shadowban', remove 'suspended' role
+  if (role === 'shadowban') {
+    await User.updateOne({ _id: userId }, { $pull: { roles: 'suspended' } });
+    status.roleChangeMessage = 'User shadowbanned.';
+  }
+
+  // If adding role 'suspended', remove 'shadowban' role
+  if (role === 'suspended') {
+    await User.updateOne({ _id: userId }, { $pull: { roles: 'shadowban' } });
+    status.roleChangeMessage = 'User suspended.';
+  }
+};
+
 /**
  * This middleware changes user roles by ID
  * Used for suspending users or setting them a "shadow ban"
@@ -264,6 +306,7 @@ exports.getUser = async (req, res) => {
 exports.changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
+  const unset = _.get(req, ['body', 'unset']);
 
   const validRoles = User.schema.path('roles').caster.enumValues || [];
 
@@ -281,18 +324,27 @@ exports.changeRole = async (req, res) => {
     });
   }
 
-  // If switching role to 'suspended', change also these settings straight up
-  const additionalChangesForSuspended =
-    role === 'suspended' ? { $set: { newsletter: false, public: false } } : {};
+  let additionalChangesForSuspended = {};
+  let setUnsetQuery = {};
+
+  if (unset === true) {
+    setUnsetQuery = { $pull: { roles: role } };
+  } else {
+    setUnsetQuery = { $addToSet: { roles: role } };
+
+    // If switching role to 'suspended', change also these settings straight up
+    additionalChangesForSuspended =
+      role === 'suspended'
+        ? { $set: { newsletter: false, public: false } }
+        : {};
+  }
 
   try {
     const user = await User.updateOne(
       { _id: userId },
       {
         ...additionalChangesForSuspended,
-        $addToSet: {
-          roles: role,
-        },
+        ...setUnsetQuery,
       },
     );
 
@@ -303,39 +355,13 @@ exports.changeRole = async (req, res) => {
       });
     }
 
-    let roleChangeMessage = `Role "${role}" added.`;
-
-    // If adding role 'volunteer-alumni', remove 'volunteer' role
-    if (role === 'volunteer-alumni') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'volunteer' } });
-      roleChangeMessage = 'User made into volunteer-alumni.';
-    }
-
-    // If adding role 'volunteer', remove 'volunteer-alumni' role
-    if (role === 'volunteer') {
-      await User.updateOne(
-        { _id: userId },
-        { $pull: { roles: 'volunteer-alumni' } },
-      );
-      roleChangeMessage = 'User made into volunteer.';
-    }
-
-    // If adding role 'shadowban', remove 'suspended' role
-    if (role === 'shadowban') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'suspended' } });
-      roleChangeMessage = 'User shadowbanned.';
-    }
-
-    // If adding role 'suspended', remove 'shadowban' role
-    if (role === 'suspended') {
-      await User.updateOne({ _id: userId }, { $pull: { roles: 'shadowban' } });
-      roleChangeMessage = 'User suspended.';
-    }
+    const status = {};
+    await exports.updateRoleDeps(role, userId, unset, status);
 
     // Add new admin-note about role change
     const adminNoteItem = new AdminNote({
       admin: req.user._id,
-      note: `<p><b>Performed action:</b></p><p><i>${roleChangeMessage}</i></p>`,
+      note: `<p><b>Performed action:</b></p><p><i>${status.roleChangeMessage}</i></p>`,
       user: userId,
     });
     await adminNoteItem.save();
