@@ -3,7 +3,7 @@ import get from 'lodash/get';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getUser, setUserRole } from '../api/users.api';
+import { getUser, setUserRole, unsetUserRole } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminNotes from './AdminNotes';
 import Json from './Json.component';
@@ -46,6 +46,18 @@ export default class AdminUser extends Component {
     const id = get(this, ['state', 'user', 'profile', '_id']);
     if (id) {
       const username = get(this, ['state', 'user', 'profile', 'username']);
+      if (role === 'shadowban' && this.hasRole(role)) {
+        if (window.confirm(`Remove ${username} from role: ${role}?`)) {
+          this.setState({ isSettingUserRole: true }, async () => {
+            await unsetUserRole(id, role);
+            // Get fresh user profile
+            this.getUserById(id);
+            this.setState({ isSettingUserRole: false });
+          });
+        }
+        return;
+      }
+
       if (window.confirm(`Set ${username} role to ${role}?`)) {
         this.setState({ isSettingUserRole: true }, async () => {
           await setUserRole(id, role);
@@ -76,6 +88,29 @@ export default class AdminUser extends Component {
 
   hasRole(role) {
     return get(this.state.user, ['profile', 'roles'], []).includes(role);
+  }
+
+  getUndoState(role) {
+    if (this.hasRole(role)) {
+      return {
+        role: 'shadowban',
+        color: 'success',
+        label: 'Undo Shadow Ban',
+      };
+    } else {
+      return {
+        role: 'shadowban',
+        color: 'danger',
+        label: 'Shadow Ban',
+      };
+    }
+  }
+
+  actButtonDisabled(user, role, isSettingUserRole) {
+    if (role !== 'shadowban') {
+      return user.profile.roles.includes(role) || isSettingUserRole;
+    }
+    return isSettingUserRole;
   }
 
   render() {
@@ -128,11 +163,7 @@ export default class AdminUser extends Component {
                     color: 'danger',
                     label: 'Suspend',
                   },
-                  {
-                    role: 'shadowban',
-                    color: 'danger',
-                    label: 'Shadow ban',
-                  },
+                  this.getUndoState('shadowban'),
                   {
                     role: 'moderator',
                     color: 'success',
@@ -152,9 +183,11 @@ export default class AdminUser extends Component {
                   <button
                     key={role}
                     className={`btn btn-${color}`}
-                    disabled={
-                      user.profile.roles.includes(role) || isSettingUserRole
-                    }
+                    disabled={this.actButtonDisabled(
+                      user,
+                      role,
+                      isSettingUserRole,
+                    )}
                     onClick={() => this.handleUserRoleChange(role)}
                   >
                     {label}
