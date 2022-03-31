@@ -1,4 +1,23 @@
 {
     "Change": "परिवर्तन",
-    "Accommodation": "आवास"
+    "Accommodation": "आवास",
+    "Meet people": "लोगों से मिलें",
+    "Might be able to host": "सम्भवतः अतिथि स्वीकार कर सकते हैं",
+    "Modify hosting offer": "पोषक (होस्टिंग) प्रस्ताव संशोधित करें",
+    "Bigger map": "बड़ा मानचित्र",
+    "Can host": "अथिति स्वीकार (होस्ट) कर सकते हैं",
+    "Cannot host currently": "अभी अतिथि स्वीकार नहीं कर सकते हैं",
+    "Open on device": "यन्त्र (डिवाइस) पर खोलें",
+    "Send a message": "सन्देश भेजें",
+    "Sorry, user is not hosting currently.": "क्षमा करें, उपयोगकर्ता वर्तमान में अतिथि स्वीकार (होस्टिंग) नहीं कर रहा है।",
+    "Start hosting travellers": "यात्रियों को स्वीकारना प्रारंभ करें",
+    "Travelling? Organising an event?": "यात्रा? कार्यक्रम का आयोजन?",
+    "Just making a dinner and would like to invite people over?": "रात्रि भोजन बना रहे हैं और लोगों को आमंत्रित करना चाहते हैं?",
+    "At most {{count}} guests.": "अधिकतम एक अतिथि।",
+    "At most {{count}} guests._plural": "अधिकतम {{count}} अतिथि।",
+    "Add it to map!": "इसे मानचित्र में जोड़ें!",
+    "Meetups stay visible on map at most one month.": "Meetups मानचित्र पर अधिक से अधिक एक महीने तक दिखाई देती है।",
+    "No guests.": "कोई अतिथि नहीं।",
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "अपने घरों में आतिथ्य प्रदान करना और \"अनजान नए\" लोगों का स्वागत करना एक दूसरे के प्रति हमारे विश्वास को दृढ़ करता है।",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "यात्रा? एक कार्यक्रम का आयोजन? अथवा रात्रि भोजन बना रहे हैं और लोगों को आमंत्रित करना चाहते हैं?"
 }
