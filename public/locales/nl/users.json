@@ -6,5 +6,6 @@
     "Edit your profile": "Pas je profiel aan",
     "Contacts": "Contacten",
     "Find people": "Vind mensen",
-    "Please ensure you are connected to internet and try again.": "Wees er alsjeblieft zeker van dat je verbinding hebt met internet en probeer het opnieuw."
+    "Please ensure you are connected to internet and try again.": "Wees er alsjeblieft zeker van dat je verbinding hebt met internet en probeer het opnieuw.",
+    "Lives in <2>{{locationLiving}}</2>": "Woont in <2>1{{locationLiving}}</2>"
 }
