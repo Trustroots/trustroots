@@ -10,6 +10,7 @@ const tribes = require('../../../tribes/server/controllers/tribes.server.control
 const textService = require('../../../core/server/services/text.server.service');
 const log = require('../../../../config/lib/logger');
 const sanitizeHtml = require('sanitize-html');
+const messageStatService = require('../../../messages/server/services/message-stat.server.service');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const Offer = mongoose.model('Offer');
@@ -724,11 +725,27 @@ exports.getOffer = function (req, res) {
         );
       },
 
-      function (offer) {
+      function (offer, done) {
         // Sanitize offer before returning it
         offer = sanitizeOffer(offer, req.user._id);
+        done(null, offer);
+      },
 
-        res.json(offer);
+      function (offer) {
+        // find the statistics
+        messageStatService.readFormattedMessageStatsOfUser(
+          offer.user._id,
+          Date.now(),
+          function (err, stats) {
+            // If we receive error, let's just continue.
+            // The stats are non-essential.
+            if (!err) {
+              // add replyRate and replyTime to req.profile
+              _.assign(offer.user, _.pick(stats, ['replyRate', 'replyTime']));
+            }
+            res.json(offer);
+          },
+        );
       },
     ],
     function (err) {

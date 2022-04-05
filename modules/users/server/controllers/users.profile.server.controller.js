@@ -71,7 +71,7 @@ exports.userMiniProfileFields = [
 
 // Mini + a few fields we'll need at listings
 exports.userListingProfileFields =
-  exports.userMiniProfileFields + ' member birthdate gender tagline';
+  exports.userMiniProfileFields + ' member birthdate gender tagline seen';
 exports.userSearchProfileFields =
   exports.userMiniProfileFields + ' gender locationFrom locationLiving';
 

@@ -41,6 +41,11 @@ function SearchController(
   // Visibility toggle for search place input on small screens
   vm.isPlaceSearchVisible = false;
 
+  if (offer && offer.user) {
+    const momentDate = moment(offer.user.seen);
+    vm.offer.user.lastSeen = momentDate.fromNow();
+  }
+
   // Init search from the URL, `tr-location` directive attached
   // to search input will take care of the rest.
   // `Replacing underscore with space is to make search queries
@@ -108,6 +113,10 @@ function SearchController(
     });
     $scope.$on('search.previewOffer', function (event, offer) {
       vm.offer = offer;
+      if (offer && offer.user) {
+        const momentDate = moment(offer.user.seen);
+        vm.offer.user.lastSeen = momentDate.fromNow();
+      }
       vm.loadingOffer = false;
       openSidebar('results');
     });
