@@ -183,7 +183,11 @@ export default function Foundation({ user }) {
         <div className="row">
           <div className="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 text-center">
             <h2>{t('Past board members')}</h2>
-            <p>{t('Callum, Carlos and Kasper were also part of the founding team.')}</p>
+            <p>
+              {t(
+                'Callum, Carlos and Kasper were also part of the founding team.',
+              )}
+            </p>
             <br />
             <br />
           </div>
