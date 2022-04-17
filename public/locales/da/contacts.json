@@ -1,1 +1,6 @@
-{}
+{
+    "Cancel": "Annuler",
+    "(additional {{count}} pending)": "(yderligere {{count}} venter)",
+    "(additional {{count}} pending)_plural": "(yderligere {{count}} venter)",
+    "Wait a moment…": "Vent et øjeblik…"
+}
