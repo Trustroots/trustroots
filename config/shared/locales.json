@@ -164,5 +164,11 @@
     "code": "ca",
     "english": "Catalan",
     "production": false
+  },
+  {
+    "label": "हिन्दी",
+    "code": "hi",
+    "english": "Hindi",
+    "production": true
   }
 ]
