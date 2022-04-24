@@ -1,10 +1,13 @@
 {
-    "Clear members search": "",
-    "No members found by this name.": "",
-    "Search members": "",
-    "Type name, username…": "",
-    "{{count}} members found_0": "",
-    "{{count}} members found_1": "",
-    "{{count}} members found_2": "",
-    "Search": "Szukaj"
+    "Clear members search": "Wyczyść wyszukiwanie",
+    "No members found by this name.": "Nie znaleziono użytkowników o tej nazwie.",
+    "Search members": "Szukaj użytkowników",
+    "Type name, username…": "Wpisz imię, nazwę użytkownika…",
+    "{{count}} members found_0": "Znaleziono jednego użytkownika",
+    "{{count}} members found_1": "Znaleziono {{count}} użytkowników",
+    "{{count}} members found_2": "Znaleziono {{count}} użytkowników",
+    "Search": "Szukaj",
+    "Select languages…": "Wybierz języki…",
+    "Spoken languages": "Używane języki",
+    "Zoom closer to find members.": "Przybliż, aby znaleźć użytkowników."
 }
