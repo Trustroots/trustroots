@@ -13,10 +13,10 @@
     "Sorry I can't host": "Niestety, nie mogę hostować",
     "Tell a little bit about yourself": "Napisz coś więcej o sobie",
     "Tell your host why you're on a trip": "Powiedz swojemu hostowi, jaki jest powód twojej podróży",
-    "This user isn't a member anymore.": "",
+    "This user isn't a member anymore.": "Ten użytkownik nie jest już członkiem.",
     "Tip": "Krótka porada",
     "Trustroots is very much about spontaneous travel": "Trustroots jest przede wszystkim nastawione na spontaniczne podróże",
-    "Unknown member": "",
+    "Unknown member": "Nieznany członek",
     "What are your expectations in regards with going through their town?": "Czego się spodziewasz względem podróży przez ich miejscowość?",
     "Write back": "Odpisz",
     "Yes, I can host!": "Tak, mogę hostować!",
@@ -32,5 +32,9 @@
     "Failed to send the message. Perhaps your internet went down? Please try again.": "Nie udało się wysłać wiadomości. Sprawdź, czy nie masz problemów z internetem, a następnie spróbuj ponownie.",
     "Member is not available anymore.": "Użytkownik nie jest już dostępny.",
     "Yes": "Tak",
-    "No": "Nie"
+    "No": "Nie",
+    "Change": "Zmień",
+    "License": "Licencja",
+    "You are writing to too many people too fast. Slow down and try later again.": "Piszesz do zbyt wielu osób zbyt szybko. Zwolnij i spróbuj ponownie później.",
+    "Your response won't be visible to them.": "Twoja odpowiedź nie będzie dla nich widoczna."
 }
