@@ -1,5 +1,5 @@
 {
-    "Back": "",
+    "Back": "Wróć",
     "Finish": "Zakończ",
     "Finish editing and save": "Zakończ edycję i zapisz",
     "Next": "Dalej",
@@ -47,5 +47,18 @@
     "Trustroots at Twitter": "Trustroots na Twitterze",
     "Type your text": "Wpisz tekst",
     "Volunteering": "Zostań wolontariuszem",
-    "Circles": "Kręgi"
+    "Circles": "Kręgi",
+    "Loading…": "Ładowanie…",
+    "No languages found; try typing something else.": "Nie znaleziono pasującego języka; spróbuj wpisać coś innego.",
+    "Select…": "Wybierz…",
+    "Snap! Something went wrong. If this keeps happening, please contact us.": "Ups! Coś poszło nie tak. Jeśli sytuacja będzie się powtarzać, prosimy o zgłoszenie się do nas.",
+    "Start typing a language…": "Zacznij wpisywać język…",
+    "About": "O nas",
+    "Login": "Zaloguj się",
+    "Media": "Media",
+    "Meet": "Spotkania",
+    "New to Trustroots?": "Jesteś nowym użytkownikiem?",
+    "Outdoors": "W plenerze",
+    "Satellite": "Satelity",
+    "Streets": "Ulice"
 }
