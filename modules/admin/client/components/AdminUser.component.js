@@ -46,7 +46,7 @@ export default class AdminUser extends Component {
     const id = get(this, ['state', 'user', 'profile', '_id']);
     if (id) {
       const username = get(this, ['state', 'user', 'profile', 'username']);
-      if (role === 'shadowban' && this.hasRole(role)) {
+      if (this.hasRole(role)) {
         if (window.confirm(`Remove ${username} from role: ${role}?`)) {
           this.setState({ isSettingUserRole: true }, async () => {
             await unsetUserRole(id, role);
@@ -90,27 +90,26 @@ export default class AdminUser extends Component {
     return get(this.state.user, ['profile', 'roles'], []).includes(role);
   }
 
-  getUndoState(role) {
-    if (this.hasRole(role)) {
+  getUndoState(curRole, label) {
+    const butLabel = !label ? curRole : label;
+    let setColor = 'success';
+    if (curRole === 'suspended' || curRole === 'shadowban') {
+      setColor = 'danger';
+    }
+
+    if (this.hasRole(curRole)) {
       return {
-        role: 'shadowban',
-        color: 'success',
-        label: 'Undo Shadow Ban',
+        role: curRole,
+        color: 'danger',
+        label: 'Undo ' + butLabel,
       };
     } else {
       return {
-        role: 'shadowban',
-        color: 'danger',
-        label: 'Shadow Ban',
+        role: curRole,
+        color: setColor,
+        label: butLabel,
       };
     }
-  }
-
-  actButtonDisabled(user, role, isSettingUserRole) {
-    if (role !== 'shadowban') {
-      return user.profile.roles.includes(role) || isSettingUserRole;
-    }
-    return isSettingUserRole;
   }
 
   render() {
@@ -158,36 +157,19 @@ export default class AdminUser extends Component {
 
               <div className="btn-group">
                 {[
-                  {
-                    role: 'suspended',
-                    color: 'danger',
-                    label: 'Suspend',
-                  },
-                  this.getUndoState('shadowban'),
-                  {
-                    role: 'moderator',
-                    color: 'success',
-                    label: 'Make moderator',
-                  },
-                  {
-                    role: 'volunteer',
-                    color: 'success',
-                    label: 'Make volunteer',
-                  },
-                  {
-                    role: 'volunteer-alumni',
-                    color: 'success',
-                    label: 'Make volunteer alumni',
-                  },
+                  this.getUndoState('suspended', 'Suspend'),
+                  this.getUndoState('shadowban', 'Shadowban'),
+                  this.getUndoState('moderator', 'Make moderator'),
+                  this.getUndoState('volunteer', 'Make volunteer'),
+                  this.getUndoState(
+                    'volunteer-alumni',
+                    'Make volunteer alumni',
+                  ),
                 ].map(({ role, color, label }) => (
                   <button
                     key={role}
                     className={`btn btn-${color}`}
-                    disabled={this.actButtonDisabled(
-                      user,
-                      role,
-                      isSettingUserRole,
-                    )}
+                    disabled={isSettingUserRole}
                     onClick={() => this.handleUserRoleChange(role)}
                   >
                     {label}
