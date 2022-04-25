@@ -259,11 +259,9 @@ exports.getUser = async (req, res) => {
 
 exports.updateRoleDeps = async (role, userId, unset, status) => {
   if (unset === true) {
-    // should suspend be handled by setting fields as true
-    // or left as shadow ban removes suspend status below ?
-    //  const additionalChangesForSuspended =
-    //    role === 'suspended' ? { $set: { newsletter: true, public: true } } : {};
-    //  await User.updateOne({ _id: userId }, { ...additionalChangesForSuspended });
+    const additionalChangesForSuspended =
+      role === 'suspended' ? { $set: { newsletter: true, public: true } } : {};
+    await User.updateOne({ _id: userId }, { ...additionalChangesForSuspended });
 
     status.roleChangeMessage = 'User removed from role:' + role + '.';
     return;
