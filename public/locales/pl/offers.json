@@ -13,19 +13,27 @@
     "I can host": "Przyjmuję gości",
     "I can't host currently": "Nie mogę gościć",
     "I might be able to host": "Może przyjmuję gości",
-    "Meet people": "",
+    "Meet people": "Poznaj ludzi",
     "Might be able to host": "Może przyjmuje gości",
-    "Modify hosting offer": "",
+    "Modify hosting offer": "Zmień ofertę przyjmowania gości",
     "No guests": {
         "": "Nie przyjmuje gości."
     },
     "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other": {
-        "": ""
+        "": "Oferowanie gościnności i przyjmowanie \"obcych\" do naszych domów pogłębia nasze wzajemne zaufanie."
     },
-    "Open on device": "",
+    "Open on device": "Otwórz na urządzeniu",
     "Sorry, user is not hosting currently": {
         "": "Niestety użytkownik nie przyjmuje teraz gości."
     },
-    "Start hosting travellers": "",
-    "Send a message": "Wyślij wiadomość"
+    "Start hosting travellers": "Zacznij przyjmować podróżnych",
+    "Send a message": "Wyślij wiadomość",
+    "At most {{count}} guests._0": "Maksymalnie przyjmowali jednego gościa.",
+    "At most {{count}} guests._1": "Maksymalnie przyjmowali {{count}} gości.",
+    "At most {{count}} guests._2": "Maksymalnie przyjmowali {{count}} gości.",
+    "Just making a dinner and would like to invite people over?": "Właśnie przygotowujesz kolację i chcesz zaprosić na nią więcej osób?",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Podróżujesz? Organizujesz wydarzenie? Właśnie przygotowujesz kolację i chcesz zaprosić na nią więcej osób?",
+    "Add it to map!": "Dodaj to do mapy!",
+    "Meetups stay visible on map at most one month.": "Meetingi pozostają widoczne na mapie maksymalnie przez miesiąc.",
+    "Travelling? Organising an event?": "Podróżujesz? Organizujesz wydarzenie?"
 }
