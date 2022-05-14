@@ -1,10 +1,25 @@
 {
-    "Report member": "",
-    "Report member {{username}} to support": "",
+    "Report member": "Zgłoś użytkownika",
+    "Report member {{username}} to support": "Zgłoś użytkownika {{username}} do administracji",
     "Contact us": "Skontaktuj się z nami",
     "Frequently Asked Questions": "Najczęściej Zadawane Pytania",
     "Send": "Wyślij",
     "Thank you!": "Dziękujemy!",
     "See also": "Zobacz również",
-    "Please ensure you are connected to internet and try again.": "Upewnij się, że masz połączenie z Internetem i spróbuj ponownie."
+    "Please ensure you are connected to internet and try again.": "Upewnij się, że masz połączenie z Internetem i spróbuj ponownie.",
+    "Email": "Email",
+    "Name": "Imię",
+    "Please write in English if possible.": "W miarę możliwości prosimy pisać w języku angielskim.",
+    "Removing your account": "Usunięcie swojego konta",
+    "Reporting member": "Zgłaszanie użytkownika",
+    "Trustroots Support": "Pomoc techniczna Trustroots",
+    "Username": "Nazwa użytkownika",
+    "Wait…": "Zaczekaj…",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Zostań wolontariuszem</0> i zmień świat na lepsze!",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Jeśli Ty lub ktoś, kogo znasz, był świadkiem lub ofiarą przestępstwa, natychmiast zgłoś to na policję.",
+    "Message": "Wiadomość",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Jestem tylko małym robotem sieciowym, ale wysłałem Twoją wiadomość do naszych pracowników działu wsparcia technicznego. Możesz spodziewać się, że wkrótce się do Ciebie odezwą!",
+    "Something went wrong sending your message.": "Wystąpił błąd podczas wysyłania wiadomości.",
+    "Trustroots Support Robot": "Robot wsparcia technicznego Trustroots",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Możesz przejść do <1>strony głównej</1> lub sprawdzić <4>najczęściej zadawane pytania</4>."
 }
