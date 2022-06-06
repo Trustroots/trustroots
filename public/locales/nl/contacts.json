@@ -21,7 +21,7 @@
     "Since {{created, LL}}": "Sinds {{created, LL}}",
     "Decline Request": "Wijs verzoek af",
     "Contact request sent and pending.": "Contact verzoek verzonden en in behandeling.",
-    "Lives in <2>{{locationLiving}}</2>": "Woont in <2>1{{locationLiving}}</2>",
+    "Lives in <2>{{locationLiving}}</2>": "Woont in <2>{{locationLiving}}</2>",
     "Yes, remove contact": "Ja, verwijder contact",
     "Wait a moment…": "Een moment geduld…",
     "{{count}} contacts in common": "Eén gemeenschappelijk contact",
