@@ -7,5 +7,7 @@
     "Search": "Искать",
     "{{count}} members found_0": "Один участник найден",
     "{{count}} members found_1": "{{count}} участника найдено",
-    "{{count}} members found_2": "{{count}} участников найдено"
+    "{{count}} members found_2": "{{count}} участников найдено",
+    "Type name, username…": "Введите имя, имя пользователя…",
+    "Spoken languages": "Языки для разговора"
 }
