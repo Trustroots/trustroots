@@ -6,7 +6,7 @@
     "Fill your profile": "Заповни свій профіль",
     "Contacts": "Контакти",
     "Account settings": "Налаштування профілю",
-    "Account": "Профіль",
+    "Account": "Облік. запис",
     "A world that encourages trust and adventure.": "Світ, який заохочує довіру та пригоди.",
     "<0>We</0> can give interviews in English, German, Dutch, French, Spanish & Finnish.": "<0>Ми</0> можемо дати інтерв’ю англійською, німецькою, голландською, французькою, іспанською та фінською мовами.",
     "<0>Send us</0> new circle ideas! In the future you will be able to create new circles by yourself.": "<0> Надішли нам </0> нові ідеї для кіл! У майбутньому ти зможеш створювати нові кола самостійно.",
@@ -30,7 +30,7 @@
     "Great! Read about <2>development</2> and get in touch with us! We are looking for JavaScript developers (back- and frontend) and sysops.": "Чудово! Прочитай про <2> розробку </2> та зв’яжіться з нами! Ми шукаємо розробників JavaScript (back- та frontend) та sysops.",
     "Gravatar, for profile images": "Gravatar, для зображення профілю",
     "Get active!": "Ставай активним!",
-    "Frequently Asked Questions": "Поширені питання",
+    "Frequently Asked Questions": "Поширені запитання",
     "Freedom": "Свобода",
     "Free and open source": "Безкоштовний та з відкритим кодом",
     "For developers": "Для розробників",
@@ -66,5 +66,6 @@
     "About": "Про нас",
     "A good profile picture can definitely help you get responses from many people.": "Гарна світлина у профілі точно може допомогти вам отримати відповіді від багатьох людей.",
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "... пояснивши, що ти зацікавлений у знайомстві, а не лише у безкоштовному житлі.",
-    "See also": "Дивися також"
+    "See also": "Дивися також",
+    "Thank you!": "Дякуємо!"
 }
