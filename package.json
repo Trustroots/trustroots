@@ -244,7 +244,7 @@
     "ng-annotate-patched": "1.13.0",
     "ngreact": "0.5.2",
     "nodemailer-stub-transport": "1.1.0",
-    "nodemon": "2.0.15",
+    "nodemon": "2.0.17",
     "npm-merge-driver": "2.3.6",
     "parse-link-header": "2.0.0",
     "postcss": "8.4.12",
