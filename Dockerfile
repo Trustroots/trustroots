@@ -26,13 +26,10 @@ WORKDIR /trustroots
 COPY package*.json ./
 RUN npm ci --quiet
 
-# Set environment variables
-ENV NODE_ENV development
-ENV DB_1_PORT_27017_TCP_ADDR mongodb
-
 # Share local directory on the docker container
 # ...therefore the previous docker "layer" thats been cached will be used if possible
 COPY . /trustroots
+
 
 # Expose ports
 # - Maildev            1080

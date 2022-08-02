@@ -1,8 +1,4 @@
-version: '3'
-
-networks:
-  trustroots-network:
-    driver: bridge
+version: '3.8'
 
 volumes:
   node-modules:
@@ -11,22 +7,16 @@ volumes:
 
 services:
   trustroots:
-    image: node:14
-    container_name: trustroots
     restart: unless-stopped
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     # Mount the app dir in the container so our changes
     #  to the app code are also changed in the container
     #
     # Mount node_modules separately as a data volume, so
     #  that they won't get overwritten by app directory
     #  Read more: http://stackoverflow.com/a/32785014/1984644
-    networks:
-      - trustroots-network
     volumes:
-      - ./:/trustroots
+      - .:/trustroots:Z # Z for rootless docker users
       - node-modules:/trustroots/node_modules
       - public:/trustroots/public
     depends_on:
@@ -39,15 +29,13 @@ services:
       - '35729:35729'
     environment:
       - DB_1_PORT_27017_TCP_ADDR=mongodb
+      - NODE_ENV=development
 
   ## Database container
   mongodb:
     image: mongo:4.4
-    container_name: db_1
     volumes:
       - dbdata:/data/db
     restart: unless-stopped
-    ports:
-      - '27017:27017'
-    networks:
-      - trustroots-network
+    # ports: ## uncomment to be able to connect from host
+    #   - '27017:27017'

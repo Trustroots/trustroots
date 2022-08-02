@@ -8,6 +8,8 @@
  * - local.js
  */
 
+const DB_HOST = process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost';
+
 module.exports = {
   featureFlags: {
     reference: true,
@@ -16,9 +18,7 @@ module.exports = {
   port: 3001,
   db: {
     uri:
-      'mongodb://' +
-      (process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost') +
-      '/trustroots-dev',
+      `mongodb://${DB_HOST}/trustroots-dev`,
     options: {
       auth: {
         authMechanism: '',
