@@ -17,8 +17,7 @@ module.exports = {
   // in dev we have webpack-dev-server on 3000, and the real server on 3001
   port: 3001,
   db: {
-    uri:
-      `mongodb://${DB_HOST}/trustroots-dev`,
+    uri: `mongodb://${DB_HOST}/trustroots-dev`,
     options: {
       auth: {
         authMechanism: '',
