@@ -14,7 +14,7 @@ export default function FaqFoundation() {
           <a href="https://find-and-update.company-information.service.gov.uk/company/09489825/filing-history">
             Trustroots Foundation is dissolved
           </a>
-          .
+          . What does it mean for the community? We don’t know exactly yet!
         </Trans>
         <br />
         <br />
