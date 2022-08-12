@@ -31,6 +31,15 @@ export default function Foundation({ user }) {
         <div className="row">
           <div className="col-xs-12 col-sm-offset-1 col-sm-10 col-md-offset-2 col-md-8">
             <p className="lead">
+              <Trans t={t} ns="pages">
+                As of May 2022{' '}
+                <a href="https://find-and-update.company-information.service.gov.uk/company/09489825/filing-history">
+                  Trustroots Foundation is dissolved
+                </a>
+                . We still try to find out what does it mean for the community.
+              </Trans>
+            </p>
+            <p className="lead">
               {t(`Trustroots is owned and operated by Trustroots Foundation, a non-profit
               Limited by Guarantee (LBG) under section 60 exemption, registered in the
               United Kingdom in March 2015.`)}
