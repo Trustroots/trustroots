@@ -98,7 +98,7 @@ export default function Foundation({ user }) {
           </div>
         </div>
         <div className="row">
-          <div className="col-xs-12 col-sm-4">
+          <div className="col-xs-12 col-sm-4 col-sm-offset-2">
             {/* Mikael */}
             <div className="media">
               <a className="pull-left" href="https://mikaelkorpela.fi/">
@@ -194,7 +194,7 @@ export default function Foundation({ user }) {
         </div>
 
         <div className="row">
-          <div className="col-xs-12 col-sm-4 col-sm-offset-2">
+          <div className="col-xs-12 col-sm-4">
             {/* Callum */}
             <div className="media">
               <a className="pull-left" href="https://www.callum-macdonald.com/">
