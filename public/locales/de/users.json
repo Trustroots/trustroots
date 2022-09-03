@@ -8,7 +8,7 @@
     "Don't panic!": "Keine Panik!",
     "Edit your profile": "Dein Profil bearbeiten",
     "Elsewhere": "Woanders",
-    "Fill your profile": "Füll dein Profil aus",
+    "Fill your profile": "Dein Profil ausfüllen",
     "From <1>{{locationFrom}}</1>": "Aus <1>{{locationFrom}}</1>",
     "Help!": "Hilfe!",
     "Hosting": "Gastgeber",
@@ -19,11 +19,11 @@
     "Languages": "Sprachen",
     "Lives in <2>{{locationLiving}}</2>": "Lebt in <2>{{locationLiving}}</2>",
     "Member has not written description about themself": {
-        "": "Dieses Mitglied hat noch keine Selbstbeschreibung verfasst."
+        "": "Das Mitglied hat über sich keine Beschreibung verfasst."
     },
     "Member since {{date, ll}}": "Mitglied seit {{date, ll}}",
     "Online long ago": "Vor langer Zeit online",
-    "Online {{ date, fromNow }}": "Vor {{ date, fromNow }} online",
+    "Online {{ date, fromNow }}": "{{ date, fromNow }} online",
     "Open user profile for {{name}}": "Profil von {{name}} öffnen",
     "Overview": "Übersicht",
     "Remove contact": "Kontakt löschen",
@@ -70,7 +70,7 @@
     "Other gender": "Anderes Geschlecht",
     "Oops!": "Ups!",
     "Note that your profile will not be visible to others until you confirm your email.": "Beachte, dass dein Profil für andere erst sichtbar wird, wenn du deine E-Mail bestätigst.",
-    "Non-binary": "Non-binary",
+    "Non-binary": "Nicht-binär",
     "Map search": "Kartensuche",
     "Male": "Männlich",
     "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "Wenn du keine Nachricht erhalten hast, schau in deinem Spam-Ordner nach oder schick die Nachricht in den <1>E-Mail-Einstellungen</1> nochmal.",
@@ -86,5 +86,17 @@
     "Share your experience": "Teil dein Erlebnis",
     "Modify your meet locations": "Verändere deine Treff-Standorte",
     "Modify your hosting location": "Verändere deinen Hosting-Standort",
-    "Hosting & meet": "Gastgeber sein & treffen"
+    "Hosting & meet": "Gastgeber sein & treffen",
+    "Add languages you speak.": "Fügen Sie Sprachen hinzu, die Sie sprechen.",
+    "Block member": "Mitglied blockieren",
+    "Block member \"{{username}}\"": "Mitglied \"{{username}}\" blockieren",
+    "Could not block this member.": "Dieses Mitglied konnte nicht blockiert werden.",
+    "Could not unblock this member.": "Dieses Mitglied konnte nicht entsperrt werden.",
+    "They cannot see or message you.": "Sie können dich nicht sehen oder dir Nachrichten senden.",
+    "Unblock member": "Mitglied entsperren",
+    "Unblock member \"{{username}}\"": "Mitglied \"{{username}}\" entsperren",
+    "You have blocked this member.": "Sie haben dieses Mitglied blockiert.",
+    "Please ensure you are connected to internet and try again.": "Bitte stellen Sie sicher, dass Sie mit dem Internet verbunden sind und versuchen Sie es erneut.",
+    "Are you sure you want to unblock them? They will be able to see your profile and messaage you again.": "Bist du sicher, dass du ihre Blockierungen aufheben willst? Sie können dein Profil sehen und dir wieder Nachrichten schicken.",
+    "Are you sure you want to block them? They will not be able to see or message you.": "Bist du sicher, dass du sie blockieren möchtest? Sie können dich nicht mehr sehen oder dir Nachrichten schicken."
 }
