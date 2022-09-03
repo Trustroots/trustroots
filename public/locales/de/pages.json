@@ -3,14 +3,14 @@
     "Please head over to our Team Guide to learn how to get started.": "",
     "Team Guide": "Team-Leitfaden",
     "Trustroots needs developers, designers, people handling support queue, copywriting and much more.": "Trustroots braucht Entwickler, Designer, Leute, die Support-Nachrichten beantworten, Texter und vieles mehr.",
-    "Volunteering": "",
+    "Volunteering": "Freiwilligenarbeit",
     "(March, 2015)": "(März 2015)",
     "About": "Über",
     "What are your expectations in regards with going through their town?": "Was erwartest du dir von einem Trip in die Gegend dieses Mitglieds?",
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "... und sag, warum du genau dieses Mitglied treffen willst, und nicht nur nach einer Gratis-Übernachtung suchst.",
     "You're much more likely to get a positive response if you have written a bit about yourself.": "Du bekommst häufiger eine positive Antwort, wenn du etwas über dich selbst schreibst.",
     "Explain to them why you are choosing them": "Sag, warum du dich für sie oder ihn entscheidest",
-    "Fill your profile": "Füll dein Profil aus",
+    "Fill your profile": "Dein Profil ausfüllen",
     "Contacts": "Kontakte",
     "Host": "Gastgeber",
     "Trustroots is very much about spontaneous travel": "Bei Trustroots geht es vor allem um spontane Reisen",
@@ -197,5 +197,7 @@
     "about technology": "zu Technologie",
     "from 37:00": "ab 37:00",
     "in Media": "in den Medien",
-    "{{date, MMMM Do}}": "{{date, MMMM Do}}"
+    "{{date, MMMM Do}}": "{{date, MMMM Do}}",
+    "Be yourself, helpful, kind, responsible.": "Sei du selbst, hilfsbereit, freundlich, verantwortungsvoll.",
+    "Be respectful of others and restrain from any kind of abusive behaviour.": "Sei respektvoll gegenüber anderen und unterlasse jede Art von beleidigendem Verhalten."
 }
