@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
     build:
       context: ../../
-      dockerfile: deploy/docker/Dockerfile
+      dockerfile: production.Dockerfile
     volumes:
       - ./local.js:/home/app/trustroots/config/env/local.js
       # DELETE THE FOLLOWING LINES - This is only for docker development
