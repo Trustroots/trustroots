@@ -29,4 +29,6 @@ services:
       - ./local.js:/home/app/trustroots/config/env/local.js
     depends_on:
       - mongodb
+    environment:
+      - NODE_ENV=production
     command: ["node", "worker.js"]
