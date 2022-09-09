@@ -9,16 +9,12 @@ services:
     restart: unless-stopped
 
   trustroots:
-    # image: node:14
     restart: unless-stopped
     build:
       context: ../../
       dockerfile: production.Dockerfile
     volumes:
       - ./local.js:/home/app/trustroots/config/env/local.js
-      # DELETE THE FOLLOWING LINES - This is only for docker development
-      # - ../../modules:/home/app/trustroots/modules
-      # - ../../config:/home/app/trustroots/config
     depends_on:
       - mongodb
     ports:
