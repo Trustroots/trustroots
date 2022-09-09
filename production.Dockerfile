@@ -64,8 +64,7 @@ WORKDIR /home/app/trustroots
 # TODO We should be able to just copy what we actually need from the builder
 COPY --from=builder /trustroots/ ./
 
-# TODO Re-enable this nginx conf
-# COPY depoy/docker/nginx.conf /etc/nginx/main.d/nginx.conf
+COPY deploy/docker/nginx-confd.conf /etc/nginx/conf.d/nginx.conf
 COPY deploy/docker/webapp.conf /etc/nginx/sites-enabled/default
 
 CMD ["/sbin/my_init"]
