@@ -1,14 +1,13 @@
 version: '3'
 
 services:
-  ## Database container
   mongodb:
     image: mongo:4.4
     volumes:
       - ./mongodb:/data/db
     restart: unless-stopped
 
-  trustroots:
+  webapp:
     restart: unless-stopped
     build:
       context: ../../
@@ -18,4 +17,16 @@ services:
     depends_on:
       - mongodb
     ports:
+      # TODO Figure out what port to expose
       - '3000:80'
+
+  worker:
+    restart: unless-stopped
+    build:
+      context: ../../
+      dockerfile: production.Dockerfile
+    volumes:
+      - ./local.js:/home/app/trustroots/config/env/local.js
+    depends_on:
+      - mongodb
+    command: ["node", "worker.js"]
