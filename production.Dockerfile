@@ -68,5 +68,4 @@ COPY --from=builder /trustroots/ ./
 # COPY depoy/docker/nginx.conf /etc/nginx/main.d/nginx.conf
 COPY deploy/docker/webapp.conf /etc/nginx/sites-enabled/default
 
-# CMD ["/sbin/my_init"]
-CMD ["node", "worker.js"]
+CMD ["/sbin/my_init"]
