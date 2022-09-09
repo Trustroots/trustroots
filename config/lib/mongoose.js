@@ -89,7 +89,7 @@ module.exports.connect = function (callback) {
       },
       // Confirm compatibility with MongoDB version
       function (done) {
-        // Skip if not check isn't required
+        // If the config says we do not need to check compatibility, skip this
         if (!config.db.checkCompatibility) {
           return done();
         }
