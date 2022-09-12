@@ -33,6 +33,10 @@ services:
       - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
     depends_on:
       - mongodb
+    # The worker needs NODE_ENV set to production because it doesn't use
+    # passenger to run the worker
     environment:
       - NODE_ENV=production
+    # Override the container's start command (which will start passenger) to
+    # start the worker
     command: ["node", "worker.js"]
