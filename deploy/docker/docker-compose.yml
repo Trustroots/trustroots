@@ -4,7 +4,7 @@ services:
   mongodb:
     image: mongo:4.4
     volumes:
-      - ./mongodb:/data/db
+      - ./data/mongodb:/data/db
     restart: unless-stopped
 
   webapp:
@@ -13,7 +13,9 @@ services:
       context: ../../
       dockerfile: production.Dockerfile
     volumes:
-      - ./local.js:/home/app/trustroots/config/env/local.js
+      - ./data/local.js:/home/app/trustroots/config/env/local.js
+      - ./data/uploads-circle:/home/app/trustroots/public/uploads-circle
+      - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
     depends_on:
       - mongodb
     ports:
@@ -26,7 +28,9 @@ services:
       context: ../../
       dockerfile: production.Dockerfile
     volumes:
-      - ./local.js:/home/app/trustroots/config/env/local.js
+      - ./data/local.js:/home/app/trustroots/config/env/local.js
+      - ./data/uploads-circle:/home/app/trustroots/public/uploads-circle
+      - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
     depends_on:
       - mongodb
     environment:
