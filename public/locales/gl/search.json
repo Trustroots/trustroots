@@ -6,5 +6,7 @@
     "Search": "Buscar",
     "Search members": "Buscar persoas membro",
     "Select languages…": "Seleccionar idiomas…",
-    "Spoken languages": "Idiomas falados"
+    "Spoken languages": "Idiomas falados",
+    "{{count}} members found": "Unha persoa encontrada",
+    "{{count}} members found_plural": "{{count}} persoas encontradas"
 }
