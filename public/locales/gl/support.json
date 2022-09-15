@@ -1,1 +1,25 @@
-{}
+{
+    "Message": "Mensaxe",
+    "Frequently Asked Questions": "Preguntas frecuentes",
+    "<0>Become a volunteer</0> and make a difference!": "¡<0>Fai parte do voluntariado</0> e marca a diferencia!",
+    "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "Se ti ou alguén que coñeces viu ou foi vítima dun crime, por favor denúnciao á policía inmediatamente.",
+    "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "Só son un robot da web, mais enviei a túa mensaxe ao persoal de apoio. Agardo que eles se poñan en contacto contigo moi cedo!",
+    "Name": "Nome",
+    "Please write in English if possible.": "Por favor escribe en inglés se é posible.",
+    "Removing your account": "Eliminando a túa conta",
+    "Report member": "Denunciar perfil",
+    "Report member {{username}} to support": "Informar do perfil de {{username}} a axuda ás persoas usuarias",
+    "See also": "Ver tamén",
+    "Send": "Enviar",
+    "Something went wrong sending your message.": "Algo fallou enviando a túa mensaxe.",
+    "Thank you!": "Grazas!",
+    "Trustroots Support": "Axuda de Trustroots",
+    "Email": "Correo electrónico",
+    "Trustroots Support Robot": "Robot de Axuda de Trustroots",
+    "Username": "Nome da persoa usuaria",
+    "Wait…": "Espere…",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "Podes continuar para a <1>páxina inicial</1> ou ver as <4>preguntas frecuentes</4>.",
+    "Contact us": "Contáctanos",
+    "Please ensure you are connected to internet and try again.": "Por favor asegúrate de que estas conectado a internet e proba de novo.",
+    "Reporting member": "Denunciando perfil"
+}
