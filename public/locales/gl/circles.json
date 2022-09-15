@@ -1,1 +1,19 @@
-{}
+{
+    "Cancel": "Cancelar",
+    "Discover circles": "Descubrir círculos",
+    "Join": "Xuntarse",
+    "Join ({{label}})": "Xúntate a ({{label}})",
+    "Join Trustroots to find members behind circles.": "Xúntate ao Trustroots para atopar persoas participantes nos círculos.",
+    "Joined": "Xuntácheste",
+    "Joining circles helps you find likeminded Trustroots members.": "Xuntarte aos círculos axúdate a atopar persoas no Trustroots que comparten as túas ideas.",
+    "Send us suggestions!": "Envíanos suxestións!",
+    "{{count, number}} members": "{{count, number}} persoa membro",
+    "{{count, number}} members_plural": "{{count, number}} persoas membro",
+    "Do you want to leave \"{{label}}\"?": "Queres saír de \"{{label}}\"?",
+    "Leave circle": "Deixa o círculo",
+    "Leave this circle?": "Deixar este círculo?",
+    "Missing your circle?": "Botas o teu círculo a faltar?",
+    "New circle!": "Novo círculo!",
+    "No members yet": "Aínda sen persoas membro",
+    "Sign up with Trustroots": "Xúntate a Trustroots"
+}
