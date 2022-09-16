@@ -2,7 +2,7 @@
 
 Building docker images for production.
 
-To build the production docker image run this in the root:
+To build the production docker image run this in the root directory:
 
     docker build -f ./production.Dockerfile . -t trustrootsops/trustroots:latest
 
