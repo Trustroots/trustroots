@@ -62,7 +62,7 @@ RUN apt-get -qq update && apt-get -q install -y \
 WORKDIR /home/app/trustroots
 
 # TODO We should be able to just copy what we actually need from the builder
-COPY --from=builder /trustroots/ ./
+COPY --chown=app:app --from=builder /trustroots/ ./
 
 COPY deploy/docker/nginx-confd.conf /etc/nginx/conf.d/nginx.conf
 COPY deploy/docker/webapp.conf /etc/nginx/sites-enabled/default
