@@ -258,6 +258,9 @@ describe('Offer search tests', function () {
         },
       ],
       function (err) {
+        // assign users to unsaved offers
+        offerMeet.user = user2Id;
+        offer1.user = user3Id;
         should.not.exist(err);
         doneBeforeEach(err);
       },
