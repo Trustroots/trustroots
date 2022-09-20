@@ -4,7 +4,7 @@
  *
  * Uses Sharp to manipulate image: https://sharp.pixelplumbing.com/
  *
- * Production images are kept at https://github.com/Trustroots/circle-images
+ * Production images are kept at `public/uploads-circle`.
  */
 
 const async = require('async');
