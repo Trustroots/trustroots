@@ -99,11 +99,23 @@ describe('Experience Model Unit Tests', () => {
       const experience1 = new Experience({
         userFrom: user2._id,
         userTo: user1._id,
+        interactions: {
+          met: true,
+          guest: false,
+          host: true,
+        },
+        recommend: 'yes',
       });
 
       const experience2 = new Experience({
         userFrom: user2._id,
         userTo: user1._id,
+        interactions: {
+          met: true,
+          guest: true,
+          host: false,
+        },
+        recommend: 'no',
       });
 
       // the first experience should be successfully saved
