@@ -1,4 +1,4 @@
-FROM node:14 as builder
+FROM phusion/passenger-nodejs:2.3.0 as builder
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get
