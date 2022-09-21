@@ -264,7 +264,7 @@ export default function Foundation({ user }) {
               <a className="pull-left" href="https://guaka.org/">
                 <img
                   className="media-object img-circle"
-                  src="/img/team-kasper.png"
+                  src="/img/team-kasper.jpg"
                   width="100"
                   alt="Kasper"
                 />
