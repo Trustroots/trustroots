@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  mongodb:
+    image: mongo:4.4
+    volumes:
+      - ./data/mongodb:/data/db
+    restart: unless-stopped
+
+  webapp:
+    restart: unless-stopped
+    build:
+      context: ../../
+      dockerfile: production.Dockerfile
+    volumes:
+      - ./data/local.js:/home/app/trustroots/config/env/local.js
+      - ./data/uploads-circle:/home/app/trustroots/public/uploads-circle
+      - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
+    depends_on:
+      - mongodb
+    ports:
+      # TODO Figure out what port to expose
+      - '8080:80'
+
+  worker:
+    restart: unless-stopped
+    build:
+      context: ../../
+      dockerfile: production.Dockerfile
+    volumes:
+      - ./data/local.js:/home/app/trustroots/config/env/local.js
+      - ./data/uploads-circle:/home/app/trustroots/public/uploads-circle
+      - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
+    depends_on:
+      - mongodb
+    # The worker needs NODE_ENV set to production because it doesn't use
+    # passenger to run the worker
+    environment:
+      - NODE_ENV=production
+    # Override the container's start command (which will start passenger) to
+    # start the worker
+    command: ["node", "worker.js"]
+
+  influxdb:
+    image: influxdb:1.8.10
+    ports:
+      - '8086:8086'
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=db0
+      - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
+
+  # chronograf:
+  #   image: chronograf:latest
+  #   ports:
+  #     - '127.0.0.1:8888:8888'
+  #   volumes:
+  #     - chronograf-storage:/var/lib/chronograf
+  #   depends_on:
+  #     - influxdb
+  #   environment:
+  #     - INFLUXDB_URL=http://influxdb:8086
+  #     - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
+  #     - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./data/grafana.ini:/etc/grafana/grafana.ini
+      - ./data/grafana:/var/lib/grafana
+      # - ./grafana-provisioning/:/etc/grafana/provisioning
+    depends_on:
+      - influxdb
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
