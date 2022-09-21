@@ -28,5 +28,7 @@ module.exports = {
     autoIndex: false,
     // Check for MongoDB version compatibility on start
     checkCompatibility: false,
+    // Use `/tmp/trustroots/` for uploads in production
+    uploadTmpDir: '/tmp/trustroots/',
   },
 };
