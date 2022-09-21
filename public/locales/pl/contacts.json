@@ -14,7 +14,7 @@
     "Requested {{created, LL}}": "Zaproszono {{created, LL}}",
     "Revoke Request": "Wycofaj zaproszenie",
     "Revoke contact request?": "Na pewno wycofać zaproszenie?",
-    "Since {{created, LL}}": "",
+    "Since {{created, LL}}": "Od {{created, LL}}",
     "Wait a moment…": "Poczekaj chwilę…",
     "Yes, decline request": "Tak, odrzuć zaproszenie",
     "Yes, remove contact": "Tak, usuń ze znajomych",
@@ -31,5 +31,6 @@
     "Requested {{date, LL}}": "Zaproszono {{date, LL}}",
     "{{count}} contacts_0": "{{count}} kontakt",
     "{{count}} contacts_1": "{{count}} kontakty",
-    "{{count}} contacts_2": "{{count}} kontakty"
+    "{{count}} contacts_2": "{{count}} kontakty",
+    "Search contacts": "Szukaj kontaktów"
 }

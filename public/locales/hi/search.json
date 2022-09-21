@@ -1,1 +1,12 @@
-{}
+{
+    "Select languages…": "भाषा खोजें…",
+    "Type name, username…": "नाम, उपयोगकर्ता नाम टाइप करें…",
+    "Search": "खोजें",
+    "Clear members search": "सदस्य खोज मिटाएं",
+    "No members found by this name.": "इस नाम से कोई भी सदस्य उपलब्ध नहीं है.",
+    "Search members": "सदस्यों को खोजें",
+    "{{count}} members found": "एक सदस्य पाया गया है",
+    "{{count}} members found_plural": "{{count}} सदस्य पाए गए हैं",
+    "Spoken languages": "बोली जाने वाली भाषाएं",
+    "Zoom closer to find members.": "सदस्यों को खोजने के लिए आकार वर्धन (ज़ूम इन) करें।"
+}

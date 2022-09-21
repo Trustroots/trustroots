@@ -176,47 +176,6 @@ export default function Foundation({ user }) {
               </div>
             </div>
           </div>
-          <div className="col-xs-12 col-sm-4">
-            {/* Kasper */}
-            <div className="media">
-              <a className="pull-left" href="https://guaka.org/">
-                <img
-                  className="media-object img-circle"
-                  src="/img/team-kasper.png"
-                  width="100"
-                  alt="Kasper"
-                />
-              </a>
-              <div className="media-body">
-                <h4 className="media-heading">Kasper</h4>
-                <p className="text-color-links">
-                  <Trans t={t} ns="pages">
-                    Founded multiple popular and trusted websites such as{' '}
-                    <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
-                    <a href="https://trashwiki.org/">Trashwiki</a>,{' '}
-                    <a href="https://nomadwiki.org/">Nomadwiki</a>,{' '}
-                    <a href="https://couchwiki.org/">Couchwiki</a> and{' '}
-                    <a href="https://deletionpedia.org/">Deletionpedia</a>.{' '}
-                    Volunteered for CouchSurfing as a tech team coordinator in
-                    2006 and 2007 and for{' '}
-                    <a href="https://www.bewelcome.org/">BeWelcome</a> since
-                    2007. Loves paradoxes, makes money with{' '}
-                    <a href="https://moneyless.org/">moneyless.org</a>.
-                  </Trans>
-                </p>
-                <p>
-                  <ul className="list-inline">
-                    <li>
-                      <a href="https://guaka.org/">guaka.org</a>
-                    </li>
-                    <li>
-                      <a href="/profile/guaka">{t('Trustroots profile')}</a>
-                    </li>
-                  </ul>
-                </p>
-              </div>
-            </div>
-          </div>
         </div>
 
         <hr />
@@ -224,7 +183,11 @@ export default function Foundation({ user }) {
         <div className="row">
           <div className="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 text-center">
             <h2>{t('Past board members')}</h2>
-            <p>{t('Callum and Carlos were also part of the founding team.')}</p>
+            <p>
+              {t(
+                'Callum, Carlos and Kasper were also part of the founding team.',
+              )}
+            </p>
             <br />
             <br />
           </div>
@@ -289,6 +252,47 @@ export default function Foundation({ user }) {
                     </li>
                     <li>
                       <a href="/profile/carlos">{t('Trustroots profile')}</a>
+                    </li>
+                  </ul>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="col-xs-12 col-sm-4">
+            {/* Kasper */}
+            <div className="media">
+              <a className="pull-left" href="https://guaka.org/">
+                <img
+                  className="media-object img-circle"
+                  src="/img/team-kasper.jpg"
+                  width="100"
+                  alt="Kasper"
+                />
+              </a>
+              <div className="media-body">
+                <h4 className="media-heading">Kasper</h4>
+                <p className="text-color-links">
+                  <Trans t={t} ns="pages">
+                    Founded multiple popular and trusted websites such as{' '}
+                    <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
+                    <a href="https://trashwiki.org/">Trashwiki</a>,{' '}
+                    <a href="https://nomadwiki.org/">Nomadwiki</a>,{' '}
+                    <a href="https://couchwiki.org/">Couchwiki</a> and{' '}
+                    <a href="https://deletionpedia.org/">Deletionpedia</a>.{' '}
+                    Volunteered for CouchSurfing as a tech team coordinator in
+                    2006 and 2007 and for{' '}
+                    <a href="https://www.bewelcome.org/">BeWelcome</a> since
+                    2007. Loves paradoxes, makes money with{' '}
+                    <a href="https://moneyless.org/">moneyless.org</a>.
+                  </Trans>
+                </p>
+                <p>
+                  <ul className="list-inline">
+                    <li>
+                      <a href="https://guaka.org/">guaka.org</a>
+                    </li>
+                    <li>
+                      <a href="/profile/guaka">{t('Trustroots profile')}</a>
                     </li>
                   </ul>
                 </p>

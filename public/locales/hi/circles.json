@@ -1,1 +1,19 @@
-{}
+{
+    "Cancel": "निरस्त",
+    "Join": "जुड़े",
+    "Do you want to leave \"{{label}}\"?": "क्या आप \"{{label}}\" से प्रस्थान करना चाहते हैं?",
+    "Join ({{label}})": "जुड़े ({{label}})",
+    "Join Trustroots to find members behind circles.": "मंडलियों के सदस्यों को खोजने के लिए Trustroots से जुड़ें।",
+    "Discover circles": "समुदाय/मंडली खोजें",
+    "Joining circles helps you find likeminded Trustroots members.": "मंडलियों में जुड़ने से आपको समान विचारधारा वाले Trustroots सदस्यों को खोजने में सहायता मिलती है।",
+    "No members yet": "अभी तक कोई सदस्य नहीं",
+    "Leave circle": "समुदाय छोड़ें",
+    "Leave this circle?": "इस समुदाय को छोड़ें?",
+    "New circle!": "नया समुदाय!",
+    "Send us suggestions!": "हमें सुझाव भेजें!",
+    "Sign up with Trustroots": "Trustroots के सदस्य बने",
+    "{{count, number}} members": "एक सदस्य",
+    "{{count, number}} members_plural": "{{count, number}} सदस्य",
+    "Joined": "सम्मिलित हैं",
+    "Missing your circle?": "अपनी मंडली/समुदाय को याद कर रहे हैं?"
+}
