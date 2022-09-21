@@ -83,6 +83,3 @@ docs/Gemfile.lock
 
 # Builds
 trustroots.tar.gz*
-
-# Mongo data (used only in development)
-mongodb
