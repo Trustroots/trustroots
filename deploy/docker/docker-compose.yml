@@ -14,12 +14,10 @@ services:
       dockerfile: production.Dockerfile
     volumes:
       - ./data/local.js:/home/app/trustroots/config/env/local.js
-      - ./data/uploads-circle:/home/app/trustroots/public/uploads-circle
       - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
     depends_on:
       - mongodb
     ports:
-      # TODO Figure out what port to expose
       - '8080:80'
 
   worker:
@@ -29,7 +27,6 @@ services:
       dockerfile: production.Dockerfile
     volumes:
       - ./data/local.js:/home/app/trustroots/config/env/local.js
-      - ./data/uploads-circle:/home/app/trustroots/public/uploads-circle
       - ./data/uploads-profile:/home/app/trustroots/public/uploads-profile
     depends_on:
       - mongodb
@@ -51,19 +48,6 @@ services:
       - INFLUXDB_DB=db0
       - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
       - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
-
-  # chronograf:
-  #   image: chronograf:latest
-  #   ports:
-  #     - '127.0.0.1:8888:8888'
-  #   volumes:
-  #     - chronograf-storage:/var/lib/chronograf
-  #   depends_on:
-  #     - influxdb
-  #   environment:
-  #     - INFLUXDB_URL=http://influxdb:8086
-  #     - INFLUXDB_USERNAME=${INFLUXDB_USERNAME}
-  #     - INFLUXDB_PASSWORD=${INFLUXDB_PASSWORD}
 
   grafana:
     image: grafana/grafana:latest
