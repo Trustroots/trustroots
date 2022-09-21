@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
 
   webapp:
+    image: trustrootsops/trustroots:latest
     restart: unless-stopped
     build:
       context: ../../
@@ -21,6 +22,7 @@ services:
       - '8080:80'
 
   worker:
+    image: trustrootsops/trustroots:latest
     restart: unless-stopped
     build:
       context: ../../
@@ -48,6 +50,8 @@ services:
       - INFLUXDB_DB=db0
       - INFLUXDB_ADMIN_USER=${INFLUXDB_USERNAME}
       - INFLUXDB_ADMIN_PASSWORD=${INFLUXDB_PASSWORD}
+    profiles:
+      - stats
 
   grafana:
     image: grafana/grafana:latest
@@ -62,3 +66,12 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USERNAME}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+    profiles:
+      - stats
+
+  maildev:
+    image: soulteary/maildev
+    ports:
+      - '1080:1080'
+    profiles:
+      - debug
