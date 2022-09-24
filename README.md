@@ -9,32 +9,15 @@
   <br>
 </p>
 
-## Volunteering
+## Maintenance mode
 
-You don't have to be a programmer to participate!
+Trustroots is in maintenance mode. No new features are being developed. Our
+medium term plan is decentralisation, more on that will be published soon.
 
-Check [Team Guide](https://team.trustroots.org/Volunteering.html) for more info on how to get started.
+## Building for production
 
-## Bugs & feature suggestions
-
-- [Issues about the website](https://github.com/Trustroots/trustroots/issues)
-- [Issues about mobile apps](https://github.com/Trustroots/trustroots-expo-mobile/issues)
-- [Report security issues](https://github.com/Trustroots/trustroots/blob/master/SECURITY.md#readme)
-
-## Running the software
-
-We have two main ways to run the software.
-
-### Running locally
-
-Install the stack on your localhost and run [NodeJS](https://nodejs.org/en/download/) and [MongoDB](https://docs.mongodb.com/manual/installation/) locally.
-This approach takes a little more time to setup, and bit more manual configuration,
-but is fast, and can be easier to work with. [Read more](https://team.trustroots.org/Install.html).
-
-### Running with Docker
-
-If you are familiar with Docker, this is the easiest and quickest way
-to get started. Running Docker can be a little bit slower than running locally. [Read more](https://team.trustroots.org/Install-Docker.html).
+See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
+which are output as the last part of the `dockerBuild.sh` script.
 
 ## License
 
