@@ -103,7 +103,7 @@
     "bootstrap": "3.4.1",
     "chalk": "4.1.2",
     "check-node-version": "4.2.1",
-    "classnames": "2.3.1",
+    "classnames": "2.3.2",
     "compression": "1.7.4",
     "connect-flash": "0.1.1",
     "connect-mongo": "4.6.0",
