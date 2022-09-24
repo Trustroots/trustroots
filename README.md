@@ -19,6 +19,15 @@ medium term plan is decentralisation, more on that will be published soon.
 See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
 which are output as the last part of the `dockerBuild.sh` script.
 
+## Merging
+
+Only use `git merge --no-ff branch` or the "Create a merge commit" option on
+GitHub. We don't want to delete any commit hashes. No rebasing or squashing.
+
+We use the commit hash to track what was deployed when, so any of those
+operations can destroy that history, making it much harder to understand what
+code was deployed when in the past.
+
 ## License
 
 - [The AGPL License](LICENSE.md)
