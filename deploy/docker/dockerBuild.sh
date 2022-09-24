@@ -25,5 +25,7 @@ fi
 echo
 echo "Docker images built."
 echo
-echo "trustrootsops/trustroots:latest"
-echo "trustrootsops/trustroots:git-${COMMIT}"
+echo "Please push these images now like so:"
+echo
+echo "docker push trustrootsops/trustroots:git-${COMMIT}"
+echo "docker push trustrootsops/trustroots:latest"
