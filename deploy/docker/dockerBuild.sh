@@ -21,3 +21,9 @@ if [ "$OS" = "Darwin" ]; then
 else
   sudo docker build -f ./production.Dockerfile . -t trustrootsops/trustroots:latest -t "trustrootsops/trustroots:git-${COMMIT}"
 fi
+
+echo
+echo "Docker images built."
+echo
+echo "trustrootsops/trustroots:latest"
+echo "trustrootsops/trustroots:git-${COMMIT}"
