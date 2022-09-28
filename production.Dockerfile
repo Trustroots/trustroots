@@ -1,4 +1,4 @@
-FROM phusion/passenger-nodejs:2.3.0 as builder
+FROM phusion/passenger-nodejs:2.3.1 as builder
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get
@@ -48,7 +48,7 @@ RUN npm run build:webpack
 # Create the production container
 # ------------------------------------------------------------------------------
 
-FROM phusion/passenger-nodejs:2.3.0
+FROM phusion/passenger-nodejs:2.3.1
 
 # Enable nginx in the passenger container
 RUN rm -f /etc/service/nginx/down
