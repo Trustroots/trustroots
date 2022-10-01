@@ -69,10 +69,10 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@sentry/browser": "6.19.6",
-    "@sentry/integrations": "6.19.6",
-    "@sentry/node": "6.19.6",
-    "@sentry/tracing": "6.19.6",
+    "@sentry/browser": "6.19.7",
+    "@sentry/integrations": "6.19.7",
+    "@sentry/node": "6.19.7",
+    "@sentry/tracing": "6.19.7",
     "acl": "0.4.11",
     "agenda": "1.0.3",
     "akismet-api": "5.3.0",
