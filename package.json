@@ -119,7 +119,7 @@
     "firebase-admin": "4.2.1",
     "git-rev": "0.2.1",
     "glob": "7.2.3",
-    "gm": "1.23.1",
+    "gm": "1.25.0",
     "gulp": "4.0.2",
     "gulp-concat": "2.6.1",
     "gulp-eslint": "6.0.0",
