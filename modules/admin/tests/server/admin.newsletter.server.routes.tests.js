@@ -108,7 +108,7 @@ describe('Admin Newsletter subscribers CRUD tests', () => {
     const lines = text.split('\n');
     lines.length.should.equal(2);
     lines[0].should.equal('Email Address,First Name,Last Name');
-    lines[2].should.equal(`${users[3].email},First name,Last name`);
+    lines[1].should.equal(`${users[3].email},First name,Last name`);
 
     await utils.signOut(agent);
   });

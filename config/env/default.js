@@ -32,7 +32,11 @@ module.exports = {
   maxUploadSize: 10 * 1024 * 1024, // 10MB. Remember to change this to Nginx configs as well
   imageProcessor: 'graphicsmagick', // graphicsmagick|imagemagick
   uploadTmpDir: './tmp/',
+  // NOTE: `uploadDir` probably cannot be changed as the `uploads-profile`
+  // part is hardcoded in several places in the codebase.
   uploadDir: './public/uploads-profile',
+  // NOTE: `circleImagesDir` probably cannot be changed as the `uploads-circle`
+  // part is hardcoded in `modules/tribes/client/utils/index.js`
   circleImagesDir: './public/uploads-circle',
   port: 3000,
   host: 'localhost',
