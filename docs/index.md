@@ -44,7 +44,6 @@ title: Trustroots Team Guide
 
 ### In-depth documentation
 
-- [Angular Directives](Angular-Directives.md) (deprecated)
 - [App and server Monitoring](Monitoring.md)
 - [i18n](i18n.md)
 - [Icons](Icons.md)
