@@ -2,7 +2,8 @@
 
 ## Where work happens
 
-Technical conversations often happen either on our GitHub repository or at [#tech](https://trustroots.slack.com/messages/C0A3Q15SS) channel at volunteer chat. [#log](https://trustroots.slack.com/messages/C08SG9CSK) channel is great for following the work happening on GitHub.
+Technical conversations often happen either on our GitHub repository
+or the [volunteer chat](Chat.md).
 
 Source code:
 
@@ -20,7 +21,7 @@ We store additional data in [InfluxDB](https://www.influxdata.com/) for statisti
 
 Our backend framework is [Express.js](https://expressjs.com/).
 
-Our frontend framework is [Angular v1](https://angularjs.org/) (Note that v1 has been deprecated) written in ES5 version of JavaScript but [we are migrating](React.md) to ES6 version and [React](https://reactjs.org/).
+Our frontend framework is [React](https://reactjs.org/).
 
 The application is compiled and served using [Gulp](https://gulpjs.org/) and [Webpack](https://webpack.js.org/).
 
@@ -32,7 +33,7 @@ Our stylesheets are written in [LESS](http://lesscss.org/) language and our UI u
 
 - Express.js server side serves content from API end-points.
 - In backend code, you would typically interact with [Mongoose](https://mongoosejs.com/) object models such as "Tribe" or "User". These match MongoDB collections "tribes" and "users".
-- Angular.js single page application (and soon React) reads data from the API and renders templates.
+- React.js single page application reads data from the API and renders templates.
 - The application is divided into modules by main features; one for messaging, one for users etc. Each module contains server-side files, client-side files and tests for that specific feature:
 
 ```
@@ -86,9 +87,7 @@ Check out the [Development docs](./Development.md) for more info about tooling, 
 
 ## Further studying
 
-If you feel like checking out some docs before diving in fixing bugs with old Angular -sections of the frontend codebase, we recommend getting familiar with [AngularJS documentation](https://angularjs.org/) as it intends to have steep learning curve.
-
-If you're working on some of the newer parts of the frontend code, official [React documentation](https://reactjs.org/) is great.
+Official [React documentation](https://reactjs.org/) is great.
 
 While our JavaScript codebase is mostly still in older ES5 format, we are fast moving towards modern ES6. Here are few resources to get up to speed with ES6:
 

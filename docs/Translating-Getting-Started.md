@@ -1,6 +1,9 @@
 # Getting started with Translating
 
-This is a brief introduction to working with translating/reviewing for Trustroots. If you have questions that are not answered below, you are welcome to contact the localisation team, which at the moment is easiest to do through the specific Slack channel.
+This is a brief introduction to working with translating/reviewing for
+Trustroots. If you have questions that are not answered below, you are
+welcome to contact the localisation team, which at the moment is
+easiest to do through [chat](Chat.md).
 
 ## Using Weblate
 
@@ -46,7 +49,7 @@ If the translation has been completed, the next step is a review by another pers
 
 ## Conflict Resolution
 
-Occasionally there might be disagreements on how to translate certain terms or what register to use etc. In these situations you should try to explain your point of view while listening to that of others - aiming to finding common ground to make a decision from. If it, for some reason, is not possible to come to an agreement we would recommend getting in touch with the others in the localisation team (through Slack or any other communications channel) in order to get more neutral opinions on the matter and, if needed, a moderated video conversation or a similar solution to find a way to resolve the conflict.
+Occasionally there might be disagreements on how to translate certain terms or what register to use etc. In these situations you should try to explain your point of view while listening to that of others - aiming to finding common ground to make a decision from. If it, for some reason, is not possible to come to an agreement we would recommend getting in touch with the others in the localisation team (through chat or any other communications channel) in order to get more neutral opinions on the matter and, if needed, a moderated video conversation or a similar solution to find a way to resolve the conflict.
 
 ## Deploying changes
 

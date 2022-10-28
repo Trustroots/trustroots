@@ -13,26 +13,26 @@ Remember that starting volunteering is hard! Handhold folks as much as possible,
 ### Working on social media
 
 - Give access to specific social media accounts. Each account should have shared `@trustroots.org` email so that they're not locked behind individuals. Passwords are kept in LastPass — ask [Mikael](https://www.trustroots.org/profile/mikael).
-- Invite to #social-media channel on Slack.
+- Invite to #social-media channel on [chat](Chat.md).
 
 ### Working on newsletter or blog
 
 - Give them "Editor" level access to blog [by inviting with their email](https://wordpress.com/people/new/ideas.trustroots.org).
 - MailPoet access is together with the blog.
 - See [newsletter docs](./Newsletter.md) for more.
-- Invite to #newsletter channel on Slack.
+- Invite to #newsletter channel on [chat](Chat.md)..
 
 ### Translators
 
 - Point them at [Weblate](https://hosted.weblate.org/projects/trustroots/) for translations. Ensure their language is listed there, and add them admin access if needed.
 - See [translation docs](./Translating-Getting-Started.md) for more.
-- Invite to #i18n channel on Slack.
+- Invite to #i18n channel on chat
 
 ### Support volunteers
 
 - Ask them to sign NDA because they will have access to private member data, see more below.
 - Add _admin_ role in admin tool. This will give them access to Trustroots admin tool.
-- Add them to private `#safety` channel on Slack.
+- Add them to private `#safety` channel on [chat](Chat.md)
 - Add them to ["Safety" team on Github](https://github.com/orgs/Trustroots/teams/safety) — this will give them access to few private repositories with more information.
 - Create them a ZD account. (Ask [Mikael](https://www.trustroots.org/profile/mikael))
 

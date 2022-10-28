@@ -6,4 +6,5 @@ As of October 2022 we are still using Slack for volunteer, day-to-day communicat
 
 Contact [the support team](https://www.trustroots.org/support) to ask to be invited to the chat.
 
-Would be great if you could use your Trustroots username as your Slack username so that people can easily recognise you.
+Would be great if you could use your Trustroots username as your
+Matrix username and/or name so that people can easily recognise you.
