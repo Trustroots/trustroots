@@ -64,6 +64,4 @@ We're a non-profit volunteer project.)_
 
 See [media](https://github.com/trustroots/media) repository for logos, screenshots etc.
 
-## See also
-
-- [Thread on meta: improve tribe pictures](https://meta.trustroots.org/t/improve-tribe-pictures/92)
+ 
