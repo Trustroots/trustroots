@@ -14,13 +14,15 @@ Please start by joining our [volunteer chat](Chat.md). You should start by intro
 
 - [Development](Development-Getting-Started.md).
 - [Design](Design-Getting-Started.md).
-- [Support](Support-Getting-Started.md).
 - [Translating](Translating-Getting-Started.md).
 - [Photography](Photos.md).
 - [Copywriting & Proofreading](Copywriting-Getting-Started.md).
-- [Social Media](Social-Media-Getting-Started.md).
-- [Legal](Legal-Getting-Started.md).
-- Other? If you have ideas, please let us know!
+
+Contact us if you want to help with
+- Social media
+- Support
+- Legal
+- Anything else
 
 Some of the easiest ways to help _right now_ are:
 
