@@ -12,11 +12,11 @@ Please start by joining our [volunteer chat](Chat.md). You should start by intro
 
 **How to get started with:**
 
-- [Development](Development-Getting-Started.md).
-- [Design](Design-Getting-Started.md).
-- [Translating](Translating-Getting-Started.md).
-- [Photography](Photos.md).
-- [Copywriting & Proofreading](Copywriting-Getting-Started.md).
+- [Development](Development-Getting-Started.md)
+- [Design](Design-Getting-Started.md)
+- [Translating](Translating-Getting-Started.md)
+- [Photography](Photos.md)
+- [Copywriting & Proofreading](Copywriting-Getting-Started.md)
 
 Contact us if you want to help with
 - Social media
