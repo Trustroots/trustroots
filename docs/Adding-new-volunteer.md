@@ -1,6 +1,6 @@
 # Adding new volunteers to our systems
 
-Remember that starting volunteering is hard! Handhold folks as much as possible, and work on making them feel welcome and included. With experienced volunteers, be mindful of [impostor syndrome](https://en.wikipedia.org/wiki/Impostor_syndrome) they might feel. Konstant encouragement and celebration of jobs well done is important.
+Remember that starting volunteering is hard! Handhold folks as much as possible, and work on making them feel welcome and included. With experienced volunteers, be mindful of [impostor syndrome](https://en.wikipedia.org/wiki/Impostor_syndrome) they might feel. Encouragement and celebration of jobs well done is important.
 
 ## Steps to take when adding new volunteers
 
@@ -12,7 +12,7 @@ Remember that starting volunteering is hard! Handhold folks as much as possible,
 
 ### Working on social media
 
-- Give access to specific social media accounts. Each account should have shared `@trustroots.org` email so that they're not locked behind individuals. Passwords are kept in LastPass — ask [Mikael](https://www.trustroots.org/profile/mikael).
+- Give access to specific social media accounts. Each account should have shared `@trustroots.org` email so that they're not locked behind individuals. Passwords are supposed to be kept in password managers such as [Bitwarden](https://www.bitwarden.com/), never re-use passwords or use passwords that can be memorized.
 - Invite to #social-media channel on [chat](Chat.md).
 
 ### Working on newsletter or blog
@@ -20,21 +20,21 @@ Remember that starting volunteering is hard! Handhold folks as much as possible,
 - Give them "Editor" level access to blog [by inviting with their email](https://wordpress.com/people/new/ideas.trustroots.org).
 - MailPoet access is together with the blog.
 - See [newsletter docs](./Newsletter.md) for more.
-- Invite to #newsletter channel on [chat](Chat.md)..
+- Invite to #newsletter channel on [chat](./Chat.md)..
 
 ### Translators
 
 - Point them at [Weblate](https://hosted.weblate.org/projects/trustroots/) for translations. Ensure their language is listed there, and add them admin access if needed.
 - See [translation docs](./Translating-Getting-Started.md) for more.
-- Invite to #i18n channel on chat
+- Invite to relevant chat room.
 
 ### Support volunteers
 
 - Ask them to sign NDA because they will have access to private member data, see more below.
 - Add _admin_ role in admin tool. This will give them access to Trustroots admin tool.
-- Add them to private `#safety` channel on [chat](Chat.md)
+- Add them to private `#safety` channel on [chat](./Chat.md)
 - Add them to ["Safety" team on Github](https://github.com/orgs/Trustroots/teams/safety) — this will give them access to few private repositories with more information.
-- Create them a ZD account. (Ask [Mikael](https://www.trustroots.org/profile/mikael))
+- Create them a Zendesk account.
 
 ### For developers
 
