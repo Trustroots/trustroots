@@ -55,7 +55,7 @@ title: Trustroots Team Guide
 ## More information
 
 - [Privacy Policy](Privacy-Policy.md)
-- Logos and other graphics from [media repository](https://github.com/trustroots/media)
+- Logos and other graphics from [community repository](https://github.com/Trustroots/community/tree/master/media)
 - [Trustroots in Media](https://www.trustroots.org/media)
 
 ## Statistics
