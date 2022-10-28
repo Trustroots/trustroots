@@ -2,11 +2,11 @@ We've got bunch of oAuth apps where dev.trustroots.org or www.trustroots.org are
 
 ## Twitter
 
-[Trustroots](https://twitter.com/trustroots) account has two apps, production and dev. Mikael+Kasper has access.
+[Trustroots](https://twitter.com/trustroots) account has two apps, production and dev. Kasper (and Mikael) have access.
 
 ## Facebook
 
-Two apps, production and dev. Mikael+Kasper has access to both.
+Two apps, production and dev. Kasper (and Mikael) have access to both.
 
 ## Github
 
