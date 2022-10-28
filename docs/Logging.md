@@ -25,8 +25,6 @@ It's okay to use `console.log/warn/error/info` in CLI scripts, server bootstrapp
 
 Do not use `console.log/warn/error/info` in files bundled for client side since they would be shipped to our users.
 
-In Angular code, you can use [`$log`](https://docs.angularjs.org/api/ng/service/$log) service. Output from this is disabled in production.
-
 There is currently no method to use in React code.
 
 We don't currently record client side error logging to centralised place.
