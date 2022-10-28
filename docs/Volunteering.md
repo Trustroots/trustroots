@@ -16,7 +16,7 @@ Please start by joining our [volunteer chat](Chat.md). You should start by intro
 - [Design](Design-Getting-Started.md).
 - [Support](Support-Getting-Started.md).
 - [Translating](Translating-Getting-Started.md).
-- [Photography](Photography-Getting-Started.md).
+- [Photography](Photos.md).
 - [Copywriting & Proofreading](Copywriting-Getting-Started.md).
 - [Social Media](Social-Media-Getting-Started.md).
 - [Legal](Legal-Getting-Started.md).
