@@ -1,6 +1,6 @@
 # Volunteer Chat
 
-We are using Slack for volunteer, day-to-day communications.
+As of October 2022 we are still using Slack for volunteer, day-to-day communications but we're about to move to Matrix.
 
 [trustroots.slack.com](https://trustroots.slack.com)
 
