@@ -38,11 +38,7 @@ COPY public public
 COPY testutils testutils
 
 # Build the app
-# RUN npm run build
-# BROKEN - The `npm run build` fails currently, so for testing, I'm building it
-# on the host and copying it (above in the public folder).
-RUN npm run build:generate-circle-images
-RUN npm run build:webpack
+RUN npm run build
 
 # ------------------------------------------------------------------------------
 # Create the production container
