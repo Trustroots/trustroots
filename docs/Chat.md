@@ -1,10 +1,11 @@
 # Volunteer Chat
 
-As of October 2022 we are still using Slack for volunteer, day-to-day communications but we're about to move to Matrix.
+As of November 2022 the [Trustroots volunteers space on Matrix](https://matrix.to/#/#volunteers:trustrooters.org) is more active than the [Slack](https://trustroots.slack.com/) we were using previously.
 
-[trustroots.slack.com](https://trustroots.slack.com)
+There are many Matrix clients, but [Element's web app](https://app.element.io/) is currently a good first choice for most people.  Element is also available for many other platforms. You can create a Matrix user account thru Element relatively easily.
 
-Contact [the support team](https://www.trustroots.org/support) to ask to be invited to the chat.
+TU Dresden has good documentation about using Matrix, including the [first steps](https://doc.matrix.tu-dresden.de/en/first-steps/).
 
-Would be great if you could use your Trustroots username as your
-Matrix username and/or name so that people can easily recognise you.
+It would be great if you could use your Trustroots username as your Matrix username and/or name so that people can easily recognise you.
+
+If you have questions, contact [the support team](https://www.trustroots.org/support).
