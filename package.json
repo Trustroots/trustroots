@@ -175,6 +175,7 @@
     "randomcolor": "0.6.2",
     "react": "17.0.2",
     "react-bootstrap": "0.33.1",
+    "react-bootstrap-typeahead": "6.0.0",
     "react-dom": "17.0.2",
     "react-i18next": "11.15.1",
     "react-map-gl": "5.3.16",

@@ -12,6 +12,20 @@ function ProfileEditLocationsController(
   // ViewModel
   const vm = this;
 
+  vm.addSuccessMessage = () => {
+    messageCenterService.add('success', 'Profile updated.');
+  };
+
+  vm.addErrorMessage = message => {
+    messageCenterService.add(
+      'danger',
+      message || 'Something went wrong. Please try again!',
+      { timeout: 10000 },
+    );
+  };
+
+  vm.messageCenterService = messageCenterService;
+
   // Copy user to make a temporary buffer for changes.
   // Prevents changes remaining here when cancelling profile editing.
   vm.user = new Users(Authentication.user);
@@ -28,14 +42,10 @@ function ProfileEditLocationsController(
         function (response) {
           Authentication.user = response;
           $scope.$emit('userUpdated');
-          messageCenterService.add('success', 'Profile updated.');
+          vm.addSuccessMessage();
         },
         function (response) {
-          messageCenterService.add(
-            'danger',
-            response.data.message || 'Something went wrong. Please try again!',
-            { timeout: 10000 },
-          );
+          vm.addErrorMessage(response.data.message);
         },
       );
     } else {
