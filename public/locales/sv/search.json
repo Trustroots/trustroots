@@ -8,5 +8,7 @@
     "{{count}} members found": "Hittade {{count}} medlem",
     "{{count}} members found_plural": "Hittade {{count}} medlemmar",
     "Zoom closer to find members.": "Zooma in för att se medlemmar.",
-    "Search": "Sök"
+    "Search": "Sök",
+    "Select languages…": "Välj språk…",
+    "Spoken languages": "Talade språk"
 }
