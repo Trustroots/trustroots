@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Stop executing if we hit any errors
+set -e
+
 STATUS=$(git status --porcelain | grep -c '^')
 
 if [[ "$STATUS" != "0" ]]
