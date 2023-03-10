@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Stop executing if we hit any errors
-set -e
-
 STATUS=$(git status --porcelain | grep -c '^')
 
 if [[ "$STATUS" != "0" ]]
@@ -18,6 +15,9 @@ OS=$(uname -s)
 
 # Switch to the repository root directory
 cd ../..
+
+# Stop executing if we hit any errors
+set -e
 
 if [ "$OS" = "Darwin" ]; then
   docker build -f ./production.Dockerfile . -t trustrootsops/trustroots:latest -t "trustrootsops/trustroots:git-${COMMIT}"
