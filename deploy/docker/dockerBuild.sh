@@ -20,9 +20,9 @@ cd ../..
 set -e
 
 if [ "$OS" = "Darwin" ]; then
-  docker build -f ./production.Dockerfile . -t trustrootsops/trustroots:latest -t "trustrootsops/trustroots:git-${COMMIT}"
+  docker build -f ./production.Dockerfile . -t ghcr.io/trustrootsops/trustroots:latest -t "ghcr.io/trustrootsops/trustroots:git-${COMMIT}"
 else
-  sudo docker build -f ./production.Dockerfile . -t trustrootsops/trustroots:latest -t "trustrootsops/trustroots:git-${COMMIT}"
+  sudo docker build -f ./production.Dockerfile . -t ghcr.io/trustrootsops/trustroots:latest -t "ghcr.io/trustrootsops/trustroots:git-${COMMIT}"
 fi
 
 echo
@@ -30,5 +30,5 @@ echo "Docker images built."
 echo
 echo "Please push these images now like so:"
 echo
-echo "docker push trustrootsops/trustroots:git-${COMMIT}"
-echo "docker push trustrootsops/trustroots:latest"
+echo "docker push ghcr.io/trustrootsops/trustroots:git-${COMMIT}"
+echo "docker push ghcr.io/trustrootsops/trustroots:latest"
