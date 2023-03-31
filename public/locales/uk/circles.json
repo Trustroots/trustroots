@@ -11,9 +11,10 @@
     "Missing your circle?": "Немає бажаного кола?",
     "Leave this circle?": "Залишити коло?",
     "Leave circle": "Залишити коло",
-    "Joining circles helps you find likeminded Trustroots members.": "Участь в колах допоможе тобі знайти однодумців на Trustroots",
+    "Joining circles helps you find likeminded Trustroots members.": "Участь в колах допоможе вам знайти однодумців серед користувачів Trustroots.",
     "Joined": "Приєднано",
-    "Join Trustroots to find members behind circles.": "Приєднайся до Trustroots, щоб знайти учасників кіл",
+    "Join Trustroots to find members behind circles.": "Приєднуйтесь до Trustroots, щоб знайти учасників кіл.",
     "Join ({{label}})": "Приєднатися {{label}}",
-    "Cancel": "Скасувати"
+    "Cancel": "Скасувати",
+    "Do you want to leave \"{{label}}\"?": "Ви бажаєте залишити «{{label}}»?"
 }

@@ -31,6 +31,6 @@
     "Requested {{date, LL}}": "Zaproszono {{date, LL}}",
     "{{count}} contacts_0": "{{count}} kontakt",
     "{{count}} contacts_1": "{{count}} kontakty",
-    "{{count}} contacts_2": "{{count}} kontakty",
+    "{{count}} contacts_2": "{{count}} kontaktów",
     "Search contacts": "Szukaj kontaktów"
 }

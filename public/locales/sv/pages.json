@@ -306,5 +306,11 @@
     "You can start now by joining <1>circles</1> that you identify yourself with.": "Du kan börja nu genom att gå med i <1>cirklar</1> som du känner dig hemma i.",
     "from 37:00": "Från 37:00",
     "in Media": "i media",
-    "Yes! Our code is available on <2>GitHub</2> and licensed under the <5>AGPL License</5>.": "Ja! Vår kod är tillgänglig på <2>GitHub</2> under en <5>AGPL-licens</5>."
+    "Yes! Our code is available on <2>GitHub</2> and licensed under the <5>AGPL License</5>.": "Ja! Vår kod är tillgänglig på <2>GitHub</2> under en <5>AGPL-licens</5>.",
+    "Last updated on {{date, LL}}": "Senast uppdaterad på {{date, LL}}",
+    "Our currency is hospitality: don't ask or accept any form of monetary exchange to use Trustroots.": "Vår valuta är gästfrihet: fråga inte efter eller acceptera inte någon form av penningväxling för att använda Trustroots.",
+    "Trustroots profile": "Trustroots profil",
+    "You are able to remove your profile from the Trustroots by asking us to delete your account through the <2>Account settings</2>.": "Du kan ta bort din profil från Trustroots genom att be oss ta bort ditt konto via <2>Kontoinställningar</2>.",
+    "{{date, LL}}": "{{date, LL}}",
+    "Members on Trustroots can download their profile, contact and hosting data through the <1>Account settings</1>.": "Medlemmar på Trustroots kan ladda ner sin profil, kontakt och värddata via <1>Kontoinställningar</1>."
 }
