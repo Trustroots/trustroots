@@ -312,5 +312,6 @@
     "Trustroots profile": "Trustroots profil",
     "You are able to remove your profile from the Trustroots by asking us to delete your account through the <2>Account settings</2>.": "Du kan ta bort din profil från Trustroots genom att be oss ta bort ditt konto via <2>Kontoinställningar</2>.",
     "{{date, LL}}": "{{date, LL}}",
-    "Members on Trustroots can download their profile, contact and hosting data through the <1>Account settings</1>.": "Medlemmar på Trustroots kan ladda ner sin profil, kontakt och värddata via <1>Kontoinställningar</1>."
+    "Members on Trustroots can download their profile, contact and hosting data through the <1>Account settings</1>.": "Medlemmar på Trustroots kan ladda ner sin profil, kontakt och värddata via <1>Kontoinställningar</1>.",
+    "Shop": "Butik"
 }
