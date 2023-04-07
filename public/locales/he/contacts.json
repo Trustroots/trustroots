@@ -21,7 +21,7 @@
     "Confirm Request": "אישור בקשה",
     "Wait a moment…": "נא להמתין…",
     "{{count}} contacts_0": "איש קשר אחד",
-    "{{count}} contacts_1": "שני אנשי קשר",
+    "{{count}} contacts_1": "{{count}} אנשי קשר",
     "{{count}} contacts_2": "{{count}} אנשי קשר",
     "{{count}} contacts_3": "{{count}} אנשי קשר",
     "(additional {{count}} pending)_0": "(עוד ממתין)",

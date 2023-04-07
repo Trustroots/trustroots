@@ -44,7 +44,6 @@ title: Trustroots Team Guide
 
 ### In-depth documentation
 
-- [Angular Directives](Angular-Directives.md) (deprecated)
 - [App and server Monitoring](Monitoring.md)
 - [i18n](i18n.md)
 - [Icons](Icons.md)
@@ -56,7 +55,7 @@ title: Trustroots Team Guide
 ## More information
 
 - [Privacy Policy](Privacy-Policy.md)
-- Logos and other graphics from [media repository](https://github.com/trustroots/media)
+- Logos and other graphics from [community repository](https://github.com/Trustroots/community/tree/master/media)
 - [Trustroots in Media](https://www.trustroots.org/media)
 
 ## Statistics
@@ -74,5 +73,5 @@ Is Trustroots.org down or is it just me? Check
 ## Contact and communication
 
 - [Contact us via our support form](https://www.trustroots.org/contact).
-- We are using [chat](Chat.md) for volunteer, day-to-day communications.
+- We are using [chat rooms](Chat.md) on Matrix for volunteer, day-to-day communications.
 - It's also great if you join the [hacker circle](https://www.trustroots.org/circles/hackers)!

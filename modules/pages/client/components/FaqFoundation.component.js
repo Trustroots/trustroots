@@ -10,10 +10,19 @@ export default function FaqFoundation() {
       <div className="faq-question" id="what-is-your-legal-status">
         <h3>{t("What's your legal status?")}</h3>
         <Trans t={t} ns="pages">
-          The website is owned and operated by{' '}
-          <a href="/faq/foundation">Trustroots Foundation</a>, a non-profit
-          Limited by Guarantee (LBG) under section 60 exemption, registered in
-          the United Kingdom in March 2015.
+          As of May 2022{' '}
+          <a href="https://find-and-update.company-information.service.gov.uk/company/09489825/filing-history">
+            Trustroots Foundation is dissolved
+          </a>
+          . What does it mean for the community? We don’t know exactly yet!
+        </Trans>
+        <br />
+        <br />
+        <Trans t={t} ns="pages">
+          Prior to that, the website was owned and operated by{' '}
+          <a href="/foundation">Trustroots Foundation</a>, a non-profit Limited
+          by Guarantee (LBG) under section 60 exemption, registered in the
+          United Kingdom in March 2015.
         </Trans>
       </div>
 
@@ -114,13 +123,6 @@ export default function FaqFoundation() {
         .
       </div>
 
-      <div className="faq-question" id="who-are-the-board">
-        <h3>{t('Who are the board?')}</h3>
-        <Trans t={t} ns="pages">
-          <a href="/foundation#board">We</a>: Mikael, Kasper, and Natalia.
-        </Trans>
-      </div>
-
       <div
         className="faq-question"
         id="how-do-you-want-to-make-the-project-financially-sustainable"
@@ -132,7 +134,6 @@ export default function FaqFoundation() {
           <a href="/contribute">Donations</a> and grants are the most likely
           ways. There are many inspiring organisations out there serving as
           great examples:{' '}
-          <a href="https://www.warmshowers.org/">Warmshowers Foundation</a>,{' '}
           <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a>{' '}
           (Hitchwiki), <a href="https://www.bevolunteer.org/">BeVolunteer</a>,{' '}
           <a href="https://servas.org/">Servas</a>,{' '}

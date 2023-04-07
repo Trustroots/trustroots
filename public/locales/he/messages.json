@@ -23,10 +23,19 @@
     "No": "לא",
     "More messages": "עוד הודעות",
     "Member is not available anymore.": "המשתמש כבר לא זמין.",
-    "Make sure your profile is complete": "תוודי שהפרופיל שלך מלא",
+    "Make sure your profile is complete": "נא לוודא שהפרופיל שלך מלא",
     "Explain to them why you are choosing them": "הסבירי למה את בוחרת אותם",
     "Edit your profile": "עריכת פרופיל",
     "Don't write to people 2 months ahead.": "אל תרשמי לאנשים חודשיים לפני בהקדם.",
     "Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?": "האם את מרגישה שההודעות מנומסות, מכבדות וברוח של טראסטרוטס?",
-    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...מסביר שאת מעוניינת להיפגש איתנו ולא רק לא בא לך לשלם על הוסטל."
+    "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...מסביר שאת מעוניינת להיפגש איתנו ולא רק לא בא לך לשלם על הוסטל.",
+    "Conversation started {{ date }}": "ההמרה החלה {{ date }}",
+    "License": "רישיון",
+    "{{count}} unread messages_0": "הודעה שלא נקראה",
+    "{{count}} unread messages_1": "{{count}} הודעות שלא נקראו",
+    "{{count}} unread messages_2": "{{count}} הודעות שלא נקראו",
+    "{{count}} unread messages_3": "{{count}} הודעות שלא נקראו",
+    "Failed to send the message. Perhaps your internet went down? Please try again.": "שליחת ההודעה נכשלה. אולי התנתק לך האינטרנט? נא לנסות שוב.",
+    "You are writing to too many people too fast. Slow down and try later again.": "כתבת ליותר מדי אנשים מהר מדי. כדאי להאט ולנסות שוב מאוחר יותר.",
+    "Highlight text to add links or change its appearance. Ctrl+Enter to send.": "יש לסמן טקסט כדי להוסיף קישורים או לשנות את העיצוב. Ctrl+Enter לשליחה."
 }
