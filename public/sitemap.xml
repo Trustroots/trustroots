@@ -54,6 +54,12 @@
 </url>
 
 <url>
+  <loc>https://www.trustroots.org/faq/bugs-and-features</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.90</priority>
+</url>
+
+<url>
   <loc>https://www.trustroots.org/media</loc>
   <changefreq>daily</changefreq>
   <priority>0.90</priority>
