@@ -22,6 +22,9 @@ export default function Faq({ category, children }) {
                 <h3>{t('about the foundation')}</h3>
               )}
               {category === 'technology' && <h3>{t('about technology')}</h3>}
+              {category === 'bugs-and-features' && (
+                <h3>{t('about Bugs & Features')}</h3>
+              )}
             </div>
           </div>
         </div>
@@ -272,6 +275,40 @@ export default function Faq({ category, children }) {
                         className="list-group-item"
                       >
                         {t('Could you offer mobile app at F-Droid store?')}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Bugs & Features */}
+              <div className="panel panel-default">
+                <div className="panel-heading">
+                  <h3 className="panel-title">
+                    <a
+                      href="/faq/bugs-and-features"
+                      className="undecorated-link text-color"
+                    >
+                      {t('Bugs & Features')}
+                    </a>
+                  </h3>
+                </div>
+                {category === 'bugs-and-features' && (
+                  <div className="panel-body">
+                    <div className="list-group">
+                      <a
+                        href="/faq/bugs-and-features#how-do-i-report-a-bug"
+                        className="list-group-item"
+                      >
+                        {t('How do I report a bug?')}
+                      </a>
+                      <a
+                        href="/faq/bugs-and-features#where-can-i-suggest"
+                        className="list-group-item"
+                      >
+                        {t(
+                          'Where can I suggest an improvement or new feature?',
+                        )}
                       </a>
                     </div>
                   </div>

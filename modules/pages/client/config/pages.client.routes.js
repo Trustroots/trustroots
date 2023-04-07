@@ -83,6 +83,13 @@ function PagesRoutes($stateProvider) {
         pageTitle: 'FAQ - Technology',
       },
     })
+    .state('faq.bugs-and-features', {
+      url: '/bugs-and-features',
+      template: `<faq-bugs-and-features />`,
+      data: {
+        pageTitle: 'FAQ - Bugs & Features',
+      },
+    })
     .state('foundation', {
       url: '/foundation',
       template: `
