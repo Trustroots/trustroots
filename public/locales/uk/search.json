@@ -1,6 +1,13 @@
 {
     "Search": "Пошук",
     "Search members": "Пошук користувачів",
-    "No members found by this name.": "Не знайдено учасників з таким іменем",
-    "Clear members search": "Очистити пошук за учасниками"
+    "No members found by this name.": "Не знайдено учасників з таким іменем.",
+    "Clear members search": "Очистити пошук за учасниками",
+    "Type name, username…": "Введіть ім'я, прізвисько…",
+    "Select languages…": "Виберіть мову…",
+    "Spoken languages": "Розмовні мови",
+    "Zoom closer to find members.": "Наблизьте, щоб знайти учасників.",
+    "{{count}} members found_0": "Знайдено {{count}} учасника",
+    "{{count}} members found_1": "Знайдено {{count}} учасника",
+    "{{count}} members found_2": "Знайдено {{count}} учасників"
 }

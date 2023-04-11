@@ -117,7 +117,7 @@ export default function FaqFoundation() {
       <div className="faq-question" id="who-are-the-board">
         <h3>{t('Who are the board?')}</h3>
         <Trans t={t} ns="pages">
-          <a href="/foundation#board">We</a>: Mikael, Kasper, and Natalia.
+          <a href="/foundation#board">We</a>: Mikael and Natalia.
         </Trans>
       </div>
 
@@ -132,8 +132,7 @@ export default function FaqFoundation() {
           <a href="/contribute">Donations</a> and grants are the most likely
           ways. There are many inspiring organisations out there serving as
           great examples:{' '}
-          <a href="https://www.warmshowers.org/">Warmshowers Foundation</a>,{' '}
-          <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a>{' '}
+          <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a>,{' '}
           (Hitchwiki), <a href="https://www.bevolunteer.org/">BeVolunteer</a>,{' '}
           <a href="https://servas.org/">Servas</a>,{' '}
           <a href="https://wwoof.net/">WWOOF</a> and many more. Again, if you

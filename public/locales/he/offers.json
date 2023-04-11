@@ -13,5 +13,12 @@
     "Can host": "רוצה לארח",
     "Bigger map": "התמונה הגדולה",
     "Accommodation": "שיכון",
-    "Add it to map!": "הוספה למפה!"
+    "Add it to map!": "הוספה למפה!",
+    "At most {{count}} guests._0": "אורח אחד לכל היותר.",
+    "At most {{count}} guests._1": "{{count}} אורחים לכל היותר.",
+    "At most {{count}} guests._2": "{{count}} אורחים לכל היותר.",
+    "At most {{count}} guests._3": "{{count}} אורחים לכל היותר.",
+    "Just making a dinner and would like to invite people over?": "הכנת ארוחת ערב ובא לך להזמין אנשים?",
+    "Meetups stay visible on map at most one month.": "מפגשים נשארים גלויים במפה למשך חודש לכל היותר.",
+    "Travelling? Organising an event?": "בא לך לטייל? התחלת לארגן אירוע?"
 }

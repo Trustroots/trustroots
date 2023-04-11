@@ -1,4 +1,27 @@
 {
     "Yes, remove contact": "Да, удалить контакт",
-    "Remove contact?": "Удалить контакт?"
+    "Remove contact?": "Удалить контакт?",
+    "{{count}} contacts in common_0": "{{count}} контакт всего",
+    "{{count}} contacts in common_1": "{{count}} контакта всего",
+    "{{count}} contacts in common_2": "{{count}} контактов всего",
+    "Cancel": "Отмена",
+    "Confirm Request": "Подтвердить запрос",
+    "Decline Request": "Отклонить запрос",
+    "Contact request sent and pending.": "Запрос на контакт отправлен и ожидает рассмотрения.",
+    "Decline contact request?": "Отклонить запрос на контакт?",
+    "Revoke Request": "Отозвать запрос",
+    "Requested {{date, LL}}": "Запрошен {{date, LL}}",
+    "Since {{created, LL}}": "Начиная с {{created, LL}}",
+    "Yes, decline request": "Да, отклонить запрос",
+    "Yes, revoke request": "Да, отозвать запрос",
+    "Search contacts": "Поиск контактов",
+    "Revoke contact request?": "Отозвать запрос на контакт?",
+    "Wait a moment…": "Секундочку…",
+    "You received a contact request.": "Вы получили запрос на контакт.",
+    "Connected since {{date, LL}}": "Подключён с {{date, LL}}",
+    "Requested {{created, LL}}": "Запрошен {{created, LL}}",
+    "{{count}} contacts_0": "{{count}} контакт",
+    "{{count}} contacts_1": "{{count}} контакта",
+    "{{count}} contacts_2": "{{count}} контактов",
+    "No contacts yet.": "Пока контактов нет."
 }

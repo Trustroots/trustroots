@@ -1,5 +1,4 @@
 description: Guides and documentation for Trustroots volunteers.
-google_analytics: UA-56947356-1
 lang: en
 plugins:
   - jekyll-mentions

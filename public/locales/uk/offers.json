@@ -13,8 +13,15 @@
     "Change": "Змінити",
     "Cannot host currently": "Наразі не можу прийняти",
     "Can host": "Можу прийняти",
-    "At most {{count}} guests._0": "At most one guest.",
-    "At most {{count}} guests._1": "At most {{count}} guests.",
-    "At most {{count}} guests._2": "At most {{count}} guests.",
-    "Accommodation": "Житло"
+    "At most {{count}} guests._0": "Максимум {{count}} гість.",
+    "At most {{count}} guests._1": "Максимум {{count}} гостей.",
+    "At most {{count}} guests._2": "Максимум {{count}} гостей.",
+    "Accommodation": "Житло",
+    "Modify hosting offer": "Змінити пропозицію приймання",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Подорожі? Організація заходу? Просто приготування вечері з бажанням запросити людей?",
+    "Send a message": "Надіслати повідомлення",
+    "Add it to map!": "Додайте на карту!",
+    "Meetups stay visible on map at most one month.": "Зустрічі залишаються видимими на карті не більше одного місяця.",
+    "Travelling? Organising an event?": "Подорожі? Організація заходу?",
+    "Just making a dinner and would like to invite people over?": "Просто приготування вечері з бажанням запросити людей?"
 }
