@@ -115,7 +115,7 @@
     "label": "Nederlands",
     "code": "nl",
     "english": "Dutch",
-    "production": false
+    "production": true
   },
   {
     "label": "简体中文",
