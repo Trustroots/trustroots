@@ -19,7 +19,8 @@ const User = mongoose.model('User');
 
 function isNameSpam(input) {
   if (
-    input.length > 25 ||
+    // The username field says it limits to 34, so apply that to all the fields
+    input.length > 34 ||
     input.includes(':') ||
     input.includes('/') ||
     input.includes('_') ||
@@ -33,10 +34,10 @@ function isNameSpam(input) {
 
 function isUsernameInvalid(input) {
   if (
-    input.contains(' ') ||
-    input.contains(':') ||
-    input.contains('www') ||
-    input.contains('/')
+    input.includes(' ') ||
+    input.includes(':') ||
+    input.includes('www') ||
+    input.includes('/')
   ) {
     return true;
   }
