@@ -17,6 +17,32 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
+function isNameSpam(input) {
+  if (
+    input.length > 25 ||
+    input.includes(':') ||
+    input.includes('/') ||
+    input.includes('_') ||
+    input.includes('www') ||
+    input.includes('bit.ly')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isUsernameInvalid(input) {
+  if (
+    input.contains(' ') ||
+    input.contains(':') ||
+    input.contains('www') ||
+    input.contains('/')
+  ) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * Signup
  */
@@ -33,6 +59,21 @@ exports.signup = function (req, res) {
           !req.body.email
         ) {
           return done(new Error('Please provide required fields.'));
+        }
+
+        done();
+      },
+
+      // Simple anti spam check on name input fields
+      function (done) {
+        const { firstName, lastName, username } = req.body;
+        if (
+          isNameSpam(firstName) ||
+          isNameSpam(lastName) ||
+          isNameSpam(username) ||
+          isUsernameInvalid(username)
+        ) {
+          return done(new Error('Invalid signup attempt'));
         }
 
         done();
