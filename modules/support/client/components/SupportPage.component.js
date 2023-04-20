@@ -36,6 +36,9 @@ export default function SupportPage({ user }) {
               <li>
                 <a href="/faq">{t('Frequently Asked Questions')}</a>
               </li>
+              <li>
+                <a href="/faq/bugs-and-features">{t('Bugs & Features')}</a>
+              </li>
               {user && (
                 <li>
                   <a href="/profile/edit/account#remove">

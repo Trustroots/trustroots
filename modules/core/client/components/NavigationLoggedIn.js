@@ -51,6 +51,9 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           <DropMenuItem href="/faq">
             {t('Frequently Asked Questions')}
           </DropMenuItem>
+          <DropMenuItem href="/faq/bugs-and-features">
+            {t('Bugs & Features')}
+          </DropMenuItem>
           <DropMenuItem href="/support">{t('Contact us')}</DropMenuItem>
         </NavDropdown>
       </Nav>
