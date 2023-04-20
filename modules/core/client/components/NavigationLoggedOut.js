@@ -30,7 +30,7 @@ export default function NavigationLoggedOut({ currentPath }) {
         {currentPath !== '/' && (
           <a
             aria-label={t('Read more about Trustroots')}
-            className="btn btn-link header-more-text"
+            className="btn btn-link header-more-text hidden-xs"
             href="/"
           >
             {t('Read more')}
