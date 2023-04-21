@@ -437,7 +437,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   {t('Play Store')}
                 </a>
                 <a
-                  href="https://ideas.trustroots.org/please-let-know-ios-app-comes-out/"
+                  href="https://apps.apple.com/nl/app/trustroots-community-app/id6447916847"
                   rel="noopener"
                   className="btn btn-lg btn-default"
                 >
