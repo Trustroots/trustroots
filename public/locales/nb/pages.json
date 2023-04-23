@@ -212,5 +212,6 @@
     "Trustroots is over <2>{{memberCount}} members</2> strong and growing!": "Trustroots har over <2>{{memberCount}} medlemmer</2> og blir større!",
     "Travellers' community": "Samfunn til reisende",
     "Trustroots Privacy Policy": "Trustroots personvernregler",
-    "Transparency": "Åpenhet"
+    "Transparency": "Åpenhet",
+    "Trustroots uses <2>Google Analytics</2> to collect usage, device and browser statistics.": "Trustroots bruker <2>Google Analytics</2> for å samle bruk-, enhet-, og nettleserstatistikk."
 }
