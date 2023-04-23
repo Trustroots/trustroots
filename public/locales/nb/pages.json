@@ -186,8 +186,8 @@
     "Fill your profile": "Fyll ut din profil",
     "Facebook, for profile images": "Facebook, for profilbilder",
     "Facebook page": "Facebook-side",
-    "Facebook group": "Facebook gruppe",
-    "Explain to them why you are choosing them": "Forklar dem hvorfor du velger dem",
+    "Facebook group": "Facebook-gruppe",
+    "Explain to them why you are choosing them": "Forklar til dem, hvorfor du velger dem.",
     "Don't write to people 2 months ahead.": "Ikke skriv til folk to måneder i forveien.",
     "Could Trustroots assets be sold?": "Kan Trustroots eiendeler selges?",
     "Contact & support": "Kontakt & Støtte",
@@ -199,5 +199,7 @@
     "Account": "Konto",
     "Are you planning to do X feature?": "Planlegger du å gjøre X funksjon?",
     "<0>Send us</0> new circle ideas! In the future you will be able to create new circles by yourself.": "<0>Send oss</0> idéer for nye sirkler! I framtida vil dere kunne skape nye sirkler selv.",
-    "A good profile picture can definitely help you get responses from many people.": "Et godt profilbilde kan definitivt hjelpe deg for å få svar fra mange folk."
+    "A good profile picture can definitely help you get responses from many people.": "Et godt profilbilde kan definitivt hjelpe deg for å få svar fra mange folk.",
+    "Content available under a <2>Creative Commons licence</2>": "Innhold tilgjengelig under en <2>Creative Commons lisens</2>",
+    "Be friendly and know when to stop messaging someone.": "Vær vennlig og vit når det er tide på å slutte å sende meldinger til noen."
 }
