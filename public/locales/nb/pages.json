@@ -197,5 +197,7 @@
     "BeWelcome: Writing to your host": "BeWelcome: Skriv til din vert",
     "Announcement": "Kunngjøring",
     "Account": "Konto",
-    "Are you planning to do X feature?": "Planlegger du å gjøre X funksjon?"
+    "Are you planning to do X feature?": "Planlegger du å gjøre X funksjon?",
+    "<0>Send us</0> new circle ideas! In the future you will be able to create new circles by yourself.": "<0>Send oss</0> idéer for nye sirkler! I framtida vil dere kunne skape nye sirkler selv.",
+    "A good profile picture can definitely help you get responses from many people.": "Et godt profilbilde kan definitivt hjelpe deg for å få svar fra mange folk."
 }
