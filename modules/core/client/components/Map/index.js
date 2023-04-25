@@ -32,6 +32,7 @@ export default function Map(props) {
 
   return (
     <ReactMapGL
+      reuseMaps
       dragRotate={false}
       height={320}
       mapboxApiAccessToken={MAPBOX_TOKEN}
