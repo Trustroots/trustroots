@@ -413,6 +413,7 @@ export default function SearchMap({
 
   return (
     <ReactMapGL
+      reuseMaps
       className="search-map"
       dragRotate={false}
       height="100%"
