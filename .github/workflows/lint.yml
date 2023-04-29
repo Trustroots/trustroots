@@ -6,10 +6,7 @@ on:
 
 jobs:
   lint:
-    # Don't run inline ESlint test if PR is from a forked repo (i.e. it doesn't have read permission)
-    # See https://github.com/ataylorme/eslint-annotate-action/issues/28
-    if: github.event.pull_request.head.repo.full_name == github.repository
-
+  
     runs-on: ubuntu-latest
 
     steps:
@@ -35,13 +32,25 @@ jobs:
         run: npm run lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
-      - name: Annotate Code Linting Results
-        uses: ataylorme/eslint-annotate-action@1.2.0
-        with:
-          repo-token: '${{ secrets.GITHUB_TOKEN }}'
-          report-json: 'eslint_report.json'
       - name: Upload ESLint report
         uses: actions/upload-artifact@v2
         with:
           name: eslint_report.json
           path: eslint_report.json
+          
+  linter-annotate:
+    # Don't run inline ESlint test if PR is from a forked repo (i.e. it doesn't have read permission)
+    # See https://github.com/ataylorme/eslint-annotate-action/issues/28
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: eslint_report.json
+      - name: Annotate Code Linting Results
+        uses: ataylorme/eslint-annotate-action@1.2.0
+        with:
+          repo-token: '${{ secrets.GITHUB_TOKEN }}'
+          report-json: 'eslint_report.json'
