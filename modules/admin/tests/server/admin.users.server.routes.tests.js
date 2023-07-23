@@ -277,7 +277,7 @@ describe('Admin User CRUD tests', () => {
     });
 
     describe('Changing user roles', () => {
-      it('non-admin users should not be allowed to change user roles', async () => {
+      it('non-admin users should not be allowed to add user roles', async () => {
         await utils.signIn(credentialsRegular, agent);
 
         await agent
@@ -286,9 +286,18 @@ describe('Admin User CRUD tests', () => {
           .expect(403);
       });
 
+      it('non-admin users should not be allowed to remove user roles', async () => {
+        await utils.signIn(credentialsRegular, agent);
+
+        await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'suspended', unset: true })
+          .expect(403);
+      });
+
       // Allowed roles
       ['moderator', 'shadowban', 'suspended'].map(role => {
-        it(`admin users should be allowed change user role to ${role}`, async () => {
+        it(`admin users should be allowed to add user role: ${role}`, async () => {
           await utils.signIn(credentialsAdmin, agent);
 
           await agent
@@ -296,9 +305,18 @@ describe('Admin User CRUD tests', () => {
             .send({ id: userRegularId, role })
             .expect(200);
         });
+
+        it(`admin users should be allowed to remove user role: ${role}`, async () => {
+          await utils.signIn(credentialsAdmin, agent);
+
+          await agent
+            .post('/api/admin/user/change-role')
+            .send({ id: userRegularId, role, unset: true })
+            .expect(200);
+        });
       });
 
-      it('missing id should not change user role', async () => {
+      it('missing id should not add user role', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
         const { body } = await agent
@@ -309,7 +327,18 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Cannot interpret id.');
       });
 
-      it('invalid role should not be change user roles', async () => {
+      it('missing id should not remove user role', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: '', role: 'suspended', unset: true })
+          .expect(400);
+
+        should(body.message).equal('Cannot interpret id.');
+      });
+
+      it('invalid role should not be added', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
         const { body } = await agent
@@ -320,7 +349,18 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Invalid role.');
       });
 
-      it('cannot change user role to admin', async () => {
+      it('invalid role should not be removed', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'fake', unset: true })
+          .expect(400);
+
+        should(body.message).equal('Invalid role.');
+      });
+
+      it('cannot add admin user role', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
         const { body } = await agent
@@ -331,7 +371,18 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Invalid role.');
       });
 
-      it('invalid id should not change user roles', async () => {
+      it('cannot remove admin user role', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'admin', unset: true })
+          .expect(400);
+
+        should(body.message).equal('Invalid role.');
+      });
+
+      it('invalid id should not add user roles', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
         const { body } = await agent
@@ -342,7 +393,18 @@ describe('Admin User CRUD tests', () => {
         should(body.message).equal('Cannot interpret id.');
       });
 
-      it(`changing role should show up as an admin note`, async () => {
+      it('invalid id should not remove user roles', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: '123', role: 'suspended', unset: true })
+          .expect(400);
+
+        should(body.message).equal('Cannot interpret id.');
+      });
+
+      it(`adding role should show up as an admin note`, async () => {
         await utils.signIn(credentialsAdmin, agent);
 
         await agent
@@ -356,6 +418,24 @@ describe('Admin User CRUD tests', () => {
 
         body[0].note.should.equal(
           '<p><b>Performed action:</b></p><p><i>User suspended.</i></p>',
+        );
+        body[0].admin._id.should.equal(userAdminId);
+      });
+
+      it(`removing role should show up as an admin note`, async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'suspended', unset: true })
+          .expect(200);
+
+        const { body } = await agent
+          .get(`/api/admin/notes?userId=${userRegularId}`)
+          .expect(200);
+
+        body[0].note.should.equal(
+          '<p><b>Performed action:</b></p><p><i>User removed from role:suspended.</i></p>',
         );
         body[0].admin._id.should.equal(userAdminId);
       });
