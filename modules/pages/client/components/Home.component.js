@@ -396,7 +396,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
               <p>
                 <i className="icon-right"></i>
                 <a
-                  href="http://team.trustroots.org/"
+                  href="https://team.trustroots.org/"
                   className="home-footer-more font-brand-semibold"
                 >
                   {t('For developers')}

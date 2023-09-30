@@ -134,7 +134,7 @@ export default function FaqFoundation() {
           <a href="/contribute">Donations</a> and grants are the most likely
           ways. There are many inspiring organisations out there serving as
           great examples:{' '}
-          <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a>{' '}
+          <a href="https://www.abgefahren-ev.de/">Abgefahren e.V.</a>{' '}
           (Hitchwiki), <a href="https://www.bevolunteer.org/">BeVolunteer</a>,{' '}
           <a href="https://servas.org/">Servas</a>,{' '}
           <a href="https://wwoof.net/">WWOOF</a> and many more. Again, if you

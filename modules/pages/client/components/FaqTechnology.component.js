@@ -24,7 +24,7 @@ export default function FaqTechnology() {
         <h3>{t("I'm a developer and I want to help!")}</h3>
         <Trans t={t} ns="pages">
           Great! Read about{' '}
-          <a href="http://team.trustroots.org/">development</a> and get in touch
+          <a href="https://team.trustroots.org/">development</a> and get in touch
           with us! We are looking for JavaScript developers (back- and frontend)
           and sysops.
         </Trans>
@@ -42,7 +42,7 @@ export default function FaqTechnology() {
           limited software you can imagine that still works for hospitality. We
           simply haven&apos;t had time to build most of the features yet. Please
           be patient and be mindful about{' '}
-          <a href="http://www.productstrategymeanssayingno.com/">
+          <a href="https://www.productstrategymeanssayingno.com/">
             feature creep
           </a>
           .

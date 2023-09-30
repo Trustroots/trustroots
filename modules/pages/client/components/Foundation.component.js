@@ -124,7 +124,7 @@ export default function Foundation({ user }) {
                   <Trans t={t} ns="pages">
                     Working on big freegan/travel projects such as{' '}
                     <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
-                    <a href="http://hitchgathering.org/">
+                    <a href="https://hitchgathering.org/">
                       Hitchgathering festival
                     </a>
                     , <a href="https://trashwiki.org/">Trashwiki</a> and{' '}

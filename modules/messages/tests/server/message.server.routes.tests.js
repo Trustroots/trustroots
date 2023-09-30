@@ -344,7 +344,7 @@ describe('Message CRUD tests', function () {
         // Create html in message
         const htmlMessage = message;
         htmlMessage.content =
-          '<strong>strong</strong><br><img src="http://www.trustroots.org/">' +
+          '<strong>strong</strong><br><img src="https://www.trustroots.org/">' +
           '<foo>blockquote</foo><p>' +
           '<script></script>' +
           '<a href="https://www.trustroots.org/">link</a>' +
@@ -380,7 +380,7 @@ describe('Message CRUD tests', function () {
                     '<br />blockquote' +
                     '<p>' +
                     '<a href="https://www.trustroots.org/">link</a>' +
-                    '<a href="http://www.trustroots.org">www.trustroots.org</a>' +
+                    '<a href="https://www.trustroots.org">www.trustroots.org</a>' +
                     ' </p>';
 
                   thread[0].content.should.equal(output);

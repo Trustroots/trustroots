@@ -215,7 +215,7 @@ function AppController(
           '  <p>We expect to be back in a couple minutes. Thanks for your patience.</p>' +
           '  <p>In the meantime, check our ' +
           '    <a href="https://twitter.com/trustroots" target="_blank">Twitter account</a> or ' +
-          '    <a href="http://status.trustroots.org/" target="_blank">status page</a> for news.</p>' +
+          '    <a href="https://status.trustroots.org/" target="_blank">status page</a> for news.</p>' +
           '</div>' +
           '<div class="modal-footer">' +
           '  <button class="btn btn-primary" type="button" ng-click="$dismiss()">OK</button>' +

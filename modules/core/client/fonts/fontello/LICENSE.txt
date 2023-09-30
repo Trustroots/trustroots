@@ -7,7 +7,7 @@ Font license info
 
    Author:    Dave Gandy
    License:   SIL ()
-   Homepage:  http://fortawesome.github.com/Font-Awesome/
+   Homepage:  https://fortawesome.github.com/Font-Awesome/
 
 
 ## Modern Pictograms
@@ -15,8 +15,8 @@ Font license info
    Copyright (c) 2012 by John Caserta. All rights reserved.
 
    Author:    John Caserta
-   License:   SIL (http://scripts.sil.org/OFL)
-   Homepage:  http://thedesignoffice.org/project/modern-pictograms/
+   License:   SIL (https://scripts.sil.org/OFL)
+   Homepage:  https://thedesignoffice.org/project/modern-pictograms/
 
 
 ## Entypo
@@ -24,8 +24,8 @@ Font license info
    Copyright (C) 2012 by Daniel Bruce
 
    Author:    Daniel Bruce
-   License:   SIL (http://scripts.sil.org/OFL)
-   Homepage:  http://www.entypo.com
+   License:   SIL (https://scripts.sil.org/OFL)
+   Homepage:  https://www.entypo.com
 
 
 ## Elusive
@@ -33,8 +33,8 @@ Font license info
    Copyright (C) 2013 by Aristeides Stathopoulos
 
    Author:    Aristeides Stathopoulos
-   License:   SIL (http://scripts.sil.org/OFL)
-   Homepage:  http://aristeides.com/
+   License:   SIL (https://scripts.sil.org/OFL)
+   Homepage:  https://aristeides.com/
 
 
 ## MFG Labs
@@ -42,8 +42,8 @@ Font license info
    Copyright (C) 2012 by Daniel Bruce
 
    Author:    MFG Labs
-   License:   SIL (http://scripts.sil.org/OFL)
-   Homepage:  http://www.mfglabs.com/
+   License:   SIL (https://scripts.sil.org/OFL)
+   Homepage:  https://www.mfglabs.com/
 
 
 ## Zocial
@@ -51,7 +51,7 @@ Font license info
    Copyright (C) 2012 by Sam Collins
 
    Author:    Sam Collins
-   License:   MIT (http://opensource.org/licenses/mit-license.php)
-   Homepage:  http://zocial.smcllns.com/
+   License:   MIT (https://opensource.org/licenses/mit-license.php)
+   Homepage:  https://zocial.smcllns.com/
 
 

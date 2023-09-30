@@ -85,7 +85,7 @@ export default function FaqGeneral() {
         <Trans t={t} ns="pages">
           If you would like to help out developing our mobile apps, read more
           about{' '}
-          <a href="http://team.trustroots.org/" rel="noopener">
+          <a href="https://team.trustroots.org/" rel="noopener">
             developing Trustroots
           </a>{' '}
           . <br />
