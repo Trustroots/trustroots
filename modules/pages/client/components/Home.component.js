@@ -163,7 +163,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   {!isNativeMobileApp && (
                     <div className="home-apps">
                       <a
-                        href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
+                        href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
                         rel="noopener"
                         className="btn btn-lg btn-default"
                       >
@@ -429,7 +429,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
             {!isNativeMobileApp && (
               <div className="home-apps">
                 <a
-                  href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
+                  href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
                   rel="noopener"
                   className="btn btn-lg btn-default"
                 >

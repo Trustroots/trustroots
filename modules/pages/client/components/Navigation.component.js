@@ -100,7 +100,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
         {!isNativeMobileApp && (
           <p className="home-apps">
             <a
-              href="https://play.google.com/store/apps/details?id=org.trustroots.trustrootsApp"
+              href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
               className="btn btn-default btn-app center-block"
             >
               <svg viewBox="0 0 2700 800" xmlns="http://www.w3.org/2000/svg">
