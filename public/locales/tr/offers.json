@@ -1,1 +1,12 @@
-{}
+{
+    "At most {{count}} guests.": "En fazla 1 misafir.",
+    "At most {{count}} guests._plural": "En fazla {{sayı}} misafir.",
+    "Change": "Değiştir",
+    "Sorry, user is not hosting currently.": "Üzgünüz, kullanıcı şu an ev sahipliği yapmıyor.",
+    "Send a message": "Bir mesaj gönder",
+    "Bigger map": "Büyük harita",
+    "Add it to map!": "Haritaya ekle!",
+    "Open on device": "Cihazda aç",
+    "Might be able to host": "Ev sahibi olabilir",
+    "Accommodation": "Konaklama"
+}
