@@ -426,6 +426,8 @@ module.exports.initModulesClientRoutes = function (app) {
   // Setting the app router and static folder
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
+  if (config.featureFlags.apidocs)
+    app.use('/api/', express.static(path.resolve('./apidocs')));
 };
 
 /**

@@ -8,3 +8,4 @@ scripts
 modules/core/server/views/email-templates/
 modules/core/server/views/email-templates-text/
 .github/**/*.md
+apidocs
