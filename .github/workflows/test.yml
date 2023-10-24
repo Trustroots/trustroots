@@ -37,7 +37,7 @@ jobs:
         with:
           mongodb-version: '4.4'
       - name: Install graphicsmagick
-        run: sudo apt-get install -y graphicsmagick
+        run: sudo apt-get update & sudo apt-get install -y graphicsmagick
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
