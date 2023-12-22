@@ -29,5 +29,6 @@
     "License": "Lisans",
     "Member is not available anymore.": "Kullanıcı artık ulaşılabilir değil.",
     "Conversation started {{ date }}": "Görüşme şu tarihte başladı {{tarih}}",
-    "You haven't been talking yet.": "Henüz bir konuşma başlatmadınız."
+    "You haven't been talking yet.": "Henüz bir konuşma başlatmadınız.",
+    "Your response won't be visible to them.": "Cevabınız onlar tarafından görüntülenemeyecektir."
 }
