@@ -1,4 +1,6 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
+npm run generate-api-docs
+git add apidocs/openapi.json
 npx lint-staged
