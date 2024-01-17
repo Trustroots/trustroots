@@ -37,7 +37,7 @@
     "{{count}} contacts in common_plural": "{{count}} felles kontakter",
     "{{count}} contacts": "{{count}} kontakt",
     "{{count}} contacts_plural": "{{count}} kontakter",
-    "Search contacts": "Søk kontakter",
+    "Search contacts": "Søk i kontakter",
     "(additional {{count}} pending)": "(flere {{count}} venter)",
     "(additional {{count}} pending)_plural": "(flere {{count}} venter)"
 }

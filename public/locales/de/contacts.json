@@ -41,5 +41,6 @@
     "(additional {{count}} pending)": "(weitere {{count}} offen)",
     "(additional {{count}} pending)_plural": "(weitere {{count}} offen)",
     "Wait a moment…": "Warte einen Moment…",
-    "Connected since {{date, LL}}": "Verbunden seit {{date, LL}}"
+    "Connected since {{date, LL}}": "Verbunden seit {{date, LL}}",
+    "Requested {{date, LL}}": "Angefragt {{date, LL}}"
 }
