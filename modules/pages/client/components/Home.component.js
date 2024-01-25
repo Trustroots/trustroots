@@ -160,6 +160,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   >
                     {t('Join Trustroots now')}
                   </a>
+                  {/*
                   {!isNativeMobileApp && (
                     <div className="home-apps">
                       <a
@@ -180,6 +181,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                       </a>
                     </div>
                   )}
+                  */}
                   <div className="home-down hidden-xs">
                     <i className="icon-down"></i>
                   </div>
