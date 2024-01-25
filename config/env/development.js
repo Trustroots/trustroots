@@ -11,7 +11,6 @@
 module.exports = {
   featureFlags: {
     reference: true,
-    apidocs: true,
   },
   // in dev we have webpack-dev-server on 3000, and the real server on 3001
   port: 3001,
