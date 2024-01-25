@@ -97,6 +97,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
       </div>
 
       <div className="container font-brand-regular">
+        {/*
         {!isNativeMobileApp && (
           <p className="home-apps">
             <a
@@ -144,6 +145,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
             <br />
           </p>
         )}
+        */}
         <ul className="list-inline text-center">
           <li>
             <p>
