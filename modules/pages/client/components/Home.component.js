@@ -160,26 +160,6 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   >
                     {t('Join Trustroots now')}
                   </a>
-                  {!isNativeMobileApp && (
-                    <div className="home-apps">
-                      <a
-                        href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
-                        rel="noopener"
-                        className="btn btn-lg btn-default"
-                      >
-                        <i className="icon-android"></i>
-                        {t('Play Store')}
-                      </a>
-                      <a
-                        href="https://apps.apple.com/nl/app/trustroots-community-app/id6447916847"
-                        rel="noopener"
-                        className="btn btn-lg btn-default"
-                      >
-                        <i className="icon-apple"></i>
-                        {t('App Store')}
-                      </a>
-                    </div>
-                  )}
                   <div className="home-down hidden-xs">
                     <i className="icon-down"></i>
                   </div>
