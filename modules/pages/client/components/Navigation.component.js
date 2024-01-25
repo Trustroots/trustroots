@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { useTranslation } from 'react-i18next';
 
-export default function Navigation({ user, onSignout, isNativeMobileApp }) {
+export default function Navigation({ user, onSignout }) {
   const { t } = useTranslation('pages');
 
   return (
