@@ -14,6 +14,8 @@ RUN apt-get -qq update && apt-get -q install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+RUN npm install -g npm@latest-7
+
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
 
