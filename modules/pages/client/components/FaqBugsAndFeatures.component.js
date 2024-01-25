@@ -37,30 +37,9 @@ export default function FaqBugsAndFeatures() {
       <div className="faq-question" id="where-can-i-suggest">
         <h3>{t('Where can I suggest an improvement or new feature?')}</h3>
         <Trans t={t} ns="pages">
-          We’re always very happy to hear back from the community how we can
-          improve our current features or have creative ideas for new ones. Bare
-          in mind though all time is donated and we fully rely on volunteers,
-          therefore only when we have plenty of volunteers, there’s time to work
-          on these kind of suggestions.
-        </Trans>
-        <br />
-        <br />
-        <Trans t={t} ns="pages">
-          We work on these kind of things in our technical space on{' '}
-          <a href="https://github.com/Trustroots/trustroots/issues">GitHub</a>.
-          Here you can see everything that is currently documented. First use
-          the search bar to see if someone else has submitted already your
-          suggestion or if you can find a similar one. You have to create an
-          account in order to do so. It takes a few minutes and this way, you’ll
-          get an email about any updates or responses.
-        </Trans>
-        <br />
-        <br />
-        <Trans t={t} ns="pages">
-          In case you can’t find any existing issue about your suggestion, you
-          can create a new one. When you create a new issue, you’ll see some
-          questions to help us to get a good idea of the issue. Fill in as much
-          as you can and submit your issue.
+          Trustroots is currently in maintenance mode. We are unable to accept
+          any feature requests at the current time. If this changes in the
+          future, we will update.
         </Trans>
       </div>
     </Faq>
