@@ -15,6 +15,7 @@ title: Trustroots Team Guide
 
 [_Become a volunteer and make a difference!_](Volunteering.md)
 
+<!--
 ## Where to report bugs & feature suggestions
 
 - [Issues about the website](https://github.com/Trustroots/trustroots/issues)
@@ -75,3 +76,5 @@ Is Trustroots.org down or is it just me? Check
 - [Contact us via our support form](https://www.trustroots.org/contact).
 - We are using [chat rooms](Chat.md) on Matrix for volunteer, day-to-day communications.
 - It's also great if you join the [hacker circle](https://www.trustroots.org/circles/hackers)!
+
+-->

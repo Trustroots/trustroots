@@ -1,1 +1,21 @@
-{}
+{
+    "About": "Hakkında",
+    "Could not unblock this member.": "Bu üyenin engellenmesi kaldırılamadı.",
+    "Could not block this member.": "Bu üye engellenemedi.",
+    "Are you sure you want to block them? They will not be able to see or message you.": "Onları bloklamak istediğinizden emin misiniz? Sizi görüntüleyemeyecekler ve mesaj gönderemeyecekler.",
+    "Languages": "Diller",
+    "About me": "Hakkımda",
+    "Download your data": "Verilerinizi indirin",
+    "Send a message": "Bir mesaj gönder",
+    "Edit your profile": "Profilinizi düzenleyin",
+    "Add languages you speak.": "Konuşabildiğiniz dilleri ekleyin.",
+    "Please ensure you are connected to internet and try again.": "İnternete bağlı olduğunuzdan emin olun ve tekrar deneyin.",
+    "Anonymous member": "Bilinmeyen kullanıcı",
+    "Profile": "Profil",
+    "Change language": "Dili değiştir",
+    "Block member": "Kullanıcıyı engelle",
+    "Fill your profile": "Profilinizi doldurun",
+    "Support": "Destek",
+    "Note that your profile will not be visible to others until you confirm your email.": "Mail onayınızı gerçekleştirene kadar profiliniz, diğer üyeler tarafından görüntülenemeyecektir.",
+    "Male": "Erkek"
+}

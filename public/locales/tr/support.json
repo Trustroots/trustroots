@@ -1,1 +1,20 @@
-{}
+{
+    "Trustroots Support": "Trustroots Destek",
+    "Report member {{username}} to support": "{{kullanıcı adı}} isimli üyeyi destek birimine ihbar et.",
+    "Report member": "Üyeyi bildir",
+    "Username": "Kullanıcı Adı",
+    "See also": "Ayrıca bakınız",
+    "Wait…": "Bekleyiniz…",
+    "Please write in English if possible.": "Lütfen, mümkünse İngilizce yazın.",
+    "Send": "Gönder",
+    "Thank you!": "Teşekkürler!",
+    "Something went wrong sending your message.": "Mesajınız gönderilirken hata oluştu.",
+    "Please ensure you are connected to internet and try again.": "İnternete bağlı olduğunuzdan emin olun ve tekrar deneyin.",
+    "Name": "İsim",
+    "Contact us": "Bizimle iletişime geçin",
+    "Email": "E-posta",
+    "<0>Become a volunteer</0> and make a difference!": "<0>Bir gönüllü olun</0> ve bir fark yaratın!",
+    "Frequently Asked Questions": "Sıkça Sorulan Sorular",
+    "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "<1>Ana Sayfa</1> 'ya dönebilirsiniz veya <4>Sıkça Sorulan Sorular</4> sayfasını ziyaret edebilirsiniz.",
+    "Message": "Mesaj"
+}

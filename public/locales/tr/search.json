@@ -1,1 +1,11 @@
-{}
+{
+    "Type name, username…": "Kullanıcı adınızı yazınız…",
+    "{{count}} members found": "Bir üye bulundu",
+    "{{count}} members found_plural": "",
+    "Search": "Arama",
+    "No members found by this name.": "Bu isme sahip bir kullanıcı bulunamadı.",
+    "Search members": "Kullanıcı ara",
+    "Select languages…": "Dil seçiniz…",
+    "Zoom closer to find members.": "Üyeleri bulmak için yakınlaştırın.",
+    "Spoken languages": "Konuşulan diller"
+}
