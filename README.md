@@ -14,6 +14,15 @@
 Trustroots is in maintenance mode. No new features are being developed. Our
 medium term plan is decentralisation, more on that will be published soon.
 
+## nvm & npm
+
+We're using nvm to manage node versions.
+
+- `nvm use`
+- `npm -g i npm@latest-7`
+
+It's important to use the latest version of npm v7 and not later.
+
 ## Building for production
 
 See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
