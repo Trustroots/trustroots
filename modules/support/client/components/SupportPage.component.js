@@ -37,7 +37,7 @@ export default function SupportPage({ user }) {
                 <a href="/faq">{t('Frequently Asked Questions')}</a>
               </li>
               <li>
-                <a href="/faq/bugs-and-features">{t('Bugs & Features')}</a>
+                <a href="/faq/bugs-and-features">{t('Report a bug')}</a>
               </li>
               {user && (
                 <li>
