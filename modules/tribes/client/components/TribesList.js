@@ -41,9 +41,6 @@ export default function TribesList({ tribes, user, onMembershipUpdated }) {
           />
         </Item>
       ))}
-      <Item>
-        <SuggestTribe />
-      </Item>
     </List>
   );
 }
