@@ -45,20 +45,14 @@ export default function FaqGeneral() {
       <div className="faq-question" id="is-there-mobile-app">
         <h3>{t('Is there a mobile app?')}</h3>
         {t(
-          'Yes! We currently have a very simple Android version, which basically wraps around our website and gives you push notifications to your phone when you have new messages.',
+          'No. There used to be an android app, but it is no longer maintained and not available.',
         )}
         <br />
         <br />
         <Trans t={t} ns="pages">
-          Install from <a href="http://android.trustroots.org">Play Store</a> or
-          download APK file from{' '}
-          <a href="http://apk.trustroots.org">apk.trustroots.org</a>. <br />
-        </Trans>
-        <br />
-        <Trans t={t} ns="pages">
-          Additionally our website is mobile optimized, so you could also add it
-          to your phone&apos;s home screen for quick access. Here are
-          instructions for{' '}
+          However, our website is mobile optimized, so you could also add it to
+          your phone&apos;s home screen for quick access. Here are instructions
+          for{' '}
           <a
             href="https://www.wikihow.com/Add-a-Link-Button-to-the-Home-Screen-of-an-iPhone"
             rel="noopener"
@@ -81,22 +75,6 @@ export default function FaqGeneral() {
           </a>
           . <br />
         </Trans>
-        <br />
-        <Trans t={t} ns="pages">
-          If you would like to help out developing our mobile apps, read more
-          about{' '}
-          <a href="http://team.trustroots.org/" rel="noopener">
-            developing Trustroots
-          </a>{' '}
-          . <br />
-        </Trans>
-        <br />
-        <em>
-          {t('See also')}{' '}
-          <a href="/faq/technology#f-droid">
-            {t('Could you offer mobile app at F-Droid store?')}
-          </a>
-        </em>
       </div>
 
       <div className="faq-question" id="is-trustroots-alternative">

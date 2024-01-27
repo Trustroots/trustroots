@@ -144,26 +144,8 @@ export default function FaqFoundation() {
       <div className="faq-question" id="who-decides-what-gets-done">
         <h3>{t('Who decides what gets done?')}</h3>
         <Trans t={t} ns="pages">
-          Anyone can join us as a <a href="/volunteering">volunteer</a>.
-          We&apos;re huge fans of do-cracy and getting things done attitude. We
-          have <a href="/team">a core team</a> which is formed from the most
-          active volunteers. There isn&apos;t voting or other buraucratic
-          processes involved, but you get more responsibility by simply becoming
-          active contributor and showing your communication skills. Great
-          community values simple translation jobs just as much as highly
-          skilled development. We&apos;ll aim to keep the entry level for
-          volunteers as low as possible. No bureaucracy. Pragmatic approach.
-          Trust.
-        </Trans>
-        <br />
-        <br />
-        <Trans t={t} ns="pages">
-          That said, any well organized project needs efficient teams working on
-          specific issues (such as <i>safety</i> or site&apos;s{' '}
-          <i>features/UX</i>). Rather than building complicated voting
-          mechanisms or other structures, we&apos;ll try to concentrate in
-          fostering volunteers into responsible, skilled teams. It&apos;s also
-          important to make sure everyone has the same goal and vision.
+          Since we went into maintenance mode in late 2022, the project is lead
+          by a small team of volunteers, most of whom were founders.
         </Trans>
       </div>
     </Faq>
