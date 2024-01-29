@@ -198,6 +198,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           <DropMenuItem divider />
           <SubMenuList
             list={[
+              /*
               {
                 href: 'https://www.facebook.com/trustroots.org',
                 ariaLabel: t('Trustroots at Facebook'),
@@ -213,6 +214,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 ariaLabel: t('Trustroots at Instagram'),
                 label: 'Instagram',
               },
+              */
               {
                 href: 'https://ideas.trustroots.org/',
                 label: t('Blog'),

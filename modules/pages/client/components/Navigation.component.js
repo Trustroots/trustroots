@@ -96,8 +96,8 @@ export default function Navigation({ user, onSignout }) {
         </a>
       </div>
 
+      {/*
       <div className="container font-brand-regular">
-        {/*
         {!isNativeMobileApp && (
           <p className="home-apps">
             <a
@@ -145,7 +145,6 @@ export default function Navigation({ user, onSignout }) {
             <br />
           </p>
         )}
-        */}
         <ul className="list-inline text-center">
           <li>
             <p>
@@ -204,6 +203,7 @@ export default function Navigation({ user, onSignout }) {
           </li>
         </ul>
       </div>
+      */}
     </>
   );
 }
