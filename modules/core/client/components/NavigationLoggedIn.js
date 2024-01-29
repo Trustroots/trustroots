@@ -52,7 +52,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
             {t('Frequently Asked Questions')}
           </DropMenuItem>
           <DropMenuItem href="/faq/bugs-and-features">
-            {t('Bugs & Features')}
+            {t('Report a bug')}
           </DropMenuItem>
           <DropMenuItem href="/support">{t('Contact us')}</DropMenuItem>
         </NavDropdown>
