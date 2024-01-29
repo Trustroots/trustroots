@@ -115,7 +115,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </MenuItem>
         <NavDropdown
           className="dropdown-user hidden-xs cursor-pointer"
-          id="support-dropdown"
+          id="profile-dropdown"
           pullRight
           title={
             <>
