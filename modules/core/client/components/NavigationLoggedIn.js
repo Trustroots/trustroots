@@ -181,10 +181,12 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 href: '/rules',
                 label: t('Rules'),
               },
+              /* Disable shop and navigation links - issue #2672
               {
                 href: 'https://trustroots.teemill.com',
                 label: t('Shop'),
               },
+              */
               {
                 href: '/team',
                 label: t('Team'),
