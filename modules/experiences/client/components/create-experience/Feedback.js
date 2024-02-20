@@ -46,7 +46,7 @@ export default function Feedback({
         <p>{getRecommend(recommend, report)}</p>
         <br />
         <label htmlFor="feedback-message" className="control-label">
-          {t('Public feedback')}
+          {t('Leave your public feedback here. Remember to be respectful of others and restrain from any kind of abusive behaviour.')}
         </label>
         <textarea
           className="form-control input-lg"
