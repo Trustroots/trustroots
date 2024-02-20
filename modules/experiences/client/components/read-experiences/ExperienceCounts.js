@@ -24,6 +24,9 @@ const SummaryIcon = styled(Icon).attrs(() => ({
   margin-right: 7px;
 `;
 
+// NOTE: The array of `experiences` are all experiences where the user being
+// displayed is in the `userTo` field of the experience. So they are experience
+// reports left about the user.
 export default function ExperienceCounts({ experiences }) {
   const { t } = useTranslation('experiences');
 
@@ -107,38 +110,38 @@ export default function ExperienceCounts({ experiences }) {
       return parseInt((count / totalCount) * 100, 10);
     };
 
-    const met = getInteractionPercentage('met');
-    const guest = getInteractionPercentage('guest');
-    const host = getInteractionPercentage('host');
+    const metPercentage = getInteractionPercentage('met');
+    const experiencesFromGuestsPercentage = getInteractionPercentage('guest');
+    const experiencesFromHostsPercentage = getInteractionPercentage('host');
 
-    if (host === 100) {
-      interactions.push(t('They hosted everyone.'));
-    } else if (host > 0) {
-      interactions.push(
-        t('They hosted {{percentage}}% of members.', {
-          percentage: host,
-        }),
-      );
-    }
-
-    if (guest === 100) {
+    if (experiencesFromHostsPercentage === 100) {
       interactions.push(t('Was hosted by everyone.'));
-    } else if (guest > 0) {
+    } else if (experiencesFromHostsPercentage > 0) {
       interactions.push(
         t('Was hosted by {{percentage}}% of members.', {
-          percentage: guest,
+          percentage: experiencesFromGuestsPercentage,
         }),
       );
     }
 
-    if (met === 0) {
+    if (experiencesFromGuestsPercentage === 100) {
+      interactions.push(t('They hosted everyone.'));
+    } else if (experiencesFromGuestsPercentage > 0) {
+      interactions.push(
+        t('They hosted {{percentage}}% of members.', {
+          percentage: experiencesFromHostsPercentage,
+        }),
+      );
+    }
+
+    if (metPercentage === 0) {
       interactions.push(t('Did not meet with anyone.'));
-    } else if (met === 100) {
+    } else if (metPercentage === 100) {
       interactions.push(t('Met with everyone.'));
-    } else if (met > 0) {
+    } else if (metPercentage > 0) {
       interactions.push(
         t('Met with {{percentage}}% of members.', {
-          percentage: met,
+          percentage: metPercentage,
         }),
       );
     }

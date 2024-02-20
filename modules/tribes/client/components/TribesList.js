@@ -4,7 +4,6 @@ import PropTypes from 'prop-types';
 import styled from 'styled-components';
 
 import Tribe from './Tribe';
-import SuggestTribe from './SuggestTribe';
 
 const List = styled.ul.attrs({ className: 'list-unstyled tribes-grid' })`
   margin: -5px -5px 15px -5px;

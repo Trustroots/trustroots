@@ -11,8 +11,14 @@
 
 ## Maintenance mode
 
-Trustroots is in maintenance mode. No new features are being developed. Our
-medium term plan is decentralisation, more on that will be published soon.
+Trustroots is in maintenance mode.
+
+No new features are being developed.
+
+Our medium term plan is decentralisation thru the nostr protocol, see https://github.com/Trustroots/nostroots
+
+We are also open to improvments that [make trustroots forkable](https://github.com/Trustroots/trustroots/issues/2669).
+
 
 ## nvm & npm
 
@@ -23,10 +29,12 @@ We're using nvm to manage node versions.
 
 It's important to use the latest version of npm v7 and not later.
 
+
 ## Building for production
 
 See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
 which are output as the last part of the `dockerBuild.sh` script.
+
 
 ## Merging
 

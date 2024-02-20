@@ -35,6 +35,7 @@
     "generate-circle-images": "node ./bin/generate-circle-images.js",
     "i18n:extract": "babel --config-file ./babel.config.i18n.js -o /dev/null 'modules/**/*.js'",
     "i18n:fix-weblate": "node ./bin/fix-weblate public/locales/en/*.json",
+    "i18n": "npm run i18n:extract && npm run i18n:fix-weblate",
     "install-dependencies": "node ./bin/install-deps.js",
     "lint:watch": "esw --cache --watch --quiet .",
     "lint": "eslint .",

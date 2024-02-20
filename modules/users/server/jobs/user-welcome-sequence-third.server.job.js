@@ -9,6 +9,11 @@
 /**
  * Module dependencies.
  */
+
+// Disable all welcome emails
+module.exports = function () {};
+
+/*
 const _ = require('lodash');
 const log = require('../../../../config/lib/logger');
 const emailService = require('../../../core/server/services/email.server.service');
@@ -105,3 +110,4 @@ module.exports = function (job, agendaDone) {
     },
   );
 };
+*/

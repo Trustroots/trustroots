@@ -21,7 +21,6 @@ import screenshotSearchPng from '../img/screenshot-search.png';
 import screenshotSearchPng2x from '../img/screenshot-search-2x.png';
 import screenshotSearchWebp from '../img/screenshot-search.webp';
 import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
-import Tooltip from '@/modules/core/client/components/Tooltip.js';
 
 /**
  * List of photos to randomly pick as cover photo for homepage
@@ -79,7 +78,7 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
-export default function Home({ user, isNativeMobileApp, photoCredits }) {
+export default function Home({ user, photoCredits }) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
   const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
@@ -428,6 +427,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
 
           <div className="row text-center">
             <hr className="hr-white hr-xs" />
+            {/*
             {!isNativeMobileApp && (
               <div className="home-apps">
                 <a
@@ -490,6 +490,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 </Tooltip>
               </li>
             </ul>
+            */}
 
             <BoardCredits photoCredits={photoCredits} />
           </div>

@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { useTranslation } from 'react-i18next';
 
-export default function Navigation({ user, onSignout, isNativeMobileApp }) {
+export default function Navigation({ user, onSignout }) {
   const { t } = useTranslation('pages');
 
   return (
@@ -91,13 +91,15 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
         <a className="list-group-item" href="/rules">
           {t('Rules')}
         </a>
+        {/* Disable shop and navigation links - issue #2672
         <a className="list-group-item" href="https://trustroots.teemill.com">
           {t('Shop')}
         </a>
+        */}
       </div>
 
+      {/*
       <div className="container font-brand-regular">
-        {/*
         {!isNativeMobileApp && (
           <p className="home-apps">
             <a
@@ -145,7 +147,6 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
             <br />
           </p>
         )}
-        */}
         <ul className="list-inline text-center">
           <li>
             <p>
@@ -204,6 +205,7 @@ export default function Navigation({ user, onSignout, isNativeMobileApp }) {
           </li>
         </ul>
       </div>
+      */}
     </>
   );
 }
