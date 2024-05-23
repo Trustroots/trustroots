@@ -1,12 +1,15 @@
 #!/bin/bash
 
+set -e
+
 STATUS=$(git status --porcelain | grep -c '^')
 
 if [[ "$STATUS" != "0" ]]
 then
   echo "Cowardly refusing to build with a dirty git"
-  exit 1
 fi
+
+cd $(dirname $0)
 
 # Get the current commit hash of the repository
 COMMIT=$(git rev-parse --short HEAD)
