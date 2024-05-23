@@ -22,7 +22,7 @@ We are also open to improvments that [make trustroots forkable](https://github.c
 
 ## nvm & npm
 
-We're using nvm to manage node versions.
+We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage node versions.
 
 - `nvm use`
 - `npm -g i npm@latest-7`
