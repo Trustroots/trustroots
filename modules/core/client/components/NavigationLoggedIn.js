@@ -108,10 +108,10 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
-          path="/offer/meet"
+          path="https://notes.trustroots.org/"
           className="hidden-xs"
         >
-          {t('Meet')}
+          {t('Notes')}
         </MenuItem>
         <NavDropdown
           className="dropdown-user hidden-xs cursor-pointer"
