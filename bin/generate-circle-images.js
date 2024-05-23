@@ -15,7 +15,7 @@ const mkdir = require('mkdir-recursive');
 const path = require('path');
 const sharp = require('sharp');
 
-sharp.simd(false)
+sharp.simd(false);
 
 // Width and height in pixels
 const circleImagesSizes = [
