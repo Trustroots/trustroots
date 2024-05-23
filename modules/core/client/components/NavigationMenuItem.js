@@ -28,4 +28,5 @@ NavigationMenuItem.propTypes = {
   className: PropTypes.string,
   currentPath: PropTypes.string.isRequired,
   path: PropTypes.string.isRequired,
+  target: PropTypes.string,
 };
