@@ -108,8 +108,11 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
-          path="https://notes.trustroots.org/#user=${user.username}"
-          target="_blank"
+          path='https://notes.trustroots.org/#user=${user.username}'
+          onClick={(event) => {
+            window.open('https://notes.trustroots.org/#user=${user.username}', "_blank");
+            event.preventDefault();
+            }}
           className="hidden-xs"
         >
           {t('Notes')}
