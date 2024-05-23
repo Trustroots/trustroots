@@ -18,7 +18,9 @@ export default function NavigationMenuItem({
       })}
       {...rest}
     >
-      <a href={path} target={target}>{children}</a>
+      <a href={path} target={target}>
+        {children}
+      </a>
     </li>
   );
 }
