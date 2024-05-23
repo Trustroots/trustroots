@@ -292,7 +292,7 @@ export default function Foundation({ user }) {
                       <a href="https://guaka.org/">guaka.org</a>
                     </li>
                     <li>
-                      <a href="/profile/guaka">{t('Trustroots profile')}</a>
+                      <a href="/profile/thefriendlyhost">{t('Trustroots profile')}</a>
                     </li>
                   </ul>
                 </p>
