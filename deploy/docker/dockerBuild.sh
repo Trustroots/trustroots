@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 STATUS=$(git status --porcelain | grep -c '^')
 
 if [[ "$STATUS" != "0" ]]
