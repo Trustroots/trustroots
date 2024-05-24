@@ -29,8 +29,8 @@ export default function Navigation({ user, onSignout }) {
           {t('Host')}
         </a>
 
-        <a href="/offer/meet" className="list-group-item">
-          {t('Meet')}
+        <a href={`https://notes.trustroots.org/#user=${user.username}`} className="list-group-item">
+          {t('Notes')}
         </a>
 
         <a

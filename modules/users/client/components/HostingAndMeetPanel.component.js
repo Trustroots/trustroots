@@ -16,7 +16,7 @@ export default function HostingAndMeetPanel() {
 
   return (
     <div className="panel panel-default">
-      <div className="panel-heading">{t('Hosting & meet')}</div>
+      <div className="panel-heading">{t('Hosting')}</div>
       <div className="panel-body">
         <div className="form-horizontal">
           <p>
@@ -27,16 +27,6 @@ export default function HostingAndMeetPanel() {
             >
               <SofaIcon icon="sofa" />
               {t('Modify your hosting location')}
-            </a>
-          </p>
-          <p>
-            <a
-              role="button"
-              href="/offer/meet"
-              className="btn btn-inverse-primary"
-            >
-              <Icon icon="users" />
-              {t('Modify your meet locations')}
             </a>
           </p>
         </div>
