@@ -22,8 +22,9 @@ export default function NoMeets() {
       <p>
         <a
           className="btn btn-action btn-inverse-primary"
-          href={`https://notes.trustroots.org/#user=${user.username}`}
-	  target="_blank"  
+          href="https://notes.trustroots.org/"
+          target="_blank"
+          rel="noreferrer"
         >
           {t('Add it to map!')}
         </a>
