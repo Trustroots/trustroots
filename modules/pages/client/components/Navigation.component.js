@@ -29,7 +29,12 @@ export default function Navigation({ user, onSignout }) {
           {t('Host')}
         </a>
 
-        <a href="https://notes.trustroots.org/" className="list-group-item">
+        <a
+          href={`https://notes.trustroots.org/#user=${user.username}`}
+          target="_blank"
+          rel="noreferrer"
+          className="list-group-item"
+        >
           {t('Notes')}
         </a>
 
