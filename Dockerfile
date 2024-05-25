@@ -1,4 +1,4 @@
-FROM node:14
+FROM node:16-bullseye-slim
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get
@@ -6,17 +6,19 @@ FROM node:14
 # - `build-essential` and `make` are required by some Node modules
 # - `unzip` & `wget` are required by API docs generator
 RUN apt-get -qq update && apt-get -q install -y \
-    build-essential \
-    graphicsmagick \
-    openssl \
-    unzip \
-    wget \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+  build-essential \
+  graphicsmagick \
+  openssl \
+  unzip \
+  wget \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Create working directory
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
+
+RUN npm -g i npm@latest-7
 
 # Copies the local package.json and package-lock.json files to the container
 # and utilities docker container cache to not needing to rebuild
