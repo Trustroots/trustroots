@@ -19,22 +19,27 @@ Our medium term plan is decentralisation thru the nostr protocol, see https://gi
 
 We are also open to improvments that [make trustroots forkable](https://github.com/Trustroots/trustroots/issues/2669).
 
-
 ## nvm & npm
 
 We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage node versions.
 
 - `nvm use`
-- `npm -g i npm@latest-7`
+- `npm -g i npm@latest-7 node-gyp@0.8.0`
 
 It's important to use the latest version of npm v7 and not later.
 
+To be able to install dependencies on macOS / apple silicon, the following dependencies are required:
+
+- `brew install pkg-config cairo pango libpng jpeg giflib librsvg python3-setuptools`
+
+Installing mmmagic expects `python` to be a valid binary, which it is not. This can be solved by adding a symlink from `python` to `python3` like so:
+
+- `ln -s "$(brew --prefix)/bin/python"{3,}`
 
 ## Building for production
 
 See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
 which are output as the last part of the `dockerBuild.sh` script.
-
 
 ## Merging
 
