@@ -11,6 +11,7 @@ RUN apt-get -qq update && apt-get -q install -y \
   openssl \
   unzip \
   wget \
+  python3 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

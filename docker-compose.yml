@@ -11,6 +11,7 @@ volumes:
 
 services:
   trustroots:
+    platform: linux/amd64
     container_name: trustroots
     restart: unless-stopped
     build:
