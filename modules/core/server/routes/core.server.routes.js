@@ -54,6 +54,15 @@ module.exports = function (app) {
   // Object is passed to layout at `core.renderIndex()`
   app.route('/circles/:tribe').get(core.renderIndex);
 
+  app.route('/.well-known/nostr.json').get(function(req, res) {
+    // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
+    res.json({
+      "names": {
+        "nostroots": "7e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e"
+      }
+    });
+  });
+
   // Define application route
   app.route('/*').get(core.renderIndex);
 
