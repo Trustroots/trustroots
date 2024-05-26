@@ -293,6 +293,67 @@
         </div>
       </div>
 
+      <div class="extsites">
+        <h4>nostr</h4>
+        <!--
+      Note:
+        - links here have `rel="noopener"` because;
+          https://mathiasbynens.github.io/rel-noopener/
+        - CS link has `rel="noreferrer"` because;
+          https://github.com/Trustroots/trustroots/issues/464
+      -->
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">
+              <a
+                tabindex="0"
+                class="icon-help cursor-help tr-help"
+                popover-placement="bottom-left"
+                popover-trigger="'mouseenter'"
+                uib-popover-template="'nostrGuidePopover.html'"
+              ></a>
+              <script type="text/ng-template" id="nostrGuidePopover.html">
+                <div>
+                  Paste your nostr npub in here.
+                  <br><br>
+                </div>
+              </script>
+            </div>
+            <label class="input-group-addon" for="extSitesCouchers">
+              <span class="hidden-xs"></span>
+              <span class="visible-xs-inline">npub:</span>
+            </label>
+            <input
+              id="nostrNpub"
+              type="text"
+              class="form-control"
+              ng-model="profileEditNetworks.user.nostrNpub"
+              ng-change="profileEdit.unsavedModifications=true"
+              placeholder="npub"
+              aria-label="nostr npub"
+            />
+	    <!-- 
+            <span
+              class="input-group-btn"
+              ng-if="profileEditNetworks.user.nostrNpub.length"
+            >
+              <a
+                ng-href="https://app.couchers.org/user/{{ profileEditNetworks.user.extSitesCouchers }}"
+                target="_blank"
+                class="btn btn-primary"
+                role="button"
+                rel="noopener"
+              >
+                <small>Test</small>
+              </a>
+            </span>
+	    -->
+          </div>
+        </div>
+        
+      </div>
+
+
       <p>
         <button
           type="submit"
