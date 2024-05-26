@@ -106,6 +106,18 @@ export default function ProfileViewBasics({ profile }) {
         className="social-profiles list-unstyled"
         aria-describedby="profile-networks"
       >
+        {profile.nostrNpub && (
+          <li className="social-profile">
+            <i className="social-profile-icon icon-fw icon-lg"></i>
+            <a
+              rel="noopener"
+              className="social-profile-handle"
+              href={`https://njump.me/${profile.nostrNpub}`}
+            >
+              nostr npub
+            </a>
+          </li>
+        )}
         {/*
           Facebook profile link is hidden here until issue with their API gets resolved
           See https://github.com/Trustroots/trustroots/issues/237
