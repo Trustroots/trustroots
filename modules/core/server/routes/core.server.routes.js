@@ -56,11 +56,31 @@ module.exports = function (app) {
 
   app.route('/.well-known/nostr.json').get(function(req, res) {
     // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
-    res.json({
-      "names": {
-        "nostroots": "7e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e"
+    const mongoose = require('mongoose');
+    const User = mongoose.model('User');
+    
+    const name = req.query.name;
+    
+    User.findOne({ username: name }, function(err, user) {
+      if (err) {
+        res.status(500).send({ error: 'Internal server error' });
+      } else if (!user) {
+        res.status(404).send({ error: 'User not found' });
+      } else {
+        const nostrNpub = user.nostrNpub || 'User does not have a Nostr public key';
+    //    const npubs = {
+    //      "nostroots": "7e7e9c42a91bfef19fa929e5fda1b72e0ebc1a4c1141673e2794234d86addf4e",
+    //      "thefriendlyhost": "84d17317d46629037291f93df470c28082a874305e41c9465970659e9254edab"
+    //    };
+        res.json({
+          "names": {
+            [name]: nostrNpub  // TODO convert npub to hex
+          }
+        });
+    
       }
     });
+
   });
 
   // Define application route
