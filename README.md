@@ -36,6 +36,12 @@ Installing mmmagic expects `python` to be a valid binary, which it is not. This 
 
 - `ln -s "$(brew --prefix)/bin/python"{3,}`
 
+If you're running on apple silicon, you also need to run this command:
+
+- `sed -i '' 's/"rU"/"r"/' ~/.nvm/versions/node/v16.20.2/lib/node_modules/npm/node_modules/node-gyp/gyp/pylib/gyp/input.py`
+
+You might also need to run the linux equivalent of that if you see an error about "ValueError: invalid mode: 'rU' while trying to load binding.gyp". The linux equivalent removes the first set of `''`.
+
 ## Building for production
 
 See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
