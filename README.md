@@ -30,7 +30,7 @@ It's important to use the latest version of npm v7 and not later.
 
 To be able to install dependencies on macOS / apple silicon, the following dependencies are required:
 
-- `brew install pkg-config cairo pango libpng jpeg giflib librsvg python3-setuptools`
+- `brew install pkg-config cairo pango libpng jpeg giflib librsvg python-setuptools`
 
 Installing mmmagic expects `python` to be a valid binary, which it is not. This can be solved by adding a symlink from `python` to `python3` like so:
 
