@@ -50,8 +50,19 @@ or
 
 `docker compose up`
 
-People have experienced problems with both of these.
 
+If you experience docker issues you could try clearing up docker - even though it shouldn't be necessary, it can help:
+
+```
+docker image prune
+docker image prune -a
+docker container prune
+docker volume prune
+docker builder prune
+docker builder prune -a
+docker system prune
+docker system prune -a --volumes -f
+```
 
 ## Building for production
 
