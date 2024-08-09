@@ -42,6 +42,17 @@ If you're running on apple silicon, you also need to run this command:
 
 You might also need to run the linux equivalent of that if you see an error about "ValueError: invalid mode: 'rU' while trying to load binding.gyp". The linux equivalent removes the first set of `''`.
 
+## Running locally
+
+`npm start`
+
+or 
+
+`docker compose up`
+
+People have experienced problems with both of these.
+
+
 ## Building for production
 
 See `deploy/docker`. Run `dockerBuild.sh`. Then `docker push` the latest tags
