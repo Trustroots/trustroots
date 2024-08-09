@@ -165,6 +165,7 @@
     "natural": "5.2.3",
     "ng-file-upload": "12.2.13",
     "nodemailer": "6.7.8",
+    "nostr-tools": "2.7.2",
     "nunjucks": "3.2.3",
     "passport": "0.5.0",
     "passport-facebook": "3.0.0",
