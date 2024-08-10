@@ -70,19 +70,17 @@ module.exports = function (app) {
       } else {
         const nostrNpub = user.nostrNpub;
 
-        if (nostrNpub) {
+        if (nostrNpub && nostrNpub.startsWith('npub1')) {
           var result = nip19.decode(nostrNpub);
-          var hex = result.data;
+          var obj = {
+            names: {
+              [name]: result.data,
+            },
+          };
         } else {
-          // what should we return if there's no npub?
-          var hex = 'no npub';
+          var obj = {};
         }
-
-        res.json({
-          names: {
-            [name]: hex,
-          },
-        });
+        res.json(obj);
       }
     });
   });
