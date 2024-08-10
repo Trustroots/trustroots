@@ -103,7 +103,7 @@ export default function ProfileViewBasics({ profile }) {
         {t('Elsewhere')}
       </h4>
       <ul
-        className="social-profiles list-unstyled"
+        className="elsewhere-profiles list-unstyled"
         aria-describedby="profile-networks"
       >
         {profile.nostrNpub && (
