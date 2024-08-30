@@ -34,6 +34,7 @@ exports.getExternalSiteCount = function (site, callback) {
     'facebook',
     'twitter',
     'github',
+    'nostr',
   ];
 
   // Validate site
@@ -65,6 +66,9 @@ exports.getExternalSiteCount = function (site, callback) {
       break;
     case 'github':
       query['additionalProvidersData.github'] = { $exists: true };
+      break;
+    case 'nostr':
+      query.nostrNpub = { $exists: true, $ne: '' };
       break;
   }
 
