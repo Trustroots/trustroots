@@ -54,6 +54,8 @@ export function getNetworkName(network) {
       return 'Twitter';
     case 'warmshowers':
       return 'Warmshowers';
+    case 'nostr':
+      return 'Nostr';
     default:
       return network;
   }
