@@ -60,7 +60,7 @@ module.exports = function (app) {
     const mongoose = require('mongoose');
     const User = mongoose.model('User');
 
-    const name = req.query.name;
+    const name = Array.isArray(req.query.name) ? req.query.name[0] : req.query.name;
 
     User.findOne({ username: name }, function (err, user) {
       if (err) {
