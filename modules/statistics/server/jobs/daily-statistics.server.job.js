@@ -187,6 +187,7 @@ module.exports = function (job, agendaDone) {
           'facebook',
           'twitter',
           'github',
+          'nostr',
         ];
 
         // Loop trough each network in series
