@@ -159,7 +159,7 @@ export default function Statistics({ isAuthenticated }) {
               <Stat title={t('Connected to networks')}>
                 <ul className="list-unstyled text-right">
                   {!statistics
-                    ? Array(6).map(i => (
+                    ? Array(7).map(i => (
                         <li key={i}>
                           <CountPlaceholder />
                         </li>
