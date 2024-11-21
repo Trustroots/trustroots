@@ -109,7 +109,6 @@ export default function Privacy() {
                 )}
               </p>
               <h3>{t('Analytics & opting out')}</h3>
-              
               <p>
                 {t(
                   'We use third-party services that probably track usage, this includes',
@@ -135,8 +134,8 @@ export default function Privacy() {
               </ul>
               <p>
                 <Trans t={t} ns="pages">
-                  We would like to reduce our
-                  reliance on these services in the future.
+                  We would like to reduce our reliance on these services in the
+                  future.
                 </Trans>
               </p>
               <br />
@@ -179,8 +178,8 @@ export default function Privacy() {
               </Trans>
               <h3>{t('Our server')}</h3>
               <Trans t={t} ns="pages">
-                Our server (and thus your data) is securely hosted at{' '}
-                Hetzner in Germany.
+                Our server (and thus your data) is securely hosted at Hetzner in
+                Germany.
               </Trans>
               <h3>{t('Research')}</h3>
               <Trans t={t} ns="pages">

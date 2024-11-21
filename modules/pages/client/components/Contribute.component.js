@@ -33,8 +33,8 @@ export default function Contribute() {
                   March 2015
                 </a>
                 . At the moment our costs are mainly for servers and other
-                technical aspects, currently well below €1000 per year.
-                As accepting donations would lead to higher total costs (due to
+                technical aspects, currently well below €1000 per year. As
+                accepting donations would lead to higher total costs (due to
                 accounting etc.) and require more effort than it seems worth,
                 everything is currently being covered by private donations.
               </Trans>

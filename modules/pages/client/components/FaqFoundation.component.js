@@ -131,8 +131,7 @@ export default function FaqFoundation() {
         <Trans t={t} ns="pages">
           <a href="/contribute">Donations</a> and grants are the most likely
           ways. There are many inspiring organisations out there serving as
-          great examples:{' '}
-          <a href="https://couchers.org/">Couchers.org</a>,{' '}
+          great examples: <a href="https://couchers.org/">Couchers.org</a>,{' '}
           (Hitchwiki), <a href="https://www.bevolunteer.org/">BeVolunteer</a>,{' '}
           <a href="https://servas.org/">Servas</a>,{' '}
           <a href="https://wwoof.net/">WWOOF</a> and many more.
