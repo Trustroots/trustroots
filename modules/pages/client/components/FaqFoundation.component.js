@@ -117,7 +117,7 @@ export default function FaqFoundation() {
       <div className="faq-question" id="who-are-the-board">
         <h3>{t('Who are the board?')}</h3>
         <Trans t={t} ns="pages">
-          <a href="/foundation#board">We</a>: Mikael and Natalia.
+          <a href="/foundation#board">We</a>: Callum and Kasper.
         </Trans>
       </div>
 
@@ -132,12 +132,10 @@ export default function FaqFoundation() {
           <a href="/contribute">Donations</a> and grants are the most likely
           ways. There are many inspiring organisations out there serving as
           great examples:{' '}
-          <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a>,{' '}
+          <a href="https://couchers.org/">Couchers.org</a>,{' '}
           (Hitchwiki), <a href="https://www.bevolunteer.org/">BeVolunteer</a>,{' '}
           <a href="https://servas.org/">Servas</a>,{' '}
-          <a href="https://wwoof.net/">WWOOF</a> and many more. Again, if you
-          have experience with this it would be great if you{' '}
-          <a href="/support">contact us</a>.
+          <a href="https://wwoof.net/">WWOOF</a> and many more.
         </Trans>
       </div>
 
@@ -145,7 +143,7 @@ export default function FaqFoundation() {
         <h3>{t('Who decides what gets done?')}</h3>
         <Trans t={t} ns="pages">
           Since we went into maintenance mode in late 2022, the project is lead
-          by a small team of volunteers, most of whom were founders.
+          by a small team of volunteers, including 2 of the original founders.
         </Trans>
       </div>
     </Faq>
