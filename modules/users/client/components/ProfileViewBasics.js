@@ -152,7 +152,7 @@ export default function ProfileViewBasics({ profile }) {
             <a
               rel="noopener"
               className="social-profile-handle"
-              href={`https://app.couchers.org/user/${profile.extSitesCouchers}`}
+              href={`https://couchers.org/user/${profile.extSitesCouchers}`}
             >
               Couchers.org
             </a>
