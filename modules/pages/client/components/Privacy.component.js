@@ -36,7 +36,7 @@ export default function Privacy() {
             >
               <time itemProp="dateModified" dateTime="2018-12-04">
                 {t('Last updated on {{date, LL}}', {
-                  date: new Date(2018, 11, 4),
+                  date: new Date(2024, 11, 21),
                 })}
               </time>
             </p>
@@ -109,24 +109,10 @@ export default function Privacy() {
                 )}
               </p>
               <h3>{t('Analytics & opting out')}</h3>
+              
               <p>
                 {t(
-                  'Using Analytics we automatically collect information such as usage times, browser details, screen size, network location (IP), country, language etc. This information is anonymized and never published so that individual users cannot be recognized.',
-                )}
-              </p>
-              <p>
-                <Trans t={t} ns="pages">
-                  We currently use <strong>Google Analytics</strong>, as
-                  it&apos;s the industry standard. At some point in the future
-                  we would like to run our own instance of Matomo and after
-                  doing that for long enough we may be able to move away from
-                  Google Analytics. We can use <a href="/volunteering">help</a>{' '}
-                  with this.
-                </Trans>
-              </p>
-              <p>
-                {t(
-                  'We also use third-party services that probably track usage, this includes',
+                  'We use third-party services that probably track usage, this includes',
                 )}
               </p>
               <ul>
@@ -149,30 +135,13 @@ export default function Privacy() {
               </ul>
               <p>
                 <Trans t={t} ns="pages">
-                  Like with Google Analytics, we would like to reduce our
-                  reliance on these services in the future, and we can
-                  definitely use <a href="/volunteering">help</a> with this.
+                  We would like to reduce our
+                  reliance on these services in the future.
                 </Trans>
               </p>
               <br />
-              <br />
-              <Trans t={t} ns="pages">
-                Trustroots uses{' '}
-                <a href="https://www.google.com/analytics/">Google Analytics</a>{' '}
-                to collect usage, device and browser statistics.
-              </Trans>
-              <br />
-              <br />
-              {t('To opt out of analytics tracking, you can either:')}
+              {t('To opt out of analytics tracking, you can:')}
               <ul>
-                <li>
-                  <Trans t={t} ns="pages">
-                    Install Google&apos;s official{' '}
-                    <a href="https://tools.google.com/dlpage/gaoptout">
-                      opt out extension
-                    </a>
-                  </Trans>
-                </li>
                 <li>
                   <Trans t={t} ns="pages">
                     Install <a href="https://www.ghostery.com/">Ghostery</a>,{' '}
@@ -188,7 +157,7 @@ export default function Privacy() {
                 </li>
               </ul>
               {t(
-                'If you wish to stay completely anonymous online, please check this guide by Matomo:',
+                'If you wish to stay more anonymous online, please check this guide by Matomo:',
               )}
               <br />
               <a href="https://matomo.org/wp-content/uploads/2012/01/How-to-remain-anonymous-online.pdf">
@@ -211,19 +180,12 @@ export default function Privacy() {
               <h3>{t('Our server')}</h3>
               <Trans t={t} ns="pages">
                 Our server (and thus your data) is securely hosted at{' '}
-                <a
-                  href="https://www.digitalocean.com/?refcode=6dc078966c9c"
-                  title="(Referral link)"
-                >
-                  DigitalOcean
-                </a>{' '}
-                in Amsterdam, Europe.
+                Hetzner in Germany.
               </Trans>
               <h3>{t('Research')}</h3>
               <Trans t={t} ns="pages">
                 Scientific trust metric research might be done with Trustroots
-                data, but in such case the data is always anonymized and it will
-                be impossible to recognize individual users from it. See our{' '}
+                data, but in such case the data is always anonymized. See our{' '}
                 <a href="/statistics">statistics page</a> for more information.
               </Trans>
             </div>
