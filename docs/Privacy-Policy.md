@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_**WORK IN PROGRESS, gonna replace [previous one](https://www.trustroots.org/#!/privacy).**_
+See also https://www.trustroots.org/privacy
 
 ---
 
@@ -29,11 +29,12 @@ You can also [contact us](http://ideas.trustroots.org/contact/).
 
 #### Our server
 
-Our server, which stores your data, is securely hosted at [DigitalOcean](https://www.digitalocean.com/?refcode=6dc078966c9c) in the Netherlands and backed up hourly to [AWS](http://aws.amazon.com/).
+Our server, which stores your data, is securely hosted at Hetzner in Germany.
 
-We may also make use of other servers in other countries. We strive to update this document in a timely manner accordingly.
+We have off-site backups in various locations in the EU.
 
-### 2) What Data is Collected?  Trustroots collects the following data:
+
+### 2) What Data is Collected?   Trustroots collects the following data:
 
 The personal information you enter when you create your profile; including name, address, contact information, phone number, location, `<fill up with the rest>`
 
@@ -55,9 +56,6 @@ Usage data is used to monitor site and server performance and generate usage sta
 
 Though we hope we never have to, we will share you data with law enforcement in response to a lawful request for data or court order.
 
-#### Google analytics and user statistics
-
-Trustroots uses [Google Analytics](https://www.google.com/analytics/) and [Piwik](https://piwik.org) hosted by [IndieHosters](https://indiehosters.net/) to collect usage statistics. We use [New Relic](http://newrelic.com/) to monitor site and server performance. No personal user data is sent or stored at these services.
 
 #### Trustroots API
 
@@ -65,14 +63,12 @@ We will have API functionality that will allow third parties to build functional
 
 **Opting out from third party data use:**
 
-To opt out from Piwik, scroll to the bottom of this page.   To opt out of Google Analytics tracking, you could install Google's official [opt out extension](https://tools.google.com/dlpage/gaoptout). To opt-out of all tracking (including Google Analytics and Piwik) you can install [Ghostery](https://www.ghostery.com/), [Noscript](https://addons.mozilla.org/en-US/firefox/addon/noscript/) or [Disconnect](https://disconnect.me/). These browser extensions will disable all known JavaScript trackers and ensure that your browser does not send a request to external tracking servers.   If you wish to stay completely anonymous online, please check this guide by Piwik: [How to remain anonymous online?](piwik.org/wp-content/uploads/2012/01/How-to-remain-anonymous-online.pdf) (PDF).
+To opt out from Piwik, scroll to the bottom of this page.   To opt-out of all tracking (including Google Analytics and Piwik) you can install [Ghostery](https://www.ghostery.com/), [Noscript](https://addons.mozilla.org/en-US/firefox/addon/noscript/) or [Disconnect](https://disconnect.me/). These browser extensions will disable all known JavaScript trackers and ensure that your browser does not send a request to external tracking servers.   If you wish to stay completely anonymous online, please check this guide by Piwik: [How to remain anonymous online?](piwik.org/wp-content/uploads/2012/01/How-to-remain-anonymous-online.pdf) (PDF).
 
 #### Email
 
-We route all our site operation emails, such as those you receive when you get a message on Trustroots, using Mandrill. Read [their privacy policy](http://mandrill.com/privacy/?_ga=1.233920093.2115460824.1431026229).
- If you subscribe to our newsletters, your email will be stored at [MailChimp](http://www.mailchimp.com/) who we use them to send newsletters, read [their privacy policy](http://mailchimp.com/legal/privacy/).
+We route all our site operation emails, such as those you receive when you get a message on Trustroots, using Sparkpost.
 
-MailChimp and Mandrill are the same company. The key bit of their privacy policy, in relation to your data, is that they state that they don’t, under any circumstances, sell [Trustroots] lists (of your email addresses), market to people on [Trustroots] lists, or share [Trustroots] lists with any other party (unless it’s required by law).
 
 #### Social networks
 
