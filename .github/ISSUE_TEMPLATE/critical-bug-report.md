@@ -1,7 +1,11 @@
 ---
-name: Bug report
-about: Create a report to help us improve
-labels: ["bug", "triage"]
+name: Critical bug report
+about: Please only report bugs which are affecting a large number of users and critical
+  functions of the site, like login, messaging, email notifications, and so on.
+title: ''
+labels: ''
+assignees: ''
+
 ---
 
 **Describe the bug**
