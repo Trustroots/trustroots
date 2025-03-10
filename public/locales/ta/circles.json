@@ -1,1 +1,19 @@
-{}
+{
+    "Cancel": "ரத்துசெய்",
+    "Discover circles": "வட்டங்களைக் கண்டறியவும்",
+    "Do you want to leave \"{{label}}\"?": "நீங்கள் \"{{label}}\" ஐ விட்டு வெளியேற விரும்புகிறீர்களா?",
+    "Join": "சேர",
+    "Join ({{label}})": "சேர ({{label}})",
+    "Join Trustroots to find members behind circles.": "வட்டங்களுக்குப் பின்னால் உறுப்பினர்களைக் கண்டுபிடிக்க ட்ரச்ட்ரூட்சில் சேரவும்.",
+    "Joined": "இணைந்தது",
+    "Joining circles helps you find likeminded Trustroots members.": "வட்டங்களில் சேருவது ஒத்த ட்ரச்ட்யூட்ச் உறுப்பினர்களைக் கண்டுபிடிக்க உதவுகிறது.",
+    "Leave circle": "வட்டம் விடுப்பு",
+    "Leave this circle?": "இந்த வட்டத்தை விட்டு வெளியேறவா?",
+    "Missing your circle?": "உங்கள் வட்டத்தைக் காணவில்லையா?",
+    "New circle!": "புதிய வட்டம்!",
+    "No members yet": "இன்னும் உறுப்பினர்கள் இல்லை",
+    "Send us suggestions!": "எங்களுக்கு பரிந்துரைகளை அனுப்புங்கள்!",
+    "Sign up with Trustroots": "ட்ரச்ட்ரூட்சுடன் பதிவுபெறுக",
+    "{{count, number}} members": "ஒரு உறுப்பினர்",
+    "{{count, number}} members_plural": "{{எண்ணிக்கை, எண்}} உறுப்பினர்கள்"
+}
