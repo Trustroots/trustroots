@@ -85,7 +85,7 @@ export default function Home({ user, photoCredits }) {
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
-  const memberCount = new Intl.NumberFormat().format(108000);
+  const memberCount = new Intl.NumberFormat().format(120000);
 
   // TODO get header height instead of magic number 56
   // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
