@@ -1,3 +1,5 @@
+_This is all kinda deprecated in 2025._
+
 # Troubleshooting technical issues with Trustroots development
 
 _Expect problems and eat them for breakfast._
@@ -108,12 +110,3 @@ If you're running the app inside docker, remember to run these inside containers
 #### Migration script says "SyntaxError: Unexpected end of input"
 
 Might be caused by `migrations/.migrate` file. Try removing/renaming it.
-
-## Tests
-
-#### Can't run Selenium tests (test.py)
-
-- Selenium tests might be outdated (as of 04/2016 they are).
-- Do you have selenium installed? `pip install selenium`
-- Do you have pip/setuptools installed? `wget https://bootstrap.pypa.io/get-pip.py && python get-pip.py && rm get-pip.py`
-- Is your python version 2.x? `python --version`
