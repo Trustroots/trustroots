@@ -1,3 +1,8 @@
+_This is probably deprecated in 2025._
+
+----------------
+
+
 # A brief guide to the React migration
 
 If you want get familiar with React, start with the [official site](reactjs.org). It has a nice [tutorial](https://reactjs.org/tutorial/tutorial.html) and [guide](https://reactjs.org/docs/hello-world.html).
