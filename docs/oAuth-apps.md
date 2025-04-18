@@ -1,3 +1,8 @@
+_This is kinda deprecated in 2025._
+
+------------
+
+
 We've got bunch of oAuth apps where dev.trustroots.org or www.trustroots.org are connected.
 
 ## Twitter
