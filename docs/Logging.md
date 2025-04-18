@@ -1,3 +1,6 @@
+_This is probably deprecated now in 2025._
+----------------
+
 # Logging
 
 ### Server side code
