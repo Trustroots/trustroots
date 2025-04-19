@@ -25,7 +25,7 @@
     "You haven't been talking yet.": "நீங்கள் இன்னும் பேசவில்லை.",
     "Your profile seems quite empty.": "உங்கள் சுயவிவரம் மிகவும் காலியாகத் தெரிகிறது.",
     "Your response won't be visible to them.": "உங்கள் பதில் அவர்களுக்குத் தெரியாது.",
-    "{{count}} unread messages": "{{count}} படிக்காத செய்திகள்",
+    "{{count}} unread messages": "{{count}} படிக்காத செய்தி",
     "{{count}} unread messages_plural": "{{count}} படிக்காத செய்திகள்",
     "Change": "மாற்றம்",
     "Conversation started {{ date }}": "உரையாடல் தொடங்கியது {{ date }}",
