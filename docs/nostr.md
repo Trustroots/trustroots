@@ -9,7 +9,7 @@ If you're adventurous there's an APK you can try on your android phone.
 
 - [2025-04-18](https://expo.dev/artifacts/eas/ny9Zqbn45WEoskfAYtAPVm.apk)
 
-These APKs can get over-the-air updates for minor things, so the date in the app can be more recent than this.
+These APKs can get over-the-air updates for minor things, so the date that shows in the app's settings screen (after enabling dev mode) is probably more recent than this.
 
 
 ## iOS
