@@ -1,7 +1,7 @@
-description: Guides and documentation for Trustroots volunteers.
+description: Documentation for Trustroots
 lang: en
 plugins:
   - jekyll-mentions
   - jekyll-seo-tag
 theme: jekyll-theme-cayman
-title: Trustroots Team Guide
+title: Trustroots docs
