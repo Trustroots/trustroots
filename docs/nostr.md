@@ -21,9 +21,33 @@ These APKs get over-the-air updates for minor things, so the date that shows in 
 We will have an iOS testflight available when the [expo map component is more stable](https://github.com/Trustroots/nostroots/issues/92).
 
 
+
+
+
+## Background
+
+Hospitality Club was the biggest hospex network in 2004, depended on one person, website down for large parts of 2023. CouchSurfing(tm) sold out to venture capital. Several other networks are based on proprietary software and/or charge money to be a member. As networks grow there is a tendency to grow bureaucracies and budgets, which eventually lead to negative side effects such as usage fees, monetization of user data or too much reliance on donations.
+
+We think it is worth our time and energy to work towards gift economy social networks that do not rely on any specific person or organization, so effectively we want to make ourselves redundant.
+
+The Nostr protocol is a decentralized, open network for social networking and messaging, using cryptographic keys for identity verification.
+
+It is great there are now hospex networks running on open source free software that are free to use, apart from Trustroots there are also [BeWelcome](https://www.bewelcome.org/) and [Couchers.org](https://www.couchers.org/).
+
+What is missing is more space for innovation and taking the gift economy into new directions. Think bicycle sharing, access to awesome parties, ride shares. Enabling Nostr on Trustroots will make it way easier for people with ideas to start off with a kickstart, just like Trustroots was kickstarted off Hitchwiki, but in a much smoother way. The user's data _and_ their connections become portable, so that projects like [Trip Hopping](https://www.triphopping.com/) can immediately be useful, even if you are the only user.
+
 ## FAQ
 
-_you're welcome to edit this: improve, add questions, answers_
+_you're warmly invited to edit this: improve, add questions, answers_
+
+### How is Nostr different?
+
+**Data Ownership:** In Nostr, users own their data. They can choose where to store it and which Nostr clients to use for interaction. This is in stark contrast to e.g. CouchSurfing(tm), where the company owns and controls user data, including its usage and monetization.
+
+**Decentralization:** Unlike all existing hospitality networks, which are controlled by a single company or organization, Nostr is decentralized. It doesn't rely on a central server or entity. Instead, it operates through a network of independent servers, allowing for greater resistance to censorship and central control.
+
+**Identity Verification:** Nostr uses cryptographic keys for identity verification. Each user has a unique pair of keys (public and private) for identity and authentication, contrasting with reliance on user-provided information like email or phone number that is used on almost all existing networks.
+
 
 ### Are you sure adopting new web technologies is a good idea for user experience?
 
