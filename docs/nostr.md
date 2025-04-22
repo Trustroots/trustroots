@@ -103,4 +103,5 @@ We believe that the main benefit of Nostr comes from owning your data through ow
 
 ## More information
 
-Check out the [nostroots repo](https://github.com/Trustroots/nostroots) for more info and if you want to help.
+* [blog posts](https://ideas.trustroots.org/category/nostr/)
+* [github repo](https://github.com/Trustroots/nostroots)
