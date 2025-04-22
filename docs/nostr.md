@@ -99,7 +99,13 @@ A lot of our roadmap is focused on the surfer experience. They'll be motivated t
 
 We believe that the main benefit of Nostr comes from owning your data through owning your identity and the publicy-by-default nature of how that data is stored, making it easy to build services on top of existing data. We don't think that being able to easily pull in data from a different service type (e.g. a social media app) and display it in your own service is a big advantage. In fact, it's likely to cause a worse user experience because the pulled-in data doesn't quite match the style and vibe of the service that's doing the pulling. On top of this, using kinds that are controlled by someone else or a NIP severely reduces the innovation speed, and easy innovation is the most valuable aspet of the Nostr ecosystem right now.
 
+### [Is nostr a good culture fit for Trustroots?](https://github.com/Trustroots/nostroots/issues/26)
 
+It's true that there's a lot of content on nostr that is far from the trustroots values, maybe even the majority. To be clear, we're choosing nostr as a technology and not as a social landscape. We're seeking trustroots adjacent content on nostr and we have already come across some great stuff:
+
+- [nos.social](https://nos.social/) is an app that gives a view on the nostr social media that aligns a bit more with Trustroots culture, only for iOS though.
+- Satellite.earth gives a reddit-like view on nostr social media posts, with some nice e.g. [FOSS](https://satellite.earth/n/FOSS/npub1z786cz3za6h4zw42ju5j7l8uxh9g4xrks93jjx9pmxpkh8py59jqszu2dz), [Gardening](https://satellite.earth/n/Gardening/npub1kemda478drtx5at65wt8kyjrmy9l27hmp8gsgnfjr8vdgf8y46sqsw0hnv) [Vegan Consciousness](https://satellite.earth/n/Vegan_Consciousness/npub1c6dhrhzkflwr2zkdmlujnujawgp2c9rsep6gscyt6mvcusnt5a3srnzmx3) and [MusicCommunity](https://satellite.earth/n/MusicCommunity/npub1njst6azswskk5gp3ns8r6nr8nj0qg65acu8gaa2u9yz7yszjxs9s6k7fqx)
+- [protest.net](https://protest.net/) is moving to nostr
 
 ## More information
 
