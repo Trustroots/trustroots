@@ -28,5 +28,10 @@
     "Start hosting travellers": "Empieza a alojar viajeros",
     "At most {{count}} guests.": "Como máximo un invitado.",
     "At most {{count}} guests._plural": "Como máximo {{count}} invitados.",
-    "Send a message": "Envía un mensaje"
+    "Send a message": "Envía un mensaje",
+    "Add it to map!": "¡Agrégalo al mapa!",
+    "Just making a dinner and would like to invite people over?": "¿Estás preparando una cena y quieres invitar a gente?",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "¿De viaje? ¿Organizas un evento? ¿Está preparando una cena y quiere invitar a alguien?",
+    "Travelling? Organising an event?": "¿De viaje? ¿Organizas un evento?",
+    "Meetups stay visible on map at most one month.": "Los grupos de encuentro permanecen visibles en el mapa como máximo un mes."
 }
