@@ -83,4 +83,13 @@ module.exports = {
       'pk.eyJ1IjoidHJ1c3Ryb290cyIsImEiOiJjanhydWF3bDkwYnd0M2JtanB2amg1NWVpIn0.a8XP1jMeVFBsScDI3oV1BA',
   }
   */
+  // Uncomment to enable iframe sources from specific domains
+  /*
+  iframe: {
+    enabled: true,
+    allowedDomains: [
+      'https://guaka.github.io'
+    ]
+  }
+  */
 };
