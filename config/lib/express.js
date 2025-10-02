@@ -338,16 +338,7 @@ module.exports.initHelmetHeaders = function (app) {
 
         // Defines valid sources for web workers and nested browsing contexts
         // loaded using elements such as `<frame>` and `<iframe>`
-        childSrc: (() => {
-          const base = ["'self'", 'blob:', '*.twitter.com', '*.facebook.com'];
-          if (
-            config.iframe?.enabled &&
-            config.iframe?.allowedDomains?.length > 0
-          ) {
-            return [...base, ...config.iframe.allowedDomains];
-          }
-          return base;
-        })(),
+        childSrc: ["'self'", 'blob:', '*.twitter.com', '*.facebook.com'],
 
         workerSrc: ["'self'", 'blob:'],
 

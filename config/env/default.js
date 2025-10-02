@@ -249,10 +249,4 @@ module.exports = {
     // See https://github.com/webpack-contrib/webpack-bundle-analyzer#options-for-plugin
     options: {},
   },
-  // Iframe embedding configuration
-  // Controls which domains are allowed to embed Trustroots pages in iframes
-  iframe: {
-    enabled: true,
-    allowedDomains: ['https://guaka.github.io'],
-  },
 };

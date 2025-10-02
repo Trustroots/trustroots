@@ -52,9 +52,4 @@ module.exports = {
       pool: true,
     },
   },
-  // Allow iframe sources from guaka.github.io
-  iframe: {
-    enabled: true,
-    allowedDomains: ['https://guaka.github.io'],
-  },
 };
