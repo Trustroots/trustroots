@@ -4,6 +4,8 @@ cd $(dirname $0)/../../../
 
 pwd
 
+DB_NAME="trustroots"
+
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 set -e
@@ -17,7 +19,6 @@ fi
 
 MONGODUMP_PATH=$(realpath mongodumps/mongodb/trust-roots)
 
-DB_NAME="trustroots"
 
 echo "This will drop the existing '$DB_NAME' database and import fresh data."
 read -p "Are you sure you want to continue? (y/N): " -n 1 -r
