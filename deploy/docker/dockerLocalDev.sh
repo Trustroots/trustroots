@@ -77,17 +77,34 @@ module.exports = {
 };
 EOF"
 
+# Create a custom webpack dev config with correct proxy target
+echo "Creating webpack dev configuration..."
+docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && cp config/webpack/webpack.config.js config/webpack/webpack.config.dev.js && sed -i 's/target: .*localhost:3001.*/target: \"http:\/\/localhost:80\",/' config/webpack/webpack.config.dev.js"
+
 # Install dependencies and build inside the running container
 echo "Installing dependencies and building..."
-docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && ln -sf /usr/bin/python3 /usr/bin/python && apt-get update && apt-get install -y build-essential python3-dev libmagic1 libmagic-dev && mkdir -p /root/.npm && chmod 777 /root/.npm && npm ci --legacy-peer-deps --ignore-scripts --unsafe-perm && npm rebuild mmmagic --build-from-source --unsafe-perm && npm rebuild --unsafe-perm && npm run build"
+docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && ln -sf /usr/bin/python3 /usr/bin/python && apt-get update && apt-get install -y build-essential python3-dev libmagic1 libmagic-dev && mkdir -p /root/.npm && chmod 777 /root/.npm && npm ci --legacy-peer-deps --ignore-scripts --unsafe-perm && npm rebuild mmmagic --build-from-source --unsafe-perm && npm rebuild --unsafe-perm"
+
+# Build webpack assets for development
+echo "Building webpack assets..."
+docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && npm run webpack"
+
+# Start the webpack dev server in the background
+echo "Starting webpack dev server..."
+docker exec -d trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && npm run webpack:server"
+
+echo "Waiting for webpack dev server to start..."
+sleep 15
 
 echo
 echo
 echo "Trustroots is available at: http://localhost:3000"
 echo "MongoDB container: $MONGODB_CONTAINER"
+echo "Webpack dev server: http://localhost:3000 (serves assets with hot reloading)"
 echo
 echo "To stop: docker stop trustroots-dev-$TIMESTAMP"
 echo "To view logs: docker logs -f trustroots-dev-$TIMESTAMP"
+echo "To restart webpack: docker exec trustroots-dev-$TIMESTAMP bash -c 'cd /home/app/trustroots && npm run webpack:server'"
 
 # Follow the logs
 docker logs -f trustroots-dev-$TIMESTAMP
