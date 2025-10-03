@@ -58,7 +58,7 @@ sleep 10
 
 # Copy nginx configuration files
 echo "Configuring nginx..."
-docker cp deploy/docker/webapp.conf trustroots-dev-$TIMESTAMP:/etc/nginx/sites-enabled/default
+docker cp deploy/docker/webappLocalDev.conf trustroots-dev-$TIMESTAMP:/etc/nginx/sites-enabled/default
 docker cp deploy/docker/nginx-confd.conf trustroots-dev-$TIMESTAMP:/etc/nginx/conf.d/nginx.conf
 
 
@@ -91,7 +91,7 @@ docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && npm ru
 
 # Start the webpack dev server in the background
 echo "Starting webpack dev server..."
-docker exec -d trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && npm run webpack:server"
+docker exec -d trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && npx webpack serve --hot --config config/webpack/webpack.config.dev.js"
 
 echo "Waiting for webpack dev server to start..."
 sleep 15
