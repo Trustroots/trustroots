@@ -5,7 +5,7 @@ function TribesService($resource) {
   return $resource(
     '/api/tribes',
     {
-      limit: 50,
+      limit: 150,
     },
     {
       query: {
