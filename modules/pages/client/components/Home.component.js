@@ -390,7 +390,7 @@ export default function Home({ user, photoCredits }) {
             <div className="col-sm-6 col-md-3">
               <h3 className="font-brand-light">{t('Free and open source')}</h3>
               <p>
-                {t(`We think it's a shame that former non profits have been sold to
+                {t(`We think it's a shame that former non-profits have been sold to
                 venture capital. We've been running other notable free and open
                 projects for a decade now and we hope our deeds so far speak for us.`)}
               </p>
