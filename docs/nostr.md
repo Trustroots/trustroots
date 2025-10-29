@@ -10,8 +10,7 @@ If you're adventurous there's an APK you can try on your android phone.
 
 ## Android
 
-### v0.0.1
-- [2025-04-18 apk](https://expo.dev/artifacts/eas/ny9Zqbn45WEoskfAYtAPVm.apk)
+<a href="https://github.com/Trustroots/nostroots/releases/">APK releases at github</a>
 
 These APKs get over-the-air updates for minor things, so the date that shows in the app's settings screen (after enabling dev mode) is probably more recent than this.
 
