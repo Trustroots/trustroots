@@ -112,3 +112,5 @@ And by decentralizing trustroots, hitchhikers and circles, we can be a big, grow
 
 * [blog posts](https://ideas.trustroots.org/category/nostr/)
 * [github repo](https://github.com/Trustroots/nostroots)
+
+<iframe id="Iframe1" width="100%" height="300" frameborder="0" src="https://tripch.at/embed.html"></iframe>
