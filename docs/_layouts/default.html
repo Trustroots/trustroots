@@ -55,10 +55,18 @@ https://jekyllrb.com/docs/themes/ {% endcomment %}
             <h1 class="project-name">
               {{ site.title | default: site.github.repository_name }}
             </h1>
-            <h2 class="project-tagline">
-              {{ site.description | default: site.github.project_tagline }}
-            </h2>
           </div>
+          <nav class="header-nav">
+            <a href="https://team.trustroots.org/nostr.html" class="nav-link"
+              >Nostr</a
+            >
+            <a href="https://www.trustroots.org/" class="nav-link"
+              >Trustroots.org</a
+            >
+            <a href="https://github.com/Trustroots/trustroots" class="nav-link"
+              >GitHub</a
+            >
+          </nav>
         </div>
         <div class="header-search">
           <!-- https://duckduckgo.com/search_box -->
@@ -69,17 +77,6 @@ https://jekyllrb.com/docs/themes/ {% endcomment %}
           ></iframe>
         </div>
       </div>
-      <nav class="header-nav">
-        <a href="https://team.trustroots.org/nostr.html" class="nav-link"
-          >Nostr</a
-        >
-        <a href="https://www.trustroots.org/" class="nav-link"
-          >Trustroots.org</a
-        >
-        <a href="https://github.com/Trustroots/trustroots" class="nav-link"
-          >GitHub</a
-        >
-      </nav>
     </header>
 
     <main id="content" class="main-content" role="main">

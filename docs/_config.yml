@@ -1,7 +1,6 @@
-description: Documentation for Trustroots
 lang: en
 plugins:
   - jekyll-mentions
   - jekyll-seo-tag
 theme: jekyll-theme-cayman
-title: Trustroots docs
+title: Documentation
