@@ -1,3 +1,5 @@
+_This is all kinda deprecated in 2025._
+
 # Example: Migrate async.waterfall to ES2018
 
 How to rewrite [async.waterfall](https://caolan.github.io/async/docs.html#waterfall) with [async/await](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)?

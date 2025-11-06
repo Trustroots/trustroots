@@ -1,7 +1,6 @@
 _This is probably deprecated in 2025._
 
-----------------
-
+---
 
 # A brief guide to the React migration
 

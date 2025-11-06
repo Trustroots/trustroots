@@ -1,5 +1,4 @@
-_This is probably deprecated now in 2025._
-----------------
+## _This is probably deprecated now in 2025._
 
 # Logging
 
