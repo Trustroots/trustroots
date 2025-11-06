@@ -3,20 +3,25 @@
 **Nostroots** is Trustroots' integration with the [Nostr protocol](https://nostr.com/), bringing decentralized, user-owned social networking features to the hospitality exchange platform.
 
 <div class="toc-box">
-
-## Table of Contents
-
-- [What is Nostroots?](#what-is-nostroots)
-- [Getting Started](#getting-started)
-  - [Android](#android)
-  - [iOS](#ios)
-- [Background & Vision](#background--vision)
-- [Frequently Asked Questions](#frequently-asked-questions)
-  - [Technology & Protocol](#technology--protocol)
-  - [Development & Strategy](#development--strategy)
-  - [Community & Culture](#community--culture)
-- [Resources](#resources)
-
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#what-is-nostroots">What is Nostroots?</a></li>
+<li><a href="#getting-started">Getting Started</a>
+<ul>
+<li><a href="#android">Android</a></li>
+<li><a href="#ios">iOS</a></li>
+</ul>
+</li>
+<li><a href="#background--vision">Background & Vision</a></li>
+<li><a href="#frequently-asked-questions">Frequently Asked Questions</a>
+<ul>
+<li><a href="#technology--protocol">Technology & Protocol</a></li>
+<li><a href="#development--strategy">Development & Strategy</a></li>
+<li><a href="#community--culture">Community & Culture</a></li>
+</ul>
+</li>
+<li><a href="#resources">Resources</a></li>
+</ul>
 </div>
 
 ---
@@ -202,6 +207,15 @@ And by decentralizing Trustroots, hitchhikers, and circles, we can be a big, gro
 - **[Blog posts about Nostr](https://ideas.trustroots.org/category/nostr/)** - Read about our journey and updates
 - **[GitHub repository](https://github.com/Trustroots/nostroots)** - Contribute code, report issues, or follow development
 - **[Nostr protocol documentation](https://nostr.com/)** - Learn more about the Nostr protocol itself
+
+<div style="margin: 2rem 0; text-align: center;">
+<a href="https://hitchwiki.org/en/User:Nostrhitch">
+<img src="600px-Nostrhitch.jpg" alt="Nostrhitch Bot" style="max-width: 300px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);" />
+</a>
+<p style="margin-top: 0.75rem; color: #555; font-size: 0.9rem;">
+<strong><a href="https://hitchwiki.org/en/User:Nostrhitch">Nostrhitch</a></strong> is a bot that automatically posts Hitchwiki changes and new Hitchmap spots to Nostr relays, bridging the Hitchwiki community with the decentralized Nostr network. <a href="https://hitchwiki.org/en/User:Nostrhitch">Learn more on the Nostrhitch user page</a>.
+</p>
+</div>
 
 ---
 

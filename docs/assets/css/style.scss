@@ -193,6 +193,7 @@ a {
   background-color: $white;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
   min-height: calc(100vh - 200px);
+  overflow: hidden; /* Contain floats */
 }
 
 @media (max-width: 800px) {
@@ -256,6 +257,7 @@ blockquote {
 /* Table of Contents Box */
 .toc-box {
   float: right;
+  clear: right;
   width: 280px;
   max-width: 100%;
   margin: 0 0 1.5rem 1.5rem;
@@ -264,6 +266,7 @@ blockquote {
   border: 1px solid #ddd;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: block;
 
   h2 {
     margin-top: 0;
