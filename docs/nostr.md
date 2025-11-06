@@ -207,7 +207,7 @@ And by decentralizing Trustroots, hitchhikers, and circles, we can be a big, gro
 
 If you want to help, you can:
 
-- **Try out our app** - Download and test the [Android APK](https://github.com/Trustroots/nostroots/releases/) or wait for the iOS TestFlight
+- **Try out our app** - Download and test the [Android APK](https://github.com/Trustroots/nostroots/releases/) or [wait](https://github.com/Trustroots/nostroots/issues/116) for the iOS TestFlight
 - **Check the issues** - Browse and contribute to issues at the [nostroots repository](https://github.com/Trustroots/nostroots)
 - **Learn about Nostr** - Read the [Nostr protocol documentation](https://nostr.com/) to understand the technology
 - **Join the conversation** - Chat with us in the [#nostroots Matrix room](https://matrix.to/#/#nostroots:matrix.org)
