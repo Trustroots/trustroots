@@ -13,5 +13,5 @@ title: Trustroots Team Guide
 
 ## Becoming a volunteer
 
-[Become a volunteer](Volunteering.md)
+Help with the transition from platform to protocol: [nostr](nostr.md).
 
