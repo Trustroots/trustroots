@@ -20,6 +20,7 @@
 <li><a href="#community--culture">Community & Culture</a></li>
 </ul>
 </li>
+<li><a href="#want-to-help">Want to Help?</a></li>
 <li><a href="#resources">Resources</a></li>
 </ul>
 </div>
@@ -199,6 +200,17 @@ It's true that in 2025 there's a lot of content on nostr that could be considere
 - **[protest.net](https://protest.net/)** is moving to nostr
 
 And by decentralizing Trustroots, hitchhikers, and circles, we can be a big, growing part of the decentralized nostr ecosystem, spreading and strengthening the vibes that we want to see in the world.
+
+---
+
+## Want to Help?
+
+If you want to help, you can:
+
+- **Try out our app** - Download and test the [Android APK](https://github.com/Trustroots/nostroots/releases/) or wait for the iOS TestFlight
+- **Check the issues** - Browse and contribute to issues at the [nostroots repository](https://github.com/Trustroots/nostroots)
+- **Learn about Nostr** - Read the [Nostr protocol documentation](https://nostr.com/) to understand the technology
+- **Join the conversation** - Chat with us in the [#nostroots Matrix room](https://matrix.to/#/#nostroots:matrix.org)
 
 ---
 
