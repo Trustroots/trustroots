@@ -2,6 +2,8 @@
 
 **Nostroots** is Trustroots' integration with the [Nostr protocol](https://nostr.com/), bringing decentralized, user-owned social networking features to the hospitality exchange platform.
 
+<div class="toc-box">
+
 ## Table of Contents
 
 - [What is Nostroots?](#what-is-nostroots)
@@ -14,6 +16,8 @@
   - [Development & Strategy](#development--strategy)
   - [Community & Culture](#community--culture)
 - [Resources](#resources)
+
+</div>
 
 ---
 

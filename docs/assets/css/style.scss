@@ -253,6 +253,62 @@ blockquote {
   font-style: italic;
 }
 
+/* Table of Contents Box */
+.toc-box {
+  float: right;
+  width: 280px;
+  max-width: 100%;
+  margin: 0 0 1.5rem 1.5rem;
+  padding: 1rem 1.25rem;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    font-size: 1.1rem;
+    color: $brand-primary;
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 1.25rem;
+    list-style-type: disc;
+
+    ul {
+      margin-top: 0.25rem;
+      list-style-type: circle;
+    }
+  }
+
+  li {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+
+    a {
+      color: $brand-secondary;
+      text-decoration: none;
+
+      &:hover {
+        color: darken($brand-secondary, 15%);
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+@media (max-width: 800px) {
+  .toc-box {
+    float: none;
+    width: 100%;
+    margin: 0 0 1.5rem 0;
+  }
+}
+
 /* Footer */
 .site-footer {
   margin-top: 3rem;
