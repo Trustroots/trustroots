@@ -62,13 +62,14 @@ a {
 .page-header {
   background-color: $brand-primary;
   color: $white;
-  padding: 0.75rem 1.5rem;
+  padding: 0;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
 
   a {
     color: $white;
     text-decoration: none;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
 
     &:hover {
       color: $white;
@@ -77,16 +78,18 @@ a {
   }
 }
 
-.header-content {
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
   display: flex;
-  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
-.header-brand {
+.header-left {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -97,6 +100,7 @@ a {
 .header-logo-link {
   display: inline-block;
   flex-shrink: 0;
+  line-height: 0;
 }
 
 .header-logo {
@@ -105,77 +109,98 @@ a {
   display: block;
 }
 
-.header-text {
-  flex: 0 0 auto;
-  min-width: 0;
-}
-
-.project-name {
+.header-brand-text {
   font-family: $font-family-base;
-  font-size: 1.75rem;
-  font-weight: $font-weight-brand-regular;
-  margin: 0;
+  font-size: 1.25rem;
+  font-weight: $font-weight-brand-semibold;
   color: $white;
-  line-height: 1.2;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
-.header-search {
+.header-title {
+  font-family: $font-family-base;
+  font-size: 1rem;
+  font-weight: $font-weight-brand-regular;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+  margin-left: 0.5rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
   flex-shrink: 0;
 }
 
 .header-nav {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
-  margin-left: auto;
+  align-items: center;
 }
 
 .nav-link {
   font-family: $font-family-base;
   color: $white;
   font-weight: $font-weight-brand-regular;
-  padding: 0.25rem 0;
+  font-size: $font-size-base;
+  padding: 0.5rem 0;
+  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
   transition: opacity 0.2s;
+  white-space: nowrap;
 
   &:hover {
     color: $white;
-    opacity: 0.8;
+    opacity: 0.9;
     text-decoration: none;
   }
 }
 
-@media (max-width: 800px) {
-  .page-header {
-    padding: 0.5rem 1rem;
-  }
+.header-search {
+  flex-shrink: 0;
+}
 
-  .header-content {
+@media (max-width: 800px) {
+  .header-container {
+    padding: 0.75rem 1rem;
     flex-direction: column;
     align-items: flex-start;
+    gap: 1rem;
   }
 
-  .header-brand {
+  .header-left {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .header-brand-text {
+    font-size: 1.1rem;
+  }
+
+  .header-title {
+    font-size: 0.9rem;
+  }
+
+  .header-right {
     width: 100%;
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 1rem;
+  }
+
+  .header-nav {
+    width: 100%;
+    flex-wrap: wrap;
   }
 
   .header-search {
     width: 100%;
   }
-
-  .header-nav {
-    width: 100%;
-    margin-left: 0;
-  }
 }
 
-@media (max-width: 480px) {
-  .project-name {
-    font-size: 1.25rem;
-  }
-}
 
 /* Search input */
 /* https://duckduckgo.com/search_box */
@@ -198,7 +223,7 @@ a {
 /* Main content */
 .main-content {
   max-width: 64rem;
-  margin: 0 auto;
+  margin: 0 auto 1.5rem;
   padding: 0 2rem 4rem;
   background-color: $white;
   box-shadow: 0 0 1px rgba(0, 0, 0, 0.1);

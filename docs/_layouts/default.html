@@ -42,8 +42,8 @@ https://jekyllrb.com/docs/themes/ {% endcomment %}
     <a id="skip-to-content" href="#content">Skip to the content.</a>
 
     <header class="page-header" role="banner">
-      <div class="header-content">
-        <div class="header-brand">
+      <div class="header-container">
+        <div class="header-left">
           <a href="https://www.trustroots.org/" class="header-logo-link">
             <img
               src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/horizontal-white.svg"
@@ -51,11 +51,12 @@ https://jekyllrb.com/docs/themes/ {% endcomment %}
               class="header-logo"
             />
           </a>
-          <div class="header-text">
-            <h1 class="project-name">
-              {{ site.title | default: site.github.repository_name }}
-            </h1>
-          </div>
+          <span class="header-brand-text">TRUSTROOTS</span>
+          <span class="header-title"
+            >{{ site.title | default: site.github.repository_name }}</span
+          >
+        </div>
+        <div class="header-right">
           <nav class="header-nav">
             <a href="https://team.trustroots.org/nostr.html" class="nav-link"
               >Nostr</a
@@ -67,14 +68,14 @@ https://jekyllrb.com/docs/themes/ {% endcomment %}
               >GitHub</a
             >
           </nav>
-        </div>
-        <div class="header-search">
-          <!-- https://duckduckgo.com/search_box -->
-          <iframe
-            class="duckduckgo"
-            frameborder="0"
-            src="https://duckduckgo.com/search.html?width=200&site={{ site.url }}&prefill=Search docs"
-          ></iframe>
+          <div class="header-search">
+            <!-- https://duckduckgo.com/search_box -->
+            <iframe
+              class="duckduckgo"
+              frameborder="0"
+              src="https://duckduckgo.com/search.html?width=200&site={{ site.url }}&prefill=Search docs"
+            ></iframe>
+          </div>
         </div>
       </div>
     </header>
