@@ -42,22 +42,42 @@ https://jekyllrb.com/docs/themes/ {% endcomment %}
     <a id="skip-to-content" href="#content">Skip to the content.</a>
 
     <header class="page-header" role="banner">
-      <div>
-        <h1 class="project-name">
-          {{ site.title | default: site.github.repository_name }}
-        </h1>
-        <h2 class="project-tagline">
-          {{ site.description | default: site.github.project_tagline }}
-        </h2>
+      <div class="header-content">
+        <div class="header-brand">
+          <a href="https://www.trustroots.org/" class="header-logo-link">
+            <img
+              src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/horizontal-white.svg"
+              alt="Trustroots"
+              class="header-logo"
+            />
+          </a>
+          <div class="header-text">
+            <h1 class="project-name">
+              {{ site.title | default: site.github.repository_name }}
+            </h1>
+            <h2 class="project-tagline">
+              {{ site.description | default: site.github.project_tagline }}
+            </h2>
+          </div>
+        </div>
+        <div class="header-search">
+          <!-- https://duckduckgo.com/search_box -->
+          <iframe
+            class="duckduckgo"
+            frameborder="0"
+            src="https://duckduckgo.com/search.html?width=200&site={{ site.url }}&prefill=Search docs"
+          ></iframe>
+        </div>
       </div>
-      <div>
-        <!-- https://duckduckgo.com/search_box -->
-        <iframe
-          class="duckduckgo"
-          frameborder="0"
-          src="https://duckduckgo.com/search.html?width=200&site={{ site.url }}&prefill=Search docs"
-        ></iframe>
-      </div>
+      <nav class="header-nav">
+        <a href="{{ '/' | relative_url }}" class="nav-link">Home</a>
+        <a href="https://www.trustroots.org/" class="nav-link"
+          >Trustroots.org</a
+        >
+        <a href="https://github.com/Trustroots/trustroots" class="nav-link"
+          >GitHub</a
+        >
+      </nav>
     </header>
 
     <main id="content" class="main-content" role="main">
