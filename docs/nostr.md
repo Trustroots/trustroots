@@ -27,19 +27,32 @@
 
 ---
 
+
 ## What is Nostroots?
 
-Nostroots adds new features to Trustroots through the Nostr protocol, initially replacing the little-used meet functionality. Users can:
+Nosroots is the evolution of Trustroots, built on a more open, decentralized protocol, The result is a version of Trustroots that is more open, resilient, and user-empowered.   
 
-- Post notes on pluscode areas of a map
-- Subscribe to specific pluscode areas (coming soon)
-- Connect notes to specific [circles](https://www.trustroots.org/circles) (coming soon)
+### Our Manifesto (2025)
 
-This creates a foundation for decentralized, user-owned social networking within the Trustroots ecosystem, enabling innovation in gift economy applications beyond traditional hospitality exchange.
+We want a world that encourages trust, adventure, and intercultural connections.
+Our willingness to help each other is universal.
+Trustroots is completely free to use — and will remain so forever.
+We believe in beauty, simplicity, and transparency.
+We emphasize community and shared ownership.
+We believe in digital freedom — that everyone should have control over their own data and connections.
+
+### The Nostroots App
+The full transition from Trustroots to Nostroots will happen over the next years, but we are excited to launch an app with the first feature built on Nostroots! Users can:
+
+- Post "notes" on a map to let the community know that something is happening in a particular location
+- Subscribe to specific areas to find out about "notes" posted by other community members
+- Connect "notes" to specific Trustroots circles
+
+This creates a foundation for decentralized, user-owned social networking within the Trustroots ecosystem, which we hope will enable more innovations in gift economy applications beyond traditional hospitality exchange. We already see two projects coming soon: lightfoot (a letter writing app) and a hitchhiking app.
 
 ---
 
-## Getting Started
+## Want to try it?
 
 ### Android
 
@@ -55,7 +68,8 @@ We will probably have an iOS TestFlight available [November 2025](https://github
 
 ---
 
-## Background & Vision
+
+## Why are we doing this?
 
 ### The Problem with Centralized Networks
 
@@ -96,6 +110,15 @@ What's missing is more space for innovation and taking the gift economy into new
 - Local resource sharing
 
 Enabling Nostr on Trustroots will make it way easier for people with ideas to get started, just like Trustroots was kickstarted from Hitchwiki, but in a much smoother way. The user's data _and_ their connections become portable, so that projects like [Trip Hopping](https://www.triphopping.com/) can immediately be useful, even if you are the only user.
+
+
+Nostroots adds new features to Trustroots through the Nostr protocol, initially replacing the little-used meet functionality. Users can:
+
+- Post notes on pluscode areas of a map
+- Subscribe to specific pluscode areas (coming soon)
+- Connect notes to specific [circles](https://www.trustroots.org/circles) (coming soon)
+
+This creates a foundation for decentralized, user-owned social networking within the Trustroots ecosystem, enabling innovation in gift economy applications beyond traditional hospitality exchange.
 
 ---
 
