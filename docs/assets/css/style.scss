@@ -252,7 +252,9 @@ h1, h2, h3, h4, h5, h6 {
 h1 {
   font-size: 2rem;
   border-bottom: 2px solid $brand-primary;
+  padding-top: 2rem;
   padding-bottom: 0.5rem;
+  margin-top: 3rem;
 }
 
 h2 {
