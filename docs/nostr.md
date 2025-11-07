@@ -125,7 +125,10 @@ We didn't dive deep into Bluesky, but Cory Doctorow [wrote this](https://plurali
 
 > Bluesky lacks the one federated feature that is absolutely necessary for me to trust it: the ability to leave Bluesky and go to another host and continue to talk to the people I've entered into community with there. While there are many independently maintained servers that provide services to Bluesky and its users, there is only one Bluesky server. A federation of multiple servers, each a peer to the other, has been on Bluesky's roadmap for as long as I've been following it, but they haven't (yet) delivered it.
 
+
 We also spoke to [Rabble](https://primal.net/rabble) in person, and he brought up that the protocol itself is decided upon by Bluesky in a very centralized way, focused on cloning X/Twitter, whereas Nostr NIPs (Nostr Improvement Proposals) are created by a wide range of people building various different applications.
+Here's a good presentation by  Rabble, [The Revolution will be Social](https://www.youtube.com/watch?v=JGwzlpiFh-8).
+
 
 #### Tokens, DAO, blockchain, other scams?
 
