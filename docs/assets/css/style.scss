@@ -372,3 +372,21 @@ blockquote {
     justify-content: space-between;
   }
 }
+
+/* Manifesto Box */
+.manifesto-box {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  border-left: 4px solid #4a90e2;
+  padding: 2rem;
+  margin: 2rem 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  .manifesto-statement {
+    font-size: 1.1em;
+    line-height: 1.8;
+    margin: 0.75rem 0;
+    color: #2c3e50;
+    font-weight: $font-weight-brand-semibold;
+  }
+}

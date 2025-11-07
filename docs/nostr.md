@@ -5,7 +5,12 @@
 <div class="toc-box">
 <h2>Table of Contents</h2>
 <ul>
-<li><a href="#what-is-nostroots">What is Nostroots?</a></li>
+<li><a href="#what-is-nostroots">What is Nostroots?</a>
+<ul>
+<li><a href="#our-manifesto-2025">Our Manifesto (2025)</a></li>
+<li><a href="#the-nostroots-app">The Nostroots App</a></li>
+</ul>
+</li>
 <li><a href="#getting-started">Getting Started</a>
 <ul>
 <li><a href="#android">Android</a></li>
@@ -27,27 +32,42 @@
 
 ---
 
-
 ## What is Nostroots?
 
-Nosroots is the evolution of Trustroots, built on a more open, decentralized protocol, The result is a version of Trustroots that is more open, resilient, and user-empowered.   
+Nosroots is the evolution of Trustroots, built on a more open, decentralized protocol, The result is a version of Trustroots that is more open, resilient, and user-empowered.
 
 ### Our Manifesto (2025)
 
+<div class="manifesto-box">
+
+<p class="manifesto-statement">
 We want a world that encourages trust, adventure, and intercultural connections.
+</p>
 
+<p class="manifesto-statement">
 Our willingness to help each other is universal.
+</p>
 
+<p class="manifesto-statement">
 Trustroots is completely free to use — and will remain so forever.
+</p>
 
+<p class="manifesto-statement">
 We believe in beauty, simplicity, and transparency.
+</p>
 
+<p class="manifesto-statement">
 We emphasize community and shared ownership.
+</p>
 
+<p class="manifesto-statement">
 We believe in digital freedom — that everyone should have control over their own data and connections.
+</p>
 
+</div>
 
 ### The Nostroots App
+
 The full transition from Trustroots to Nostroots will happen over the next years, but we are excited to launch an app with the first feature built on Nostroots! Users can:
 
 - Post "notes" on a map to let the community know that something is happening in a particular location
@@ -73,7 +93,6 @@ If you're adventurous, you can try the Android APK:
 We will probably have an iOS TestFlight available [November 2025](https://github.com/Trustroots/nostroots/issues/116).
 
 ---
-
 
 ## Why are we doing this?
 
@@ -117,7 +136,6 @@ What's missing is more space for innovation and taking the gift economy into new
 
 Enabling Nostr on Trustroots will make it way easier for people with ideas to get started, just like Trustroots was kickstarted from Hitchwiki, but in a much smoother way. The user's data _and_ their connections become portable, so that projects like [Trip Hopping](https://www.triphopping.com/) can immediately be useful, even if you are the only user.
 
-
 Nostroots adds new features to Trustroots through the Nostr protocol, initially replacing the little-used meet functionality. Users can:
 
 - Post notes on pluscode areas of a map
@@ -154,10 +172,8 @@ We didn't dive deep into Bluesky, but Cory Doctorow [wrote this](https://plurali
 
 > Bluesky lacks the one federated feature that is absolutely necessary for me to trust it: the ability to leave Bluesky and go to another host and continue to talk to the people I've entered into community with there. While there are many independently maintained servers that provide services to Bluesky and its users, there is only one Bluesky server. A federation of multiple servers, each a peer to the other, has been on Bluesky's roadmap for as long as I've been following it, but they haven't (yet) delivered it.
 
-
 We also spoke to [Rabble](https://primal.net/rabble) in person, and he brought up that the protocol itself is decided upon by Bluesky in a very centralized way, focused on cloning X/Twitter, whereas Nostr NIPs (Nostr Improvement Proposals) are created by a wide range of people building various different applications.
-Here's a good presentation by  Rabble, [The Revolution will be Social](https://www.youtube.com/watch?v=JGwzlpiFh-8).
-
+Here's a good presentation by Rabble, [The Revolution will be Social](https://www.youtube.com/watch?v=JGwzlpiFh-8).
 
 #### Tokens, DAO, blockchain, other scams?
 
