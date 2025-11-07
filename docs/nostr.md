@@ -34,12 +34,19 @@ Nosroots is the evolution of Trustroots, built on a more open, decentralized pro
 
 ### Our Manifesto (2025)
 
+<div style="text-align: center">
 We want a world that encourages trust, adventure, and intercultural connections.
+
 Our willingness to help each other is universal.
+
 Trustroots is completely free to use — and will remain so forever.
+
 We believe in beauty, simplicity, and transparency.
+
 We emphasize community and shared ownership.
+
 We believe in digital freedom — that everyone should have control over their own data and connections.
+</div>
 
 ### The Nostroots App
 The full transition from Trustroots to Nostroots will happen over the next years, but we are excited to launch an app with the first feature built on Nostroots! Users can:
