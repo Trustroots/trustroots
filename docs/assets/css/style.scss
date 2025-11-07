@@ -109,16 +109,6 @@ a {
   display: block;
 }
 
-.header-brand-text {
-  font-family: $font-family-base;
-  font-size: 1.25rem;
-  font-weight: $font-weight-brand-semibold;
-  color: $white;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-}
-
 .header-title {
   font-family: $font-family-base;
   font-size: 1rem;
@@ -174,10 +164,6 @@ a {
   .header-left {
     width: 100%;
     flex-wrap: wrap;
-  }
-
-  .header-brand-text {
-    font-size: 1.1rem;
   }
 
   .header-title {
