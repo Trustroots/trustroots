@@ -35,7 +35,7 @@ export default function Navigation({ user, onSignout }) {
           rel="noreferrer"
           className="list-group-item"
         >
-          Nostr
+          Nostroots
         </a>
 
         <a

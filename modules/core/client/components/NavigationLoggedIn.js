@@ -112,7 +112,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           target="_blank"
           className="hidden-xs"
         >
-          Nostr
+          Nostroots
         </MenuItem>
         <NavDropdown
           className="dropdown-user hidden-xs cursor-pointer"
