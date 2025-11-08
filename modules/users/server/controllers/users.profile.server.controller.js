@@ -101,6 +101,17 @@ exports.update = function (req, res) {
     });
   }
 
+  // Validate nostr npub - must start with npub (public key), not nsec (secret key)
+  if (req.body.nostrNpub && typeof req.body.nostrNpub === 'string') {
+    const trimmedNpub = req.body.nostrNpub.trim();
+    if (trimmedNpub && !trimmedNpub.toLowerCase().startsWith('npub')) {
+      return res.status(400).send({
+        message:
+          'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+      });
+    }
+  }
+
   async.waterfall(
     [
       function (done) {

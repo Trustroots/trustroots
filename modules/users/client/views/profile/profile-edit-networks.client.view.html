@@ -314,8 +314,9 @@
               ></a>
               <script type="text/ng-template" id="nostrGuidePopover.html">
                 <div>
-                  Paste your nostr npub in here.
+                  Paste your nostr npub (public key) in here.
                   <br><br>
+                  <strong>Important:</strong> Never paste your nsec (secret key) here. Only use your npub (public key).
                 </div>
               </script>
             </div>
@@ -325,13 +326,22 @@
             </label>
             <input
               id="nostrNpub"
+              name="nostrNpub"
               type="text"
               class="form-control"
               ng-model="profileEditNetworks.user.nostrNpub"
               ng-change="profileEdit.unsavedModifications=true"
+              ng-pattern="/^(|npub.+)$/i"
               placeholder="npub"
               aria-label="nostr npub"
             />
+            <p
+              class="help-block text-danger"
+              ng-if="userForm.nostrNpub.$dirty && userForm.nostrNpub.$error.pattern"
+            >
+              Invalid nostr key. Please provide your npub (public key) starting
+              with "npub". Never use your nsec (secret key).
+            </p>
             <!--
             <span
               class="input-group-btn"
