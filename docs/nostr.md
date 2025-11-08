@@ -61,7 +61,7 @@ We emphasize community and shared ownership.
 </p>
 
 <p class="manifesto-statement">
-We believe in digital freedom — that everyone should have control over their own data and connections.
+We believe in digital freedom — everyone should have control over their own data.
 </p>
 
 </div>
