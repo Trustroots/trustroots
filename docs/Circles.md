@@ -1,7 +1,3 @@
-_This is kinda deprecated in 2025._
-
-----------------
-
 # Circles
 
 ## Adding new circle
@@ -10,7 +6,8 @@ Circles are added directly to the database manually.
 
 ## Adding circle image
 
-Production circle images are kept at [their own repository](https://github.com/Trustroots/circle-images) and manually updated at the production server.
+Production circle images are kept at [public/uploads-circle](https://github.com/Trustroots/trustroots/tree/master/public/uploads-circle)
+and manually updated at the production server.
 
 Image requirements:
 
@@ -25,7 +22,7 @@ Image requirements:
 
 To test images locally:
 
-1. [Install Trustroots locally](./Install.md)
+1. Install Trustroots locally (good luck)
 2. Generate new circles with `npm run seed` command.
 3. Place your image file at `public/uploads-circle`. Mind the above filename instructions.
 4. Start the application with `npm start`, or run `npm run generate-circle-images`
