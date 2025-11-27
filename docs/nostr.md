@@ -90,7 +90,7 @@ If you're adventurous, you can try the Android APK:
 
 ### iOS
 
-We will probably have an iOS TestFlight available [November 2025](https://github.com/Trustroots/nostroots/issues/116).
+We have an iOS TestFlight [available](https://testflight.apple.com/join/n5WGu8Hu) as of November 2025.
 
 ---
 
