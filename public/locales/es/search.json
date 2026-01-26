@@ -8,5 +8,7 @@
     "{{count}} members found": "Un miembro encontrado",
     "{{count}} members found_plural": "{{count}} miembros encontrados",
     "Search": "Buscar",
-    "Zoom closer to find members.": "Haz zoom para encontrar miembros."
+    "Zoom closer to find members.": "Haz zoom para encontrar miembros.",
+    "Select languages…": "Elegir el idioma…",
+    "Spoken languages": "Idiomas hablados"
 }

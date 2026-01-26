@@ -1,3 +1,4 @@
 {
-    "Lives in <2>{{locationLiving}}</2>": "生活在 <2>{{locationLiving}}</2>"
+    "Lives in <2>{{locationLiving}}</2>": "生活在 <2>{{locationLiving}}</2>",
+    "{{count}} contacts_0": "{{count}} 個好友"
 }

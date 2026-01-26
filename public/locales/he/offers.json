@@ -3,7 +3,7 @@
     "Sorry, user is not hosting currently.": "סורי, המשתמשת לא מארחת כרגע.",
     "Send a message": "שלחי הודעה",
     "Open on device": "פתח במכשיר",
-    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "כשאנחנו מציעים לארח ומסכימים לקבל  אנשים זרים לביתנו אנחנו מחזקים את תחושת האמון שלנו אחד בשני.",
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "כשאנחנו מציעים לארח ומסכימים לקבל אנשים זרים לביתנו אנחנו מחזקים את תחושת האמון שלנו אחד בשני.",
     "No guests.": "אין אורחים.",
     "Modify hosting offer": "שני את מצב הארוח שלך",
     "Might be able to host": "אולי יכולה לארח",
@@ -17,8 +17,8 @@
     "At most {{count}} guests._0": "אורח אחד לכל היותר.",
     "At most {{count}} guests._1": "{{count}} אורחים לכל היותר.",
     "At most {{count}} guests._2": "{{count}} אורחים לכל היותר.",
-    "At most {{count}} guests._3": "{{count}} אורחים לכל היותר.",
     "Just making a dinner and would like to invite people over?": "הכנת ארוחת ערב ובא לך להזמין אנשים?",
     "Meetups stay visible on map at most one month.": "מפגשים נשארים גלויים במפה למשך חודש לכל היותר.",
-    "Travelling? Organising an event?": "בא לך לטייל? התחלת לארגן אירוע?"
+    "Travelling? Organising an event?": "בא לך לטייל? התחלת לארגן אירוע?",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "בטיול? יש לך אירוע לארגן? סתם הכנת ארוחת ערב ובא לך להזמין אורחים?"
 }

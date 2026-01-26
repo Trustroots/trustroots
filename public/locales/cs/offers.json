@@ -8,7 +8,7 @@
     "Bigger map": "Větší mapa",
     "Can host": "Hostí",
     "Cannot host currently": "Nemůže teď hostit",
-    "Change": "Změnit",
+    "Change": "Změň",
     "Hosting status: {{statusLabel}}": "Status hostitele: {{statusLabel}}",
     "I can host": "Můžu hostit",
     "I can't host currently": "Nemůžu teď hostit",
@@ -26,5 +26,14 @@
     "Sorry, user is not hosting currently": {
         "": "Bohužel uživatel teď nehostí."
     },
-    "Start hosting travellers": "Začni hostit cestovatele"
+    "Start hosting travellers": "Začni hostit cestovatele",
+    "Send a message": "Poslat zprávu",
+    "Add it to map!": "Přidej to do mapy!",
+    "Just making a dinner and would like to invite people over?": "Připravuješ večeři a chceš pozvat lidi?",
+    "Meetups stay visible on map at most one month.": "Setkání jsou viditelná na mapě maximálně jeden měsíc.",
+    "Travelling? Organising an event?": "Cestuješ? Organizuješ akci?",
+    "At most {{count}} guests._0": "Maximálně {{count}} host.",
+    "At most {{count}} guests._1": "Maximálně {{count}} hosté.",
+    "At most {{count}} guests._2": "Maximálně {{count}} hostů.",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Cestuješ? Organizuješ akci? Připravuješ večeři a chceš pozvat lidi?"
 }

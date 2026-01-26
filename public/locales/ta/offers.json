@@ -1,0 +1,23 @@
+{
+    "Change": "மாற்றம்",
+    "Cannot host currently": "தற்போது புரவலன் செய்ய முடியாது",
+    "Just making a dinner and would like to invite people over?": "ஒரு இரவு உணவு தயாரித்து, மக்களை அழைக்க விரும்புகிறீர்களா?",
+    "Meet people": "மக்களை சந்திக்கவும்",
+    "Meetups stay visible on map at most one month.": "சந்திப்புகள் வரைபடத்தில் ஒரு மாதத்தில் தெரியும்.",
+    "Might be able to host": "புரவலன் செய்ய முடியும்",
+    "Modify hosting offer": "ஓச்டிங் சலுகையை மாற்றவும்",
+    "No guests.": "விருந்தினர்கள் இல்லை.",
+    "Offering hospitality and welcoming “strangers” to our homes strengthens our faith in each other.": "விருந்தோம்பலை வழங்குவதும், எங்கள் வீடுகளுக்கு “அந்நியர்களை” வரவேற்பதும் ஒருவருக்கொருவர் நம்முடைய நம்பிக்கையை பலப்படுத்துகிறது.",
+    "Open on device": "சாதனத்தில் திறக்கவும்",
+    "Send a message": "ஒரு செய்தியை அனுப்பவும்",
+    "Sorry, user is not hosting currently.": "மன்னிக்கவும், பயனர் தற்போது ஓச்டிங் செய்யவில்லை.",
+    "Start hosting travellers": "பயணிகளை புரவலன் செய்யத் தொடங்குங்கள்",
+    "Travelling? Organising an event?": "பயணம்? ஒரு நிகழ்வை ஏற்பாடு செய்கிறீர்களா?",
+    "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "பயணம்? ஒரு நிகழ்வை ஏற்பாடு செய்கிறீர்களா? ஒரு இரவு உணவு தயாரித்து, மக்களை அழைக்க விரும்புகிறீர்களா?",
+    "Accommodation": "தங்குமிடம்",
+    "Add it to map!": "வரைபடத்தில் சேர்க்கவும்!",
+    "At most {{count}} guests.": "அதிகபட்சம் ஒரு விருந்தினர்.",
+    "At most {{count}} guests._plural": "அதிகபட்சம் {{count}} விருந்தினர்கள்.",
+    "Bigger map": "பெரிய வரைபடம்",
+    "Can host": "புரவலன் செய்யலாம்"
+}

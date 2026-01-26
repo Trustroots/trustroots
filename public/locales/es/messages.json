@@ -45,8 +45,9 @@
     "Your profile seems quite empty": {
         "": "Tu perfil parece estar bastante vacío."
     },
-    "{{count}} unread messages": "{{count}} mensaje sin leer",
-    "{{count}} unread messages_plural": "{{count}} mensajes sin leer",
+    "{{count}} unread messages_0": "{{count}} mensaje no leídos",
+    "{{count}} unread messages_1": "{{count}} mensajes no leídos",
+    "{{count}} unread messages_2": "{{count}} mensajes no leídos",
     "License": "Licencia",
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...explicando que tienes interés en conocerlos, no que solo estás buscando alojamiento gratis.",
     "No": "No",
@@ -54,5 +55,7 @@
     "Change": "Cambiar",
     "Your response won't be visible to them.": "Tu respuesta no será visible para elles.",
     "Yes": "Sí",
-    "Member is not available anymore.": "Este perfil ya no está disponible."
+    "Member is not available anymore.": "Este perfil ya no está disponible.",
+    "Failed to send the message. Perhaps your internet went down? Please try again.": "No se ha podido enviar el mensaje. ¿Tal vez se ha caído Internet? Por favor, inténtalo de nuevo.",
+    "You are writing to too many people too fast. Slow down and try later again.": "Estás escribiendo a demasiada gente y demasiado rápido. Vaya más despacio y vuelva a intentarlo más tarde."
 }
