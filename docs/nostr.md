@@ -245,7 +245,7 @@ It's true that in 2025 there's a lot of content on nostr that could be considere
   - [Gardening](https://satellite.earth/n/Gardening/npub1kemda478drtx5at65wt8kyjrmy9l27hmp8gsgnfjr8vdgf8y46sqsw0hnv)
   - [Vegan Consciousness](https://satellite.earth/n/Vegan_Consciousness/npub1c6dhrhzkflwr2zkdmlujnujawgp2c9rsep6gscyt6mvcusnt5a3srnzmx3)
   - [MusicCommunity](https://satellite.earth/n/MusicCommunity/npub1njst6azswskk5gp3ns8r6nr8nj0qg65acu8gaa2u9yz7yszjxs9s6k7fqx)
-- **[protest.net](https://protest.net/)** is moving to nostr
+- **[Bitchat](https://bitchat.free/)** is a p2p messaging app that enables communication through Bluetooth mesh networks and the nostr network without requiring an internet connection or user accounts, it has been used in protests in Madagascar, Nepal, Uganda, and Iran, as well as at large events like music festivals
 
 And by decentralizing Trustroots, hitchhikers, and circles, we can be a big, growing part of the decentralized nostr ecosystem, spreading and strengthening the vibes that we want to see in the world.
 
