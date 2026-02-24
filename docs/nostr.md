@@ -80,17 +80,7 @@ This creates a foundation for decentralized, user-owned social networking within
 
 ## Want to try it?
 
-### Android
-
-If you're adventurous, you can try the Android APK:
-
-**[Download APK releases from GitHub](https://github.com/Trustroots/nostroots/releases/)**
-
-> **Note:** These APKs receive over-the-air updates for minor changes, so the date shown in the app's settings screen (after enabling dev mode) may be more recent than the release date.
-
-### iOS
-
-We have an iOS TestFlight [available](https://testflight.apple.com/join/n5WGu8Hu) as of November 2025.
+[notes.trustroots.org](https://notes.trustroots.org/)
 
 ---
 
