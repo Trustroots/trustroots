@@ -92,7 +92,7 @@ We're a non-profit volunteer project.)_
 ### Adding photos
 
 - General atmosphere in photos should be dreamy, magical, wanderlust. Communicate tranquillity or crazy in a happy way (e.g. laughing friends).
-- Landscapes. Make them 1100px wide. Make them hazy blue-green-yellow'ish. [Check toner psd](https://github.com/Trustroots/media/blob/master/photos/photos-color-effect.psd).
+- Landscapes. Make them 1100px wide. Make them hazy blue-green-yellow'ish.
 - Add photos+credits to [boards directive](https://github.com/Trustroots/trustroots/blob/master/modules/core/client/directives/tr-boards.client.directive.js). Actual files go to under [core/img/boards/](https://github.com/Trustroots/trustroots/tree/master/modules/core/client/img/board).
 - Use them at `board` elements: `<div class="board" tr-boards="['foo', 'bar']"></div>` (will randomly pick one) or just one: `<div class="board" tr-boards="'oneimage'"></div>`.
 - At the [blog](http://ideas.trustroots.org) you can add credits to the caption or at the end of the article. Example:
@@ -108,4 +108,4 @@ We're a non-profit volunteer project.)_
 
 ### Other material
 
-See [media](https://github.com/trustroots/media) repository for logos, screenshots etc.
+Check [media](https://github.com/Trustroots/community/tree/master/media) in the community repo for logos, screenshots etc.
