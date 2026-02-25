@@ -30,5 +30,3 @@ You can drop your entire database by running:
 ```bash
 npm run dropdb
 ```
-
-See instructions about how to add new mock data [from installation documentation](../docs/Install.md).

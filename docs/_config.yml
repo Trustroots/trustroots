@@ -2,5 +2,6 @@ lang: en
 plugins:
   - jekyll-mentions
   - jekyll-seo-tag
+  - jekyll-redirect-from
 theme: jekyll-theme-cayman
 title: Documentation

@@ -1,43 +1,46 @@
 ---
 ---
 
-@import '{{ site.theme }}';
+// Notes-style warm palette (notes.trustroots.org)
+:root {
+  --green: #12b591;
+  --green-dark: #0e9a7b;
+  --bg: #f5f0e6;
+  --text: #3a2e1f;
+  --text-muted: #6b5940;
+  --card-bg: #faf6ed;
+  --card-border: #d4c9b0;
+  --radius: 14px;
+  --brown: #7a5c3a;
+  --olive: #6a7d45;
+  --rust: #b87333;
+  --white: #fff;
+}
 
-// Trustroots brand colors
-$brand-primary: #12b591; // Trustroots Green
-$brand-secondary: #cd771b; // Trustroots Brown
-$body-bg: #f9f9f9;
-$text-color: #333;
-$text-color-light: #555;
-$white: #fff;
-
-// Typography
-$font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
-  'Oxygen-Sans', 'Ubuntu', 'Cantarell', 'Helvetica Neue', sans-serif;
-$font-size-base: 14px;
-$font-size-large: 18px; // ceil($font-size-base * 1.25)
-$font-size-small: 12px; // ceil($font-size-base * 0.85)
-
-$font-weight-brand-light: 300;
-$font-weight-brand-regular: 400;
-$font-weight-brand-semibold: 500;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
-  font-family: $font-family-base;
-  font-size: $font-size-base;
-  background-color: $body-bg;
-  color: $text-color;
-  line-height: 1.42857143; // ~20px at 14px base
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: $brand-secondary;
+  color: var(--brown);
   text-decoration: none;
+}
 
-  &:hover {
-    color: darken($brand-secondary, 15%);
-    text-decoration: underline;
-  }
+a:hover {
+  color: var(--rust);
+  text-decoration: underline;
 }
 
 #skip-to-content {
@@ -53,197 +56,110 @@ a {
     left: 10px;
     height: auto;
     width: auto;
-    background: $white;
-    outline: thick solid $brand-primary;
+    background: var(--white);
+    outline: thick solid var(--green);
     z-index: 1000;
   }
 }
 
-.page-header {
-  background-color: $brand-primary;
-  color: $white;
-  padding: 0;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 0;
+/* Header (notes-style) */
+.header {
+  background: var(--green);
+  padding: 1rem 2rem 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
 
-  a {
-    color: $white;
-    text-decoration: none;
-    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+.header-vines {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
 
-    &:hover {
-      color: $white;
-      text-decoration: underline;
-    }
+  img {
+    width: 100%;
+    min-height: 100%;
+    object-fit: cover;
+    opacity: 0.15;
   }
 }
 
-.header-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem 2rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 1;
-  min-width: 0;
-}
-
 .header-logo-link {
-  display: inline-block;
-  flex-shrink: 0;
-  line-height: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .header-logo {
-  height: 31px;
+  height: 32px;
   width: auto;
   display: block;
 }
 
 .header-title {
-  font-family: $font-family-base;
-  font-size: 1rem;
-  font-weight: $font-weight-brand-regular;
-  color: rgba(255, 255, 255, 0.85);
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
-  margin-left: 0.5rem;
+  color: var(--white);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
 }
 
-.header-right {
+.header-links {
   display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  flex-shrink: 0;
-}
-
-.header-nav {
-  display: flex;
-  gap: 1.5rem;
   flex-wrap: wrap;
-  align-items: center;
-}
+  gap: 1rem;
+  position: relative;
+  z-index: 1;
 
-.nav-link {
-  font-family: $font-family-base;
-  color: $white;
-  font-weight: $font-weight-brand-regular;
-  font-size: $font-size-base;
-  padding: 0.5rem 0;
-  text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
-  transition: opacity 0.2s;
-  white-space: nowrap;
+  a {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+  }
 
-  &:hover {
-    color: $white;
-    opacity: 0.9;
+  a:hover {
+    color: var(--white);
     text-decoration: none;
   }
 }
 
-.header-search {
-  flex-shrink: 0;
-}
-
-@media (max-width: 800px) {
-  .header-container {
+@media (max-width: 600px) {
+  .header {
     padding: 0.75rem 1rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .header-left {
-    width: 100%;
-    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .header-title {
-    font-size: 0.9rem;
+    font-size: 1.2rem;
+    width: 100%;
+    text-align: center;
   }
 
-  .header-right {
+  .header-links {
     width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .header-nav {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .header-search {
-    width: 100%;
-  }
-}
-
-
-/* Search input */
-/* https://duckduckgo.com/search_box */
-.duckduckgo {
-  margin: 0;
-  height: 40px;
-  overflow: hidden;
-  padding: 0;
-  width: 258px;
-  max-width: 100%;
-  border-radius: 4px;
-}
-
-@media (max-width: 800px) {
-  .duckduckgo {
-    width: 100%;
+    justify-content: center;
   }
 }
 
 /* Main content */
 .main-content {
-  max-width: 64rem;
-  margin: 0 auto 1.5rem;
-  padding: 0 2rem 4rem;
-  background-color: $white;
-  box-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
-  min-height: calc(100vh - 200px);
-  overflow: hidden; /* Contain floats */
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.5rem 1.5rem 3rem;
+  min-height: 50vh;
 }
 
-@media (max-width: 800px) {
-  .main-content {
-    padding: 0 1.5rem 3rem;
-  }
-}
-
-/* Typography improvements */
-// Font weight helper classes (matching main site)
-.font-brand-light {
-  font-family: $font-family-base;
-  font-weight: $font-weight-brand-light;
-}
-
-.font-brand-regular {
-  font-family: $font-family-base;
-  font-weight: $font-weight-brand-regular;
-}
-
-.font-brand-semibold {
-  font-family: $font-family-base;
-  font-weight: $font-weight-brand-semibold;
-}
-
+/* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-family: $font-family-base;
-  font-weight: $font-weight-brand-regular;
-  color: $text-color;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  color: var(--text);
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   line-height: 1.2;
@@ -251,50 +167,73 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 {
   font-size: 2rem;
-  border-bottom: 2px solid $brand-primary;
-  padding-top: 2rem;
+  margin-top: 0;
   padding-bottom: 0.5rem;
-  margin-top: 3rem;
+  border-bottom: 2px solid var(--green);
 }
 
 h2 {
   font-size: 1.5rem;
-  margin-top: 2em;
+  margin-top: 1.75em;
+  color: var(--brown);
 }
 
 h3 {
   font-size: 1.25rem;
 }
 
+.main-content {
+  p, li {
+    color: var(--text);
+  }
+
+  ul, ol {
+    margin: 0.75em 0;
+    padding-left: 1.5em;
+  }
+
+  ul {
+    list-style-type: disc;
+  }
+
+  ol {
+    list-style-type: decimal;
+  }
+
+  li {
+    margin-bottom: 0.25em;
+  }
+}
+
 code {
-  background-color: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.06);
   padding: 0.2em 0.4em;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 0.9em;
 }
 
 pre {
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
   padding: 1rem;
   overflow-x: auto;
 
   code {
-    background-color: transparent;
+    background: transparent;
     padding: 0;
   }
 }
 
 blockquote {
-  border-left: 4px solid $brand-primary;
+  border-left: 4px solid var(--green);
   padding-left: 1rem;
-  margin-left: 0;
-  color: $text-color-light;
+  margin: 1rem 0;
+  color: var(--text-muted);
   font-style: italic;
 }
 
-/* Table of Contents Box */
+/* TOC box (if used in pages) */
 .toc-box {
   float: right;
   clear: right;
@@ -302,45 +241,14 @@ blockquote {
   max-width: 100%;
   margin: 0 0 1.5rem 1.5rem;
   padding: 1rem 1.25rem;
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  display: block;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
 
   h2 {
     margin-top: 0;
-    margin-bottom: 0.75rem;
     font-size: 1.1rem;
-    color: $brand-primary;
     border-bottom: none;
-    padding-bottom: 0;
-  }
-
-  ul {
-    margin: 0;
-    padding-left: 1.25rem;
-    list-style-type: disc;
-
-    ul {
-      margin-top: 0.25rem;
-      list-style-type: circle;
-    }
-  }
-
-  li {
-    margin-bottom: 0.5rem;
-    line-height: 1.4;
-
-    a {
-      color: $brand-secondary;
-      text-decoration: none;
-
-      &:hover {
-        color: darken($brand-secondary, 15%);
-        text-decoration: underline;
-      }
-    }
   }
 }
 
@@ -354,41 +262,32 @@ blockquote {
 
 /* Footer */
 .site-footer {
-  margin-top: 3rem;
-  padding-top: 2rem;
-  border-top: 1px solid #eee;
-  color: $text-color-light;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--card-border);
+  color: var(--text-muted);
   font-size: 0.9rem;
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  justify-content: space-between;
 
   a {
-    color: $brand-secondary;
+    color: var(--brown);
   }
 }
 
-@media (min-width: 600px) {
-  .site-footer {
-    flex-direction: row;
-    justify-content: space-between;
-  }
-}
+/* Mycelium illustration */
+.mycelium {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  opacity: 0.55;
 
-/* Manifesto Box */
-.manifesto-box {
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  border-left: 4px solid #4a90e2;
-  padding: 2rem;
-  margin: 2rem 0;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-
-  .manifesto-statement {
-    font-size: 1.1em;
-    line-height: 1.8;
-    margin: 0.75rem 0;
-    color: #2c3e50;
-    font-weight: $font-weight-brand-semibold;
+  img {
+    width: 100%;
+    max-width: 960px;
+    height: auto;
+    display: block;
   }
 }

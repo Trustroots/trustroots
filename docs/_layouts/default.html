@@ -1,102 +1,59 @@
-{% comment %} Trustroots Team Guide template Extends jekyll-theme-cayman theme —
-see original file:
-https://github.com/pages-themes/cayman/blob/4b7215bd058e0695ebb3fa6929bf8fd0b3bf3714/_layouts/default.html
-See Instructions for how to modify and run this template locally:
-https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/
-https://help.github.com/articles/customizing-css-and-html-in-your-jekyll-theme/
-https://help.github.com/categories/customizing-github-pages/
-https://jekyllrb.com/docs/themes/ {% endcomment %}
 <!DOCTYPE html>
-<html lang="{{ site.lang | default: 'en-US' }}">
+<html lang="{{ site.lang | default: 'en' }}">
   <head>
-    {% if site.google_analytics %}
-    <script
-      async
-      src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics }}"
-    ></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag() {
-        dataLayer.push(arguments);
-      }
-      gtag('js', new Date());
-      gtag('config', '{{ site.google_analytics }}');
-    </script>
-    <!-- https://www.trustroots.org/privacy -->
-    {% endif %}
     <meta charset="UTF-8" />
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {% seo %}
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#12b591" />
-    <meta
-      name="apple-mobile-web-app-status-bar-style"
-      content="black-translucent"
-    />
     <link
       rel="stylesheet"
-      href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}"
+      href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | default: '' | relative_url }}"
     />
   </head>
   <body>
     <a id="skip-to-content" href="#content">Skip to the content.</a>
 
-    <header class="page-header" role="banner">
-      <div class="header-container">
-        <div class="header-left">
-          <a href="https://www.trustroots.org/" class="header-logo-link">
-            <img
-              src="https://cdn.rawgit.com/Trustroots/trustroots/master/public/img/logo/horizontal-white.svg"
-              alt="Trustroots"
-              class="header-logo"
-            />
-          </a>
-          <span class="header-title"
-            >{{ site.title | default: site.github.repository_name }}</span
-          >
-        </div>
-        <div class="header-right">
-          <nav class="header-nav">
-            <a href="https://notes.trustroots.org/" class="nav-link"
-              >Nostroots</a
-            >
-            <a href="https://www.trustroots.org/" class="nav-link"
-              >Trustroots.org</a
-            >
-            <a href="https://github.com/Trustroots/nostroots" class="nav-link"
-              >GitHub</a
-            >
-          </nav>
-          <div class="header-search">
-            <!-- https://duckduckgo.com/search_box -->
-            <iframe
-              class="duckduckgo"
-              frameborder="0"
-              src="https://duckduckgo.com/search.html?width=200&site={{ site.url }}&prefill=Search docs"
-            ></iframe>
-          </div>
-        </div>
+    <header class="header" role="banner">
+      <div class="header-vines" aria-hidden="true">
+        <img src="{{ '/assets/images/vines-top.png' | relative_url }}" alt="" />
       </div>
+      <a href="https://www.trustroots.org/" class="header-logo-link">
+        <img
+          class="header-logo"
+          src="{{ '/assets/logo.svg' | relative_url }}"
+          alt="Trustroots"
+        />
+      </a>
+      <span class="header-title"
+        >{{ site.title | default: 'Documentation' }}</span
+      >
+      <nav class="header-links">
+        <a href="https://notes.trustroots.org/">Nostroots</a>
+        <a href="https://www.trustroots.org/">Trustroots.org</a>
+        <a href="https://github.com/Trustroots/trustroots">GitHub</a>
+      </nav>
     </header>
 
     <main id="content" class="main-content" role="main">
       {{ content }}
 
       <footer class="site-footer">
-        <span class="site-footer-owner">
-          <a
-            href="{{ site.github.repository_url }}/edit/master/docs{{ page.dir }}{{ page.name }}"
-          >
-            Edit this page on GitHub
-          </a>
-        </span>
-        <span class="site-footer-credits">
-          This documentation is licensed under
-          <a href="https://creativecommons.org/licenses/by/4.0/">
-            a Creative Commons Attribution 4.0 International License </a
-          >.
+        <a
+          href="{{ site.github.repository_url }}/edit/master/docs{{ page.dir }}{{ page.name }}"
+          >Edit this page on GitHub</a
+        >
+        <span>
+          Licensed under
+          <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
         </span>
       </footer>
     </main>
+
+    <div class="mycelium" aria-hidden="true">
+      <img
+        src="{{ '/assets/images/mycelium-roots.svg' | relative_url }}"
+        alt=""
+      />
+    </div>
   </body>
 </html>

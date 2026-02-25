@@ -1,3 +1,4 @@
-# Nostroots
-
-See [notes.trustroots.org](https://notes.trustroots.org/)
+---
+redirect_to: https://notes.trustroots.org/
+title: Nostroots
+---
