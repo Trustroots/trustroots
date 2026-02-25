@@ -1,1 +1,1 @@
-Check our [nostr app](https://team.trustroots.org/nostr.html)
+Check out our nostroots app at [notes.trustroots.org](https://notes.trustroots.org).
