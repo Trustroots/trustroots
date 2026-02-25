@@ -267,6 +267,7 @@ blockquote {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: center;
   gap: 0.5rem 1rem;
 
   a {
@@ -276,6 +277,16 @@ blockquote {
   a:hover {
     color: var(--rust);
   }
+}
+
+.footer-links-left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+}
+
+.footer-edit {
+  margin-left: auto;
 }
 
 
