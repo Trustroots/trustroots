@@ -2,7 +2,7 @@
 
 ## Nostr — decentralized social networking
 
-Online social networks built around the gift economy should rely less on individual-run servers and bureaucratic overhead. Nostr is a promising way to make that vision real. Learn more about [nostr here](nostr.md).
+Online social networks built around the gift economy should rely less on individual-run servers and bureaucratic overhead. Nostr is a promising way to make that vision real. Learn more at [notes.trustroots.org](https://notes.trustroots.org).
 
 
 ## Support team
