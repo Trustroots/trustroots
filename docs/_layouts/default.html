@@ -27,25 +27,37 @@
       <span class="header-title"
         >{{ site.title | default: 'Documentation' }}</span
       >
-      <nav class="header-links">
-        <a href="https://notes.trustroots.org/">Nostroots</a>
-        <a href="https://www.trustroots.org/">Trustroots.org</a>
-        <a href="https://github.com/Trustroots/trustroots">GitHub</a>
-      </nav>
+      <a href="{{ '/' | relative_url }}" class="header-url"
+        >team.trustroots.org</a
+      >
     </header>
 
     <main id="content" class="main-content" role="main">
       {{ content }}
 
       <footer class="site-footer">
-        <a
-          href="{{ site.github.repository_url }}/edit/master/docs{{ page.dir }}{{ page.name }}"
-          >Edit this page on GitHub</a
-        >
-        <span>
-          Licensed under
-          <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
-        </span>
+        <div class="footer-links">
+          <a href="https://notes.trustroots.org/">Nostroots</a>
+          <a href="https://www.trustroots.org/">Trustroots.org</a>
+          <a href="https://github.com/Trustroots/trustroots">GitHub</a>
+          <a
+            href="{{ site.github.repository_url }}/edit/master/docs{{ page.dir }}{{ page.name }}"
+            >Edit this page</a
+          >
+          <span class="footer-license">
+            <a
+              href="https://creativecommons.org/licenses/by/4.0/"
+              rel="license"
+            >
+              <img
+                src="https://licensebuttons.net/l/by/4.0/88x31.png"
+                alt="Creative Commons Attribution 4.0 International"
+                width="88"
+                height="31"
+              />
+            </a>
+          </span>
+        </div>
       </footer>
     </main>
 

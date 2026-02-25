@@ -111,22 +111,19 @@ a:hover {
   z-index: 1;
 }
 
-.header-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+.header-url {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.9rem;
   position: relative;
   z-index: 1;
+  width: 100%;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
 
-  a {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.95rem;
-  }
-
-  a:hover {
-    color: var(--white);
-    text-decoration: none;
-  }
+a.header-url:hover {
+  color: var(--white);
+  text-decoration: none;
 }
 
 @media (max-width: 600px) {
@@ -137,13 +134,10 @@ a:hover {
 
   .header-title {
     font-size: 1.2rem;
-    width: 100%;
-    text-align: center;
   }
 
-  .header-links {
-    width: 100%;
-    justify-content: center;
+  .header-url {
+    font-size: 0.85rem;
   }
 }
 
@@ -260,20 +254,33 @@ blockquote {
   }
 }
 
-/* Footer */
+/* Footer (notes-style links row) */
 .site-footer {
   margin-top: 2.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid var(--card-border);
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+}
+
+.footer-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
   justify-content: space-between;
+  gap: 0.5rem 1rem;
 
   a {
     color: var(--brown);
+  }
+
+  a:hover {
+    color: var(--rust);
+  }
+}
+
+.footer-license {
+  a {
+    color: var(--text-muted);
   }
 }
 
