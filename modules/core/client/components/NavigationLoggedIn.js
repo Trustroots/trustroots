@@ -108,7 +108,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
-          path="https://team.trustroots.org/nostr.html"
+          path="https://notes.trustroots.org/"
           target="_blank"
           className="hidden-xs"
         >
