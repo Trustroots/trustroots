@@ -305,6 +305,9 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
+              /* Disable push notifications - Callum 6/Apr/2026
+              // We're having problems with emails not sending properly, so
+              // we're disabling push notifications as they are also failing
               push(callback) {
                 pushService.notifyMessagesUnread(
                   userFrom,
@@ -313,6 +316,7 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
+              */
             },
             notificationCallback,
           );
