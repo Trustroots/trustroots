@@ -9,6 +9,9 @@ const UNREGISTERED_TOKEN_ERROR_CODE =
   'messaging/registration-token-not-registered';
 
 module.exports = function (job, done) {
+  // Notifications are disabled because they don't work - Callum 6/Apr/2026
+  return done();
+
   const attrs = job.attrs;
   const data = attrs.data;
 
