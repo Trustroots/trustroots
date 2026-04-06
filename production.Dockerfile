@@ -5,7 +5,8 @@ FROM phusion/passenger-nodejs:2.3.1 as builder
 # Base image should also have these already installed: gcc, git, make, python
 # - `build-essential` and `make` are required by some Node modules
 # - `unzip` & `wget` are required by API docs generator
-RUN apt-get -qq update && apt-get -q install -y \
+RUN rm -f /etc/apt/sources.list.d/passenger.list \
+  && apt-get -qq update && apt-get -q install -y \
   build-essential \
   graphicsmagick \
   openssl \
@@ -52,7 +53,8 @@ FROM phusion/passenger-nodejs:2.3.1
 RUN rm -f /etc/service/nginx/down
 
 # Install the production dependencies into the production container
-RUN apt-get -qq update && apt-get -q install -y \
+RUN rm -f /etc/apt/sources.list.d/passenger.list \
+  && apt-get -qq update && apt-get -q install -y \
   graphicsmagick \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
