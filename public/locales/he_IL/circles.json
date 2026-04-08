@@ -1,1 +1,20 @@
-{}
+{
+    "Cancel": "בטל",
+    "Discover circles": "גלה מעגלים",
+    "Do you want to leave \"{{label}}\"?": "האם ברצונך לעזוב את \"{{label}}\"?",
+    "Join": "הצטרף",
+    "Join ({{label}})": "הצטרף ל-\"{{label}}\"",
+    "Join Trustroots to find members behind circles.": "הצטרף ל-Trustroots כדי למצוא חברים מאחורי מעגלים.",
+    "Joined": "הצטרף",
+    "Joining circles helps you find likeminded Trustroots members.": "הצטרפות למעגלים עוזרת לך למצוא חברים ב-Trustroots בעלי דעות דומות.",
+    "Leave circle": "עזוב עיגול",
+    "Leave this circle?": "לעזוב את העיגול הזה?",
+    "Missing your circle?": "איבדת את המעגל שלך?",
+    "New circle!": "מעגל חדש!",
+    "No members yet": "אין משתמשים עדיין",
+    "Send us suggestions!": "שלח לנו הצעות!",
+    "Sign up with Trustroots": "היכנס עם Trustroots",
+    "{{count, number}} members_0": "משתמש אחד",
+    "{{count, number}} members_1": "{{count, number}} משתמשים",
+    "{{count, number}} members_2": "{{count, number}} משתמשים"
+}

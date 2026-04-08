@@ -1,6 +1,6 @@
 {
     "{{count}} contacts in common": "{{count}}个共同好友",
-    "{{count}} contacts": "{{count}}个好友",
+    "{{count}} contacts_0": "{{count}} 個好友",
     "You received a contact request.": "你收到一条好友申请。",
     "Yes, revoke request": "是的，撤回申请",
     "Yes, remove contact": "是，删除此好友",
