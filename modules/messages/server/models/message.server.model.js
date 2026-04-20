@@ -37,6 +37,13 @@ const MessageSchema = new Schema({
     type: Boolean,
     // No default; lack of value means no definitive check has been done
   },
+  // Hidden delivery path used for shadowbanned/suspended senders:
+  // sender can still see own messages, recipients can't.
+  shadowHidden: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
   /* Count and the latest date of notifications sent to `userTo`
      about unread messages (`read:false`) */
   notificationCount: {

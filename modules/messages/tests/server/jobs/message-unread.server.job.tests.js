@@ -242,6 +242,56 @@ describe('Job: message unread', function () {
     });
   });
 
+  it('Suppress reminder emails when sender is shadowbanned', function (done) {
+    message.created = moment().subtract(
+      moment.duration({ minutes: 10, seconds: 1 }),
+    );
+    message.save(function (err) {
+      if (err) return done(err);
+
+      userFrom.roles = ['user', 'shadowban'];
+      userFrom.save(function (err) {
+        if (err) return done(err);
+
+        messageUnreadJobHandler({}, function (err) {
+          if (err) return done(err);
+
+          jobs.length.should.equal(0);
+          Message.find({}, function (err, messages) {
+            if (err) return done(err);
+            messages[0].notificationCount.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('Suppress reminder emails when recipient is suspended', function (done) {
+    message.created = moment().subtract(
+      moment.duration({ minutes: 10, seconds: 1 }),
+    );
+    message.save(function (err) {
+      if (err) return done(err);
+
+      userTo.roles = ['user', 'suspended'];
+      userTo.save(function (err) {
+        if (err) return done(err);
+
+        messageUnreadJobHandler({}, function (err) {
+          if (err) return done(err);
+
+          jobs.length.should.equal(0);
+          Message.find({}, function (err, messages) {
+            if (err) return done(err);
+            messages[0].notificationCount.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
   it('Ignore notification messages from removed users but do not stop processing other notifications', function (done) {
     const message2 = new Message(_message);
     message2.created = moment().subtract(moment.duration({ minutes: 11 }));

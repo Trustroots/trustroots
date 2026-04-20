@@ -14,6 +14,12 @@ const agenda = require('../../../../config/lib/agenda');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+const restrictedRoles = ['suspended', 'shadowban'];
+
+function hasRestrictedRole(user) {
+  const roles = _.get(user, 'roles', []);
+  return _.intersection(roles, restrictedRoles).length > 0;
+}
 
 /**
  * Get a randomized name from a list of support volunteer names.
@@ -31,6 +37,10 @@ exports.sendMessagesUnread = function (
   notification,
   callback,
 ) {
+  if (hasRestrictedRole(userFrom) || hasRestrictedRole(userTo)) {
+    return callback();
+  }
+
   // Is the notification the first one?
   // If not, we send a different subject.
   const isFirst = !(notification.notificationCount > 0);
@@ -84,6 +94,10 @@ exports.sendConfirmContact = function (
   messageText,
   callback,
 ) {
+  if (hasRestrictedRole(user) || hasRestrictedRole(friend)) {
+    return callback();
+  }
+
   const meURL = url + '/profile/' + user.username;
   const urlConfirm = url + '/contact-confirm/' + contact._id;
   const campaign = 'confirm-contact';

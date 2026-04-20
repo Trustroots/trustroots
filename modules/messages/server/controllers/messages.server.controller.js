@@ -20,6 +20,12 @@ const statService = require('../../../stats/server/services/stats.server.service
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
+const restrictedRoles = ['suspended', 'shadowban'];
+
+function hasRestrictedMessagingRole(user) {
+  const roles = _.get(user, 'roles', []);
+  return _.intersection(roles, restrictedRoles).length > 0;
+}
 
 // Allowed fields of message object to be set over API
 const messageFields = [
@@ -264,6 +270,8 @@ exports.send = async function (req, res) {
     });
   }
 
+  const senderIsRestricted = hasRestrictedMessagingRole(req.user);
+
   // No receiver
   if (!req.body.userTo) {
     return res.status(400).send({
@@ -450,7 +458,10 @@ exports.send = async function (req, res) {
         message.content = textService.html(message.content);
 
         message.userFrom = req.user;
-        message.read = false;
+        // "Ghost-send" behavior: restricted senders can still see own messages,
+        // but they are hidden from recipients.
+        message.read = senderIsRestricted;
+        message.shadowHidden = senderIsRestricted;
         message.notified = false;
 
         // Include spam status only if we have definitive yes or no, otherwise it's unknown
@@ -465,6 +476,11 @@ exports.send = async function (req, res) {
 
       // Create/upgrade Thread handle between these two users
       function (message, done) {
+        // Don't update recipient thread/inbox delivery state for shadow-hidden messages.
+        if (message.shadowHidden) {
+          return done(null, message);
+        }
+
         const thread = new Thread();
         thread.updated = Date.now();
         thread.userFrom = message.userFrom;
@@ -636,7 +652,11 @@ exports.threadByUser = function (req, res, next, userId) {
           {
             $or: [
               { userFrom: req.user._id, userTo: userId },
-              { userTo: req.user._id, userFrom: userId },
+              {
+                userTo: req.user._id,
+                userFrom: userId,
+                shadowHidden: { $ne: true },
+              },
             ],
           },
           {
@@ -850,7 +870,10 @@ exports.sync = function (req, res) {
 
         // This is always part of the query
         const queryUsers = {
-          $or: [{ userFrom: req.user._id }, { userTo: req.user._id }],
+          $or: [
+            { userFrom: req.user._id },
+            { userTo: req.user._id, shadowHidden: { $ne: true } },
+          ],
         };
 
         // Filter only by user or also by date?

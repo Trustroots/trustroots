@@ -28,7 +28,6 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const pushService = require('../../../core/server/services/push.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const log = require('../../../../config/lib/logger');
 const config = require('../../../../config/config');
@@ -37,6 +36,12 @@ const moment = require('moment');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
 const User = mongoose.model('User');
+const restrictedRoles = ['suspended', 'shadowban'];
+
+function hasRestrictedMessagingRole(user) {
+  const roles = _.get(user, 'roles', []);
+  return _.intersection(roles, restrictedRoles).length > 0;
+}
 
 module.exports = function (job, agendaDone) {
   // read timing of notifications from config
@@ -228,6 +233,7 @@ function sendUnreadMessageReminders(reminder, callback) {
               'email',
               'displayName',
               'username',
+              'roles',
               // Used for web/mobile push notifications:
               'pushRegistration.token',
               'pushRegistration.platform',
@@ -284,6 +290,15 @@ function sendUnreadMessageReminders(reminder, callback) {
                 'Could not find all users relevant for this message to notify about. #j93bvs',
               ),
             );
+          }
+
+          // Suppress reminders related to suspended/shadowbanned profiles.
+          // We still increment notificationCount later to avoid retrying forever.
+          if (
+            hasRestrictedMessagingRole(userFrom) ||
+            hasRestrictedMessagingRole(userTo)
+          ) {
+            return notificationCallback();
           }
 
           // Process email notifications
