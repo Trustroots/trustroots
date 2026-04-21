@@ -166,7 +166,7 @@ describe('Message CRUD tests', function () {
       });
   });
 
-  it('should be able to send and read messages when with role "shadowban"', function (done) {
+  it('should be able to send and read own messages when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
 
     userFrom.save(function (saveErr) {
@@ -194,7 +194,6 @@ describe('Message CRUD tests', function () {
                 .end(function (messagesGetErr, messagesGetRes) {
                   should.not.exist(messagesGetErr);
 
-                  // Confirm message is on the list
                   if (
                     !messagesGetRes.body[0] ||
                     !messagesGetRes.body[0].content
@@ -1110,6 +1109,136 @@ describe('Message CRUD tests', function () {
             });
         });
       });
+    });
+  });
+
+  it('should be able to read sync endpoint when with role "shadowban"', function (done) {
+    userFrom.roles = ['user', 'shadowban'];
+
+    userFrom.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          agent
+            .post('/api/messages')
+            .send(message)
+            .expect(200)
+            .end(function (messageSaveErr) {
+              should.not.exist(messageSaveErr);
+
+              agent
+                .get('/api/messages-sync')
+                .expect(200)
+                .end(function (syncReadErr, syncReadRes) {
+                  if (syncReadErr) return done(syncReadErr);
+                  should.exist(syncReadRes.body.messages);
+                  should.exist(syncReadRes.body.users);
+                  should.exist(syncReadRes.body.messages[userToId.toString()]);
+                  syncReadRes.body.messages[
+                    userToId.toString()
+                  ].length.should.equal(1);
+                  done();
+                });
+            });
+        });
+    });
+  });
+
+  it('should not deliver shadowbanned sender messages to recipient thread', function (done) {
+    userFrom.roles = ['user', 'shadowban'];
+
+    userFrom.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          agent
+            .post('/api/messages')
+            .send(message)
+            .expect(200)
+            .end(function (messageSaveErr) {
+              should.not.exist(messageSaveErr);
+
+              const recipientAgent = request.agent(app);
+              recipientAgent
+                .post('/api/auth/signin')
+                .send({
+                  username: userTo.username,
+                  password: 'password123',
+                })
+                .expect(200)
+                .end(function (recipientSigninErr) {
+                  should.not.exist(recipientSigninErr);
+
+                  recipientAgent
+                    .get('/api/messages/' + userFromId)
+                    .expect(200)
+                    .end(function (messagesGetErr, messagesGetRes) {
+                      should.not.exist(messagesGetErr);
+                      messagesGetRes.body.length.should.equal(0);
+                      done();
+                    });
+                });
+            });
+        });
+    });
+  });
+
+  it('should not deliver shadowbanned sender messages to recipient sync', function (done) {
+    userFrom.roles = ['user', 'shadowban'];
+
+    userFrom.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          agent
+            .post('/api/messages')
+            .send(message)
+            .expect(200)
+            .end(function (messageSaveErr) {
+              should.not.exist(messageSaveErr);
+
+              const recipientAgent = request.agent(app);
+              recipientAgent
+                .post('/api/auth/signin')
+                .send({
+                  username: userTo.username,
+                  password: 'password123',
+                })
+                .expect(200)
+                .end(function (recipientSigninErr) {
+                  should.not.exist(recipientSigninErr);
+
+                  recipientAgent
+                    .get('/api/messages-sync')
+                    .expect(200)
+                    .end(function (syncReadErr, syncReadRes) {
+                      if (syncReadErr) return done(syncReadErr);
+                      should.not.exist(
+                        syncReadRes.body.messages[userFromId.toString()],
+                      );
+                      done();
+                    });
+                });
+            });
+        });
     });
   });
 });

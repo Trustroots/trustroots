@@ -13,6 +13,7 @@ const render = require('../../../../config/lib/render');
 const agenda = require('../../../../config/lib/agenda');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**
@@ -31,6 +32,13 @@ exports.sendMessagesUnread = function (
   notification,
   callback,
 ) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(userFrom) ||
+    userRolesService.hasRestrictedMessagingRole(userTo)
+  ) {
+    return callback();
+  }
+
   // Is the notification the first one?
   // If not, we send a different subject.
   const isFirst = !(notification.notificationCount > 0);
@@ -84,6 +92,13 @@ exports.sendConfirmContact = function (
   messageText,
   callback,
 ) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(user) ||
+    userRolesService.hasRestrictedMessagingRole(friend)
+  ) {
+    return callback();
+  }
+
   const meURL = url + '/profile/' + user.username;
   const urlConfirm = url + '/contact-confirm/' + contact._id;
   const campaign = 'confirm-contact';

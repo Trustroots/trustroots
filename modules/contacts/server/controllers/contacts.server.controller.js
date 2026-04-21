@@ -90,7 +90,7 @@ exports.add = function (req, res) {
 
       // Find friend
       function (messageHTML, messagePlain, done) {
-        User.findById(req.body.friendUserId, 'email displayName').exec(
+        User.findById(req.body.friendUserId, 'email displayName roles').exec(
           function (err, friend) {
             if (!friend)
               return done(

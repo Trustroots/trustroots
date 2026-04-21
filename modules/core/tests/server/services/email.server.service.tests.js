@@ -185,6 +185,42 @@ describe('Service: email', function () {
     );
   });
 
+  it('suppresses messages unread email for banned participants', function (done) {
+    const userFrom = {
+      _id: 'from-user-id',
+      username: 'userfrom',
+      displayName: 'from name',
+      email: 'from@test.com',
+      roles: ['user', 'shadowban'],
+    };
+    const userTo = {
+      _id: 'to-user-id',
+      username: 'userto',
+      displayName: 'to name',
+      email: 'to@test.com',
+      roles: ['user'],
+    };
+    const notification = {
+      messages: [
+        {
+          id: 'message-id-1',
+          content: 'message content 1',
+        },
+      ],
+    };
+
+    emailService.sendMessagesUnread(
+      userFrom,
+      userTo,
+      notification,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(0);
+        done();
+      },
+    );
+  });
+
   it('can send support request email', function (done) {
     const supportRequest = {
       message: 'test-support-message',
@@ -458,6 +494,46 @@ describe('Service: email', function () {
     it('contains the contact confirm url', function () {
       jobs[0].data.html.should.containEql('/contact-confirm/' + contact._id);
       jobs[0].data.text.should.containEql('/contact-confirm/' + contact._id);
+    });
+
+    it('suppresses confirm contact email for banned sender', function (done) {
+      jobs.length = 0;
+      const bannedUser = {
+        ...user,
+        roles: ['user', 'shadowban'],
+      };
+      emailService.sendConfirmContact(
+        bannedUser,
+        friend,
+        contact,
+        messageHTML,
+        messageText,
+        function (err) {
+          if (err) return done(err);
+          jobs.length.should.equal(0);
+          done();
+        },
+      );
+    });
+
+    it('suppresses confirm contact email for banned recipient', function (done) {
+      jobs.length = 0;
+      const bannedFriend = {
+        ...friend,
+        roles: ['user', 'suspended'],
+      };
+      emailService.sendConfirmContact(
+        user,
+        bannedFriend,
+        contact,
+        messageHTML,
+        messageText,
+        function (err) {
+          if (err) return done(err);
+          jobs.length.should.equal(0);
+          done();
+        },
+      );
     });
   });
 });
