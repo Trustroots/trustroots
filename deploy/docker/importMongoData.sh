@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 pwd
 
@@ -10,7 +10,31 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
 set -e
 
-echo "Importing MongoDB data from mongodumps/ to localhost:27017"
+if docker compose version >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker-compose"
+else
+  echo "Error: docker compose (or docker-compose) is required."
+  exit 1
+fi
+
+if ! $DOCKER_COMPOSE_CMD ps --services --status running | rg -x "mongodb" >/dev/null; then
+  echo "Error: mongodb service is not running."
+  echo "Start it with: $DOCKER_COMPOSE_CMD up -d mongodb"
+  exit 1
+fi
+
+if $DOCKER_COMPOSE_CMD exec -T mongodb sh -lc "command -v mongosh >/dev/null 2>&1"; then
+  MONGO_SHELL="mongosh"
+elif $DOCKER_COMPOSE_CMD exec -T mongodb sh -lc "command -v mongo >/dev/null 2>&1"; then
+  MONGO_SHELL="mongo"
+else
+  echo "Error: neither 'mongosh' nor 'mongo' is available in mongodb container."
+  exit 1
+fi
+
+echo "Importing MongoDB data from mongodumps/ to mongodb container"
 
 if [ ! -d "mongodumps" ]; then
   echo "Error: mongodumps/ directory not found"
@@ -31,17 +55,24 @@ fi
 DB_NAME="trustroots"
 
 echo "Dropping existing collections..."
-mongosh --host localhost:27017 --eval "db.dropDatabase()" $DB_NAME
+$DOCKER_COMPOSE_CMD exec -T mongodb "$MONGO_SHELL" "$DB_NAME" --quiet --eval "db.dropDatabase()"
 
 echo "Importing data..."
 # Check if we have a compressed BSON archive file
 if [ -f "$MONGODUMP_PATH/trust-roots-dump-no-agenda.bson.gz" ]; then
   echo "Found compressed BSON archive file, importing..."
   # The archive contains data for "trust-roots" database, we need to rename it to "trustroots"
-  gunzip -c "$MONGODUMP_PATH/trust-roots-dump-no-agenda.bson.gz" | mongorestore --host localhost:27017 --archive --nsFrom="trust-roots.*" --nsTo="trustroots.*"
+  gunzip -c "$MONGODUMP_PATH/trust-roots-dump-no-agenda.bson.gz" | \
+    $DOCKER_COMPOSE_CMD exec -T mongodb mongorestore --archive --nsFrom="trust-roots.*" --nsTo="trustroots.*"
 else
   echo "No compressed BSON archive file found, trying standard mongorestore..."
-  mongorestore --host localhost:27017 --db $DB_NAME --excludeCollection=agendaJobs $MONGODUMP_PATH
+  TMP_DUMP_PATH="/tmp/trustroots-mongodump-$TIMESTAMP"
+  echo "Copying dump directory into mongodb container..."
+  $DOCKER_COMPOSE_CMD cp "$MONGODUMP_PATH" "mongodb:$TMP_DUMP_PATH"
+  echo "Importing dump from container path..."
+  $DOCKER_COMPOSE_CMD exec -T mongodb mongorestore --db "$DB_NAME" --excludeCollection=agendaJobs "$TMP_DUMP_PATH"
+  echo "Cleaning up temporary dump files in container..."
+  $DOCKER_COMPOSE_CMD exec -T mongodb rm -rf "$TMP_DUMP_PATH"
 fi
 
 echo "Data import completed!"
@@ -52,13 +83,13 @@ echo "DATABASE OVERVIEW"
 echo "=========================================="
 
 echo "Database: $DB_NAME"
-echo "Host: localhost:27017"
+echo "Host: mongodb (docker compose service)"
 echo ""
 
 # Get collection list and document counts
 echo "Collections and document counts:"
 echo "--------------------------------"
-mongosh --host localhost:27017 --quiet --eval "
+$DOCKER_COMPOSE_CMD exec -T mongodb "$MONGO_SHELL" --quiet --eval "
 db = db.getSiblingDB('$DB_NAME');
 var collections = db.getCollectionNames();
 collections.forEach(function(collection) {
@@ -72,7 +103,7 @@ echo ""
 # Get database stats
 echo "Database statistics:"
 echo "-------------------"
-mongosh --host localhost:27017 --quiet --eval "
+$DOCKER_COMPOSE_CMD exec -T mongodb "$MONGO_SHELL" --quiet --eval "
 db = db.getSiblingDB('$DB_NAME');
 var stats = db.stats();
 print('Collections: ' + stats.collections);
