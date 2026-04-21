@@ -14,18 +14,13 @@ const messageStatService = require('../services/message-stat.server.service');
 const errorService = require('../../../core/server/services/error.server.service');
 const textService = require('../../../core/server/services/text.server.service');
 const spamService = require('../../../core/server/services/spam.server.service');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const statService = require('../../../stats/server/services/stats.server.service');
 
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
-const restrictedRoles = ['suspended', 'shadowban'];
-
-function hasRestrictedMessagingRole(user) {
-  const roles = _.get(user, 'roles', []);
-  return _.intersection(roles, restrictedRoles).length > 0;
-}
 
 // Allowed fields of message object to be set over API
 const messageFields = [
@@ -270,7 +265,9 @@ exports.send = async function (req, res) {
     });
   }
 
-  const senderIsRestricted = hasRestrictedMessagingRole(req.user);
+  const senderIsRestricted = userRolesService.hasRestrictedMessagingRole(
+    req.user,
+  );
 
   // No receiver
   if (!req.body.userTo) {

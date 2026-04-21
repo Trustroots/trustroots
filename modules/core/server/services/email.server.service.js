@@ -13,13 +13,8 @@ const render = require('../../../../config/lib/render');
 const agenda = require('../../../../config/lib/agenda');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-const restrictedRoles = ['suspended', 'shadowban'];
-
-function hasRestrictedRole(user) {
-  const roles = _.get(user, 'roles', []);
-  return _.intersection(roles, restrictedRoles).length > 0;
-}
 
 /**
  * Get a randomized name from a list of support volunteer names.
@@ -37,7 +32,10 @@ exports.sendMessagesUnread = function (
   notification,
   callback,
 ) {
-  if (hasRestrictedRole(userFrom) || hasRestrictedRole(userTo)) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(userFrom) ||
+    userRolesService.hasRestrictedMessagingRole(userTo)
+  ) {
     return callback();
   }
 
@@ -94,7 +92,10 @@ exports.sendConfirmContact = function (
   messageText,
   callback,
 ) {
-  if (hasRestrictedRole(user) || hasRestrictedRole(friend)) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(user) ||
+    userRolesService.hasRestrictedMessagingRole(friend)
+  ) {
     return callback();
   }
 
