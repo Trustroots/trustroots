@@ -13,6 +13,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 14
+      - name: Use Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Cache Node.js modules
         uses: actions/cache@v4
         with:
@@ -27,6 +31,8 @@ jobs:
         run: >
           git config --global url."https://github.com/".insteadOf
           ssh://git@github.com/
+      - name: Configure node-gyp Python
+        run: npm config set python "$(which python)"
       - name: Install dependencies
         run: npm ci
       - name: Test client
@@ -46,6 +52,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 14
+      - name: Use Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
       - name: Cache Node.js modules
         uses: actions/cache@v4
         with:
@@ -60,6 +70,8 @@ jobs:
         run: >
           git config --global url."https://github.com/".insteadOf
           ssh://git@github.com/
+      - name: Configure node-gyp Python
+        run: npm config set python "$(which python)"
       - name: Install dependencies
         run: npm ci
       - name: Test server
