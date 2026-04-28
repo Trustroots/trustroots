@@ -89,6 +89,28 @@ describe('User signup and authentication CRUD tests', function () {
 
   afterEach(dataUtils.clearDatabase);
 
+  it('should reject signup with underscore in username and return a clear message', function (done) {
+    agent
+      .post('/api/auth/signup')
+      .send({
+        firstName: 'Test',
+        lastName: 'User',
+        email: 'underscore-signup-test@example.org',
+        username: 'has_an_underscore',
+        password: 'TR-I$Aw3$0m4',
+        provider: 'local',
+        acquisitionStory: 'Unit test',
+      })
+      .expect(400)
+      .end(function (err, res) {
+        should.not.exist(err);
+        res.body.message.should.equal(
+          'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.',
+        );
+        done();
+      });
+  });
+
   it('should be able to register a new user', function (done) {
     _unConfirmedUser.username = 'Register_New_User';
     _unConfirmedUser.email = 'register_new_user_@example.org';

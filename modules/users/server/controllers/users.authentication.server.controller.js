@@ -68,6 +68,13 @@ exports.signup = function (req, res) {
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
+        if (String(username || '').includes('_')) {
+          return done(
+            new Error(
+              'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.',
+            ),
+          );
+        }
         if (
           isNameSpam(firstName) ||
           isNameSpam(lastName) ||
@@ -162,7 +169,7 @@ exports.signup = function (req, res) {
         statService.stat(statsObject, function () {
           // Send error to the API
           res.status(400).send({
-            message: errorService.getErrorMessage(err),
+            message: errorService.getErrorMessageOrErrMessage(err),
           });
         });
 
@@ -204,6 +211,22 @@ exports.signupValidation = function (req, res) {
           return done(
             new Error('Username is not available.'),
             'username-not-available-reserved',
+          );
+        }
+
+        if (!/[0-9a-z]/.test(username)) {
+          return done(
+            new Error('Username is in invalid format.'),
+            'username-invalid',
+          );
+        }
+
+        if (username.includes('_')) {
+          return done(
+            new Error(
+              'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.',
+            ),
+            'username-invalid',
           );
         }
 

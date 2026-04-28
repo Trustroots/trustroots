@@ -161,6 +161,15 @@ describe('User signup validation CRUD tests', function () {
         );
       });
 
+      it('should show error validating a username with underscores', function (done) {
+        validationFailure(
+          { username: 'underscores_score' },
+          'username-invalid',
+          'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.',
+          done,
+        );
+      });
+
       it('should show error validating a username longer than 34 characters', function (done) {
         validationFailure(
           { username: 'l'.repeat(35) },

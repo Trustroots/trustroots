@@ -44,18 +44,42 @@ exports.getNewError = function (key, status) {
 };
 
 /**
+ * First Mongoose validation path message from `err.errors`, if any.
+ * @param {Error} err
+ * @returns {string|false}
+ */
+function getMongoosePathMessage(err) {
+  let message = false;
+  if (!err.errors) {
+    return false;
+  }
+  for (const errName in err.errors) {
+    if (err.errors[errName].message) {
+      message = err.errors[errName].message;
+    }
+  }
+  return message;
+}
+
+/**
  * Get the error message from error object
  * @param err Error
  * @return String Error message
  */
 exports.getErrorMessage = function (err) {
-  let message = false;
+  return getMongoosePathMessage(err) || defaultErrorMessage;
+};
 
-  for (const errName in err.errors) {
-    if (err.errors[errName].message) message = err.errors[errName].message;
-  }
-
-  return message || defaultErrorMessage;
+/**
+ * Like getErrorMessage(), but falls back to `err.message` when there are no
+ * Mongoose path errors. Used for signup where we return intentional plain
+ * Error messages (e.g. username rules) that are safe to show to the user.
+ *
+ * @param {Error} err
+ * @returns {string}
+ */
+exports.getErrorMessageOrErrMessage = function (err) {
+  return getMongoosePathMessage(err) || err.message || defaultErrorMessage;
 };
 
 /**

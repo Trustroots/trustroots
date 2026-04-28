@@ -80,7 +80,7 @@ function SignupController(
     }
 
     if (err.pattern) {
-      return 'Invalid username.';
+      return 'Use only letters, numbers, periods, and hyphens—no underscores or spaces.';
     }
 
     if (err.username) {

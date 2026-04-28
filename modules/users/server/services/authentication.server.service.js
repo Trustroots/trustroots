@@ -12,7 +12,7 @@ exports.generateEmailToken = function (user, saltBuffer) {
  * Used at Mongoose Schema
  *
  * - at least 3 characters
- * - only a-z0-9_-.
+ * - only a-z0-9-. (underscores are rejected at signup; some legacy usernames may still contain them)
  * - contain at least one alphanumeric character
  * - not in list of illegal usernames
  * - no consecutive dots: "." ok, ".." nope
