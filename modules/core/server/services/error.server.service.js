@@ -71,18 +71,6 @@ exports.getErrorMessage = function (err) {
 };
 
 /**
- * Like getErrorMessage(), but falls back to `err.message` when there are no
- * Mongoose path errors. Used for signup where we return intentional plain
- * Error messages (e.g. username rules) that are safe to show to the user.
- *
- * @param {Error} err
- * @returns {string}
- */
-exports.getErrorMessageOrErrMessage = function (err) {
-  return getMongoosePathMessage(err) || err.message || defaultErrorMessage;
-};
-
-/**
  * Error responses middleware
  */
 exports.errorResponse = function (err, req, res, next) {
