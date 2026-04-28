@@ -20,7 +20,7 @@ describe('job: send push message', () => {
     );
   });
 
-  it('will send a push', () => {
+  it('will not send a push while notifications are disabled', () => {
     const notification = {
       title: 'a title',
       body: 'a body',
@@ -43,10 +43,7 @@ describe('job: send push message', () => {
     };
     sendPushJobHandler(job, err => {
       should.not.exist(err);
-      messages.length.should.equal(1);
-      const message = messages[0];
-      message.tokens.should.deepEqual(['123', '456']);
-      message.payload.should.deepEqual({ notification });
+      messages.length.should.equal(0);
     });
   });
 

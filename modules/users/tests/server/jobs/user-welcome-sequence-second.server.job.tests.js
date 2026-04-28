@@ -90,18 +90,10 @@ describe('Job: welcome sequence, second email', function () {
     confirmedUser.save(done);
   });
 
-  it('Send second welcome sequence email to confirmed users only', function (done) {
+  it('Does not send second welcome sequence email while welcome emails are disabled', function (done) {
     userWelcomeSequenceSecondJobHandler({}, function (err) {
       if (err) return done(err);
-      // Confirmed user received welcome email, unconfirmed didn't
-      jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.from.name.should.be.equalOneOf(config.supportVolunteerNames);
-      jobs[0].data.subject.should.equal(
-        'Meet new people at Trustroots, ' + _confirmedUser.firstName,
-      );
-      // Check that the email contains a link to profile
-      jobs[0].data.html.should.match(/href="http.+\/profile\/user_confirmed/);
+      jobs.length.should.equal(0);
       done();
     });
   });
