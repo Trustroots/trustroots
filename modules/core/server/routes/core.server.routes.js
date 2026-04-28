@@ -60,9 +60,12 @@ module.exports = function (app) {
     const mongoose = require('mongoose');
     const User = mongoose.model('User');
 
-    const name = Array.isArray(req.query.name) ? req.query.name[0] : req.query.name;
+    const name = Array.isArray(req.query.name)
+      ? req.query.name[0]
+      : req.query.name;
 
     User.findOne({ username: name }, function (err, user) {
+      let response;
       if (err) {
         res.status(500).send({ error: 'Internal server error' });
       } else if (!user) {
@@ -71,16 +74,16 @@ module.exports = function (app) {
         const nostrNpub = user.nostrNpub;
 
         if (nostrNpub && nostrNpub.startsWith('npub1')) {
-          var result = nip19.decode(nostrNpub);
-          var obj = {
+          const result = nip19.decode(nostrNpub);
+          response = {
             names: {
               [name]: result.data,
             },
           };
         } else {
-          var obj = {};
+          response = {};
         }
-        res.json(obj);
+        res.json(response);
       }
     });
   });

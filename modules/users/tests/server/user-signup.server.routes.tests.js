@@ -112,7 +112,7 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user', function (done) {
-    _unConfirmedUser.username = 'Register_New_User';
+    _unConfirmedUser.username = 'Register-New-User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
 
     agent

@@ -85,13 +85,13 @@ describe('User signup validation CRUD tests', function () {
         displayName: 'Full Name',
         email: 'test@example.org',
         emailToken: 'initial email token',
-        username: 'taken_username',
+        username: 'taken-username',
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
       user.save(function () {
         validationFailure(
-          { username: 'taken_username' },
+          { username: 'taken-username' },
           'username-not-available',
           'Username is not available.',
           done,

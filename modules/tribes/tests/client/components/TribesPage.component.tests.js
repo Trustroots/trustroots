@@ -79,8 +79,7 @@ describe('CirclesPage', () => {
     });
 
     it('fetch circles from api and show circles on page', async () => {
-      // get tribes and omit the last one, which is "Missing your Tribe?"
-      const tribes = page.getAllByRole('listitem').slice(0, -1);
+      const tribes = page.getAllByRole('listitem');
 
       expect(tribes).toHaveLength(fake.tribes.length);
 
@@ -114,8 +113,7 @@ describe('CirclesPage', () => {
     });
 
     it('show circles on page', async () => {
-      // get tribes and omit the last one, which is "Missing your Tribe?"
-      const tribes = page.getAllByRole('listitem').slice(0, -1);
+      const tribes = page.getAllByRole('listitem');
 
       expect(tribes).toHaveLength(fake.tribes.length);
 
