@@ -153,7 +153,7 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user but not inject additional roles', function (done) {
-    _unConfirmedUser.username = 'Register_New_User';
+    _unConfirmedUser.username = 'Register-New-User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
     _unConfirmedUser.roles = ['user', 'admin'];
 
@@ -175,7 +175,7 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user and confirm email with token and user should become public', function (done) {
-    _unConfirmedUser.username = 'Register_New_User';
+    _unConfirmedUser.username = 'Register-New-User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
 
     agent
@@ -256,7 +256,7 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user and confirming email with wrong token should redirect error and yeld an error and user should not be public', function (done) {
-    _unConfirmedUser.username = 'Register_New_User';
+    _unConfirmedUser.username = 'Register-New-User';
     _unConfirmedUser.email = 'register_new_user_@example.org';
 
     agent
