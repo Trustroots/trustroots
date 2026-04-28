@@ -126,9 +126,14 @@ describe('<CreateExperience />', () => {
         'Would you like to describe something about your experience with them? (Optional)',
       ),
     ).toBeInTheDocument();
-    fireEvent.change(getByLabelText('Public feedback'), {
-      target: { value: 'they made a tasty pie' },
-    });
+    fireEvent.change(
+      getByLabelText(
+        'Leave your public feedback here. Remember to be respectful of others and restrain from any kind of abusive behaviour.',
+      ),
+      {
+        target: { value: 'they made a tasty pie' },
+      },
+    );
 
     fireEvent.click(getAllByText('Finish')[0]);
 
