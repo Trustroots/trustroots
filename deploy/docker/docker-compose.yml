@@ -7,6 +7,21 @@ services:
       - ./data/mongodb:/data/db
     restart: unless-stopped
 
+  # Optional localhost port forward for imports/debugging.
+  # Enable with: docker compose --profile mongo-localhost up -d mongodb mongodb-localhost
+  mongodb-localhost:
+    image: alpine/socat
+    command:
+      - "tcp-listen:27017,fork,reuseaddr,bind=0.0.0.0"
+      - "tcp-connect:mongodb:27017"
+    depends_on:
+      - mongodb
+    ports:
+      - '127.0.0.1:27017:27017'
+    restart: unless-stopped
+    profiles:
+      - mongo-localhost
+
   webapp:
     image: trustrootsops/trustroots:latest
     restart: unless-stopped
