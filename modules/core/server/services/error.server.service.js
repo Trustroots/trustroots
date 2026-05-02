@@ -2,7 +2,7 @@ const log = require('../../../../config/lib/logger');
 
 // Default error message when unsure how to respond
 const defaultErrorMessage =
-  'Snap! Something went wrong. If this keeps happening, please contact us.';
+  'Snap! Something went wrong. If this keeps happening, please contact us.  If you are trying to sign up, try a username without _ underscore.';
 
 /**
  * Get the error by key
