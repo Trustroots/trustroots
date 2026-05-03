@@ -90,18 +90,10 @@ describe('Job: welcome sequence, third email', function () {
     confirmedUser.save(done);
   });
 
-  it('Send third welcome sequence email to confirmed users only', function (done) {
+  it('Does not send third welcome sequence email while welcome emails are disabled', function (done) {
     userWelcomeSequenceThirdJobHandler({}, function (err) {
       if (err) return done(err);
-      // Confirmed user received welcome email, unconfirmed didn't
-      jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-      jobs[0].data.from.name.should.be.equalOneOf(config.supportVolunteerNames);
-      jobs[0].data.subject.should.equal(
-        'How is it going, ' + _confirmedUser.firstName + '?',
-      );
-      // Check that the email contains a link to profile
-      jobs[0].data.html.should.match(/href="http.+\/profile\/user_confirmed/);
+      jobs.length.should.equal(0);
       done();
     });
   });

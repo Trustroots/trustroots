@@ -17,6 +17,9 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
+const usernameUnderscoreErrorMessage =
+  'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.';
+
 function isNameSpam(input) {
   if (
     // The username field says it limits to 34, so apply that to all the fields
@@ -44,6 +47,18 @@ function isUsernameInvalid(input) {
   return false;
 }
 
+function getUsernameUnderscoreError() {
+  const err = new Error(usernameUnderscoreErrorMessage);
+  err.userFacing = true;
+  return err;
+}
+
+function getSignupErrorMessage(err) {
+  return err && err.userFacing
+    ? err.message
+    : errorService.getErrorMessage(err);
+}
+
 /**
  * Signup
  */
@@ -68,6 +83,9 @@ exports.signup = function (req, res) {
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
+        if (String(username || '').includes('_')) {
+          return done(getUsernameUnderscoreError());
+        }
         if (
           isNameSpam(firstName) ||
           isNameSpam(lastName) ||
@@ -162,7 +180,7 @@ exports.signup = function (req, res) {
         statService.stat(statsObject, function () {
           // Send error to the API
           res.status(400).send({
-            message: errorService.getErrorMessage(err),
+            message: getSignupErrorMessage(err),
           });
         });
 
@@ -204,6 +222,20 @@ exports.signupValidation = function (req, res) {
           return done(
             new Error('Username is not available.'),
             'username-not-available-reserved',
+          );
+        }
+
+        if (!/[0-9a-z]/.test(username)) {
+          return done(
+            new Error('Username is in invalid format.'),
+            'username-invalid',
+          );
+        }
+
+        if (username.includes('_')) {
+          return done(
+            new Error(usernameUnderscoreErrorMessage),
+            'username-invalid',
           );
         }
 

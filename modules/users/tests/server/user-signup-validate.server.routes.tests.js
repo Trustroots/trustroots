@@ -85,13 +85,13 @@ describe('User signup validation CRUD tests', function () {
         displayName: 'Full Name',
         email: 'test@example.org',
         emailToken: 'initial email token',
-        username: 'taken_username',
+        username: 'taken-username',
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
       user.save(function () {
         validationFailure(
-          { username: 'taken_username' },
+          { username: 'taken-username' },
           'username-not-available',
           'Username is not available.',
           done,
@@ -157,6 +157,15 @@ describe('User signup validation CRUD tests', function () {
           { username: '-_-' },
           'username-invalid',
           invalidMessage,
+          done,
+        );
+      });
+
+      it('should show error validating a username with underscores', function (done) {
+        validationFailure(
+          { username: 'underscores_score' },
+          'username-invalid',
+          'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.',
           done,
         );
       });
