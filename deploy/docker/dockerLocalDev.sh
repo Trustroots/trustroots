@@ -83,7 +83,7 @@ docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && cp con
 
 # Install dependencies and build inside the running container
 echo "Installing dependencies and building..."
-docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && ln -sf /usr/bin/python3 /usr/bin/python && apt-get update && apt-get install -y build-essential python3-dev libmagic1 libmagic-dev && mkdir -p /root/.npm && chmod 777 /root/.npm && npm ci --legacy-peer-deps --ignore-scripts --unsafe-perm && npm rebuild mmmagic --build-from-source --unsafe-perm && npm rebuild --unsafe-perm"
+docker exec trustroots-dev-$TIMESTAMP bash -c "cd /home/app/trustroots && ln -sf /usr/bin/python3 /usr/bin/python && rm -f /etc/apt/sources.list.d/passenger.list /etc/apt/sources.list.d/passenger.list.save && apt-get update && apt-get install -y build-essential python3-dev libmagic1 libmagic-dev && mkdir -p /root/.npm && chmod 777 /root/.npm && npm ci --legacy-peer-deps --ignore-scripts --unsafe-perm && npm rebuild mmmagic --build-from-source --unsafe-perm && npm rebuild --unsafe-perm"
 
 # Build webpack assets for development
 echo "Building webpack assets..."
@@ -106,5 +106,5 @@ echo "To stop: docker stop trustroots-dev-$TIMESTAMP"
 echo "To view logs: docker logs -f trustroots-dev-$TIMESTAMP"
 echo "To restart webpack: docker exec trustroots-dev-$TIMESTAMP bash -c 'cd /home/app/trustroots && npm run webpack:server'"
 
-# Follow the logs
-docker logs -f trustroots-dev-$TIMESTAMP
+# Follow logs without failing the whole script if stream disconnects
+docker logs -f trustroots-dev-$TIMESTAMP || true
