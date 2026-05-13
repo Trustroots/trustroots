@@ -19,9 +19,6 @@ export default function ProfileViewBasics({ profile }) {
   const getBirthdate = birthdate =>
     t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
 
-  const getReplyRate = replyRate =>
-    t('Reply rate {{replyRate}}.', { replyRate });
-
   const getReplyTime = replyTime =>
     t('Replies within {{replyTime, fromNow}}.', { replyTime });
 
@@ -38,15 +35,9 @@ export default function ProfileViewBasics({ profile }) {
   /*
    * Rendering functions
    */
-  const renderReplyData = (replyRate, replyTime) => (
+  const renderReplyTime = replyTime => (
     <div className="profile-sidebar-section text-muted">
-      {replyRate && <span>{getReplyRate(replyRate)}</span>}
-      {replyTime && (
-        <span>
-          <br />
-          {getReplyTime(replyTime)}
-        </span>
-      )}
+      <span>{getReplyTime(replyTime)}</span>
     </div>
   );
 
@@ -220,9 +211,8 @@ export default function ProfileViewBasics({ profile }) {
         </div>
       )}
 
-      {/* reply rate and reply time */}
-      {(profile.replyRate || profile.replyTime) &&
-        renderReplyData(profile.replyRate, profile.replyTime)}
+      {/* reply time */}
+      {profile.replyTime && renderReplyTime(profile.replyTime)}
 
       {/* birthdate and gender */}
       {(profile.birthdate || profile.gender) &&
