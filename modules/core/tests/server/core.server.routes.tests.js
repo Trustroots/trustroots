@@ -3,7 +3,10 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const config = require('../../../../config/config');
+const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
+
+const User = mongoose.model('User');
 
 /**
  * Globals
@@ -193,6 +196,252 @@ describe('Core CRUD tests', function () {
         res.text.should.containEql('isNativeMobileApp = true');
 
         return done();
+      });
+    });
+  });
+
+  describe('NIP-05 nostr Tests:', function () {
+    const validNpub =
+      'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+    const validNpubHex =
+      '0000000000000000000000000000000000000000000000000000000000000000';
+    const nsec =
+      'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
+
+    afterEach(utils.clearDatabase);
+
+    function createNostrUser(overrides, done) {
+      const username = overrides.username || 'nostruser';
+      const user = new User(
+        Object.assign(
+          {
+            public: true,
+            firstName: 'Nostr',
+            lastName: 'User',
+            email: `${username}@example.com`,
+            username,
+            password: 'M3@n.jsI$Aw3$0m3',
+            provider: 'local',
+            roles: ['user'],
+            nostrNpub: validNpub,
+          },
+          overrides,
+        ),
+      );
+
+      user.save(done);
+    }
+
+    function expectEmptyNames(username, done) {
+      agent
+        .get('/.well-known/nostr.json?name=' + username)
+        .expect(200)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          res.body.should.deepEqual({ names: {} });
+
+          return done();
+        });
+    }
+
+    it('should reject nostr requests with a query object as username', function (done) {
+      agent
+        .get('/.well-known/nostr.json?name[$ne]=x')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          res.body.error.should.equal('Valid username required.');
+
+          return done();
+        });
+    });
+
+    it('should reject nostr requests with duplicate username values', function (done) {
+      agent
+        .get('/.well-known/nostr.json?name=userone&name=usertwo')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          res.body.error.should.equal('Valid username required.');
+
+          return done();
+        });
+    });
+
+    it('should reject nostr requests with an empty username', function (done) {
+      agent
+        .get('/.well-known/nostr.json?name=')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          res.body.error.should.equal('Valid username required.');
+
+          return done();
+        });
+    });
+
+    it('should reject nostr requests with an invalid username', function (done) {
+      agent
+        .get('/.well-known/nostr.json?name=' + 'a'.repeat(35))
+        .expect(400)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          res.body.error.should.equal('Valid username required.');
+
+          return done();
+        });
+    });
+
+    it('should use the normalized username as the nostr response key', function (done) {
+      createNostrUser({}, function (saveErr) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        agent
+          .get('/.well-known/nostr.json?name=NostrUser')
+          .expect(200)
+          .end(function (err, res) {
+            if (err) {
+              return done(err);
+            }
+
+            res.body.names.should.have.property('nostruser', validNpubHex);
+            res.body.names.should.not.have.property('NostrUser');
+            res.headers['access-control-allow-origin'].should.equal('*');
+
+            return done();
+          });
+      });
+    });
+
+    it('should return empty names for a missing user', function (done) {
+      expectEmptyNames('missinguser', done);
+    });
+
+    it('should return empty names for a private or unconfirmed user', function (done) {
+      createNostrUser(
+        {
+          public: false,
+          emailTemporary: 'nostruser@example.com',
+          emailToken: 'initial email token',
+        },
+        function (saveErr) {
+          if (saveErr) {
+            return done(saveErr);
+          }
+
+          expectEmptyNames('nostruser', done);
+        },
+      );
+    });
+
+    it('should return empty names for suspended users', function (done) {
+      createNostrUser({ roles: ['user', 'suspended'] }, function (saveErr) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        expectEmptyNames('nostruser', done);
+      });
+    });
+
+    it('should return empty names for shadowbanned users', function (done) {
+      createNostrUser({ roles: ['user', 'shadowban'] }, function (saveErr) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        expectEmptyNames('nostruser', done);
+      });
+    });
+
+    it('should verify public users with pending email changes', function (done) {
+      createNostrUser(
+        { emailTemporary: 'changed-nostruser@example.com' },
+        function (saveErr) {
+          if (saveErr) {
+            return done(saveErr);
+          }
+
+          agent
+            .get('/.well-known/nostr.json?name=nostruser')
+            .expect(200)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+
+              res.body.names.should.have.property('nostruser', validNpubHex);
+
+              return done();
+            });
+        },
+      );
+    });
+
+    it('should return empty names for public users without a current email', function (done) {
+      createNostrUser({}, function (saveErr, user) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        User.updateOne(
+          { _id: user._id },
+          { $set: { email: '' } },
+          function (updateErr) {
+            if (updateErr) {
+              return done(updateErr);
+            }
+
+            expectEmptyNames('nostruser', done);
+          },
+        );
+      });
+    });
+
+    it('should return empty names for users without a nostr npub', function (done) {
+      createNostrUser({ nostrNpub: '' }, function (saveErr) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        expectEmptyNames('nostruser', done);
+      });
+    });
+
+    it('should return empty names for malformed stored nostr npubs', function (done) {
+      createNostrUser({ nostrNpub: 'npub1invalid' }, function (saveErr) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        expectEmptyNames('nostruser', done);
+      });
+    });
+
+    it('should return empty names for stored nostr values that are not npubs', function (done) {
+      createNostrUser({ nostrNpub: nsec }, function (saveErr) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        expectEmptyNames('nostruser', done);
       });
     });
   });

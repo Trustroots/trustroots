@@ -8,6 +8,10 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 
+const validNpub =
+  'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+const nsec = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
+
 /**
  * Globals
  */
@@ -407,6 +411,181 @@ describe('User profile CRUD tests', function () {
               userInfoRes.body._id.should.be.equal(String(user._id));
 
               // Call the assertion callback
+              return done();
+            });
+        });
+    });
+  });
+
+  it('should be able to update own nostr npub', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ nostrNpub: validNpub })
+            .expect(200)
+            .end(function (userInfoErr, userInfoRes) {
+              if (userInfoErr) {
+                return done(userInfoErr);
+              }
+
+              userInfoRes.body.nostrNpub.should.equal(validNpub);
+
+              User.findById(user._id, function (findErr, userFindRes) {
+                should.not.exist(findErr);
+                userFindRes.nostrNpub.should.equal(validNpub);
+
+                return done();
+              });
+            });
+        });
+    });
+  });
+
+  it('should trim nostr npub when updating own profile', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ nostrNpub: '  ' + validNpub + '  ' })
+            .expect(200)
+            .end(function (userInfoErr, userInfoRes) {
+              if (userInfoErr) {
+                return done(userInfoErr);
+              }
+
+              userInfoRes.body.nostrNpub.should.equal(validNpub);
+
+              User.findById(user._id, function (findErr, userFindRes) {
+                should.not.exist(findErr);
+                userFindRes.nostrNpub.should.equal(validNpub);
+
+                return done();
+              });
+            });
+        });
+    });
+  });
+
+  it('should be able to clear nostr npub when updating own profile', function (done) {
+    user.roles = ['user'];
+    user.nostrNpub = validNpub;
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ nostrNpub: '' })
+            .expect(200)
+            .end(function (userInfoErr, userInfoRes) {
+              if (userInfoErr) {
+                return done(userInfoErr);
+              }
+
+              userInfoRes.body.nostrNpub.should.equal('');
+
+              User.findById(user._id, function (findErr, userFindRes) {
+                should.not.exist(findErr);
+                userFindRes.nostrNpub.should.equal('');
+
+                return done();
+              });
+            });
+        });
+    });
+  });
+
+  it('should reject malformed nostr npub when updating own profile', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ nostrNpub: 'npub1invalid' })
+            .expect(400)
+            .end(function (userInfoErr, userInfoRes) {
+              if (userInfoErr) {
+                return done(userInfoErr);
+              }
+
+              userInfoRes.body.message.should.equal(
+                'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+              );
+
+              return done();
+            });
+        });
+    });
+  });
+
+  it('should reject nostr secret keys when updating own profile', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ nostrNpub: nsec })
+            .expect(400)
+            .end(function (userInfoErr, userInfoRes) {
+              if (userInfoErr) {
+                return done(userInfoErr);
+              }
+
+              userInfoRes.body.message.should.equal(
+                'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+              );
+
               return done();
             });
         });
