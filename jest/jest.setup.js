@@ -1,3 +1,8 @@
+// jsdom doesn't expose these, but some deps (e.g. nostr-tools) need them.
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = global.TextEncoder || TextEncoder;
+global.TextDecoder = global.TextDecoder || TextDecoder;
+
 global.L = require('leaflet');
 global.jQuery = require('jquery');
 require('angular');

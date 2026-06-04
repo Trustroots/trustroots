@@ -342,6 +342,20 @@
               Invalid nostr key. Please provide your npub (public key) starting
               with "npub". Never use your nsec (secret key).
             </p>
+            <p
+              class="help-block"
+              ng-if="profileEditNetworks.hasNostrNip07Suggestion()"
+            >
+              Your browser Nostr extension suggests
+              <code>{{ profileEditNetworks.nostrNip07SuggestedNpub }}</code>.
+              <button
+                type="button"
+                class="btn btn-default btn-xs"
+                ng-click="profileEditNetworks.applyNostrNip07Suggestion()"
+              >
+                {{ profileEditNetworks.nostrNip07SuggestionButtonText() }}
+              </button>
+            </p>
             <!--
             <span
               class="input-group-btn"

@@ -83,7 +83,9 @@ module.exports = webpackMerge.merge(shims, {
     rules: [
       {
         test: /\.js$/,
-        exclude: /node_modules/,
+        // Transpile our own code, plus a few deps that ship modern syntax
+        // (e.g. optional chaining) which webpack 4's parser can't handle.
+        exclude: /node_modules\/(?!(nostr-tools|@noble|@scure)\/)/,
         use: [
           {
             loader: 'babel-loader',
