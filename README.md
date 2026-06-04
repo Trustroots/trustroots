@@ -44,12 +44,15 @@ You might also need to run the linux equivalent of that if you see an error abou
 
 ## Running locally
 
-`npm start`
+`nvm use && npm start` (host, hot reload at http://localhost:3000)
 
-or 
+or
 
-`docker compose up`
+```bash
+cd deploy/docker && docker compose up
+```
 
+Docker dev (hot reload, maildev, shared mongo): see [`deploy/docker/README.md`](deploy/docker/README.md).
 
 If you experience docker issues you could try clearing up docker - even though it shouldn't be necessary, it can help:
 
