@@ -143,8 +143,13 @@ function mocha(done) {
   // Open mongoose connections
   const mongooseService = require('./config/lib/mongoose');
   const agenda = require('./config/lib/agenda');
+  const configuredTestFiles = process.env.SERVER_TEST_FILES
+    ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
+    : [];
   const testSuites =
-    changedTestFiles.length > 0
+    configuredTestFiles.length > 0
+      ? configuredTestFiles
+      : changedTestFiles.length > 0
       ? changedTestFiles
       : 'modules/*/tests/server/**/*.js';
   let error;

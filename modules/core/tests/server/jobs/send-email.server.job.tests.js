@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const testutils = require('../../../../../testutils/server/server.testutil');
+require('should');
 
 /**
  * Globals

@@ -1,0 +1,69 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
+
+import '@/config/client/i18n';
+import Statistics from '@/modules/statistics/client/components/Statistics.component';
+import { get } from '@/modules/statistics/client/api/statistics.api';
+
+jest.mock('@/modules/statistics/client/api/statistics.api');
+
+jest.mock('@/modules/core/client/components/Board', () => {
+  const React = require('react');
+  function MockBoard({ children }) {
+    return <div>{children}</div>;
+  }
+  MockBoard.propTypes = { children: () => null };
+  return MockBoard;
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+});
+
+describe('<Statistics />', () => {
+  it('renders statistics from the api', async () => {
+    get.mockResolvedValueOnce({
+      data: {
+        total: 12345,
+        hosting: {
+          total: 1000,
+          percentage: 40,
+          yes: 500,
+          yesPercentage: 20,
+          maybe: 500,
+          maybePercentage: 20,
+        },
+        connections: [{ network: 'facebook', count: 100, percentage: 10 }],
+        newsletter: { percentage: 30, count: 3000 },
+      },
+    });
+
+    render(<Statistics isAuthenticated={true} />);
+
+    expect(await screen.findByText('40%')).toBeInTheDocument();
+    expect(screen.getByText('Trustroots Statistics')).toBeInTheDocument();
+    expect(screen.getByText('Members')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Subscribe to newsletter' }),
+    ).toBeInTheDocument();
+  });
+
+  it('hides the newsletter subscribe link for unauthenticated visitors', async () => {
+    get.mockResolvedValueOnce({
+      data: {
+        total: 1,
+        hosting: { total: 0, percentage: 0, yesPercentage: 0 },
+        connections: [],
+        newsletter: { percentage: 0, count: 0 },
+      },
+    });
+
+    render(<Statistics isAuthenticated={false} />);
+
+    expect(await screen.findByText('Members')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Subscribe to newsletter' }),
+    ).not.toBeInTheDocument();
+  });
+});

@@ -28,6 +28,40 @@ describe('Search Route Tests', function () {
           '/modules/search/views/search.client.view.html',
         );
       });
+
+      it('Should not load an offer for invalid offer query params', inject(function (
+        $injector,
+      ) {
+        const OffersService = {
+          get: jest.fn(),
+        };
+
+        expect(
+          $injector.invoke(mainstate.resolve.offer, null, {
+            $stateParams: { offer: 'not-a-valid-offer-id' },
+            OffersService,
+          }),
+        ).toBe(false);
+        expect(OffersService.get).not.toHaveBeenCalled();
+      }));
+
+      it('Should load an offer for valid offer query params', inject(function (
+        $injector,
+      ) {
+        const offerId = '507f1f77bcf86cd799439011';
+        const offer = { _id: offerId };
+        const OffersService = {
+          get: jest.fn().mockReturnValue(offer),
+        };
+
+        expect(
+          $injector.invoke(mainstate.resolve.offer, null, {
+            $stateParams: { offer: offerId },
+            OffersService,
+          }),
+        ).toBe(offer);
+        expect(OffersService.get).toHaveBeenCalledWith({ offerId });
+      }));
     });
 
     describe('Map Route', function () {

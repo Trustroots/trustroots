@@ -2,7 +2,7 @@ import React from 'react';
 import {
   render,
   fireEvent,
-  waitForElement,
+  waitFor,
   waitForElementToBeRemoved,
   screen,
 } from '@testing-library/react';
@@ -32,7 +32,7 @@ describe('<CreateExperience />', () => {
     userTo = { _id: '222222', displayName: 'to-name', username: 'userto' };
   });
 
-  it('should not be possible to leave an experience to self', () => {
+  it('should not be possible to leave an experience to self', async () => {
     const me = { _id: '123456', username: 'username' };
     experiencesApi.readMine.mockResolvedValueOnce([]);
     const { queryByRole } = render(
@@ -41,14 +41,21 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('alert')).toHaveTextContent(
       "Sorry, you can't share experience only with yourself.",
     );
+    await waitFor(() =>
+      expect(experiencesApi.readMine).toHaveBeenCalledWith({
+        userWith: me._id,
+      }),
+    );
   });
 
-  it('check whether the experience exists at the beginning', () => {
+  it('check whether the experience exists at the beginning', async () => {
     experiencesApi.readMine.mockResolvedValueOnce([]);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
-    expect(experiencesApi.readMine).toBeCalledWith({
-      userWith: userTo._id,
-    });
+    await waitFor(() =>
+      expect(experiencesApi.readMine).toBeCalledWith({
+        userWith: userTo._id,
+      }),
+    );
   });
 
   it('can not leave a second experience - without response', async () => {
@@ -126,7 +133,7 @@ describe('<CreateExperience />', () => {
         'Would you like to describe something about your experience with them? (Optional)',
       ),
     ).toBeInTheDocument();
-    fireEvent.change(getByLabelText('Public feedback'), {
+    fireEvent.change(getByLabelText(/Leave your public feedback here/), {
       target: { value: 'they made a tasty pie' },
     });
 
@@ -143,7 +150,7 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    const successMessage = await waitForElement(() =>
+    const successMessage = await waitFor(() =>
       getByText('Thank you for sharing your experience!').closest('div'),
     );
     expect(successMessage).toHaveTextContent(
@@ -202,7 +209,7 @@ describe('<CreateExperience />', () => {
       'they were mean to me',
     );
 
-    const successMessage = await waitForElement(() =>
+    const successMessage = await waitFor(() =>
       getByText('Thank you for sharing your experience!').closest('div'),
     );
     expect(successMessage).toHaveTextContent(

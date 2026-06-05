@@ -33,7 +33,7 @@ module.exports = {
     checkCompatibility: false,
   },
   maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
-  port: 3001,
+  port: Number(process.env.PORT) || 3001,
   illegalStrings: ['trustroots', 'trust', 'roots'],
   app: {
     title: 'Trustroots test environment.',

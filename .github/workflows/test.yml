@@ -3,6 +3,13 @@ name: Tests
 on:
   pull_request:
     branches: [master]
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   client:
@@ -31,6 +38,15 @@ jobs:
         run: npm ci
       - name: Test client
         run: npm run test:client
+      - name: Test client coverage
+        run: npm run test:coverage:client
+      - name: Upload client coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-client
+          path: coverage/client
+      - name: Check client coverage
+        run: npm run coverage:check -- --scope=client
 
   server:
     runs-on: ubuntu-latest
@@ -64,3 +80,98 @@ jobs:
         run: npm ci
       - name: Test server
         run: npm run test:server
+      - name: Test server coverage
+        run: npm run test:coverage:server
+      - name: Upload server coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-server
+          path: coverage/server
+      - name: Check server coverage
+        run: npm run coverage:check -- --scope=server
+
+  e2e:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.labels.*.name, 'run-e2e'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use MongoDB
+        uses: supercharge/mongodb-github-action@1.6.0
+        with:
+          mongodb-version: '4.4'
+      - name: Install graphicsmagick
+        run: sudo apt-get install -y graphicsmagick
+      - name: Use Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14
+      - name: Cache Node.js modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.node-gyp
+            ~/.npm
+          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-node-
+            ${{ runner.OS }}-
+      - name: Reconfigure git to use HTTP authentication
+        run: >
+          git config --global url."https://github.com/".insteadOf
+          ssh://git@github.com/
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Test end-to-end smoke suite
+        run: npm run test:e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+      - name: Upload Playwright test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results
+
+  coverage-report:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: [client, server]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download client coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-client
+          path: coverage/client
+      - name: Download server coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-server
+          path: coverage/server
+      - name: Generate coverage report page
+        run: npm run coverage:report
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Upload coverage report page
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: coverage-report
+      - name: Deploy coverage report page
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -119,7 +119,7 @@ export default function ExperienceCounts({ experiences }) {
     } else if (experiencesFromHostsPercentage > 0) {
       interactions.push(
         t('Was hosted by {{percentage}}% of members.', {
-          percentage: experiencesFromGuestsPercentage,
+          percentage: experiencesFromHostsPercentage,
         }),
       );
     }
@@ -129,7 +129,7 @@ export default function ExperienceCounts({ experiences }) {
     } else if (experiencesFromGuestsPercentage > 0) {
       interactions.push(
         t('They hosted {{percentage}}% of members.', {
-          percentage: experiencesFromHostsPercentage,
+          percentage: experiencesFromGuestsPercentage,
         }),
       );
     }

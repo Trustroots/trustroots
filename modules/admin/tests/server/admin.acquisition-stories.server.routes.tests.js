@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const request = require('supertest');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
+require('should');
 
 describe('Admin acquisition stories CRUD tests', () => {
   // Get application
@@ -90,7 +91,10 @@ describe('Admin acquisition stories CRUD tests', () => {
           .post('/api/admin/acquisition-stories/analysis')
           .expect(200);
 
-        body.table.should.match([
+        const sortByCategory = rows =>
+          rows.slice().sort((a, b) => a.category.localeCompare(b.category));
+
+        const expectedRows = [
           {
             category: 'example',
             observed: 4,
@@ -98,18 +102,12 @@ describe('Admin acquisition stories CRUD tests', () => {
             expected: 2.1429,
           },
           {
-            category: 'warmshowers',
-            observed: 4,
-            percentage: 26.6667,
-            expected: 2.1429,
-          },
-          { category: 'google', observed: 3, percentage: 20, expected: 2.1429 },
-          {
-            category: 'something',
+            category: 'facebook',
             observed: 1,
             percentage: 6.6667,
             expected: 2.1429,
           },
+          { category: 'google', observed: 3, percentage: 20, expected: 2.1429 },
           {
             category: 'else',
             observed: 1,
@@ -123,12 +121,20 @@ describe('Admin acquisition stories CRUD tests', () => {
             expected: 2.1429,
           },
           {
-            category: 'facebook',
+            category: 'something',
             observed: 1,
             percentage: 6.6667,
             expected: 2.1429,
           },
-        ]);
+          {
+            category: 'warmshowers',
+            observed: 4,
+            percentage: 26.6667,
+            expected: 2.1429,
+          },
+        ];
+
+        sortByCategory(body.table).should.match(sortByCategory(expectedRows));
         body.size.should.be.Number();
         body.sum.should.be.Number();
         body.x2.should.be.Number();

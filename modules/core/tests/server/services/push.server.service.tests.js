@@ -1,6 +1,7 @@
 const config = require('../../../../../config/config');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 const testutils = require('../../../../../testutils/server/server.testutil');
+require('should');
 
 describe('Service: push', function () {
   const jobs = testutils.catchJobs();

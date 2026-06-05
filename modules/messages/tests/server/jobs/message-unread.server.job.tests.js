@@ -1,7 +1,7 @@
 /**
  * Module dependencies.
  */
-// should = require('should'),
+require('should');
 const moment = require('moment');
 const sinon = require('sinon');
 const testutils = require('../../../../../testutils/server/server.testutil');

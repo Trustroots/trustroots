@@ -144,7 +144,10 @@ const initGlobalConfig = function () {
   );
   config = _.merge(
     config,
-    (fs.existsSync('./config/env/local.js') && require('./env/local.js')) || {},
+    (!process.env.TRUSTROOTS_SKIP_LOCAL_CONFIG &&
+      fs.existsSync('./config/env/local.js') &&
+      require('./env/local.js')) ||
+      {},
   );
 
   // Initialize global globbed files

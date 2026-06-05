@@ -83,3 +83,12 @@ docs/Gemfile.lock
 
 # Builds
 trustroots.tar.gz*
+
+# Test coverage output
+/coverage/
+/coverage-report/
+/.nyc_output/
+
+# End-to-end test output
+/playwright-report/
+/test-results/

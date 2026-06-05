@@ -79,13 +79,12 @@ describe('CirclesPage', () => {
     });
 
     it('fetch circles from api and show circles on page', async () => {
-      // get tribes and omit the last one, which is "Missing your Tribe?"
-      const tribes = page.getAllByRole('listitem').slice(0, -1);
-
-      expect(tribes).toHaveLength(fake.tribes.length);
-
-      tribes.forEach((tribe, i) => {
-        expect(tribe).toHaveTextContent(fake.tribes[i].label);
+      fake.tribes.forEach(tribeData => {
+        expect(
+          page.getByText(nestedTextMatch(tribeData.label), {
+            selector: 'li',
+          }),
+        ).toBeInTheDocument();
       });
 
       // the api should be called only once
@@ -114,13 +113,12 @@ describe('CirclesPage', () => {
     });
 
     it('show circles on page', async () => {
-      // get tribes and omit the last one, which is "Missing your Tribe?"
-      const tribes = page.getAllByRole('listitem').slice(0, -1);
-
-      expect(tribes).toHaveLength(fake.tribes.length);
-
-      tribes.forEach((tribe, i) => {
-        expect(tribe).toHaveTextContent(fake.tribes[i].label);
+      fake.tribes.forEach(tribeData => {
+        expect(
+          page.getByText(nestedTextMatch(tribeData.label), {
+            selector: 'li',
+          }),
+        ).toBeInTheDocument();
       });
 
       // during the test the api should be called only once

@@ -1,7 +1,9 @@
 import React from 'react';
 import {
+  fireEvent,
   render,
   screen,
+  waitFor,
   waitForElementToBeRemoved,
   within,
 } from '@testing-library/react';
@@ -11,6 +13,7 @@ import '@/config/client/i18n';
 import Thread from '@/modules/messages/client/components/Thread.component';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
+import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import {
   generateClientUser,
   generateMessage,
@@ -24,9 +27,40 @@ const api = {
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/messages/client/api/messages.api');
+jest.mock(
+  '@/modules/messages/client/services/unread-message-count.client.service',
+);
 jest.mock('@/modules/core/client/services/angular-compat');
+jest.mock('react-responsive', () => ({
+  useMediaQuery: () => true,
+}));
+jest.mock('@/modules/core/client/components/TrEditor', () => {
+  function MockTrEditor({ id, onChange, text }) {
+    return (
+      <textarea
+        id={id}
+        onChange={event => onChange(event.target.value)}
+        value={text}
+      />
+    );
+  }
+  MockTrEditor.propTypes = {
+    id: () => null,
+    onChange: () => null,
+    text: () => null,
+  };
 
-afterEach(() => jest.clearAllMocks());
+  return MockTrEditor;
+});
+
+beforeEach(() => {
+  api.messages.markRead.mockResolvedValue();
+});
+
+afterEach(() => {
+  jest.clearAllMocks();
+  window.localStorage.clear();
+});
 
 const me = {
   ...generateClientUser({ public: true }),
@@ -73,6 +107,35 @@ describe('<Thread>', () => {
       expect(queryByText(/You haven't been talking yet/)).toBeInTheDocument();
       expect(within(form).queryByRole('textbox')).toBeInTheDocument();
     });
+
+    it('sends a typed reply and appends the API response to the thread', async () => {
+      api.messages.sendMessage.mockResolvedValueOnce({
+        data: {
+          ...generateMessage(me),
+          _id: 'sent-message',
+          content: '<p>Hello, can I stay next Tuesday?</p>',
+          created: '2026-06-05T12:00:00.000Z',
+        },
+      });
+
+      render(<Thread user={me} profileMinimumLength={0} />);
+
+      const editor = await screen.findByRole('textbox');
+      fireEvent.change(editor, {
+        target: { value: '<p>Hello, can I stay next Tuesday?</p>' },
+      });
+      fireEvent.submit(editor.closest('form'));
+
+      await waitFor(() =>
+        expect(api.messages.sendMessage).toHaveBeenCalledWith(
+          otherUser._id,
+          '<p>Hello, can I stay next Tuesday?</p>',
+        ),
+      );
+      expect(
+        await screen.findByText('Hello, can I stay next Tuesday?'),
+      ).toBeInTheDocument();
+    });
   });
 
   describe('only messages from other user', () => {
@@ -82,7 +145,7 @@ describe('<Thread>', () => {
       });
     });
 
-    it.skip('shows quick reply buttons', async () => {
+    it('shows quick reply buttons', async () => {
       const { getByTestId } = render(
         <Thread user={me} profileMinimumLength={0} />,
       );
@@ -95,6 +158,55 @@ describe('<Thread>', () => {
           expect(buttons[i]).toHaveTextContent(content);
         },
       );
+    });
+
+    it('sends a hosting quick reply through the thread API', async () => {
+      api.messages.sendMessage.mockResolvedValueOnce({
+        data: {
+          ...generateMessage(me),
+          _id: 'quick-reply-message',
+          content: '<p data-hosting="yes"><b><i>Yes, I can host!</i></b></p>',
+          created: '2026-06-05T12:00:00.000Z',
+        },
+      });
+
+      render(<Thread user={me} profileMinimumLength={0} />);
+      await waitForLoader();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Yes, I can host!' }));
+
+      await waitFor(() =>
+        expect(api.messages.sendMessage).toHaveBeenCalledWith(
+          otherUser._id,
+          expect.stringContaining('data-hosting="yes"'),
+        ),
+      );
+      await waitFor(() =>
+        expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument(),
+      );
+      expect(screen.getByText('Yes, I can host!')).toBeInTheDocument();
+    });
+  });
+
+  describe('unread messages from other user', () => {
+    it('marks them read and refreshes the unread message count', async () => {
+      api.messages.fetchMessages.mockResolvedValueOnce({
+        messages: [
+          {
+            ...generateMessage(otherUser),
+            _id: 'unread-message',
+            read: false,
+          },
+        ],
+      });
+
+      render(<Thread user={me} profileMinimumLength={0} />);
+      await waitForLoader();
+
+      await waitFor(() =>
+        expect(api.messages.markRead).toHaveBeenCalledWith(['unread-message']),
+      );
+      expect(updateUnreadMessageCount).toHaveBeenCalledTimes(1);
     });
   });
 

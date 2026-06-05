@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const request = require('supertest');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
+require('should');
 
 const Tribe = mongoose.model('Tribe');
 const User = mongoose.model('User');

@@ -73,4 +73,20 @@ describe('Unread Message Count Service', () => {
       $broadcast('userUpdated');
     }, 100);
   });
+
+  it('does not notify subscribers when unread count is unchanged', async () => {
+    getUser.mockReturnValue(user);
+    api.messages.unreadCount
+      .mockResolvedValueOnce(unreadCount)
+      .mockResolvedValueOnce(unreadCount);
+
+    const watcher = jest.fn();
+    unreadMessageCountService.watch(watcher);
+
+    await unreadMessageCountService.update();
+    await unreadMessageCountService.update();
+
+    expect(watcher).toHaveBeenCalledTimes(1);
+    expect(watcher).toHaveBeenCalledWith(unreadCount);
+  });
 });
