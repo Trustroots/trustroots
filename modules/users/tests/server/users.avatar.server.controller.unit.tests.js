@@ -5,6 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const mongoose = require('mongoose');
+const proxyquire = require('proxyquire').noCallThru();
 
 const avatarController = require('../../server/controllers/users.avatar.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -172,7 +173,99 @@ describe('Avatar controller unit tests', () => {
     });
   });
 
+  function loadAvatarWithGm(writeHandler) {
+    function chainable() {
+      const chain = {
+        autoOrient: () => chain,
+        noProfile: () => chain,
+        colorspace: () => chain,
+        interlace: () => chain,
+        filter: () => chain,
+        resize: () => chain,
+        gravity: () => chain,
+        extent: () => chain,
+        unsharp: () => chain,
+        quality: () => chain,
+        write: (outputPath, cb) => writeHandler(cb),
+      };
+      return chain;
+    }
+
+    return proxyquire(
+      '../../server/controllers/users.avatar.server.controller',
+      {
+        gm: () => chainable(),
+      },
+    );
+  }
+
   describe('avatarUpload', () => {
+    it('uploads an avatar using the image processor', async () => {
+      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+
+      try {
+        const controller = loadAvatarWithGm(cb => cb());
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        const tmpFile = path.join(os.tmpdir(), `avatar-gm-${Date.now()}.jpg`);
+        fs.writeFileSync(tmpFile, 'fake-image');
+
+        const res = deferredResponse();
+        controller.avatarUpload(
+          {
+            user: userDoc,
+            file: { path: tmpFile },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        res.body.message.should.equal('Avatar image uploaded.');
+      } finally {
+        if (previousFallback === undefined) {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
+        }
+      }
+    });
+
+    it('returns 422 when thumbnail generation fails', async () => {
+      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+
+      try {
+        const controller = loadAvatarWithGm(cb =>
+          cb(new Error('gm processing failed')),
+        );
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        const tmpFile = path.join(
+          os.tmpdir(),
+          `avatar-gm-fail-${Date.now()}.jpg`,
+        );
+        fs.writeFileSync(tmpFile, 'fake-image');
+
+        const res = deferredResponse();
+        controller.avatarUpload(
+          {
+            user: userDoc,
+            file: { path: tmpFile },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(422);
+      } finally {
+        if (previousFallback === undefined) {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
+        }
+      }
+    });
+
     it('uploads an avatar using the processor fallback', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);

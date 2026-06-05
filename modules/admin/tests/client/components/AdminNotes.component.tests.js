@@ -47,12 +47,13 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
   return MockTrEditor;
 });
 
+const originalAlert = window.alert;
+
 afterEach(() => {
   jest.clearAllMocks();
   window.alert = originalAlert;
 });
 
-const originalAlert = window.alert;
 const userId = '111111111111111111111111';
 
 const makeNote = overrides => ({

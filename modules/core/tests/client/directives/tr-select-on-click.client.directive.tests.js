@@ -5,6 +5,7 @@ describe('trSelectOnClick directive', function () {
   let $compile;
   let $rootScope;
   let $window;
+  let getSelectionText = '';
 
   beforeEach(function () {
     $window = {
@@ -26,8 +27,6 @@ describe('trSelectOnClick directive', function () {
     $compile = _$compile_;
     $rootScope = _$rootScope_;
   }));
-
-  let getSelectionText = '';
 
   beforeEach(function () {
     getSelectionText = '';

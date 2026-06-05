@@ -4,6 +4,7 @@
  * with mock req/res/next against the test database.
  */
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 
 const offersController = require('../../server/controllers/offers.server.controller');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
@@ -62,7 +63,10 @@ describe('Offers controller unit tests', () => {
     );
   });
 
-  afterEach(utils.clearDatabase);
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
 
   describe('create', () => {
     it('responds with 403 without a user', async () => {
@@ -189,6 +193,51 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer updated.');
     });
+
+    it('defaults validUntil when updating a meet offer with invalid input', async () => {
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location: [1, 2], validUntil: 'not-a-date' },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+
+      const reloaded = await Offer.findById(offerReq._id);
+      reloaded.validUntil.should.be.a.Date();
+    });
+  });
+
+  describe('update host offer', () => {
+    it('strips validUntil when updating a host offer', async () => {
+      const hostOffer = await createOffer(owner._id, { type: 'host' });
+      const offerReq = await Offer.findById(hostOffer._id).populate(
+        'user',
+        '_id',
+      );
+      const validUntil = require('moment')().add(10, 'days').toISOString();
+
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location: [1, 2], validUntil },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+
+      const reloaded = await Offer.findById(hostOffer._id);
+      (
+        reloaded.validUntil === undefined || reloaded.validUntil === null
+      ).should.be.true();
+    });
   });
 
   describe('delete', () => {
@@ -261,6 +310,27 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('returns 400 when the map query fails', async () => {
+      const ownerDoc = await User.findById(owner._id);
+      sinon.stub(Offer, 'aggregate').returns({
+        exec: () => Promise.reject(new Error('aggregate failed')),
+      });
+
+      const { res } = await runHandler(res =>
+        offersController.list(
+          {
+            user: ownerDoc,
+            query: {
+              ...validCoords,
+              filters: JSON.stringify({ types: ['host'] }),
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
     it('returns a feature collection', async () => {
       const ownerDoc = await User.findById(owner._id);
       const { res } = await runHandler(res =>
@@ -303,6 +373,24 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.type.should.equal('host');
+    });
+
+    it('returns 400 when populating tribe memberships fails', async () => {
+      const offer = await createOffer(owner._id);
+      const offerReq = await Offer.findById(offer._id).populate(
+        'user',
+        userProfile.userListingProfileFields,
+      );
+      offerReq.user.member = [{ tribe: new mongoose.Types.ObjectId() }];
+
+      sinon
+        .stub(User, 'populate')
+        .callsFake((doc, options, cb) => cb(new Error('populate failed')));
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer: offerReq }, res),
+      );
+      res.statusCode.should.equal(400);
     });
   });
 

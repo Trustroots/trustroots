@@ -8,6 +8,7 @@
  */
 const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
+const should = require('should');
 
 const config = require('../../../../config/config');
 const testutils = require('../../../../testutils/server/server.testutil');
@@ -156,6 +157,25 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       res.body.message.should.equal('No provider defined.');
     });
 
+    it('returns 400 when login fails after removing a provider', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+
+      const req = {
+        user: userDoc,
+        params: { provider: 'github' },
+        login: (user, cb) => cb(new Error('login failed')),
+      };
+      const res = deferredResponse();
+
+      authController.removeOAuthProvider(req, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('removes the provider data and returns the sanitized user', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -229,6 +249,52 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(403);
+    });
+
+    it('stores a token without an expiry date', async () => {
+      const originalClientID = config.facebook.clientID;
+      const originalClientSecret = config.facebook.clientSecret;
+      config.facebook.clientID = 'fb-client-id';
+      config.facebook.clientSecret = 'fb-client-secret';
+
+      try {
+        const controller = loadControllerWithFacebook((options, cb) =>
+          cb(null, { access_token: 'long-lived-token' }),
+        );
+
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(saved._id);
+        userDoc.additionalProvidersData = {
+          facebook: {
+            id: 'fb-id',
+            accessTokenExpires: new Date(),
+          },
+        };
+        userDoc.markModified('additionalProvidersData');
+        await userDoc.save();
+
+        const res = deferredResponse();
+        controller.updateFacebookOAuthToken(
+          {
+            body: { accessToken: 'short-token', userID: 'fb-id' },
+            user: userDoc,
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+
+        const reloaded = await User.findById(saved._id);
+        reloaded.additionalProvidersData.facebook.accessToken.should.equal(
+          'long-lived-token',
+        );
+        should.not.exist(
+          reloaded.additionalProvidersData.facebook.accessTokenExpires,
+        );
+      } finally {
+        config.facebook.clientID = originalClientID;
+        config.facebook.clientSecret = originalClientSecret;
+      }
     });
 
     it('stores the extended token for a matching Facebook user', async () => {
@@ -407,6 +473,28 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       res.redirectUrl.should.equal('/signin');
     });
 
+    it('redirects to signin when login fails', async () => {
+      const controller = loadControllerWithPassport((strategy, callback) => {
+        callback(null, { _id: 'user' }, '/custom-redirect');
+      });
+      const res = deferredResponse();
+      let resolveResponse;
+      const promise = new Promise(resolve => {
+        resolveResponse = resolve;
+      });
+      res.redirect = url => {
+        res.redirectUrl = url;
+        resolveResponse(res);
+        return res;
+      };
+      res.waitForResponse = () => promise;
+
+      const req = { login: (user, cb) => cb(new Error('login failed')) };
+      controller.oauthCallback('github')(req, res, () => {});
+      await res.waitForResponse();
+      res.redirectUrl.should.equal('/signin');
+    });
+
     it('redirects to the provided URL after login', async () => {
       const controller = loadControllerWithPassport((strategy, callback) => {
         callback(null, { _id: 'user' }, '/custom-redirect');
@@ -446,6 +534,41 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       res.body.message.should.equal('Already confirmed.');
     });
 
+    it('resends the email-change confirmation email', async () => {
+      const [saved] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const userDoc = await User.findById(saved._id);
+      userDoc.emailTemporary = 'new-email@example.com';
+      userDoc.emailToken = 'token';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      authController.resendConfirmation({ user: userDoc }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+    });
+
+    it('returns 400 when resending the confirmation email fails', async () => {
+      const controller = proxyquire(controllerPath, {
+        '../../../core/server/services/email.server.service': {
+          sendSignupEmailConfirmation: (user, cb) => cb(new Error('smtp down')),
+          sendEmailConfirmation: (user, cb) => cb(new Error('smtp down')),
+        },
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.public = false;
+      userDoc.emailTemporary = userDoc.email;
+      userDoc.emailToken = 'token';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.resendConfirmation({ user: userDoc }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('resends the signup confirmation email', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -475,6 +598,25 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       const controller = loadSignupController();
       const res = deferredResponse();
       controller.signup({ body: { firstName: 'Ada' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('rejects usernames with invalid characters', async () => {
+      const controller = loadSignupController();
+      const res = deferredResponse();
+      controller.signup(
+        {
+          body: {
+            firstName: 'Ada',
+            lastName: 'Lovelace',
+            username: 'has space',
+            password: 'password123',
+            email: 'ada@example.com',
+          },
+        },
+        res,
+      );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
     });
@@ -593,6 +735,51 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body._id.toString().should.equal(userDoc._id.toString());
+    });
+
+    it('returns 400 when login fails after authentication', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      const controller = loadSigninController(() => [null, userDoc, null]);
+      const res = deferredResponse();
+      const req = { login: (user, cb) => cb(new Error('login failed')) };
+      controller.signin(req, res, () => {});
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+  });
+
+  describe('confirmEmail', () => {
+    it('confirms a signup email token', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.public = false;
+      userDoc.emailTemporary = userDoc.email;
+      userDoc.emailToken = 'confirm-token';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token: 'confirm-token' },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.profileMadePublic.should.be.true();
+
+      const reloaded = await User.findById(saved._id);
+      reloaded.public.should.be.true();
+      should.not.exist(reloaded.emailToken);
+    });
+
+    it('returns 400 when the token is invalid', async () => {
+      const res = deferredResponse();
+      authController.confirmEmail({ params: { token: 'missing' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
   });
 });

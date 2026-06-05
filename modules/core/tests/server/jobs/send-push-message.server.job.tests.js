@@ -19,6 +19,9 @@ describe('job: send push message', function () {
     if (nodeMajor >= 22) {
       this.skip();
     }
+
+    // Push notifications are disabled in send-push-message.server.job.js
+    this.skip();
   });
 
   beforeEach(function () {

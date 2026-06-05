@@ -4,7 +4,6 @@ import {
   render,
   screen,
   waitFor,
-  waitForElementToBeRemoved,
   within,
 } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
@@ -18,7 +17,7 @@ import {
   generateClientUser,
   generateMessage,
 } from '@/testutils/client/data.client.testutil';
-import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import * as angularCompat from '@/modules/core/client/services/angular-compat';
 
 const api = {
   users: usersAPI,
@@ -30,7 +29,10 @@ jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
-jest.mock('@/modules/core/client/services/angular-compat');
+jest.mock('@/modules/core/client/services/angular-compat', () => ({
+  getRouteParams: jest.fn(),
+  go: jest.fn(),
+}));
 jest.mock('react-responsive', () => ({
   useMediaQuery: () => true,
 }));
@@ -54,6 +56,13 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
 });
 
 beforeEach(() => {
+  api.users.fetch.mockReset();
+  api.messages.fetchMessages.mockReset();
+  api.messages.sendMessage.mockReset();
+  api.messages.markRead.mockReset();
+
+  api.users.fetch.mockResolvedValue(otherUser);
+  api.messages.fetchMessages.mockResolvedValue({ messages: [] });
   api.messages.markRead.mockResolvedValue();
 });
 
@@ -71,17 +80,19 @@ const otherUser = {
   member: [],
 };
 
-getRouteParams.mockReturnValue({
+let routeParams = {
   username: otherUser.username,
-});
+};
 
-async function waitForLoader() {
-  await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
-}
+angularCompat.getRouteParams.mockReturnValue(routeParams);
 
 describe('<Thread>', () => {
   beforeEach(() => {
-    api.users.fetch.mockResolvedValueOnce(otherUser);
+    api.users.fetch.mockResolvedValue(otherUser);
+    routeParams = {
+      username: otherUser.username,
+    };
+    angularCompat.getRouteParams.mockReturnValue(routeParams);
   });
 
   describe('no messages', () => {
@@ -121,10 +132,13 @@ describe('<Thread>', () => {
       render(<Thread user={me} profileMinimumLength={0} />);
 
       const editor = await screen.findByRole('textbox');
+      expect(editor).toBeInTheDocument();
       fireEvent.change(editor, {
         target: { value: '<p>Hello, can I stay next Tuesday?</p>' },
       });
-      fireEvent.submit(editor.closest('form'));
+      const replyForm = editor.closest('form');
+      expect(replyForm).toBeTruthy();
+      fireEvent.submit(replyForm);
 
       await waitFor(() =>
         expect(api.messages.sendMessage).toHaveBeenCalledWith(
@@ -138,6 +152,98 @@ describe('<Thread>', () => {
     });
   });
 
+  it('redirects to inbox when opening own profile thread', async () => {
+    routeParams = {
+      username: me.username,
+    };
+    angularCompat.getRouteParams.mockReturnValue(routeParams);
+    api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    await waitFor(() => expect(angularCompat.go).toHaveBeenCalledWith('inbox'));
+    expect(
+      screen.queryByText(/You haven't been talking yet/),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows removed user note when user has been deleted and userId exists', async () => {
+    routeParams = {
+      username: otherUser.username,
+      userId: otherUser._id,
+    };
+    angularCompat.getRouteParams.mockReturnValue(routeParams);
+
+    api.users.fetch.mockRejectedValueOnce({
+      response: {
+        status: 404,
+      },
+    });
+    api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Member is not available anymore.'),
+      ).toBeInTheDocument(),
+    );
+    expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  });
+
+  it('shows blocked banner and disables replies for blocked users', async () => {
+    const blockedMe = {
+      ...me,
+      blocked: [otherUser._id],
+    };
+
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [
+        {
+          ...generateMessage(otherUser),
+          _id: 'blocked-msg',
+        },
+      ],
+    });
+
+    render(<Thread user={blockedMe} profileMinimumLength={0} />);
+
+    const blockedAlert = await screen.findByRole('alert');
+
+    expect(blockedAlert).toHaveTextContent('You have blocked this member.');
+    expect(
+      screen.queryByRole('button', { name: 'Send' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  });
+
+  it('displays an explicit rate-limit alert when send fails with 429', async () => {
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
+    api.messages.sendMessage.mockRejectedValueOnce({
+      response: { status: 429 },
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+    const editor = await screen.findByRole('textbox');
+    expect(editor).toBeInTheDocument();
+
+    fireEvent.change(editor, {
+      target: {
+        value: '<p>Can I host this week?</p>',
+      },
+    });
+    const replyForm = editor.closest('form');
+    expect(replyForm).toBeTruthy();
+    fireEvent.submit(replyForm);
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        'You are writing to too many people too fast. Slow down and try later again.',
+      ),
+    );
+  });
+
   describe('only messages from other user', () => {
     beforeEach(() => {
       api.messages.fetchMessages.mockResolvedValueOnce({
@@ -146,11 +252,8 @@ describe('<Thread>', () => {
     });
 
     it('shows quick reply buttons', async () => {
-      const { getByTestId } = render(
-        <Thread user={me} profileMinimumLength={0} />,
-      );
-      await waitForLoader();
-      const quickReply = getByTestId('quick-reply');
+      render(<Thread user={me} profileMinimumLength={0} />);
+      const quickReply = await screen.findByTestId('quick-reply');
       const buttons = within(quickReply).queryAllByRole('button');
       expect(buttons.length).toBe(3);
       ['Yes, I can host!', "Sorry I can't host", 'Write back'].forEach(
@@ -171,7 +274,7 @@ describe('<Thread>', () => {
       });
 
       render(<Thread user={me} profileMinimumLength={0} />);
-      await waitForLoader();
+      await screen.findByRole('button', { name: 'Yes, I can host!' });
 
       fireEvent.click(screen.getByRole('button', { name: 'Yes, I can host!' }));
 
@@ -190,18 +293,14 @@ describe('<Thread>', () => {
 
   describe('unread messages from other user', () => {
     it('marks them read and refreshes the unread message count', async () => {
+      const unreadMessage = generateMessage(otherUser);
+      unreadMessage._id = 'unread-message';
       api.messages.fetchMessages.mockResolvedValueOnce({
-        messages: [
-          {
-            ...generateMessage(otherUser),
-            _id: 'unread-message',
-            read: false,
-          },
-        ],
+        messages: [unreadMessage],
       });
 
       render(<Thread user={me} profileMinimumLength={0} />);
-      await waitForLoader();
+      await screen.findByRole('textbox');
 
       await waitFor(() =>
         expect(api.messages.markRead).toHaveBeenCalledWith(['unread-message']),
@@ -212,8 +311,14 @@ describe('<Thread>', () => {
 
   describe('messages from both users', () => {
     beforeEach(() => {
+      const messageFromOther = generateMessage(otherUser);
+      messageFromOther.content = 'Hi there from other user';
+      const messageFromMe = generateMessage(me);
+      messageFromMe._id = 'my-message';
+      messageFromMe.content = 'Hi there from me';
+
       api.messages.fetchMessages.mockResolvedValueOnce({
-        messages: [generateMessage(otherUser), generateMessage(me)],
+        messages: [messageFromOther, messageFromMe],
       });
     });
 
@@ -221,8 +326,11 @@ describe('<Thread>', () => {
       const { queryByTestId } = render(
         <Thread user={me} profileMinimumLength={0} />,
       );
-      await waitForLoader();
-      expect(queryByTestId('quick-reply')).not.toBeInTheDocument();
+      await screen.findByText('Hi there from me');
+
+      await waitFor(() => {
+        expect(queryByTestId('quick-reply')).not.toBeInTheDocument();
+      });
     });
   });
 });

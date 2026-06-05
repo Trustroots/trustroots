@@ -4,6 +4,8 @@
  * with mock req/res/next against the test database.
  */
 const mongoose = require('mongoose');
+const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
 
 const profileController = require('../../server/controllers/users.profile.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -44,8 +46,15 @@ function runHandler(invoke) {
   });
 }
 
+const controllerPath =
+  '../../server/controllers/users.profile.server.controller';
+const emailServicePath = '../../../core/server/services/email.server.service';
+
 describe('Profile controller unit tests', () => {
-  afterEach(utils.clearDatabase);
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
 
   describe('update', () => {
     let userDoc;
@@ -221,6 +230,21 @@ describe('Profile controller unit tests', () => {
       should.exist(reloaded.removeProfileToken);
       should.exist(reloaded.removeProfileExpires);
     });
+
+    it('returns 400 when sending the removal email fails', async () => {
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendRemoveProfile: (user, cb) => cb(new Error('smtp down')),
+        },
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+
+      const { res } = await runHandler(res =>
+        controller.initializeRemoveProfile({ user: userDoc }, res),
+      );
+      res.statusCode.should.equal(400);
+    });
   });
 
   describe('removeProfile', () => {
@@ -262,6 +286,45 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Your profile has been removed.');
 
+      const gone = await User.findById(saved._id);
+      should.not.exist(gone);
+    });
+
+    it('still removes the profile when ancillary cleanup steps fail', async () => {
+      const offerHandlerPath =
+        '../../../offers/server/controllers/offers.server.controller';
+      const contactHandlerPath =
+        '../../../contacts/server/controllers/contacts.server.controller';
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendRemoveProfileConfirmed: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
+        [offerHandlerPath]: {
+          removeAllByUserId: (userId, cb) => cb(new Error('offers failed')),
+        },
+        [contactHandlerPath]: {
+          removeAllByUserId: (userId, cb) => cb(new Error('contacts failed')),
+        },
+      });
+
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.removeProfileToken = 'valid-remove-token';
+      userDoc.removeProfileExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      const { res } = await runHandler(res =>
+        controller.removeProfile(
+          {
+            user: { _id: saved._id },
+            params: { token: 'valid-remove-token' },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
       const gone = await User.findById(saved._id);
       should.not.exist(gone);
     });

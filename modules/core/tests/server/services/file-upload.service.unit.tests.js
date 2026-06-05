@@ -93,6 +93,21 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
+  it('maps generic multer errors to the default message', done => {
+    const uploadFile = loadUploadFileWithStubbedMulter(null, {
+      code: 'UNKNOWN_ERROR',
+    });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('default'),
+      );
+      done();
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
+
   it('maps unexpected field errors from multer', done => {
     const uploadFile = loadUploadFileWithStubbedMulter(null, {
       code: 'LIMIT_UNEXPECTED_FILE',
@@ -176,5 +191,39 @@ describe('file-upload.service unit tests', () => {
     }
 
     runNext();
+  });
+
+  it('accepts jpeg files via the mmmagic detector', done => {
+    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+    const filePath = writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00]));
+    const uploadFile = proxyquire(
+      '../../../server/services/file-upload.service',
+      {
+        multer: () => ({
+          single: () => (req, res, callback) => {
+            req.file = { path: filePath };
+            callback(null);
+          },
+        }),
+        mmmagic: {
+          MAGIC_MIME_TYPE: 16,
+          Magic() {
+            this.detectFile = (path, cb) => cb(null, 'image/jpeg');
+          },
+        },
+        '../../../../config/config': require('../../../../../config/config'),
+        './error.server.service': errorService,
+      },
+    ).uploadFile;
+
+    uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
+      try {
+        fs.unlinkSync(filePath);
+        done();
+      } catch (err) {
+        fs.unlinkSync(filePath);
+        done(err);
+      }
+    });
   });
 });
