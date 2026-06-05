@@ -18,20 +18,29 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build test image
+      - name: Build dev image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: deploy/docker/test.Dockerfile
-          tags: trustroots-test:ci
+          file: deploy/docker/dev.Dockerfile
+          tags: trustroots-dev:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
           load: true
+      - name: Prepare compose local config
+        run: node ./scripts/ci/ensure-compose-local.js
       - name: Test client with coverage
-        env:
-          TRUSTROOTS_TEST_IMAGE: trustroots-test:ci
-          TRUSTROOTS_TEST_SKIP_BUILD: 1
-        run: ./scripts/docker/test-client.sh
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build --no-deps \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            dev npm run test:coverage:client
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build --no-deps \
+            -e CI=true \
+            -e NODE_ENV=test \
+            dev npm run coverage:check -- --scope=client
       - name: Upload client coverage report
         uses: actions/upload-artifact@v4
         with:
@@ -44,20 +53,35 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build test image
+      - name: Build dev image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: deploy/docker/test.Dockerfile
-          tags: trustroots-test:ci
+          file: deploy/docker/dev.Dockerfile
+          tags: trustroots-dev:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
           load: true
+      - name: Prepare compose local config
+        run: node ./scripts/ci/ensure-compose-local.js
+      - name: Start MongoDB
+        working-directory: deploy/docker
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
       - name: Test server with coverage
-        env:
-          TRUSTROOTS_TEST_IMAGE: trustroots-test:ci
-          TRUSTROOTS_TEST_SKIP_BUILD: 1
-        run: ./scripts/docker/test-server.sh
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+            dev npm run test:coverage:server
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build \
+            -e CI=true \
+            -e NODE_ENV=test \
+            dev npm run coverage:check -- --scope=server
       - name: Upload server coverage report
         uses: actions/upload-artifact@v4
         with:
@@ -74,20 +98,32 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build test image
+      - name: Build dev image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: deploy/docker/test.Dockerfile
-          tags: trustroots-test:ci
+          file: deploy/docker/dev.Dockerfile
+          tags: trustroots-dev:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
           load: true
+      - name: Prepare compose local config
+        run: node ./scripts/ci/ensure-compose-local.js
+      - name: Start MongoDB
+        working-directory: deploy/docker
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
       - name: Test end-to-end smoke suite
-        env:
-          TRUSTROOTS_TEST_IMAGE: trustroots-test:ci
-          TRUSTROOTS_TEST_SKIP_BUILD: 1
-        run: ./scripts/docker/test-e2e.sh
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+            -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            dev npm run test:e2e
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4

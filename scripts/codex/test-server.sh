@@ -3,7 +3,8 @@ set -euo pipefail
 
 CONTAINER_NAME="${TRUSTROOTS_CODEX_MONGO_CONTAINER:-trustroots-codex-mongo}"
 MONGO_IMAGE="${TRUSTROOTS_CODEX_MONGO_IMAGE:-mongo:4.4}"
-MONGO_URI="${TRUSTROOTS_CODEX_MONGO_URI:-mongodb://127.0.0.1:27017/trustroots-test}"
+MONGO_HOST="${DB_1_PORT_27017_TCP_ADDR:-127.0.0.1}"
+MONGO_URI="${TRUSTROOTS_CODEX_MONGO_URI:-mongodb://${MONGO_HOST}:27017/trustroots-test}"
 GULP_BIN="${TRUSTROOTS_GULP_BIN:-./node_modules/.bin/gulp}"
 STARTED_CONTAINER=0
 TEST_FILE_LIST=""
@@ -14,9 +15,35 @@ CODEX_NETWORK_MESSAGE="Codex network access is required to reach local MongoDB. 
 can_ping_mongo() {
   local output
 
-  if output="$(MONGOSH_LOG_DIR="${TMPDIR:-/tmp}" mongosh --quiet "$MONGO_URI" \
-    --eval 'db.runCommand({ ping: 1 }).ok' 2>&1)"; then
+  if output="$(MONGO_URI="$MONGO_URI" node <<'NODE' 2>&1
+const { MongoClient } = require('mongodb');
+
+const uri = process.env.MONGO_URI;
+
+(async () => {
+  const client = await MongoClient.connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  try {
+    await client.db().command({ ping: 1 });
+  } finally {
+    await client.close();
+  }
+})().catch(error => {
+  console.error(error && error.message ? error.message : error);
+  process.exit(1);
+});
+NODE
+)"; then
     return 0
+  fi
+
+  if command -v mongosh >/dev/null 2>&1; then
+    if output="$(MONGOSH_LOG_DIR="${TMPDIR:-/tmp}" mongosh --quiet "$MONGO_URI" \
+      --eval 'db.runCommand({ ping: 1 }).ok' 2>&1)"; then
+      return 0
+    fi
   fi
 
   MONGO_PING_ERROR="$output"
@@ -127,7 +154,7 @@ fi
 
 run_server_tests() {
   NODE_ENV=test \
-    DB_1_PORT_27017_TCP_ADDR=127.0.0.1 \
+    DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
     SERVER_TEST_FILES="$1" \
     TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
     TRUSTROOTS_FILE_MAGIC_FALLBACK=true \

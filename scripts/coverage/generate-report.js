@@ -8,8 +8,8 @@ const outputDir = path.join(root, 'coverage-report');
 const outputPath = path.join(outputDir, 'index.html');
 const baselinePath = path.join(root, 'coverage-baseline.json');
 const metrics = ['statements', 'branches', 'functions', 'lines'];
-const e2eMetrics = ['total', 'passed', 'failed', 'passRate'];
-const e2eMetricLabels = {
+const e2eTestMetrics = ['total', 'passed', 'failed', 'passRate'];
+const e2eTestMetricLabels = {
   total: 'Tests',
   passed: 'Passed',
   failed: 'Failed',
@@ -23,11 +23,17 @@ const metricHelp = {
   functions: 'Functions and methods called by tests.',
   lines: 'Source lines executed by tests.',
 };
-const e2eMetricHelp = {
+const e2eTestMetricHelp = {
   total: 'Number of Playwright tests executed in the latest end-to-end run.',
   passed: 'Tests that completed successfully.',
   failed: 'Tests that failed, timed out, or were interrupted.',
   passRate: 'Percentage of executed tests that passed.',
+};
+const e2eAreaMetricHelp = {
+  areaCoverage:
+    'Percentage of defined product areas that ran at least one Playwright test.',
+  areaPassCoverage:
+    'Percentage of defined product areas with no failing Playwright tests.',
 };
 const coverageSuites = {
   client: {
@@ -300,6 +306,37 @@ function readCoverageLane(suiteName, baseline, metadata) {
   };
 }
 
+function buildMetricComparison(current, expected) {
+  if (typeof current !== 'number') {
+    return {
+      current: null,
+      baseline: expected,
+      delta: null,
+      passed: typeof expected !== 'number',
+    };
+  }
+
+  return {
+    current,
+    baseline: expected,
+    delta: typeof expected === 'number' ? current - expected : null,
+    passed: typeof expected !== 'number' ? true : current >= expected,
+  };
+}
+
+function buildE2eCodeCoverage(statusMetrics, baseline = {}) {
+  const code = statusMetrics.codeCoverage;
+  if (!code) {
+    return null;
+  }
+
+  return metrics.reduce((result, metric) => {
+    const expected = baseline.code && baseline.code[metric];
+    result[metric] = buildMetricComparison(code[metric], expected);
+    return result;
+  }, {});
+}
+
 function buildE2eMetrics(statusMetrics, baseline = {}) {
   if (!statusMetrics) {
     return null;
@@ -307,52 +344,46 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
 
   const expectedTests = baseline.tests;
   const expectedPassRate = baseline.passRate;
-  const values = {
-    total: {
-      current: statusMetrics.total,
-      baseline: expectedTests,
-      delta:
-        typeof expectedTests === 'number'
-          ? statusMetrics.total - expectedTests
-          : null,
-      passed:
-        typeof expectedTests !== 'number' || statusMetrics.total >= expectedTests,
-    },
-    passed: {
-      current: statusMetrics.passed,
-      baseline: expectedTests,
-      delta:
-        typeof expectedTests === 'number'
-          ? statusMetrics.passed - expectedTests
-          : null,
-      passed:
-        typeof expectedTests !== 'number' || statusMetrics.passed >= expectedTests,
-    },
+  const testValues = {
+    total: buildMetricComparison(statusMetrics.total, expectedTests),
+    passed: buildMetricComparison(statusMetrics.passed, expectedTests),
     failed: {
       current: statusMetrics.failed,
       baseline: 0,
       delta: statusMetrics.failed,
       passed: statusMetrics.failed === 0,
     },
-    passRate: {
-      current: statusMetrics.passRate,
-      baseline: expectedPassRate,
-      delta:
-        typeof expectedPassRate === 'number'
-          ? statusMetrics.passRate - expectedPassRate
-          : null,
-      passed:
-        typeof expectedPassRate !== 'number' ||
-        statusMetrics.passRate >= expectedPassRate,
-    },
+    passRate: buildMetricComparison(statusMetrics.passRate, expectedPassRate),
   };
+  const areaValues = {
+    areaCoverage: buildMetricComparison(
+      statusMetrics.areaCoverage,
+      baseline.areaCoverage,
+    ),
+    areaPassCoverage: buildMetricComparison(
+      statusMetrics.areaPassCoverage,
+      baseline.areaPassCoverage,
+    ),
+  };
+  const codeCoverage = buildE2eCodeCoverage(statusMetrics, baseline);
+  const codePassed =
+    !codeCoverage ||
+    metrics.every(metric => !codeCoverage[metric] || codeCoverage[metric].passed);
 
   return {
-    values,
+    testValues,
+    areaValues,
+    codeCoverage,
     durationMs: statusMetrics.durationMs || 0,
     areas: (statusMetrics.areas || []).filter(area => area !== 'Setup'),
     byArea: statusMetrics.byArea || {},
-    passed: e2eMetrics.every(metric => values[metric].passed),
+    definedAreaCount: statusMetrics.definedAreaCount || 0,
+    exercisedAreaCount: statusMetrics.exercisedAreaCount || 0,
+    greenAreaCount: statusMetrics.greenAreaCount || 0,
+    passed:
+      e2eTestMetrics.every(metric => testValues[metric].passed) &&
+      Object.keys(areaValues).every(metric => areaValues[metric].passed) &&
+      codePassed,
   };
 }
 
@@ -481,10 +512,12 @@ function capitalizeMetric(metric) {
 
 function renderSuiteTableHead() {
   const groupHeaders = metrics
-    .map((metric, index) => {
-      const e2eMetric = e2eMetrics[index];
-      const label = `${capitalizeMetric(metric)} / ${e2eMetricLabels[e2eMetric]}`;
-      const helpText = `${metricHelp[metric] || metric} End-to-end: ${e2eMetricHelp[e2eMetric]}`;
+    .map(metric => {
+      const label = capitalizeMetric(metric);
+      const helpText =
+        metric === 'statements'
+          ? `${metricHelp[metric]} For end-to-end, this is client code coverage collected during Playwright runs.`
+          : metricHelp[metric] || metric;
       return `<th colspan="2">${renderHelpLabel(label, helpText)}</th>`;
     })
     .join('');
@@ -933,8 +966,8 @@ function renderReportShell(metadata, initialLanes) {
       var suiteConfig = ${JSON.stringify(suiteConfig)};
       var initialLaneData = ${JSON.stringify(initialLanes)};
       var metrics = ${JSON.stringify(metrics)};
-      var e2eMetrics = ${JSON.stringify(e2eMetrics)};
-      var e2eMetricLabels = ${JSON.stringify(e2eMetricLabels)};
+      var e2eTestMetrics = ${JSON.stringify(e2eTestMetrics)};
+      var e2eTestMetricLabels = ${JSON.stringify(e2eTestMetricLabels)};
 
       function escapeHtml(value) {
         return String(value)
@@ -1200,47 +1233,28 @@ function renderReportShell(metadata, initialLanes) {
           .join('');
       }
 
-      function renderE2eMetricCells(lane) {
-        if (!lane.e2eMetrics || !lane.e2eMetrics.values) {
-          return (
-            '<td class="missing" colspan="' +
-            e2eMetrics.length * 2 +
-            '">' +
-            escapeHtml(lane.message) +
-            '</td>'
-          );
-        }
-
-        return e2eMetrics
-          .map(function (metric) {
-            var values = lane.e2eMetrics.values[metric] || {};
-            var className = values.passed ? 'pass' : 'fail';
-            var deltaClass =
-              typeof values.delta === 'number' && values.delta >= 0 ? 'pass' : 'fail';
-            return (
-              '<td>' +
-                renderMetricValue(
-                  className,
-                  formatE2eMetricValue(metric, values.current),
-                  typeof values.delta === 'number' ? formatDelta(values.delta) : '',
-                  deltaClass,
-                ) +
-              '</td>' +
-              '<td class="baseline metric-value">' +
-                escapeHtml(formatE2eMetricValue(metric, values.baseline)) +
-              '</td>'
-            );
-          })
-          .join('');
-      }
-
       function renderSuiteTable(lanes) {
         var rows = lanes
           .map(function (lane) {
-            var metricCells =
-              lane.kind === 'coverage'
-                ? renderMetricCells(lane)
-                : renderE2eMetricCells(lane);
+            var metricCells;
+            if (lane.kind === 'coverage') {
+              metricCells = renderMetricCells(lane);
+            } else if (lane.e2eMetrics && lane.e2eMetrics.codeCoverage) {
+              metricCells = renderMetricCells({
+                metrics: lane.e2eMetrics.codeCoverage,
+                message: lane.message,
+              });
+            } else {
+              metricCells =
+                '<td class="missing" colspan="' +
+                metrics.length * 2 +
+                '">' +
+                escapeHtml(
+                  lane.message ||
+                    'End-to-end code coverage is not available for this run.',
+                ) +
+                '</td>';
+            }
 
             return (
               '<tr>' +
@@ -1272,6 +1286,40 @@ function renderReportShell(metadata, initialLanes) {
 
         section.hidden = false;
 
+        var areaCoverage = lane.e2eMetrics.areaValues || {};
+        var testValues = lane.e2eMetrics.testValues || {};
+        var summaryParts = [
+          'Duration ' + formatDuration(lane.e2eMetrics.durationMs),
+          formatE2eMetricValue('passRate', testValues.passRate.current) +
+            ' pass rate (' +
+            String(testValues.passed.current) +
+            '/' +
+            String(testValues.total.current) +
+            ' tests)',
+        ];
+
+        if (typeof areaCoverage.areaCoverage.current === 'number') {
+          summaryParts.push(
+            formatPercent(areaCoverage.areaCoverage.current) +
+              ' area coverage (' +
+              String(lane.e2eMetrics.exercisedAreaCount) +
+              '/' +
+              String(lane.e2eMetrics.definedAreaCount) +
+              ' areas)',
+          );
+        }
+
+        if (typeof areaCoverage.areaPassCoverage.current === 'number') {
+          summaryParts.push(
+            formatPercent(areaCoverage.areaPassCoverage.current) +
+              ' green areas (' +
+              String(lane.e2eMetrics.greenAreaCount) +
+              '/' +
+              String(lane.e2eMetrics.definedAreaCount) +
+              ')',
+          );
+        }
+
         var areaRows = Object.keys(lane.e2eMetrics.byArea || {})
           .filter(function (area) {
             return area !== 'Setup';
@@ -1279,9 +1327,23 @@ function renderReportShell(metadata, initialLanes) {
           .sort()
           .map(function (area) {
             var areaValues = lane.e2eMetrics.byArea[area];
+            var areaStatus = 'Skipped';
+            var areaClass = 'skip';
+
+            if (areaValues.total > 0) {
+              if (areaValues.failed > 0) {
+                areaStatus = 'Failing';
+                areaClass = 'fail';
+              } else if (areaValues.passed > 0) {
+                areaStatus = 'Passing';
+                areaClass = 'pass';
+              }
+            }
+
             return (
               '<tr>' +
                 '<td><strong>' + escapeHtml(area) + '</strong></td>' +
+                '<td class="' + areaClass + '">' + escapeHtml(areaStatus) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.passed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.failed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.total)) + '</td>' +
@@ -1296,16 +1358,11 @@ function renderReportShell(metadata, initialLanes) {
         }
 
         areaMetrics.innerHTML =
-          '<strong>End-to-end coverage by area</strong>' +
-          '<p class="subtle">Duration ' +
-          escapeHtml(formatDuration(lane.e2eMetrics.durationMs)) +
-          (lane.e2eMetrics.areas.length
-            ? ' · Areas: ' + escapeHtml(lane.e2eMetrics.areas.join(', '))
-            : '') +
-          '</p>' +
+          '<strong>End-to-end test and area coverage</strong>' +
+          '<p class="subtle">' + escapeHtml(summaryParts.join(' · ')) + '</p>' +
           '<div class="table-wrap">' +
             '<table class="test-report-table">' +
-              '<thead><tr><th>Area</th><th>Passed</th><th>Failed</th><th>Total</th></tr></thead>' +
+              '<thead><tr><th>Area</th><th>Status</th><th>Passed</th><th>Failed</th><th>Total</th></tr></thead>' +
               '<tbody>' + areaRows + '</tbody>' +
             '</table>' +
           '</div>';
@@ -1335,21 +1392,49 @@ function renderReportShell(metadata, initialLanes) {
             return lane.name === 'e2e' && lane.status !== 'skipped' && lane.e2eMetrics;
           })
           .flatMap(function (lane) {
-            return e2eMetrics
-              .filter(function (metric) {
-                var values = lane.e2eMetrics.values[metric];
-                return values && !values.passed;
-              })
-              .map(function (metric) {
-                return {
+            var failures = [];
+
+            if (lane.e2eMetrics.codeCoverage) {
+              metrics.forEach(function (metric) {
+                var values = lane.e2eMetrics.codeCoverage[metric];
+                if (values && !values.passed) {
+                  failures.push({
+                    lane: lane,
+                    metric: 'code ' + metric,
+                    values: values,
+                    formatValue: formatPercent,
+                  });
+                }
+              });
+            }
+
+            Object.keys(lane.e2eMetrics.areaValues || {}).forEach(function (metric) {
+              var values = lane.e2eMetrics.areaValues[metric];
+              if (values && !values.passed) {
+                failures.push({
                   lane: lane,
-                  metric: e2eMetricLabels[metric] || metric,
-                  values: lane.e2eMetrics.values[metric],
+                  metric: metric,
+                  values: values,
+                  formatValue: formatPercent,
+                });
+              }
+            });
+
+            e2eTestMetrics.forEach(function (metric) {
+              var values = lane.e2eMetrics.testValues[metric];
+              if (values && !values.passed) {
+                failures.push({
+                  lane: lane,
+                  metric: e2eTestMetricLabels[metric] || metric,
+                  values: values,
                   formatValue: function (value) {
                     return formatE2eMetricValue(metric, value);
                   },
-                };
-              });
+                });
+              }
+            });
+
+            return failures;
           });
 
         return coverageFailures.concat(e2eFailures);

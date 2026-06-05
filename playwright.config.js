@@ -50,6 +50,7 @@ const webServers = useWebpackDevServer
 module.exports = defineConfig({
   testDir: './tests/e2e',
   globalSetup: require.resolve('./tests/e2e/global-setup.js'),
+  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
   timeout: 60 * 1000,
   expect: {
     timeout: 10 * 1000,

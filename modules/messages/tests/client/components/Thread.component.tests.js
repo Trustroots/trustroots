@@ -55,6 +55,15 @@ jest.mock('@/modules/core/client/components/TrEditor', () => {
   return MockTrEditor;
 });
 
+const me = {
+  ...generateClientUser({ public: true }),
+  memberIds: [],
+};
+const otherUser = {
+  ...generateClientUser({ public: true }),
+  member: [],
+};
+
 beforeEach(() => {
   api.users.fetch.mockReset();
   api.messages.fetchMessages.mockReset();
@@ -70,15 +79,6 @@ afterEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
 });
-
-const me = {
-  ...generateClientUser({ public: true }),
-  memberIds: [],
-};
-const otherUser = {
-  ...generateClientUser({ public: true }),
-  member: [],
-};
 
 let routeParams = {
   username: otherUser.username,

@@ -5,6 +5,7 @@
  */
 const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 
 const contactsController = require('../../server/controllers/contacts.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -53,7 +54,10 @@ describe('Contacts controller unit tests', () => {
     );
   });
 
-  afterEach(utils.clearDatabase);
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
 
   describe('add', () => {
     it('rejects an invalid friend user id', async () => {
@@ -154,6 +158,26 @@ describe('Contacts controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
+    it('responds with 400 when saving the confirmation fails', async () => {
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: false,
+      }).save();
+      const populated = await Contact.findById(contact._id).populate(
+        'userTo userFrom',
+      );
+
+      sinon.stub(Contact.prototype, 'save').callsFake(function (cb) {
+        cb(new Error('save failed'));
+      });
+
+      const { res } = await runHandler(res =>
+        contactsController.confirm({ user: user2, contact: populated }, res),
+      );
+      res.statusCode.should.equal(400);
+    });
+
     it('confirms a contact for the receiving user', async () => {
       const contact = await new Contact({
         userFrom: user1._id,
@@ -173,6 +197,23 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('remove', () => {
+    it('responds with 400 when removal fails', async () => {
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: true,
+      }).save();
+
+      sinon.stub(Contact.prototype, 'remove').callsFake(function (cb) {
+        cb(new Error('remove failed'));
+      });
+
+      const { res } = await runHandler(res =>
+        contactsController.remove({ contact }, res),
+      );
+      res.statusCode.should.equal(400);
+    });
+
     it('removes a contact', async () => {
       const contact = await new Contact({
         userFrom: user1._id,
@@ -350,6 +391,21 @@ describe('Contacts controller unit tests', () => {
       );
       nextCalled.should.be.true();
       req.contacts.length.should.equal(0);
+    });
+
+    it('calls next with a database error', async () => {
+      sinon.stub(Contact, 'find').returns({
+        exec: cb => cb(new Error('find failed')),
+      });
+
+      const req = {
+        user: user1,
+        contacts: [{ user: { _id: user2._id } }],
+      };
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.filterByCommon(req, res, next),
+      );
+      nextArg.should.be.Error();
     });
 
     it('keeps only contacts shared with the authenticated user', async () => {

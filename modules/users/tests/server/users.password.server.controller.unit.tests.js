@@ -81,6 +81,24 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('returns 400 when sending the reset email fails', async () => {
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(new Error('smtp down')),
+        },
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      const res = deferredResponse();
+      controller.forgot(
+        { body: { username: userDoc.username } },
+        res,
+        () => {},
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('sends a reset email for a valid account', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -137,6 +155,52 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('resets the password and logs the user in', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.username.should.equal(userDoc.username);
+    });
+
+    it('returns 400 when login fails after reset', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: { newPassword: 'newpass', verifyPassword: 'newpass' },
+          login: (user, cb) => cb(new Error('login failed')),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('rejects mismatched passwords', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -179,6 +243,31 @@ describe('Password controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('changes the password for a valid user', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.password = 'oldpassword1';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Password changed successfully!');
     });
   });
 });

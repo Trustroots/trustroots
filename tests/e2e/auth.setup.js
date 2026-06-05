@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { test: setup } = require('@playwright/test');
+const { test: setup } = require('./test');
 
 setup.describe.configure({ mode: 'serial' });
 const {

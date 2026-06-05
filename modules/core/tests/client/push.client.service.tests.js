@@ -32,6 +32,17 @@ describe('Push Service Tests', function () {
     };
     notifications.length = 0;
     firebaseMessaging.shouldInitialize = false;
+
+    if (!$window.navigator) {
+      $window.navigator = {};
+    }
+    if (!$window.navigator.serviceWorker) {
+      $window.navigator.serviceWorker = {};
+    }
+    if (!$window.PushManager) {
+      $window.PushManager = {};
+    }
+
     $window.Notification = function (title, options) {
       notifications.push({ title, options });
     };

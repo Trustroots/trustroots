@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./test');
 
 const { SEEDED_MEMBERS, signOut, waitForTribesList } = require('./helpers');
 

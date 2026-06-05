@@ -1,7 +1,7 @@
-# Development image for local `docker compose up`.
+# Development image for local `docker compose up` and devcontainer.
 #
-# Mirrors the former root `Dockerfile`: node 16, native build deps, npm ci to
-# seed the `node_modules` named volume. App code is bind-mounted at runtime.
+# Node 16, native build deps, npm ci to seed the `node_modules` named volume.
+# App code is bind-mounted at runtime. Playwright Chromium is baked for E2E.
 
 FROM node:16-bullseye-slim
 
@@ -29,6 +29,9 @@ RUN npm -g i npm@latest-7
 WORKDIR /home/app/trustroots
 
 COPY package*.json ./
-RUN npm ci --quiet \
+RUN --mount=type=cache,target=/root/.npm \
+  npm ci --quiet \
   && npm rebuild sharp --build-from-source \
   && npm rebuild mmmagic --build-from-source
+
+RUN npx playwright install chromium

@@ -76,6 +76,44 @@ describe('Daily Statistics Job - Unit Test', function () {
       });
     });
 
+    it('continues when fetching meet offer count fails', function (done) {
+      sinon
+        .stub(statistics, 'getMeetOffersCount')
+        .callsFake(cb => cb(new Error('meet db down')));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when fetching spoken language counts fails', function (done) {
+      sinon
+        .stub(statistics, 'getUserLanguagesCount')
+        .callsFake((limit, cb) => cb(new Error('languages db down')));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('logs and completes when a network count fails', function (done) {
+      const original = statistics.getExternalSiteCount;
+      statistics.getExternalSiteCount = function (site, cb) {
+        if (site === 'facebook') {
+          return cb(new Error('network db down'));
+        }
+        return original.call(statistics, site, cb);
+      };
+
+      statsJob(null, function (e) {
+        statistics.getExternalSiteCount = original;
+        if (e) return done(e);
+        done();
+      });
+    });
+
     it('continues when writing to influx fails with a general error', function (done) {
       sinon
         .stub(statsService, 'stat')

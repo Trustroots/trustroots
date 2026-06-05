@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+const { test, expect } = require('./test');
 
 const { createUser, registerViaApi, signIn } = require('./helpers');
 

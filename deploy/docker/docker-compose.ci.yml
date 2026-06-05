@@ -1,0 +1,4 @@
+services:
+  dev:
+    image: trustroots-dev:ci
+    shm_size: '2gb'

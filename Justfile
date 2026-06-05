@@ -1,5 +1,8 @@
 set shell := ["bash", "-cu"]
 
+test-all:
+    npm run test:all
+
 test-client:
     BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' ./node_modules/.bin/jest --no-watchman --silent --maxWorkers=50%
 

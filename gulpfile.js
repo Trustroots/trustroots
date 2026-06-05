@@ -30,14 +30,15 @@ const nodemonIgnores = [
   defaultAssets.server.fontelloConfig,
   defaultAssets.server.gulpConfig,
 ];
+const nodeInspectHost = process.env.TRUSTROOTS_NODE_INSPECT_HOST || '127.0.0.1';
 
 // Nodemon task for server
 function runNodemon(done) {
   nodemon({
     script: 'server.js',
-    // Default port is `5858`
+    // Docker Compose sets this to `0.0.0.0` so inspector ports can be published.
     // @link https://nodejs.org/api/debugger.html
-    nodeArgs: ['--inspect=5858'],
+    nodeArgs: [`--inspect=${nodeInspectHost}:5858`],
     ext: 'js, html',
     ignore: nodemonIgnores,
     watch: _.union(
@@ -59,10 +60,10 @@ function runNodemon(done) {
 function runNodemonWorker(done) {
   nodemon({
     script: 'worker.js',
-    // Default port is `5858`, but because `nodemon` task is already using it
-    // we are defining different port for debugging here.
+    // Docker Compose sets this to `0.0.0.0` so inspector ports can be published.
+    // Use a different port because the server inspector uses `5858`.
     // @link https://nodejs.org/api/debugger.html
-    nodeArgs: ['--inspect=5859'],
+    nodeArgs: [`--inspect=${nodeInspectHost}:5859`],
     ext: 'js',
     ignore: nodemonIgnores,
     watch: _.union(

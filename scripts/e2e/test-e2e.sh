@@ -3,7 +3,8 @@ set -euo pipefail
 
 CONTAINER_NAME="${TRUSTROOTS_E2E_MONGO_CONTAINER:-trustroots-e2e-mongo}"
 MONGO_IMAGE="${TRUSTROOTS_E2E_MONGO_IMAGE:-mongo:4.4}"
-MONGO_URI="${TRUSTROOTS_E2E_MONGO_URI:-mongodb://127.0.0.1:27017/trustroots-test}"
+MONGO_HOST="${DB_1_PORT_27017_TCP_ADDR:-127.0.0.1}"
+MONGO_URI="${TRUSTROOTS_E2E_MONGO_URI:-mongodb://${MONGO_HOST}:27017/trustroots-test}"
 STATUS_PATH="${TRUSTROOTS_E2E_STATUS_PATH:-coverage/e2e/status.json}"
 STARTED_CONTAINER=0
 MONGO_ERROR=""
@@ -292,6 +293,8 @@ if ! ensure_playwright_browser; then
     "End-to-end tests blocked because the Playwright Chromium browser could not be installed."
 fi
 
+rm -rf coverage/e2e/js-raw coverage/e2e/captured-bundles
+
 if ! mongo_eval drop; then
   echo "Failed to reset the e2e database at $MONGO_URI." >&2
   echo "$MONGO_ERROR" >&2
@@ -302,7 +305,7 @@ if ! mongo_eval drop; then
 fi
 
 if ! NODE_ENV=test \
-  DB_1_PORT_27017_TCP_ADDR=127.0.0.1 \
+  DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
   TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
   node ./scripts/e2e/seed.js; then
   exit_with_status \
@@ -325,7 +328,7 @@ fi
 
 set +e
 NODE_ENV=test \
-DB_1_PORT_27017_TCP_ADDR=127.0.0.1 \
+DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
 TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
 TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
 TRUSTROOTS_FILE_MAGIC_FALLBACK=true \

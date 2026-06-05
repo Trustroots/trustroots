@@ -47,6 +47,23 @@ describe('Admin users controller unit tests', () => {
       );
     });
 
+    it('returns 400 when the database lookup fails', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              exec: cb => cb(new Error('search failed')),
+            }),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.searchUsers({ body: { search: 'abc' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('obfuscates sensitive tokens in search results', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
@@ -61,6 +78,44 @@ describe('Admin users controller unit tests', () => {
       res.body.length.should.equal(1);
       res.body[0].removeProfileToken.should.equal('(Hidden from admins.)');
       res.body[0].resetPasswordToken.should.equal('(Hidden from admins.)');
+    });
+  });
+
+  describe('listUsersByRole', () => {
+    it('rejects an invalid role', async () => {
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'not-a-role' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
+    it('returns users with the requested role', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(users[0]._id);
+      userDoc.roles = ['user', 'volunteer'];
+      await userDoc.save();
+
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+      await res.waitForResponse();
+      res.body.length.should.equal(1);
+      res.body[0]._id.toString().should.equal(userDoc._id.toString());
+    });
+
+    it('returns 400 when the database lookup fails', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: cb => cb(new Error('role lookup failed')),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
   });
 

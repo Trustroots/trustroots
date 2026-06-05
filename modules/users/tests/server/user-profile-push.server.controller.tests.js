@@ -105,6 +105,21 @@ describe('Profile controller push/membership unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
+    it('returns 400 when removing a registration fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(User, 'findByIdAndUpdate').returns({
+        exec: cb => cb(new Error('remove failed')),
+      });
+
+      const res = deferredResponse();
+      profileController.removePushRegistration(
+        { user: { _id: saved._id }, params: { token: 'token-1' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('removes a registration by token', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -202,6 +217,29 @@ describe('Profile controller push/membership unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Saved registration.');
       notified.should.be.true();
+    });
+
+    it('returns 400 when saving the registration fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .onFirstCall()
+        .returns({ exec: cb => cb() })
+        .onSecondCall()
+        .returns({
+          exec: cb => cb(new Error('save failed')),
+        });
+
+      const res = deferredResponse();
+      profileController.addPushRegistration(
+        {
+          user: { _id: saved._id },
+          body: { token: 'token-fail', platform: 'web' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
 
     it('still succeeds when the notification fails', async () => {

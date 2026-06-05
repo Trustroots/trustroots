@@ -77,4 +77,16 @@ describe('<Offers />', () => {
     expect(screen.getByText('own:false')).toBeInTheDocument();
     expect(screen.getByText('public:false')).toBeInTheDocument();
   });
+
+  it('does not fetch offers when profile has no id', () => {
+    render(
+      <Offers
+        authUser={{ _id: 'visitor', public: true }}
+        profile={{ username: 'alice' }}
+      />,
+    );
+
+    expect(getOffers).not.toHaveBeenCalled();
+    expect(screen.getByText('status:loading')).toBeInTheDocument();
+  });
 });

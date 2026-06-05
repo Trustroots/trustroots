@@ -11,7 +11,7 @@ const User = mongoose.model('User');
 
 const nodeMajor = Number(process.versions.node.split('.')[0]);
 
-describe('job: send push message', function () {
+describe.skip('job: send push message', function () {
   let sendPushJobHandler;
   const messages = []; // Collects firebase messages that are sent
 
@@ -19,9 +19,6 @@ describe('job: send push message', function () {
     if (nodeMajor >= 22) {
       this.skip();
     }
-
-    // Push notifications are disabled in send-push-message.server.job.js
-    this.skip();
   });
 
   beforeEach(function () {

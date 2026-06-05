@@ -2,22 +2,12 @@
 
 const fs = require('fs');
 const path = require('path');
+const { areaForSpec, computeAreaCoverage } = require('./areas');
+const { mergeRawCoverage } = require('./merge-js-coverage');
 
 const root = path.resolve(__dirname, '../..');
 const resultsPath = path.join(root, 'coverage/e2e/playwright-results.json');
 const statusPath = path.join(root, 'coverage/e2e/status.json');
-
-const AREA_BY_SPEC = {
-  'auth-smoke.spec.js': 'Authentication',
-  'authenticated.spec.js': 'Member flows',
-  'public-pages.spec.js': 'Public pages',
-  'nostr.spec.js': 'Nostr',
-  'seeded-content.spec.js': 'Seeded content',
-  'messages.spec.js': 'Messages',
-  'experiences.spec.js': 'Experiences',
-  'admin.spec.js': 'Admin',
-  'auth.setup.js': 'Setup',
-};
 
 const TERMINAL_FAILURES = new Set([
   'failed',
@@ -28,15 +18,6 @@ const TERMINAL_FAILURES = new Set([
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-}
-
-function areaForSpec(specFile) {
-  if (!specFile) {
-    return 'Other';
-  }
-
-  const fileName = path.basename(specFile);
-  return AREA_BY_SPEC[fileName] || 'Other';
 }
 
 function summarizeReport(report) {
@@ -105,6 +86,8 @@ function summarizeReport(report) {
 
   walkSuites(report.suites);
 
+  const areaCoverage = computeAreaCoverage(areaResults);
+
   return {
     total,
     passed,
@@ -115,6 +98,30 @@ function summarizeReport(report) {
     areas: Array.from(areas).filter(area => area !== 'Setup').sort(),
     areaCount: areas.size,
     byArea: areaResults,
+    areaCoverage: areaCoverage.areaCoverage,
+    areaPassCoverage: areaCoverage.areaPassCoverage,
+    definedAreaCount: areaCoverage.defined,
+    exercisedAreaCount: areaCoverage.exercised,
+    greenAreaCount: areaCoverage.green,
+  };
+}
+
+function readCodeCoverageSummary() {
+  const summaryPath = path.join(root, 'coverage/e2e/coverage-summary.json');
+  if (!fs.existsSync(summaryPath)) {
+    return null;
+  }
+
+  const summary = readJson(summaryPath);
+  if (!summary || !summary.total) {
+    return null;
+  }
+
+  return {
+    statements: summary.total.statements.pct,
+    branches: summary.total.branches.pct,
+    functions: summary.total.functions.pct,
+    lines: summary.total.lines.pct,
   };
 }
 
@@ -123,9 +130,27 @@ function formatMessage(metrics, fallbackMessage) {
     return fallbackMessage;
   }
 
-  return `${metrics.passed}/${metrics.total} Playwright tests passed (${metrics.passRate.toFixed(
-    2,
-  )}%).`;
+  const parts = [
+    `${metrics.passed}/${metrics.total} Playwright tests passed (${metrics.passRate.toFixed(
+      2,
+    )}%)`,
+  ];
+
+  if (typeof metrics.areaCoverage === 'number') {
+    parts.push(
+      `${metrics.exercisedAreaCount}/${metrics.definedAreaCount} areas exercised (${metrics.areaCoverage.toFixed(
+        2,
+      )}%)`,
+    );
+  }
+
+  if (metrics.codeCoverage) {
+    parts.push(
+      `client code ${metrics.codeCoverage.statements.toFixed(2)}% statements`,
+    );
+  }
+
+  return `${parts.join('; ')}.`;
 }
 
 function writeStatus(status, exitCode, message, metrics) {
@@ -148,10 +173,12 @@ function writeStatus(status, exitCode, message, metrics) {
   );
 }
 
-function run() {
+async function run() {
   const status = process.env.STATUS || 'unknown';
   const exitCode = Number(process.env.EXIT_CODE || 0);
   const message = process.env.MESSAGE || 'No status message was recorded.';
+
+  await mergeRawCoverage();
 
   if (!fs.existsSync(resultsPath)) {
     writeStatus(status, exitCode, message, null);
@@ -159,7 +186,16 @@ function run() {
   }
 
   const metrics = summarizeReport(readJson(resultsPath));
+  const codeCoverage = readCodeCoverageSummary();
+  if (codeCoverage) {
+    metrics.codeCoverage = codeCoverage;
+  }
+
   writeStatus(status, exitCode, message, metrics);
 }
 
-run();
+run().catch(error => {
+  const message = error && error.message ? error.message : String(error);
+  process.stderr.write(`Failed to summarize end-to-end results: ${message}\n`);
+  process.exit(1);
+});

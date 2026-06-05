@@ -42,6 +42,66 @@ describe('Statistics controller unit tests', () => {
     return utils.clearDatabase();
   });
 
+  describe('count helper error callbacks', () => {
+    const dbError = new Error('db unavailable');
+
+    it('getUsersCount propagates database errors', done => {
+      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      statistics.getUsersCount(err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getNewsletterSubscriptionsCount propagates database errors', done => {
+      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      statistics.getNewsletterSubscriptionsCount(err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getPushRegistrationCount propagates database errors', done => {
+      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      statistics.getPushRegistrationCount(err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getLastSeenStatistic propagates database errors', done => {
+      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      statistics.getLastSeenStatistic({ days: 7 }, err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getExternalSiteCount propagates database errors', done => {
+      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      statistics.getExternalSiteCount('github', err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getMeetOffersCount propagates database errors', done => {
+      sinon.stub(Offer, 'countDocuments').callsFake((query, cb) => cb(dbError));
+      statistics.getMeetOffersCount(err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getHostOffersCount propagates database errors', done => {
+      sinon.stub(Offer, 'aggregate').callsFake((pipeline, cb) => cb(dbError));
+      statistics.getHostOffersCount(err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+  });
+
   describe('getExternalSiteCount', () => {
     it('errors for an invalid site id', done => {
       statistics.getExternalSiteCount('invalid', err => {
@@ -254,6 +314,22 @@ describe('Statistics controller unit tests', () => {
       const res = deferredResponse();
       statistics.getPublicStatistics({}, res);
       await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when an external site count fails', async () => {
+      const original = statistics.getExternalSiteCount;
+      statistics.getExternalSiteCount = function (site, cb) {
+        if (site === 'bewelcome') {
+          return cb(new Error('bewelcome count failed'));
+        }
+        return original.call(statistics, site, cb);
+      };
+
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+      statistics.getExternalSiteCount = original;
       res.statusCode.should.equal(400);
     });
   });
