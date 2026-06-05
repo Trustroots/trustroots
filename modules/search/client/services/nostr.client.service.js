@@ -1,5 +1,10 @@
 import { Relay } from 'nostr-tools/relay';
 
+// Nostroots validation server pubkey — only kind 30398 events signed by this
+// key are considered verified map notes.
+const NOSTROOTS_VALIDATION_PUBKEY =
+  'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b';
+
 /**
  * NostrService — manages WebSocket relay connection and Nostr subscriptions.
  * Framework-agnostic; consumed by React components in later tasks.
@@ -49,14 +54,14 @@ export default class NostrService {
   }
 
   /**
-   * Subscribe to map notes (kinds 30397, 30398) filtered by plus-code prefixes.
+   * Subscribe to all verified map notes (kind 30398) from the Nostroots
+   * validation server. No geographic filtering — fetches everything.
    * Closes any existing 'mapNotes' subscription before creating a new one.
    *
-   * @param {string[]} plusCodePrefixes — open-location-code prefixes to filter by
    * @param {Function} onEvent — callback invoked for each matching event
    * @returns {Promise<object>} the subscription handle
    */
-  async subscribeMapNotes(plusCodePrefixes, onEvent) {
+  async subscribeMapNotes(onEvent) {
     const relay = await this.connect();
 
     // Close previous mapNotes subscription if any
@@ -66,18 +71,14 @@ export default class NostrService {
     }
 
     // eslint-disable-next-line no-console
-    console.log(
-      '[Nostr] Subscribing to map notes, prefixes:',
-      plusCodePrefixes,
-    );
+    console.log('[Nostr] Subscribing to all verified map notes');
 
     let eventCount = 0;
     const sub = relay.subscribe(
       [
         {
-          kinds: [30397, 30398],
-          '#L': ['open-location-code-prefix'],
-          '#l': plusCodePrefixes,
+          kinds: [30398],
+          authors: [NOSTROOTS_VALIDATION_PUBKEY],
         },
       ],
       {

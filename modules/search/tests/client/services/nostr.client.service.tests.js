@@ -2,7 +2,7 @@ import NostrService from '@/modules/search/client/services/nostr.client.service'
 
 // Mock nostr-tools/relay
 jest.mock('nostr-tools/relay', () => {
-  const MockRelay = jest.fn().mockImplementation((url) => {
+  const MockRelay = jest.fn().mockImplementation(url => {
     const instance = {
       url,
       connect: jest.fn().mockResolvedValue(undefined),
@@ -95,25 +95,28 @@ describe('NostrService', () => {
   });
 
   describe('subscribeMapNotes()', () => {
-    it('subscribes with correct filters', async () => {
+    it('subscribes with correct filters for verified notes', async () => {
       const mockSub = { close: jest.fn() };
       await service.connect();
       Relay._lastInstance.subscribe.mockReturnValue(mockSub);
 
       const onEvent = jest.fn();
-      const prefixes = ['8FVC', '8FVB'];
 
-      const sub = await service.subscribeMapNotes(prefixes, onEvent);
+      const sub = await service.subscribeMapNotes(onEvent);
 
       expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
         [
           {
-            kinds: [30397, 30398],
-            '#L': ['open-location-code-prefix'],
-            '#l': prefixes,
+            kinds: [30398],
+            authors: [
+              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
+            ],
           },
         ],
-        { onevent: onEvent },
+        expect.objectContaining({
+          onevent: expect.any(Function),
+          oneose: expect.any(Function),
+        }),
       );
       expect(sub).toBe(mockSub);
       expect(service.subscriptions.get('mapNotes')).toBe(mockSub);
@@ -125,10 +128,10 @@ describe('NostrService', () => {
       await service.connect();
 
       Relay._lastInstance.subscribe.mockReturnValueOnce(oldSub);
-      await service.subscribeMapNotes(['8FVC'], jest.fn());
+      await service.subscribeMapNotes(jest.fn());
 
       Relay._lastInstance.subscribe.mockReturnValueOnce(newSub);
-      await service.subscribeMapNotes(['8FVB'], jest.fn());
+      await service.subscribeMapNotes(jest.fn());
 
       expect(oldSub.close).toHaveBeenCalled();
       expect(service.subscriptions.get('mapNotes')).toBe(newSub);
@@ -137,7 +140,7 @@ describe('NostrService', () => {
     it('connects lazily if not already connected', async () => {
       const mockSub = { close: jest.fn() };
       // Service starts disconnected — subscribe should trigger connect
-      Relay.mockImplementationOnce((url) => {
+      Relay.mockImplementationOnce(url => {
         const instance = {
           url,
           connect: jest.fn().mockResolvedValue(undefined),
@@ -148,7 +151,7 @@ describe('NostrService', () => {
         return instance;
       });
 
-      const sub = await service.subscribeMapNotes(['8FVC'], jest.fn());
+      const sub = await service.subscribeMapNotes(jest.fn());
       expect(Relay).toHaveBeenCalledWith(RELAY_URL);
       expect(sub).toBe(mockSub);
     });
@@ -166,7 +169,7 @@ describe('NostrService', () => {
       ];
 
       relay.subscribe.mockImplementation((filters, callbacks) => {
-        events.forEach((e) => callbacks.onevent(e));
+        events.forEach(e => callbacks.onevent(e));
         callbacks.oneose();
         return { close: jest.fn() };
       });

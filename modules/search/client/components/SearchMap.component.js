@@ -48,21 +48,6 @@ const olc = new OpenLocationCode();
 
 const nostrService = new NostrService('wss://relay.trustroots.org');
 
-function boundsToPluscCodePrefixes(bounds) {
-  const sw = bounds.getSouthWest();
-  const ne = bounds.getNorthEast();
-  const prefixes = new Set();
-  const latStep = (ne.lat - sw.lat) / 4;
-  const lngStep = (ne.lng - sw.lng) / 4;
-  for (let lat = sw.lat; lat <= ne.lat; lat += latStep || 1) {
-    for (let lng = sw.lng; lng <= ne.lng; lng += lngStep || 1) {
-      const code = olc.encode(lat, lng);
-      prefixes.add(code.substring(0, 4));
-    }
-  }
-  return Array.from(prefixes);
-}
-
 function nostrEventsToGeoJSON(events) {
   const features = events
     .map(event => {
@@ -247,36 +232,6 @@ export default function SearchMap({
     // The maximum time func is allowed to be delayed before it's invoked:
     { maxWait: 3500 },
   );
-
-  /**
-   * Re-subscribe to community notes for the current map bounds
-   */
-  const updateCommunityNotes = () => {
-    if (!communityNotesEnabled) return;
-    const mapInstance = getMapRef();
-    if (!mapInstance) return;
-    const bounds = mapInstance.getBounds();
-    const prefixes = boundsToPluscCodePrefixes(bounds);
-    const events = [];
-    nostrService.subscribeMapNotes(prefixes, event => {
-      events.push(event);
-      clearTimeout(communityNotesTimerRef.current);
-      communityNotesTimerRef.current = setTimeout(() => {
-        setCommunityNotes(nostrEventsToGeoJSON([...events]));
-      }, 200);
-    });
-  };
-
-  const [debouncedUpdateCommunityNotes] = useDebouncedCallback(
-    updateCommunityNotes,
-    300,
-    { maxWait: 2000 },
-  );
-
-  const onInteractionStateChange = (...args) => {
-    debouncedUpdateOffers(...args);
-    debouncedUpdateCommunityNotes(...args);
-  };
 
   /**
    * Update state for a feature on the map
@@ -542,22 +497,14 @@ export default function SearchMap({
       return;
     }
 
-    function subscribeToNotes() {
-      const mapInstance = getMapRef();
-      if (!mapInstance) return;
-      const mapBounds = mapInstance.getBounds();
-      const prefixes = boundsToPluscCodePrefixes(mapBounds);
-      const events = [];
-      nostrService.subscribeMapNotes(prefixes, event => {
-        events.push(event);
-        clearTimeout(communityNotesTimerRef.current);
-        communityNotesTimerRef.current = setTimeout(() => {
-          setCommunityNotes(nostrEventsToGeoJSON([...events]));
-        }, 200);
-      });
-    }
-
-    subscribeToNotes();
+    const events = [];
+    nostrService.subscribeMapNotes(event => {
+      events.push(event);
+      clearTimeout(communityNotesTimerRef.current);
+      communityNotesTimerRef.current = setTimeout(() => {
+        setCommunityNotes(nostrEventsToGeoJSON([...events]));
+      }, 200);
+    });
 
     return () => {
       nostrService.disconnect();
@@ -607,7 +554,7 @@ export default function SearchMap({
         mapStyle={mapStyle}
         onClick={onClickMap}
         onHover={onHover}
-        onInteractionStateChange={onInteractionStateChange}
+        onInteractionStateChange={debouncedUpdateOffers}
         onMouseLeave={clearPreviouslyHoveredState}
         onViewportChange={onViewPortChange}
         ref={mapRef}
