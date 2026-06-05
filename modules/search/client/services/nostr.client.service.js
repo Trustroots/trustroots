@@ -23,8 +23,12 @@ export default class NostrService {
     if (this.relay) {
       return this.relay;
     }
+    // eslint-disable-next-line no-console
+    console.log('[Nostr] Connecting to', this.relayUrl);
     const relay = new Relay(this.relayUrl);
     await relay.connect();
+    // eslint-disable-next-line no-console
+    console.log('[Nostr] Connected');
     this.relay = relay;
     return this.relay;
   }
@@ -61,6 +65,13 @@ export default class NostrService {
       existing.close();
     }
 
+    // eslint-disable-next-line no-console
+    console.log(
+      '[Nostr] Subscribing to map notes, prefixes:',
+      plusCodePrefixes,
+    );
+
+    let eventCount = 0;
     const sub = relay.subscribe(
       [
         {
@@ -70,7 +81,24 @@ export default class NostrService {
         },
       ],
       {
-        onevent: onEvent,
+        onevent: event => {
+          eventCount++;
+          // eslint-disable-next-line no-console
+          console.log(
+            '[Nostr] Map note received (#%d): kind=%d, content=%s',
+            eventCount,
+            event.kind,
+            event.content?.substring(0, 80),
+          );
+          onEvent(event);
+        },
+        oneose: () => {
+          // eslint-disable-next-line no-console
+          console.log(
+            '[Nostr] Map notes subscription EOSE — %d events received',
+            eventCount,
+          );
+        },
       },
     );
 
@@ -87,6 +115,8 @@ export default class NostrService {
    * @returns {Promise<object[]>} events sorted by created_at desc
    */
   async fetchUserNotes(pubkeyHex, limit = 3) {
+    // eslint-disable-next-line no-console
+    console.log('[Nostr] Fetching user notes for', pubkeyHex);
     const relay = await this.connect();
     const events = [];
 
@@ -104,6 +134,8 @@ export default class NostrService {
             events.push(event);
           },
           oneose() {
+            // eslint-disable-next-line no-console
+            console.log('[Nostr] User notes EOSE — %d events', events.length);
             events.sort((a, b) => b.created_at - a.created_at);
             resolve(events);
           },
