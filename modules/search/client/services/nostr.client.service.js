@@ -90,7 +90,7 @@ export default class NostrService {
     const relay = await this.connect();
     const events = [];
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       relay.subscribe(
         [
           {
@@ -127,7 +127,7 @@ export default class NostrService {
 
     const relay = await this.connect();
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       let username = null;
 
       relay.subscribe(
@@ -140,7 +140,7 @@ export default class NostrService {
         {
           onevent(event) {
             const tag = event.tags.find(
-              (t) =>
+              t =>
                 t[0] === 'l' &&
                 t.length >= 3 &&
                 t[2] === 'org.trustroots:username',
