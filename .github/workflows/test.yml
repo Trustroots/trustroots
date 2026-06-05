@@ -7,12 +7,26 @@ on:
   push:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      run_client:
+        description: Run client tests
+        type: boolean
+        default: true
+      run_server:
+        description: Run server tests
+        type: boolean
+        default: true
+      run_e2e:
+        description: Run e2e tests
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   client:
+    if: github.event_name != 'workflow_dispatch' || inputs.run_client
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +62,7 @@ jobs:
           path: coverage/client
 
   server:
+    if: github.event_name != 'workflow_dispatch' || inputs.run_server
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +105,7 @@ jobs:
 
   e2e:
     if: >
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
       (github.event_name == 'pull_request' &&
         contains(github.event.pull_request.labels.*.name, 'run-e2e'))
     runs-on: ubuntu-latest

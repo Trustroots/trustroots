@@ -11,7 +11,7 @@ const User = mongoose.model('User');
 
 const nodeMajor = Number(process.versions.node.split('.')[0]);
 
-describe.skip('job: send push message', function () {
+describe('job: send push message', function () {
   let sendPushJobHandler;
   const messages = []; // Collects firebase messages that are sent
 
@@ -32,7 +32,7 @@ describe.skip('job: send push message', function () {
     );
   });
 
-  it('will send a push', () => {
+  it('will not send a push while notifications are disabled', () => {
     const notification = {
       title: 'a title',
       body: 'a body',
@@ -55,10 +55,7 @@ describe.skip('job: send push message', function () {
     };
     sendPushJobHandler(job, err => {
       should.not.exist(err);
-      messages.length.should.equal(1);
-      const message = messages[0];
-      message.tokens.should.deepEqual(['123', '456']);
-      message.payload.should.deepEqual({ notification });
+      messages.length.should.equal(0);
     });
   });
 
@@ -185,7 +182,7 @@ describe.skip('job: send push message', function () {
 
     afterEach(utils.clearDatabase);
 
-    it('removes user tokens if they are invalid', () => {
+    it('does not remove user tokens while notifications are disabled', () => {
       const notification = {
         title: 'a title',
         body: 'a body',
@@ -209,19 +206,13 @@ describe.skip('job: send push message', function () {
       sendPushJobHandler(job, async err => {
         should.not.exist(err);
 
-        messages.length.should.equal(1);
-        const message = messages[0];
-        message.tokens.should.deepEqual(['123', '456', 'toberemoved']);
-        message.payload.should.deepEqual({ notification });
+        messages.length.should.equal(0);
         const updatedUser = await User.findOne(user._id);
-        user.pushRegistration.length.should.equal(3);
-
-        // Invalid token has been removed!
-        updatedUser.pushRegistration.length.should.equal(2);
+        updatedUser.pushRegistration.length.should.equal(3);
         const tokens = updatedUser.pushRegistration.map(reg => reg.token);
 
         // We need to convert CoreMongooseArray to Array
-        Array.from(tokens).should.deepEqual(['123', '456']);
+        Array.from(tokens).should.deepEqual(['123', '456', 'toberemoved']);
       });
     });
   });

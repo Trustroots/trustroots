@@ -4,7 +4,8 @@ test-all:
     npm run test:all
 
 test-client:
-    BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' ./node_modules/.bin/jest --no-watchman --silent --maxWorkers=50%
+    BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' ./node_modules/.bin/jest --coverage --no-watchman --silent --maxWorkers=50%
+    npm run coverage:report -- --scope=client
 
 test-server:
     npm run test:server:codex

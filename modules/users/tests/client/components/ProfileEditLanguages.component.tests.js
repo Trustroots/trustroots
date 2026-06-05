@@ -63,4 +63,36 @@ describe('<ProfileEditLanguages />', () => {
     expect($broadcast).toHaveBeenCalledWith('userChanged');
     expect(onChangeLanguages).toHaveBeenCalledWith(['en', 'pt']);
   });
+
+  it('does not require onChangeLanguages callback prop to update angular state', () => {
+    render(
+      <ProfileEditLanguages
+        profileLanguages={['en']}
+        onChangeLanguages={undefined}
+      />,
+    );
+
+    const select = screen.getByRole('button', {
+      name: 'Add languages you speak.',
+    });
+
+    fireEvent.click(select);
+
+    expect($broadcast).toHaveBeenCalledWith('userChanged');
+  });
+
+  it('always keeps selected languages visible in language select input', () => {
+    render(
+      <ProfileEditLanguages
+        onChangeLanguages={() => undefined}
+        profileLanguages={['fr', 'de', 'es']}
+      />,
+    );
+
+    const select = screen.getByRole('button', {
+      name: 'Add languages you speak.',
+    });
+
+    expect(select).toHaveAttribute('data-selected', 'fr,de,es');
+  });
 });

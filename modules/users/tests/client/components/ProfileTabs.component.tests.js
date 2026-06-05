@@ -104,4 +104,78 @@ describe('<ProfileTabs />', () => {
       expect.any(Function),
     );
   });
+
+  it('shows an experiences notification dot when experiences are pending', async () => {
+    getCount.mockResolvedValue({ count: 5, hasPending: true });
+
+    render(
+      <ProfileTabs
+        contactsCount={2}
+        initialPathName="profile.about"
+        isExperiencesEnabled
+        isOWnProfile={false}
+        userId="user-1"
+        username="alice"
+      />,
+    );
+
+    await waitFor(() => expect(getCount).toHaveBeenCalledTimes(1));
+
+    const expTab = screen
+      .getByRole('tab', {
+        name: /experiences/i,
+      })
+      .closest('li');
+
+    expect(expTab.querySelector('div')).toBeInTheDocument();
+    expect(screen.getByText('5')).toHaveClass('badge');
+  });
+
+  it('shows private tabs for own profile even without counts', async () => {
+    render(
+      <ProfileTabs
+        contactsCount={0}
+        initialPathName="profile.about"
+        isExperiencesEnabled
+        isOWnProfile
+        userId="user-1"
+        username="alice"
+      />,
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tab', { name: '0 contacts' }),
+      ).toBeInTheDocument(),
+    );
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tab', { name: '2 experiences' }),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('handles route updates that activate the experiences tab', async () => {
+    render(
+      <ProfileTabs
+        contactsCount={1}
+        initialPathName="profile.about"
+        isExperiencesEnabled
+        isOWnProfile={false}
+        userId="user-1"
+        username="alice"
+      />,
+    );
+
+    await waitFor(() => expect(stateChangeHandler).not.toBeNull());
+
+    act(() => {
+      stateChangeHandler({}, { name: 'profile.experiences.list' });
+    });
+
+    expect(
+      screen.getByRole('tab', { name: /2 experiences/ }).closest('li'),
+    ).toHaveClass('active');
+  });
 });

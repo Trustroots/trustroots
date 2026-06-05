@@ -106,4 +106,75 @@ describe('trAvatar directive', function () {
     expect(element.find('a').length).toBe(0);
     expect(element.find('img').length).toBe(1);
   });
+
+  it('uses facebook source URL when provider is configured', function () {
+    const { element } = compileTemplate(
+      {
+        displayName: 'Facebook User',
+        avatarSource: 'facebook',
+        additionalProvidersData: {
+          facebook: {
+            id: 'fb-987',
+          },
+        },
+      },
+      'source="facebook"',
+    );
+
+    const src = element.find('img').attr('src');
+    expect(src).toContain('graph.facebook.com');
+    expect(src).toContain('fb-987');
+  });
+
+  it('falls back to default avatar when facebook source is missing provider data', function () {
+    const { element } = compileTemplate(
+      {
+        displayName: 'Missing FB',
+        avatarSource: 'facebook',
+      },
+      'source="facebook"',
+    );
+
+    expect(element.find('img').attr('src')).toBe('/img/avatar.png');
+  });
+
+  it('uses gravatar URL when email hash is available', function () {
+    const { element } = compileTemplate(
+      {
+        displayName: 'Gravatar',
+        avatarSource: 'gravatar',
+        emailHash: 'abcd1234',
+      },
+      'source="gravatar"',
+    );
+
+    const src = element.find('img').attr('src');
+    expect(src).toContain('gravatar.com/avatar/abcd1234');
+    expect(src).toContain('s=256');
+  });
+
+  it('falls back to default avatar when gravatar hash is missing', function () {
+    const { element } = compileTemplate(
+      {
+        displayName: 'Gravatar',
+        avatarSource: 'gravatar',
+      },
+      'source="gravatar"',
+    );
+
+    expect(element.find('img').attr('src')).toBe('/img/avatar.png');
+  });
+
+  it('uses local fallback avatar when user data is not sufficient', function () {
+    const { element } = compileTemplate(
+      {
+        displayName: 'Local User',
+        avatarSource: 'local',
+        avatarUploaded: true,
+      },
+      'source="local"',
+    );
+
+    expect(element.find('img').attr('src')).toBe('/img/avatar.png');
+  });
 });

@@ -82,6 +82,54 @@ describe('visibility service', () => {
     expect(addListener).not.toHaveBeenCalled();
     expect(watcher).toHaveBeenCalledWith(true);
   });
+
+  it('uses msHidden fallback when standard hidden property is unavailable', () => {
+    defineDocumentProperty('hidden', undefined);
+    defineDocumentProperty('msHidden', false);
+    defineDocumentProperty('webkitHidden', undefined);
+
+    const addListener = jest.spyOn(document, 'addEventListener');
+    const watcher = jest.fn();
+
+    visibilityService.enable();
+    visibilityService.watch(watcher);
+
+    expect(addListener).toHaveBeenCalledWith(
+      'msvisibilitychange',
+      expect.any(Function),
+      false,
+    );
+    expect(watcher).toHaveBeenCalledWith(true);
+
+    defineDocumentProperty('msHidden', true);
+    document.dispatchEvent(new Event('msvisibilitychange'));
+
+    expect(watcher).toHaveBeenLastCalledWith(false);
+  });
+
+  it('uses webkitHidden fallback when other APIs are unavailable', () => {
+    defineDocumentProperty('hidden', undefined);
+    defineDocumentProperty('msHidden', undefined);
+    defineDocumentProperty('webkitHidden', false);
+
+    const addListener = jest.spyOn(document, 'addEventListener');
+    const watcher = jest.fn();
+
+    visibilityService.enable();
+    visibilityService.watch(watcher);
+
+    expect(addListener).toHaveBeenCalledWith(
+      'webkitvisibilitychange',
+      expect.any(Function),
+      false,
+    );
+    expect(watcher).toHaveBeenCalledWith(true);
+
+    defineDocumentProperty('webkitHidden', true);
+    document.dispatchEvent(new Event('webkitvisibilitychange'));
+
+    expect(watcher).toHaveBeenLastCalledWith(false);
+  });
 });
 
 function defineDocumentProperty(name, value) {

@@ -95,4 +95,66 @@ describe('MapLayersFactory', function () {
       'Landsat_WELD_CorrectedReflectance_TrueColor_Global_Annual',
     );
   });
+
+  it('uses legacy mapbox layer URL format when legacy config is provided', function () {
+    const factory = createFactory({
+      mapbox: {
+        user: 'trustroots',
+        publicKey: 'pk.test',
+        maps: {
+          streets: {
+            map: 'st.123456',
+            legacy: true,
+          },
+        },
+      },
+    });
+
+    const layers = factory.getLayers({ streets: true });
+
+    expect(layers.streets.url).toContain('tiles.mapbox.com/v4');
+    expect(layers.streets.url).toContain('secure=1');
+    expect(layers.streets.layerParams.map).toBe('st.123456');
+    expect(layers.streets.layerOptions.attribution).toContain('map-feedback');
+  });
+
+  it('adds outdoors mapbox layer when requested and configured', function () {
+    const factory = createFactory({
+      mapbox: {
+        user: 'trustroots',
+        publicKey: 'pk.test',
+        maps: {
+          streets: {
+            map: 'st.123456',
+          },
+          outdoors: {
+            map: 'outdoors.98765',
+          },
+        },
+      },
+    });
+
+    const layers = factory.getLayers({ outdoors: true, streets: false });
+
+    expect(layers.outdoors.name).toBe('Outdoors');
+    expect(layers.outdoors.url).toContain('api.mapbox.com/styles/v1');
+    expect(layers.outdoors.layerParams.map).toBe('outdoors.98765');
+  });
+
+  it('returns no layers when all options are disabled', function () {
+    const factory = createFactory({
+      mapbox: {
+        user: false,
+        publicKey: false,
+      },
+    });
+
+    const layers = factory.getLayers({
+      streets: false,
+      satellite: false,
+      outdoors: false,
+    });
+
+    expect(layers).toEqual({});
+  });
 });

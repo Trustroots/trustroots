@@ -144,7 +144,7 @@ describe('trNativeAppBridge service', function () {
     });
     const preventDefaultSpy = spyOn(clickEvent, 'preventDefault');
 
-    expect(external).toHaveClass('tr-app-urlified');
+    expect(external.className).toContain('tr-app-urlified');
     expect(
       document.querySelectorAll('.tr-app-urlified').length,
     ).toBeGreaterThan(0);
