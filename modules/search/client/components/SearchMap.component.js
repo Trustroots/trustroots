@@ -5,11 +5,13 @@ import React, { createRef, useEffect, useRef, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
   Layer,
+  Popup,
   Source,
   WebMercatorViewport,
 } from 'react-map-gl';
 
 // Internal dependencies
+import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import {
   MAP_STYLE_DEFAULT,
@@ -32,6 +34,7 @@ import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import NostrService from '../services/nostr.client.service';
+import CommunityNotesPopup from './CommunityNotesPopup.component';
 import {
   SOURCE_COMMUNITY_NOTES,
   communityNotesLayer,
@@ -142,6 +145,9 @@ export default function SearchMap({
     type: 'FeatureCollection',
     features: [],
   });
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [selectedNoteUsername, setSelectedNoteUsername] = useState(null);
+  const [showActionGateModal, setShowActionGateModal] = useState(false);
   const communityNotesTimerRef = useRef(null);
 
   const parsedFilters = filters ? JSON.parse(filters) : {};
@@ -423,7 +429,14 @@ export default function SearchMap({
 
     // Community notes click
     if (layerId === communityNotesLayer.id) {
-      // Selected note will be handled by Task 5 (popup component)
+      const feature = features[0];
+      setSelectedNote(feature);
+      setSelectedNoteUsername(null);
+      nostrService
+        .resolveNpubToUsername(feature.properties.pubkey)
+        .then(name => {
+          setSelectedNoteUsername(name);
+        });
       return;
     }
 
@@ -570,85 +583,108 @@ export default function SearchMap({
   }, [location]);
 
   return (
-    <ReactMapGL
-      reuseMaps
-      className="search-map"
-      dragRotate={false}
-      height="100%"
-      /*
-       * Pointer event callbacks will only query the features under the pointer
-       * of `interactiveLayerIds` layers. The getCursor callback will receive
-       * `isHovering:true` when hover over features of these layers.
-       *
-       * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
-       */
-      interactiveLayerIds={[
-        clusterLayer.id,
-        unclusteredPointLayer.id,
-        communityNotesLayer.id,
-        communityNotesClusterLayer.id,
-      ]}
-      location={[
-        persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
-        persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
-      ]}
-      mapboxApiAccessToken={MAPBOX_TOKEN}
-      mapStyle={mapStyle}
-      onClick={onClickMap}
-      onHover={onHover}
-      onInteractionStateChange={onInteractionStateChange}
-      onMouseLeave={clearPreviouslyHoveredState}
-      onViewportChange={onViewPortChange}
-      ref={mapRef}
-      touchRotate={false}
-      {...viewport}
-      width={
-        '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
-      }
-    >
-      {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
-      <MapScaleControl />
-      <MapNavigationControl />
-      {showMapStyles && (
-        <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
-      )}
-      <Source
-        buffer={512}
-        cluster
-        clusterMaxZoom={CLUSTER_MAX_ZOOM}
-        clusterMinPoints={3}
-        clusterRadius={50}
-        data={offers}
-        id={SOURCE_OFFERS}
-        promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
-        ref={sourceRef}
-        type="geojson"
+    <>
+      <ReactMapGL
+        reuseMaps
+        className="search-map"
+        dragRotate={false}
+        height="100%"
+        /*
+         * Pointer event callbacks will only query the features under the pointer
+         * of `interactiveLayerIds` layers. The getCursor callback will receive
+         * `isHovering:true` when hover over features of these layers.
+         *
+         * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
+         */
+        interactiveLayerIds={[
+          clusterLayer.id,
+          unclusteredPointLayer.id,
+          communityNotesLayer.id,
+          communityNotesClusterLayer.id,
+        ]}
+        location={[
+          persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
+          persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
+        ]}
+        mapboxApiAccessToken={MAPBOX_TOKEN}
+        mapStyle={mapStyle}
+        onClick={onClickMap}
+        onHover={onHover}
+        onInteractionStateChange={onInteractionStateChange}
+        onMouseLeave={clearPreviouslyHoveredState}
+        onViewportChange={onViewPortChange}
+        ref={mapRef}
+        touchRotate={false}
+        {...viewport}
+        width={
+          '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
+        }
       >
-        <Layer {...clusterLayer} />
-        {/* OSM and Mapbox use different fonts for cluster numbers */}
-        {mapStyle === MAP_STYLE_OSM ? (
-          <Layer {...clusterCountLayerOSM} />
-        ) : (
-          <Layer {...clusterCountLayerMapbox} />
+        {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
+        <MapScaleControl />
+        <MapNavigationControl />
+        {showMapStyles && (
+          <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
         )}
-        <Layer {...unclusteredPointLayer} />
-      </Source>
-      {communityNotesEnabled && (
         <Source
-          id={SOURCE_COMMUNITY_NOTES}
-          type="geojson"
-          data={communityNotes}
+          buffer={512}
           cluster
-          clusterMaxZoom={14}
+          clusterMaxZoom={CLUSTER_MAX_ZOOM}
+          clusterMinPoints={3}
           clusterRadius={50}
-          promoteId="id"
+          data={offers}
+          id={SOURCE_OFFERS}
+          promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
+          ref={sourceRef}
+          type="geojson"
         >
-          <Layer {...communityNotesClusterLayer} />
-          <Layer {...communityNotesClusterCountLayer} />
-          <Layer {...communityNotesLayer} />
+          <Layer {...clusterLayer} />
+          {/* OSM and Mapbox use different fonts for cluster numbers */}
+          {mapStyle === MAP_STYLE_OSM ? (
+            <Layer {...clusterCountLayerOSM} />
+          ) : (
+            <Layer {...clusterCountLayerMapbox} />
+          )}
+          <Layer {...unclusteredPointLayer} />
         </Source>
-      )}
-    </ReactMapGL>
+        {communityNotesEnabled && (
+          <Source
+            id={SOURCE_COMMUNITY_NOTES}
+            type="geojson"
+            data={communityNotes}
+            cluster
+            clusterMaxZoom={14}
+            clusterRadius={50}
+            promoteId="id"
+          >
+            <Layer {...communityNotesClusterLayer} />
+            <Layer {...communityNotesClusterCountLayer} />
+            <Layer {...communityNotesLayer} />
+          </Source>
+        )}
+        {selectedNote && (
+          <Popup
+            longitude={selectedNote.geometry.coordinates[0]}
+            latitude={selectedNote.geometry.coordinates[1]}
+            closeOnClick={false}
+            onClose={() => setSelectedNote(null)}
+          >
+            <CommunityNotesPopup
+              content={selectedNote.properties.content}
+              pubkey={selectedNote.properties.pubkey}
+              createdAt={selectedNote.properties.created_at}
+              verified={selectedNote.properties.verified}
+              username={selectedNoteUsername}
+              onActionGate={() => setShowActionGateModal(true)}
+            />
+          </Popup>
+        )}
+      </ReactMapGL>
+      <NostrootsActionModal
+        isOpen={showActionGateModal}
+        onClose={() => setShowActionGateModal(false)}
+      />
+    </>
   );
 }
 
