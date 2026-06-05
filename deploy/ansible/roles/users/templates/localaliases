@@ -1,4 +1,0 @@
-alias sudo='sudo '
-alias ez='nano +118 ~/.aliases && source ~/.bashrc'
-alias sctl='systemctl'
-
