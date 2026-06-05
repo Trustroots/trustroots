@@ -9,3 +9,67 @@
   padding-top: 10px;
   padding-bottom: 10px;
 }
+
+// Nostroots Action-Gate Modal
+.nostroots-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: @zindex-modal;
+}
+
+.nostroots-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.nostroots-modal-title {
+  margin: 0 0 8px;
+  font-size: @font-size-large;
+}
+
+.nostroots-modal-body {
+  font-size: @font-size-base;
+  color: @gray;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.nostroots-modal-actions {
+  margin-bottom: 16px;
+
+  .btn {
+    display: block;
+    width: 100%;
+  }
+}
+
+.nostroots-modal-note {
+  font-size: @font-size-small;
+  color: @gray-light;
+  line-height: 1.5;
+}
+
+.nostroots-modal-dismiss {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: @gray-light;
+  font-size: 13px;
+  cursor: pointer;
+
+  &:hover {
+    color: @gray;
+  }
+}
