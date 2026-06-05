@@ -96,23 +96,35 @@ function createUser(overrides = {}) {
  * up authentication state without driving the multi-step signup UI. Returns the
  * created user payload.
  */
-async function registerViaApi(request, user) {
-  const response = await request.post('/api/auth/signup', {
-    data: {
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username,
-      email: user.email,
-      password: user.password,
-    },
-  });
+async function registerViaApi(request, user, { attempts = 3 } = {}) {
+  let lastDetail = 'no attempts made';
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const response = await request.post('/api/auth/signup', {
+      data: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
+        email: user.email,
+        password: user.password,
+      },
+    });
+
+    if (response.ok()) {
+      return response.json();
+    }
+
+    lastDetail = `${response.status()}: ${await response.text()}`;
+
+    if (attempt < attempts) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
 
   expect(
-    response.ok(),
-    `Signup API responded with ${response.status()}: ${await response.text()}`,
+    null,
+    `Signup API never succeeded. Last response ${lastDetail}`,
   ).toBeTruthy();
-
-  return response.json();
 }
 
 /**

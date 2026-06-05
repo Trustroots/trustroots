@@ -70,9 +70,10 @@ test.describe('authenticated member flows', () => {
     await page.goto(`/profile/${user.username}`);
 
     await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
-    await expect(
-      page.getByText(`${user.firstName} ${user.lastName}`).first(),
-    ).toBeVisible();
+    await expect(page).toHaveTitle(/Profile - Trustroots/);
+    await expect(page.locator('h2.profile-name')).toHaveText(
+      `${user.firstName} ${user.lastName}`,
+    );
   });
 
   test('member can view a seeded host profile', async ({ page }) => {

@@ -475,6 +475,38 @@ function renderHeader(metric, isBaseline = false) {
   )}</th>`;
 }
 
+function capitalizeMetric(metric) {
+  return metric.charAt(0).toUpperCase() + metric.slice(1);
+}
+
+function renderSuiteTableHead() {
+  const groupHeaders = metrics
+    .map((metric, index) => {
+      const e2eMetric = e2eMetrics[index];
+      const label = `${capitalizeMetric(metric)} / ${e2eMetricLabels[e2eMetric]}`;
+      const helpText = `${metricHelp[metric] || metric} End-to-end: ${e2eMetricHelp[e2eMetric]}`;
+      return `<th colspan="2">${renderHelpLabel(label, helpText)}</th>`;
+    })
+    .join('');
+  const subHeaders = metrics
+    .map(() => '<th class="subhead">Current</th><th class="subhead">Baseline</th>')
+    .join('');
+
+  return `
+    <tr>
+      <th rowspan="2">${renderHelpLabel('Suite', metricHelp.suite)}</th>
+      <th rowspan="2">Status</th>
+      <th rowspan="2">${renderHelpLabel(
+        'Recorded',
+        'When this suite last produced the results shown in the row.',
+      )}</th>
+      ${groupHeaders}
+      <th rowspan="2">Report</th>
+    </tr>
+    <tr>${subHeaders}</tr>
+  `;
+}
+
 function metricHelpText(metric, isBaseline = false) {
   const metricDescription = metricHelp[metric] || metric;
 
@@ -541,7 +573,7 @@ function renderReportShell(metadata, initialLanes) {
         line-height: 1.45;
       }
       main {
-        max-width: 1080px;
+        max-width: 1240px;
         margin: 0 auto;
         padding: 40px 24px;
       }
@@ -608,19 +640,93 @@ function renderReportShell(metadata, initialLanes) {
       }
       th,
       td {
-        padding: 12px;
+        padding: 8px 10px;
         border-bottom: 1px solid var(--border);
         text-align: right;
         white-space: nowrap;
+        vertical-align: middle;
       }
       th:first-child,
-      td:first-child {
+      td:first-child,
+      th:nth-child(2),
+      td:nth-child(2),
+      th:nth-child(3),
+      td:nth-child(3) {
         text-align: left;
       }
       thead th {
         color: var(--muted);
-        font-size: 13px;
+        font-size: 12px;
         text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+      thead th.subhead {
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .suite-table .suite-name {
+        font-weight: 700;
+      }
+      .suite-table .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border: 1px solid transparent;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1.3;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+      .suite-table .status-badge.pass {
+        color: var(--pass);
+        background: var(--pass-bg);
+        border-color: #b8ddc4;
+      }
+      .suite-table .status-badge.fail {
+        color: var(--fail);
+        background: var(--fail-bg);
+        border-color: #e4b7ae;
+      }
+      .suite-table .status-badge.warn {
+        color: var(--warn);
+        background: var(--warn-bg);
+        border-color: #e6c86f;
+      }
+      .suite-table .status-badge.skip {
+        color: var(--skip);
+        background: var(--skip-bg);
+        border-color: #cfd5db;
+      }
+      .suite-table .suite-note {
+        display: block;
+        margin-top: 2px;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 400;
+        line-height: 1.2;
+        text-transform: none;
+        letter-spacing: 0;
+        white-space: nowrap;
+      }
+      .suite-table .report-link {
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .suite-table .report-link:hover {
+        text-decoration: underline;
+      }
+      .suite-table .metric-value {
+        font-variant-numeric: tabular-nums;
+      }
+      .suite-table .metric-value.pass {
+        color: var(--pass);
+        font-weight: 700;
+      }
+      .suite-table .metric-value.fail {
+        color: var(--fail);
+        font-weight: 700;
       }
       .help-label {
         position: relative;
@@ -708,8 +814,9 @@ function renderReportShell(metadata, initialLanes) {
         color: var(--muted);
       }
       .delta {
-        display: block;
-        font-size: 12px;
+        display: inline;
+        margin-left: 4px;
+        font-size: 11px;
         font-weight: 600;
       }
       .delta.pass {
@@ -772,60 +879,16 @@ function renderReportShell(metadata, initialLanes) {
 
       <section>
         <div class="table-wrap">
-          <table>
+          <table class="suite-table">
             <thead>
-              <tr>
-                <th>${renderHelpLabel('Suite', metricHelp.suite)}</th>
-                ${metrics
-                  .map(
-                    metric =>
-                      `${renderHeader(metric)}${renderHeader(metric, true)}`,
-                  )
-                  .join('')}
-              </tr>
+              ${renderSuiteTableHead()}
             </thead>
-            <tbody id="coverage-body"></tbody>
+            <tbody id="suite-body"></tbody>
           </table>
         </div>
       </section>
 
-      <section>
-        <div class="section-body">
-          <strong>Test reports</strong>
-          <p>Recorded non-coverage test suite results.</p>
-        </div>
-        <div class="table-wrap">
-          <table class="test-report-table">
-            <thead>
-              <tr>
-                <th>Test suite</th>
-                <th>Status</th>
-                <th>Details</th>
-                <th>Report</th>
-              </tr>
-            </thead>
-            <tbody id="test-report-body"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="e2e-metrics-section" hidden>
-        <div class="section-body">
-          <strong>End-to-end metrics</strong>
-          <p>Playwright test counts and pass rate compared to the checked-in baseline.</p>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Metric</th>
-                <th>Current</th>
-                <th>Baseline</th>
-              </tr>
-            </thead>
-            <tbody id="e2e-metrics-body"></tbody>
-          </table>
-        </div>
+      <section id="e2e-area-section" hidden>
         <div class="section-body" id="e2e-area-metrics"></div>
       </section>
 
@@ -848,7 +911,7 @@ function renderReportShell(metadata, initialLanes) {
           </div>
           <div>
             <strong>Generated</strong>
-            ${escapeHtml(metadata.generatedAt)}
+            ${escapeHtml(metadata.generatedAtDisplay)}
           </div>
           <div>
             <strong>Workflow</strong>
@@ -914,6 +977,33 @@ function renderReportShell(metadata, initialLanes) {
         return minutes + 'm ' + seconds + 's';
       }
 
+      function formatDatetime(isoString) {
+        if (!isoString) {
+          return 'n/a';
+        }
+
+        var date = new Date(isoString);
+        if (Number.isNaN(date.getTime())) {
+          return String(isoString);
+        }
+
+        function pad(value) {
+          return String(value).padStart(2, '0');
+        }
+
+        return (
+          date.getUTCFullYear() +
+          '-' +
+          pad(date.getUTCMonth() + 1) +
+          '-' +
+          pad(date.getUTCDate()) +
+          ' ' +
+          pad(date.getUTCHours()) +
+          ':' +
+          pad(date.getUTCMinutes())
+        );
+      }
+
       function formatE2eMetricValue(metric, value) {
         if (typeof value !== 'number') {
           return 'n/a';
@@ -924,6 +1014,65 @@ function renderReportShell(metadata, initialLanes) {
         }
 
         return String(value);
+      }
+
+      function renderSuiteNameCell(lane) {
+        var title = lane.description
+          ? ' title="' + escapeHtml(lane.description) + '"'
+          : '';
+        return '<span class="suite-name"' + title + '>' + escapeHtml(lane.label) + '</span>';
+      }
+
+      function renderStatusCell(lane) {
+        var html =
+          '<span class="status-badge ' +
+          statusClass(lane.status) +
+          '">' +
+          escapeHtml(statusLabel(lane.status)) +
+          '</span>';
+
+        if (lane.stale) {
+          html += '<span class="suite-note">Previous run</span>';
+        } else if (lane.previousStatus) {
+          html +=
+            '<span class="suite-note">Was ' +
+            escapeHtml(statusLabel(lane.previousStatus)) +
+            '</span>';
+        }
+
+        return html;
+      }
+
+      function renderReportCell(lane) {
+        if (!lane.localReportHref) {
+          return '<span class="suite-note">—</span>';
+        }
+
+        return (
+          '<a class="report-link" href="' +
+          escapeHtml(lane.localReportHref) +
+          '">HTML</a>'
+        );
+      }
+
+      function renderMetricValue(className, current, delta, deltaClass) {
+        var html =
+          '<span class="metric-value ' +
+          className +
+          '">' +
+          escapeHtml(current) +
+          '</span>';
+
+        if (delta) {
+          html +=
+            '<span class="delta ' +
+            deltaClass +
+            '">' +
+            escapeHtml(delta) +
+            '</span>';
+        }
+
+        return html;
       }
 
       function skippedLane(config, message) {
@@ -1035,87 +1184,85 @@ function renderReportShell(metadata, initialLanes) {
             var className = values.passed ? 'pass' : 'fail';
             var deltaClass = values.delta >= 0 ? 'pass' : 'fail';
             return (
-              '<td class="' + className + '">' +
-                escapeHtml(formatPercent(values.current)) +
-                '<span class="delta ' + deltaClass + '">' +
-                  escapeHtml(formatDelta(values.delta)) +
-                '</span>' +
+              '<td>' +
+                renderMetricValue(
+                  className,
+                  formatPercent(values.current),
+                  formatDelta(values.delta),
+                  deltaClass,
+                ) +
               '</td>' +
-              '<td class="baseline">' + escapeHtml(formatPercent(values.baseline)) + '</td>'
+              '<td class="baseline metric-value">' +
+                escapeHtml(formatPercent(values.baseline)) +
+              '</td>'
             );
           })
           .join('');
       }
 
-      function renderCoverageTable(lanes) {
-        var rows = lanes
-          .filter(function (lane) {
-            return lane.kind === 'coverage';
-          })
-          .map(function (lane) {
+      function renderE2eMetricCells(lane) {
+        if (!lane.e2eMetrics || !lane.e2eMetrics.values) {
+          return (
+            '<td class="missing" colspan="' +
+            e2eMetrics.length * 2 +
+            '">' +
+            escapeHtml(lane.message) +
+            '</td>'
+          );
+        }
+
+        return e2eMetrics
+          .map(function (metric) {
+            var values = lane.e2eMetrics.values[metric] || {};
+            var className = values.passed ? 'pass' : 'fail';
+            var deltaClass =
+              typeof values.delta === 'number' && values.delta >= 0 ? 'pass' : 'fail';
             return (
-            '<tr>' +
-                '<td>' +
-                  '<strong>' + escapeHtml(lane.label) + '</strong>' +
-                  (lane.stale ? '<span class="subtle">Showing previous run</span>' : '') +
-                '</td>' +
-                renderMetricCells(lane) +
-              '</tr>'
+              '<td>' +
+                renderMetricValue(
+                  className,
+                  formatE2eMetricValue(metric, values.current),
+                  typeof values.delta === 'number' ? formatDelta(values.delta) : '',
+                  deltaClass,
+                ) +
+              '</td>' +
+              '<td class="baseline metric-value">' +
+                escapeHtml(formatE2eMetricValue(metric, values.baseline)) +
+              '</td>'
             );
           })
           .join('');
-        document.getElementById('coverage-body').innerHTML = rows;
       }
 
-      function renderTestReports(lanes) {
+      function renderSuiteTable(lanes) {
         var rows = lanes
-          .filter(function (lane) {
-            return lane.kind === 'test';
-          })
           .map(function (lane) {
-            var report = lane.localReportHref
-              ? '<a href="' + escapeHtml(lane.localReportHref) + '">Open HTML report</a>'
-              : '<span class="subtle">' + escapeHtml(lane.command) + '</span>';
+            var metricCells =
+              lane.kind === 'coverage'
+                ? renderMetricCells(lane)
+                : renderE2eMetricCells(lane);
+
             return (
               '<tr>' +
-                '<td>' +
-                  '<strong>' + escapeHtml(lane.label) + '</strong>' +
-                  '<span class="subtle">' + escapeHtml(lane.description || '') + '</span>' +
+                '<td>' + renderSuiteNameCell(lane) + '</td>' +
+                '<td>' + renderStatusCell(lane) + '</td>' +
+                '<td class="baseline metric-value">' +
+                  escapeHtml(formatDatetime(lane.generatedAt)) +
                 '</td>' +
-                '<td class="' + statusClass(lane.status) + '">' +
-                  escapeHtml(statusLabel(lane.status)) +
-                  (lane.previousStatus
-                    ? '<span class="subtle">Previous: ' +
-                        escapeHtml(statusLabel(lane.previousStatus)) +
-                      '</span>'
-                    : '') +
-                '</td>' +
-                '<td>' +
-                  escapeHtml(lane.message) +
-                  (lane.e2eMetrics
-                    ? '<span class="subtle">Duration ' +
-                        escapeHtml(formatDuration(lane.e2eMetrics.durationMs)) +
-                        (lane.e2eMetrics.areas.length
-                          ? ' · Areas: ' + escapeHtml(lane.e2eMetrics.areas.join(', '))
-                          : '') +
-                      '</span>'
-                    : '') +
-                  '<span class="subtle">Recorded ' + escapeHtml(lane.generatedAt) + '</span>' +
-                '</td>' +
-                '<td>' + report + '</td>' +
+                metricCells +
+                '<td>' + renderReportCell(lane) + '</td>' +
               '</tr>'
             );
           })
           .join('');
-        document.getElementById('test-report-body').innerHTML = rows;
+        document.getElementById('suite-body').innerHTML = rows;
       }
 
-      function renderE2eMetrics(lanes) {
+      function renderE2eAreaMetrics(lanes) {
         var lane = lanes.find(function (item) {
           return item.name === 'e2e';
         });
-        var section = document.getElementById('e2e-metrics-section');
-        var body = document.getElementById('e2e-metrics-body');
+        var section = document.getElementById('e2e-area-section');
         var areaMetrics = document.getElementById('e2e-area-metrics');
 
         if (!lane || !lane.e2eMetrics || lane.status === 'skipped') {
@@ -1124,34 +1271,6 @@ function renderReportShell(metadata, initialLanes) {
         }
 
         section.hidden = false;
-        body.innerHTML = e2eMetrics
-          .map(function (metric) {
-            var values = lane.e2eMetrics.values[metric] || {};
-            var className = values.passed ? 'pass' : 'fail';
-            var deltaClass =
-              typeof values.delta === 'number' && values.delta >= 0 ? 'pass' : 'fail';
-            return (
-              '<tr>' +
-                '<td><strong>' + escapeHtml(e2eMetricLabels[metric] || metric) + '</strong></td>' +
-                '<td class="' + className + '">' +
-                  escapeHtml(formatE2eMetricValue(metric, values.current)) +
-                  (typeof values.delta === 'number'
-                    ? '<span class="delta ' + deltaClass + '">' +
-                        escapeHtml(formatDelta(values.delta)) +
-                      '</span>'
-                    : '') +
-                '</td>' +
-                '<td class="baseline">' +
-                  escapeHtml(formatE2eMetricValue(metric, values.baseline)) +
-                '</td>' +
-              '</tr>'
-            );
-          })
-          .join('') +
-          '<tr>' +
-            '<td><strong>Duration</strong></td>' +
-            '<td colspan="2">' + escapeHtml(formatDuration(lane.e2eMetrics.durationMs)) + '</td>' +
-          '</tr>';
 
         var areaRows = Object.keys(lane.e2eMetrics.byArea || {})
           .filter(function (area) {
@@ -1177,7 +1296,13 @@ function renderReportShell(metadata, initialLanes) {
         }
 
         areaMetrics.innerHTML =
-          '<strong>Coverage by area</strong>' +
+          '<strong>End-to-end coverage by area</strong>' +
+          '<p class="subtle">Duration ' +
+          escapeHtml(formatDuration(lane.e2eMetrics.durationMs)) +
+          (lane.e2eMetrics.areas.length
+            ? ' · Areas: ' + escapeHtml(lane.e2eMetrics.areas.join(', '))
+            : '') +
+          '</p>' +
           '<div class="table-wrap">' +
             '<table class="test-report-table">' +
               '<thead><tr><th>Area</th><th>Passed</th><th>Failed</th><th>Total</th></tr></thead>' +
@@ -1187,7 +1312,7 @@ function renderReportShell(metadata, initialLanes) {
       }
 
       function failedMetrics(lanes) {
-        return lanes
+        var coverageFailures = lanes
           .filter(function (lane) {
             return lane.kind === 'coverage' && lane.status !== 'skipped' && lane.metrics;
           })
@@ -1201,9 +1326,33 @@ function renderReportShell(metadata, initialLanes) {
                   lane: lane,
                   metric: metric,
                   values: lane.metrics[metric],
+                  formatValue: formatPercent,
                 };
               });
           });
+        var e2eFailures = lanes
+          .filter(function (lane) {
+            return lane.name === 'e2e' && lane.status !== 'skipped' && lane.e2eMetrics;
+          })
+          .flatMap(function (lane) {
+            return e2eMetrics
+              .filter(function (metric) {
+                var values = lane.e2eMetrics.values[metric];
+                return values && !values.passed;
+              })
+              .map(function (metric) {
+                return {
+                  lane: lane,
+                  metric: e2eMetricLabels[metric] || metric,
+                  values: lane.e2eMetrics.values[metric],
+                  formatValue: function (value) {
+                    return formatE2eMetricValue(metric, value);
+                  },
+                };
+              });
+          });
+
+        return coverageFailures.concat(e2eFailures);
       }
 
       function overallStatus(lanes) {
@@ -1270,9 +1419,9 @@ function renderReportShell(metadata, initialLanes) {
               ' ' +
               failure.metric +
               ' is ' +
-              formatPercent(failure.values.current) +
+              failure.formatValue(failure.values.current) +
               ', below baseline ' +
-              formatPercent(failure.values.baseline) +
+              failure.formatValue(failure.values.baseline) +
               ' by ' +
               formatDelta(failure.values.delta) +
               ' points.',
@@ -1372,9 +1521,8 @@ function renderReportShell(metadata, initialLanes) {
       async function renderReport() {
         var lanes = await Promise.all(suiteConfig.map(loadLane));
         renderOverallStatus(lanes);
-        renderCoverageTable(lanes);
-        renderTestReports(lanes);
-        renderE2eMetrics(lanes);
+        renderSuiteTable(lanes);
+        renderE2eAreaMetrics(lanes);
         renderStatusDetails(lanes);
         renderDetailedReports(lanes);
       }
