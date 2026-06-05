@@ -4,6 +4,8 @@ module.exports = {
     '^modules/(.*)$': '<rootDir>/modules/$1',
     '^nostr-tools/relay$':
       '<rootDir>/node_modules/nostr-tools/lib/cjs/relay.js',
+    '^nostr-tools/nip19$':
+      '<rootDir>/node_modules/nostr-tools/lib/cjs/nip19.js',
     '^.+\\.(css|jpg|png|gif|webp|svg|less)$':
       '<rootDir>/jest/jest.empty-module.js',
   },
