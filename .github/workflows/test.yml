@@ -15,76 +15,54 @@ jobs:
   client:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build test image
+        uses: docker/build-push-action@v6
         with:
-          node-version: 14
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.node-gyp
-            ~/.npm
-          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-node-
-            ${{ runner.OS }}-
-      - name: Reconfigure git to use HTTP authentication
-        run: >
-          git config --global url."https://github.com/".insteadOf
-          ssh://git@github.com/
-      - name: Install dependencies
-        run: npm ci
+          context: .
+          file: deploy/docker/test.Dockerfile
+          tags: trustroots-test:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
       - name: Test client with coverage
-        run: npm run test:coverage:client
+        env:
+          TRUSTROOTS_TEST_IMAGE: trustroots-test:ci
+          TRUSTROOTS_TEST_SKIP_BUILD: 1
+        run: ./scripts/docker/test-client.sh
       - name: Upload client coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-client
           path: coverage/client
-      - name: Check client coverage
-        run: npm run coverage:check -- --scope=client
 
   server:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Use MongoDB
-        uses: supercharge/mongodb-github-action@1.6.0
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build test image
+        uses: docker/build-push-action@v6
         with:
-          mongodb-version: '4.4'
-      - name: Install graphicsmagick
-        run: sudo apt-get install -y graphicsmagick
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.node-gyp
-            ~/.npm
-          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-node-
-            ${{ runner.OS }}-
-      - name: Reconfigure git to use HTTP authentication
-        run: >
-          git config --global url."https://github.com/".insteadOf
-          ssh://git@github.com/
-      - name: Install dependencies
-        run: npm ci
+          context: .
+          file: deploy/docker/test.Dockerfile
+          tags: trustroots-test:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
       - name: Test server with coverage
-        run: npm run test:coverage:server
+        env:
+          TRUSTROOTS_TEST_IMAGE: trustroots-test:ci
+          TRUSTROOTS_TEST_SKIP_BUILD: 1
+        run: ./scripts/docker/test-server.sh
       - name: Upload server coverage report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-server
           path: coverage/server
-      - name: Check server coverage
-        run: npm run coverage:check -- --scope=server
 
   e2e:
     if: >
@@ -93,44 +71,23 @@ jobs:
         contains(github.event.pull_request.labels.*.name, 'run-e2e'))
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Use MongoDB
-        uses: supercharge/mongodb-github-action@1.6.0
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build test image
+        uses: docker/build-push-action@v6
         with:
-          mongodb-version: '4.4'
-      - name: Install graphicsmagick
-        run: sudo apt-get install -y graphicsmagick
-      - name: Use Node.js
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.node-gyp
-            ~/.npm
-          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-node-
-            ${{ runner.OS }}-
-      - name: Reconfigure git to use HTTP authentication
-        run: >
-          git config --global url."https://github.com/".insteadOf
-          ssh://git@github.com/
-      - name: Install dependencies
-        run: npm ci
-      - name: Cache Playwright browser
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-chromium-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+          context: .
+          file: deploy/docker/test.Dockerfile
+          tags: trustroots-test:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
       - name: Test end-to-end smoke suite
-        run: npm run test:e2e
+        env:
+          TRUSTROOTS_TEST_IMAGE: trustroots-test:ci
+          TRUSTROOTS_TEST_SKIP_BUILD: 1
+        run: ./scripts/docker/test-e2e.sh
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -156,7 +113,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Download client coverage report
         uses: actions/download-artifact@v4
         with:
