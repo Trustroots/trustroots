@@ -18,9 +18,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 16
           cache: npm
@@ -37,13 +37,16 @@ jobs:
         run: npm run lint:report
         # Continue to the next step even if this fails
         continue-on-error: true
-      - name: Annotate Code Linting Results
-        uses: ataylorme/eslint-annotate-action@1.2.0
+      - name: Run ESLint with reviewdog
+        uses: reviewdog/action-eslint@v1.34.0
         with:
-          repo-token: '${{ secrets.GITHUB_TOKEN }}'
-          report-json: 'eslint_report.json'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-check
+          filter_mode: file # annotate all issues in changed files (mirrors old only-pr-files)
+          fail_level: error # fail the check on ESLint errors (warnings still reported)
+          eslint_flags: '.'
       - name: Upload ESLint report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: eslint_report.json
           path: eslint_report.json
