@@ -68,4 +68,35 @@ describe('trEditor directive', function () {
     expect(ngModelCtrl.editor).toBeTruthy();
     expect(typeof ngModelCtrl.editor.subscribe).toBe('function');
   });
+
+  it('correctly identifies empty values for HTML and plain text', function () {
+    const { element } = compile();
+    const ngModel = element.controller('ngModel');
+
+    expect(ngModel.$isEmpty('<span>   <br/> </span>')).toBe(true);
+    expect(ngModel.$isEmpty('')).toBe(true);
+    expect(ngModel.$isEmpty('   ')).toBe(true);
+    expect(ngModel.$isEmpty('<p>hello</p>')).toBe(false);
+    expect(ngModel.$isEmpty(' hello ')).toBe(false);
+    expect(ngModel.$isEmpty('hello')).toBe(false);
+    expect(ngModel.$isEmpty('   hello   ')).toBe(false);
+    expect(ngModel.$isEmpty(null)).toBe(true);
+    expect(ngModel.$isEmpty(undefined)).toBe(true);
+  });
+
+  it('updates placeholder extension during render if extension exists', function () {
+    const { element } = compile();
+    const ngModel = element.controller('ngModel');
+    const placeholder = {
+      updatePlaceholder: jasmine.createSpy('placeholder.updatePlaceholder'),
+    };
+
+    spyOn(
+      element.controller('ngModel').editor,
+      'getExtensionByName',
+    ).and.returnValue(placeholder);
+    ngModel.$render();
+
+    expect(placeholder.updatePlaceholder).toHaveBeenCalledWith(element[0]);
+  });
 });

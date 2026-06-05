@@ -114,4 +114,23 @@ describe('RemoveProfileController', function () {
       timeout: 10000,
     });
   });
+
+  it('uses fallback error message when resend confirmation returns no message', function () {
+    removeProfilePromise = () => $q.resolve();
+    resendProfilePromise = () => $q.reject({});
+
+    const vm = createController();
+    $rootScope.$apply();
+
+    vm.resendConfirmation();
+    $rootScope.$apply();
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Something went wrong while initializing profile removal, try again.',
+      {
+        timeout: 10000,
+      },
+    );
+  });
 });

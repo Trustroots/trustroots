@@ -85,13 +85,15 @@ function trEditorDirective($parse) {
       };
 
       ngModel.$isEmpty = function (value) {
-        if (/[<>]/.test(value)) {
-          return toInnerText(value).length === 0;
-        } else if (value) {
-          return value.length === 0;
-        } else {
+        if (value === null || value === undefined) {
           return true;
         }
+
+        if (/[<>]/.test(value)) {
+          return toInnerText(value).length === 0;
+        }
+
+        return String(value).trim().length === 0;
       };
 
       ngModel.editor.subscribe('editableInput', function (event, editable) {
