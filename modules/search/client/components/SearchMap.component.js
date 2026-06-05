@@ -46,11 +46,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 
 const olc = new OpenLocationCode();
 
-const nostrService = new NostrService(
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'ws://localhost:7000'
-    : 'wss://relay.trustroots.org',
-);
+const nostrService = new NostrService('wss://relay.trustroots.org');
 
 function boundsToPluscCodePrefixes(bounds) {
   const sw = bounds.getSouthWest();

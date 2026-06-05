@@ -3,11 +3,7 @@ import PropTypes from 'prop-types';
 import NostrService from '@/modules/search/client/services/nostr.client.service';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 
-const nostrService = new NostrService(
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'ws://localhost:7000'
-    : 'wss://relay.trustroots.org',
-);
+const nostrService = new NostrService('wss://relay.trustroots.org');
 
 /**
  * Convert a Unix timestamp to a relative time string.
