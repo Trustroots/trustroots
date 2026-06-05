@@ -2,17 +2,30 @@ name: trustroots-devcontainer
 
 services:
   dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
     init: true
     shm_size: '2gb'
     # Devcontainer keeps the editor container available; start the app manually.
     command: ['sleep', 'infinity']
-    ports: !override
+    volumes:
+      # Mount the repo so edits are picked up live.
+      - ../:/home/app/trustroots
+      # Named volume keeps the image's linux-correct node_modules, shadowing
+      # whatever is on the host. Seeded from the image on first creation.
+      - node_modules:/home/app/trustroots/node_modules
+    depends_on:
+      - mongodb
+      - maildev
+    ports:
       - '127.0.0.1:${TRUSTROOTS_DEV_WEBPACK_HOST_PORT:-13000}:3000'
       - '127.0.0.1:${TRUSTROOTS_DEV_SERVER_HOST_PORT:-13001}:3001'
       - '127.0.0.1:${TRUSTROOTS_DEV_LIVERELOAD_HOST_PORT:-45729}:35729'
       - '127.0.0.1:${TRUSTROOTS_DEV_SERVER_INSPECTOR_HOST_PORT:-15858}:5858'
       - '127.0.0.1:${TRUSTROOTS_DEV_WORKER_INSPECTOR_HOST_PORT:-15859}:5859'
     environment:
+      - NODE_ENV=development
       - TRUSTROOTS_NODE_INSPECT_HOST=0.0.0.0
       - DB_1_PORT_27017_TCP_ADDR=mongodb
       - TRUSTROOTS_SKIP_LOCAL_CONFIG=true
@@ -22,10 +35,18 @@ services:
       - TRUSTROOTS_CODEX_MONGO_URI=mongodb://mongodb:27017/trustroots-test
 
   maildev:
-    ports: !override
+    image: soulteary/maildev
+    ports:
       - '127.0.0.1:${TRUSTROOTS_DEV_MAILDEV_HOST_PORT:-11080}:1080'
 
   mongodb:
+    image: mongo:4.4
     container_name: trustroots-devcontainer-db
-    ports: !override
+    volumes:
+      - mongodb:/data/db
+    ports:
       - '127.0.0.1:${TRUSTROOTS_DEV_MONGODB_HOST_PORT:-37017}:27017'
+
+volumes:
+  mongodb:
+  node_modules:

@@ -1,9 +1,6 @@
 {
   "name": "Trustroots",
-  "dockerComposeFile": [
-    "../deploy/docker/docker-compose.yml",
-    "docker-compose.yml"
-  ],
+  "dockerComposeFile": ["docker-compose.yml"],
   "service": "dev",
   "workspaceFolder": "/home/app/trustroots",
   "shutdownAction": "stopCompose",

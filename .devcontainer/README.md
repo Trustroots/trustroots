@@ -1,8 +1,8 @@
 # Dev Container
 
-Linux development and test environment for Trustroots. Reuses
-[`deploy/docker/dev.Dockerfile`](../deploy/docker/dev.Dockerfile) and
-[`deploy/docker/docker-compose.yml`](../deploy/docker/docker-compose.yml).
+Linux development and test environment for Trustroots. Builds the `dev` service
+from [`Dockerfile`](Dockerfile) and defines only the development support
+services needed by the devcontainer.
 
 Open the repository with **Dev Containers: Reopen in Container**. The container
 runs `npm run check-environment`, which creates `config/env/local.js` and upload
