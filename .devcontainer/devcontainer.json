@@ -1,0 +1,52 @@
+{
+  "name": "Trustroots",
+  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"],
+  "service": "trustroots",
+  "workspaceFolder": "/trustroots",
+  "shutdownAction": "stopCompose",
+  "overrideCommand": true,
+  "postCreateCommand": "npm ci --quiet && npm run check-environment",
+  "postStartCommand": "npm run check-environment",
+  "portsAttributes": {
+    "3000": {
+      "label": "Webpack dev server",
+      "onAutoForward": "ignore"
+    },
+    "3001": {
+      "label": "Express API/server",
+      "onAutoForward": "ignore"
+    },
+    "1080": {
+      "label": "MailDev web UI",
+      "onAutoForward": "ignore"
+    },
+    "27017": {
+      "label": "MongoDB",
+      "onAutoForward": "ignore"
+    },
+    "35729": {
+      "label": "LiveReload",
+      "onAutoForward": "ignore"
+    },
+    "5858": {
+      "label": "Node server inspector",
+      "onAutoForward": "ignore"
+    },
+    "5859": {
+      "label": "Node worker inspector",
+      "onAutoForward": "ignore"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "settings": {
+        "eslint.workingDirectories": [
+          {
+            "mode": "auto"
+          }
+        ]
+      }
+    }
+  }
+}
