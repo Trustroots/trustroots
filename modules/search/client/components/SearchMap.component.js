@@ -1,7 +1,7 @@
 // External dependencies
 import { useDebouncedCallback } from 'use-debounce';
 import PropTypes from 'prop-types';
-import React, { createRef, useEffect, useState } from 'react';
+import React, { createRef, useEffect, useRef, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
   Layer,
@@ -31,7 +31,74 @@ import {
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
+import NostrService from '../services/nostr.client.service';
+import {
+  SOURCE_COMMUNITY_NOTES,
+  communityNotesLayer,
+  communityNotesClusterLayer,
+  communityNotesClusterCountLayer,
+} from './community-notes-layers';
+import { OpenLocationCode } from 'open-location-code';
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+const olc = new OpenLocationCode();
+
+const nostrService = new NostrService(
+  typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'ws://localhost:7000'
+    : 'wss://relay.trustroots.org',
+);
+
+function boundsToPluscCodePrefixes(bounds) {
+  const sw = bounds.getSouthWest();
+  const ne = bounds.getNorthEast();
+  const prefixes = new Set();
+  const latStep = (ne.lat - sw.lat) / 4;
+  const lngStep = (ne.lng - sw.lng) / 4;
+  for (let lat = sw.lat; lat <= ne.lat; lat += latStep || 1) {
+    for (let lng = sw.lng; lng <= ne.lng; lng += lngStep || 1) {
+      const code = olc.encode(lat, lng);
+      prefixes.add(code.substring(0, 4));
+    }
+  }
+  return Array.from(prefixes);
+}
+
+function nostrEventsToGeoJSON(events) {
+  const features = events
+    .map(event => {
+      const plusCodeTag = event.tags.find(
+        t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+      );
+      if (!plusCodeTag) return null;
+      const code = plusCodeTag[1];
+      let area;
+      try {
+        area = olc.decode(code);
+      } catch {
+        return null;
+      }
+      return {
+        type: 'Feature',
+        id: event.id,
+        geometry: {
+          type: 'Point',
+          coordinates: [area.longitudeCenter, area.latitudeCenter],
+        },
+        properties: {
+          id: event.id,
+          content: event.content,
+          pubkey: event.pubkey,
+          created_at: event.created_at,
+          verified: event.kind === 30398,
+          kind: event.kind,
+          tags: JSON.stringify(event.tags),
+        },
+      };
+    })
+    .filter(Boolean);
+  return { type: 'FeatureCollection', features };
+}
 
 export default function SearchMap({
   filters,
@@ -71,6 +138,14 @@ export default function SearchMap({
     features: [],
     type: 'FeatureCollection',
   });
+  const [communityNotes, setCommunityNotes] = useState({
+    type: 'FeatureCollection',
+    features: [],
+  });
+  const communityNotesTimerRef = useRef(null);
+
+  const parsedFilters = filters ? JSON.parse(filters) : {};
+  const communityNotesEnabled = parsedFilters.communityNotes || false;
   const MAPBOX_TOKEN = getMapBoxToken();
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles = !!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production';
@@ -172,6 +247,36 @@ export default function SearchMap({
   );
 
   /**
+   * Re-subscribe to community notes for the current map bounds
+   */
+  const updateCommunityNotes = () => {
+    if (!communityNotesEnabled) return;
+    const mapInstance = getMapRef();
+    if (!mapInstance) return;
+    const bounds = mapInstance.getBounds();
+    const prefixes = boundsToPluscCodePrefixes(bounds);
+    const events = [];
+    nostrService.subscribeMapNotes(prefixes, event => {
+      events.push(event);
+      clearTimeout(communityNotesTimerRef.current);
+      communityNotesTimerRef.current = setTimeout(() => {
+        setCommunityNotes(nostrEventsToGeoJSON([...events]));
+      }, 200);
+    });
+  };
+
+  const [debouncedUpdateCommunityNotes] = useDebouncedCallback(
+    updateCommunityNotes,
+    300,
+    { maxWait: 2000 },
+  );
+
+  const onInteractionStateChange = (...args) => {
+    debouncedUpdateOffers(...args);
+    debouncedUpdateCommunityNotes(...args);
+  };
+
+  /**
    * Update state for a feature on the map
    */
   const updateFeatureState = (feature, newState) => {
@@ -241,7 +346,8 @@ export default function SearchMap({
     // - feature doesn't have ID for some reason, or
     // - we're just hovering previously hovered feature
     if (
-      feature.layer.id !== unclusteredPointLayer.id ||
+      (feature.layer.id !== unclusteredPointLayer.id &&
+        feature.layer.id !== communityNotesLayer.id) ||
       !feature.id ||
       feature.id === hoveredOffer?.id
     ) {
@@ -314,6 +420,28 @@ export default function SearchMap({
     }
 
     const layerId = features[0]?.layer?.id;
+
+    // Community notes click
+    if (layerId === communityNotesLayer.id) {
+      // Selected note will be handled by Task 5 (popup component)
+      return;
+    }
+
+    // Community notes cluster click — zoom in
+    if (layerId === communityNotesClusterLayer.id) {
+      const feature = features[0];
+      if (feature?.geometry?.coordinates) {
+        setViewport({
+          ...viewport,
+          latitude: feature.geometry.coordinates[1],
+          longitude: feature.geometry.coordinates[0],
+          zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
+          transitionDuration: 'auto',
+          transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
+        });
+      }
+      return;
+    }
 
     switch (layerId) {
       // Hosting or meeting offer
@@ -398,6 +526,36 @@ export default function SearchMap({
     updateOffers();
   }, [filters]);
 
+  // Subscribe/unsubscribe to community notes based on toggle
+  useEffect(() => {
+    if (!communityNotesEnabled) {
+      setCommunityNotes({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    function subscribeToNotes() {
+      const mapInstance = getMapRef();
+      if (!mapInstance) return;
+      const mapBounds = mapInstance.getBounds();
+      const prefixes = boundsToPluscCodePrefixes(mapBounds);
+      const events = [];
+      nostrService.subscribeMapNotes(prefixes, event => {
+        events.push(event);
+        clearTimeout(communityNotesTimerRef.current);
+        communityNotesTimerRef.current = setTimeout(() => {
+          setCommunityNotes(nostrEventsToGeoJSON([...events]));
+        }, 200);
+      });
+    }
+
+    subscribeToNotes();
+
+    return () => {
+      nostrService.disconnect();
+      clearTimeout(communityNotesTimerRef.current);
+    };
+  }, [communityNotesEnabled]);
+
   // Apply externally changed location object
   // Changed by Angular controller when loading offer via URL
   useEffect(() => {
@@ -424,7 +582,12 @@ export default function SearchMap({
        *
        * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
        */
-      interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
+      interactiveLayerIds={[
+        clusterLayer.id,
+        unclusteredPointLayer.id,
+        communityNotesLayer.id,
+        communityNotesClusterLayer.id,
+      ]}
       location={[
         persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
         persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
@@ -433,7 +596,7 @@ export default function SearchMap({
       mapStyle={mapStyle}
       onClick={onClickMap}
       onHover={onHover}
-      onInteractionStateChange={debouncedUpdateOffers}
+      onInteractionStateChange={onInteractionStateChange}
       onMouseLeave={clearPreviouslyHoveredState}
       onViewportChange={onViewPortChange}
       ref={mapRef}
@@ -470,6 +633,21 @@ export default function SearchMap({
         )}
         <Layer {...unclusteredPointLayer} />
       </Source>
+      {communityNotesEnabled && (
+        <Source
+          id={SOURCE_COMMUNITY_NOTES}
+          type="geojson"
+          data={communityNotes}
+          cluster
+          clusterMaxZoom={14}
+          clusterRadius={50}
+          promoteId="id"
+        >
+          <Layer {...communityNotesClusterLayer} />
+          <Layer {...communityNotesClusterCountLayer} />
+          <Layer {...communityNotesLayer} />
+        </Source>
+      )}
     </ReactMapGL>
   );
 }
