@@ -18,7 +18,7 @@ function timeAgo(timestamp) {
  * Sidebar panel showing a thread of community notes for a plus code location.
  * Displayed when a community note pin is clicked on the map.
  */
-export default function CommunityNotesSidebar({ notes, plusCode, onClose }) {
+export default function CommunityNotesSidebar({ notes, plusCode }) {
   const [showModal, setShowModal] = useState(false);
   const [usernames, setUsernames] = useState({});
 
@@ -100,5 +100,4 @@ export default function CommunityNotesSidebar({ notes, plusCode, onClose }) {
 CommunityNotesSidebar.propTypes = {
   notes: PropTypes.array,
   plusCode: PropTypes.string,
-  onClose: PropTypes.func,
 };
