@@ -35,7 +35,9 @@ function SearchController(
   vm.openSearchPlaceInput = openSearchPlaceInput;
   vm.onLanguageFiltersChange = onLanguageFiltersChange;
   vm.onSeenFilterChange = onSeenFilterChange;
+  vm.onCommunityNotesToggle = onCommunityNotesToggle;
   vm.onlineInPast6Months = vm.filters.seen && vm.filters.seen.months === 6;
+  vm.communityNotesEnabled = FiltersService.get('communityNotes') || false;
   vm.sidebarTab = 'filters';
 
   // Visibility toggle for search place input on small screens
@@ -153,6 +155,14 @@ function SearchController(
 
       onFiltersUpdated();
     });
+  }
+
+  /**
+   * Fired for changes at community notes toggle
+   */
+  function onCommunityNotesToggle() {
+    FiltersService.set('communityNotes', vm.communityNotesEnabled);
+    onFiltersUpdated();
   }
 
   /**
