@@ -5,13 +5,11 @@ import React, { createRef, useEffect, useRef, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
   Layer,
-  Popup,
   Source,
   WebMercatorViewport,
 } from 'react-map-gl';
 
 // Internal dependencies
-import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import {
   MAP_STYLE_DEFAULT,
@@ -34,7 +32,6 @@ import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import NostrService from '../services/nostr.client.service';
-import CommunityNotesPopup from './CommunityNotesPopup.component';
 import {
   SOURCE_COMMUNITY_NOTES,
   communityNotesLayer,
@@ -48,20 +45,68 @@ const olc = new OpenLocationCode();
 
 const nostrService = new NostrService('wss://relay.trustroots.org');
 
+function getPlusCodeFromRawEvent(event) {
+  const tag = event.tags.find(
+    t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+  );
+  return tag ? tag[1] : null;
+}
+
+function getPlusCodeFromEvent(properties) {
+  const tags =
+    typeof properties.tags === 'string'
+      ? JSON.parse(properties.tags)
+      : properties.tags;
+  const tag = tags.find(
+    t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+  );
+  return tag ? tag[1] : null;
+}
+
+function reconstructEvent(properties) {
+  return {
+    id: properties.id,
+    content: properties.content,
+    pubkey: properties.pubkey,
+    created_at: properties.created_at,
+    kind: properties.kind,
+    tags:
+      typeof properties.tags === 'string'
+        ? JSON.parse(properties.tags)
+        : properties.tags,
+  };
+}
+
 function nostrEventsToGeoJSON(events) {
+  // eslint-disable-next-line no-console
+  console.log('[Nostr] Converting %d events to GeoJSON', events.length);
   const features = events
     .map(event => {
       const plusCodeTag = event.tags.find(
         t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
       );
-      if (!plusCodeTag) return null;
+      if (!plusCodeTag) {
+        // eslint-disable-next-line no-console
+        console.warn('[Nostr] Event %s has no plus code tag', event.id);
+        return null;
+      }
       const code = plusCodeTag[1];
       let area;
       try {
         area = olc.decode(code);
-      } catch {
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[Nostr] Failed to decode plus code %s:', code, e);
         return null;
       }
+      // eslint-disable-next-line no-console
+      console.log(
+        '[Nostr] Event %s: pluscode=%s → [%f, %f]',
+        event.id?.substring(0, 8),
+        code,
+        area.longitudeCenter,
+        area.latitudeCenter,
+      );
       return {
         type: 'Feature',
         id: event.id,
@@ -81,6 +126,8 @@ function nostrEventsToGeoJSON(events) {
       };
     })
     .filter(Boolean);
+  // eslint-disable-next-line no-console
+  console.log('[Nostr] GeoJSON: %d features created', features.length);
   return { type: 'FeatureCollection', features };
 }
 
@@ -91,6 +138,7 @@ export default function SearchMap({
   locationBounds: bounds,
   onOfferClose,
   onOfferOpen,
+  onCommunityNoteOpen,
 }) {
   /**
    * Store map location in browser cache
@@ -126,10 +174,8 @@ export default function SearchMap({
     type: 'FeatureCollection',
     features: [],
   });
-  const [selectedNote, setSelectedNote] = useState(null);
-  const [selectedNoteUsername, setSelectedNoteUsername] = useState(null);
-  const [showActionGateModal, setShowActionGateModal] = useState(false);
   const communityNotesTimerRef = useRef(null);
+  const communityNotesEventsRef = useRef([]);
 
   const parsedFilters = filters ? JSON.parse(filters) : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
@@ -378,16 +424,26 @@ export default function SearchMap({
 
     const layerId = features[0]?.layer?.id;
 
-    // Community notes click
+    // Community notes click — open thread in sidebar
     if (layerId === communityNotesLayer.id) {
       const feature = features[0];
-      setSelectedNote(feature);
-      setSelectedNoteUsername(null);
-      nostrService
-        .resolveNpubToUsername(feature.properties.pubkey)
-        .then(name => {
-          setSelectedNoteUsername(name);
+      const clickedPlusCode = getPlusCodeFromEvent(feature.properties);
+
+      // Find all notes sharing the same plus code (the "thread")
+      const threadNotes = communityNotesEventsRef.current.filter(event => {
+        const eventPlusCode = getPlusCodeFromRawEvent(event);
+        return eventPlusCode && eventPlusCode === clickedPlusCode;
+      });
+
+      if (onCommunityNoteOpen) {
+        onCommunityNoteOpen({
+          notes:
+            threadNotes.length > 0
+              ? threadNotes
+              : [reconstructEvent(feature.properties)],
+          plusCode: clickedPlusCode,
         });
+      }
       return;
     }
 
@@ -497,12 +553,14 @@ export default function SearchMap({
       return;
     }
 
-    const events = [];
+    communityNotesEventsRef.current = [];
     nostrService.subscribeMapNotes(event => {
-      events.push(event);
+      communityNotesEventsRef.current.push(event);
       clearTimeout(communityNotesTimerRef.current);
       communityNotesTimerRef.current = setTimeout(() => {
-        setCommunityNotes(nostrEventsToGeoJSON([...events]));
+        setCommunityNotes(
+          nostrEventsToGeoJSON([...communityNotesEventsRef.current]),
+        );
       }, 200);
     });
 
@@ -606,28 +664,7 @@ export default function SearchMap({
             <Layer {...communityNotesLayer} />
           </Source>
         )}
-        {selectedNote && (
-          <Popup
-            longitude={selectedNote.geometry.coordinates[0]}
-            latitude={selectedNote.geometry.coordinates[1]}
-            closeOnClick={false}
-            onClose={() => setSelectedNote(null)}
-          >
-            <CommunityNotesPopup
-              content={selectedNote.properties.content}
-              pubkey={selectedNote.properties.pubkey}
-              createdAt={selectedNote.properties.created_at}
-              verified={selectedNote.properties.verified}
-              username={selectedNoteUsername}
-              onActionGate={() => setShowActionGateModal(true)}
-            />
-          </Popup>
-        )}
       </ReactMapGL>
-      <NostrootsActionModal
-        isOpen={showActionGateModal}
-        onClose={() => setShowActionGateModal(false)}
-      />
     </>
   );
 }
@@ -639,4 +676,5 @@ SearchMap.propTypes = {
   locationBounds: PropTypes.object,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
+  onCommunityNoteOpen: PropTypes.func,
 };

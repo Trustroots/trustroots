@@ -84,12 +84,17 @@ export default class NostrService {
       {
         onevent: event => {
           eventCount++;
+          const plusCodeTag = event.tags.find(
+            t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+          );
           // eslint-disable-next-line no-console
           console.log(
-            '[Nostr] Map note received (#%d): kind=%d, content=%s',
+            '[Nostr] Map note received (#%d): kind=%d, pluscode=%s, content=%s, tags=%o',
             eventCount,
             event.kind,
+            plusCodeTag ? plusCodeTag[1] : 'NONE',
             event.content?.substring(0, 80),
+            event.tags,
           );
           onEvent(event);
         },
