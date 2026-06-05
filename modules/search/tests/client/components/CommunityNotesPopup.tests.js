@@ -27,8 +27,7 @@ describe('CommunityNotesPopup', () => {
 
   it('shows verified indicator when verified=true', () => {
     render(<CommunityNotesPopup {...BASE_PROPS} verified={true} />);
-    expect(screen.getByText(/verified/i)).toBeInTheDocument();
-    expect(screen.getByText('✓')).toBeInTheDocument();
+    expect(screen.getByText(/✓ verified/)).toBeInTheDocument();
   });
 
   it('does not show verified indicator when verified=false', () => {
@@ -54,10 +53,10 @@ describe('CommunityNotesPopup', () => {
     expect(screen.getByText(/via Nostroots/i)).toBeInTheDocument();
   });
 
-  it('calls onActionGate when "Reply on Nostroots" is clicked', () => {
+  it('calls onActionGate when "Reply" is clicked', () => {
     render(<CommunityNotesPopup {...BASE_PROPS} />);
     const replyBtn = screen.getByRole('button', {
-      name: /reply on nostroots/i,
+      name: /reply/i,
     });
     fireEvent.click(replyBtn);
     expect(BASE_PROPS.onActionGate).toHaveBeenCalledTimes(1);

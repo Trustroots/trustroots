@@ -12,21 +12,37 @@ describe('NostrootsActionModal', () => {
     const { getByText } = render(
       <NostrootsActionModal isOpen={true} onClose={onClose} />,
     );
-    expect(getByText('Continue on Nostroots')).toBeInTheDocument();
+    expect(getByText('Get Nostroots')).toBeInTheDocument();
   });
 
   it('does not render when isOpen is false', () => {
     const { queryByText } = render(
       <NostrootsActionModal isOpen={false} onClose={onClose} />,
     );
-    expect(queryByText('Continue on Nostroots')).not.toBeInTheDocument();
+    expect(queryByText('Get Nostroots')).not.toBeInTheDocument();
   });
 
-  it('shows web app link pointing to https://nos.trustroots.org', () => {
+  it('shows iOS and Android app links', () => {
     const { getByText } = render(
       <NostrootsActionModal isOpen={true} onClose={onClose} />,
     );
-    const link = getByText('Open Nostroots Web App');
+    const iosLink = getByText('Join TestFlight for iOS');
+    expect(iosLink).toHaveAttribute(
+      'href',
+      'https://testflight.apple.com/join/n5WGu8Hu',
+    );
+    const androidLink = getByText('Download for Android');
+    expect(androidLink).toHaveAttribute(
+      'href',
+      'https://github.com/Trustroots/nostroots/releases',
+    );
+  });
+
+  it('shows web app link', () => {
+    const { getByText } = render(
+      <NostrootsActionModal isOpen={true} onClose={onClose} />,
+    );
+    const link = getByText('Open web app');
     expect(link).toHaveAttribute('href', 'https://nos.trustroots.org');
   });
 
@@ -51,7 +67,7 @@ describe('NostrootsActionModal', () => {
       <NostrootsActionModal isOpen={true} onClose={onClose} />,
     );
     expect(
-      getByText('Your Trustroots account works on Nostroots.'),
+      getByText(/Your Trustroots account works on Nostroots/),
     ).toBeInTheDocument();
   });
 });

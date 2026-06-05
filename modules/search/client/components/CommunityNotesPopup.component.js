@@ -50,52 +50,39 @@ export default function CommunityNotesPopup({
   const authorLabel = username || truncatePubkey(pubkey);
 
   return (
-    <div className="community-notes-popup">
-      {/* Header */}
-      <div className="community-notes-popup__header">
-        <span className="community-notes-popup__author">
+    <div className="community-note-popup">
+      <div className="community-note-popup-header">
+        <span className="community-note-author">
           {profilePath ? (
             <a href={profilePath}>{authorLabel}</a>
           ) : (
             <span>{authorLabel}</span>
           )}
+          <span className="community-note-meta">
+            {' \u00b7 '}
+            {timeAgo(createdAt)}
+            {' \u00b7 via Nostroots'}
+          </span>
         </span>
-        <span className="community-notes-popup__timestamp">
-          {' · '}
-          {timeAgo(createdAt)}
-        </span>
-        <span className="community-notes-popup__attribution">
-          {' · via Nostroots'}
-        </span>
+        {verified && (
+          <span className="community-note-verified">{'✓ verified'}</span>
+        )}
       </div>
 
-      {/* Verified indicator */}
-      {verified && (
-        <div className="community-notes-popup__verified">
-          <span className="community-notes-popup__verified-icon">✓</span>
-          <span className="community-notes-popup__verified-label">
-            {' '}
-            verified
-          </span>
-        </div>
-      )}
+      <p className="community-note-popup-content">{content}</p>
 
-      {/* Note content */}
-      <p className="community-notes-popup__content">{content}</p>
-
-      {/* Actions */}
-      <div className="community-notes-popup__actions">
+      <div className="community-note-popup-actions">
         {profilePath && (
-          <a href={profilePath} className="community-notes-popup__action-link">
+          <a href={profilePath} className="community-note-popup-action">
             View profile
           </a>
         )}
         <button
-          className="community-notes-popup__action-link community-notes-popup__reply-btn"
+          className="community-note-popup-action community-note-popup-reply"
           onClick={onActionGate}
           type="button"
         >
-          Reply on Nostroots →
+          Reply &rarr;
         </button>
       </div>
     </div>

@@ -60,21 +60,23 @@ export default function ProfileNostrBadge({ npubHex }) {
   if (!loading && notes.length === 0) return null;
 
   return (
-    <div className="profile-nostr-badge">
-      <span>Nostroots</span>
+    <div>
+      <span className="profile-nostr-badge">Nostroots</span>
 
       {notes.length > 0 && (
-        <div>
+        <div className="profile-nostr-notes">
           <h4 className="profile-nostr-notes-title">Recent community notes</h4>
           {notes.map(note => (
             <div key={note.id} className="profile-nostr-note">
-              <p>{note.content}</p>
-              <small>{timeAgo(note.created_at)}</small>
+              <p className="profile-nostr-note-content">{note.content}</p>
+              <small className="profile-nostr-note-meta text-muted">
+                {timeAgo(note.created_at)}
+              </small>
             </div>
           ))}
           <button
             type="button"
-            className="btn btn-link"
+            className="profile-nostr-notes-more"
             onClick={() => setModalOpen(true)}
           >
             See all notes on Nostroots &rarr;

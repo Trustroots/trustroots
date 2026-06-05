@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
 /**
@@ -7,6 +7,26 @@ import PropTypes from 'prop-types';
  * Nostroots web app or dismiss.
  */
 export default function NostrootsActionModal({ isOpen, onClose }) {
+  const ctaRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Focus the CTA when the modal opens
+    if (ctaRef.current) {
+      ctaRef.current.focus();
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) {
     return null;
   }
@@ -24,32 +44,51 @@ export default function NostrootsActionModal({ isOpen, onClose }) {
         aria-modal="true"
         aria-labelledby="nostroots-modal-title"
       >
+        <button
+          className="nostroots-modal-close"
+          onClick={onClose}
+          type="button"
+          aria-label="Close"
+        >
+          &times;
+        </button>
+
         <h2 className="nostroots-modal-title" id="nostroots-modal-title">
-          Continue on Nostroots
+          Get Nostroots
         </h2>
 
-        <div className="nostroots-modal-body">
-          <p>
-            Nostroots is the community-powered companion to Trustroots. Post
-            travel tips, share local knowledge, and connect with travelers — all
-            on a decentralized network where you own your data.
-          </p>
-        </div>
+        <p className="nostroots-modal-body">
+          Post notes on a map, share travel tips, and connect with travelers.
+          Your Trustroots account works on Nostroots.
+        </p>
 
         <div className="nostroots-modal-actions">
+          <a
+            ref={ctaRef}
+            href="https://testflight.apple.com/join/n5WGu8Hu"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary btn-block nostroots-modal-btn"
+          >
+            Join TestFlight for iOS
+          </a>
+          <a
+            href="https://github.com/Trustroots/nostroots/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-primary btn-block nostroots-modal-btn"
+          >
+            Download for Android
+          </a>
           <a
             href="https://nos.trustroots.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-primary btn-block"
+            className="btn btn-default btn-block nostroots-modal-btn"
           >
-            Open Nostroots Web App
+            Open web app
           </a>
         </div>
-
-        <p className="nostroots-modal-note">
-          Your Trustroots account works on Nostroots.
-        </p>
 
         <button
           className="nostroots-modal-dismiss"
