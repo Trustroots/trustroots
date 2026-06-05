@@ -599,8 +599,9 @@ export default function SearchMap({
         interactiveLayerIds={[
           clusterLayer.id,
           unclusteredPointLayer.id,
-          communityNotesLayer.id,
-          communityNotesClusterLayer.id,
+          ...(communityNotesEnabled
+            ? [communityNotesLayer.id, communityNotesClusterLayer.id]
+            : []),
         ]}
         location={[
           persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
