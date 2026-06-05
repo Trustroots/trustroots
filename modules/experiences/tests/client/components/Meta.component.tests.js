@@ -22,7 +22,12 @@ describe('<Meta />', () => {
   });
 
   it('renders a negative recommend label', () => {
-    render(<Meta recommend="no" interactions={{ host: true }} />);
+    render(
+      <Meta
+        recommend="no"
+        interactions={{ guest: false, host: true, met: false }}
+      />,
+    );
 
     expect(screen.getByText('Not recommend')).toBeInTheDocument();
     expect(screen.getByText('Host')).toBeInTheDocument();
@@ -30,9 +35,27 @@ describe('<Meta />', () => {
 
   it('renders nothing when there are no labels', () => {
     const { container } = render(
-      <Meta recommend="unknown" interactions={{}} />,
+      <Meta
+        recommend="unknown"
+        interactions={{ guest: false, host: false, met: false }}
+      />,
     );
 
     expect(container.querySelectorAll('.label')).toHaveLength(0);
+  });
+
+  it('omits labels for unknown recommendation with false interactions', () => {
+    render(
+      <Meta
+        recommend="unknown"
+        interactions={{ guest: false, host: false, met: false }}
+      />,
+    );
+
+    expect(screen.queryByText('Recommend')).not.toBeInTheDocument();
+    expect(screen.queryByText('Not recommend')).not.toBeInTheDocument();
+    expect(screen.queryByText('Guest')).not.toBeInTheDocument();
+    expect(screen.queryByText('Host')).not.toBeInTheDocument();
+    expect(screen.queryByText('Met in person')).not.toBeInTheDocument();
   });
 });

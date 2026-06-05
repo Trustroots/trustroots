@@ -153,7 +153,7 @@ module.exports = webpackMerge.merge(shims, {
     ],
   },
   plugins: compact([
-    new ESLintPlugin(),
+    !process.env.TRUSTROOTS_WEBPACK_SKIP_ESLINT && new ESLintPlugin(),
     config.bundleAnalyzer.enabled &&
       new BundleAnalyzerPlugin(config.bundleAnalyzer.options),
     isProduction &&

@@ -17,9 +17,11 @@ afterEach(() => {
 
 describe('<ReferenceThread />', () => {
   it('renders an existing reference answer', async () => {
+    const created = new Date('2020-01-01T00:00:00.000Z');
+
     get.mockResolvedValueOnce({
       reference: 'yes',
-      created: '2020-01-01T00:00:00.000Z',
+      created,
     });
 
     render(<ReferenceThread userToId="user-1" />);
@@ -67,5 +69,32 @@ describe('<ReferenceThread />', () => {
 
     await waitFor(() => expect(send).toHaveBeenCalledWith('yes', 'user-1'));
     expect(await screen.findByText('Change')).toBeInTheDocument();
+  });
+
+  it('returns to the question if sending the answer fails', async () => {
+    get.mockRejectedValueOnce({
+      response: { status: 404, data: { allowCreatingReference: true } },
+    });
+    send.mockRejectedValueOnce(new Error('network error'));
+
+    render(<ReferenceThread userToId="user-1" />);
+
+    const yesButton = await screen.findByRole('button', { name: 'Yes' });
+    fireEvent.click(yesButton);
+
+    await waitFor(() => expect(send).toHaveBeenCalledWith('yes', 'user-1'));
+    expect(
+      await screen.findByRole('button', { name: 'Yes' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'No' })).toBeInTheDocument();
+  });
+
+  it('hides component when loading fails with non-404 errors', async () => {
+    get.mockRejectedValueOnce({ response: { status: 500, data: {} } });
+
+    const { container } = render(<ReferenceThread userToId="user-1" />);
+
+    await waitFor(() => expect(get).toHaveBeenCalledWith('user-1'));
+    expect(container).toBeEmptyDOMElement();
   });
 });

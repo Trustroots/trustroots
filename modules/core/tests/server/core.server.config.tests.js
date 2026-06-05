@@ -22,8 +22,7 @@ let credentials;
 
 describe('Configuration Tests:', function () {
   describe('Exposing authenticated user to pages', function () {
-    beforeEach(function (done) {
-      // Get application
+    before(function (done) {
       app = express.init(mongoose.connection);
       agent = request.agent(app);
       done();

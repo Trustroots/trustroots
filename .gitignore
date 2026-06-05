@@ -92,3 +92,4 @@ trustroots.tar.gz*
 # End-to-end test output
 /playwright-report/
 /test-results/
+/tests/e2e/.auth/

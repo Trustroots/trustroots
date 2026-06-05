@@ -10,8 +10,10 @@ import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
 
+const mockGetRouteParams = jest.fn();
+
 jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  getRouteParams: () => ({}),
+  getRouteParams: () => mockGetRouteParams(),
 }));
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
@@ -56,12 +58,13 @@ describe('getSignupUrl', () => {
 describe('<Home />', () => {
   it('renders the intro and join button for logged-out visitors', async () => {
     circlesAPI.read.mockResolvedValueOnce([]);
+    mockGetRouteParams.mockReturnValue({});
 
     render(<Home user={null} />);
 
-    expect(screen.getByText('How does it work?')).toBeInTheDocument();
+    expect(await screen.findByText('How does it work?')).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Join Trustroots now' }),
+      await screen.findByRole('link', { name: 'Join Trustroots now' }),
     ).toHaveAttribute('href', '/signup');
   });
 
@@ -69,10 +72,61 @@ describe('<Home />', () => {
     circlesAPI.read.mockResolvedValueOnce([
       { _id: 'c1', slug: 'hitchhikers', label: 'Hitchhikers' },
     ]);
+    mockGetRouteParams.mockReturnValue({});
 
-    render(<Home user={{ _id: 'me' }} />);
+    render(
+      <Home
+        user={{
+          _id: 'me',
+          username: 'me',
+          displayName: 'Current User',
+        }}
+      />,
+    );
 
     expect(await screen.findByText('Hitchhikers')).toBeInTheDocument();
     expect(circlesAPI.read).toHaveBeenCalledWith({ limit: 3 });
+  });
+
+  it('prepends a circle from route params when missing from first response', async () => {
+    circlesAPI.read.mockResolvedValueOnce([
+      { _id: 'c1', slug: 'mountainbiking', label: 'Mountain Bikers' },
+    ]);
+    circlesAPI.get.mockResolvedValueOnce({
+      _id: 'c2',
+      slug: 'hitchhikers',
+      label: 'Hitchhikers',
+    });
+    mockGetRouteParams.mockReturnValue({ circle: 'hitchhikers' });
+
+    render(<Home user={null} photoCredits={{}} />);
+
+    expect(
+      await screen.findByRole('link', { name: 'Hitchhikers' }),
+    ).toBeInTheDocument();
+    expect(circlesAPI.get).toHaveBeenCalledWith('hitchhikers');
+    expect(
+      await screen.findByRole('link', { name: 'Join Trustroots now' }),
+    ).toHaveAttribute('href', '/signup?tribe=hitchhikers');
+  });
+
+  it('does not show the top join link for logged-in users', async () => {
+    circlesAPI.read.mockResolvedValueOnce([]);
+    mockGetRouteParams.mockReturnValue({});
+
+    render(
+      <Home
+        user={{
+          _id: 'me',
+          username: 'me',
+          displayName: 'Current User',
+        }}
+      />,
+    );
+
+    expect(await screen.findByText('How does it work?')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Join Trustroots now' }),
+    ).not.toBeInTheDocument();
   });
 });

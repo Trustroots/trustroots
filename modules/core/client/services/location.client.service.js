@@ -6,7 +6,7 @@ import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 angular.module('core').factory('LocationService', LocationService);
 
 /* @ngInject */
-function LocationService($log, $http, SettingsFactory) {
+function LocationService($log, $http, SettingsFactory, $q) {
   const appSettings = SettingsFactory.get();
 
   const service = {
@@ -58,7 +58,7 @@ function LocationService($log, $http, SettingsFactory) {
       !angular.isArray(geolocation.bbox) ||
       geolocation.bbox.length !== 4
     ) {
-      const center = geolocation.center;
+      const center = geolocation && geolocation.center;
       if (
         !geolocation ||
         !center ||
@@ -170,20 +170,25 @@ function LocationService($log, $http, SettingsFactory) {
           ignoreLoadingBar: true,
         },
       )
-      .then(function (response) {
-        if (
-          response.status === 200 &&
-          response.data.features &&
-          response.data.features.length > 0
-        ) {
-          return response.data.features.map(function (geolocation) {
-            geolocation.trTitle = shortTitle(geolocation);
-            return geolocation;
-          });
-        } else {
-          return Promise.resolve([]);
-        }
-      });
+      .then(
+        function (response) {
+          if (
+            response.status === 200 &&
+            response.data.features &&
+            response.data.features.length > 0
+          ) {
+            return response.data.features.map(function (geolocation) {
+              geolocation.trTitle = shortTitle(geolocation);
+              return geolocation;
+            });
+          } else {
+            return $q.when([]);
+          }
+        },
+        function () {
+          return $q.when([]);
+        },
+      );
   }
 
   /**

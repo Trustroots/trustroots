@@ -145,7 +145,7 @@ run_server_tests_with_retry() {
   run_server_tests "$test_file"
 }
 
-if [ "${TRUSTROOTS_CODEX_FULL_SERVER_TESTS:-false}" = "true" ]; then
+if [ "${TRUSTROOTS_CODEX_ISOLATED_SERVER_TESTS:-false}" != "true" ]; then
   run_server_tests ""
 else
   TEST_FILE_LIST="$(mktemp "${TMPDIR:-/tmp}/trustroots-server-tests.XXXXXX")"
@@ -156,7 +156,7 @@ else
     -print | sort >"$TEST_FILE_LIST"
 
   TEST_COUNT="$(wc -l <"$TEST_FILE_LIST" | tr -d ' ')"
-  echo "Running $TEST_COUNT server test files in isolated Codex mode."
+  echo "Running $TEST_COUNT server test files in isolated mode (TRUSTROOTS_CODEX_ISOLATED_SERVER_TESTS=true)."
 
   while IFS= read -r test_file; do
     echo "==> $test_file"

@@ -36,9 +36,7 @@ jobs:
           ssh://git@github.com/
       - name: Install dependencies
         run: npm ci
-      - name: Test client
-        run: npm run test:client
-      - name: Test client coverage
+      - name: Test client with coverage
         run: npm run test:coverage:client
       - name: Upload client coverage report
         uses: actions/upload-artifact@v4
@@ -78,9 +76,7 @@ jobs:
           ssh://git@github.com/
       - name: Install dependencies
         run: npm ci
-      - name: Test server
-        run: npm run test:server
-      - name: Test server coverage
+      - name: Test server with coverage
         run: npm run test:coverage:server
       - name: Upload server coverage report
         uses: actions/upload-artifact@v4
@@ -124,6 +120,13 @@ jobs:
           ssh://git@github.com/
       - name: Install dependencies
         run: npm ci
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-chromium-
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       - name: Test end-to-end smoke suite

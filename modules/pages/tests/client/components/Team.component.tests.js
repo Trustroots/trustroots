@@ -17,6 +17,12 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
   return MockBoard;
 });
 
+const loggedInUser = {
+  _id: 'me',
+  username: 'me',
+  displayName: 'Current User',
+};
+
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -28,7 +34,7 @@ describe('<Team />', () => {
       alumni: [{ _id: 'a1', username: 'bob', firstName: 'Bob' }],
     });
 
-    render(<Team user={{ _id: 'me' }} />);
+    render(<Team user={loggedInUser} />);
 
     expect(await screen.findByRole('link', { name: /Alice/ })).toHaveAttribute(
       'href',
@@ -39,6 +45,32 @@ describe('<Team />', () => {
       '/profile/bob',
     );
     expect(screen.getByText('Trustroots Team')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Alice' })).toHaveAttribute(
+      'src',
+      expect.stringContaining('/api/users/v1/avatar?size=256'),
+    );
+  });
+
+  it('shows loading state while volunteers are being fetched', async () => {
+    let resolveVolunteers;
+    const pending = new Promise(resolve => {
+      resolveVolunteers = resolve;
+    });
+    getVolunteers.mockReturnValueOnce(pending);
+
+    render(<Team user={loggedInUser} />);
+
+    expect(await screen.findByText('Wait a moment…')).toBeInTheDocument();
+
+    resolveVolunteers({
+      volunteers: [{ _id: 'v1', username: 'alice', firstName: 'Alice' }],
+      alumni: [],
+    });
+
+    expect(await screen.findByRole('link', { name: /Alice/ })).toHaveAttribute(
+      'href',
+      '/profile/alice',
+    );
   });
 
   it('shows a join button for logged-out visitors', async () => {

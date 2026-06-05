@@ -8,6 +8,13 @@ const outputDir = path.join(root, 'coverage-report');
 const outputPath = path.join(outputDir, 'index.html');
 const baselinePath = path.join(root, 'coverage-baseline.json');
 const metrics = ['statements', 'branches', 'functions', 'lines'];
+const e2eMetrics = ['total', 'passed', 'failed', 'passRate'];
+const e2eMetricLabels = {
+  total: 'Tests',
+  passed: 'Passed',
+  failed: 'Failed',
+  passRate: 'Pass rate',
+};
 const metricHelp = {
   suite: 'The test suite these coverage numbers came from.',
   statements: 'Executable JavaScript statements that were run by tests.',
@@ -15,6 +22,12 @@ const metricHelp = {
     'Conditional code paths run by tests, such as if/else, ternaries, and switches.',
   functions: 'Functions and methods called by tests.',
   lines: 'Source lines executed by tests.',
+};
+const e2eMetricHelp = {
+  total: 'Number of Playwright tests executed in the latest end-to-end run.',
+  passed: 'Tests that completed successfully.',
+  failed: 'Tests that failed, timed out, or were interrupted.',
+  passRate: 'Percentage of executed tests that passed.',
 };
 const coverageSuites = {
   client: {
@@ -43,7 +56,8 @@ const testSuites = {
     name: 'e2e',
     label: 'End-to-end',
     kind: 'test',
-    description: 'Playwright smoke tests for homepage, signup, and sign-in.',
+    description:
+      'Playwright tests for auth, profiles, circles, messages, admin, Nostr, and public pages.',
     statusPath: path.join(root, 'coverage/e2e/status.json'),
     htmlPath: path.join(root, 'playwright-report/index.html'),
     artifactName: 'playwright-report',
@@ -102,12 +116,38 @@ function getRunUrl() {
   return `${serverUrl}/${repository}/actions/runs/${runId}`;
 }
 
+function formatDatetime(isoString) {
+  if (!isoString) {
+    return 'n/a';
+  }
+
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) {
+    return String(isoString);
+  }
+
+  const pad = value => String(value).padStart(2, '0');
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(
+    date.getUTCDate(),
+  )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+}
+
+function fileGeneratedAt(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return null;
+  }
+
+  return new Date(fs.statSync(filePath).mtimeMs).toISOString();
+}
+
 function getMetadata() {
   const runUrl = getRunUrl();
+  const generatedAt = new Date().toISOString();
   return {
     branch: process.env.GITHUB_REF_NAME || process.env.GITHUB_REF || 'local',
     commit: process.env.GITHUB_SHA || 'local',
-    generatedAt: new Date().toISOString(),
+    generatedAt,
+    generatedAtDisplay: formatDatetime(generatedAt),
     isGitHubActions: process.env.GITHUB_ACTIONS === 'true',
     runUrl,
   };
@@ -117,7 +157,47 @@ function normalizeStatus(status) {
   return statusValues.includes(status) ? status : 'unknown';
 }
 
+function copyDirectoryRecursive(sourceDir, targetDir) {
+  if (!fs.existsSync(sourceDir)) {
+    return false;
+  }
+
+  fs.mkdirSync(targetDir, { recursive: true });
+
+  for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
+    const sourcePath = path.join(sourceDir, entry.name);
+    const targetPath = path.join(targetDir, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirectoryRecursive(sourcePath, targetPath);
+    } else {
+      fs.copyFileSync(sourcePath, targetPath);
+    }
+  }
+
+  return true;
+}
+
+function syncBundledPlaywrightReport() {
+  const sourceDir = path.join(root, 'playwright-report');
+  const targetDir = path.join(outputDir, 'playwright-report');
+
+  if (!fs.existsSync(path.join(sourceDir, 'index.html'))) {
+    return null;
+  }
+
+  copyDirectoryRecursive(sourceDir, targetDir);
+  return path.join(targetDir, 'index.html');
+}
+
 function localReportHref(suite) {
+  if (suite.name === 'e2e') {
+    const bundledReport = path.join(outputDir, 'playwright-report', 'index.html');
+    if (fs.existsSync(bundledReport)) {
+      return relativeHref(bundledReport);
+    }
+  }
+
   return fs.existsSync(suite.htmlPath) ? relativeHref(suite.htmlPath) : null;
 }
 
@@ -191,6 +271,7 @@ function readCoverageLane(suiteName, baseline, metadata) {
   }
 
   const summary = readJson(suite.summaryPath);
+  const status = readStatus(suite);
   const metricValues = metrics.reduce((result, metric) => {
     const current = summary.total[metric].pct;
     const expected = baseline[suiteName] && baseline[suiteName][metric];
@@ -203,6 +284,10 @@ function readCoverageLane(suiteName, baseline, metadata) {
     return result;
   }, {});
   const passed = metrics.every(metric => metricValues[metric].passed);
+  const generatedAt =
+    (status && status.generatedAt) ||
+    fileGeneratedAt(suite.summaryPath) ||
+    metadata.generatedAt;
 
   return {
     ...baseLane(suite, metadata),
@@ -210,11 +295,68 @@ function readCoverageLane(suiteName, baseline, metadata) {
     message: passed
       ? `${suite.label} coverage meets the checked-in baseline.`
       : `${suite.label} coverage is below the checked-in baseline.`,
+    generatedAt,
     metrics: metricValues,
   };
 }
 
-function readTestLane(suiteName, metadata) {
+function buildE2eMetrics(statusMetrics, baseline = {}) {
+  if (!statusMetrics) {
+    return null;
+  }
+
+  const expectedTests = baseline.tests;
+  const expectedPassRate = baseline.passRate;
+  const values = {
+    total: {
+      current: statusMetrics.total,
+      baseline: expectedTests,
+      delta:
+        typeof expectedTests === 'number'
+          ? statusMetrics.total - expectedTests
+          : null,
+      passed:
+        typeof expectedTests !== 'number' || statusMetrics.total >= expectedTests,
+    },
+    passed: {
+      current: statusMetrics.passed,
+      baseline: expectedTests,
+      delta:
+        typeof expectedTests === 'number'
+          ? statusMetrics.passed - expectedTests
+          : null,
+      passed:
+        typeof expectedTests !== 'number' || statusMetrics.passed >= expectedTests,
+    },
+    failed: {
+      current: statusMetrics.failed,
+      baseline: 0,
+      delta: statusMetrics.failed,
+      passed: statusMetrics.failed === 0,
+    },
+    passRate: {
+      current: statusMetrics.passRate,
+      baseline: expectedPassRate,
+      delta:
+        typeof expectedPassRate === 'number'
+          ? statusMetrics.passRate - expectedPassRate
+          : null,
+      passed:
+        typeof expectedPassRate !== 'number' ||
+        statusMetrics.passRate >= expectedPassRate,
+    },
+  };
+
+  return {
+    values,
+    durationMs: statusMetrics.durationMs || 0,
+    areas: (statusMetrics.areas || []).filter(area => area !== 'Setup'),
+    byArea: statusMetrics.byArea || {},
+    passed: e2eMetrics.every(metric => values[metric].passed),
+  };
+}
+
+function readTestLane(suiteName, metadata, baseline) {
   const suite = testSuites[suiteName];
   const lane = baseLane(suite, metadata);
   const status = readStatus(suite);
@@ -235,11 +377,15 @@ function readTestLane(suiteName, metadata) {
     };
   }
 
+  const e2eMetricValues = buildE2eMetrics(status.metrics, baseline.e2e);
+
   return {
     ...lane,
     status: normalizeStatus(status.status),
     message: status.message || 'No status message was recorded.',
     command: status.command || suite.command,
+    generatedAt: status.generatedAt || metadata.generatedAt,
+    e2eMetrics: e2eMetricValues,
   };
 }
 
@@ -248,7 +394,61 @@ function readReportLane(suiteName, baseline, metadata) {
     return readCoverageLane(suiteName, baseline, metadata);
   }
 
-  return readTestLane(suiteName, metadata);
+  return readTestLane(suiteName, metadata, baseline);
+}
+
+function outputJsonPath(suiteName) {
+  return path.join(outputDir, `${suiteName}.json`);
+}
+
+function skippedLaneFromConfig(suiteName, metadata) {
+  const suite = reportSuites[suiteName];
+  return {
+    ...baseLane(suite, metadata),
+    status: 'skipped',
+    message: `${suite.label} was not refreshed for this report run.`,
+    metrics: suite.kind === 'coverage' ? {} : undefined,
+  };
+}
+
+function laneWithConfig(suiteName, lane) {
+  const suite = reportSuites[suiteName];
+  return {
+    name: suite.name,
+    label: suite.label,
+    kind: suite.kind,
+    description: suite.description || '',
+    command: suite.command,
+    artifactName: suite.artifactName,
+    ...lane,
+    localReportHref: localReportHref(suite) || lane.localReportHref || null,
+  };
+}
+
+function staleLaneFromExisting(suiteName, lane, metadata) {
+  const suite = reportSuites[suiteName];
+  const previousStatus = normalizeStatus(lane.status);
+  return {
+    ...laneWithConfig(suiteName, lane),
+    status: 'skipped',
+    previousStatus,
+    stale: true,
+    message: `${suite.label} was not refreshed for this report run; showing the previous ${previousStatus} result.`,
+    reportGeneratedAt: metadata.generatedAt,
+  };
+}
+
+function readInitialLane(suiteName, selectedSuites, baseline, metadata) {
+  if (selectedSuites.includes(suiteName)) {
+    return readReportLane(suiteName, baseline, metadata);
+  }
+
+  const jsonPath = outputJsonPath(suiteName);
+  if (!fs.existsSync(jsonPath)) {
+    return skippedLaneFromConfig(suiteName, metadata);
+  }
+
+  return staleLaneFromExisting(suiteName, readJson(jsonPath), metadata);
 }
 
 function renderHelpLabel(label, helpText) {
@@ -285,7 +485,7 @@ function metricHelpText(metric, isBaseline = false) {
   return `Checked-in minimum for ${metric}. The ratchet fails when current ${metric} coverage drops below this value.`;
 }
 
-function renderReportShell(metadata) {
+function renderReportShell(metadata, initialLanes) {
   const runLink = metadata.runUrl
     ? `<a href="${escapeHtml(metadata.runUrl)}">GitHub Actions run</a>`
     : 'local run';
@@ -609,6 +809,26 @@ function renderReportShell(metadata) {
         </div>
       </section>
 
+      <section id="e2e-metrics-section" hidden>
+        <div class="section-body">
+          <strong>End-to-end metrics</strong>
+          <p>Playwright test counts and pass rate compared to the checked-in baseline.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th>Current</th>
+                <th>Baseline</th>
+              </tr>
+            </thead>
+            <tbody id="e2e-metrics-body"></tbody>
+          </table>
+        </div>
+        <div class="section-body" id="e2e-area-metrics"></div>
+      </section>
+
       <section>
         <div class="section-body">
           <strong>Status details</strong>
@@ -648,7 +868,10 @@ function renderReportShell(metadata) {
     <script>
       var reportMetadata = ${JSON.stringify(metadata)};
       var suiteConfig = ${JSON.stringify(suiteConfig)};
+      var initialLaneData = ${JSON.stringify(initialLanes)};
       var metrics = ${JSON.stringify(metrics)};
+      var e2eMetrics = ${JSON.stringify(e2eMetrics)};
+      var e2eMetricLabels = ${JSON.stringify(e2eMetricLabels)};
 
       function escapeHtml(value) {
         return String(value)
@@ -675,6 +898,34 @@ function renderReportShell(metadata) {
         return (value >= 0 ? '+' : '') + value.toFixed(2);
       }
 
+      function formatDuration(durationMs) {
+        if (typeof durationMs !== 'number' || durationMs <= 0) {
+          return 'n/a';
+        }
+
+        var totalSeconds = Math.round(durationMs / 1000);
+        var minutes = Math.floor(totalSeconds / 60);
+        var seconds = totalSeconds % 60;
+
+        if (minutes === 0) {
+          return seconds + 's';
+        }
+
+        return minutes + 'm ' + seconds + 's';
+      }
+
+      function formatE2eMetricValue(metric, value) {
+        if (typeof value !== 'number') {
+          return 'n/a';
+        }
+
+        if (metric === 'passRate') {
+          return value.toFixed(2) + '%';
+        }
+
+        return String(value);
+      }
+
       function skippedLane(config, message) {
         return {
           name: config.name,
@@ -691,6 +942,45 @@ function renderReportShell(metadata) {
         };
       }
 
+      function staleLane(config, lane, message) {
+        if (!lane) {
+          return skippedLane(config, message);
+        }
+
+        return Object.assign({}, config, lane, {
+          status: 'skipped',
+          previousStatus: lane.previousStatus || lane.status || 'unknown',
+          stale: true,
+          message: message,
+          reportGeneratedAt: reportMetadata.generatedAt,
+        });
+      }
+
+      function normalizeLane(config, lane) {
+        if (!lane) {
+          return skippedLane(
+            config,
+            config.label + ' report data is not available for this report run.',
+          );
+        }
+
+        if (lane.reportGeneratedAt === reportMetadata.generatedAt) {
+          return Object.assign({}, config, lane);
+        }
+
+        if (lane.generatedAt === reportMetadata.generatedAt) {
+          return Object.assign({}, config, lane);
+        }
+
+        return staleLane(
+          config,
+          lane,
+          config.label + ' was not refreshed for this report run; showing the previous ' +
+            statusLabel(lane.previousStatus || lane.status || 'unknown').toLowerCase() +
+            ' result.',
+        );
+      }
+
       async function loadLane(config) {
         try {
           var response = await fetch(config.name + '.json', { cache: 'no-store' });
@@ -699,19 +989,9 @@ function renderReportShell(metadata) {
           }
 
           var lane = await response.json();
-          if (!lane || lane.generatedAt !== reportMetadata.generatedAt) {
-            return skippedLane(
-              config,
-              config.label + ' was not refreshed for this report run.',
-            );
-          }
-
-          return Object.assign({}, config, lane);
+          return normalizeLane(config, lane);
         } catch (error) {
-          return skippedLane(
-            config,
-            config.label + ' report data is not available for this report run.',
-          );
+          return normalizeLane(config, initialLaneData[config.name]);
         }
       }
 
@@ -774,8 +1054,11 @@ function renderReportShell(metadata) {
           })
           .map(function (lane) {
             return (
-              '<tr>' +
-                '<td><strong>' + escapeHtml(lane.label) + '</strong></td>' +
+            '<tr>' +
+                '<td>' +
+                  '<strong>' + escapeHtml(lane.label) + '</strong>' +
+                  (lane.stale ? '<span class="subtle">Showing previous run</span>' : '') +
+                '</td>' +
                 renderMetricCells(lane) +
               '</tr>'
             );
@@ -801,9 +1084,22 @@ function renderReportShell(metadata) {
                 '</td>' +
                 '<td class="' + statusClass(lane.status) + '">' +
                   escapeHtml(statusLabel(lane.status)) +
+                  (lane.previousStatus
+                    ? '<span class="subtle">Previous: ' +
+                        escapeHtml(statusLabel(lane.previousStatus)) +
+                      '</span>'
+                    : '') +
                 '</td>' +
                 '<td>' +
                   escapeHtml(lane.message) +
+                  (lane.e2eMetrics
+                    ? '<span class="subtle">Duration ' +
+                        escapeHtml(formatDuration(lane.e2eMetrics.durationMs)) +
+                        (lane.e2eMetrics.areas.length
+                          ? ' · Areas: ' + escapeHtml(lane.e2eMetrics.areas.join(', '))
+                          : '') +
+                      '</span>'
+                    : '') +
                   '<span class="subtle">Recorded ' + escapeHtml(lane.generatedAt) + '</span>' +
                 '</td>' +
                 '<td>' + report + '</td>' +
@@ -814,10 +1110,86 @@ function renderReportShell(metadata) {
         document.getElementById('test-report-body').innerHTML = rows;
       }
 
+      function renderE2eMetrics(lanes) {
+        var lane = lanes.find(function (item) {
+          return item.name === 'e2e';
+        });
+        var section = document.getElementById('e2e-metrics-section');
+        var body = document.getElementById('e2e-metrics-body');
+        var areaMetrics = document.getElementById('e2e-area-metrics');
+
+        if (!lane || !lane.e2eMetrics || lane.status === 'skipped') {
+          section.hidden = true;
+          return;
+        }
+
+        section.hidden = false;
+        body.innerHTML = e2eMetrics
+          .map(function (metric) {
+            var values = lane.e2eMetrics.values[metric] || {};
+            var className = values.passed ? 'pass' : 'fail';
+            var deltaClass =
+              typeof values.delta === 'number' && values.delta >= 0 ? 'pass' : 'fail';
+            return (
+              '<tr>' +
+                '<td><strong>' + escapeHtml(e2eMetricLabels[metric] || metric) + '</strong></td>' +
+                '<td class="' + className + '">' +
+                  escapeHtml(formatE2eMetricValue(metric, values.current)) +
+                  (typeof values.delta === 'number'
+                    ? '<span class="delta ' + deltaClass + '">' +
+                        escapeHtml(formatDelta(values.delta)) +
+                      '</span>'
+                    : '') +
+                '</td>' +
+                '<td class="baseline">' +
+                  escapeHtml(formatE2eMetricValue(metric, values.baseline)) +
+                '</td>' +
+              '</tr>'
+            );
+          })
+          .join('') +
+          '<tr>' +
+            '<td><strong>Duration</strong></td>' +
+            '<td colspan="2">' + escapeHtml(formatDuration(lane.e2eMetrics.durationMs)) + '</td>' +
+          '</tr>';
+
+        var areaRows = Object.keys(lane.e2eMetrics.byArea || {})
+          .filter(function (area) {
+            return area !== 'Setup';
+          })
+          .sort()
+          .map(function (area) {
+            var areaValues = lane.e2eMetrics.byArea[area];
+            return (
+              '<tr>' +
+                '<td><strong>' + escapeHtml(area) + '</strong></td>' +
+                '<td>' + escapeHtml(String(areaValues.passed)) + '</td>' +
+                '<td>' + escapeHtml(String(areaValues.failed)) + '</td>' +
+                '<td>' + escapeHtml(String(areaValues.total)) + '</td>' +
+              '</tr>'
+            );
+          })
+          .join('');
+
+        if (!areaRows) {
+          areaMetrics.innerHTML = '';
+          return;
+        }
+
+        areaMetrics.innerHTML =
+          '<strong>Coverage by area</strong>' +
+          '<div class="table-wrap">' +
+            '<table class="test-report-table">' +
+              '<thead><tr><th>Area</th><th>Passed</th><th>Failed</th><th>Total</th></tr></thead>' +
+              '<tbody>' + areaRows + '</tbody>' +
+            '</table>' +
+          '</div>';
+      }
+
       function failedMetrics(lanes) {
         return lanes
           .filter(function (lane) {
-            return lane.kind === 'coverage' && lane.metrics;
+            return lane.kind === 'coverage' && lane.status !== 'skipped' && lane.metrics;
           })
           .flatMap(function (lane) {
             return metrics
@@ -919,7 +1291,7 @@ function renderReportShell(metadata) {
               passing.map(function (lane) { return lane.label; }).join(' and ') +
                 ' checks passed. ' +
                 skipped.map(function (lane) { return lane.label; }).join(' and ') +
-                ' were skipped for this report run.',
+                ' were not refreshed for this report run.',
             );
           } else if (passing.length > 0) {
             details.push(
@@ -1002,6 +1374,7 @@ function renderReportShell(metadata) {
         renderOverallStatus(lanes);
         renderCoverageTable(lanes);
         renderTestReports(lanes);
+        renderE2eMetrics(lanes);
         renderStatusDetails(lanes);
         renderDetailedReports(lanes);
       }
@@ -1014,23 +1387,34 @@ function renderReportShell(metadata) {
 }
 
 function writeReport() {
+  syncBundledPlaywrightReport();
   const baseline = fs.existsSync(baselinePath) ? readJson(baselinePath) : {};
   const metadata = getMetadata();
   const selectedSuites = scope ? [scope] : suiteOrder;
+  const initialLanes = suiteOrder.reduce((result, suiteName) => {
+    result[suiteName] = readInitialLane(
+      suiteName,
+      selectedSuites,
+      baseline,
+      metadata,
+    );
+    return result;
+  }, {});
 
   fs.mkdirSync(outputDir, { recursive: true });
-  fs.writeFileSync(outputPath, renderReportShell(metadata));
+  fs.writeFileSync(outputPath, renderReportShell(metadata, initialLanes));
 
   for (const suiteName of selectedSuites) {
-    const outputJsonPath = path.join(outputDir, `${suiteName}.json`);
-    const lane = readReportLane(suiteName, baseline, metadata);
-    fs.writeFileSync(outputJsonPath, `${JSON.stringify(lane, null, 2)}\n`);
+    fs.writeFileSync(
+      outputJsonPath(suiteName),
+      `${JSON.stringify(initialLanes[suiteName], null, 2)}\n`,
+    );
   }
 
   const written = [
     path.relative(root, outputPath),
     ...selectedSuites.map(suiteName =>
-      path.relative(root, path.join(outputDir, `${suiteName}.json`)),
+      path.relative(root, outputJsonPath(suiteName)),
     ),
   ];
   console.log(`Wrote ${written.join(', ')}.`);

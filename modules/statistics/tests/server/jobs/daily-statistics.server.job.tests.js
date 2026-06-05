@@ -5,6 +5,7 @@ const influx = require('influx');
 const sinon = require('sinon');
 
 const config = require('../../../../../config/config');
+const statsService = require('../../../../stats/server/services/stats.server.service');
 const statsJob = require('../../../server/jobs/daily-statistics.server.job');
 
 describe('Daily Statistics Job - Unit Test', function () {
@@ -35,9 +36,69 @@ describe('Daily Statistics Job - Unit Test', function () {
   });
 
   context('influxdb configured', function () {
+    const statistics = require('../../../server/controllers/statistics.server.controller');
+
     beforeEach(function () {
       // stub enable influx in config
       sinon.stub(config.influxdb, 'enabled').value(true);
+    });
+
+    it('continues when fetching the user count fails', function (done) {
+      sinon
+        .stub(statistics, 'getUsersCount')
+        .callsFake(cb => cb(new Error('db down')));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when fetching push registration count fails', function (done) {
+      sinon
+        .stub(statistics, 'getPushRegistrationCount')
+        .callsFake(cb => cb(new Error('push db down')));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when fetching host offer counts fails', function (done) {
+      sinon
+        .stub(statistics, 'getHostOffersCount')
+        .callsFake(cb => cb(new Error('offers db down')));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when writing to influx fails with a general error', function (done) {
+      sinon
+        .stub(statsService, 'stat')
+        .callsFake((statObject, cb) => cb(new Error('influx unavailable')));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when writing to influx fails with an influx-specific error', function (done) {
+      sinon.stub(statsService, 'stat').callsFake((statObject, cb) =>
+        cb({
+          message: 'Writing to Influx service failed.',
+          errors: { influx: new Error('influx write failed') },
+        }),
+      );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
     });
 
     it('should reach the influxdb with data in correct format', function (done) {

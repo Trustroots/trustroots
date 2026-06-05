@@ -46,7 +46,7 @@ describe('Unread Message Count Service', () => {
   let unreadCount;
 
   beforeEach(() => {
-    unreadCount = faker.random.number(100);
+    unreadCount = faker.datatype.number(100);
   });
 
   it('gives value immediately if already logged in', done => {

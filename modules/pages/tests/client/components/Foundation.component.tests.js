@@ -16,12 +16,33 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
 
 describe('<Foundation />', () => {
   it('renders foundation headings and board members', () => {
-    render(<Foundation user={{ _id: 'me' }} />);
+    render(
+      <Foundation
+        user={{
+          _id: 'me',
+          username: 'me',
+          displayName: 'Current User',
+        }}
+      />,
+    );
 
     expect(screen.getByText('Trustroots Foundation')).toBeInTheDocument();
     expect(screen.getByText('Board')).toBeInTheDocument();
     expect(screen.getByText('Mikael')).toBeInTheDocument();
     expect(screen.getByText('Past board members')).toBeInTheDocument();
+  });
+
+  it('renders core mission copy and trustees details', () => {
+    render(
+      <Foundation user={{ _id: 'me', username: 'me', displayName: 'Me' }} />,
+    );
+
+    expect(screen.getByText('Vision, Mission & Values')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Trustroots is owned and operated by Trustroots Foundation/,
+      ),
+    ).toBeInTheDocument();
   });
 
   it('shows a join button for logged-out visitors', () => {

@@ -7,10 +7,18 @@ import Contact from '@/modules/contacts/client/components/Contact';
 
 jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
   const React = require('react');
-  function MockRemoveContact({ show }) {
-    return show ? <div>remove-modal-open</div> : null;
+  function MockRemoveContact({ show, onSuccess }) {
+    return show ? (
+      <div>
+        <div>remove-modal-open</div>
+        <button onClick={() => onSuccess && onSuccess()}>remove-success</button>
+      </div>
+    ) : null;
   }
-  MockRemoveContact.propTypes = { show: () => null };
+  MockRemoveContact.propTypes = {
+    show: () => null,
+    onSuccess: () => null,
+  };
   return MockRemoveContact;
 });
 
@@ -62,5 +70,25 @@ describe('<Contact />', () => {
 
     fireEvent.click(screen.getByText('Revoke Request'));
     expect(screen.getByText('remove-modal-open')).toBeInTheDocument();
+  });
+
+  it('notifies the container when received-contact removal succeeds', () => {
+    const onContactRemoved = jest.fn();
+    render(
+      <Contact
+        contact={makeContact({
+          confirmed: false,
+          userFrom: 'someone-else',
+          userTo: 'me',
+        })}
+        selfId="me"
+        onContactRemoved={onContactRemoved}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Decline Request'));
+    fireEvent.click(screen.getByText('remove-success'));
+
+    expect(onContactRemoved).toHaveBeenCalledTimes(1);
   });
 });

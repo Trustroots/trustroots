@@ -28,7 +28,8 @@ module.exports = {
     debug: false,
     // Autoindex indexes
     // Mongoose calls createIndex on each Model's index when staring the app
-    autoIndex: true,
+    // Indexes are built once per test run in gulpfile.js (ensureIndexes).
+    autoIndex: false,
     // Check for MongoDB version compatibility on start
     checkCompatibility: false,
   },

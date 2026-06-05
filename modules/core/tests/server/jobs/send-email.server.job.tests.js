@@ -14,6 +14,38 @@ describe('job: send email', function () {
     sendEmailJobHandler = require('../../../server/jobs/send-email.server.job');
   });
 
+  it('reports send failures', function (done) {
+    const config = require('../../../../../config/config');
+    const originalSend = config.mailer.options.send;
+    config.mailer.options.send = function (data, callback) {
+      callback(new Error('smtp failed'));
+    };
+
+    const job = {
+      attrs: {
+        // eslint-disable-next-line new-cap
+        _id: mongoose.Types.ObjectId(),
+        data: {
+          to: {
+            name: 'foo',
+            address: 'to@test.com',
+          },
+          from: 'from@test.com',
+          subject: 'test subject',
+          html: 'html content',
+          text: 'text content',
+        },
+      },
+    };
+
+    sendEmailJobHandler(job, function (err) {
+      config.mailer.options.send = originalSend;
+      err.should.be.Error();
+      sentEmails.length.should.equal(0);
+      done();
+    });
+  });
+
   it('will send an email', function (done) {
     const job = {
       attrs: {

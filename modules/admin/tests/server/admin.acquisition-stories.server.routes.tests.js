@@ -28,21 +28,31 @@ describe('Admin acquisition stories CRUD tests', () => {
     'www.example.org', // Url normalization to "example"
   ];
 
-  // Generate one user per story
-  let users = utils.generateUsers(acquisitionStories.length);
-  users[0].roles = ['user', 'admin'];
+  let credentialsAdmin;
+  let credentialsRegular;
 
-  // Apply acquisition stories one per user
-  users = users.map((user, i) => {
-    user.acquisitionStory = acquisitionStories[i];
-    return user;
+  beforeEach(async () => {
+    const users = utils
+      .generateUsers(acquisitionStories.length)
+      .map((user, index) => {
+        user.acquisitionStory = acquisitionStories[index];
+        return user;
+      });
+    users[0].roles = ['user', 'admin'];
+
+    const savedUsers = await utils.saveUsers(users);
+
+    credentialsAdmin = {
+      username: savedUsers[0].username,
+      password: users[0].password,
+    };
+    credentialsRegular = {
+      username: savedUsers[1].username,
+      password: users[1].password,
+    };
   });
 
-  before(async () => {
-    await utils.saveUsers(users);
-  });
-
-  after(utils.clearDatabase);
+  afterEach(utils.clearDatabase);
 
   describe('Acquisition stories', () => {
     it('non-authenticated users should not be allowed to read acquisition stories', async () => {
@@ -55,17 +65,17 @@ describe('Admin acquisition stories CRUD tests', () => {
       });
 
       it('non-admin users should not be allowed to read acquisition stories', async () => {
-        await utils.signIn(users[1], agent);
+        await utils.signIn(credentialsRegular, agent);
         await agent.post('/api/admin/acquisition-stories').expect(403);
       });
 
       it('admin users should be allowed to read acquisition stories', async () => {
-        await utils.signIn(users[0], agent);
+        await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/acquisition-stories')
           .expect(200);
 
-        body.length.should.equal(users.length);
+        body.length.should.equal(acquisitionStories.length);
       });
     });
   });
@@ -81,12 +91,12 @@ describe('Admin acquisition stories CRUD tests', () => {
       });
 
       it('non-admin users should not be allowed to read acquisition stories analysis', async () => {
-        await utils.signIn(users[1], agent);
+        await utils.signIn(credentialsRegular, agent);
         await agent.post('/api/admin/acquisition-stories/analysis').expect(403);
       });
 
       it('admin users should be allowed to read acquisition stories analysis and analysis have certain shape', async () => {
-        await utils.signIn(users[0], agent);
+        await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/acquisition-stories/analysis')
           .expect(200);

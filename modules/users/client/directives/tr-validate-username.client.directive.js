@@ -57,6 +57,11 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
                     resolve();
                   }
                 },
+                function () {
+                  // Network failures should be treated as valid rather than blocking
+                  // all users until next keystroke.
+                  resolve();
+                },
               );
             }, 1000);
           }

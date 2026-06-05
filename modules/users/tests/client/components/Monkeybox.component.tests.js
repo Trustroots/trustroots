@@ -34,6 +34,7 @@ const tribe = {
 
 function makeUser(overrides = {}) {
   return {
+    _id: 'alice',
     username: 'alice',
     displayName: 'Alice Example',
     languages: ['en'],
@@ -44,12 +45,16 @@ function makeUser(overrides = {}) {
 
 describe('<Monkeybox />', () => {
   it('renders the user, languages, and tribes in common', () => {
-    render(
-      <Monkeybox
-        user={makeUser()}
-        otherUser={{ memberIds: ['tribe-1'], member: [], languages: [] }}
-      />,
-    );
+    const otherUser = {
+      _id: 'bob',
+      username: 'bob',
+      displayName: 'Bob Example',
+      memberIds: ['tribe-1'],
+      member: [],
+      languages: [],
+    };
+
+    render(<Monkeybox user={makeUser()} otherUser={otherUser} />);
 
     expect(screen.getByRole('link', { name: 'Alice Example' })).toHaveAttribute(
       'href',
@@ -65,10 +70,19 @@ describe('<Monkeybox />', () => {
   });
 
   it('hides tribes in common and languages when there are none', () => {
+    const otherUser = {
+      _id: 'charlie',
+      username: 'charlie',
+      displayName: 'Charlie Example',
+      memberIds: [],
+      member: [],
+      languages: [],
+    };
+
     render(
       <Monkeybox
         user={makeUser({ languages: [], member: [{ tribe }] })}
-        otherUser={{ memberIds: [], member: [], languages: [] }}
+        otherUser={otherUser}
       />,
     );
 

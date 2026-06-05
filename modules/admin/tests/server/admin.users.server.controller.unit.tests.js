@@ -1,0 +1,154 @@
+/**
+ * Unit tests for uncovered admin users controller paths.
+ */
+const mongoose = require('mongoose');
+const sinon = require('sinon');
+
+const adminUsers = require('../../server/controllers/admin.users.server.controller');
+const errorService = require('../../../core/server/services/error.server.service');
+const utils = require('../../../../testutils/server/data.server.testutil');
+const should = require('should');
+
+const User = mongoose.model('User');
+
+function mockResponse() {
+  let resolveResponse;
+  const promise = new Promise(resolve => {
+    resolveResponse = resolve;
+  });
+  const res = { statusCode: 200, body: null };
+  res.status = function (code) {
+    res.statusCode = code;
+    return res;
+  };
+  res.send = function (body) {
+    res.body = body;
+    resolveResponse(res);
+    return res;
+  };
+  res.waitForResponse = () => promise;
+  return res;
+}
+
+describe('Admin users controller unit tests', () => {
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
+
+  describe('searchUsers', () => {
+    it('rejects queries shorter than three characters', () => {
+      const res = mockResponse();
+      adminUsers.searchUsers({ body: { search: 'ab' } }, res);
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Query string at least 3 characters long required.',
+      );
+    });
+
+    it('obfuscates sensitive tokens in search results', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(users[0]._id);
+      userDoc.removeProfileToken = 'remove-token';
+      userDoc.resetPasswordToken = 'reset-token';
+      await userDoc.save();
+
+      const res = mockResponse();
+      adminUsers.searchUsers({ body: { search: userDoc.username } }, res);
+      await res.waitForResponse();
+
+      res.body.length.should.equal(1);
+      res.body[0].removeProfileToken.should.equal('(Hidden from admins.)');
+      res.body[0].resetPasswordToken.should.equal('(Hidden from admins.)');
+    });
+  });
+
+  describe('getUser', () => {
+    it('returns 404 for missing users', async () => {
+      const res = mockResponse();
+      await adminUsers.getUser(
+        { body: { id: new mongoose.Types.ObjectId().toString() } },
+        res,
+      );
+
+      res.statusCode.should.equal(404);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('not-found'),
+      );
+    });
+  });
+
+  describe('changeRole', () => {
+    it('promotes a volunteer and removes volunteer-alumni', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(2));
+      const admin = users[0];
+      const target = users[1];
+      target.roles = ['user', 'volunteer-alumni'];
+      await target.save();
+
+      const res = mockResponse();
+      await adminUsers.changeRole(
+        {
+          body: { id: target._id.toString(), role: 'volunteer' },
+          user: admin,
+        },
+        res,
+      );
+
+      res.body.message.should.equal('Role changed.');
+
+      const updated = await User.findById(target._id).exec();
+      updated.roles.should.containEql('volunteer');
+      updated.roles.should.not.containEql('volunteer-alumni');
+    });
+
+    it('returns 404 when the target user does not exist', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: {
+            id: new mongoose.Types.ObjectId().toString(),
+            role: 'suspended',
+          },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(404);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('not-found'),
+      );
+    });
+  });
+
+  describe('usernameToUserId', () => {
+    it('attaches a user id when the username exists', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const req = { body: { username: users[0].username } };
+      let nextCalled = false;
+
+      await adminUsers.usernameToUserId(req, {}, () => {
+        nextCalled = true;
+      });
+
+      nextCalled.should.equal(true);
+      req.userIdFromUsername.toString().should.equal(users[0]._id.toString());
+    });
+
+    it('continues when the username is missing', async () => {
+      const req = { body: {} };
+      let nextCalled = false;
+
+      await adminUsers.usernameToUserId(req, {}, () => {
+        nextCalled = true;
+      });
+
+      nextCalled.should.equal(true);
+      should.not.exist(req.userIdFromUsername);
+    });
+  });
+});

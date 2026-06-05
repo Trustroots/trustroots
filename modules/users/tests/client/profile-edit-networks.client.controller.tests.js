@@ -89,6 +89,31 @@ describe('ProfileEditNetworksController', function () {
     expect(controller.hasNostrNip07Suggestion()).toBeTruthy();
   });
 
+  it('flags loading and offers "use" copy while resolving an empty field', function () {
+    const $window = {
+      nostr: {
+        getPublicKey: jasmine
+          .createSpy('getPublicKey')
+          .and.returnValue($q.resolve(validHex)),
+      },
+    };
+
+    const { controller } = createController(
+      {
+        _id: 'user',
+        nostrNpub: '',
+      },
+      $window,
+    );
+
+    expect(controller.nostrNip07Loading).toBe(true);
+
+    flushNip07();
+
+    expect(controller.nostrNip07Loading).toBe(false);
+    expect(controller.nostrNip07SuggestionButtonText()).toBe('Use this npub');
+  });
+
   it('applies an empty-field suggestion and marks the profile as modified', function () {
     const $window = {
       nostr: {

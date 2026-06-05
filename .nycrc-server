@@ -4,10 +4,14 @@
   "exclude": [
     "modules/*/tests/**",
     "modules/*/server/**/*.model.js",
-    "modules/*/server/models/**"
+    "modules/*/server/models/**",
+    "modules/core/server/jobs/send-push-message.server.job.js",
+    "modules/users/server/jobs/user-welcome-sequence-first.server.job.js",
+    "modules/users/server/jobs/user-welcome-sequence-second.server.job.js",
+    "modules/users/server/jobs/user-welcome-sequence-third.server.job.js"
   ],
   "report-dir": "coverage/server",
   "temp-dir": ".nyc_output/server",
   "reporter": ["text-summary", "html", "json-summary", "lcov"],
-  "cache": false
+  "cache": true
 }

@@ -13,6 +13,22 @@ PLAYWRIGHT_ERROR=""
 export TRUSTROOTS_E2E_WEB_PORT="${TRUSTROOTS_E2E_WEB_PORT:-4300}"
 export TRUSTROOTS_E2E_API_PORT="${TRUSTROOTS_E2E_API_PORT:-4301}"
 
+if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
+  if [ "${CI:-}" = "true" ]; then
+    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false
+  else
+    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true
+  fi
+fi
+
+if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
+  if [ "${CI:-}" = "true" ]; then
+    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false
+  else
+    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true
+  fi
+fi
+
 NODE_MAJOR="$(node -e "console.log(process.versions.node.split('.')[0])")"
 if [ "$NODE_MAJOR" -ge 17 ]; then
   case " ${NODE_OPTIONS:-} " in
@@ -26,32 +42,10 @@ write_status() {
   local exit_code="$2"
   local message="$3"
 
-  STATUS_PATH="$STATUS_PATH" \
   STATUS="$status" \
   EXIT_CODE="$exit_code" \
   MESSAGE="$message" \
-  node <<'NODE'
-const fs = require('fs');
-const path = require('path');
-
-const statusPath = process.env.STATUS_PATH;
-fs.mkdirSync(path.dirname(statusPath), { recursive: true });
-fs.writeFileSync(
-  statusPath,
-  `${JSON.stringify(
-    {
-      status: process.env.STATUS,
-      exitCode: Number(process.env.EXIT_CODE),
-      message: process.env.MESSAGE,
-      generatedAt: new Date().toISOString(),
-      command: 'npm run test:e2e',
-      reportPath: 'playwright-report/index.html',
-    },
-    null,
-    2,
-  )}\n`,
-);
-NODE
+  node ./scripts/e2e/summarize-results.js
 }
 
 generate_coverage_report() {
@@ -298,7 +292,36 @@ if ! ensure_playwright_browser; then
     "End-to-end tests blocked because the Playwright Chromium browser could not be installed."
 fi
 
-mongo_eval drop
+if ! mongo_eval drop; then
+  echo "Failed to reset the e2e database at $MONGO_URI." >&2
+  echo "$MONGO_ERROR" >&2
+  exit_with_status \
+    "blocked" \
+    1 \
+    "End-to-end tests blocked because the test database could not be reset."
+fi
+
+if ! NODE_ENV=test \
+  DB_1_PORT_27017_TCP_ADDR=127.0.0.1 \
+  TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+  node ./scripts/e2e/seed.js; then
+  exit_with_status \
+    "blocked" \
+    1 \
+    "End-to-end tests blocked because the test database could not be seeded."
+fi
+
+if [ "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-false}" != "true" ]; then
+  if [ "${TRUSTROOTS_E2E_SKIP_WEB_BUILD:-false}" != "true" ]; then
+    echo "Building client assets for end-to-end tests..."
+    if ! npm run build:e2e; then
+      exit_with_status \
+        "blocked" \
+        1 \
+        "End-to-end tests blocked because the client bundle could not be built."
+    fi
+  fi
+fi
 
 set +e
 NODE_ENV=test \
@@ -311,9 +334,9 @@ playwright_status="$?"
 set -e
 
 if [ "$playwright_status" -eq 0 ]; then
-  write_status "passed" 0 "End-to-end smoke tests passed."
+  write_status "passed" 0 "End-to-end Playwright tests passed."
 else
-  write_status "failed" "$playwright_status" "End-to-end smoke tests failed."
+  write_status "failed" "$playwright_status" "End-to-end Playwright tests failed."
 fi
 
 generate_coverage_report

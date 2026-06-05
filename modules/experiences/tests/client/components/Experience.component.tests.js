@@ -34,6 +34,7 @@ describe('<Experience />', () => {
           userFrom,
           userTo,
           response: {
+            _id: 'response-1',
             created: '2020-01-02T00:00:00.000Z',
             feedbackPublic: 'Thanks, was great!',
             interactions: { guest: true, host: false, met: true },
@@ -58,6 +59,7 @@ describe('<Experience />', () => {
         experience={{
           _id: 'experience-2',
           created: new Date().toISOString(),
+          feedbackPublic: '',
           interactions: { guest: false, host: false, met: true },
           public: false,
           recommend: 'yes',
@@ -68,12 +70,12 @@ describe('<Experience />', () => {
       />,
     );
 
-    expect(screen.getByText(/days left to respond/)).toBeInTheDocument();
     expect(
-      screen.getByRole('link', {
-        name: 'Write about your experience with them',
-      }),
-    ).toHaveAttribute('href', '/profile/alice/experiences/new');
+      screen.getByText(/Your experience will become public in/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Write about your experience with them'),
+    ).not.toBeInTheDocument();
   });
 
   it('shows a write-experience footer on the receiver profile for public experiences', () => {

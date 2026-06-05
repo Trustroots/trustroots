@@ -45,4 +45,8 @@ Codex-local coverage reporting is client-first: use `just coverage-report` to ru
 
 Jest treats the optional `canvas` package as absent so JSDOM uses its normal non-native canvas fallback. If non-test tooling fails while loading `canvas`, rebuild native dependencies for your current Node version with `npm rebuild canvas`. The project CI installs dependencies from scratch on Node 14, which avoids stale native binaries.
 
-In Codex, use `npm run test:client` for client tests and `npm run test:server:codex` for server tests. The repo's `.codex/config.toml` enables the local network permission needed for MongoDB on `127.0.0.1` and localhost Playwright automation in trusted Codex sessions. The Codex server command ignores machine-specific `config/env/local.js`, uses an existing local MongoDB when reachable, and removes only the temporary Docker container it starts.
+In Codex, use `npm run test:client` for client tests and `npm run test:server:codex` for server tests. The repo's `.codex/config.toml` enables the local network permission needed for MongoDB on `127.0.0.1` and localhost Playwright automation in trusted Codex sessions. The Codex server command ignores machine-specific `config/env/local.js`, uses an existing local MongoDB when reachable, and removes only the temporary Docker container it starts. By default it runs the full server suite in one pass; set `TRUSTROOTS_CODEX_ISOLATED_SERVER_TESTS=true` to rerun each server test file in its own process when debugging flakes.
+
+For a single server test file locally, use `SERVER_TEST_FILES=modules/foo/tests/server/bar.tests.js npm run test:server`.
+
+End-to-end tests build the client bundle once (`npm run build:e2e`) and serve pages from the API server. Set `TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true` to use the webpack dev server instead (slower startup, closer to day-to-day frontend development).

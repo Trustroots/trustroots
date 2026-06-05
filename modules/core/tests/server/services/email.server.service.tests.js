@@ -312,6 +312,128 @@ describe('Service: email', function () {
     });
   });
 
+  it('returns an empty object when base template params are invalid', function () {
+    emailService.addEmailBaseTemplateParams(null).should.deepEqual({});
+  });
+
+  it('can send remove profile emails', function (done) {
+    const user = {
+      displayName: 'test user',
+      email: 'test@test.com',
+      removeProfileToken: 'remove-token',
+    };
+    emailService.sendRemoveProfile(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.subject.should.equal(
+        'Confirm removing your Trustroots profile',
+      );
+      jobs[0].data.text.should.containEql('/remove/remove-token');
+      done();
+    });
+  });
+
+  it('can send remove profile confirmed email', function (done) {
+    const user = {
+      displayName: 'test user',
+      email: 'test@test.com',
+    };
+    emailService.sendRemoveProfileConfirmed(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.subject.should.equal(
+        'Your Trustroots profile has been removed',
+      );
+      done();
+    });
+  });
+
+  it('can send welcome sequence emails', function (done) {
+    const user = {
+      firstName: 'Test',
+      displayName: 'Test User',
+      email: 'test@test.com',
+      username: 'testuser',
+      description: '',
+    };
+
+    emailService.sendWelcomeSequenceFirst(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.subject.should.containEql('Welcome to Trustroots');
+
+      emailService.sendWelcomeSequenceSecond(user, function (err2) {
+        if (err2) return done(err2);
+        jobs.length.should.equal(2);
+        jobs[1].data.subject.should.containEql('Meet new people');
+
+        emailService.sendWelcomeSequenceThird(user, function (err3) {
+          if (err3) return done(err3);
+          jobs.length.should.equal(3);
+          jobs[2].data.subject.should.containEql('How is it going');
+          done();
+        });
+      });
+    });
+  });
+
+  it('uses the fill-profile topic for short welcome sequence third emails', function (done) {
+    const user = {
+      firstName: 'Test',
+      displayName: 'Test User',
+      email: 'test@test.com',
+      username: 'testuser',
+      description: 'Too short',
+    };
+
+    emailService.sendWelcomeSequenceThird(user, function (err) {
+      if (err) return done(err);
+      jobs[0].data.headers['X-MSYS-API'].campaign_id.should.containEql(
+        'fill-profile',
+      );
+      done();
+    });
+  });
+
+  it('can send experience notification emails', function (done) {
+    const userFrom = {
+      username: 'sender',
+      displayName: 'Sender Name',
+      email: 'sender@test.com',
+    };
+    const userTo = {
+      username: 'receiver',
+      displayName: 'Receiver Name',
+      email: 'receiver@test.com',
+    };
+    const experience = { _id: 'experience-id' };
+
+    emailService.sendExperienceNotificationFirst(
+      userFrom,
+      userTo,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].data.subject.should.containEql('shared their experience');
+
+        emailService.sendExperienceNotificationSecond(
+          userFrom,
+          userTo,
+          experience,
+          function (err2) {
+            if (err2) return done(err2);
+            jobs.length.should.equal(2);
+            jobs[1].data.subject.should.containEql(
+              'shared also their experience',
+            );
+            jobs[1].data.text.should.containEql('experience-id');
+            done();
+          },
+        );
+      },
+    );
+  });
+
   it('emails should have inline css styles', function (done) {
     const params = emailService.addEmailBaseTemplateParams({
       subject: 'test',

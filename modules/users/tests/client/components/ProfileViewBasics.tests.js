@@ -99,6 +99,25 @@ describe('<ProfileViewBasics />', () => {
     );
   });
 
+  it('renders the nostr npub link when it is the only network', () => {
+    render(
+      <ProfileViewBasics
+        profile={{
+          created: '2020-01-01T00:00:00.000Z',
+          languages: [],
+          nostrNpub: 'npub1onlynetwork',
+          seen: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Elsewhere')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
+      'href',
+      'https://njump.me/npub1onlynetwork',
+    );
+  });
+
   it('renders sparse profile fallback details without optional sections', () => {
     render(
       <ProfileViewBasics
@@ -114,5 +133,8 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.getByText('Online long ago')).toBeInTheDocument();
     expect(screen.queryByText('Languages')).not.toBeInTheDocument();
     expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'nostr npub' }),
+    ).not.toBeInTheDocument();
   });
 });
