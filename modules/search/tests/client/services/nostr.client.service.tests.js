@@ -1,0 +1,306 @@
+import NostrService from '@/modules/search/client/services/nostr.client.service';
+
+// Mock nostr-tools/relay
+jest.mock('nostr-tools/relay', () => {
+  const MockRelay = jest.fn().mockImplementation((url) => {
+    const instance = {
+      url,
+      connect: jest.fn().mockResolvedValue(undefined),
+      close: jest.fn(),
+      subscribe: jest.fn(),
+    };
+    // Store last created instance for test access
+    MockRelay._lastInstance = instance;
+    return instance;
+  });
+  return { Relay: MockRelay };
+});
+
+const { Relay } = require('nostr-tools/relay');
+
+describe('NostrService', () => {
+  let service;
+  const RELAY_URL = 'wss://relay.example.com';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    service = new NostrService(RELAY_URL);
+  });
+
+  describe('constructor', () => {
+    it('stores the relay URL', () => {
+      expect(service.relayUrl).toBe(RELAY_URL);
+    });
+
+    it('initializes with null relay', () => {
+      expect(service.relay).toBeNull();
+    });
+
+    it('initializes empty subscriptions map', () => {
+      expect(service.subscriptions).toBeInstanceOf(Map);
+      expect(service.subscriptions.size).toBe(0);
+    });
+
+    it('initializes empty username cache', () => {
+      expect(service.usernameCache).toBeInstanceOf(Map);
+      expect(service.usernameCache.size).toBe(0);
+    });
+  });
+
+  describe('connect()', () => {
+    it('creates a new Relay and connects', async () => {
+      const relay = await service.connect();
+      expect(Relay).toHaveBeenCalledWith(RELAY_URL);
+      expect(relay.connect).toHaveBeenCalled();
+      expect(service.relay).toBe(relay);
+    });
+
+    it('returns existing relay if already connected', async () => {
+      const relay1 = await service.connect();
+      const relay2 = await service.connect();
+      expect(relay1).toBe(relay2);
+      expect(Relay).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('disconnect()', () => {
+    it('closes all subscriptions and the relay', async () => {
+      await service.connect();
+      const mockSub = { close: jest.fn() };
+      service.subscriptions.set('mapNotes', mockSub);
+
+      service.disconnect();
+
+      expect(mockSub.close).toHaveBeenCalled();
+      expect(service.subscriptions.size).toBe(0);
+      expect(service.relay).toBeNull();
+    });
+
+    it('handles disconnect when not connected', () => {
+      expect(() => service.disconnect()).not.toThrow();
+    });
+
+    it('closes multiple subscriptions', async () => {
+      await service.connect();
+      const sub1 = { close: jest.fn() };
+      const sub2 = { close: jest.fn() };
+      service.subscriptions.set('a', sub1);
+      service.subscriptions.set('b', sub2);
+
+      service.disconnect();
+
+      expect(sub1.close).toHaveBeenCalled();
+      expect(sub2.close).toHaveBeenCalled();
+    });
+  });
+
+  describe('subscribeMapNotes()', () => {
+    it('subscribes with correct filters', async () => {
+      const mockSub = { close: jest.fn() };
+      await service.connect();
+      Relay._lastInstance.subscribe.mockReturnValue(mockSub);
+
+      const onEvent = jest.fn();
+      const prefixes = ['8FVC', '8FVB'];
+
+      const sub = await service.subscribeMapNotes(prefixes, onEvent);
+
+      expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
+        [
+          {
+            kinds: [30397, 30398],
+            '#L': ['open-location-code-prefix'],
+            '#l': prefixes,
+          },
+        ],
+        { onevent: onEvent },
+      );
+      expect(sub).toBe(mockSub);
+      expect(service.subscriptions.get('mapNotes')).toBe(mockSub);
+    });
+
+    it('closes existing mapNotes subscription before creating new one', async () => {
+      const oldSub = { close: jest.fn() };
+      const newSub = { close: jest.fn() };
+      await service.connect();
+
+      Relay._lastInstance.subscribe.mockReturnValueOnce(oldSub);
+      await service.subscribeMapNotes(['8FVC'], jest.fn());
+
+      Relay._lastInstance.subscribe.mockReturnValueOnce(newSub);
+      await service.subscribeMapNotes(['8FVB'], jest.fn());
+
+      expect(oldSub.close).toHaveBeenCalled();
+      expect(service.subscriptions.get('mapNotes')).toBe(newSub);
+    });
+
+    it('connects lazily if not already connected', async () => {
+      const mockSub = { close: jest.fn() };
+      // Service starts disconnected — subscribe should trigger connect
+      Relay.mockImplementationOnce((url) => {
+        const instance = {
+          url,
+          connect: jest.fn().mockResolvedValue(undefined),
+          close: jest.fn(),
+          subscribe: jest.fn().mockReturnValue(mockSub),
+        };
+        Relay._lastInstance = instance;
+        return instance;
+      });
+
+      const sub = await service.subscribeMapNotes(['8FVC'], jest.fn());
+      expect(Relay).toHaveBeenCalledWith(RELAY_URL);
+      expect(sub).toBe(mockSub);
+    });
+  });
+
+  describe('fetchUserNotes()', () => {
+    it('resolves with events sorted by created_at desc', async () => {
+      await service.connect();
+      const relay = Relay._lastInstance;
+
+      const events = [
+        { id: '1', created_at: 100 },
+        { id: '2', created_at: 300 },
+        { id: '3', created_at: 200 },
+      ];
+
+      relay.subscribe.mockImplementation((filters, callbacks) => {
+        events.forEach((e) => callbacks.onevent(e));
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      const result = await service.fetchUserNotes('aabbcc', 3);
+
+      expect(relay.subscribe).toHaveBeenCalledWith(
+        [{ kinds: [30397], authors: ['aabbcc'], limit: 3 }],
+        expect.objectContaining({
+          onevent: expect.any(Function),
+          oneose: expect.any(Function),
+        }),
+      );
+
+      expect(result).toEqual([
+        { id: '2', created_at: 300 },
+        { id: '3', created_at: 200 },
+        { id: '1', created_at: 100 },
+      ]);
+    });
+
+    it('uses default limit of 3', async () => {
+      await service.connect();
+      const relay = Relay._lastInstance;
+
+      relay.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      await service.fetchUserNotes('aabbcc');
+
+      expect(relay.subscribe).toHaveBeenCalledWith(
+        [{ kinds: [30397], authors: ['aabbcc'], limit: 3 }],
+        expect.any(Object),
+      );
+    });
+
+    it('resolves with empty array when no events', async () => {
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      const result = await service.fetchUserNotes('aabbcc');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('resolveNpubToUsername()', () => {
+    it('resolves username from kind 10390 event tags', async () => {
+      await service.connect();
+      const relay = Relay._lastInstance;
+
+      relay.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent({
+          tags: [
+            ['l', 'alice', 'org.trustroots:username'],
+            ['L', 'org.trustroots'],
+          ],
+        });
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      const username = await service.resolveNpubToUsername('pubkey123');
+      expect(username).toBe('alice');
+    });
+
+    it('returns null when no username tag found', async () => {
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent({
+          tags: [['L', 'org.trustroots']],
+        });
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      const username = await service.resolveNpubToUsername('pubkey123');
+      expect(username).toBeNull();
+    });
+
+    it('returns null when no events received', async () => {
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      const username = await service.resolveNpubToUsername('pubkey123');
+      expect(username).toBeNull();
+    });
+
+    it('caches results and returns cached value on subsequent calls', async () => {
+      await service.connect();
+      const relay = Relay._lastInstance;
+
+      relay.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent({
+          tags: [['l', 'bob', 'org.trustroots:username']],
+        });
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      const first = await service.resolveNpubToUsername('pubkey456');
+      const second = await service.resolveNpubToUsername('pubkey456');
+
+      expect(first).toBe('bob');
+      expect(second).toBe('bob');
+      // subscribe should only be called once (cached on second call)
+      expect(relay.subscribe).toHaveBeenCalledTimes(1);
+    });
+
+    it('subscribes with correct filters', async () => {
+      await service.connect();
+      const relay = Relay._lastInstance;
+
+      relay.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      await service.resolveNpubToUsername('abc123');
+
+      expect(relay.subscribe).toHaveBeenCalledWith(
+        [{ kinds: [10390], authors: ['abc123'] }],
+        expect.objectContaining({
+          onevent: expect.any(Function),
+          oneose: expect.any(Function),
+        }),
+      );
+    });
+  });
+});
