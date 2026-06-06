@@ -194,35 +194,268 @@ describe('Service: influx', function () {
         const service = loadInfluxServiceWithLogger(logger);
 
         service._writeMeasurement(
-          'test',
+          null,
+          { value: 1 },
+          { tag: 'tag' },
+          function (measurementErr) {
+            service._writeMeasurement(
+              'test',
+              null,
+              { tag: 'tag' },
+              function (fieldsErr) {
+                service._writeMeasurement(
+                  'test',
+                  { value: 1 },
+                  null,
+                  function (tagsErr) {
+                    service._writeMeasurement(
+                      'test',
+                      { value: 1, time: 'bad-time' },
+                      { tag: 'tag' },
+                      function (timeErr) {
+                        process.env.NODE_ENV = originalEnv;
+
+                        try {
+                          measurementErr.message.should.containEql(
+                            'no `measurementName`',
+                          );
+                          fieldsErr.message.should.containEql('no `fields`');
+                          tagsErr.message.should.containEql('no `tags`');
+                          timeErr.message.should.containEql(
+                            'expected `fields.time`',
+                          );
+                          sinon.assert.callCount(logger, 4);
+                          return done();
+                        } catch (e) {
+                          return done(e);
+                        }
+                      },
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      });
+
+      it('restores NODE_ENV when logging validation assertions fail', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        const service = loadInfluxServiceWithLogger(sinon.stub());
+
+        service._writeMeasurement('test', null, { tag: 'tag' }, function (err) {
+          process.env.NODE_ENV = originalEnv;
+
+          try {
+            err.message.should.containEql('no `fields`');
+            process.env.NODE_ENV.should.equal(originalEnv);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        });
+      });
+
+      it('logs measurement name validation failures outside test mode', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          null,
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            process.env.NODE_ENV = originalEnv;
+
+            try {
+              err.message.should.containEql('no `measurementName`');
+              sinon.assert.calledOnce(logger);
+              logger.firstCall.args[1].should.equal(
+                'InfluxDB Service: no `measurementName` defined. #ghi3kH',
+              );
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('logs field and tag validation context outside test mode', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          'testMeasurement',
           null,
           { tag: 'tag' },
           function (fieldsErr) {
             service._writeMeasurement(
-              'test',
+              'testMeasurement',
               { value: 1 },
               null,
               function (tagsErr) {
-                service._writeMeasurement(
-                  'test',
-                  { value: 1, time: 'bad-time' },
-                  { tag: 'tag' },
-                  function (timeErr) {
-                    process.env.NODE_ENV = originalEnv;
+                process.env.NODE_ENV = originalEnv;
 
-                    try {
-                      fieldsErr.message.should.containEql('no `fields`');
-                      tagsErr.message.should.containEql('no `tags`');
-                      timeErr.message.should.containEql(
-                        'expected `fields.time`',
-                      );
-                      sinon.assert.calledThrice(logger);
-                      return done();
-                    } catch (e) {
-                      return done(e);
-                    }
-                  },
-                );
+                try {
+                  fieldsErr.message.should.containEql('no `fields`');
+                  tagsErr.message.should.containEql('no `tags`');
+                  sinon.assert.calledTwice(logger);
+                  logger.firstCall.args[2].measurement.should.equal(
+                    'testMeasurement',
+                  );
+                  logger.secondCall.args[2].measurement.should.equal(
+                    'testMeasurement',
+                  );
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              },
+            );
+          },
+        );
+      });
+
+      it('logs invalid time validation context outside test mode', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          'testMeasurement',
+          { value: 1, time: 'bad-time' },
+          { tag: 'tag' },
+          function (err) {
+            process.env.NODE_ENV = originalEnv;
+
+            try {
+              err.message.should.containEql('expected `fields.time`');
+              sinon.assert.calledOnce(logger);
+              logger.firstCall.args[2].measurement.should.equal(
+                'testMeasurement',
+              );
+              logger.firstCall.args[2].time.should.equal('bad-time');
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('does not log validation failures while running in test mode', function (done) {
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          null,
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            try {
+              err.message.should.containEql('no `measurementName`');
+              sinon.assert.notCalled(logger);
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('does not log invalid field validation while running in test mode', function (done) {
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          'testMeasurement',
+          null,
+          { tag: 'tag' },
+          function (err) {
+            try {
+              err.message.should.containEql('no `fields`');
+              sinon.assert.notCalled(logger);
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('does not log invalid tag validation while running in test mode', function (done) {
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          'testMeasurement',
+          { value: 1 },
+          null,
+          function (err) {
+            try {
+              err.message.should.containEql('no `tags`');
+              sinon.assert.notCalled(logger);
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('does not log invalid time validation while running in test mode', function (done) {
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          'testMeasurement',
+          { value: 1, time: 'bad-time' },
+          { tag: 'tag' },
+          function (err) {
+            try {
+              err.message.should.containEql('expected `fields.time`');
+              sinon.assert.notCalled(logger);
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('continues validation logging after NODE_ENV switches back from test', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          null,
+          { value: 1 },
+          { tag: 'tag' },
+          function (testModeErr) {
+            process.env.NODE_ENV = 'development';
+            service._writeMeasurement(
+              null,
+              { value: 1 },
+              { tag: 'tag' },
+              function (devModeErr) {
+                process.env.NODE_ENV = originalEnv;
+
+                try {
+                  testModeErr.message.should.containEql('no `measurementName`');
+                  devModeErr.message.should.containEql('no `measurementName`');
+                  sinon.assert.calledOnce(logger);
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
               },
             );
           },
@@ -343,6 +576,19 @@ describe('Service: influx', function () {
             }
           },
         );
+      });
+
+      it('allows writeMeasurement success without a callback', function (done) {
+        influxService._writeMeasurement('test', { value: 1 }, { tag: 'tag' });
+
+        process.nextTick(function () {
+          try {
+            sinon.assert.calledOnce(influx.InfluxDB.prototype.writeMeasurement);
+            done();
+          } catch (err) {
+            done(err);
+          }
+        });
       });
 
       it('propagates writeMeasurement client errors', function (done) {

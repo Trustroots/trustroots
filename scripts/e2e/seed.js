@@ -66,6 +66,7 @@ const TRIBES = [
 
 const MEMBERS = [
   {
+    id: '665000000000000000000001',
     username: 'e2e-seeded-berlin',
     email: 'e2e-seeded-berlin@example.test',
     firstName: 'Berlin',
@@ -74,6 +75,7 @@ const MEMBERS = [
     tribes: ['Hitchhikers', 'Cyclists'],
   },
   {
+    id: '665000000000000000000002',
     username: 'e2e-seeded-portland',
     email: 'e2e-seeded-portland@example.test',
     firstName: 'Portland',
@@ -82,6 +84,7 @@ const MEMBERS = [
     tribes: ['Musicians', 'Artists'],
   },
   {
+    id: '665000000000000000000003',
     username: 'e2e-seeded-beijing',
     email: 'e2e-seeded-beijing@example.test',
     firstName: 'Beijing',
@@ -90,6 +93,7 @@ const MEMBERS = [
     tribes: ['Remote workers', 'Hikers'],
   },
   {
+    id: '665000000000000000000004',
     username: 'e2e-seeded-shadow',
     email: 'e2e-seeded-shadow@example.test',
     firstName: 'Shadow',
@@ -98,6 +102,7 @@ const MEMBERS = [
     tribes: [],
   },
   {
+    id: '665000000000000000000005',
     username: 'e2e-seeded-admin',
     email: 'e2e-seeded-admin@example.test',
     firstName: 'E2E',
@@ -149,6 +154,7 @@ const EXPERIENCES = [
 
 function buildUser(member) {
   return {
+    _id: member.id,
     username: member.username,
     email: member.email,
     firstName: member.firstName,
@@ -314,7 +320,7 @@ async function seedDatabase() {
   await seedShadowMessages(Message, usersByUsername, SHADOW_MESSAGES);
   await seedExperiences(Experience, usersByUsername, EXPERIENCES);
   await seedAdminNotes(AdminNote, usersByUsername);
-  await mongooseService.ensureIndexes(['User']);
+  await mongooseService.ensureIndexes(mongoose.modelNames());
 
   console.log(
     `Seeded ${TRIBES.length} tribes, ${MEMBERS.length} members, ` +

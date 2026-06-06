@@ -1,15 +1,42 @@
-const config = require('../../../../../config/config');
-const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-const testutils = require('../../../../../testutils/server/server.testutil');
+const proxyquire = require('proxyquire').noCallThru();
 require('should');
 
+function loadPushService(configOverrides) {
+  const config = {
+    domain: 'www.trustroots.test',
+    https: false,
+    ...configOverrides,
+  };
+  const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+  const jobs = [];
+  const agenda = {
+    now(type, data, callback) {
+      jobs.push(JSON.parse(JSON.stringify({ type, data })));
+      process.nextTick(callback);
+    },
+  };
+
+  const pushService = proxyquire(
+    '../../../server/services/push.server.service',
+    {
+      '../../../../config/config': config,
+      '../../../../config/lib/agenda': agenda,
+    },
+  );
+
+  return { jobs, pushService, url };
+}
+
 describe('Service: push', function () {
-  const jobs = testutils.catchJobs();
-
+  let jobs;
   let pushService;
+  let url;
 
-  before(function () {
-    pushService = require('../../../server/services/push.server.service');
+  beforeEach(function () {
+    const harness = loadPushService();
+    jobs = harness.jobs;
+    pushService = harness.pushService;
+    url = harness.url;
   });
 
   it('can send a user notification', function (done) {
@@ -77,6 +104,25 @@ describe('Service: push', function () {
           '/profile/edit/account?utm_source=push-notification&utm_medium=fcm&utm_campaign=device-added&utm_content=reply-to',
       );
 
+      done();
+    });
+  });
+
+  it('uses https URLs when configured', function (done) {
+    const harness = loadPushService({
+      domain: 'secure.trustroots.test',
+      https: true,
+    });
+    const user = {
+      _id: 20,
+      pushRegistration: [{ token: 'secure-token' }],
+    };
+
+    harness.pushService.notifyPushDeviceAdded(user, 'web', err => {
+      if (err) return done(err);
+      harness.jobs[0].data.notification.click_action.should.equal(
+        'https://secure.trustroots.test/profile/edit/account?utm_source=push-notification&utm_medium=fcm&utm_campaign=device-added&utm_content=reply-to',
+      );
       done();
     });
   });

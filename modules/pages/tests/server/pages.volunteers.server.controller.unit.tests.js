@@ -1,15 +1,10 @@
 /**
- * Unit tests for uncovered volunteers controller error paths.
+ * Unit tests for the volunteers controller.
  */
-const mongoose = require('mongoose');
+const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
-const volunteersController = require('../../server/controllers/pages.volunteers.server.controller');
-const errorService = require('../../../core/server/services/error.server.service');
-const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
-
-const User = mongoose.model('User');
 
 function mockResponse() {
   let resolveResponse;
@@ -30,67 +25,116 @@ function mockResponse() {
   return res;
 }
 
+function loadController(execHandler) {
+  const exec = sinon.stub().callsFake(execHandler);
+  const limit = sinon.stub().withArgs(500).returns({ exec });
+  const sort = sinon.stub().withArgs('firstName username').returns({ limit });
+  const select = sinon.stub().withArgs('username firstName roles').returns({
+    sort,
+  });
+  const find = sinon.stub().returns({ select });
+
+  const controller = proxyquire(
+    '../../server/controllers/pages.volunteers.server.controller',
+    {
+      lodash: {
+        shuffle: users => users,
+      },
+      mongoose: {
+        model: () => ({ find }),
+      },
+    },
+  );
+
+  return { controller, exec, find, limit, select, sort };
+}
+
 describe('Volunteers controller unit tests', () => {
-  afterEach(() => {
-    sinon.restore();
-    return utils.clearDatabase();
+  it('queries volunteer and alumni roles with bounded selected results', async () => {
+    const harness = loadController(callback => callback(null, []));
+    const res = mockResponse();
+
+    harness.controller.list({}, res);
+    await res.waitForResponse();
+
+    harness.find
+      .calledOnceWithExactly({
+        roles: { $in: ['volunteer', 'volunteer-alumni'] },
+      })
+      .should.be.true();
+    harness.select
+      .calledOnceWithExactly('username firstName roles')
+      .should.be.true();
+    harness.sort.calledOnceWithExactly('firstName username').should.be.true();
+    harness.limit.calledOnceWithExactly(500).should.be.true();
   });
 
   it('returns 400 when the database lookup fails', async () => {
-    sinon.stub(User, 'find').returns({
-      select: () => ({
-        sort: () => ({
-          limit: () => ({
-            exec: cb => cb(new Error('lookup failed')),
-          }),
-        }),
-      }),
-    });
-
+    const harness = loadController(callback =>
+      callback(new Error('lookup failed')),
+    );
     const res = mockResponse();
-    volunteersController.list({}, res);
+
+    harness.controller.list({}, res);
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(400);
-    response.body.message.should.equal(
-      errorService.getErrorMessage(new Error('lookup failed')),
-    );
+    response.body.message.should.startWith('Snap! Something went wrong.');
   });
 
-  it('returns volunteers and alumni grouped by role', async () => {
-    const volunteer = new User({
-      firstName: 'Active',
-      lastName: 'Volunteer',
-      displayName: 'Active Volunteer',
-      email: 'active-volunteer@example.com',
-      username: 'unitactivevol',
-      password: 'password123',
-      provider: 'local',
-      roles: ['user', 'volunteer'],
-      public: true,
-    });
-    const alumni = new User({
-      firstName: 'Former',
-      lastName: 'Volunteer',
-      displayName: 'Former Volunteer',
-      email: 'former-volunteer@example.com',
-      username: 'unitformervol',
-      password: 'password123',
-      provider: 'local',
-      roles: ['user', 'volunteer-alumni'],
-      public: true,
-    });
-    await volunteer.save();
-    await alumni.save();
-
+  it('returns volunteers and alumni grouped by role with only public fields', async () => {
+    const users = [
+      {
+        _id: 'volunteer-id',
+        firstName: 'Active',
+        lastName: 'Hidden',
+        roles: ['user', 'volunteer'],
+        username: 'activevol',
+      },
+      {
+        _id: 'alumni-id',
+        firstName: 'Former',
+        email: 'hidden@example.com',
+        roles: ['user', 'volunteer-alumni'],
+        username: 'formervol',
+      },
+      {
+        _id: 'both-id',
+        firstName: 'Both',
+        roles: ['volunteer', 'volunteer-alumni'],
+        username: 'bothvol',
+      },
+    ];
+    const harness = loadController(callback => callback(null, users));
     const res = mockResponse();
-    volunteersController.list({}, res);
+
+    harness.controller.list({}, res);
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(200);
-    response.body.volunteers.length.should.equal(1);
-    response.body.alumni.length.should.equal(1);
-    response.body.volunteers[0].username.should.equal('unitactivevol');
-    response.body.alumni[0].username.should.equal('unitformervol');
+    response.body.volunteers.should.deepEqual([
+      {
+        _id: 'volunteer-id',
+        firstName: 'Active',
+        username: 'activevol',
+      },
+      {
+        _id: 'both-id',
+        firstName: 'Both',
+        username: 'bothvol',
+      },
+    ]);
+    response.body.alumni.should.deepEqual([
+      {
+        _id: 'alumni-id',
+        firstName: 'Former',
+        username: 'formervol',
+      },
+      {
+        _id: 'both-id',
+        firstName: 'Both',
+        username: 'bothvol',
+      },
+    ]);
   });
 });

@@ -5,6 +5,7 @@ const DEFAULT_PASSWORD = 'Tester123';
 // Confirmed members created by scripts/e2e/seed.js before Playwright runs.
 const SEEDED_MEMBERS = [
   {
+    id: '665000000000000000000001',
     username: 'e2e-seeded-berlin',
     email: 'e2e-seeded-berlin@example.test',
     password: DEFAULT_PASSWORD,
@@ -12,6 +13,7 @@ const SEEDED_MEMBERS = [
     lastName: 'Host',
   },
   {
+    id: '665000000000000000000002',
     username: 'e2e-seeded-portland',
     email: 'e2e-seeded-portland@example.test',
     password: DEFAULT_PASSWORD,
@@ -19,6 +21,7 @@ const SEEDED_MEMBERS = [
     lastName: 'Host',
   },
   {
+    id: '665000000000000000000003',
     username: 'e2e-seeded-beijing',
     email: 'e2e-seeded-beijing@example.test',
     password: DEFAULT_PASSWORD,
@@ -28,6 +31,7 @@ const SEEDED_MEMBERS = [
 ];
 
 const SEEDED_ADMIN = {
+  id: '665000000000000000000005',
   username: 'e2e-seeded-admin',
   email: 'e2e-seeded-admin@example.test',
   password: DEFAULT_PASSWORD,
@@ -36,6 +40,7 @@ const SEEDED_ADMIN = {
 };
 
 const SEEDED_SHADOW = {
+  id: '665000000000000000000004',
   username: 'e2e-seeded-shadow',
   email: 'e2e-seeded-shadow@example.test',
   password: DEFAULT_PASSWORD,

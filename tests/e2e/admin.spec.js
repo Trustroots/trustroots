@@ -141,7 +141,11 @@ test.describe('admin moderation flows', () => {
 
     await page.goto(`/admin/user?id=${shadowId}`);
 
-    await expect(page.getByText(/report card/i)).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName} report card`,
+      }),
+    ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
     await expect(page.getByText('1 sent').first()).toBeVisible();
   });

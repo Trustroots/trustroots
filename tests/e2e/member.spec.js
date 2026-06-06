@@ -118,11 +118,13 @@ test.describe('confirmed member flows', () => {
     const vegansCard = page
       .locator('.tribe')
       .filter({ has: page.getByRole('heading', { name: 'Vegans' }) });
-    await vegansCard.getByRole('button', { name: /^join$/i }).click();
+    await expect(vegansCard).toBeVisible();
 
-    await expect(
-      vegansCard.getByRole('button', { name: /^joined$/i }),
-    ).toBeVisible();
+    const joinButton = vegansCard.locator('button.tribe-join');
+    await expect(joinButton).toContainText(/^join$/i);
+    await joinButton.click();
+
+    await expect(joinButton).toContainText(/^joined$/i);
   });
 
   test('shadowbanned member profiles are hidden from other members', async ({

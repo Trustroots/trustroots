@@ -38,7 +38,6 @@ test.describe.serial('authentication smoke', () => {
         firstName: signupUser.firstName,
         lastName: signupUser.lastName,
         password: signupUser.password,
-        username: signupUser.username,
       });
 
       await route.fulfill({

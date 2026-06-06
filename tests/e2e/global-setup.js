@@ -80,9 +80,7 @@ async function waitForSeededTribes(context, deadline) {
 
   while (Date.now() < deadline) {
     try {
-      const response = await context.get('/api/tribes', {
-        params: { limit: 150 },
-      });
+      const response = await context.get('/api/tribes?limit=150');
 
       if (response.ok()) {
         const tribes = await response.json();

@@ -34,10 +34,19 @@ test.describe('authenticated member flows', () => {
     await page
       .locator('#search-users-form input')
       .fill(SEEDED_MEMBERS[0].username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/users?search=') &&
+        response.request().method() === 'GET' &&
+        response.ok(),
+    );
     await page.locator('#search-users-form button[type="submit"]').click();
+    await searchResponse;
 
     await expect(
-      page.getByText(SEEDED_MEMBERS[0].username).first(),
+      page.getByRole('link', {
+        name: `${SEEDED_MEMBERS[0].firstName} ${SEEDED_MEMBERS[0].lastName}`,
+      }),
     ).toBeVisible();
   });
 
@@ -71,7 +80,7 @@ test.describe('authenticated member flows', () => {
 
     await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
     await expect(page).toHaveTitle(/Profile - Trustroots/);
-    await expect(page.locator('h2.profile-name')).toHaveText(
+    await expect(page.locator('.row.hidden-xs h2.profile-name')).toHaveText(
       `${user.firstName} ${user.lastName}`,
     );
   });
@@ -142,7 +151,9 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveTitle(/Navigation - Trustroots/);
     await expect(page.getByText(/view your profile/i)).toBeVisible();
     await expect(page.getByText(/edit profile/i).first()).toBeVisible();
-    await expect(page.getByText(/find people/i)).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /find people/i }),
+    ).toBeVisible();
   });
 
   test('member can sign out', async ({ page }) => {

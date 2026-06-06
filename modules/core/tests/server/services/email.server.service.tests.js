@@ -1,14 +1,29 @@
 const should = require('should');
-const testutils = require('../../../../../testutils/server/server.testutil');
+const proxyquire = require('proxyquire').noCallThru();
 const config = require('../../../../../config/config');
 
 let emailService;
 
 describe('Service: email', function () {
-  const jobs = testutils.catchJobs();
+  let jobs;
 
-  before(function () {
-    emailService = require('../../../server/services/email.server.service');
+  function loadEmailService(stubs = {}) {
+    jobs = [];
+    const agenda = {
+      now(type, data, callback) {
+        jobs.push(JSON.parse(JSON.stringify({ type, data })));
+        process.nextTick(callback);
+      },
+    };
+
+    return proxyquire('../../../server/services/email.server.service', {
+      '../../../../config/lib/agenda': agenda,
+      ...stubs,
+    });
+  }
+
+  beforeEach(function () {
+    emailService = loadEmailService();
   });
 
   it('can send signup email confirmation', function (done) {
@@ -38,6 +53,22 @@ describe('Service: email', function () {
           '/confirm-email/' + user.emailToken,
         );
       });
+      done();
+    });
+  });
+
+  it('falls back to primary email for signup confirmation without a temporary email', function (done) {
+    const user = {
+      displayName: 'test user',
+      email: 'test@test.com',
+      emailToken: 'emailtoken',
+    };
+
+    emailService.sendSignupEmailConfirmation(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.to.address.should.equal(user.email);
+      jobs[0].data.text.should.containEql(user.email);
       done();
     });
   });
@@ -135,6 +166,50 @@ describe('Service: email', function () {
     });
   });
 
+  it('includes the reactivation survey link when configured', function (done) {
+    const originalSurveyUrl = config.surveyReactivateHosts;
+    config.surveyReactivateHosts = 'https://survey.trustroots.test/reactivate';
+    const user = {
+      firstName: 'first',
+      lastName: 'last',
+      displayName: 'first last',
+      email: 'test@test.com',
+    };
+
+    emailService.sendReactivateHosts(user, function (err) {
+      const surveyUrl = config.surveyReactivateHosts;
+      config.surveyReactivateHosts = originalSurveyUrl;
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.html.should.containEql(surveyUrl);
+      jobs[0].data.text.should.containEql(surveyUrl);
+      done();
+    });
+  });
+
+  it('omits the reactivation survey link when disabled', function (done) {
+    const service = loadEmailService({
+      '../../../../config/config': {
+        ...config,
+        surveyReactivateHosts: false,
+      },
+    });
+    const user = {
+      firstName: 'first',
+      lastName: 'last',
+      displayName: 'first last',
+      email: 'test@test.com',
+    };
+
+    service.sendReactivateHosts(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.html.should.not.containEql('ideas.trustroots.org');
+      jobs[0].data.text.should.not.containEql('ideas.trustroots.org');
+      done();
+    });
+  });
+
   it('can send messages unread email', function (done) {
     const userFrom = {
       _id: 'from-user-id',
@@ -180,6 +255,44 @@ describe('Service: email', function () {
         jobs[0].data.html.should.containEql('/messages/' + userFrom.username);
         jobs[0].data.to.name.should.equal(userTo.displayName);
         jobs[0].data.to.address.should.equal(userTo.email);
+        done();
+      },
+    );
+  });
+
+  it('uses the follow-up subject for repeated unread message notifications', function (done) {
+    const userFrom = {
+      _id: 'from-user-id',
+      username: 'userfrom',
+      displayName: 'from name',
+      email: 'from@test.com',
+    };
+    const userTo = {
+      _id: 'to-user-id',
+      username: 'userto',
+      displayName: 'to name',
+      email: 'to@test.com',
+    };
+    const notification = {
+      notificationCount: 1,
+      messages: [
+        {
+          id: 'message-id-1',
+          content: 'message content 1',
+        },
+      ],
+    };
+
+    emailService.sendMessagesUnread(
+      userFrom,
+      userTo,
+      notification,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].data.subject.should.equal(
+          userFrom.displayName + ' is still waiting for a reply on Trustroots',
+        );
         done();
       },
     );
@@ -284,6 +397,58 @@ describe('Service: email', function () {
     });
   });
 
+  it('uses a generic support request subject without member identity', function (done) {
+    const supportRequest = {
+      message: 'test-support-message',
+      username: '',
+      displayName: '',
+    };
+    const replyTo = {
+      email: 'replyto@test.com',
+    };
+
+    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.subject.should.equal('Support request');
+      done();
+    });
+  });
+
+  it('includes only username in the support request subject when display name is missing', function (done) {
+    const supportRequest = {
+      message: 'test-support-message',
+      username: 'joedoe',
+    };
+    const replyTo = {
+      email: 'replyto@test.com',
+    };
+
+    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.subject.should.equal('Support request from joedoe');
+      done();
+    });
+  });
+
+  it('includes only display name in the support request subject when username is missing', function (done) {
+    const supportRequest = {
+      message: 'test-support-message',
+      displayName: 'Joe Doe',
+    };
+    const replyTo = {
+      email: 'replyto@test.com',
+    };
+
+    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.subject.should.equal('Support request (Joe Doe)');
+      done();
+    });
+  });
+
   it('can send signup reminder email', function (done) {
     const user = {
       _id: 'user-id',
@@ -312,8 +477,70 @@ describe('Service: email', function () {
     });
   });
 
+  it('uses a final warning subject for the last signup reminder', function (done) {
+    const user = {
+      _id: 'user-id',
+      username: 'username',
+      displayName: 'Firstname Lastname',
+      email: 'email@test.com',
+      emailTemporary: 'email@test.com',
+      emailToken: 'email-token',
+      publicReminderCount: config.limits.maxSignupReminders - 1,
+    };
+
+    emailService.sendSignupEmailReminder(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].type.should.equal('send email');
+      jobs[0].data.subject.should.equal(
+        'Last chance to complete your signup to Trustroots!',
+      );
+      done();
+    });
+  });
+
+  it('falls back to primary email for signup reminders without a temporary email', function (done) {
+    const user = {
+      _id: 'user-id',
+      username: 'username',
+      displayName: 'Firstname Lastname',
+      email: 'email@test.com',
+      emailToken: 'email-token',
+    };
+
+    emailService.sendSignupEmailReminder(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      jobs[0].data.to.address.should.equal(user.email);
+      jobs[0].data.text.should.containEql(user.email);
+      done();
+    });
+  });
+
   it('returns an empty object when base template params are invalid', function () {
     emailService.addEmailBaseTemplateParams(null).should.deepEqual({});
+  });
+
+  it('builds HTTPS base template URLs when HTTPS is configured', function () {
+    const service = loadEmailService({
+      '../../../../config/config': {
+        ...config,
+        domain: 'secure.trustroots.test',
+        https: true,
+      },
+    });
+
+    const params = service.addEmailBaseTemplateParams({
+      subject: 'test',
+      name: 'test',
+      email: 'test@test.com',
+      utmCampaign: 'test',
+    });
+
+    params.footerUrlPlainText.should.equal('https://secure.trustroots.test');
+    params.urlSupportPlainText.should.equal(
+      'https://secure.trustroots.test/support',
+    );
   });
 
   it('can send remove profile emails', function (done) {
@@ -390,6 +617,24 @@ describe('Service: email', function () {
       if (err) return done(err);
       jobs[0].data.headers['X-MSYS-API'].campaign_id.should.containEql(
         'fill-profile',
+      );
+      done();
+    });
+  });
+
+  it('uses the feedback topic for complete welcome sequence third emails', function (done) {
+    const user = {
+      firstName: 'Test',
+      displayName: 'Test User',
+      email: 'test@test.com',
+      username: 'testuser',
+      description: 'Complete profile. '.repeat(config.profileMinimumLength),
+    };
+
+    emailService.sendWelcomeSequenceThird(user, function (err) {
+      if (err) return done(err);
+      jobs[0].data.headers['X-MSYS-API'].campaign_id.should.containEql(
+        'feedback',
       );
       done();
     });
@@ -506,6 +751,65 @@ describe('Service: email', function () {
       );
       done();
     });
+  });
+
+  it('passes render failures to renderEmail callbacks', function (done) {
+    const service = loadEmailService({
+      '../../../../config/lib/render': (templatePath, params, callback) =>
+        callback(new Error('render failed')),
+    });
+
+    service.renderEmail(
+      'reset-password',
+      { subject: 'test', name: 'test', email: 'test@test.com' },
+      function (err) {
+        err.message.should.equal('render failed');
+        done();
+      },
+    );
+  });
+
+  it('passes render failures to renderEmailAndSend callbacks without scheduling jobs', function (done) {
+    const service = loadEmailService({
+      '../../../../config/lib/render': (templatePath, params, callback) =>
+        callback(new Error('render failed')),
+    });
+
+    service.renderEmailAndSend(
+      'reset-password',
+      { subject: 'test', name: 'test', email: 'test@test.com' },
+      function (err) {
+        err.message.should.equal('render failed');
+        jobs.length.should.equal(0);
+        done();
+      },
+    );
+  });
+
+  it('passes Agenda scheduling failures to renderEmailAndSend callbacks', function (done) {
+    const service = loadEmailService({
+      '../../../../config/lib/agenda': {
+        now(type, data, callback) {
+          jobs.push(JSON.parse(JSON.stringify({ type, data })));
+          callback(new Error('agenda failed'));
+        },
+      },
+    });
+
+    service.renderEmailAndSend(
+      'reset-password',
+      {
+        subject: 'test',
+        name: 'test',
+        email: 'test@test.com',
+        utmCampaign: 'test',
+      },
+      function (err) {
+        err.message.should.equal('agenda failed');
+        jobs.length.should.equal(1);
+        done();
+      },
+    );
   });
 
   describe('Plain text emails', function () {

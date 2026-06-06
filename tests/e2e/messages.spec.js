@@ -45,11 +45,7 @@ test.describe('seeded message flows', () => {
   test('member thread API hides shadow-hidden messages from the recipient', async ({
     request,
   }) => {
-    const shadowId = await fetchUserIdByUsername(
-      request,
-      SEEDED_SHADOW.username,
-    );
-    const response = await request.get(`/api/messages/${shadowId}`);
+    const response = await request.get(`/api/messages/${SEEDED_SHADOW.id}`);
     expect(response.ok()).toBeTruthy();
 
     const messages = await response.json();

@@ -117,6 +117,20 @@ describe('OAuth strategy configuration unit tests', () => {
       (providerUserProfile.email === undefined).should.be.true();
       providerUserProfile.providerData.accessToken.should.equal('token');
     });
+
+    it('leaves optional profile fields undefined when GitHub omits them', () => {
+      const harness = loadStrategy(strategyPath, 'passport-github');
+      harness.strategy(fullConfig('github'));
+
+      harness.getVerify()({}, 'token', 'refresh', {}, () => {});
+
+      const providerUserProfile =
+        harness.saveOAuthUserProfile.firstCall.args[1];
+      (providerUserProfile.displayName === undefined).should.be.true();
+      (providerUserProfile.username === undefined).should.be.true();
+      (providerUserProfile.email === undefined).should.be.true();
+      providerUserProfile.providerData.accessToken.should.equal('token');
+    });
   });
 
   describe('Twitter strategy', () => {
@@ -150,6 +164,20 @@ describe('OAuth strategy configuration unit tests', () => {
       providerUserProfile.providerIdentifierField.should.equal('id_str');
       providerUserProfile.displayName.should.equal('Jack');
       providerUserProfile.username.should.equal('jack');
+      providerUserProfile.providerData.token.should.equal('token');
+      providerUserProfile.providerData.tokenSecret.should.equal('token-secret');
+    });
+
+    it('tolerates a sparse Twitter profile', () => {
+      const harness = loadStrategy(strategyPath, 'passport-twitter');
+      harness.strategy(fullConfig('twitter'));
+
+      harness.getVerify()({}, 'token', 'token-secret', {}, () => {});
+
+      const providerUserProfile =
+        harness.saveOAuthUserProfile.firstCall.args[1];
+      (providerUserProfile.displayName === undefined).should.be.true();
+      (providerUserProfile.username === undefined).should.be.true();
       providerUserProfile.providerData.token.should.equal('token');
       providerUserProfile.providerData.tokenSecret.should.equal('token-secret');
     });

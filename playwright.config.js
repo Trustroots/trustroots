@@ -97,7 +97,7 @@ module.exports = defineConfig({
       name: 'authenticated',
       testMatch: /authenticated\.spec\.js/,
       dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authStorageState,
