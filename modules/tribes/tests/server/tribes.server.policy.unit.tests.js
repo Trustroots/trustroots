@@ -35,6 +35,21 @@ function mockResponse() {
 }
 
 describe('Tribes policy unit tests', () => {
+  it('registers admin, user, and guest tribe policies', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.calledOnce.should.be.true();
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies
+      .map(entry => entry.roles[0])
+      .should.deepEqual(['admin', 'user', 'guest']);
+    policies[2].allows
+      .map(allow => allow.resources)
+      .should.deepEqual(['/api/tribes', '/api/tribes/:tribe']);
+  });
+
   it('returns 500 when authorization fails unexpectedly', done => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
@@ -93,5 +108,26 @@ describe('Tribes policy unit tests', () => {
 
     nextCalled.should.be.true();
     done();
+  });
+
+  it('uses signed-in user roles for ACL checks', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { roles: ['admin'] },
+        route: { path: '/api/tribes/:tribe' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(['admin'], '/api/tribes/:tribe', 'get')
+      .should.be.true();
+    next.calledOnce.should.be.true();
   });
 });

@@ -31,6 +31,57 @@ function mockResponse() {
 }
 
 describe('Experiences policy unit tests', () => {
+  it('registers public user and admin experience policies', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.calledOnce.should.be.true();
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies.length.should.equal(1);
+    policies[0].roles.should.deepEqual(['user', 'admin']);
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/my-experience');
+  });
+
+  it('calls next when ACL allows a public user', async () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.resolves(true);
+    const next = sinon.stub();
+
+    await policy.isAllowed(
+      {
+        user: { public: true, roles: ['user'] },
+        route: { path: '/api/experiences' },
+        method: 'POST',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(['user'], '/api/experiences', 'post')
+      .should.be.true();
+    next.calledOnce.should.be.true();
+  });
+
+  it('checks guest permissions when there is no signed-in user', async () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.resolves(false);
+
+    await policy.isAllowed(
+      {
+        route: { path: '/api/experiences' },
+        method: 'GET',
+      },
+      mockResponse(),
+      () => {},
+    );
+
+    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
+  });
+
   it('passes thrown ACL errors to next', async () => {
     const { policy, mockAcl } = loadPolicy();
     const aclError = new Error('acl down');

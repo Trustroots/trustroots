@@ -35,6 +35,60 @@ function mockResponse() {
 }
 
 describe('Admin policy unit tests', () => {
+  it('registers admin-only role policies', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.calledOnce.should.be.true();
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies.length.should.equal(1);
+    policies[0].roles.should.deepEqual(['admin']);
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/acquisition-stories');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/reference-threads');
+  });
+
+  it('calls next when ACL allows the admin request', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { roles: ['admin'] },
+        route: { path: '/api/admin/users' },
+        method: 'POST',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(['admin'], '/api/admin/users', 'post')
+      .should.be.true();
+    next.calledOnce.should.be.true();
+  });
+
+  it('checks guest permissions when no user roles are present', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, false);
+
+    policy.isAllowed(
+      {
+        route: { path: '/api/admin/users' },
+        method: 'POST',
+      },
+      mockResponse(),
+      () => {},
+    );
+
+    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
+  });
+
   it('returns 500 when authorization fails unexpectedly', done => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));

@@ -38,6 +38,20 @@ function mockResponse() {
 }
 
 describe('Reference thread policy unit tests', () => {
+  it('registers admin and user reference policies', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.calledOnce.should.be.true();
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies[0].roles.should.deepEqual(['admin']);
+    policies[1].roles.should.deepEqual(['user']);
+    policies[1].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/references-thread/:referenceThreadUserToId');
+  });
+
   it('returns 403 for unauthenticated users', done => {
     const { policy } = loadPolicy();
     const res = mockResponse();
@@ -93,6 +107,72 @@ describe('Reference thread policy unit tests', () => {
 
     nextCalled.should.be.true();
     done();
+  });
+
+  it('allows published users to read through ACL', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { public: true, roles: ['user'] },
+        route: { path: '/api/references-thread/:referenceThreadUserToId' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(
+        ['user'],
+        '/api/references-thread/:referenceThreadUserToId',
+        'get',
+      )
+      .should.be.true();
+    next.calledOnce.should.be.true();
+  });
+
+  it('lets unpublished users read through ACL when not owning the thread', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: {
+          _id: 'reader-id',
+          public: false,
+          roles: ['user'],
+        },
+        referenceThread: { userFrom: { equals: sinon.stub().returns(false) } },
+        route: { path: '/api/references-thread/:referenceThreadUserToId' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed.calledOnce.should.be.true();
+    next.calledOnce.should.be.true();
+  });
+
+  it('checks guest permissions for signed-in users without roles', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, false);
+
+    policy.isAllowed(
+      {
+        user: { public: true },
+        route: { path: '/api/references-thread' },
+        method: 'POST',
+      },
+      mockResponse(),
+      () => {},
+    );
+
+    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
   });
 
   it('returns 500 when authorization fails unexpectedly', done => {
