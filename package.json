@@ -61,6 +61,7 @@
     "test:client:watch": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --watch --no-watchman",
     "test:client": "BROWSERSLIST_IGNORE_OLD_DATA=1 NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --no-watchman --silent --maxWorkers=50%",
     "test:coverage:client": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --coverage --runInBand --no-watchman",
+    "test:coverage:client:ci": "NODE_OPTIONS='--require ./jest/jest.hide-canvas.js' jest --coverage --maxWorkers=50% --no-watchman",
     "test:coverage:server": "nyc --nycrc-path .nycrc-server npm run test:server",
     "test:coverage:server:codex": "nyc --nycrc-path .nycrc-server npm run test:server:codex",
     "test:coverage": "npm run test:coverage:client && npm run test:coverage:server",

@@ -1,6 +1,6 @@
 const { test, expect } = require('./test');
 
-const { createUser, registerViaApi, signOut } = require('./helpers');
+const { createUser, registerViaApi, signOut, signUp } = require('./helpers');
 
 const user = createUser();
 
@@ -30,26 +30,7 @@ test.describe.serial('authentication smoke', () => {
   test('signup creates a unique user through the UI', async ({ page }) => {
     const signupUser = createUser();
 
-    await page.goto('/signup');
-
-    await page.locator('#firstName').fill(signupUser.firstName);
-    await page.locator('#lastName').fill(signupUser.lastName);
-    await page.locator('#email').fill(signupUser.email);
-    await page.locator('#username').fill(signupUser.username);
-    await page.locator('#password').fill(signupUser.password);
-    await page.locator('#acquisitionStory').fill('End-to-end smoke test');
-
-    await page.getByRole('button', { name: /^next$/i }).click();
-
-    await expect(
-      page.getByText(/do you want to join any circles\?/i),
-    ).toBeVisible();
-
-    const skipButton = page.getByRole('button', { name: /^skip$/i });
-    await expect(skipButton).toBeVisible();
-    await skipButton.click();
-
-    await expect(page.locator('#signup-edit')).toBeVisible();
+    await signUp(page, signupUser);
   });
 
   test('signed out user can sign in with username', async ({ page }) => {

@@ -23,16 +23,65 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
-  client:
-    if: github.event_name != 'workflow_dispatch' || inputs.run_client
+  build-dev-image:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
+    outputs:
+      image-ref: ${{ steps.image.outputs.image-ref }}
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+      - name: Set image reference
+        id: image
+        run: |
+          image_ref="ghcr.io/${GITHUB_REPOSITORY,,}/trustroots-dev:${GITHUB_SHA}"
+          echo "image-ref=$image_ref" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push dev image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/docker/dev.Dockerfile
+          tags: ${{ steps.image.outputs.image-ref }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+
+  client:
+    needs: build-dev-image
+    if: >
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_client) &&
+      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        if: needs.build-dev-image.result == 'skipped'
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        if: needs.build-dev-image.result == 'success'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull dev image
+        if: needs.build-dev-image.result == 'success'
+        run: |
+          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
+          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
       - name: Build dev image
+        if: needs.build-dev-image.result == 'skipped'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -62,13 +111,31 @@ jobs:
           path: coverage/client
 
   server:
-    if: github.event_name != 'workflow_dispatch' || inputs.run_server
+    needs: build-dev-image
+    if: >
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_server) &&
+      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
+        if: needs.build-dev-image.result == 'skipped'
         uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        if: needs.build-dev-image.result == 'success'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull dev image
+        if: needs.build-dev-image.result == 'success'
+        run: |
+          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
+          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
       - name: Build dev image
+        if: needs.build-dev-image.result == 'skipped'
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -104,16 +171,35 @@ jobs:
           path: coverage/server
 
   e2e:
+    needs: build-dev-image
     if: >
-      (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
-      (github.event_name == 'pull_request' &&
-        contains(github.event.pull_request.labels.*.name, 'run-e2e'))
+      always() &&
+      (
+        (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
+        (github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'run-e2e'))
+      ) &&
+      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
+        if: needs.build-dev-image.result == 'skipped'
         uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        if: needs.build-dev-image.result == 'success'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull dev image
+        if: needs.build-dev-image.result == 'success'
+        run: |
+          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
+          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
       - name: Build dev image
+        if: needs.build-dev-image.result == 'skipped'
         uses: docker/build-push-action@v7
         with:
           context: .
