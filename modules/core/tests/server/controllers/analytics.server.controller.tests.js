@@ -46,10 +46,20 @@ describe('Controller: analytics', function () {
       result.should.equal('https://www.trustroots.org/');
     });
 
+    it('returns the original URL when the UTM params object is missing', function () {
+      const result = analytics.appendUTMParams('https://www.trustroots.org/');
+      result.should.equal('https://www.trustroots.org/');
+    });
+
     it('returns an empty string when no URL is given', function () {
       const result = analytics.appendUTMParams('', {
         source: 'transactional_email',
       });
+      result.should.equal('');
+    });
+
+    it('returns an empty string when neither URL nor UTM params are given', function () {
+      const result = analytics.appendUTMParams();
       result.should.equal('');
     });
   });

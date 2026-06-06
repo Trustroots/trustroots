@@ -1,8 +1,21 @@
-const coreController = require('../../server/controllers/core.server.controller');
+const proxyquire = require('proxyquire').noCallThru();
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
 
 require('should');
+
+const sanitizeProfile = user => ({
+  sanitized: true,
+  username: user.username,
+});
+const coreController = proxyquire(
+  '../../server/controllers/core.server.controller',
+  {
+    '../../../users/server/controllers/users.profile.server.controller': {
+      sanitizeProfile,
+    },
+  },
+);
 
 /**
  * Minimal Express-like response mock for unit-testing controller actions
@@ -64,6 +77,25 @@ describe('Controller: core', function () {
       coreController.renderIndex({ path: '/' }, res);
       (res.renderVars.invite === undefined).should.be.true();
     });
+
+    it('exposes a sanitized user profile when signed in', function () {
+      const res = mockResponse();
+      coreController.renderIndex(
+        { path: '/', user: { username: 'alice', email: 'alice@example.com' } },
+        res,
+      );
+      res.renderVars.user.should.deepEqual({
+        sanitized: true,
+        username: 'alice',
+      });
+    });
+
+    it('exposes the current tribe when browsing a tribe page', function () {
+      const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
+      const res = mockResponse();
+      coreController.renderIndex({ path: '/tribes/test-tribe', tribe }, res);
+      res.renderVars.tribe.should.equal(tribe);
+    });
   });
 
   describe('renderNotFound', function () {
@@ -110,6 +142,14 @@ describe('Controller: core', function () {
       coreController.receiveCSPViolationReport({ body: null }, res);
       res.statusCode.should.equal(204);
     });
+
+    it('responds with status 204 in test mode', function () {
+      process.env.NODE_ENV = 'test';
+
+      const res = mockResponse();
+      coreController.receiveCSPViolationReport({ body: { foo: 'bar' } }, res);
+      res.statusCode.should.equal(204);
+    });
   });
 
   describe('receiveExpectCTViolationReport', function () {
@@ -136,6 +176,17 @@ describe('Controller: core', function () {
     it('responds with status 204 when no report body is present', function () {
       const res = mockResponse();
       coreController.receiveExpectCTViolationReport({ body: null }, res);
+      res.statusCode.should.equal(204);
+    });
+
+    it('responds with status 204 in test mode', function () {
+      process.env.NODE_ENV = 'test';
+
+      const res = mockResponse();
+      coreController.receiveExpectCTViolationReport(
+        { body: { foo: 'bar' } },
+        res,
+      );
       res.statusCode.should.equal(204);
     });
   });

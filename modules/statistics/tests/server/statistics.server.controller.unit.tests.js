@@ -4,7 +4,10 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
+require('../../../offers/server/models/offer.server.model');
+require('../../../users/server/models/user.server.model');
 const statistics = require('../../server/controllers/statistics.server.controller');
+const statService = require('../../../stats/server/services/stats.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -16,22 +19,27 @@ function deferredResponse() {
   const promise = new Promise(resolve => {
     resolveResponse = resolve;
   });
-  const res = { statusCode: 200, body: null };
+  const res = { body: null, headers: {}, sendCount: 0, statusCode: 200 };
   res.status = code => {
     res.statusCode = code;
     return res;
   };
   res.send = body => {
+    res.sendCount += 1;
     res.body = body;
     resolveResponse(res);
     return res;
   };
   res.json = body => {
+    res.sendCount += 1;
     res.body = body;
     resolveResponse(res);
     return res;
   };
-  res.header = () => res;
+  res.header = (name, value) => {
+    res.headers[name.toLowerCase()] = value;
+    return res;
+  };
   res.waitForResponse = () => promise;
   return res;
 }
@@ -39,6 +47,9 @@ function deferredResponse() {
 describe('Statistics controller unit tests', () => {
   afterEach(() => {
     sinon.restore();
+    if (mongoose.connection.readyState !== 1) {
+      return undefined;
+    }
     return utils.clearDatabase();
   });
 
@@ -406,6 +417,7 @@ describe('Statistics controller unit tests', () => {
 
   describe('collectStatistics', () => {
     it('rejects missing stats payload', async () => {
+      const stat = sinon.stub(statService, 'stat');
       const res = deferredResponse();
       statistics.collectStatistics(
         { body: { collection: 'mobileAppInit' } },
@@ -413,9 +425,13 @@ describe('Statistics controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      res.sendCount.should.equal(1);
+      res.headers['x-tr-update-needed'].should.containEql('update');
+      stat.called.should.be.false();
     });
 
     it('rejects an invalid collection', async () => {
+      const stat = sinon.stub(statService, 'stat');
       const res = deferredResponse();
       statistics.collectStatistics(
         { body: { stats: { version: '1.0.0' }, collection: 'invalid' } },
@@ -423,9 +439,13 @@ describe('Statistics controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      res.sendCount.should.equal(1);
+      res.headers['x-tr-update-needed'].should.containEql('update');
+      stat.called.should.be.false();
     });
 
     it('rejects a missing collection', async () => {
+      const stat = sinon.stub(statService, 'stat');
       const res = deferredResponse();
       statistics.collectStatistics(
         { body: { stats: { version: '1.0.0' } } },
@@ -434,9 +454,15 @@ describe('Statistics controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Missing or invalid `collection`.');
+      res.sendCount.should.equal(1);
+      res.headers['x-tr-update-needed'].should.containEql('update');
+      stat.called.should.be.false();
     });
 
     it('accepts a current mobile app version', async () => {
+      const stat = sinon.stub(statService, 'stat').callsFake((stats, cb) => {
+        cb();
+      });
       const res = deferredResponse();
       statistics.collectStatistics(
         {
@@ -450,9 +476,20 @@ describe('Statistics controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.message.should.equal('OK');
+      res.sendCount.should.equal(1);
+      stat.calledOnce.should.be.true();
+      stat.firstCall.args[0].namespace.should.equal('mobileAppInit');
+      stat.firstCall.args[0].counts.count.should.equal(1);
+      stat.firstCall.args[0].tags.version.should.equal('1.0.0');
+      stat.firstCall.args[0].tags.deviceYearClass.should.equal('unknown');
+      stat.firstCall.args[0].meta.os.should.equal('android');
+      stat.firstCall.args[0].meta.expoVersion.should.equal('unknown');
     });
 
     it('asks outdated mobile apps to update', async () => {
+      sinon.stub(statService, 'stat').callsFake((stats, cb) => {
+        cb();
+      });
       const res = deferredResponse();
       statistics.collectStatistics(
         {
@@ -466,6 +503,8 @@ describe('Statistics controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.message.should.containEql('update');
+      res.sendCount.should.equal(1);
+      res.headers['x-tr-update-needed'].should.containEql('update');
     });
   });
 });

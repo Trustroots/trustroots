@@ -423,13 +423,13 @@ exports.collectStatistics = function (req, res) {
     'You should update Trustroots app or otherwise it will not continue functioning.';
 
   if (!_.has(req, 'body.stats') || !_.isObject(req.body.stats)) {
-    res.header('x-tr-update-needed', updateMsg).status(400).send({
+    return res.header('x-tr-update-needed', updateMsg).status(400).send({
       message: 'Missing or invalid `stats`.',
     });
   }
 
   if (!collection || validCollections.indexOf(collection) === -1) {
-    res.header('x-tr-update-needed', updateMsg).status(400).send({
+    return res.header('x-tr-update-needed', updateMsg).status(400).send({
       message: 'Missing or invalid `collection`.',
     });
   }
