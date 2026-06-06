@@ -2,15 +2,20 @@ const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('./test');
 
-const { SEEDED_MEMBERS, signOut, waitForTribesList } = require('./helpers');
+const {
+  SEEDED_MEMBERS,
+  createUser,
+  registerViaApi,
+  signInViaApi,
+  signOut,
+  waitForTribesList,
+} = require('./helpers');
 
 const userPath = path.join(__dirname, '.auth/user.json');
 const seededMemberStoragePath = path.join(
   __dirname,
   '.auth/seeded-member.json',
 );
-const webPort = process.env.TRUSTROOTS_E2E_WEB_PORT || 4300;
-const testBaseURL = `http://localhost:${webPort}`;
 
 /** @type {ReturnType<typeof import('./helpers').createUser>} */
 let user;
@@ -91,10 +96,13 @@ test.describe('authenticated member flows', () => {
     );
   });
 
-  test('member can view a seeded host profile', async ({ browser }) => {
+  test('member can view a seeded host profile', async ({
+    browser,
+    baseURL,
+  }) => {
     const host = SEEDED_MEMBERS[1];
     const seededMemberContext = await browser.newContext({
-      baseURL: testBaseURL,
+      baseURL,
       storageState: seededMemberStoragePath,
     });
     const seededMemberPage = await seededMemberContext.newPage();
@@ -173,10 +181,24 @@ test.describe('authenticated member flows', () => {
     ).toBeVisible();
   });
 
-  test('member can sign out', async ({ page }) => {
-    await signOut(page);
+  test('member can sign out', async ({ browser, baseURL }) => {
+    // Sign out tears down the session, so run it against a throwaway account in
+    // an isolated context. That keeps the shared authenticated session intact
+    // for the other tests in this file when they run in parallel.
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
 
-    await page.goto('/messages');
-    await expect(page).toHaveURL(/\/signin/);
+    try {
+      const throwaway = createUser();
+      await registerViaApi(context.request, throwaway);
+      await signInViaApi(page, context.request, throwaway);
+
+      await signOut(page);
+
+      await page.goto('/messages');
+      await expect(page).toHaveURL(/\/signin/);
+    } finally {
+      await context.close();
+    }
   });
 });

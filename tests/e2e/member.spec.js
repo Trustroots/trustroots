@@ -138,7 +138,7 @@ test.describe('confirmed member flows', () => {
     await expect(vegansCard).toBeVisible();
 
     const joinButton = vegansCard.locator('button.tribe-join');
-    await expect(joinButton).toContainText(/^join$/i);
+    await expect(joinButton).toContainText(/^\s*join\s*$/i);
     await joinButton.click();
     await joinResponse;
 

@@ -58,7 +58,10 @@ module.exports = defineConfig({
   expect: {
     timeout: 10 * 1000,
   },
-  workers: process.env.CI ? 2 : 1,
+  // Run projects (and parallel-safe specs) concurrently. CI keeps a fixed,
+  // conservative worker count for stability; locally we let Playwright scale to
+  // half the available cores instead of running everything serially.
+  workers: process.env.CI ? 2 : undefined,
   retries: process.env.CI ? 2 : 0,
   reporter: [
     ['list'],
@@ -97,7 +100,7 @@ module.exports = defineConfig({
       name: 'authenticated',
       testMatch: /authenticated\.spec\.js/,
       dependencies: ['setup-authenticated'],
-      fullyParallel: false,
+      fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authStorageState,
@@ -163,7 +166,7 @@ module.exports = defineConfig({
       name: 'member',
       testMatch: /member\.spec\.js/,
       dependencies: ['setup-authenticated'],
-      fullyParallel: false,
+      fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
         storageState: seededMemberStorageState,
