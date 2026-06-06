@@ -31,7 +31,6 @@ WORKDIR /home/app/trustroots
 COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --quiet \
-  && npm rebuild sharp --build-from-source \
   && npm rebuild mmmagic --build-from-source
 
 RUN npx playwright install chromium
