@@ -36,7 +36,7 @@ module.exports = async () => {
 
   try {
     while (Date.now() < signupDeadline) {
-      const unique = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+      const unique = `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
 
       let response;
       try {
@@ -44,8 +44,8 @@ module.exports = async () => {
           data: {
             firstName: 'Warmup',
             lastName: 'User',
-            username: `warmup-${unique}`,
-            email: `warmup-${unique}@example.test`,
+            username: `warmup${unique}`,
+            email: `warmup${unique}@example.test`,
             password: 'Tester123',
           },
         });

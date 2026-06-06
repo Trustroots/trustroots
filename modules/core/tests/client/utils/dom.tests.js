@@ -59,17 +59,20 @@ describe('ready', () => {
 });
 
 describe('canUseWebP', () => {
+  function restoreJsdomWindow() {
+    Object.defineProperty(global, 'window', {
+      configurable: true,
+      value: document.defaultView,
+      writable: true,
+    });
+  }
+
   afterEach(() => {
     jest.restoreAllMocks();
+    restoreJsdomWindow();
   });
 
   it('returns false when window is unavailable', () => {
-    const originalWindowDescriptor = Object.getOwnPropertyDescriptor(
-      global,
-      'window',
-    );
-    const originalWindow = global.window;
-
     Object.defineProperty(global, 'window', {
       configurable: true,
       value: undefined,
@@ -78,15 +81,7 @@ describe('canUseWebP', () => {
     try {
       expect(canUseWebP()).toBe(false);
     } finally {
-      if (originalWindowDescriptor) {
-        Object.defineProperty(global, 'window', originalWindowDescriptor);
-      } else {
-        Object.defineProperty(global, 'window', {
-          configurable: true,
-          value: originalWindow,
-          writable: true,
-        });
-      }
+      restoreJsdomWindow();
     }
   });
 

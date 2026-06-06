@@ -79,13 +79,13 @@ const EUROPE_OFFERS_QUERY =
  * database without colliding.
  */
 function createUser(overrides = {}) {
-  const unique = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const unique = `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
 
   return {
     firstName: 'Eddie',
     lastName: 'Endtoend',
-    username: `e2e-${unique}`,
-    email: `e2e-${unique}@example.test`,
+    username: `e2e${unique}`,
+    email: `e2e${unique}@example.test`,
     password: DEFAULT_PASSWORD,
     ...overrides,
   };
