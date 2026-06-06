@@ -38,7 +38,7 @@ afterEach(disableUnreadMessageCountPolling);
 
 describe('<UnreadCount>', () => {
   it('renders with count > 0', async () => {
-    const unreadCount = faker.random.number({ min: 1, max: 100 });
+    const unreadCount = faker.datatype.number({ min: 1, max: 100 });
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     enableUnreadMessageCountPolling();
     const { findByLabelText } = render(<UnreadCount />);

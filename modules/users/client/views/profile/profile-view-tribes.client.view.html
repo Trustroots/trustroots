@@ -10,7 +10,7 @@
     >
       <li
         class="panel tribe tribe-image"
-        data-ng-repeat="membership in profileCtrl.profile.member | track by tribe.tag._id"
+        data-ng-repeat="membership in profileCtrl.profile.member track by membership.tribe._id"
         tr-tribe-styles="{{::membership.tribe}}"
       >
         <a

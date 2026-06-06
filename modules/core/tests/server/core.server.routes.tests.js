@@ -200,6 +200,56 @@ describe('Core CRUD tests', function () {
     });
   });
 
+  describe('Legacy redirect routes', function () {
+    afterEach(utils.clearDatabase);
+
+    it('redirects /invite to /signup', function (done) {
+      agent.get('/invite').expect(301).expect('Location', '/signup').end(done);
+    });
+
+    it('redirects /tribes/lgbt to /circles/lgbtq', function (done) {
+      agent
+        .get('/tribes/lgbt')
+        .expect(301)
+        .expect('Location', '/circles/lgbtq')
+        .end(done);
+    });
+
+    it('redirects /tribes to /circles', function (done) {
+      agent.get('/tribes').expect(301).expect('Location', '/circles').end(done);
+    });
+
+    it('redirects /tribes/:slug to /circles/:slug when tribe exists', function (done) {
+      const Tribe = mongoose.model('Tribe');
+      const tribe = new Tribe({
+        slug: 'testcircle',
+        label: 'Test Circle',
+        description: 'A test circle',
+        public: true,
+      });
+
+      tribe.save(function (saveErr, savedTribe) {
+        if (saveErr) {
+          return done(saveErr);
+        }
+
+        agent
+          .get('/tribes/' + savedTribe.slug)
+          .expect(301)
+          .expect('Location', '/circles/' + savedTribe.slug)
+          .end(done);
+      });
+    });
+
+    it('redirects unknown tribe slugs to /circles', function (done) {
+      agent
+        .get('/tribes/missing-circle')
+        .expect(301)
+        .expect('Location', '/circles')
+        .end(done);
+    });
+  });
+
   describe('NIP-05 nostr Tests:', function () {
     const validNpub =
       'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
@@ -246,6 +296,24 @@ describe('Core CRUD tests', function () {
           return done();
         });
     }
+
+    it('should return 500 when the user lookup fails', function (done) {
+      const sinon = require('sinon');
+      sinon.stub(User, 'findOne').yields(new Error('db down'));
+
+      agent
+        .get('/.well-known/nostr.json?name=nostruser')
+        .expect(500)
+        .end(function (err, res) {
+          sinon.restore();
+          if (err) {
+            return done(err);
+          }
+
+          res.body.error.should.equal('Internal server error');
+          done();
+        });
+    });
 
     it('should reject nostr requests with a query object as username', function (done) {
       agent

@@ -17,6 +17,15 @@ exports.renderIndex = function (req, res) {
   // Expose user
   if (req.user) {
     renderVars.user = userProfile.sanitizeProfile(req.user, req.user);
+
+    // `sanitizeProfile` strips `roles` so they never leak for *other*
+    // members, but the client needs the *current* user's own roles to drive
+    // role based route guards (e.g. keeping non-admins out of admin pages).
+    // Exposing the authenticated user's own roles to their own browser is
+    // safe.
+    if (req.user.roles) {
+      renderVars.user.roles = req.user.roles;
+    }
   }
 
   // Expose tribe (when browsing `/tribes/tribe-name`)

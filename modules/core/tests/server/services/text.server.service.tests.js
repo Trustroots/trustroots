@@ -29,6 +29,11 @@ describe('Text processor tests', function () {
     '<p>foo<br>bar</p>';
 
   describe('Sanitize html', function () {
+    it('Should return an empty string for empty input', function () {
+      const testString = textService.html(null);
+      testString.should.equal('');
+    });
+
     it('Should strip trailing empty space', function () {
       const testString = textService.html('foo  	');
       testString.should.equal('foo');
@@ -42,6 +47,11 @@ describe('Text processor tests', function () {
     it('Replace <p><br></p> with empty spaces', function () {
       const testString = textService.html('foo<p><br></p>bar');
       testString.should.equal('foo bar');
+    });
+
+    it('Should return an empty string for editor-only whitespace markup', function () {
+      const testString = textService.html('&nbsp;<p><br></p>');
+      testString.should.equal('');
     });
 
     it('Remove non-allowed tags and keep allowed ones', function () {
@@ -69,6 +79,18 @@ describe('Text processor tests', function () {
     });
 
     describe('Link handling', function () {
+      it('Should remove links without href attributes', function () {
+        const testString = textService.html('<a>http://trustroots.org</a>');
+        testString.should.equal('');
+      });
+
+      it('Should remove empty links', function () {
+        const testString = textService.html(
+          '<a href="http://trustroots.org"></a>',
+        );
+        testString.should.equal('');
+      });
+
       it('Should allow protocol relative links', function () {
         const testString = textService.html(
           '<a href="//www.trustroots.org">test</a>',

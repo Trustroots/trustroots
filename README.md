@@ -11,21 +11,20 @@
 
 ## 2026 plans
 
-*Out of maintenance mode*
+_Out of maintenance mode_
 
 As of June 2026 Trustroots some development will take place. (Trustroots was in maintenance mode from 2022 till June 2026.)
 
 Priorities:
+
 - solid test coverage, frontend, backend
 - DRY, simplify, upgrade
-   * react vs angular? probably finish transition to react?
-   * docker dev setup state
-   * upgrade npm packages
+  - react vs angular? probably finish transition to react?
+  - docker dev setup state
+  - upgrade npm packages
 - nostr
-   * basics done: nip5, nip7
-   * interaction with nostroots
-
-
+  - basics done: nip5, nip7
+  - interaction with nostroots
 
 ## Medium term plans
 

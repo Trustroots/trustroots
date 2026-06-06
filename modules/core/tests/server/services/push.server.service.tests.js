@@ -1,14 +1,42 @@
-const config = require('../../../../../config/config');
-const url = (config.https ? 'https' : 'http') + '://' + config.domain;
-const testutils = require('../../../../../testutils/server/server.testutil');
+const proxyquire = require('proxyquire').noCallThru();
+require('should');
+
+function loadPushService(configOverrides) {
+  const config = {
+    domain: 'www.trustroots.test',
+    https: false,
+    ...configOverrides,
+  };
+  const url = (config.https ? 'https' : 'http') + '://' + config.domain;
+  const jobs = [];
+  const agenda = {
+    now(type, data, callback) {
+      jobs.push(JSON.parse(JSON.stringify({ type, data })));
+      process.nextTick(callback);
+    },
+  };
+
+  const pushService = proxyquire(
+    '../../../server/services/push.server.service',
+    {
+      '../../../../config/config': config,
+      '../../../../config/lib/agenda': agenda,
+    },
+  );
+
+  return { jobs, pushService, url };
+}
 
 describe('Service: push', function () {
-  const jobs = testutils.catchJobs();
-
+  let jobs;
   let pushService;
+  let url;
 
-  before(function () {
-    pushService = require('../../../server/services/push.server.service');
+  beforeEach(function () {
+    const harness = loadPushService();
+    jobs = harness.jobs;
+    pushService = harness.pushService;
+    url = harness.url;
   });
 
   it('can send a user notification', function (done) {
@@ -80,6 +108,25 @@ describe('Service: push', function () {
     });
   });
 
+  it('uses https URLs when configured', function (done) {
+    const harness = loadPushService({
+      domain: 'secure.trustroots.test',
+      https: true,
+    });
+    const user = {
+      _id: 20,
+      pushRegistration: [{ token: 'secure-token' }],
+    };
+
+    harness.pushService.notifyPushDeviceAdded(user, 'web', err => {
+      if (err) return done(err);
+      harness.jobs[0].data.notification.click_action.should.equal(
+        'https://secure.trustroots.test/profile/edit/account?utm_source=push-notification&utm_medium=fcm&utm_campaign=device-added&utm_content=reply-to',
+      );
+      done();
+    });
+  });
+
   it('can send a messages unread notification', function (done) {
     const userFrom = {
       _id: 1,
@@ -116,6 +163,130 @@ describe('Service: push', function () {
 
       done();
     });
+  });
+
+  it('skips notification when the user has no push registrations', function (done) {
+    pushService.notifyPushDeviceAdded(
+      { _id: 1, pushRegistration: [] },
+      'web',
+      err => {
+        jobs.length.should.equal(0);
+        done(err);
+      },
+    );
+  });
+
+  it('uses the mobile wording for android devices', function (done) {
+    const user = {
+      _id: 16,
+      pushRegistration: [{ token: 'android-token' }],
+    };
+
+    pushService.notifyPushDeviceAdded(user, 'android', err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql('mobile notifications');
+      done();
+    });
+  });
+
+  it('skips unread notification when the recipient has no registrations', function (done) {
+    pushService.notifyMessagesUnread(
+      { _id: 1 },
+      { _id: 2, pushRegistration: [] },
+      { messages: ['foo'] },
+      err => {
+        jobs.length.should.equal(0);
+        done(err);
+      },
+    );
+  });
+
+  it('uses plural wording for multiple unread messages', function (done) {
+    const userTo = {
+      _id: 6,
+      pushRegistration: [{ token: '123' }],
+    };
+
+    pushService.notifyMessagesUnread(
+      { _id: 1 },
+      userTo,
+      { messages: ['one', 'two', 'three'] },
+      err => {
+        if (err) return done(err);
+        jobs[0].data.notification.body.should.equal(
+          'You have 3 unread messages',
+        );
+        done();
+      },
+    );
+  });
+
+  it('uses the mobile wording for expo devices', function (done) {
+    const user = {
+      _id: 17,
+      pushRegistration: [{ token: 'expo-token' }],
+    };
+
+    pushService.notifyPushDeviceAdded(user, 'expo', err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql('mobile notifications');
+      done();
+    });
+  });
+
+  it('uses the mobile wording for ios devices', function (done) {
+    const user = {
+      _id: 18,
+      pushRegistration: [{ token: 'ios-token' }],
+    };
+
+    pushService.notifyPushDeviceAdded(user, 'ios', err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql('mobile notifications');
+      done();
+    });
+  });
+
+  it('uses the raw platform name for unknown platforms', function (done) {
+    const user = {
+      _id: 19,
+      pushRegistration: [{ token: 'windows-token' }],
+    };
+
+    pushService.notifyPushDeviceAdded(user, 'windows', err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql('windows notifications');
+      done();
+    });
+  });
+
+  it('can send a new experience notification', function (done) {
+    const userFrom = { _id: 1, displayName: 'Alice', username: 'alice' };
+    const userTo = { _id: 2, pushRegistration: [{ token: 'abc' }] };
+
+    pushService.notifyNewExperienceFirst(userFrom, userTo, err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql(
+        'shared their experience',
+      );
+      done();
+    });
+  });
+
+  it('can send a published experience notification', function (done) {
+    const userFrom = { _id: 1, displayName: 'Alice', username: 'alice' };
+    const userTo = { _id: 2, pushRegistration: [{ token: 'abc' }] };
+
+    pushService.notifyNewExperienceSecond(
+      userFrom,
+      userTo,
+      'experience-id',
+      err => {
+        if (err) return done(err);
+        jobs[0].data.notification.body.should.containEql('now published');
+        done();
+      },
+    );
   });
 
   it('can have different text for a second messages unread notification', function (done) {

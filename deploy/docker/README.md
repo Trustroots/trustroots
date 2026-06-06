@@ -87,6 +87,28 @@ With the stack running, import dumps into the `trustroots` database:
 ./importMongoData.sh      # restore into the mongodb service
 ```
 
+## Running tests
+
+**Local:** use the devcontainer (recommended). Open with **Dev Containers: Reopen
+in Container**, then run tests in the integrated terminal. MongoDB is already
+available via compose. See [`.devcontainer/README.md`](../../.devcontainer/README.md).
+
+```bash
+npm run test:all
+```
+
+**CI:** GitHub Actions builds this dev image and runs tests via
+`docker compose run dev` (see `docker-compose.ci.yml`).
+
+After changing `package.json` / `package-lock.json`, rebuild the dev image:
+
+```bash
+cd deploy/docker
+docker compose build dev
+docker volume rm trustroots_node_modules   # if native modules misbehave
+docker compose up -d -V --force-recreate dev
+```
+
 ## Other profiles
 
 - `--profile stats` — influxdb + grafana

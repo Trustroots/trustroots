@@ -175,4 +175,41 @@ describe('Step Navigation through 3 steps', () => {
       });
     },
   );
+
+  it('renders small-screen icon variants and a disabled reason tooltip', () => {
+    const { getAllByRole } = render(
+      <StepNavigation
+        currentStep={1}
+        numberOfSteps={3}
+        disabled={true}
+        disabledReason="Complete the required fields"
+        {...handlers}
+      />,
+    );
+
+    const buttons = getAllByRole('button');
+    expect(buttons[1]).toBeDisabled();
+    expect(buttons[3]).toHaveTextContent('Next');
+    expect(buttons[3].querySelector('.icon-right')).toBeInTheDocument();
+    expect(buttons[3]).toBeDisabled();
+  });
+
+  it('keeps next actions enabled when disabled prop is omitted', () => {
+    const onNext = jest.fn();
+    const { getAllByRole } = render(
+      <StepNavigation
+        currentStep={0}
+        numberOfSteps={2}
+        {...handlers}
+        onNext={onNext}
+      />,
+    );
+
+    const nextButton = getAllByRole('button')[0];
+    expect(nextButton).toBeEnabled();
+
+    fireEvent.click(nextButton);
+
+    expect(onNext).toHaveBeenCalledTimes(1);
+  });
 });

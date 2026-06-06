@@ -241,7 +241,7 @@ function AppController(
         // Check if user has the required role
         else if (
           Authentication.user &&
-          !Authentication.user.roles.includes(toState.requiresRole)
+          !(Authentication.user.roles || []).includes(toState.requiresRole)
         ) {
           event.preventDefault();
           $window.alert(
