@@ -22,68 +22,52 @@ describe('client filter utilities', () => {
   });
 
   it('falls back to innerText when textContent is empty', () => {
-    const originalDocument = global.document;
+    jest.spyOn(document, 'createElement').mockReturnValue({
+      innerHTML: '',
+      textContent: '',
+      innerText: 'Fallback text',
+    });
 
-    try {
-      Object.defineProperty(global, 'document', {
-        configurable: true,
-        value: {
-          createElement: jest.fn(() => ({
-            innerHTML: '',
-            textContent: '',
-            innerText: 'Fallback text',
-          })),
-        },
-      });
-
-      expect(plainText('<p>Fallback text</p>')).toBe('Fallback text');
-    } finally {
-      Object.defineProperty(global, 'document', {
-        configurable: true,
-        value: originalDocument,
-      });
-    }
+    expect(plainText('<p>Fallback text</p>')).toBe('Fallback text');
   });
 
   it('returns empty text when generated element has no text fields', () => {
-    const originalDocument = global.document;
+    jest.spyOn(document, 'createElement').mockReturnValue({
+      innerHTML: '',
+      textContent: '',
+      innerText: '',
+    });
 
-    try {
-      Object.defineProperty(global, 'document', {
-        configurable: true,
-        value: {
-          createElement: jest.fn(() => ({
-            innerHTML: '',
-            textContent: '',
-            innerText: '',
-          })),
-        },
-      });
-
-      expect(plainText('<br>')).toBe('');
-    } finally {
-      Object.defineProperty(global, 'document', {
-        configurable: true,
-        value: originalDocument,
-      });
-    }
+    expect(plainText('<br>')).toBe('');
   });
 
-  it('returns empty text when document is unavailable', () => {
-    const originalDocument = global.document;
+  it('returns empty text when document cannot create elements', () => {
+    const originalCreateElementDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'createElement',
+    );
 
     try {
-      Object.defineProperty(global, 'document', {
+      Object.defineProperty(document, 'createElement', {
         configurable: true,
         value: undefined,
       });
 
       expect(plainText('<p>Hello</p>')).toBe('');
     } finally {
-      Object.defineProperty(global, 'document', {
-        configurable: true,
-        value: originalDocument,
-      });
+      if (originalCreateElementDescriptor) {
+        Object.defineProperty(
+          document,
+          'createElement',
+          originalCreateElementDescriptor,
+        );
+      } else {
+        delete document.createElement;
+      }
     }
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 });
