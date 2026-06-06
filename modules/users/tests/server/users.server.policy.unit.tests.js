@@ -31,6 +31,77 @@ function mockResponse() {
 }
 
 describe('Users policy unit tests', () => {
+  it('registers user and admin role policies', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.calledOnce.should.be.true();
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies[0].roles.should.deepEqual(['admin']);
+    policies[1].roles.should.deepEqual(['user']);
+    policies[1].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/users/push/registrations/:token');
+  });
+
+  it('calls next when ACL allows the request', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { public: true, roles: ['user'] },
+        route: { path: '/api/users/:username' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(['user'], '/api/users/:username', 'get')
+      .should.be.true();
+    next.calledOnce.should.be.true();
+  });
+
+  it('checks guest permissions when there is no signed-in user', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, false);
+
+    policy.isAllowed(
+      {
+        route: { path: '/api/users/:username' },
+        method: 'GET',
+      },
+      mockResponse(),
+      () => {},
+    );
+
+    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
+  });
+
+  it('allows profile owners past public-profile prechecks', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+    const ownId = { equals: sinon.stub().returns(true) };
+
+    policy.isAllowed(
+      {
+        user: { _id: ownId, public: false, roles: ['user'] },
+        profile: { _id: ownId, public: false },
+        route: { path: '/api/users/:username' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    next.calledOnce.should.be.true();
+  });
+
   it('returns 500 when authorization fails unexpectedly', done => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
@@ -68,6 +139,7 @@ describe('Users policy unit tests', () => {
     );
 
     res.statusCode.should.equal(404);
+    res.body.message.should.equal('Not found.');
     done();
   });
 
@@ -88,6 +160,7 @@ describe('Users policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
+    res.body.message.should.equal('Forbidden.');
     done();
   });
 
