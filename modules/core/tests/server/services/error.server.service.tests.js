@@ -1,6 +1,6 @@
 const errorService = require('../../../server/services/error.server.service');
 
-require('should');
+const should = require('should');
 
 /**
  * Minimal Express-like response mock supporting the subset of methods used by
@@ -143,7 +143,7 @@ describe('Service: error', function () {
       errorService.errorResponse(new Error('Boom'), {}, res);
 
       process.env.NODE_ENV = originalEnv;
-      res.body.error.should.be.undefined();
+      should(res.body.error).be.undefined();
     });
 
     it('renders the HTML error view for text/html requests', function () {

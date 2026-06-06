@@ -5,7 +5,7 @@ const passport = require('passport');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
-require('should');
+const should = require('should');
 
 const User = mongoose.model('User');
 
@@ -29,8 +29,8 @@ describe('Local passport strategy unit tests', () => {
 
     verify('testuser', 'password', (err, user, info) => {
       err.message.should.equal('db down');
-      user.should.be.undefined();
-      info.should.be.undefined();
+      should(user).be.undefined();
+      should(info).be.undefined();
       done();
     });
   });
@@ -41,7 +41,7 @@ describe('Local passport strategy unit tests', () => {
     });
 
     verify('missinguser', 'password', (err, user, info) => {
-      err.should.be.undefined();
+      should(err).be.null();
       user.should.equal(false);
       info.message.should.equal('Unknown user or invalid password');
       done();
@@ -65,7 +65,7 @@ describe('Local passport strategy unit tests', () => {
     });
 
     verify('localstrategy', 'wrong-password', (err, foundUser, info) => {
-      err.should.be.undefined();
+      should(err).be.null();
       foundUser.should.equal(false);
       info.message.should.equal('Unknown user or invalid password');
       done();
