@@ -5,6 +5,12 @@ const { test, expect } = require('./test');
 const { SEEDED_MEMBERS, signOut, waitForTribesList } = require('./helpers');
 
 const userPath = path.join(__dirname, '.auth/user.json');
+const seededMemberStoragePath = path.join(
+  __dirname,
+  '.auth/seeded-member.json',
+);
+const webPort = process.env.TRUSTROOTS_E2E_WEB_PORT || 4300;
+const testBaseURL = `http://localhost:${webPort}`;
 
 /** @type {ReturnType<typeof import('./helpers').createUser>} */
 let user;
@@ -85,15 +91,26 @@ test.describe('authenticated member flows', () => {
     );
   });
 
-  test('member can view a seeded host profile', async ({ page }) => {
+  test('member can view a seeded host profile', async ({ browser }) => {
     const host = SEEDED_MEMBERS[1];
+    const seededMemberContext = await browser.newContext({
+      baseURL: testBaseURL,
+      storageState: seededMemberStoragePath,
+    });
+    const seededMemberPage = await seededMemberContext.newPage();
 
-    await page.goto(`/profile/${host.username}`);
+    try {
+      await seededMemberPage.goto(`/profile/${host.username}`);
 
-    await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
-    await expect(page.locator('.row.hidden-xs h4.profile-username')).toHaveText(
-      `@${host.username}`,
-    );
+      await expect(seededMemberPage).toHaveURL(
+        new RegExp(`/profile/${host.username}`),
+      );
+      await expect(
+        seededMemberPage.locator('.row.hidden-xs h4.profile-username'),
+      ).toHaveText(`@${host.username}`);
+    } finally {
+      await seededMemberContext.close();
+    }
   });
 
   test('profile edit locations page is reachable', async ({ page }) => {
