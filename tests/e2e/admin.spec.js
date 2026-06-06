@@ -50,7 +50,14 @@ test.describe('admin moderation flows', () => {
     await page.goto('/admin/search-users');
 
     await page.locator('input[type="search"]').fill(berlin.username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
     await page.getByRole('button', { name: /^search$/i }).click();
+    await searchResponse;
 
     await expect(page.getByText(berlin.username).first()).toBeVisible();
     await expect(page.getByText(berlin.email).first()).toBeVisible();
@@ -60,17 +67,35 @@ test.describe('admin moderation flows', () => {
     await page.goto('/admin/search-users');
 
     await page.locator('input[type="search"]').fill(SEEDED_SHADOW.username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
     await page.getByRole('button', { name: /^search$/i }).click();
+    await searchResponse;
 
-    await expect(page.getByText(SEEDED_SHADOW.username).first()).toBeVisible();
-    await expect(page.getByText('shadowban').first()).toBeVisible();
+    const shadowBanRow = page
+      .locator('table tbody tr')
+      .filter({ hasText: SEEDED_SHADOW.username })
+      .first();
+    await expect(shadowBanRow).toBeVisible();
+    await expect(shadowBanRow.getByText('shadowban')).toBeVisible();
   });
 
   test('admin can list members in the shadowban role', async ({ page }) => {
     await page.goto('/admin/search-users');
 
     await page.locator('select[name="role"]').selectOption('shadowban');
+    const listRoleResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
     await page.getByRole('button', { name: /list users in role/i }).click();
+    await listRoleResponse;
 
     await expect(page.getByText(SEEDED_SHADOW.username).first()).toBeVisible();
   });
@@ -85,13 +110,24 @@ test.describe('admin moderation flows', () => {
     );
     const berlinId = await fetchUserIdByUsername(request, 'e2e-seeded-berlin');
 
-    await page.goto('/admin/messages');
+    const shadowDisplayName = `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`;
+
+    await page.goto(`/admin/messages?userId1=${shadowId}&userId2=${berlinId}`);
+    const messagesResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/messages') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
     await page.locator('input[name="userId1"]').fill(shadowId);
     await page.locator('input[name="userId2"]').fill(berlinId);
     await page.getByRole('button', { name: /^read$/i }).click();
+    await messagesResponse;
 
     await expect(page.getByText(SEEDED_SHADOW_MESSAGE).first()).toBeVisible();
-    await expect(page.getByText(SEEDED_SHADOW.username).first()).toBeVisible();
+    await expect(
+      page.getByText(shadowDisplayName, { exact: false }).first(),
+    ).toBeVisible();
   });
 
   test('admin user report card shows message counts for a shadowbanned member', async ({

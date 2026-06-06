@@ -314,6 +314,7 @@ async function seedDatabase() {
   await seedShadowMessages(Message, usersByUsername, SHADOW_MESSAGES);
   await seedExperiences(Experience, usersByUsername, EXPERIENCES);
   await seedAdminNotes(AdminNote, usersByUsername);
+  await mongooseService.ensureIndexes(['User']);
 
   console.log(
     `Seeded ${TRIBES.length} tribes, ${MEMBERS.length} members, ` +

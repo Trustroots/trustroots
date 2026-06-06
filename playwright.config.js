@@ -163,7 +163,7 @@ module.exports = defineConfig({
       name: 'member',
       testMatch: /member\.spec\.js/,
       dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: seededMemberStorageState,
@@ -180,7 +180,7 @@ module.exports = defineConfig({
       name: 'admin',
       testMatch: /admin\.spec\.js/,
       dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: adminStorageState,
