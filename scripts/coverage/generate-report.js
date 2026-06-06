@@ -196,9 +196,34 @@ function syncBundledPlaywrightReport() {
   return path.join(targetDir, 'index.html');
 }
 
+function syncBundledCoverageReport(suite) {
+  if (!fs.existsSync(suite.htmlPath)) {
+    return null;
+  }
+
+  const sourceDir = path.dirname(suite.htmlPath);
+  const targetDir = path.join(outputDir, suite.name);
+
+  copyDirectoryRecursive(sourceDir, targetDir);
+  return path.join(targetDir, 'index.html');
+}
+
+function syncBundledCoverageReports() {
+  for (const suite of Object.values(coverageSuites)) {
+    syncBundledCoverageReport(suite);
+  }
+}
+
 function localReportHref(suite) {
   if (suite.name === 'e2e') {
     const bundledReport = path.join(outputDir, 'playwright-report', 'index.html');
+    if (fs.existsSync(bundledReport)) {
+      return relativeHref(bundledReport);
+    }
+  }
+
+  if (suite.kind === 'coverage') {
+    const bundledReport = path.join(outputDir, suite.name, 'index.html');
     if (fs.existsSync(bundledReport)) {
       return relativeHref(bundledReport);
     }
@@ -1621,6 +1646,7 @@ function renderReportShell(metadata, initialLanes) {
 
 function writeReport() {
   syncBundledPlaywrightReport();
+  syncBundledCoverageReports();
   const baseline = fs.existsSync(baselinePath) ? readJson(baselinePath) : {};
   const metadata = getMetadata();
   const selectedSuites = scope ? [scope] : suiteOrder;

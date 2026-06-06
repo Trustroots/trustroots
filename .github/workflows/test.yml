@@ -238,7 +238,7 @@ jobs:
           name: playwright-test-results
           path: test-results
 
-  coverage-report:
+  pages:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
     needs: [client, server]
     runs-on: ubuntu-latest
@@ -265,10 +265,20 @@ jobs:
         run: npm run coverage:report
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v6
-      - name: Upload coverage report page
-        uses: actions/upload-pages-artifact@v5
+      - name: Build docs site
+        uses: actions/jekyll-build-pages@v1
         with:
-          path: coverage-report
-      - name: Deploy coverage report page
+          source: ./docs
+          destination: ./_site
+      - name: Add coverage report to site
+        run: mkdir -p _site/coverage && cp -r coverage-report/. _site/coverage/
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5
+      - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@v5
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage-report
