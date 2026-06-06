@@ -615,9 +615,8 @@ describe('Service: email', function () {
 
     emailService.sendWelcomeSequenceThird(user, function (err) {
       if (err) return done(err);
-      jobs[0].data.headers['X-MSYS-API'].campaign_id.should.containEql(
-        'fill-profile',
-      );
+      const sparkpostHeader = JSON.parse(jobs[0].data.headers['X-MSYS-API']);
+      sparkpostHeader.campaign_id.should.containEql('fill-profile');
       done();
     });
   });
@@ -633,9 +632,8 @@ describe('Service: email', function () {
 
     emailService.sendWelcomeSequenceThird(user, function (err) {
       if (err) return done(err);
-      jobs[0].data.headers['X-MSYS-API'].campaign_id.should.containEql(
-        'feedback',
-      );
+      const sparkpostHeader = JSON.parse(jobs[0].data.headers['X-MSYS-API']);
+      sparkpostHeader.campaign_id.should.containEql('feedback');
       done();
     });
   });
