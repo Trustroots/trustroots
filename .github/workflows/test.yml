@@ -46,12 +46,12 @@ jobs:
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build --no-deps \
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             -e CI=true \
             -e NODE_ENV=test \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             dev npm run test:coverage:client
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build --no-deps \
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             -e CI=true \
             -e NODE_ENV=test \
             dev npm run coverage:check -- --scope=client
@@ -85,7 +85,7 @@ jobs:
       - name: Test server with coverage
         working-directory: deploy/docker
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build \
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
             -e DB_1_PORT_27017_TCP_ADDR=mongodb \
@@ -93,7 +93,7 @@ jobs:
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             dev npm run test:coverage:server
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build \
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
             dev npm run coverage:check -- --scope=server
@@ -130,7 +130,7 @@ jobs:
       - name: Test end-to-end smoke suite
         working-directory: deploy/docker
         run: |
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-build \
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
             -e DB_1_PORT_27017_TCP_ADDR=mongodb \
