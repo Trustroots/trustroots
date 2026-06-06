@@ -14,6 +14,9 @@ const should = require('should');
 const User = mongoose.model('User');
 const Tribe = mongoose.model('Tribe');
 
+const validNpub =
+  'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+
 /**
  * Invoke a controller handler and resolve once it either responds or calls
  * `next`. Returns `{ res, nextCalled, nextArg }`.
@@ -99,6 +102,41 @@ describe('Profile controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(400);
+    });
+
+    it('accepts a valid nostrNpub', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { nostrNpub: validNpub },
+            login: (user, cb) => cb(),
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.nostrNpub.should.equal(validNpub);
+    });
+
+    it('blocks username changes before the cooldown expires', async () => {
+      userDoc.created = new Date();
+      await userDoc.save();
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { username: 'brand-new-username' },
+            login: (user, cb) => cb(),
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(403);
+      res.body.message.should.equal(
+        'You cannot change your username at this time.',
+      );
     });
 
     it('rejects an email already used by someone else', async () => {
@@ -215,6 +253,18 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
+    it('responds with 403 for shadowbanned users', async () => {
+      const { res } = await runHandler(res =>
+        profileController.initializeRemoveProfile(
+          {
+            user: { _id: new mongoose.Types.ObjectId(), roles: ['shadowban'] },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(403);
+    });
+
     it('sends a removal confirmation email for a valid user', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -288,6 +338,36 @@ describe('Profile controller unit tests', () => {
 
       const gone = await User.findById(saved._id);
       should.not.exist(gone);
+    });
+
+    it('returns 400 when profile removal fails in the waterfall', async () => {
+      const messageHandlerPath =
+        '../../../messages/server/controllers/messages.server.controller';
+      const controller = proxyquire(controllerPath, {
+        [messageHandlerPath]: {
+          markAllMessagesToUserNotified: (userId, cb) =>
+            cb(new Error('messages failed')),
+        },
+      });
+
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.removeProfileToken = 'valid-remove-token';
+      userDoc.removeProfileExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      const { res } = await runHandler(res =>
+        controller.removeProfile(
+          {
+            user: { _id: saved._id },
+            params: { token: 'valid-remove-token' },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Removing your profile failed.');
     });
 
     it('still removes the profile when ancillary cleanup steps fail', async () => {
@@ -442,6 +522,63 @@ describe('Profile controller unit tests', () => {
       );
       nextCalled.should.be.true();
     });
+
+    it('responds with 404 for a private profile', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(utils.generateUsers(1));
+
+      const { res } = await runHandler((res, next) =>
+        profileController.userMiniByID(
+          { user: { _id: viewer._id, roles: ['user'] } },
+          res,
+          next,
+          target._id.toString(),
+        ),
+      );
+      res.statusCode.should.equal(404);
+    });
+
+    it('responds with 404 when the viewer has blocked the profile owner', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const viewerDoc = await User.findById(viewer._id);
+      viewerDoc.blocked = [target._id];
+      await viewerDoc.save();
+
+      const { res } = await runHandler((res, next) =>
+        profileController.userMiniByID(
+          {
+            user: viewerDoc,
+          },
+          res,
+          next,
+          target._id.toString(),
+        ),
+      );
+      res.statusCode.should.equal(404);
+    });
+
+    it('allows admins to load a suspended profile', async () => {
+      const [admin, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.roles = ['suspended'];
+      await targetDoc.save();
+
+      const { nextCalled } = await runHandler((res, next) =>
+        profileController.userMiniByID(
+          {
+            user: { _id: admin._id, roles: ['admin'] },
+          },
+          res,
+          next,
+          target._id.toString(),
+        ),
+      );
+      nextCalled.should.be.true();
+    });
   });
 
   describe('userByUsername', () => {
@@ -509,6 +646,131 @@ describe('Profile controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(404);
+    });
+  });
+
+  describe('getUserMemberships', () => {
+    it('responds with 403 without a user', async () => {
+      const { res } = await runHandler(res =>
+        profileController.getUserMemberships({}, res),
+      );
+      res.statusCode.should.equal(403);
+    });
+
+    it('returns tribe memberships for the authenticated user', async () => {
+      const tribe = await new Tribe({ label: 'Membership Tribe' }).save();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.member = [{ tribe: tribe._id, since: new Date() }];
+      await userDoc.save();
+
+      const { res } = await runHandler(res =>
+        profileController.getUserMemberships({ user: userDoc }, res),
+      );
+      res.statusCode.should.equal(200);
+      res.body.length.should.equal(1);
+      res.body[0].tribe.label.should.equal('Membership Tribe');
+    });
+
+    it('returns 400 when loading memberships fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(User, 'findById').returns({
+        populate: () => ({
+          exec: cb => cb(new Error('membership lookup failed')),
+        }),
+      });
+
+      const { res } = await runHandler(res =>
+        profileController.getUserMemberships({ user: { _id: saved._id } }, res),
+      );
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to get list of tribes.');
+    });
+  });
+
+  describe('push registration', () => {
+    it('removePushRegistration responds with 403 without a user', async () => {
+      const { res } = await runHandler(res =>
+        profileController.removePushRegistration(
+          { params: { token: 'abc' } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(403);
+    });
+
+    it('removePushRegistration removes an existing registration', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.pushRegistration = [
+        { platform: 'android', token: 'device-token', created: new Date() },
+      ];
+      await userDoc.save();
+
+      const { res } = await runHandler(res =>
+        profileController.removePushRegistration(
+          {
+            user: userDoc,
+            params: { token: 'device-token' },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Removed registration.');
+
+      const reloaded = await User.findById(saved._id);
+      reloaded.pushRegistration.length.should.equal(0);
+    });
+
+    it('addPushRegistration rejects a missing token', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const { res } = await runHandler(res =>
+        profileController.addPushRegistration(
+          { user: { _id: saved._id }, body: { platform: 'android' } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
+    it('addPushRegistration rejects an invalid platform', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const { res } = await runHandler(res =>
+        profileController.addPushRegistration(
+          {
+            user: { _id: saved._id },
+            body: { token: 'device-token', platform: 'invalid' },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
+    it('addPushRegistration saves a new registration', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+
+      const { res } = await runHandler(res =>
+        profileController.addPushRegistration(
+          {
+            user: userDoc,
+            body: {
+              token: 'new-device-token',
+              platform: 'android',
+              doNotNotify: true,
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Saved registration.');
+
+      const reloaded = await User.findById(saved._id);
+      reloaded.pushRegistration.length.should.equal(1);
+      reloaded.pushRegistration[0].token.should.equal('new-device-token');
     });
   });
 
@@ -669,6 +931,54 @@ describe('Profile controller unit tests', () => {
       const reloaded = await User.findById(saved._id);
       reloaded.member.length.should.equal(0);
     });
+
+    it('joinTribe returns 400 when saving the membership fails', async () => {
+      const tribe = await new Tribe({ label: 'Join Error Tribe' }).save();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.member = [];
+      await userDoc.save();
+
+      sinon.stub(User, 'findByIdAndUpdate').returns({
+        exec: cb => cb(new Error('save failed')),
+      });
+
+      const { res } = await runHandler(res =>
+        profileController.joinTribe(
+          {
+            user: userDoc,
+            params: { tribeId: tribe._id.toString() },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to join tribe.');
+    });
+
+    it('leaveTribe returns 400 when saving the membership fails', async () => {
+      const tribe = await new Tribe({ label: 'Leave Error Tribe' }).save();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.member = [{ tribe: tribe._id, since: new Date() }];
+      await userDoc.save();
+
+      sinon.stub(User, 'findByIdAndUpdate').returns({
+        exec: cb => cb(new Error('save failed')),
+      });
+
+      const { res } = await runHandler(res =>
+        profileController.leaveTribe(
+          {
+            user: userDoc,
+            params: { tribeId: tribe._id.toString() },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to leave tribe.');
+    });
   });
 
   describe('sanitizeProfile', () => {
@@ -766,6 +1076,66 @@ describe('Profile controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.should.be.an.Array();
+    });
+
+    it('filters out users blocked by the viewer', async () => {
+      const [viewer, blockedTarget] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const visibleDoc = await User.findById(viewer._id);
+
+      sinon.stub(User, 'find').callsFake(query => {
+        query.$and.should.containEql({ _id: { $nin: [blockedTarget._id] } });
+        return {
+          select: () => ({
+            sort: () => ({
+              limit: () => ({
+                skip: () => ({
+                  exec: cb => cb(null, [visibleDoc]),
+                }),
+              }),
+            }),
+          }),
+        };
+      });
+
+      const { res } = await runHandler((res, next) =>
+        profileController.search(
+          {
+            query: { search: 'Findme' },
+            user: { _id: viewer._id, blocked: [blockedTarget._id] },
+            skip: 0,
+          },
+          res,
+          next,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.length.should.equal(1);
+    });
+
+    it('filters out users who have blocked the viewer', async () => {
+      const [viewer, blocker] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const blockerDoc = await User.findById(blocker._id);
+      blockerDoc.firstName = 'BlockerSearchPerson';
+      blockerDoc.blocked = [viewer._id];
+      await blockerDoc.save();
+
+      const { res } = await runHandler((res, next) =>
+        profileController.search(
+          {
+            query: { search: 'BlockerSearch' },
+            user: { _id: viewer._id, id: viewer._id, blocked: [] },
+            skip: 0,
+          },
+          res,
+          next,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.length.should.equal(0);
     });
   });
 });

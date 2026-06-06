@@ -56,12 +56,16 @@ describe('Tribe-related directives', function () {
     const element = $compile(template)(scope);
     scope.$digest();
 
-    return element;
+    return {
+      controller: element.controller('trTribesInCommon'),
+      element,
+      scope,
+    };
   }
 
   describe('trTribeStyles directive', function () {
     it('skips style updates when required attrs are missing', function () {
-      const element = compile(
+      const { element } = compile(
         '<div tr-tribe-styles tr-tribe-styles-dimensions="1024x768"></div>',
       );
 
@@ -69,7 +73,7 @@ describe('Tribe-related directives', function () {
     });
 
     it('applies background image and color styles', function () {
-      const element = compile(
+      const { element } = compile(
         '<div tr-tribe-styles=\'{"slug":"circle","image":"hero.jpg","color":"ff00ff"}\' tr-tribe-styles-dimensions="320x240"></div>',
       );
 
@@ -87,7 +91,9 @@ describe('Tribe-related directives', function () {
   describe('trTribeBadge directive', function () {
     it('opens tribe page and caches tribe object', function () {
       const tribe = { slug: 'circle', _id: 'tid' };
-      const element = compile('<div tr-tribe-badge="tribe"></div>', { tribe });
+      const { element } = compile('<div tr-tribe-badge="tribe"></div>', {
+        tribe,
+      });
       const directive = element.controller('trTribeBadge');
 
       directive.openTribe();
@@ -110,7 +116,7 @@ describe('Tribe-related directives', function () {
         ],
       };
 
-      const element = compile(
+      const { element } = compile(
         '<div tr-tribes-in-common="memberships"></div>',
         scopeData,
       );
@@ -125,6 +131,27 @@ describe('Tribe-related directives', function () {
       expect($state.go).toHaveBeenCalledWith('circles.circle', {
         circle: 'one',
       });
+    });
+
+    it('keeps the membership list empty for missing or invalid inputs', function () {
+      const { controller, scope } = compile(
+        '<div tr-tribes-in-common="memberships"></div>',
+      );
+
+      expect(controller.memberships).toEqual([]);
+
+      scope.memberships = {
+        tribe: { _id: 'one', slug: 'one' },
+      };
+      scope.$digest();
+
+      expect(controller.memberships).toEqual([]);
+
+      Authentication.user.memberIds = [];
+      scope.memberships = [{ tribe: { _id: 'one', slug: 'one' } }];
+      scope.$digest();
+
+      expect(controller.memberships).toEqual([]);
     });
   });
 });

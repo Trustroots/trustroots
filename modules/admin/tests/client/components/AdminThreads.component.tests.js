@@ -93,8 +93,42 @@ describe('<AdminThreads />', () => {
     );
   });
 
+  it('renders read threads with success state', async () => {
+    threadsApi.getThreads.mockResolvedValueOnce([
+      {
+        _id: 'thread-1',
+        read: true,
+        updated: '2025-04-05T06:07:08.000Z',
+        userFromProfile: [makeUser({ displayName: 'Alice Example' })],
+        userToProfile: [makeUser({ _id: userId, displayName: 'Bob Example' })],
+      },
+    ]);
+
+    render(<AdminThreads />);
+
+    fireEvent.change(screen.getByLabelText('Username'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
+
+    expect(await screen.findByText('Read')).toHaveClass('label-success');
+  });
+
   it('shows an empty state after a query with no threads', async () => {
     threadsApi.getThreads.mockResolvedValueOnce([]);
+
+    render(<AdminThreads />);
+
+    fireEvent.change(screen.getByLabelText('Username'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
+
+    expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
+  });
+
+  it('shows an empty state when the thread query returns no payload', async () => {
+    threadsApi.getThreads.mockResolvedValueOnce(null);
 
     render(<AdminThreads />);
 

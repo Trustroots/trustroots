@@ -5,8 +5,16 @@ describe('messageCenterService', function () {
   let $sce;
   let $timeout;
   let messageCenterService;
+  let messageCenterServiceProvider;
 
-  beforeEach(angular.mock.module(AppConfig.appModuleName));
+  beforeEach(
+    angular.mock.module(
+      AppConfig.appModuleName,
+      function ($messageCenterServiceProvider) {
+        messageCenterServiceProvider = $messageCenterServiceProvider;
+      },
+    ),
+  );
 
   beforeEach(inject(function (
     _$rootScope_,
@@ -22,6 +30,7 @@ describe('messageCenterService', function () {
 
   afterEach(function () {
     messageCenterService.reset();
+    messageCenterServiceProvider.setGlobalOptions({ timeout: 6000 });
   });
 
   it('adds info messages with unseen state and processed flag', function () {
@@ -31,6 +40,22 @@ describe('messageCenterService', function () {
     expect(message.status).toBe('unseen');
     expect(message.processed).toBe(false);
     expect(message.html).toBe(false);
+  });
+
+  it('uses custom global options and per-message status without timeouts', function () {
+    messageCenterServiceProvider.setGlobalOptions({
+      status: 'next',
+      timeout: undefined,
+    });
+
+    const message = messageCenterService.add('info', 'Until next page');
+
+    expect(messageCenterServiceProvider.getOptions()).toEqual({
+      status: 'next',
+      timeout: undefined,
+    });
+    expect(message.status).toBe('next');
+    expect(message.timer).toBeUndefined();
   });
 
   it('trusts html message bodies when requested', function () {
@@ -78,6 +103,21 @@ describe('messageCenterService', function () {
     expect(messageCenterService.mcMessages[0].status).toBe('shown');
     expect(messageCenterService.mcMessages[0].processed).toBe(true);
     expect(messageCenterService.mcMessages[1].status).toBe('unseen');
+  });
+
+  it('leaves permanent and already processed messages unchanged when marking shown', function () {
+    const processed = messageCenterService.add('info', 'Processed');
+    const permanent = messageCenterService.add('info', 'Permanent', {
+      status: 'permanent',
+    });
+    processed.processed = true;
+    processed.status = 'unseen';
+
+    messageCenterService.markShown();
+
+    expect(processed.status).toBe('unseen');
+    expect(permanent.status).toBe('permanent');
+    expect(permanent.processed).toBe(false);
   });
 
   it('removes messages with shown status', function () {

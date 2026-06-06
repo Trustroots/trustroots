@@ -131,6 +131,27 @@ describe('<ProfileTabs />', () => {
     expect(screen.getByText('5')).toHaveClass('badge');
   });
 
+  it('hides unavailable experience tabs without pending notification', async () => {
+    getCount.mockResolvedValue({ count: -1, hasPending: false });
+
+    render(
+      <ProfileTabs
+        contactsCount={2}
+        initialPathName="profile.about"
+        isExperiencesEnabled
+        isOWnProfile={false}
+        userId="user-1"
+        username="alice"
+      />,
+    );
+
+    await waitFor(() => expect(getCount).toHaveBeenCalledTimes(1));
+
+    expect(
+      screen.queryByRole('tab', { name: /experiences/i }),
+    ).not.toBeInTheDocument();
+  });
+
   it('shows private tabs for own profile even without counts', async () => {
     render(
       <ProfileTabs

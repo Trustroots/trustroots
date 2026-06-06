@@ -98,6 +98,32 @@ describe('Daily Statistics Job - Unit Test', function () {
       });
     });
 
+    it('writes language statistics when spoken language counts are available', function (done) {
+      sinon.stub(statistics, 'getUserLanguagesCount').callsFake((limit, cb) =>
+        cb(null, [
+          { _id: 'en', count: 3 },
+          { _id: 'fi', count: 1 },
+        ]),
+      );
+      sinon.stub(statistics, 'getUsersCount').callsFake(cb => cb(null, 4));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when collecting last-seen statistics fails', function (done) {
+      sinon
+        .stub(statistics, 'getLastSeenStatistic')
+        .callsFake((since, cb) => cb(new Error('last seen db down')));
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
     it('logs and completes when a network count fails', function (done) {
       const original = statistics.getExternalSiteCount;
       statistics.getExternalSiteCount = function (site, cb) {

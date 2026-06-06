@@ -33,9 +33,65 @@ jest.mock('@/modules/core/client/services/angular-compat', () => ({
   getRouteParams: jest.fn(),
   go: jest.fn(),
 }));
+let mockIsExtraSmall = true;
 jest.mock('react-responsive', () => ({
-  useMediaQuery: () => true,
+  useMediaQuery: () => mockIsExtraSmall,
 }));
+jest.mock('@/modules/messages/client/components/InfiniteMessages', () => {
+  const React = require('react');
+
+  function MockInfiniteMessages({ children, onFetchMore }) {
+    return (
+      <div data-testid="infinite-messages">
+        <button type="button" onClick={onFetchMore}>
+          Fetch older messages
+        </button>
+        {children}
+      </div>
+    );
+  }
+  MockInfiniteMessages.propTypes = {
+    children: () => null,
+    onFetchMore: () => null,
+  };
+
+  return MockInfiniteMessages;
+});
+jest.mock('@/modules/users/client/components/Monkeybox', () => {
+  return function MockMonkeybox() {
+    return <div data-testid="monkeybox" />;
+  };
+});
+jest.mock('@/modules/support/client/components/ReportMember.component', () => {
+  function MockReportMember({ username }) {
+    return <button type="button">Report {username}</button>;
+  }
+  MockReportMember.propTypes = {
+    username: () => null,
+  };
+  return MockReportMember;
+});
+jest.mock('@/modules/users/client/components/BlockMember.component', () => {
+  function MockBlockMember({ username }) {
+    return <button type="button">Block {username}</button>;
+  }
+  MockBlockMember.propTypes = {
+    username: () => null,
+  };
+  return MockBlockMember;
+});
+jest.mock(
+  '@/modules/references-thread/client/components/ReferenceThread',
+  () => {
+    function MockReferenceThread({ userToId }) {
+      return <div>References for {userToId}</div>;
+    }
+    MockReferenceThread.propTypes = {
+      userToId: () => null,
+    };
+    return MockReferenceThread;
+  },
+);
 jest.mock('@/modules/core/client/components/TrEditor', () => {
   function MockTrEditor({ id, onChange, text }) {
     return (
@@ -89,10 +145,21 @@ angularCompat.getRouteParams.mockReturnValue(routeParams);
 describe('<Thread>', () => {
   beforeEach(() => {
     api.users.fetch.mockResolvedValue(otherUser);
+    mockIsExtraSmall = true;
     routeParams = {
       username: otherUser.username,
     };
     angularCompat.getRouteParams.mockReturnValue(routeParams);
+  });
+
+  it('shows the activation prompt and skips loading for private users', () => {
+    render(<Thread user={{ ...me, public: false }} profileMinimumLength={0} />);
+
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(
+      'Sorry, you need to first activate your profile by confirming your email.',
+    );
+    expect(api.users.fetch).not.toHaveBeenCalled();
+    expect(api.messages.fetchMessages).not.toHaveBeenCalled();
   });
 
   describe('no messages', () => {
@@ -191,6 +258,106 @@ describe('<Thread>', () => {
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
   });
 
+  it('shows missing-member message when deleted user cannot be identified', async () => {
+    api.users.fetch.mockRejectedValueOnce({
+      response: {
+        status: 404,
+      },
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(
+      await screen.findByText("This user isn't a member anymore."),
+    ).toBeInTheDocument();
+    expect(api.messages.fetchMessages).not.toHaveBeenCalled();
+  });
+
+  it('shows a load failure when member lookup fails unexpectedly', async () => {
+    api.users.fetch.mockRejectedValueOnce({
+      response: {
+        status: 500,
+      },
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(
+      await screen.findByText('Failed to load messages. Please try again.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('form')).not.toBeInTheDocument();
+    expect(api.messages.fetchMessages).not.toHaveBeenCalled();
+  });
+
+  it('repairs missing message endpoints for removed users', async () => {
+    routeParams = {
+      username: otherUser.username,
+      userId: otherUser._id,
+    };
+    angularCompat.getRouteParams.mockReturnValue(routeParams);
+
+    api.users.fetch.mockRejectedValueOnce({
+      response: {
+        status: 404,
+      },
+    });
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [
+        {
+          ...generateMessage(otherUser),
+          _id: 'removed-user-message',
+          content: 'I used to be here',
+          userFrom: null,
+          userTo: null,
+        },
+      ],
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(await screen.findByText('I used to be here')).toBeInTheDocument();
+    expect(
+      screen.getByText('Member is not available anymore.'),
+    ).toBeInTheDocument();
+    expect(api.messages.markRead).toHaveBeenCalledWith([
+      'removed-user-message',
+    ]);
+  });
+
+  it('keeps existing message endpoints for removed users', async () => {
+    routeParams = {
+      username: otherUser.username,
+      userId: otherUser._id,
+    };
+    angularCompat.getRouteParams.mockReturnValue(routeParams);
+
+    api.users.fetch.mockRejectedValueOnce({
+      response: {
+        status: 404,
+      },
+    });
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [
+        {
+          ...generateMessage(otherUser),
+          _id: 'removed-user-complete-message',
+          content: 'My endpoints were complete',
+          userFrom: { _id: otherUser._id },
+          userTo: { _id: me._id },
+        },
+      ],
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(
+      await screen.findByText('My endpoints were complete'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Member is not available anymore.'),
+    ).toBeInTheDocument();
+  });
+
   it('shows blocked banner and disables replies for blocked users', async () => {
     const blockedMe = {
       ...me,
@@ -215,6 +382,120 @@ describe('<Thread>', () => {
       screen.queryByRole('button', { name: 'Send' }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  });
+
+  it('loads older messages using next pagination params', async () => {
+    const newestMessage = {
+      ...generateMessage(otherUser),
+      _id: 'newest-message',
+      content: 'Newest message',
+      created: '2026-06-05T12:00:00.000Z',
+      read: true,
+    };
+    const oldestMessage = {
+      ...generateMessage(otherUser),
+      _id: 'oldest-message',
+      content: 'Oldest message',
+      created: '2026-06-04T12:00:00.000Z',
+      read: true,
+    };
+    api.messages.fetchMessages
+      .mockResolvedValueOnce({
+        messages: [newestMessage],
+        nextParams: { before: 'older-page' },
+      })
+      .mockResolvedValueOnce({
+        messages: [oldestMessage],
+        nextParams: null,
+      });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(await screen.findByText('Newest message')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Fetch older messages' }),
+    );
+
+    await waitFor(() =>
+      expect(api.messages.fetchMessages).toHaveBeenLastCalledWith(
+        otherUser._id,
+        { before: 'older-page' },
+      ),
+    );
+    expect(await screen.findByText('Oldest message')).toBeInTheDocument();
+  });
+
+  it('prepends older paginated messages in chronological order', async () => {
+    const newestMessage = {
+      ...generateMessage(otherUser),
+      _id: 'newest-message',
+      content: 'Newest message',
+      created: '2026-06-05T12:00:00.000Z',
+      read: true,
+    };
+    const oldestMessage = {
+      ...generateMessage(otherUser),
+      _id: 'oldest-message',
+      content: 'Oldest message',
+      created: '2026-06-03T12:00:00.000Z',
+      read: true,
+    };
+    const middleMessage = {
+      ...generateMessage(otherUser),
+      _id: 'middle-message',
+      content: 'Middle message',
+      created: '2026-06-04T12:00:00.000Z',
+      read: true,
+    };
+    api.messages.fetchMessages
+      .mockResolvedValueOnce({
+        messages: [newestMessage],
+        nextParams: { before: 'older-page' },
+      })
+      .mockResolvedValueOnce({
+        messages: [middleMessage, oldestMessage],
+        nextParams: null,
+      });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(await screen.findByText('Newest message')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Fetch older messages' }),
+    );
+
+    await screen.findByText('Middle message');
+    const messages = screen.getAllByText(/message$/i);
+    expect(messages.map(message => message.textContent)).toEqual([
+      'Oldest message',
+      'Middle message',
+      'Newest message',
+    ]);
+  });
+
+  it('does not fetch older messages when no next pagination params exist', async () => {
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [
+        {
+          ...generateMessage(otherUser),
+          _id: 'only-message',
+          content: 'Only message',
+          created: '2026-06-05T12:00:00.000Z',
+        },
+      ],
+      nextParams: null,
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(await screen.findByText('Only message')).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Fetch older messages' }),
+    );
+
+    await waitFor(() =>
+      expect(api.messages.fetchMessages).toHaveBeenCalledTimes(1),
+    );
   });
 
   it('displays an explicit rate-limit alert when send fails with 429', async () => {
@@ -242,6 +523,59 @@ describe('<Thread>', () => {
         'You are writing to too many people too fast. Slow down and try later again.',
       ),
     );
+  });
+
+  it('displays a generic alert when send fails without a rate limit', async () => {
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
+    api.messages.sendMessage.mockRejectedValueOnce({
+      response: { status: 500 },
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+    const editor = await screen.findByRole('textbox');
+
+    fireEvent.change(editor, {
+      target: {
+        value: '<p>Can I host this week?</p>',
+      },
+    });
+    const replyForm = editor.closest('form');
+    expect(replyForm).toBeTruthy();
+    fireEvent.submit(replyForm);
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Failed to send the message. Perhaps your internet went down? Please try again.',
+      ),
+    );
+  });
+
+  it('shows sidebar actions and references on wider screens', async () => {
+    mockIsExtraSmall = false;
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [
+        {
+          ...generateMessage(otherUser),
+          _id: 'sidebar-message',
+          content: 'Message with sidebar',
+          read: true,
+        },
+      ],
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(await screen.findByTestId('monkeybox')).toBeInTheDocument();
+    expect(
+      screen.getByText(`References for ${otherUser._id}`),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: `Report ${otherUser.username}` }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: `Block ${otherUser.username}` }),
+    ).toBeInTheDocument();
   });
 
   describe('only messages from other user', () => {

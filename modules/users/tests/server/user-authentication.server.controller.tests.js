@@ -8,6 +8,7 @@
  */
 const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 const should = require('should');
 
 const config = require('../../../../config/config');
@@ -71,6 +72,7 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
   const jobs = testutils.catchJobs();
 
   afterEach(async () => {
+    sinon.restore();
     jobs.length = 0;
     await utils.clearDatabase();
   });
@@ -155,6 +157,26 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('No provider defined.');
+    });
+
+    it('returns 400 when saving after removing a provider fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+      sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
+
+      const req = {
+        user: userDoc,
+        params: { provider: 'github' },
+        login: (user, cb) => cb(),
+      };
+      const res = deferredResponse();
+
+      authController.removeOAuthProvider(req, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
 
     it('returns 400 when login fails after removing a provider', async () => {
@@ -291,6 +313,42 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
         should.not.exist(
           reloaded.additionalProvidersData.facebook.accessTokenExpires,
         );
+      } finally {
+        config.facebook.clientID = originalClientID;
+        config.facebook.clientSecret = originalClientSecret;
+      }
+    });
+
+    it('returns 400 when saving the extended token fails', async () => {
+      const originalClientID = config.facebook.clientID;
+      const originalClientSecret = config.facebook.clientSecret;
+      config.facebook.clientID = 'fb-client-id';
+      config.facebook.clientSecret = 'fb-client-secret';
+
+      try {
+        const controller = loadControllerWithFacebook((options, cb) =>
+          cb(null, { access_token: 'long-lived-token', expires_in: 3600 }),
+        );
+
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(saved._id);
+        userDoc.additionalProvidersData = { facebook: { id: 'fb-id' } };
+        userDoc.markModified('additionalProvidersData');
+        await userDoc.save();
+        sinon
+          .stub(userDoc, 'save')
+          .callsFake(cb => cb(new Error('save failed')));
+
+        const res = deferredResponse();
+        controller.updateFacebookOAuthToken(
+          {
+            body: { accessToken: 'short-token', userID: 'fb-id' },
+            user: userDoc,
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
       } finally {
         config.facebook.clientID = originalClientID;
         config.facebook.clientSecret = originalClientSecret;
@@ -778,6 +836,25 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
     it('returns 400 when the token is invalid', async () => {
       const res = deferredResponse();
       authController.confirmEmail({ params: { token: 'missing' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when updating the confirmed user fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.public = false;
+      userDoc.emailTemporary = userDoc.email;
+      userDoc.emailToken = 'confirm-token';
+      await userDoc.save();
+
+      sinon.stub(User, 'findOneAndUpdate').yields(new Error('update failed'));
+
+      const res = deferredResponse();
+      authController.confirmEmail(
+        { params: { token: 'confirm-token' }, login: (user, cb) => cb() },
+        res,
+      );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
     });

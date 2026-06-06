@@ -207,7 +207,7 @@ describe('file-upload.service unit tests', () => {
         }),
         mmmagic: {
           MAGIC_MIME_TYPE: 16,
-          Magic() {
+          Magic: function Magic() {
             this.detectFile = (path, cb) => cb(null, 'image/jpeg');
           },
         },
@@ -225,5 +225,72 @@ describe('file-upload.service unit tests', () => {
         done(err);
       }
     });
+  });
+
+  it('rejects files when mmmagic detection fails', done => {
+    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+    const filePath = writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00]));
+    const uploadFile = proxyquire(
+      '../../../server/services/file-upload.service',
+      {
+        multer: () => ({
+          single: () => (req, res, callback) => {
+            req.file = { path: filePath };
+            callback(null);
+          },
+        }),
+        mmmagic: {
+          MAGIC_MIME_TYPE: 16,
+          Magic: function Magic() {
+            this.detectFile = (path, cb) => cb(new Error('magic failed'));
+          },
+        },
+        '../../../../config/config': require('../../../../../config/config'),
+        './error.server.service': errorService,
+      },
+    ).uploadFile;
+    const res = mockResponse(() => {
+      try {
+        res.statusCode.should.equal(415);
+        fs.unlinkSync(filePath);
+        done();
+      } catch (err) {
+        fs.unlinkSync(filePath);
+        done(err);
+      }
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
+
+  it('accepts svg files via the fallback detector', done => {
+    const filePath = writeTempFile(
+      Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>', 'utf8'),
+    );
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    const res = mockResponse(() => {
+      try {
+        res.statusCode.should.equal(415);
+        fs.unlinkSync(filePath);
+        done();
+      } catch (err) {
+        fs.unlinkSync(filePath);
+        done(err);
+      }
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
+
+  it('rejects files when fallback detection cannot read the file', done => {
+    const uploadFile = loadUploadFileWithStubbedMulter({
+      path: '/tmp/trustroots-missing-upload-file',
+    });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(415);
+      done();
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 });

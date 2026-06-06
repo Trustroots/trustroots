@@ -95,4 +95,12 @@ describe('<ProfileEditLanguages />', () => {
 
     expect(select).toHaveAttribute('data-selected', 'fr,de,es');
   });
+
+  it('uses an empty selected-language list by default', () => {
+    render(<ProfileEditLanguages onChangeLanguages={() => undefined} />);
+
+    expect(
+      screen.getByRole('button', { name: 'Add languages you speak.' }),
+    ).toHaveAttribute('data-selected', '');
+  });
 });

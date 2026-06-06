@@ -76,4 +76,14 @@ describe('MapMarkersFactory', function () {
     expect(circle.type).toBe('custom');
     expect(circle.clickable).toBe(false);
   });
+
+  it('creates circles from defaults when no overrides are provided', function () {
+    const { factory } = createFactory(500);
+
+    const circle = factory.getOfferCircle();
+
+    expect(circle.radius).toBe(500);
+    expect(circle.type).toBe('circle');
+    expect(circle.latlngs).toEqual([0, 0]);
+  });
 });

@@ -118,6 +118,26 @@ describe('<ProfileViewBasics />', () => {
     );
   });
 
+  it('renders Warmshowers usernames and volunteer alumni labels', () => {
+    render(
+      <ProfileViewBasics
+        profile={{
+          created: '2020-01-01T00:00:00.000Z',
+          extSitesWS: 'warmshowers-user',
+          isVolunteerAlumni: true,
+          languages: [],
+          seen: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Trustroots volunteer alumni')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Warmshowers' })).toHaveAttribute(
+      'href',
+      'https://www.warmshowers.org/users/warmshowers-user',
+    );
+  });
+
   it('renders sparse profile fallback details without optional sections', () => {
     render(
       <ProfileViewBasics

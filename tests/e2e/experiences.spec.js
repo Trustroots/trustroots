@@ -1,6 +1,6 @@
 const { test, expect } = require('./test');
 
-const { SEEDED_EXPERIENCE } = require('./helpers');
+const { SEEDED_EXPERIENCE, fetchUserIdByUsername } = require('./helpers');
 
 test.describe('seeded experience flows', () => {
   test('profile experiences tab shows the seeded public experience', async ({
@@ -19,5 +19,25 @@ test.describe('seeded experience flows', () => {
     await expect(
       page.getByText(SEEDED_EXPERIENCE.feedbackPublic),
     ).toBeVisible();
+  });
+
+  test('experiences API returns the seeded public experience', async ({
+    request,
+  }) => {
+    const portlandId = await fetchUserIdByUsername(
+      request,
+      SEEDED_EXPERIENCE.profileUsername,
+    );
+    const response = await request.get('/api/experiences', {
+      params: { userTo: portlandId },
+    });
+    expect(response.ok()).toBeTruthy();
+
+    const experiences = await response.json();
+    expect(Array.isArray(experiences)).toBeTruthy();
+    expect(experiences.length).toBeGreaterThan(0);
+    expect(experiences[0].feedbackPublic).toBe(
+      SEEDED_EXPERIENCE.feedbackPublic,
+    );
   });
 });

@@ -7,21 +7,23 @@ describe('trOfferValidUntil directive', function () {
   let $compile;
   let $rootScope;
   let dateNowSpy;
+  let appSettings;
 
   beforeEach(function () {
     const fixedTime = new Date('2026-01-01T00:00:00.000Z');
     dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(fixedTime.getTime());
+    appSettings = {
+      limits: {
+        maxOfferValidFromNow: {
+          days: 30,
+        },
+      },
+    };
 
     angular.mock.module(AppConfig.appModuleName, $provide => {
       $provide.value('SettingsFactory', {
         get() {
-          return {
-            limits: {
-              maxOfferValidFromNow: {
-                days: 30,
-              },
-            },
-          };
+          return appSettings;
         },
       });
     });
@@ -79,6 +81,27 @@ describe('trOfferValidUntil directive', function () {
 
     expect(directive.validUntil).toEqual(expected);
     expect(directive.isCalendarVisible).toBe(false);
+  });
+
+  it('uses the configured maximum date when days selection is empty', function () {
+    appSettings.limits.maxOfferValidFromNow = { days: 45 };
+    const { directive, scope } = compile();
+
+    directive.offerValidityInDays = '';
+    scope.$apply();
+
+    const expected = moment().endOf('day').add({ days: 45 }).toDate();
+
+    expect(directive.validUntil).toEqual(expected);
+  });
+
+  it('uses a 30-day max calendar range when settings omit an offer limit', function () {
+    delete appSettings.limits.maxOfferValidFromNow;
+
+    const { directive } = compile();
+    const expected = moment().add({ days: 30 }).toDate();
+
+    expect(directive.calendarOptions.maxDate).toEqual(expected);
   });
 
   it('updates parent validUntil when directive validUntil changes', function () {

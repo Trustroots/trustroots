@@ -58,8 +58,7 @@ function trEditorDirective($parse) {
     // eslint-disable-next-line angular/document-service
     const tempEl = document.createElement('div');
     tempEl.innerHTML = value;
-    const text = tempEl.textContent || '';
-    return text.trim();
+    return tempEl.textContent.trim();
   }
 
   return {

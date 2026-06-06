@@ -4,13 +4,17 @@
  * called directly with mock req/res objects against the test database.
  */
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 
 const messagesController = require('../../server/controllers/messages.server.controller');
 const config = require('../../../../config/config');
+const spamService = require('../../../core/server/services/spam.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User');
+const Thread = mongoose.model('Thread');
+const Message = mongoose.model('Message');
 
 /**
  * Response mock that resolves a promise when the controller responds, so both
@@ -42,7 +46,10 @@ function deferredResponse() {
 }
 
 describe('Messages controller unit tests', () => {
-  afterEach(utils.clearDatabase);
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
 
   describe('guards require an authenticated user', () => {
     it('inbox responds with 403', async () => {
@@ -688,6 +695,375 @@ describe('Messages controller unit tests', () => {
         { content: '<b>hi</b><script>x</script>' },
       ]);
       cleaned[0].content.should.equal('<b>hi</b>');
+    });
+  });
+
+  describe('error paths', () => {
+    it('returns 400 when inbox pagination fails', async () => {
+      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(new Error('paginate failed'));
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: user._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('uses excerpt fallback when the thread message is missing', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const message = await new Message({
+        content: 'Will be deleted',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      const thread = await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+      await Message.deleteOne({ _id: message._id });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: receiver._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.body[0].message.excerpt.should.equal('…');
+      thread._id.should.be.ok();
+    });
+
+    it('returns 400 when markRead update fails', async () => {
+      sinon.stub(Message, 'update').callsFake((query, update, options, cb) => {
+        cb(new Error('update failed'));
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: { id: user._id.toString(), _id: user._id },
+          body: { messageIds: [new mongoose.Types.ObjectId().toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when messagesCount lookup fails', async () => {
+      sinon.stub(Thread, 'countDocuments').callsFake((query, cb) => {
+        cb(new Error('count failed'));
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.messagesCount({ user: { _id: user._id } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when sync message lookup fails', async () => {
+      sinon.stub(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: cb => cb(new Error('find failed')),
+          }),
+        }),
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.sync({ user, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when threadByUser pagination fails', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      sinon.stub(Message, 'paginate').callsFake((query, options, cb) => {
+        cb(new Error('paginate failed'));
+      });
+
+      const res = deferredResponse();
+      messagesController.threadByUser(
+        { user: receiver, query: {} },
+        res,
+        () => {},
+        sender._id.toString(),
+      );
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(400);
+    });
+  });
+
+  describe('uncovered controller paths', () => {
+    const longDescription =
+      'I am a long-time member of this community and I love to travel and host people from all over the world. ' +
+      'I enjoy cooking, cycling, hiking and sharing stories with travellers passing through my town.';
+
+    async function prepareSender() {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const senderDoc = await User.findById(sender._id);
+      senderDoc.description = longDescription;
+      senderDoc.roles = ['user'];
+      await senderDoc.save();
+      return { sender: senderDoc, receiver };
+    }
+
+    it('backfills deleted profile ids in inbox threads', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const message = await new Message({
+        content: 'Hello before deletion',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+      await User.deleteOne({ _id: sender._id });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: receiver._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.be.an.Array().with.lengthOf(1);
+      res.body[0].userFrom._id.toString().should.equal(sender._id.toString());
+    });
+
+    it('marks messages as spam when akismet reports spam', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      sinon.stub(spamService, 'check').resolves('spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Buy cheap pills now',
+            },
+            headers: { 'x-forwarded-for': '203.0.113.1' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+
+        const saved = await Message.findOne({ userFrom: sender._id }).sort({
+          created: -1,
+        });
+        saved.spam.should.be.true();
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('marks messages as not spam when akismet reports clean', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello there, would love to host you!',
+            },
+            headers: { 'x-forwarded-for': '203.0.113.1' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+
+        const saved = await Message.findOne({ userFrom: sender._id }).sort({
+          created: -1,
+        });
+        saved.spam.should.be.false();
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('sends successfully when spam check rejects', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      sinon
+        .stub(spamService, 'check')
+        .rejects(new Error('akismet unavailable'));
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello despite akismet failure',
+            },
+            headers: { 'x-forwarded-for': '203.0.113.1' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        res.body.content.should.containEql('Hello despite akismet failure');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('returns 400 when first-message profile lookup fails', async () => {
+      const { sender, receiver } = await prepareSender();
+      sinon.stub(User, 'findById').returns({
+        exec: cb => cb(new Error('profile lookup failed')),
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello there friend',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when send populate fails', async () => {
+      sinon.stub(Message.prototype, 'save').callsFake(function (cb) {
+        const fakeMessage = {
+          populate: sinon
+            .stub()
+            .onFirstCall()
+            .returnsThis()
+            .onSecondCall()
+            .callsFake((opts, populateCb) => {
+              populateCb(new Error('populate failed'));
+            }),
+        };
+        cb(null, fakeMessage);
+      });
+      const { sender, receiver } = await prepareSender();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello there friend',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when message save fails', async () => {
+      sinon.stub(Message.prototype, 'save').callsFake(cb => {
+        cb(new Error('save failed'));
+      });
+      const { sender, receiver } = await prepareSender();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'This will not save',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when threadByUser pagination returns no docs', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      sinon.stub(Message, 'paginate').callsFake((query, options, cb) => {
+        cb(null, { docs: null });
+      });
+
+      const res = deferredResponse();
+      messagesController.threadByUser(
+        { user: receiver, query: {} },
+        res,
+        () => {},
+        sender._id.toString(),
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('groups incoming sync messages by sender id', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const viewerId = receiver._id;
+      const incoming = {
+        content: 'Incoming sync message',
+        userFrom: sender._id,
+        userTo: viewerId,
+        created: new Date(),
+      };
+      sinon.stub(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: cb => cb(null, [incoming]),
+          }),
+        }),
+      });
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const senderKey = sender._id.toString();
+      res.body.messages.should.have.property(senderKey);
+      res.body.messages[senderKey].should.be.an.Array().with.lengthOf(1);
+      res.body.messages[senderKey][0].content.should.containEql(
+        'Incoming sync message',
+      );
     });
   });
 });

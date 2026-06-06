@@ -58,7 +58,12 @@ describe('SignupController', function () {
         .createSpy('UserMembershipsService.post')
         .and.callFake(function (_params, callback) {
           callback({
-            user: options.membershipUser || { _id: 'joined-user' },
+            user: Object.prototype.hasOwnProperty.call(
+              options,
+              'membershipUser',
+            )
+              ? options.membershipUser
+              : { _id: 'joined-user' },
           });
         }),
     };
@@ -180,6 +185,20 @@ describe('SignupController', function () {
       expect(
         controller.getUsernameValidationError({
           $dirty: true,
+          $error: {},
+          $usernameValue: '',
+          $valid: false,
+        }),
+      ).toBe('Username is required.');
+      expect(
+        controller.getUsernameValidationError({
+          $dirty: true,
+          $valid: false,
+        }),
+      ).toBe('Invalid username.');
+      expect(
+        controller.getUsernameValidationError({
+          $dirty: true,
           $error: { maxlength: true },
           $valid: false,
         }),
@@ -263,6 +282,42 @@ describe('SignupController', function () {
     expect(controller.step).toBe(2);
   });
 
+  it('falls back to the newly signed-up user when referred tribe join omits a user', function () {
+    const referredTribe = suggestedTribes[0];
+    const newUser = { _id: 'new-user', username: 'newuser' };
+    const { controller } = createController({
+      membershipUser: null,
+      referredTribe,
+      stateParams: { tribe: 'hitchhikers' },
+    });
+    $rootScope.$digest();
+
+    $httpBackend.expectPOST('/api/auth/signup').respond(200, newUser);
+    controller.submitSignup();
+    $httpBackend.flush();
+
+    expect(Authentication.user).toEqual(newUser);
+    expect(controller.step).toBe(2);
+  });
+
+  it('keeps a missing referred tribe out of the selected tribe state', function () {
+    const { controller, TribesService } = createController({
+      referredTribe: {},
+      stateParams: { tribe: 'missing' },
+    });
+
+    $rootScope.$digest();
+
+    expect(controller.tribe).toBeNull();
+    expect(TribesService.query).toHaveBeenCalledWith(
+      { limit: 40 },
+      jasmine.any(Function),
+    );
+    expect(controller.suggestedTribes).toEqual(
+      expect.arrayContaining(suggestedTribes),
+    );
+  });
+
   it('marks duplicate email errors without showing a generic flash', function () {
     const { controller, messageCenterService } = createController();
 
@@ -275,6 +330,22 @@ describe('SignupController', function () {
     expect(controller.isLoading).toBe(false);
     expect(controller.isEmailTaken).toBe(true);
     expect(messageCenterService.add).not.toHaveBeenCalled();
+  });
+
+  it('shows custom signup error messages from the server', function () {
+    const { controller, messageCenterService } = createController();
+
+    $httpBackend.expectPOST('/api/auth/signup').respond(400, {
+      message: 'Username is unavailable.',
+    });
+    controller.submitSignup();
+    $httpBackend.flush();
+
+    expect(controller.isLoading).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Username is unavailable.',
+    );
   });
 
   it('shows a fallback message when signup fails without a server message', function () {
@@ -306,6 +377,16 @@ describe('SignupController', function () {
     expect($analytics.eventTrack).toHaveBeenCalledWith('signup.rules.open', {
       category: 'signup',
       label: 'Open rules from signup form',
+    });
+  });
+
+  it('opens the rules modal without a click event', function () {
+    const { $uibModal, controller } = createController();
+
+    controller.openRules();
+
+    expect($uibModal.open).toHaveBeenCalledWith({
+      templateUrl: expect.stringContaining('rules-modal.client.view.html'),
     });
   });
 });

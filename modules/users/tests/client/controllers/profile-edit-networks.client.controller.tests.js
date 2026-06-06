@@ -187,6 +187,18 @@ describe('ProfileEditNetworksController', function () {
     expect($scope.profileEdit.unsavedModifications).toBe(true);
   });
 
+  it('applies suggested Nostr npub without a parent profile form', function () {
+    const { vm } = createController();
+    const detected = npubEncode('44'.repeat(32));
+
+    vm.user.nostrNpub = '';
+    vm.nostrNip07SuggestedNpub = detected;
+
+    vm.applyNostrNip07Suggestion();
+
+    expect(vm.user.nostrNpub).toBe(detected);
+  });
+
   it('does not apply suggested Nostr value when suggestion is identical', function () {
     const { vm, $scope } = createController({
       profileEdit: {
@@ -268,6 +280,21 @@ describe('ProfileEditNetworksController', function () {
     );
   });
 
+  it('reports fallback remove account error when API omits a message', function () {
+    const { vm } = createController();
+
+    $httpBackend.expectDELETE('/api/users/accounts/google').respond(500, {});
+
+    vm.removeUserSocialAccount('google');
+    $httpBackend.flush();
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Something went wrong. Try again or contact us to disconnect your profile.',
+      { timeout: 10000 },
+    );
+  });
+
   it('updates user profile when validation passes', function () {
     const { vm } = createController();
     usersUpdateData = {
@@ -309,6 +336,20 @@ describe('ProfileEditNetworksController', function () {
     expect(messageCenterService.add).toHaveBeenCalledWith(
       'danger',
       'Validation failed',
+      { timeout: 10000 },
+    );
+  });
+
+  it('adds fallback error on profile update failure without a message', function () {
+    const { vm } = createController();
+    updateShouldError = true;
+    usersUpdateError = null;
+
+    vm.updateUserProfile(true);
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Something went wrong. Please try again!',
       { timeout: 10000 },
     );
   });

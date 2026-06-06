@@ -53,6 +53,95 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       sinon.stub(config.influxdb, 'enabled').value(true);
     });
 
+    it('receiveBatch rejects non-array payloads', function () {
+      const res = {
+        statusCode: 200,
+        body: null,
+        status(code) {
+          this.statusCode = code;
+          return this;
+        },
+        send(body) {
+          this.body = body;
+          return this;
+        },
+        end() {},
+      };
+
+      sparkpostWebhooks.receiveBatch({ body: {} }, res);
+      res.statusCode.should.equal(400);
+    });
+
+    it('receiveBatch accepts a valid batch', function (done) {
+      const processStub = sinon
+        .stub(sparkpostWebhooks, 'processAndSendMetrics')
+        .callsFake((event, cb) => cb());
+      const res = {
+        statusCode: 200,
+        status(code) {
+          this.statusCode = code;
+          return this;
+        },
+        end() {
+          processStub.restore();
+          res.statusCode.should.equal(200);
+          done();
+        },
+      };
+
+      sparkpostWebhooks.receiveBatch({ body: [testEvent] }, res);
+    });
+
+    it('processAndSendMetrics skips empty msys payloads', function (done) {
+      sparkpostWebhooks.processAndSendMetrics({ msys: {} }, function (err) {
+        should.not.exist(err);
+        sinon.assert.notCalled(influx.InfluxDB.prototype.writeMeasurement);
+        done();
+      });
+    });
+
+    it('processAndSendMetrics skips invalid event categories', function (done) {
+      sparkpostWebhooks.processAndSendMetrics(
+        { msys: { unknown: { type: 'click' } } },
+        function (err) {
+          should.not.exist(err);
+          sinon.assert.notCalled(influx.InfluxDB.prototype.writeMeasurement);
+          done();
+        },
+      );
+    });
+
+    it('basicAuthenticate rejects missing credentials', function () {
+      const originalEnabled = config.sparkpostWebhook.enabled;
+      config.sparkpostWebhook.enabled = true;
+      const res = {
+        statusCode: 200,
+        headers: {},
+        body: null,
+        set(key, value) {
+          this.headers[key] = value;
+          return this;
+        },
+        status(code) {
+          this.statusCode = code;
+          return this;
+        },
+        send(body) {
+          this.body = body;
+          return this;
+        },
+      };
+      let nextCalled = false;
+
+      sparkpostWebhooks.basicAuthenticate({ headers: {} }, res, () => {
+        nextCalled = true;
+      });
+
+      nextCalled.should.be.false();
+      res.statusCode.should.equal(401);
+      config.sparkpostWebhook.enabled = originalEnabled;
+    });
+
     it('should reach the influxdb with data in correct format', function (done) {
       sparkpostWebhooks.processAndSendMetrics(testEvent, function (e) {
         if (e) return done(e);

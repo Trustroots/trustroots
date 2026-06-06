@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
@@ -122,14 +122,50 @@ describe('<InfiniteMessages>', function () {
     });
 
     expect(onScrollCapture.current).toEqual(expect.any(Function));
+    act(() => {
+      onScrollCapture.current();
+      if (typeof onScrollCapture.current.flush === 'function') {
+        onScrollCapture.current.flush();
+      }
+      jest.advanceTimersByTime(25);
+    });
+
+    expect(onFetchMore).toHaveBeenCalledTimes(1);
+    expect(scroller.scrollTop).toBe(0);
+  });
+
+  it('does not fetch more messages when scrolled away from the top', () => {
+    const onScrollCapture = { current: null };
+    const Component = makeScrollableComponent(onScrollCapture);
+    const onFetchMore = jest.fn();
+
+    const { getByTestId, rerender } = render(
+      <InfiniteMessages component={Component} onFetchMore={onFetchMore}>
+        <div key="only">first</div>
+      </InfiniteMessages>,
+    );
+
+    const scroller = getByTestId('scrollable');
+    setScrollMetrics(scroller, {
+      scrollHeight: 160,
+      offsetHeight: 80,
+      scrollTop: 20,
+    });
+
+    rerender(
+      <InfiniteMessages component={Component} onFetchMore={onFetchMore}>
+        <div key="only">first</div>
+      </InfiniteMessages>,
+    );
+    jest.advanceTimersByTime(25);
+
     onScrollCapture.current();
     if (typeof onScrollCapture.current.flush === 'function') {
       onScrollCapture.current.flush();
     }
     jest.advanceTimersByTime(25);
 
-    expect(onFetchMore).toHaveBeenCalledTimes(1);
-    expect(scroller.scrollTop).toBe(0);
+    expect(onFetchMore).not.toHaveBeenCalled();
   });
 
   it('preserves scroll position when a message is added to the top', () => {
@@ -236,5 +272,122 @@ describe('<InfiniteMessages>', function () {
     expect(resizeListener).toEqual(expect.any(Function));
     expect(addEventListener).toHaveBeenCalledWith('resize', resizeListener);
     expect(removeEventListener).toHaveBeenCalledWith('resize', resizeListener);
+  });
+
+  it('ignores debounced resize work after unmount', () => {
+    const Component = makeScrollableComponent();
+    const addEventListener = jest.spyOn(window, 'addEventListener');
+
+    const { unmount } = render(
+      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+        <div key="first">first</div>
+      </InfiniteMessages>,
+    );
+
+    const resizeListener = addEventListener.mock.calls.find(
+      ([eventName]) => eventName === 'resize',
+    )?.[1];
+
+    unmount();
+
+    expect(() => {
+      resizeListener();
+      if (typeof resizeListener.flush === 'function') {
+        resizeListener.flush();
+      }
+    }).not.toThrow();
+  });
+
+  it('ignores scroll work when the component does not expose a ref', () => {
+    const onScrollCapture = { current: null };
+    const onFetchMore = jest.fn();
+
+    function ComponentWithoutRef({ children, onScroll }) {
+      onScrollCapture.current = onScroll;
+      return <div data-testid="scrollable-without-ref">{children}</div>;
+    }
+
+    ComponentWithoutRef.propTypes = {
+      children: () => null,
+      onScroll: () => null,
+    };
+
+    render(
+      <InfiniteMessages
+        component={ComponentWithoutRef}
+        onFetchMore={onFetchMore}
+      >
+        <div key="first">first</div>
+      </InfiniteMessages>,
+    );
+
+    expect(() => {
+      onScrollCapture.current();
+      if (typeof onScrollCapture.current.flush === 'function') {
+        onScrollCapture.current.flush();
+      }
+      jest.advanceTimersByTime(25);
+    }).not.toThrow();
+    expect(onFetchMore).not.toHaveBeenCalled();
+  });
+
+  it('preserves distance from the bottom when resizing while mounted', () => {
+    const onScrollCapture = { current: null };
+    const Component = makeScrollableComponent(onScrollCapture);
+    const addEventListener = jest.spyOn(window, 'addEventListener');
+
+    const { getByTestId, rerender } = render(
+      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+        <div key="first">first</div>
+      </InfiniteMessages>,
+    );
+
+    const scroller = getByTestId('scrollable');
+    setScrollMetrics(scroller, {
+      offsetHeight: 80,
+      scrollHeight: 160,
+      scrollTop: 20,
+    });
+
+    rerender(
+      <InfiniteMessages component={Component} onFetchMore={jest.fn()}>
+        <div key="first">first</div>
+      </InfiniteMessages>,
+    );
+    jest.advanceTimersByTime(25);
+
+    setScrollMetrics(scroller, {
+      offsetHeight: 80,
+      scrollHeight: 160,
+      scrollTop: 20,
+    });
+
+    act(() => {
+      onScrollCapture.current();
+      if (typeof onScrollCapture.current.flush === 'function') {
+        onScrollCapture.current.flush();
+      }
+      jest.advanceTimersByTime(25);
+    });
+
+    const resizeListener = addEventListener.mock.calls
+      .filter(([eventName]) => eventName === 'resize')
+      .pop()[1];
+
+    setScrollMetrics(scroller, {
+      offsetHeight: 100,
+      scrollHeight: 220,
+      scrollTop: 0,
+    });
+
+    act(() => {
+      resizeListener();
+      if (typeof resizeListener.flush === 'function') {
+        resizeListener.flush();
+      }
+      jest.advanceTimersByTime(25);
+    });
+
+    expect(scroller.scrollTop).toBe(60);
   });
 });

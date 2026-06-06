@@ -72,6 +72,14 @@ describe('trDateSelect directive', function () {
     expect(scope.date).toBe('2026-01-08');
   });
 
+  it('uses the default minimum date when none is configured', function () {
+    const { isolateScope } = compile('', 'max="2026-12-31"');
+
+    expect(isolateScope.min.format('YYYY-MM-DD')).toBe('1900-01-01');
+    expect(isolateScope.years[0]).toBe(2026);
+    expect(isolateScope.years[isolateScope.years.length - 1]).toBe(1900);
+  });
+
   it('resets date model to null when date is incomplete', function () {
     const { isolateScope, scope } = compile(
       '2026-01-08',
@@ -96,5 +104,27 @@ describe('trDateSelect directive', function () {
     scope.$digest();
 
     expect(isolateScope.val.month).toBeUndefined();
+  });
+
+  it('limits days to the configured maximum date in the selected month', function () {
+    const { isolateScope } = compile(
+      '2026-06-12',
+      'min="2026-06-01" max="2026-06-15"',
+    );
+
+    expect(isolateScope.dates[0]).toBe(1);
+    expect(isolateScope.dates[isolateScope.dates.length - 1]).toBe(15);
+  });
+
+  it('clears selected days outside the valid range when month changes', function () {
+    const { isolateScope, scope } = compile(
+      '2026-06-20',
+      'min="2026-06-10" max="2026-06-15"',
+    );
+
+    scope.$digest();
+
+    expect(isolateScope.val.date).toBeUndefined();
+    expect(scope.date).toBeNull();
   });
 });

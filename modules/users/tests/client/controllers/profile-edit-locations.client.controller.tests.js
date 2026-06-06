@@ -35,7 +35,7 @@ describe('ProfileEditLocationsController', function () {
       model.$update = jasmine
         .createSpy('$update')
         .and.callFake(function (_success, error) {
-          if (usersUpdateError) {
+          if (usersUpdateError !== null) {
             error({
               data: { message: usersUpdateError },
             });
@@ -113,5 +113,18 @@ describe('ProfileEditLocationsController', function () {
     expect(messageCenterService.add).toHaveBeenCalledWith('danger', 'Nope', {
       timeout: 10000,
     });
+  });
+
+  it('shows generic error message when location update failure omits a message', function () {
+    const { vm } = createController();
+    usersUpdateError = '';
+
+    vm.updateUserProfile(true);
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Something went wrong. Please try again!',
+      { timeout: 10000 },
+    );
   });
 });

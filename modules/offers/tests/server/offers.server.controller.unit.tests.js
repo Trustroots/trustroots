@@ -4,6 +4,7 @@
  * with mock req/res/next against the test database.
  */
 const mongoose = require('mongoose');
+const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
 const offersController = require('../../server/controllers/offers.server.controller');
@@ -131,6 +132,21 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
     });
+
+    it('returns 400 when saving a new offer fails', async () => {
+      sinon.stub(Offer.prototype, 'save').callsFake(function (cb) {
+        cb(new Error('save failed'));
+      });
+
+      const { res } = await runHandler(res =>
+        offersController.create(
+          { user: owner, body: { type: 'host', location: [10, 20] } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to save offer.');
+    });
   });
 
   describe('update', () => {
@@ -210,6 +226,42 @@ describe('Offers controller unit tests', () => {
       const reloaded = await Offer.findById(offerReq._id);
       reloaded.validUntil.should.be.a.Date();
     });
+
+    it('accepts a valid validUntil when updating a meet offer', async () => {
+      const validUntil = require('moment')().add(5, 'days').toISOString();
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location: [1, 2], validUntil },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+
+      const reloaded = await Offer.findById(offerReq._id);
+      reloaded.validUntil.should.be.a.Date();
+    });
+
+    it('returns 400 when saving an updated offer fails', async () => {
+      sinon.stub(Offer.prototype, 'save').callsFake(function (cb) {
+        cb(new Error('save failed'));
+      });
+
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location: [1, 2], description: 'Updated' },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
   });
 
   describe('update host offer', () => {
@@ -258,6 +310,19 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer removed.');
+    });
+
+    it('returns 400 when removing an offer fails', async () => {
+      const offer = await createOffer(owner._id);
+      const offerReq = await Offer.findById(offer._id).populate('user', '_id');
+      sinon.stub(Offer, 'findOneAndRemove').callsFake((query, cb) => {
+        cb(new Error('remove failed'));
+      });
+
+      const { res } = await runHandler(res =>
+        offersController.delete({ user: owner, offer: offerReq }, res),
+      );
+      res.statusCode.should.equal(400);
     });
   });
 
@@ -352,6 +417,90 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.type.should.equal('FeatureCollection');
     });
+
+    it('accepts coordinates with leading whitespace', async () => {
+      const ownerDoc = await User.findById(owner._id);
+      const { res } = await runHandler(res =>
+        offersController.list(
+          {
+            user: ownerDoc,
+            query: {
+              southWestLat: ' 10',
+              southWestLng: ' 20',
+              northEastLat: ' 30',
+              northEastLng: ' 40',
+              filters: JSON.stringify({ types: ['host'] }),
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.type.should.equal('FeatureCollection');
+    });
+
+    it('filters offers by a single tribe', async () => {
+      const tribe = await mongoose
+        .model('Tribe')
+        .create({ label: 'Offer Tribe' });
+      const ownerDoc = await User.findById(owner._id);
+      ownerDoc.member = [{ tribe: tribe._id, since: new Date() }];
+      await ownerDoc.save();
+      await createOffer(owner._id, { type: 'host' });
+
+      const { res } = await runHandler(res =>
+        offersController.list(
+          {
+            user: ownerDoc,
+            query: {
+              ...validCoords,
+              filters: JSON.stringify({ tribes: [tribe._id.toString()] }),
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.type.should.equal('FeatureCollection');
+    });
+
+    it('respects showOnlyInMyCircles on offers', async () => {
+      const tribe = await mongoose
+        .model('Tribe')
+        .create({ label: 'Circle Tribe' });
+      const [member, outsider] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const memberDoc = await User.findById(member._id);
+      memberDoc.member = [{ tribe: tribe._id, since: new Date() }];
+      await memberDoc.save();
+      const viewerDoc = await User.findById(outsider._id);
+
+      await createOffer(member._id, {
+        type: 'host',
+        showOnlyInMyCircles: true,
+      });
+      await createOffer(member._id, {
+        type: 'host',
+        showOnlyInMyCircles: false,
+        location: [11, 21],
+      });
+
+      const { res } = await runHandler(res =>
+        offersController.list(
+          {
+            user: viewerDoc,
+            query: {
+              ...validCoords,
+              filters: JSON.stringify({ types: ['host'] }),
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      res.body.features.length.should.equal(1);
+    });
   });
 
   describe('getOffer', () => {
@@ -391,6 +540,36 @@ describe('Offers controller unit tests', () => {
         offersController.getOffer({ user: owner, offer: offerReq }, res),
       );
       res.statusCode.should.equal(400);
+    });
+
+    it('returns an offer when the owner has no tribe memberships', async () => {
+      const offer = await createOffer(owner._id);
+      const offerReq = await Offer.findById(offer._id).populate(
+        'user',
+        userProfile.userListingProfileFields,
+      );
+      offerReq.user.member = [];
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer: offerReq }, res),
+      );
+      res.statusCode.should.equal(200);
+      res.body.type.should.equal('host');
+    });
+
+    it('returns an offer when tribe memberships are undefined', async () => {
+      const offer = await createOffer(owner._id);
+      const offerReq = await Offer.findById(offer._id).populate(
+        'user',
+        userProfile.userListingProfileFields,
+      );
+      delete offerReq.user.member;
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer: offerReq }, res),
+      );
+      res.statusCode.should.equal(200);
+      res.body.type.should.equal('host');
     });
   });
 
@@ -443,6 +622,22 @@ describe('Offers controller unit tests', () => {
       );
       nextCalled.should.be.true();
     });
+
+    it('passes lookup errors to next', async () => {
+      sinon.stub(Offer, 'find').callsFake((query, cb) => {
+        cb(new Error('lookup failed'));
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        offersController.offersByUserId(
+          { user: owner, query: {} },
+          res,
+          next,
+          owner._id.toString(),
+        ),
+      );
+      nextArg.message.should.equal('lookup failed');
+    });
   });
 
   describe('offerById', () => {
@@ -488,6 +683,33 @@ describe('Offers controller unit tests', () => {
         ),
       );
       nextCalled.should.be.true();
+    });
+
+    it('calls next(err) when attaching the offer fails', async () => {
+      const asyncLib = require('async');
+      const failingOffersController = proxyquire(
+        '../../server/controllers/offers.server.controller',
+        {
+          async: {
+            ...asyncLib,
+            waterfall(tasks, callback) {
+              callback(new Error('attach failed'));
+            },
+          },
+        },
+      );
+
+      const { nextCalled, nextArg } = await runHandler((res, next) =>
+        failingOffersController.offerById(
+          { user: owner },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+      nextCalled.should.be.true();
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('attach failed');
     });
   });
 

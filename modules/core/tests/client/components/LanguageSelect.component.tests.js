@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
@@ -104,10 +104,12 @@ describe('<LanguageSelect />', () => {
     await waitFor(() => {
       expect(asyncSelectProps.at(-1).onChange).toBeTruthy();
     });
-    asyncSelectProps.at(-1).onChange([
-      { value: 'eng', label: 'English' },
-      { value: 'fin', label: 'Finnish' },
-    ]);
+    act(() => {
+      asyncSelectProps.at(-1).onChange([
+        { value: 'eng', label: 'English' },
+        { value: 'fin', label: 'Finnish' },
+      ]);
+    });
 
     expect(onChangeLanguages).toHaveBeenCalledWith(['eng', 'fin']);
   });
@@ -125,9 +127,77 @@ describe('<LanguageSelect />', () => {
     await waitFor(() => {
       expect(asyncSelectProps.at(-1).onChange).toBeTruthy();
     });
-    asyncSelectProps.at(-1).onChange(null);
+    act(() => {
+      asyncSelectProps.at(-1).onChange(null);
+    });
 
     expect(onChangeLanguages).toHaveBeenCalledWith([]);
+  });
+
+  it('updates local selected state without an onChangeLanguages callback', async () => {
+    useLanguagesQuery.mockReturnValue({
+      data: [{ value: 'eng', label: 'English' }],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    await waitFor(() => {
+      expect(asyncSelectProps.at(-1).onChange).toBeTruthy();
+    });
+    act(() => {
+      asyncSelectProps.at(-1).onChange([{ value: 'eng', label: 'English' }]);
+    });
+
+    await waitFor(() => {
+      expect(asyncSelectProps.at(-1).value).toEqual([
+        { value: 'eng', label: 'English' },
+      ]);
+    });
+  });
+
+  it('uses the translated placeholder by default', () => {
+    useLanguagesQuery.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    expect(screen.getByText('Select…')).toBeInTheDocument();
+  });
+
+  it('uses the translated loading message while languages are loading', async () => {
+    useLanguagesQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    await waitFor(() => {
+      expect(asyncSelectProps.at(-1).loadingMessage()).toBe('Loading…');
+    });
+    expect(asyncSelectProps.at(-1).isLoading).toBe(true);
+  });
+
+  it('treats missing input as a short language search', async () => {
+    useLanguagesQuery.mockReturnValue({
+      data: [{ value: 'eng', label: 'English' }],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    await waitFor(() => {
+      expect(asyncSelectProps.at(-1).loadOptions).toBeTruthy();
+    });
+
+    expect(await asyncSelectProps.at(-1).loadOptions()).toEqual([]);
   });
 
   it('loads matching options only once input is long enough', async () => {

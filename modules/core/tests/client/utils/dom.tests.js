@@ -63,6 +63,28 @@ describe('canUseWebP', () => {
     jest.restoreAllMocks();
   });
 
+  it('returns false when window is unavailable', () => {
+    const originalWindowDescriptor = Object.getOwnPropertyDescriptor(
+      global,
+      'window',
+    );
+
+    Object.defineProperty(global, 'window', {
+      configurable: true,
+      value: undefined,
+    });
+
+    try {
+      expect(canUseWebP()).toBe(false);
+    } finally {
+      if (originalWindowDescriptor) {
+        Object.defineProperty(global, 'window', originalWindowDescriptor);
+      } else {
+        delete global.window;
+      }
+    }
+  });
+
   it('returns false when canvas context is unavailable', () => {
     const createElement = jest
       .spyOn(document, 'createElement')

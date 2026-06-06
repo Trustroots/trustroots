@@ -104,6 +104,20 @@ describe('Contacts controller unit tests', () => {
       res.body.message.should.match(/email was sent/);
     });
 
+    it('responds with 400 when the contact lookup fails before creation', async () => {
+      sinon.stub(Contact, 'findOne').returns({
+        exec: cb => cb(new Error('lookup failed')),
+      });
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
     it('responds with 400 when the friend does not exist', async () => {
       const { res } = await runHandler(res =>
         contactsController.add(

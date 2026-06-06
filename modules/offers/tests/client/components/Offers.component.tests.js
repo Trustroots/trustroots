@@ -23,7 +23,7 @@ jest.mock('@/modules/offers/client/components/OffersPresentational', () => {
         <div>{`own:${isOwnOffer}`}</div>
         <div>{`public:${isUserPublic}`}</div>
         <div>{`status:${offer.status || 'loading'}`}</div>
-        <div>{`username:${username}`}</div>
+        <div>{`username:${username || 'none'}`}</div>
       </div>
     );
   }
@@ -31,7 +31,7 @@ jest.mock('@/modules/offers/client/components/OffersPresentational', () => {
     isOwnOffer: PropTypes.bool.isRequired,
     isUserPublic: PropTypes.bool,
     offer: PropTypes.object.isRequired,
-    username: PropTypes.string.isRequired,
+    username: PropTypes.string,
   };
   return MockOffersPresentational;
 });
@@ -39,6 +39,12 @@ jest.mock('@/modules/offers/client/components/OffersPresentational', () => {
 describe('<Offers />', () => {
   beforeEach(() => {
     getOffers.mockReset();
+    window.isNativeMobileApp = false;
+  });
+
+  afterEach(() => {
+    window.isNativeMobileApp = false;
+    jest.restoreAllMocks();
   });
 
   it('loads host offers and marks the authenticated owner', async () => {
@@ -88,5 +94,52 @@ describe('<Offers />', () => {
 
     expect(getOffers).not.toHaveBeenCalled();
     expect(screen.getByText('status:loading')).toBeInTheDocument();
+  });
+
+  it('handles a missing profile without fetching offers', async () => {
+    render(<Offers authUser={{ _id: 'visitor', public: true }} />);
+
+    await waitFor(() => expect(getOffers).not.toHaveBeenCalled());
+
+    expect(screen.getByText('status:loading')).toBeInTheDocument();
+    expect(screen.getByText('username:none')).toBeInTheDocument();
+  });
+
+  it('treats missing authenticated user data as a public false visitor', async () => {
+    getOffers.mockResolvedValue([{ status: 'maybe' }]);
+
+    render(<Offers profile={{ _id: 'user-1', username: 'alice' }} />);
+
+    await waitFor(() =>
+      expect(getOffers).toHaveBeenCalledWith('user-1', 'host'),
+    );
+
+    expect(screen.getByText('own:false')).toBeInTheDocument();
+    expect(screen.getByText('public:false')).toBeInTheDocument();
+    expect(screen.getByText('status:maybe')).toBeInTheDocument();
+  });
+
+  it('detects native mobile app environments during construction', () => {
+    window.isNativeMobileApp = true;
+
+    const offers = new Offers({
+      authUser: {},
+      profile: { username: 'alice' },
+    });
+
+    expect(offers.state.isMobile).toBe(true);
+  });
+
+  it('detects mobile user agents during construction', () => {
+    jest
+      .spyOn(window.navigator, 'userAgent', 'get')
+      .mockReturnValue('Mozilla/5.0 Mobile Safari');
+
+    const offers = new Offers({
+      authUser: {},
+      profile: { username: 'alice' },
+    });
+
+    expect(offers.state.isMobile).toBe(true);
   });
 });

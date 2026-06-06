@@ -66,6 +66,27 @@ describe('trLocation directive', function () {
     );
   });
 
+  it('binds custom autocomplete attribute values', function () {
+    const { element } = compile(
+      {},
+      'typeahead-min-length="2" typeahead-wait-ms="100"',
+    );
+
+    expect(element.attr('typeahead-min-length')).toBe('2');
+    expect(element.attr('typeahead-wait-ms')).toBe('100');
+  });
+
+  it('limits autocomplete query parameters when requested on scope', function () {
+    const { element } = compile(
+      { limitLocationTypes: true },
+      'limit-location-types="limitLocationTypes"',
+    );
+
+    expect(element.attr('uib-typeahead')).toContain(
+      '$viewValue, "country,region,place,locality,neighborhood"',
+    );
+  });
+
   it('passes country/region/place/locality types when limits are requested', function () {
     LocationService.suggestions.and.returnValue($q.when([]));
 
@@ -208,5 +229,79 @@ describe('trLocation directive', function () {
       lat: 12.5,
       lng: 98.7,
     });
+  });
+
+  it('notifies selection changes with bounds when no bounds object is linked', function () {
+    const bounds = {
+      northEast: {
+        lat: 57,
+        lng: 24,
+      },
+      southWest: {
+        lat: 56,
+        lng: 23,
+      },
+    };
+    LocationService.getBounds.and.returnValue(bounds);
+    LocationService.getCenter.and.returnValue({
+      lat: 56.95,
+      lng: 24.1,
+    });
+
+    const { controller, scope } = compile(
+      {
+        locationBounds: undefined,
+        locationCenter: undefined,
+      },
+      'tr-location-change="locationChange"',
+    );
+
+    controller.onSelect({ trTitle: 'Riga' }, null, 'Riga', {});
+    $timeout.flush();
+
+    expect(scope.locationChange).toHaveBeenCalledWith(bounds, 'bounds');
+  });
+
+  it('notifies selection changes with center when bounds are unavailable', function () {
+    const center = {
+      lat: 56.95,
+      lng: 24.1,
+    };
+    LocationService.getBounds.and.returnValue(false);
+    LocationService.getCenter.and.returnValue(center);
+
+    const { controller, scope } = compile(
+      {
+        locationBounds: undefined,
+        locationCenter: undefined,
+      },
+      'tr-location-change="locationChange"',
+    );
+
+    controller.onSelect({ trTitle: 'Riga' }, null, 'Riga', {});
+    $timeout.flush();
+
+    expect(scope.locationChange).toHaveBeenCalledWith(center, 'center');
+  });
+
+  it('ignores selections when no linked target or callback is available', function () {
+    LocationService.getBounds.and.returnValue(false);
+    LocationService.getCenter.and.returnValue({
+      lat: 56.95,
+      lng: 24.1,
+    });
+
+    const { controller, scope } = compile(
+      {
+        locationBounds: undefined,
+        locationCenter: undefined,
+      },
+      '',
+    );
+
+    controller.onSelect({ trTitle: 'Riga' }, null, 'Riga', {});
+    $timeout.flush();
+
+    expect(scope.locationChange).not.toHaveBeenCalled();
   });
 });

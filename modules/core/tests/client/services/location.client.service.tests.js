@@ -106,6 +106,44 @@ describe('LocationService', function () {
     ).toBe('Helsinki, Finland');
   });
 
+  it('includes place context in short titles', function () {
+    expect(
+      LocationService.shortTitle({
+        text: 'Kallio',
+        context: [
+          { id: 'place.123', text: 'Helsinki' },
+          { id: 'country.fi', text: 'Finland' },
+        ],
+      }),
+    ).toBe('Kallio, Helsinki, Finland');
+  });
+
+  it('uses place name when text is unavailable', function () {
+    expect(
+      LocationService.shortTitle({
+        place_name: 'Somewhere, Earth',
+      }),
+    ).toBe('Somewhere, Earth');
+  });
+
+  it('keeps text-only and unknown-context titles unchanged', function () {
+    expect(
+      LocationService.shortTitle({
+        text: 'Nowhere',
+      }),
+    ).toBe('Nowhere');
+    expect(
+      LocationService.shortTitle({
+        text: 'Katajanokka',
+        context: [{ id: 'region.123', text: 'Uusimaa' }],
+      }),
+    ).toBe('Katajanokka');
+  });
+
+  it('returns an empty title when no title fields are available', function () {
+    expect(LocationService.shortTitle({})).toBe('');
+  });
+
   it('uses place name for US context when available', function () {
     expect(
       LocationService.shortTitle({
@@ -174,6 +212,22 @@ describe('LocationService', function () {
         'https://api.mapbox.com/geocoding/v5/mapbox.places/Helsinki.json?access_token=test-public-key&language=en',
       )
       .respond(200, {});
+
+    LocationService.suggestions('Helsinki').then(function (suggestions) {
+      expect(suggestions).toEqual([]);
+      done();
+    }, done.fail);
+
+    $httpBackend.flush();
+    $rootScope.$apply();
+  });
+
+  it('returns empty list for failed mapbox responses', function (done) {
+    $httpBackend
+      .expectGET(
+        'https://api.mapbox.com/geocoding/v5/mapbox.places/Helsinki.json?access_token=test-public-key&language=en',
+      )
+      .respond(503, {});
 
     LocationService.suggestions('Helsinki').then(function (suggestions) {
       expect(suggestions).toEqual([]);

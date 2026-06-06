@@ -102,6 +102,27 @@ describe('Facebook service', function () {
     expect(window.FB.init).not.toHaveBeenCalled();
   });
 
+  it('does not inject the SDK script twice', function () {
+    const anchorScript = document.createElement('script');
+    $document[0].head.appendChild(anchorScript);
+
+    const existingScript = document.createElement('script');
+    existingScript.id = 'facebook-jssdk';
+    existingScript.src = '//connect.facebook.net/en_US/sdk.js';
+    $document[0].head.appendChild(existingScript);
+
+    mockFacebook();
+    window.facebookAppId = 'fb-app-id';
+    Authentication.user = {
+      additionalProvidersData: { facebook: { id: 'fb-user-id' } },
+    };
+
+    Facebook.init();
+
+    expect(window.fbAsyncInit).toBeDefined();
+    expect($document[0].querySelectorAll('#facebook-jssdk')).toHaveLength(1);
+  });
+
   it('broadcasts facebook ready and stores token when status becomes connected', function () {
     const anchorScript = document.createElement('script');
     $document[0].head.appendChild(anchorScript);
@@ -165,6 +186,28 @@ describe('Facebook service', function () {
 
     statusChangeCallback({
       status: 'not_authorized',
+    });
+
+    $rootScope.$apply();
+  });
+
+  it('ignores connected status updates without an auth response object', function () {
+    const anchorScript = document.createElement('script');
+    $document[0].head.appendChild(anchorScript);
+
+    mockFacebook();
+    window.facebookAppId = 'fb-app-id';
+    Authentication.user = {
+      additionalProvidersData: { facebook: { id: 'fb-user-id' } },
+    };
+
+    Facebook.init();
+    window.fbAsyncInit();
+    expect(statusChangeCallback).toBeDefined();
+
+    statusChangeCallback({
+      status: 'connected',
+      authResponse: undefined,
     });
 
     $rootScope.$apply();

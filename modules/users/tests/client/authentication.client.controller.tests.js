@@ -232,6 +232,37 @@ describe('AuthenticationController', function () {
         expect(push.init).toHaveBeenCalled();
         expect(trNativeAppBridge.signalAuthenticated).toHaveBeenCalled();
       });
+
+      it('should redirect to search when continue param has no stored target', function () {
+        mockViews();
+        $httpBackend.when('POST', '/api/auth/signin').respond(200, {
+          _id: 'abc',
+        });
+
+        delete $rootScope.signinState;
+        delete $rootScope.signinStateParams;
+
+        inject(function ($controller) {
+          AuthenticationController = $controller('AuthenticationController', {
+            $scope,
+            appSettings,
+            $stateParams: {
+              continue: true,
+            },
+            $analytics,
+            Facebook,
+            push,
+            trNativeAppBridge,
+            messageCenterService,
+          });
+        });
+
+        AuthenticationController.signin();
+        $httpBackend.flush();
+
+        expect($state.go).toHaveBeenCalledWith('search', {});
+        expect(Authentication.user).toEqual({ _id: 'abc' });
+      });
     });
 
     describe('Logged in user', function () {

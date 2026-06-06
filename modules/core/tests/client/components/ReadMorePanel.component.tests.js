@@ -56,4 +56,17 @@ describe('<ReadMorePanel />', () => {
 
     expect(container.querySelector('.panel-more-wrap')).toBeNull();
   });
+
+  it('expands full content when the collapsed preview is clicked', () => {
+    const content = `<p>${'C'.repeat(2008)}</p>`;
+    const { container } = render(
+      <ReadMorePanel content={content} id="preview-click" />,
+    );
+
+    fireEvent.click(container.querySelector('#preview-click'));
+
+    expect(screen.queryByText('Read more…')).not.toBeInTheDocument();
+    expect(container.querySelector('.panel-more-wrap')).toBeNull();
+    expect(container).toHaveTextContent('C'.repeat(2008));
+  });
 });

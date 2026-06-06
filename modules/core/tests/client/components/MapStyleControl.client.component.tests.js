@@ -12,6 +12,7 @@ import {
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
 
 const mockMapStyleButton = jest.fn();
+const mockMapIcon = jest.fn();
 
 jest.mock('react-i18next', () => ({
   withTranslation: () => Component => {
@@ -70,7 +71,8 @@ jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
 jest.mock('@/modules/core/client/components/Map/MapIcon', () => {
   const React = require('react');
 
-  return function MockMapIcon() {
+  return function MockMapIcon(props) {
+    mockMapIcon(props);
     return <div data-testid="map-icon" />;
   };
 });
@@ -83,6 +85,7 @@ describe('<MapStyleControl />', () => {
   beforeEach(() => {
     getMapBoxToken.mockReturnValue('mapbox-test-token');
     mockMapStyleButton.mockClear();
+    mockMapIcon.mockClear();
   });
 
   it('renders open state and maps selected styles for button labels', () => {
@@ -200,6 +203,43 @@ describe('<MapStyleControl />', () => {
 
     expect(trigger).toBeInTheDocument();
     expect(trigger).toHaveTextContent('Custom style');
+  });
+
+  it('does not pass a mapbox icon style when OSM is selected', () => {
+    render(
+      <MapStyleControl mapStyle={MAP_STYLE_OSM} setMapstyle={jest.fn()} />,
+    );
+
+    expect(mockMapIcon).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mapboxStyle: '',
+      }),
+    );
+    expect(
+      screen.getByRole('button', { name: 'i18n:Change map style' }),
+    ).toHaveTextContent(MAP_STYLE_OSM.name);
+  });
+
+  it('updates to OSM style and closes when selecting OSM', () => {
+    const setMapstyle = jest.fn();
+    render(
+      <MapStyleControl
+        mapStyle={MAP_STYLE_MAPBOX_STREETS}
+        setMapstyle={setMapstyle}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: 'i18n:Change map style',
+      }),
+    );
+    fireEvent.click(screen.getByRole('button', { name: MAP_STYLE_OSM.name }));
+
+    expect(setMapstyle).toHaveBeenCalledWith(MAP_STYLE_OSM);
+    expect(
+      screen.getByRole('button', { name: 'i18n:Change map style' }),
+    ).toBeInTheDocument();
   });
 
   it('does not render OSM option in production', () => {

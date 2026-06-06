@@ -28,6 +28,20 @@ describe('Service: influx', function () {
         }
       });
     });
+
+    it('stat() finishes without error when InfluxDB is disabled', function (done) {
+      influxService.stat(
+        { namespace: 'supportRequest', counts: { count: 1 } },
+        function (err) {
+          try {
+            should.not.exist(err);
+            return done();
+          } catch (e) {
+            return done(e);
+          }
+        },
+      );
+    });
   });
 
   context('InfluxDB enabled', function () {
@@ -257,6 +271,59 @@ describe('Service: influx', function () {
             return done(e);
           }
         });
+      });
+
+      it('uses the namespace as the measurement name for non-message stats', function (done) {
+        influxService.stat(
+          {
+            namespace: 'supportRequest',
+            counts: { count: 1 },
+            tags: { type: 'normal' },
+          },
+          function (e) {
+            if (e) return done(e);
+            try {
+              const measurement =
+                influx.InfluxDB.prototype.writeMeasurement.getCall(0).args[0];
+              measurement.should.equal('supportRequest');
+              done();
+            } catch (err) {
+              done(err);
+            }
+          },
+        );
+      });
+
+      it('propagates writeMeasurement client errors', function (done) {
+        sinon.stub(influxService, '_getClient').callsFake(cb => {
+          cb(new Error('client fail'));
+        });
+
+        influxService._writeMeasurement(
+          'test',
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            err.message.should.equal('client fail');
+            done();
+          },
+        );
+      });
+
+      it('propagates writeMeasurement promise rejections', function (done) {
+        influx.InfluxDB.prototype.writeMeasurement.returns(
+          Promise.reject(new Error('write failed')),
+        );
+
+        influxService._writeMeasurement(
+          'test',
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            err.message.should.equal('write failed');
+            done();
+          },
+        );
       });
     }); // end of context 'valid data'
   }); // end of context 'InfluxDB enabled'

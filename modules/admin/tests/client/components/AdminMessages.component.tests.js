@@ -56,6 +56,19 @@ describe('<AdminMessages />', () => {
     expect(messagesApi.getMessages).not.toHaveBeenCalled();
   });
 
+  it('does not query when an invalid form submit bypasses the disabled read button', () => {
+    render(<AdminMessages />);
+
+    fireEvent.change(screen.getByLabelText('Member 1 ID'), {
+      target: { value: user1 },
+    });
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Read' }).closest('form'),
+    );
+
+    expect(messagesApi.getMessages).not.toHaveBeenCalled();
+  });
+
   it('fetches and renders messages between two valid members', async () => {
     messagesApi.getMessages.mockResolvedValueOnce([
       {
@@ -89,6 +102,34 @@ describe('<AdminMessages />', () => {
     expect(
       screen.getByText('Database entry').closest('.panel-body'),
     ).toHaveTextContent('Not seen.');
+  });
+
+  it('renders read messages as seen', async () => {
+    messagesApi.getMessages.mockResolvedValueOnce([
+      {
+        _id: 'message-1',
+        content: '<p>Hello Alice</p>',
+        created: '2025-03-04T05:06:07.000Z',
+        read: true,
+        userFrom: alice,
+        userTo: bob,
+      },
+    ]);
+
+    render(<AdminMessages />);
+
+    fireEvent.change(screen.getByLabelText('Member 1 ID'), {
+      target: { value: user1 },
+    });
+    fireEvent.change(screen.getByLabelText('Member 2 ID'), {
+      target: { value: user2 },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Read' }));
+
+    expect(await screen.findByText('Database entry')).toBeInTheDocument();
+    expect(
+      screen.getByText('Database entry').closest('.panel-body'),
+    ).toHaveTextContent('Seen.');
   });
 
   it('shows an empty state after a valid query with no messages', async () => {

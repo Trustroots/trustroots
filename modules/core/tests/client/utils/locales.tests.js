@@ -47,4 +47,14 @@ describe('locales utils', () => {
       { label: 'Español', code: 'es', english: 'Spanish' },
     ]);
   });
+
+  it('treats missing search text and missing locale fields as empty strings', () => {
+    const searchData = [
+      { label: 'English', code: 'en', english: 'English' },
+      { label: undefined, code: undefined, english: undefined },
+    ];
+
+    expect(getSearchedLocales(searchData)).toEqual(searchData);
+    expect(getSearchedLocales(searchData, 'english')).toEqual([searchData[0]]);
+  });
 });

@@ -61,6 +61,21 @@ describe('trAvatar directive', function () {
     );
   });
 
+  it('uses the minimum generated file size for very small local avatars', function () {
+    const { element } = compileTemplate(
+      {
+        _id: 'u2-small',
+        avatarUploaded: true,
+        avatarSource: 'local',
+      },
+      'source="local" size="16"',
+    );
+
+    expect(element.find('img').attr('src')).toContain(
+      '/uploads-profile/u2-small/avatar/32.jpg?',
+    );
+  });
+
   it('locks explicit source and ignores later user source changes', function () {
     const { element, scope } = compileTemplate(
       {
@@ -126,11 +141,50 @@ describe('trAvatar directive', function () {
     expect(src).toContain('fb-987');
   });
 
+  it('uses default facebook image dimensions when size is reset before source refresh', function () {
+    const { element, scope } = compileTemplate(
+      {
+        displayName: 'Facebook User',
+        avatarSource: 'facebook',
+        additionalProvidersData: {
+          facebook: {
+            id: 'fb-default-size',
+          },
+        },
+      },
+      'source="facebook"',
+    );
+
+    element.isolateScope().size = undefined;
+    scope.user.updated = '2026-06-06T08:00:00.000Z';
+    scope.$digest();
+
+    const src = element.find('img').attr('src');
+    expect(src).toContain('fb-default-size');
+    expect(src).toContain('width=256');
+    expect(src).toContain('height=256');
+  });
+
   it('falls back to default avatar when facebook source is missing provider data', function () {
     const { element } = compileTemplate(
       {
         displayName: 'Missing FB',
         avatarSource: 'facebook',
+      },
+      'source="facebook"',
+    );
+
+    expect(element.find('img').attr('src')).toBe('/img/avatar.png');
+  });
+
+  it('falls back to default avatar when facebook provider id is missing', function () {
+    const { element } = compileTemplate(
+      {
+        displayName: 'Missing FB ID',
+        avatarSource: 'facebook',
+        additionalProvidersData: {
+          facebook: {},
+        },
       },
       'source="facebook"',
     );
@@ -150,6 +204,25 @@ describe('trAvatar directive', function () {
 
     const src = element.find('img').attr('src');
     expect(src).toContain('gravatar.com/avatar/abcd1234');
+    expect(src).toContain('s=256');
+  });
+
+  it('uses default gravatar image size when size is reset before source refresh', function () {
+    const { element, scope } = compileTemplate(
+      {
+        displayName: 'Gravatar',
+        avatarSource: 'gravatar',
+        emailHash: 'defaultsize123',
+      },
+      'source="gravatar"',
+    );
+
+    element.isolateScope().size = '';
+    scope.user.updated = '2026-06-06T08:00:00.000Z';
+    scope.$digest();
+
+    const src = element.find('img').attr('src');
+    expect(src).toContain('gravatar.com/avatar/defaultsize123');
     expect(src).toContain('s=256');
   });
 
@@ -176,5 +249,11 @@ describe('trAvatar directive', function () {
     );
 
     expect(element.find('img').attr('src')).toBe('/img/avatar.png');
+  });
+
+  it('uses default none source when no user is supplied', function () {
+    const { element } = compileTemplate(null);
+
+    expect(element.find('img').attr('src')).toBe('/img/avatar.png?none');
   });
 });

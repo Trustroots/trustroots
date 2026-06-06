@@ -213,6 +213,13 @@ async function waitForTribesList(page) {
   );
 
   expect(response.ok()).toBeTruthy();
+
+  const tribes = await response.json();
+  expect(Array.isArray(tribes)).toBeTruthy();
+  expect(
+    tribes.length,
+    'Circles API returned no tribes; is the e2e database seeded?',
+  ).toBeGreaterThan(0);
 }
 
 /**

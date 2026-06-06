@@ -160,6 +160,64 @@ describe('trTribeJoinButton directive', function () {
     expect($rootScope.$broadcast).toHaveBeenCalledWith('userUpdated');
   });
 
+  it('shows a failure message when join returns incomplete data', () => {
+    const user = {
+      _id: 'user-1',
+      memberIds: [],
+    };
+
+    UserMembershipsService.post.and.callFake((payload, resolve) =>
+      resolve({
+        tribe: {
+          _id: 'circle-1',
+        },
+      }),
+    );
+
+    const { controller } = compile(user);
+
+    controller.toggleMembership();
+    $rootScope.$apply();
+
+    expect(controller.isMember).toBe(false);
+    expect(controller.isLoading).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Failed to join the circle. Try again!',
+    );
+    expect($analytics.eventTrack).not.toHaveBeenCalledWith(
+      'join-tribe',
+      jasmine.anything(),
+    );
+  });
+
+  it('shows a failure message when join request fails', () => {
+    const user = {
+      _id: 'user-1',
+      memberIds: [],
+    };
+
+    UserMembershipsService.post.and.callFake((payload, resolve, reject) =>
+      reject({
+        data: {
+          message: 'Nope',
+        },
+      }),
+    );
+
+    const { controller } = compile(user);
+
+    controller.toggleMembership();
+    $rootScope.$apply();
+
+    expect(controller.isMember).toBe(false);
+    expect(controller.isLoading).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Failed to join the circle. Try again!',
+    );
+  });
+
   it('leaves tribe after confirmation and notifies analytics', () => {
     const user = {
       _id: 'user-1',
@@ -254,6 +312,33 @@ describe('trTribeJoinButton directive', function () {
     expect($analytics.eventTrack).not.toHaveBeenCalledWith(
       'leave-tribe',
       jasmine.anything(),
+    );
+  });
+
+  it('shows the default failure message when leaving returns incomplete data', () => {
+    const user = {
+      _id: 'user-1',
+      memberIds: ['circle-1'],
+    };
+
+    UserMembershipsService.delete.and.callFake((payload, resolve) =>
+      resolve({
+        tribe: {
+          _id: 'circle-1',
+        },
+      }),
+    );
+
+    const { controller } = compile(user);
+
+    controller.toggleMembership();
+    $rootScope.$apply();
+
+    expect(controller.isMember).toBe(true);
+    expect(controller.isLoading).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Failed to leave the circle. Try again!',
     );
   });
 

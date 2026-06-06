@@ -68,4 +68,20 @@ describe('TribesListController', function () {
     expect(Authentication.user).toEqual({ _id: 'new-user' });
     expect($rootScope.$broadcast).toHaveBeenCalledWith('userUpdated');
   });
+
+  it('ignores emitted updates without a user payload', function () {
+    const Authentication = { user: { _id: 'old-user' } };
+    const vm = $controller('TribesListController as vm', {
+      $scope: $rootScope.$new(),
+      Authentication,
+      $rootScope,
+    });
+
+    spyOn($rootScope, '$broadcast');
+
+    vm.broadcastUpdatedUser({});
+
+    expect(Authentication.user).toEqual({ _id: 'old-user' });
+    expect($rootScope.$broadcast).not.toHaveBeenCalled();
+  });
 });

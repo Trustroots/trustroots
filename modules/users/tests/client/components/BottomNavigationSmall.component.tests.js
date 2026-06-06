@@ -61,4 +61,23 @@ describe('<BottomNavigationSmall />', () => {
       screen.queryByRole('tab', { name: /Contacts/ }),
     ).not.toBeInTheDocument();
   });
+
+  it('defaults the active tab to about when the path has no subpage', () => {
+    window.history.pushState({}, 'Profile', '/profile/alice');
+
+    render(<BottomNavigationSmall contactCount={0} isSelf username="alice" />);
+
+    expect(
+      screen.getByRole('tab', { name: 'About' }).closest('li'),
+    ).toHaveClass('active');
+  });
+
+  it('shows contacts for the current user even with no contacts yet', () => {
+    render(<BottomNavigationSmall contactCount={0} isSelf username="alice" />);
+
+    expect(screen.getByRole('tab', { name: /Contacts/ })).toHaveAttribute(
+      'href',
+      '/profile/alice/contacts',
+    );
+  });
 });

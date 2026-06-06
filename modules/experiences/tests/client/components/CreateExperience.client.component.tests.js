@@ -217,4 +217,74 @@ describe('<CreateExperience />', () => {
     );
     expect(successMessage).toHaveTextContent(`You also reported them to us.`);
   });
+
+  it('can navigate back after choosing that members met in person', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+
+    const { getAllByText, getByLabelText, queryByLabelText } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+
+    await waitForLoader();
+
+    fireEvent.click(getByLabelText('Met in person'));
+    fireEvent.click(getAllByText('Next')[0]);
+
+    expect(
+      queryByLabelText(
+        'Besides your personal experience, would you recommend others to meet them?',
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(getAllByText('Back')[0]);
+
+    expect(getByLabelText('Met in person')).toBeInTheDocument();
+  });
+
+  it('uses hosting as the primary recommendation prompt', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+
+    const { getAllByText, getByLabelText, queryByLabelText } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+
+    await waitForLoader();
+
+    fireEvent.click(getByLabelText('I hosted them'));
+    fireEvent.click(getAllByText('Next')[0]);
+
+    expect(
+      queryByLabelText(
+        'Besides your personal experience, would you recommend others to host them?',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('skips recommendation when the other member already shared publicly', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce({
+      userFrom: userTo._id,
+      public: true,
+      response: null,
+    });
+
+    const { getAllByText, getByLabelText, queryByLabelText } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+
+    await waitForLoader();
+
+    fireEvent.click(getByLabelText('Met in person'));
+    fireEvent.click(getAllByText('Next')[0]);
+
+    expect(
+      queryByLabelText(
+        'Besides your personal experience, would you recommend others to meet them?',
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      queryByLabelText(
+        'Would you like to describe something about your experience with them? (Optional)',
+      ),
+    ).toBeInTheDocument();
+  });
 });

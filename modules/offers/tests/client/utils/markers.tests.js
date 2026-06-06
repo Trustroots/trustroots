@@ -23,4 +23,8 @@ describe('offer marker utilities', () => {
     expect(getOfferHexColor({ offerType: 'meet' })).toBe('#0081a1');
     expect(getOfferHexColor({ offerType: 'other' })).toBe('#000');
   });
+
+  it('returns the default color when offer type is omitted', () => {
+    expect(getOfferHexColor({})).toBe('#000');
+  });
 });

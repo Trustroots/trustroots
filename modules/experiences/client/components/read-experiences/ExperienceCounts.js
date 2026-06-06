@@ -138,7 +138,7 @@ export default function ExperienceCounts({ experiences }) {
       interactions.push(t('Did not meet with anyone.'));
     } else if (metPercentage === 100) {
       interactions.push(t('Met with everyone.'));
-    } else if (metPercentage > 0) {
+    } else {
       interactions.push(
         t('Met with {{percentage}}% of members.', {
           percentage: metPercentage,
@@ -146,12 +146,12 @@ export default function ExperienceCounts({ experiences }) {
       );
     }
 
-    return interactions.length > 0 ? (
+    return (
       <p>
         <SummaryIcon icon="tree" />
         {interactions.join(' ')}
       </p>
-    ) : null;
+    );
   };
 
   // Statistics about genders

@@ -66,4 +66,28 @@ describe('<Statistics />', () => {
       screen.queryByRole('link', { name: 'Subscribe to newsletter' }),
     ).not.toBeInTheDocument();
   });
+
+  it('renders network loading placeholders while statistics are pending', () => {
+    get.mockReturnValueOnce(new Promise(() => {}));
+
+    const { container } = render(<Statistics isAuthenticated={false} />);
+
+    expect(container.querySelectorAll('li div')).toHaveLength(6);
+  });
+
+  it('falls back to zero values when optional statistics are missing', async () => {
+    get.mockResolvedValueOnce({
+      data: {
+        total: 0,
+        connections: [{ network: 'warmshowers', count: 0, percentage: 0 }],
+      },
+    });
+
+    render(<Statistics isAuthenticated={true} />);
+
+    expect(await screen.findByText('Warmshowers 0%')).toBeInTheDocument();
+    expect(screen.getAllByText('0%')).toHaveLength(2);
+    expect(screen.getByText('0% yes')).toBeInTheDocument();
+    expect(screen.getByText('0 subscribers')).toBeInTheDocument();
+  });
 });

@@ -1,6 +1,7 @@
 const should = require('should');
 const async = require('async');
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 const messageStatService = require('../../server/services/message-stat.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
@@ -692,6 +693,26 @@ describe('MessageStat Creation & Updating Test', function () {
           ],
           done,
         );
+      });
+    });
+
+    context('Empty thread', function () {
+      afterEach(function () {
+        sinon.restore();
+      });
+
+      it('returns an error when no first message exists in the thread', function (done) {
+        sinon.stub(Message, 'findOne').returns({
+          sort: () => ({
+            exec: cb => cb(null, null),
+          }),
+        });
+
+        messageStatService.updateMessageStat(firstReply, function (err) {
+          err.should.be.an.Error();
+          err.message.should.equal('The Thread is Empty');
+          done();
+        });
       });
     });
 

@@ -40,6 +40,44 @@ describe('<Avatar />', () => {
     );
   });
 
+  it('uses local avatar URLs without cache busters when updated time is absent', () => {
+    const userWithoutUpdate = { ...user };
+    delete userWithoutUpdate.updated;
+
+    render(
+      <Avatar user={userWithoutUpdate} source="local" size={64} link={false} />,
+    );
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/uploads-profile/user-1/avatar/64.jpg?',
+    );
+  });
+
+  it('falls back to the largest generated local avatar size', () => {
+    render(<Avatar user={user} source="local" size={4096} link={false} />);
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/uploads-profile/user-1/avatar/2048.jpg?1767323045000',
+    );
+  });
+
+  it('uses the default avatar when local upload data is incomplete', () => {
+    render(
+      <Avatar
+        user={{ ...user, avatarUploaded: false }}
+        source="local"
+        link={false}
+      />,
+    );
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/img/avatar.png?none',
+    );
+  });
+
   it('uses gravatar with an encoded fallback image', () => {
     render(<Avatar user={user} source="gravatar" size={128} link={false} />);
 
@@ -55,6 +93,30 @@ describe('<Avatar />', () => {
     expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
       'src',
       'https://graph.facebook.com/fb-123/picture/?width=64&height=64',
+    );
+  });
+
+  it('uses the default avatar when remote avatar identifiers are missing', () => {
+    const remoteUser = {
+      ...user,
+      additionalProvidersData: { facebook: {} },
+      emailHash: '',
+    };
+
+    const { rerender } = render(
+      <Avatar user={remoteUser} source="facebook" link={false} />,
+    );
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/img/avatar.png?none',
+    );
+
+    rerender(<Avatar user={remoteUser} source="gravatar" link={false} />);
+
+    expect(screen.getByRole('img', { hidden: true })).toHaveAttribute(
+      'src',
+      '/img/avatar.png?none',
     );
   });
 

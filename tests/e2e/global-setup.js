@@ -11,21 +11,31 @@ const { request } = require('@playwright/test');
  * To keep the suite reliable we warm the server up here: repeatedly attempt a
  * throwaway signup until one succeeds, which proves the signup pipeline
  * (including Agenda) is ready before any spec runs.
+ *
+ * We then poll the tribes API until the seeded dataset from scripts/e2e/seed.js
+ * is visible. The list endpoint defaults to `limit=0` when no limit is passed,
+ * so callers must pass `limit` explicitly.
  */
 module.exports = async () => {
   const webPort = process.env.TRUSTROOTS_E2E_WEB_PORT || 4300;
+  const apiPort = process.env.TRUSTROOTS_E2E_API_PORT || 4301;
+  const useWebpackDevServer =
+    process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'true';
   const baseURL =
-    process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${webPort}`;
+    process.env.PLAYWRIGHT_BASE_URL ||
+    (useWebpackDevServer
+      ? `http://localhost:${webPort}`
+      : `http://localhost:${apiPort}`);
 
   const timeoutMs =
     Number(process.env.TRUSTROOTS_E2E_WARMUP_TIMEOUT_MS) || 90000;
   const context = await request.newContext({ baseURL });
-  const deadline = Date.now() + timeoutMs;
+  const signupDeadline = Date.now() + timeoutMs;
 
   let lastError = 'no attempts made';
 
   try {
-    while (Date.now() < deadline) {
+    while (Date.now() < signupDeadline) {
       const unique = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 
       let response;
@@ -46,20 +56,55 @@ module.exports = async () => {
       }
 
       if (response.ok()) {
-        return;
+        break;
       }
 
       lastError = `${response.status()} ${await response.text()}`;
       await wait(1000);
     }
+
+    if (Date.now() >= signupDeadline) {
+      throw new Error(
+        `End-to-end warmup signup never succeeded within ${timeoutMs}ms. Last response: ${lastError}`,
+      );
+    }
+
+    await waitForSeededTribes(context, Date.now() + timeoutMs);
   } finally {
     await context.dispose();
   }
+};
+
+async function waitForSeededTribes(context, deadline) {
+  let lastError = 'no attempts made';
+
+  while (Date.now() < deadline) {
+    try {
+      const response = await context.get('/api/tribes', {
+        params: { limit: 150 },
+      });
+
+      if (response.ok()) {
+        const tribes = await response.json();
+        if (Array.isArray(tribes) && tribes.length >= 10) {
+          return;
+        }
+
+        lastError = `expected at least 10 tribes, received ${tribes.length}`;
+      } else {
+        lastError = `${response.status()} ${await response.text()}`;
+      }
+    } catch (error) {
+      lastError = error.message;
+    }
+
+    await wait(1000);
+  }
 
   throw new Error(
-    `End-to-end warmup signup never succeeded within ${timeoutMs}ms. Last response: ${lastError}`,
+    `End-to-end seeded tribes never appeared before timeout. Last response: ${lastError}`,
   );
-};
+}
 
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

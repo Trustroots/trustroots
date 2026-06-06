@@ -100,6 +100,14 @@ describe('Statistics controller unit tests', () => {
         done();
       });
     });
+
+    it('getUserLanguagesCount propagates database errors', done => {
+      sinon.stub(User, 'aggregate').callsFake((pipeline, cb) => cb(dbError));
+      statistics.getUserLanguagesCount(5, err => {
+        err.should.be.Error();
+        done();
+      });
+    });
   });
 
   describe('getExternalSiteCount', () => {
@@ -332,6 +340,36 @@ describe('Statistics controller unit tests', () => {
       statistics.getExternalSiteCount = original;
       res.statusCode.should.equal(400);
     });
+
+    ['couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'].forEach(
+      site => {
+        it(`returns 400 when ${site} count fails`, async () => {
+          const original = statistics.getExternalSiteCount;
+          statistics.getExternalSiteCount = function (requestedSite, cb) {
+            if (requestedSite === site) {
+              return cb(new Error(`${site} count failed`));
+            }
+            return original.call(statistics, requestedSite, cb);
+          };
+
+          const res = deferredResponse();
+          statistics.getPublicStatistics({}, res);
+          await res.waitForResponse();
+          statistics.getExternalSiteCount = original;
+          res.statusCode.should.equal(400);
+        });
+      },
+    );
+
+    it('returns zeroed hosting stats when there are no host offers', async () => {
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.hosting.total.should.equal(0);
+      res.body.hosting.yes.should.equal(0);
+      res.body.hosting.maybe.should.equal(0);
+    });
   });
 
   describe('collectStatistics', () => {
@@ -353,6 +391,17 @@ describe('Statistics controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('rejects a missing collection', async () => {
+      const res = deferredResponse();
+      statistics.collectStatistics(
+        { body: { stats: { version: '1.0.0' } } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Missing or invalid `collection`.');
     });
 
     it('accepts a current mobile app version', async () => {

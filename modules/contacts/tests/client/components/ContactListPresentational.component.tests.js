@@ -7,10 +7,17 @@ import ContactListPresentational from '@/modules/contacts/client/components/Cont
 
 jest.mock('@/modules/contacts/client/components/Contact', () => {
   const React = require('react');
-  function MockContact({ contact }) {
-    return <div>{`contact-${contact.user.username}`}</div>;
+  function MockContact({ contact, onContactRemoved }) {
+    return (
+      <button type="button" onClick={onContactRemoved}>
+        {`contact-${contact.user.username}`}
+      </button>
+    );
   }
-  MockContact.propTypes = { contact: () => null };
+  MockContact.propTypes = {
+    contact: () => null,
+    onContactRemoved: () => null,
+  };
   return MockContact;
 });
 
@@ -72,5 +79,44 @@ describe('<ContactListPresentational />', () => {
 
     expect(screen.getByText('contact-alice')).toBeInTheDocument();
     expect(screen.queryByText('contact-bob')).not.toBeInTheDocument();
+  });
+
+  it('ignores contacts without matching string user fields', () => {
+    render(
+      <ContactListPresentational
+        selfId="me"
+        filter="alice"
+        contacts={[
+          {
+            _id: 'id-numeric',
+            confirmed: true,
+            user: { id: 12345 },
+          },
+        ]}
+        onContactRemoved={() => {}}
+        onFilterChange={() => {}}
+      />,
+    );
+
+    expect(screen.queryByText('contact-undefined')).not.toBeInTheDocument();
+  });
+
+  it('reports the removed contact from the clicked row', () => {
+    const onContactRemoved = jest.fn();
+    const alice = contact('alice');
+
+    render(
+      <ContactListPresentational
+        selfId="me"
+        filter=""
+        contacts={[alice]}
+        onContactRemoved={onContactRemoved}
+        onFilterChange={() => {}}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('contact-alice'));
+
+    expect(onContactRemoved).toHaveBeenCalledWith(alice);
   });
 });

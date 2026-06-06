@@ -96,6 +96,29 @@ describe('MapLayersFactory', function () {
     );
   });
 
+  it('uses mapbox satellite layers when requested and configured', function () {
+    const factory = createFactory({
+      mapbox: {
+        user: 'trustroots',
+        publicKey: 'pk.test',
+        maps: {
+          satellite: {
+            map: 'satellite-v9',
+          },
+        },
+      },
+    });
+
+    const layers = factory.getLayers({ streets: false, satellite: true });
+
+    expect(layers.satellite.name).toBe('Satellite');
+    expect(layers.satellite.url).toContain('api.mapbox.com/styles/v1');
+    expect(layers.satellite.layerParams.map).toBe('satellite-v9');
+    expect(layers.satellite.layerOptions.attribution).toContain(
+      'mapbox.satellite',
+    );
+  });
+
   it('uses legacy mapbox layer URL format when legacy config is provided', function () {
     const factory = createFactory({
       mapbox: {
@@ -141,6 +164,24 @@ describe('MapLayersFactory', function () {
     expect(layers.outdoors.layerParams.map).toBe('outdoors.98765');
   });
 
+  it('omits outdoors layer when requested but not configured', function () {
+    const factory = createFactory({
+      mapbox: {
+        user: 'trustroots',
+        publicKey: 'pk.test',
+        maps: {
+          streets: {
+            map: 'st.123456',
+          },
+        },
+      },
+    });
+
+    const layers = factory.getLayers({ outdoors: true, streets: false });
+
+    expect(layers.outdoors).toBeUndefined();
+  });
+
   it('returns no layers when all options are disabled', function () {
     const factory = createFactory({
       mapbox: {
@@ -156,5 +197,14 @@ describe('MapLayersFactory', function () {
     });
 
     expect(layers).toEqual({});
+  });
+
+  it('falls back when mapbox settings are missing entirely', function () {
+    const factory = createFactory({});
+
+    const layers = factory.getLayers();
+
+    expect(layers.streets.name).toBe('Streets');
+    expect(layers.streets.url).toContain('openstreetmap.org');
   });
 });

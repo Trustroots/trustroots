@@ -70,4 +70,24 @@ describe('trShareTwitter directive', function () {
     );
     expect(element.html()).toContain('twitter-share-button');
   });
+
+  it('queues callbacks until the twitter sdk is ready', function () {
+    const readyCallback = jasmine.createSpy('readyCallback');
+
+    compile();
+    $window.twttr.ready(readyCallback);
+
+    expect($window.twttr._e).toEqual([readyCallback]);
+  });
+
+  it('does not inject another twitter sdk script when one already exists', function () {
+    const existingScript = document.createElement('script');
+    existingScript.id = 'twitter-wjs';
+    document.head.appendChild(existingScript);
+
+    compile();
+
+    expect(document.querySelectorAll('#twitter-wjs')).toHaveLength(1);
+    expect($window.twttr).toEqual({});
+  });
 });

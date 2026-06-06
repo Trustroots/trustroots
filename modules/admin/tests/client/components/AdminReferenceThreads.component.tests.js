@@ -69,6 +69,26 @@ describe('<AdminReferenceThreads />', () => {
     );
   });
 
+  it('builds message-thread links when reference users are raw ids', async () => {
+    referenceThreadsApi.getReferenceThreads.mockResolvedValueOnce([
+      {
+        _id: 'reference-thread-2',
+        created: '2025-06-07T08:09:10.000Z',
+        userFrom: userFrom._id,
+        userTo: userTo._id,
+      },
+    ]);
+
+    render(<AdminReferenceThreads />);
+
+    expect(
+      await screen.findByRole('link', { name: 'See message thread' }),
+    ).toHaveAttribute(
+      'href',
+      `/admin/messages?userId1=${userTo._id}&userId2=${userFrom._id}`,
+    );
+  });
+
   it('logs and clears loading state when loading fails', async () => {
     const log = jest.spyOn(console, 'log').mockImplementation(() => {});
     referenceThreadsApi.getReferenceThreads.mockRejectedValueOnce(

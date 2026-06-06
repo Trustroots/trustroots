@@ -57,4 +57,14 @@ describe('default presentation', () => {
       expect(api.users.update).toHaveBeenCalledWith({ locale: 'cs' }),
     );
   });
+
+  it('falls back to English when the current language is unknown', () => {
+    i18n.changeLanguage('zz');
+
+    render(<LanguageSwitch buttonStyle="inverse" />);
+
+    expect(screen.getByRole('button', { name: 'Language: EN' })).toHaveClass(
+      'btn-inverse',
+    );
+  });
 });

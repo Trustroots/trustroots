@@ -1,12 +1,61 @@
 const { test, expect } = require('./test');
 
 const {
+  SEEDED_MEMBERS,
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
   fetchUserIdByUsername,
 } = require('./helpers');
 
 test.describe('admin moderation flows', () => {
+  test('admin dashboard welcomes the signed in admin', async ({ page }) => {
+    await page.goto('/admin');
+
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page).toHaveTitle(/Admin - Trustroots/);
+    await expect(page.getByText(/welcome, friend!/i)).toBeVisible();
+  });
+
+  test('admin audit log page loads', async ({ page }) => {
+    await page.goto('/admin/audit-log');
+
+    await expect(page).toHaveURL(/\/admin\/audit-log/);
+    await expect(page).toHaveTitle(/Admin - Audit log - Trustroots/);
+    await expect(
+      page.getByRole('heading', { name: /audit log/i }),
+    ).toBeVisible();
+  });
+
+  test('admin threads page loads', async ({ page }) => {
+    await page.goto('/admin/threads');
+
+    await expect(page).toHaveURL(/\/admin\/threads/);
+    await expect(page).toHaveTitle(/Admin - Threads - Trustroots/);
+    await expect(page.getByRole('button', { name: /^query$/i })).toBeVisible();
+  });
+
+  test('admin newsletter page loads', async ({ page }) => {
+    await page.goto('/admin/newsletter');
+
+    await expect(page).toHaveURL(/\/admin\/newsletter/);
+    await expect(page).toHaveTitle(/Admin - Newsletter - Trustroots/);
+    await expect(
+      page.getByRole('heading', { name: /newsletter subscribers/i }),
+    ).toBeVisible();
+  });
+
+  test('admin search finds a confirmed seeded member', async ({ page }) => {
+    const berlin = SEEDED_MEMBERS[0];
+
+    await page.goto('/admin/search-users');
+
+    await page.locator('input[type="search"]').fill(berlin.username);
+    await page.getByRole('button', { name: /^search$/i }).click();
+
+    await expect(page.getByText(berlin.username).first()).toBeVisible();
+    await expect(page.getByText(berlin.email).first()).toBeVisible();
+  });
+
   test('admin search finds the shadowbanned member', async ({ page }) => {
     await page.goto('/admin/search-users');
 

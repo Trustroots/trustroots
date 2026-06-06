@@ -3,10 +3,11 @@
  */
 const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
-require('should');
+const should = require('should');
 
 const User = mongoose.model('User');
 
@@ -60,6 +61,7 @@ describe('Password controller unit tests', () => {
   const jobs = testutils.catchJobs();
 
   afterEach(async () => {
+    sinon.restore();
     jobs.length = 0;
     await utils.clearDatabase();
   });
@@ -113,6 +115,38 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.message.should.containEql('sent you an email');
     });
+
+    it('propagates errors when saving the reset token fails', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+
+      sinon.stub(User, 'findOne').callsFake(function (query, fields, cb) {
+        cb(null, {
+          email: userDoc.email,
+          username: userDoc.username,
+          save(saveCb) {
+            saveCb(new Error('save failed'));
+          },
+        });
+      });
+
+      let nextErr;
+      const res = deferredResponse();
+      await new Promise(resolve => {
+        controller.forgot(
+          { body: { username: userDoc.username } },
+          res,
+          err => {
+            nextErr = err;
+            resolve();
+          },
+        );
+      });
+
+      should.exist(nextErr);
+      nextErr.message.should.equal('save failed');
+    });
   });
 
   describe('validateResetToken', () => {
@@ -136,6 +170,33 @@ describe('Password controller unit tests', () => {
       controller.validateResetToken({ params: { token: 'valid-token' } }, res);
       await res.waitForResponse();
       res.redirectUrl.should.equal('/password/reset/valid-token');
+    });
+
+    it('preserves UTM parameters on valid token redirects', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.resetPasswordToken = 'valid-token';
+      userDoc.resetPasswordExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.validateResetToken(
+        {
+          params: { token: 'valid-token' },
+          query: {
+            utm_source: 'newsletter',
+            utm_medium: 'email',
+            utm_campaign: 'reset',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/password/reset/valid-token');
+      res.redirectUrl.should.containEql('utm_source=newsletter');
+      res.redirectUrl.should.containEql('utm_medium=email');
+      res.redirectUrl.should.containEql('utm_campaign=reset');
     });
   });
 
@@ -222,6 +283,37 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Passwords do not match.');
     });
+
+    it('still resets the password when the confirmation email fails', async () => {
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(),
+          sendResetPasswordConfirm: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.username.should.equal(userDoc.username);
+    });
   });
 
   describe('changePassword', () => {
@@ -243,6 +335,52 @@ describe('Password controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('rejects mismatched new passwords', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'different-password',
+          },
+          login: () => {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Passwords do not match.');
+    });
+
+    it('rejects an incorrect current password', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.password = 'oldpassword1';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'wrong-password',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: () => {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Current password is incorrect.');
     });
 
     it('changes the password for a valid user', async () => {

@@ -12,7 +12,7 @@ jest.mock('react-medium-editor', () => {
   const PropTypes = require('prop-types');
 
   const MockMediumEditor = React.forwardRef(function MockMediumEditor(
-    { onChange },
+    { onChange, options },
     ref,
   ) {
     const medium = React.useRef(null);
@@ -46,11 +46,17 @@ jest.mock('react-medium-editor', () => {
       medium: medium.current,
     }));
 
-    return <div data-testid="tr-editor" />;
+    return (
+      <div
+        data-placeholder={options.placeholder.text}
+        data-testid="tr-editor"
+      />
+    );
   });
 
   MockMediumEditor.propTypes = {
     onChange: PropTypes.func,
+    options: PropTypes.object,
   };
 
   return {
@@ -127,5 +133,50 @@ describe('<TrEditor />', () => {
     editor.onChange('<p>Hello</p>');
 
     expect(onChange).toHaveBeenCalledWith('<p>Hello</p>');
+  });
+
+  it('uses translated default placeholder text when none is provided', () => {
+    const { getByTestId } = render(
+      <TrEditor
+        id="bio"
+        onChange={jest.fn()}
+        onCtrlEnter={jest.fn()}
+        text="initial"
+      />,
+    );
+
+    expect(getByTestId('tr-editor')).toHaveAttribute(
+      'data-placeholder',
+      'Type your text',
+    );
+  });
+
+  it('passes through a custom placeholder', () => {
+    const { getByTestId } = render(
+      <TrEditor
+        id="bio"
+        onChange={jest.fn()}
+        onCtrlEnter={jest.fn()}
+        placeholder="Write a careful reply"
+        text="initial"
+      />,
+    );
+
+    expect(getByTestId('tr-editor')).toHaveAttribute(
+      'data-placeholder',
+      'Write a careful reply',
+    );
+  });
+
+  it('uses a no-op ctrl+enter handler by default', () => {
+    render(<TrEditor id="bio" onChange={jest.fn()} text="initial" />);
+
+    const editor = mediumEditors[0];
+    expect(() =>
+      editor.trigger('editableKeydownEnter', {
+        ctrlKey: true,
+        preventDefault: jest.fn(),
+      }),
+    ).not.toThrow();
   });
 });

@@ -87,10 +87,23 @@ test.describe('public pages and unauthenticated flows', () => {
 
   for (const { path, title } of [
     { path: '/faq', title: /FAQ - Site & community - Trustroots/ },
+    { path: '/faq/circles', title: /FAQ - Circles - Trustroots/ },
+    { path: '/faq/foundation', title: /FAQ - Foundation - Trustroots/ },
+    { path: '/faq/technology', title: /FAQ - Technology - Trustroots/ },
+    {
+      path: '/faq/bugs-and-features',
+      title: /FAQ - Bugs & Features - Trustroots/,
+    },
     { path: '/contribute', title: /Contribute - Trustroots/ },
     { path: '/team', title: /Team - Trustroots/ },
     { path: '/privacy', title: /Privacy policy - Trustroots/ },
     { path: '/rules', title: /Rules - Trustroots/ },
+    { path: '/guide', title: /Guide - Trustroots/ },
+    { path: '/foundation', title: /Foundation - Trustroots/ },
+    { path: '/media', title: /Media - Trustroots/ },
+    { path: '/volunteering', title: /Volunteering - Trustroots/ },
+    { path: '/support', title: /Support - Trustroots/ },
+    { path: '/contact', title: /Contact us - Trustroots/ },
   ]) {
     test(`public marketing page ${path} loads`, async ({ page }) => {
       await page.goto(path);
@@ -99,4 +112,37 @@ test.describe('public pages and unauthenticated flows', () => {
       await expect(page).toHaveTitle(title);
     });
   }
+
+  test('support page renders the contact form', async ({ page }) => {
+    await page.goto('/support');
+
+    await expect(
+      page.getByRole('heading', { name: /trustroots support/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: /contact us/i }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /^send$/i })).toBeVisible();
+  });
+
+  test('invalid password reset page explains the link is no longer valid', async ({
+    page,
+  }) => {
+    await page.goto('/password/reset/invalid');
+
+    await expect(page).toHaveURL(/\/password\/reset\/invalid/);
+    await expect(
+      page.getByRole('heading', { name: /password reset is invalid/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /ask for a new password reset/i }),
+    ).toHaveAttribute('href', '/password/forgot');
+  });
+
+  test('/about redirects to the homepage', async ({ page }) => {
+    await page.goto('/about');
+
+    await expect(page).toHaveURL(/\/(\?.*)?$/);
+    await expect(page).toHaveTitle(/Trustroots/);
+  });
 });

@@ -36,7 +36,7 @@ describe('ProfileEditTribesController', function () {
       model.$update = jasmine
         .createSpy('$update')
         .and.callFake(function (_success, error) {
-          if (usersUpdateError) {
+          if (usersUpdateError !== null) {
             error({
               data: { message: usersUpdateError },
             });
@@ -110,6 +110,19 @@ describe('ProfileEditTribesController', function () {
     expect(messageCenterService.add).toHaveBeenCalledWith(
       'danger',
       'Invalid tribe data',
+      { timeout: 10000 },
+    );
+  });
+
+  it('adds a generic warning when update failure omits a message', function () {
+    const { vm } = createController();
+    usersUpdateError = '';
+
+    vm.updateUserProfile(true);
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Something went wrong. Please try again!',
       { timeout: 10000 },
     );
   });

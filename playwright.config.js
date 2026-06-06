@@ -29,13 +29,15 @@ const webServers = useWebpackDevServer
         command: 'npm run start:e2e:api',
         url: `http://localhost:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer:
+          process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
       },
       {
         command: 'npm run start:e2e:web',
         url: baseURL,
         timeout: 180 * 1000,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer:
+          process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
       },
     ]
   : [
@@ -43,7 +45,8 @@ const webServers = useWebpackDevServer
         command: 'npm run start:e2e:api',
         url: `http://localhost:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer:
+          process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
       },
     ];
 

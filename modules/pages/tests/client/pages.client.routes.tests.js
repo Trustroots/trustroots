@@ -227,6 +227,20 @@ describe('Pages Route Tests', function () {
         expect(state.controller).toBeTruthy();
         expect(state.url).toBe('/about');
       });
+
+      it('about route redirects to home', function () {
+        const $state = {
+          go: jest.fn(),
+        };
+
+        getState('about');
+        const controller = Array.isArray(state.controller)
+          ? state.controller[state.controller.length - 1]
+          : state.controller;
+        controller($state);
+
+        expect($state.go).toHaveBeenCalledWith('home');
+      });
     });
   });
 });

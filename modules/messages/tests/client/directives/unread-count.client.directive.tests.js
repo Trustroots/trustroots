@@ -84,6 +84,25 @@ describe('messagesUnreadCount directive', function () {
     expect(PollMessagesCount.poll).toHaveBeenCalled();
   });
 
+  it('keeps waiting when user updates remain non-public', function () {
+    Authentication.user = {
+      public: false,
+    };
+
+    const { scope } = compileDirective();
+
+    scope.$broadcast('userUpdated');
+
+    expect(PollMessagesCount.initPolling).not.toHaveBeenCalled();
+    expect(PollMessagesCount.poll).not.toHaveBeenCalled();
+
+    Authentication.user.public = true;
+    scope.$broadcast('userUpdated');
+
+    expect(PollMessagesCount.initPolling).toHaveBeenCalledTimes(1);
+    expect(PollMessagesCount.poll).toHaveBeenCalledTimes(1);
+  });
+
   it('updates the badge and favicons when unread counts change', function () {
     Authentication.user = {
       public: true,

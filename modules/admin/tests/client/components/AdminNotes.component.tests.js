@@ -128,4 +128,21 @@ describe('<AdminNotes />', () => {
     );
     expect(notesApi.listNotes).toHaveBeenCalledTimes(2);
   });
+
+  it('logs failed note loads and leaves the editor usable', async () => {
+    const log = jest.spyOn(console, 'log').mockImplementation(() => {});
+    notesApi.listNotes.mockRejectedValueOnce(new Error('load failed'));
+
+    render(<AdminNotes id={userId} />);
+
+    await waitFor(() =>
+      expect(log).toHaveBeenCalledWith(
+        `Could not load admin notes for user ${userId}`,
+      ),
+    );
+    expect(screen.getByRole('button', { name: 'Save note' })).toBeDisabled();
+    expect(screen.getByLabelText('Write a note')).toBeInTheDocument();
+
+    log.mockRestore();
+  });
 });

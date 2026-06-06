@@ -107,6 +107,19 @@ describe('ContactConfirmController', function () {
     );
   });
 
+  it('handles generic errors while loading a confirmation request', function () {
+    const { vm } = createController({
+      contactOverrides: {
+        $promise: $q.reject({
+          status: 500,
+        }),
+      },
+    });
+
+    expect(vm.isWrongCode).toBe(true);
+    expect(vm.error).toBe('Something went wrong. Try again.');
+  });
+
   it('confirms contact on user request', function () {
     const { contact, vm } = createController({
       contactOverrides: {
@@ -136,5 +149,24 @@ describe('ContactConfirmController', function () {
 
     expect(vm.isLoading).toBe(false);
     expect(vm.error).toBe('Something went wrong. Try again.');
+  });
+
+  it('shows API error message if confirmation fails with one', function () {
+    const { vm } = createController({
+      contactOverrides: {
+        $update(_, errorCallback) {
+          errorCallback({
+            data: {
+              message: 'Confirmation expired.',
+            },
+          });
+        },
+      },
+    });
+
+    vm.confirmContact();
+
+    expect(vm.isLoading).toBe(false);
+    expect(vm.error).toBe('Confirmation expired.');
   });
 });

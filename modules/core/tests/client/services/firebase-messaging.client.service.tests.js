@@ -217,4 +217,49 @@ describe('Firebase Messaging service', function () {
     expect(mockedMessaging.requestPermission).toHaveBeenCalledTimes(1);
     expect(mockedMessaging.deleteToken).toHaveBeenCalledWith('user-token');
   });
+
+  it('reuses the initialized messaging instance for later calls', function () {
+    bootstrap();
+
+    let firstResolved = false;
+    firebaseMessaging.getToken().then(() => {
+      firstResolved = true;
+    });
+    flushAsync();
+
+    let secondResolved = false;
+    firebaseMessaging.getToken().then(() => {
+      secondResolved = true;
+    });
+    flushAsync();
+
+    expect(firstResolved).toBe(true);
+    expect(secondResolved).toBe(true);
+    expect(getRegistrations).toHaveBeenCalledTimes(1);
+    expect(register).toHaveBeenCalledTimes(1);
+    expect(mockedMessaging.getToken).toHaveBeenCalledTimes(2);
+  });
+
+  it('reuses messaging when concurrent initialization finishes first', function () {
+    const firebase = require('firebase/app');
+    bootstrap();
+    firebase.initializeApp.mockClear();
+
+    let firstResolved = false;
+    let secondResolved = false;
+    firebaseMessaging.getToken().then(() => {
+      firstResolved = true;
+    });
+    firebaseMessaging.getToken().then(() => {
+      secondResolved = true;
+    });
+
+    flushAsync();
+
+    expect(firstResolved).toBe(true);
+    expect(secondResolved).toBe(true);
+    expect(firebase.initializeApp).toHaveBeenCalledTimes(1);
+    expect(mockedMessaging.useServiceWorker).toHaveBeenCalledTimes(1);
+    expect(mockedMessaging.getToken).toHaveBeenCalledTimes(2);
+  });
 });

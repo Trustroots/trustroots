@@ -21,6 +21,17 @@ const threads = generateThreads(10);
 const moreThreads = generateThreads(7);
 
 describe('<Inbox>', () => {
+  it('asks private users to activate their profile before loading threads', () => {
+    const privateUser = generateClientUser({ public: false });
+
+    const { getByRole } = render(<Inbox user={privateUser} />);
+
+    expect(getByRole('alertdialog')).toHaveTextContent(
+      'Sorry, you need to first activate your profile',
+    );
+    expect(api.fetchThreads).not.toHaveBeenCalled();
+  });
+
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
     const { findByRole } = render(<Inbox user={me} />);

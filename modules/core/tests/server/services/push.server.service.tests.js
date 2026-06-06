@@ -175,6 +175,45 @@ describe('Service: push', function () {
     );
   });
 
+  it('uses the mobile wording for expo devices', function (done) {
+    const user = {
+      _id: 17,
+      pushRegistration: [{ token: 'expo-token' }],
+    };
+
+    pushService.notifyPushDeviceAdded(user, 'expo', err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql('mobile notifications');
+      done();
+    });
+  });
+
+  it('uses the mobile wording for ios devices', function (done) {
+    const user = {
+      _id: 18,
+      pushRegistration: [{ token: 'ios-token' }],
+    };
+
+    pushService.notifyPushDeviceAdded(user, 'ios', err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql('mobile notifications');
+      done();
+    });
+  });
+
+  it('uses the raw platform name for unknown platforms', function (done) {
+    const user = {
+      _id: 19,
+      pushRegistration: [{ token: 'windows-token' }],
+    };
+
+    pushService.notifyPushDeviceAdded(user, 'windows', err => {
+      if (err) return done(err);
+      jobs[0].data.notification.body.should.containEql('windows notifications');
+      done();
+    });
+  });
+
   it('can send a new experience notification', function (done) {
     const userFrom = { _id: 1, displayName: 'Alice', username: 'alice' };
     const userTo = { _id: 2, pushRegistration: [{ token: 'abc' }] };

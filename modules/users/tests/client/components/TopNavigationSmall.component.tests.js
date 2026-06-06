@@ -75,6 +75,24 @@ describe('<TopNavigationSmall />', () => {
     );
   });
 
+  it('omits experience and contact actions when they are unavailable', () => {
+    renderNavigation({
+      contact: null,
+      isResolved: false,
+      referencesEnabled: false,
+    });
+
+    expect(
+      screen.getByRole('link', { name: 'Send a message' }),
+    ).toHaveAttribute('href', '/messages/alice');
+    expect(
+      screen.queryByRole('link', { name: 'Share your experience' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Add contact' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('confirms contact removal and reports the normalized contact', () => {
     const onContactRemoved = jest.fn();
     const contact = {
@@ -119,5 +137,27 @@ describe('<TopNavigationSmall />', () => {
     expect(
       screen.getByRole('dialog', { name: 'Remove contact' }),
     ).toBeVisible();
+  });
+
+  it('can cancel contact removal without reporting success', () => {
+    const onContactRemoved = jest.fn();
+
+    renderNavigation({
+      contact: {
+        _id: 'contact-1',
+        confirmed: true,
+        userFrom: 'me',
+        userTo: 'alice-id',
+      },
+      onContactRemoved,
+    });
+
+    fireEvent.click(screen.getByText('Remove contact'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel remove' }));
+
+    expect(onContactRemoved).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('dialog', { name: 'Remove contact' }),
+    ).not.toBeInTheDocument();
   });
 });

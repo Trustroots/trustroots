@@ -88,6 +88,22 @@ describe('<SearchUsers />', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows empty results when the search response has no users array', async () => {
+    searchUsers.mockResolvedValueOnce({ data: null });
+
+    render(<SearchUsers />);
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search members' }), {
+      target: { value: 'alice' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
+
+    await waitFor(() => expect(searchUsers).toHaveBeenCalledWith('alice'));
+    expect(
+      await screen.findByText('No members found by this name.'),
+    ).toBeInTheDocument();
+  });
+
   it('does not request users for short URL searches', () => {
     window.history.pushState({}, 'Search', '/search?search=ab');
 

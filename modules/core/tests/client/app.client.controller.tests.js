@@ -206,6 +206,17 @@ describe('App Controller Tests', function () {
     expect($state.go).toHaveBeenCalledWith('volunteering');
   });
 
+  it('should allow users with required role to continue navigation', function () {
+    Authentication.user = { roles: ['admin'] };
+    const toState = { requiresRole: 'admin', name: 'admin' };
+
+    const event = $scope.$broadcast('$stateChangeStart', toState, {});
+
+    expect(event.defaultPrevented).toBe(false);
+    expect($window.alert).not.toHaveBeenCalled();
+    expect($state.go).not.toHaveBeenCalled();
+  });
+
   it('should redirect not-signed-in users to signin', function () {
     Authentication.user = null;
     const toParams = { id: 'user-id' };
@@ -217,6 +228,19 @@ describe('App Controller Tests', function () {
     expect($rootScope.signinState).toBe('profile');
     expect($rootScope.signinStateParams).toEqual(toParams);
     expect($state.go).toHaveBeenCalledWith('profile-signup');
+  });
+
+  it('should redirect not-signed-in users to default signin with continuation', function () {
+    Authentication.user = null;
+    const toParams = { invite: 'abc' };
+    const toState = { requiresAuth: true, name: 'contacts' };
+
+    const event = $scope.$broadcast('$stateChangeStart', toState, toParams);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect($rootScope.signinState).toBe('contacts');
+    expect($rootScope.signinStateParams).toEqual(toParams);
+    expect($state.go).toHaveBeenCalledWith('signin', { continue: true });
   });
 
   it('should clear page state and scroll on successful state changes', function () {
@@ -232,6 +256,17 @@ describe('App Controller Tests', function () {
     expect($scope.vm.isHeaderHidden).toBe(true);
     expect($scope.vm.photoCredits).toEqual({});
     expect($scope.vm.photoCreditsCount).toBe(0);
+    expect($window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('should use visible header and footer defaults on state changes', function () {
+    $scope.vm.isFooterHidden = true;
+    $scope.vm.isHeaderHidden = true;
+
+    $scope.$broadcast('$stateChangeSuccess', {});
+
+    expect($scope.vm.isFooterHidden).toBe(false);
+    expect($scope.vm.isHeaderHidden).toBe(false);
     expect($window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
@@ -288,6 +323,21 @@ describe('App Controller Tests', function () {
       'unAuthenticated',
       'https://localhost',
     );
+    expect(trNativeAppBridge.signalUnAuthenticated).toHaveBeenCalled();
+  });
+
+  it('should sign out without an event or postMessage hook', function () {
+    $window.postMessage = undefined;
+
+    $scope.vm.signout();
+    $rootScope.$apply();
+
+    expect($analytics.eventTrack).toHaveBeenCalledWith('signout', {
+      category: 'authentication',
+      label: 'Sign out',
+    });
+    expect(push.disable).toHaveBeenCalled();
+    expect($window.top.location.href).toBe('/api/auth/signout');
     expect(trNativeAppBridge.signalUnAuthenticated).toHaveBeenCalled();
   });
 

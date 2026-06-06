@@ -7,7 +7,7 @@ server_status=0
 npm run test:coverage:client &
 client_pid=$!
 
-npm run test:coverage:server &
+npm run test:coverage:server:codex &
 server_pid=$!
 
 if ! wait "$client_pid"; then

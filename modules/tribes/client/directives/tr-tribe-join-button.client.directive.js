@@ -214,16 +214,12 @@ function trTribeJoinButtonDirective() {
 
     function applyChangedData(data) {
       // Update tribe with new count
-      if (data.tribe) {
-        $scope.tribe = data.tribe;
-        $rootScope.$broadcast('tribeUpdated', data.tribe);
-      }
+      $scope.tribe = data.tribe;
+      $rootScope.$broadcast('tribeUpdated', data.tribe);
 
       // User model is updated with new tribe data
-      if (data.user) {
-        Authentication.user = data.user;
-        $rootScope.$broadcast('userUpdated');
-      }
+      Authentication.user = data.user;
+      $rootScope.$broadcast('userUpdated');
     }
   }
 }

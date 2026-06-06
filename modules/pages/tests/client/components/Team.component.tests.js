@@ -84,4 +84,25 @@ describe('<Team />', () => {
       screen.getByRole('link', { name: 'Join Trustroots' }),
     ).toHaveAttribute('href', '/signup');
   });
+
+  it('uses username and fallback avatar for logged-out volunteer and alumni entries', async () => {
+    getVolunteers.mockResolvedValueOnce({
+      volunteers: [{ _id: 'v2', username: 'charlie' }],
+      alumni: [{ _id: 'a2', username: 'dana' }],
+    });
+
+    render(<Team user={null} />);
+
+    expect(
+      await screen.findByRole('link', { name: /charlie/ }),
+    ).toHaveAttribute('href', '/profile/charlie');
+    expect(screen.getByRole('img', { name: 'charlie' })).toHaveAttribute(
+      'src',
+      '/img/avatar.png',
+    );
+    expect(screen.getByRole('link', { name: 'dana' })).toHaveAttribute(
+      'href',
+      '/profile/dana',
+    );
+  });
 });

@@ -152,4 +152,23 @@ describe('profile onboarding components', () => {
 
     expect(avatarButton).toHaveClass('profile-avatar-lg');
   });
+
+  it('renders mobile avatar identity without optional display fields', () => {
+    render(
+      <AvatarNameMobile
+        profile={{
+          avatarSource: 'none',
+          username: 'alice',
+        }}
+      />,
+    );
+
+    expect(screen.getByText('@alice')).toBeVisible();
+    expect(
+      screen.queryByRole('heading', { name: 'Alice Example' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Hosting cyclists in Lisbon'),
+    ).not.toBeInTheDocument();
+  });
 });

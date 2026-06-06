@@ -72,6 +72,72 @@ describe('Admin audit log controller unit tests', () => {
       items[0].body.action.should.equal('search');
       items[0].ip.should.equal('203.0.113.10');
     });
+
+    it('prefers the Passenger client address over X-Forwarded-For', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      let nextCalled = false;
+
+      const req = {
+        body: { action: 'search' },
+        params: {},
+        query: {},
+        route: { path: '/api/admin/users' },
+        user,
+        get(header) {
+          if (header === '!~Passenger-Client-Address') {
+            return '10.0.0.1';
+          }
+          if (header === 'X-Forwarded-For') {
+            return '203.0.113.10';
+          }
+          return null;
+        },
+        ip: '127.0.0.1',
+      };
+
+      await new Promise((resolve, reject) => {
+        adminAuditLog.record(req, {}, err => {
+          if (err) {
+            return reject(err);
+          }
+          nextCalled = true;
+          resolve();
+        });
+      });
+
+      nextCalled.should.equal(true);
+      const items = await AuditLog.find({ user: user._id }).exec();
+      items[0].ip.should.equal('10.0.0.1');
+    });
+
+    it('still calls next when saving the audit log fails', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(AuditLog.prototype, 'save').callsFake(cb => {
+        cb(new Error('save failed'));
+      });
+      let nextCalled = false;
+
+      await new Promise(resolve => {
+        adminAuditLog.record(
+          {
+            body: { action: 'search' },
+            params: {},
+            query: {},
+            route: { path: '/api/admin/users' },
+            user,
+            get: () => null,
+            ip: '127.0.0.1',
+          },
+          {},
+          () => {
+            nextCalled = true;
+            resolve();
+          },
+        );
+      });
+
+      nextCalled.should.be.true();
+    });
   });
 
   describe('list', () => {
@@ -91,6 +157,23 @@ describe('Admin audit log controller unit tests', () => {
 
       res.body.length.should.equal(1);
       res.body[0].user.username.should.equal(user.username);
+    });
+
+    it('returns 400 when audit log lookup fails', async () => {
+      sinon.stub(AuditLog, 'find').returns({
+        sort: () => ({
+          limit: () => ({
+            populate: () => ({
+              exec: cb => cb(new Error('lookup failed')),
+            }),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminAuditLog.list({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
   });
 });

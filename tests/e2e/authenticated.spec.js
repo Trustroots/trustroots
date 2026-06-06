@@ -127,6 +127,24 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveURL(/\/volunteering/);
   });
 
+  test('profile edit photo page is reachable', async ({ page }) => {
+    await page.goto('/profile/edit/photo');
+
+    await expect(page).toHaveURL(/\/profile\/edit\/photo/);
+    await expect(page).toHaveTitle(/Edit profile photo - Trustroots/);
+    await expect(page.getByText(/profile photo/i).first()).toBeVisible();
+  });
+
+  test('navigation page lists member shortcuts', async ({ page }) => {
+    await page.goto('/navigation');
+
+    await expect(page).toHaveURL(/\/navigation/);
+    await expect(page).toHaveTitle(/Navigation - Trustroots/);
+    await expect(page.getByText(/view your profile/i)).toBeVisible();
+    await expect(page.getByText(/edit profile/i).first()).toBeVisible();
+    await expect(page.getByText(/find people/i)).toBeVisible();
+  });
+
   test('member can sign out', async ({ page }) => {
     await signOut(page);
 

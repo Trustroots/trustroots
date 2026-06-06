@@ -62,6 +62,41 @@ describe('Search Route Tests', function () {
         ).toBe(offer);
         expect(OffersService.get).toHaveBeenCalledWith({ offerId });
       }));
+
+      it('Should not load a tribe for missing tribe query params', inject(function (
+        $injector,
+      ) {
+        const TribeService = {
+          get: jest.fn(),
+        };
+
+        expect(
+          $injector.invoke(mainstate.resolve.tribe, null, {
+            $stateParams: {},
+            TribeService,
+          }),
+        ).toBe(false);
+        expect(TribeService.get).not.toHaveBeenCalled();
+      }));
+
+      it('Should load a tribe for tribe query params', inject(function (
+        $injector,
+      ) {
+        const tribe = { slug: 'hitchhikers' };
+        const TribeService = {
+          get: jest.fn().mockReturnValue(tribe),
+        };
+
+        expect(
+          $injector.invoke(mainstate.resolve.tribe, null, {
+            $stateParams: { tribe: 'hitchhikers' },
+            TribeService,
+          }),
+        ).toBe(tribe);
+        expect(TribeService.get).toHaveBeenCalledWith({
+          tribeSlug: 'hitchhikers',
+        });
+      }));
     });
 
     describe('Map Route', function () {

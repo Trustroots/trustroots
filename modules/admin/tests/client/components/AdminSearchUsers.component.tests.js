@@ -25,6 +25,23 @@ const makeUser = overrides => ({
 });
 
 describe('<AdminSearchUsers />', () => {
+  it('lists users by role when called without a form event', async () => {
+    const userResults = [makeUser({ displayName: 'Direct Admin' })];
+    usersApi.listUsersByRole.mockResolvedValueOnce(userResults);
+    const component = new AdminSearchUsers({});
+    component.setState = jest.fn(update => {
+      component.state = {
+        ...component.state,
+        ...update,
+      };
+    });
+
+    await component.doListUsersByRole();
+
+    expect(usersApi.listUsersByRole).toHaveBeenCalledWith('admin');
+    expect(component.setState).toHaveBeenCalledWith({ userResults });
+  });
+
   it('runs an initial search from the URL and renders result details', async () => {
     window.history.pushState({}, '', '/admin/search-users?search=alice');
     usersApi.searchUsers.mockResolvedValueOnce(
@@ -55,14 +72,38 @@ describe('<AdminSearchUsers />', () => {
 
     const input = screen.getByLabelText('Name, username or email');
     const button = screen.getByRole('button', { name: 'Search' });
+    const form = input.closest('form');
 
     expect(button).toBeDisabled();
 
     fireEvent.change(input, { target: { value: 'al' } });
-    fireEvent.click(button);
+    fireEvent.submit(form);
 
     expect(window.location.search).toBe('?search=al');
     expect(usersApi.searchUsers).not.toHaveBeenCalled();
+  });
+
+  it('searches from the submitted form once the search text is long enough', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([
+      makeUser({
+        _id: 'searchsearchsearchsearch0001',
+        displayName: 'Boundary Search',
+        username: 'boundary',
+      }),
+    ]);
+
+    render(<AdminSearchUsers />);
+
+    fireEvent.change(screen.getByLabelText('Name, username or email'), {
+      target: { value: 'ali' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(await screen.findByText('Boundary Search')).toHaveAttribute(
+      'href',
+      '/admin/user?id=searchsearchsearchsearch0001',
+    );
+    expect(usersApi.searchUsers).toHaveBeenCalledWith('ali');
   });
 
   it('lists users by role and renders temporary email state', async () => {

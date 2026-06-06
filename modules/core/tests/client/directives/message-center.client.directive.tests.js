@@ -42,6 +42,16 @@ describe('mcMessages directive', function () {
     expect(element.scope().animation).toBe('flash');
   });
 
+  it('reuses the existing location listener when compiled more than once', function () {
+    spyOn($rootScope, '$on').and.callThrough();
+
+    compile();
+    compile();
+
+    expect($rootScope.$on).toHaveBeenCalledTimes(1);
+    expect(messageCenterService.offlistener).toEqual(jasmine.any(Function));
+  });
+
   it('marks and removes shown messages after location changes', function () {
     const markShown = spyOn(
       messageCenterService,

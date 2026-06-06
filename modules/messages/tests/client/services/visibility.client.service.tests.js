@@ -58,6 +58,16 @@ describe('visibility service', () => {
     );
   });
 
+  it('does not notify new watchers before visibility is known', () => {
+    jest.resetModules();
+    const freshVisibilityService = require('@/modules/messages/client/services/visibility.client.service');
+    const watcher = jest.fn();
+
+    freshVisibilityService.watch(watcher);
+
+    expect(watcher).not.toHaveBeenCalled();
+  });
+
   it('is idempotent for repeated enable calls', () => {
     defineDocumentProperty('hidden', false);
     const addListener = jest.spyOn(document, 'addEventListener');

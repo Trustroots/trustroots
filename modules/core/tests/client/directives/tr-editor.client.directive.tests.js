@@ -15,14 +15,17 @@ describe('trEditor directive', function () {
     $rootScope = _$rootScope_;
   }));
 
-  function compile(attrs = '', initialModel = '') {
+  function compile(attrs = '', initialModel = '', options = {}) {
+    const includeCtrlEnter = options.includeCtrlEnter !== false;
     const scope = $rootScope.$new();
     scope.options = {};
     scope.content = initialModel;
     scope.handleCtrlEnter = jasmine.createSpy('handleCtrlEnter');
 
     const element = $compile(
-      `<div tr-editor tr-editor-options="options" ng-model="content" tr-editor-on-ctrl-enter="handleCtrlEnter()" ${attrs}></div>`,
+      `<div tr-editor tr-editor-options="options" ng-model="content" ${
+        includeCtrlEnter ? 'tr-editor-on-ctrl-enter="handleCtrlEnter()"' : ''
+      } ${attrs}></div>`,
     )(scope);
     scope.$digest();
 
@@ -50,6 +53,20 @@ describe('trEditor directive', function () {
     });
 
     expect(element.html()).toBe('<p>saved</p>');
+  });
+
+  it('updates the model when MediumEditor emits input', function () {
+    const { editor, scope } = compile();
+    const inputHandler = editor.events.customEvents.editableInput.slice(-1)[0];
+
+    inputHandler(
+      {},
+      {
+        innerHTML: ' <p>typed</p> ',
+      },
+    );
+
+    expect(scope.content).toBe('<p>typed</p>');
   });
 
   it('allows options updates without crashing the directive', function () {
@@ -98,5 +115,44 @@ describe('trEditor directive', function () {
     ngModel.$render();
 
     expect(placeholder.updatePlaceholder).toHaveBeenCalledWith(element[0]);
+  });
+
+  it('renders without placeholder extension support', function () {
+    const { element, scope } = compile();
+    const ngModel = element.controller('ngModel');
+
+    spyOn(ngModel.editor, 'getExtensionByName').and.returnValue(null);
+    scope.$apply(() => {
+      scope.content = '<p>without placeholder</p>';
+    });
+
+    expect(ngModel.editor.getExtensionByName).toHaveBeenCalledWith(
+      'placeholder',
+    );
+    expect(element.html()).toBe('<p>without placeholder</p>');
+  });
+
+  it('does not subscribe to ctrl+enter when callback attribute is missing', function () {
+    const { editor } = compile('', '', { includeCtrlEnter: false });
+
+    expect(editor.events.customEvents.editableInput.slice(-1)[0]).toEqual(
+      jasmine.any(Function),
+    );
+    expect(editor.events.customEvents.editableKeydownEnter).toHaveLength(1);
+  });
+
+  it('handles ctrl+enter input only when Ctrl key is pressed', function () {
+    const { scope, editor } = compile();
+    const preventDefault = jest.fn();
+    const keydownHandler =
+      editor.events.customEvents.editableKeydownEnter.slice(-1)[0];
+
+    keydownHandler({ ctrlKey: true, preventDefault });
+    expect(preventDefault).toHaveBeenCalledTimes(1);
+    expect(scope.handleCtrlEnter).toHaveBeenCalledTimes(1);
+
+    keydownHandler({ ctrlKey: false, preventDefault });
+    expect(scope.handleCtrlEnter).toHaveBeenCalledTimes(1);
+    expect(preventDefault).toHaveBeenCalledTimes(1);
   });
 });

@@ -153,4 +153,17 @@ describe('ProfileEditAboutController', function () {
       { timeout: 10000 },
     );
   });
+
+  it('shows fallback error message when update failure has no message', function () {
+    const { vm } = createController();
+    usersUpdateError = { data: {} };
+
+    vm.updateUserProfile(true);
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Something went wrong. Please try again!',
+      { timeout: 10000 },
+    );
+  });
 });

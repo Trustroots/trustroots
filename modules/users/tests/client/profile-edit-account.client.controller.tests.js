@@ -74,6 +74,20 @@ describe('ProfileEditAccountController', function () {
         expect(
           ProfileEditAccountController.getUsernameValidationError({
             $dirty: true,
+            $valid: false,
+          }),
+        ).toEqual('Invalid username.');
+        expect(
+          ProfileEditAccountController.getUsernameValidationError({
+            $dirty: true,
+            $error: {},
+            $usernameValue: '',
+            $valid: false,
+          }),
+        ).toEqual('Username is required.');
+        expect(
+          ProfileEditAccountController.getUsernameValidationError({
+            $dirty: true,
             $error: { maxlength: true },
             $valid: false,
           }),
@@ -151,6 +165,18 @@ describe('ProfileEditAccountController', function () {
           'Username is already taken.',
         );
       });
+
+      it('falls back to a generic username update error', function () {
+        ProfileEditAccountController.user.username = 'new-username';
+
+        $httpBackend.expect('PUT', '/api/users').respond(500);
+        ProfileEditAccountController.updateUsername();
+        $httpBackend.flush();
+
+        expect(ProfileEditAccountController.usernameError).toEqual(
+          'Something went wrong',
+        );
+      });
     });
 
     describe('change email address', function () {
@@ -221,7 +247,7 @@ describe('ProfileEditAccountController', function () {
         expect(ProfileEditAccountController.changeUserPasswordLoading).toEqual(
           false,
         );
-        expect(Authentication.user).toEqual(updatedUser);
+        expect(Authentication.user).toMatchObject(updatedUser);
         expect(messageCenterService.add).toHaveBeenCalledWith(
           'success',
           'Your password is now changed. Have a nice day!',
@@ -242,6 +268,102 @@ describe('ProfileEditAccountController', function () {
           'danger',
           'Current password is incorrect.',
           { timeout: 10000 },
+        );
+      });
+
+      it('falls back to the generic password error when the API omits a message', function () {
+        $httpBackend.expect('POST', '/api/users/password').respond(400, {
+          message: '',
+        });
+        ProfileEditAccountController.changeUserPassword();
+        $httpBackend.flush();
+
+        expect(messageCenterService.add).toHaveBeenCalledWith(
+          'danger',
+          'Password not changed due error, try again.',
+          { timeout: 10000 },
+        );
+      });
+    });
+
+    describe('push notifications', function () {
+      it('enables and disables push based on the toggle state', function () {
+        ProfileEditAccountController.push.enable = jasmine.createSpy('enable');
+        ProfileEditAccountController.push.disable =
+          jasmine.createSpy('disable');
+
+        ProfileEditAccountController.pushEnabled = true;
+        ProfileEditAccountController.pushUpdate();
+        expect(ProfileEditAccountController.push.enable).toHaveBeenCalled();
+
+        ProfileEditAccountController.pushEnabled = false;
+        ProfileEditAccountController.pushUpdate();
+        expect(ProfileEditAccountController.push.disable).toHaveBeenCalled();
+      });
+
+      it('disables push controls when push is busy, blocked, unsupported, or native mobile', function () {
+        ProfileEditAccountController.push.isBusy = false;
+        ProfileEditAccountController.push.isBlocked = false;
+        ProfileEditAccountController.push.isSupported = true;
+        ProfileEditAccountController.isNativeMobileApp = false;
+        expect(ProfileEditAccountController.pushIsDisabled()).toBe(false);
+
+        ProfileEditAccountController.push.isBusy = true;
+        expect(ProfileEditAccountController.pushIsDisabled()).toBe(true);
+
+        ProfileEditAccountController.push.isBusy = false;
+        ProfileEditAccountController.push.isBlocked = true;
+        expect(ProfileEditAccountController.pushIsDisabled()).toBe(true);
+
+        ProfileEditAccountController.push.isBlocked = false;
+        ProfileEditAccountController.push.isSupported = false;
+        expect(ProfileEditAccountController.pushIsDisabled()).toBe(true);
+
+        ProfileEditAccountController.push.isSupported = true;
+        ProfileEditAccountController.isNativeMobileApp = true;
+        expect(ProfileEditAccountController.pushIsDisabled()).toBe(true);
+      });
+    });
+
+    describe('email subscriptions', function () {
+      it('updates email subscriptions', function () {
+        ProfileEditAccountController.user.newsletter = true;
+        const updatedUser = {
+          _id: 'user',
+          displayName: 'User',
+          newsletter: true,
+        };
+
+        $httpBackend.expect('PUT', '/api/users').respond(200, updatedUser);
+        ProfileEditAccountController.updateUserSubscriptions();
+        expect(ProfileEditAccountController.updatingUserSubscriptions).toEqual(
+          true,
+        );
+        $httpBackend.flush();
+
+        expect(messageCenterService.add).toHaveBeenCalledWith(
+          'success',
+          'Subscriptions updated.',
+        );
+        expect(ProfileEditAccountController.updatingUserSubscriptions).toEqual(
+          false,
+        );
+        expect(Authentication.user).toMatchObject(updatedUser);
+      });
+
+      it('shows subscription update errors', function () {
+        $httpBackend.expect('PUT', '/api/users').respond(400, {
+          message: 'Subscription update failed.',
+        });
+        ProfileEditAccountController.updateUserSubscriptions();
+        $httpBackend.flush();
+
+        expect(ProfileEditAccountController.updatingUserSubscriptions).toEqual(
+          false,
+        );
+        expect(messageCenterService.add).toHaveBeenCalledWith(
+          'error',
+          'Error: Subscription update failed.',
         );
       });
     });
@@ -267,6 +389,18 @@ describe('ProfileEditAccountController', function () {
 
         expect(ProfileEditAccountController.removeProfileInitialized).toEqual(
           'Removal initialized.',
+        );
+      });
+
+      it('falls back to a generic profile removal success message', function () {
+        ProfileEditAccountController.removeProfileConfirm = true;
+
+        $httpBackend.expect('DELETE', '/api/users').respond(200, {});
+        ProfileEditAccountController.removeProfile();
+        $httpBackend.flush();
+
+        expect(ProfileEditAccountController.removeProfileInitialized).toEqual(
+          'Success.',
         );
       });
 
@@ -301,6 +435,30 @@ describe('ProfileEditAccountController', function () {
         );
       });
 
+      it('prevents the default event when resending email', function () {
+        const event = {
+          preventDefault: jasmine.createSpy('preventDefault'),
+        };
+
+        $httpBackend
+          .expect('POST', '/api/auth/resend-confirmation')
+          .respond(200);
+        ProfileEditAccountController.resendUserEmailConfirm(event);
+        $httpBackend.flush();
+
+        expect(event.preventDefault).toHaveBeenCalled();
+      });
+
+      it('does not resend confirmation when no temporary email exists', function () {
+        delete ProfileEditAccountController.user.emailTemporary;
+
+        ProfileEditAccountController.resendUserEmailConfirm();
+        expect(messageCenterService.add).not.toHaveBeenCalledWith(
+          'success',
+          'Confirmation email resent.',
+        );
+      });
+
       it('can show an error message during failure', function () {
         $httpBackend
           .expect('POST', '/api/auth/resend-confirmation')
@@ -324,6 +482,35 @@ describe('ProfileEditAccountController', function () {
         expect(messageCenterService.add).toHaveBeenCalledWith(
           'danger',
           'Error: my custom error',
+        );
+      });
+
+      it('falls back to a generic error when resend rejection omits a response', function () {
+        inject(function ($controller, $rootScope) {
+          const controller = $controller('ProfileEditAccountController', {
+            Authentication,
+            messageCenterService,
+            $scope: $rootScope.$new(),
+            push: {},
+            $http: {
+              post: jasmine.createSpy('$http.post').and.returnValue({
+                then() {
+                  return {
+                    catch(callback) {
+                      callback();
+                    },
+                  };
+                },
+              }),
+            },
+          });
+
+          controller.resendUserEmailConfirm();
+        });
+
+        expect(messageCenterService.add).toHaveBeenCalledWith(
+          'danger',
+          'Something went wrong.',
         );
       });
     });

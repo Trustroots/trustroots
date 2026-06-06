@@ -71,6 +71,30 @@ describe('trNativeAppBridge service', function () {
     $rootScope.$apply();
   });
 
+  it('ignores bridge messages that are not first-time mobile init events', function () {
+    let onMessage;
+    let resolved = false;
+
+    spyOn(document, 'addEventListener').and.callFake(function (_type, handler) {
+      if (_type === 'message') {
+        onMessage = handler;
+      }
+    });
+
+    trNativeAppBridge.activate().then(function () {
+      resolved = true;
+    });
+
+    onMessage(null);
+    onMessage({ data: 'somethingElse' });
+    $window.isNativeMobileApp = true;
+    onMessage({ data: 'trMobileAppInit' });
+    $rootScope.$apply();
+
+    expect(resolved).toBe(false);
+    expect($window.postMessage).not.toHaveBeenCalled();
+  });
+
   it('sends only native-friendly messages', function () {
     trNativeAppBridge.signalAuthenticated();
     trNativeAppBridge.signalUnAuthenticated();
@@ -87,6 +111,16 @@ describe('trNativeAppBridge service', function () {
     expect($window.postMessage).toHaveBeenCalledWith(
       '{"action":"unAuthenticated"}',
     );
+  });
+
+  it('returns app info from the native bridge payload', function () {
+    expect(trNativeAppBridge.getAppInfo()).toEqual({
+      version: '1.0.0',
+    });
+
+    $window.trMobileApp = null;
+
+    expect(trNativeAppBridge.getAppInfo()).toEqual({});
   });
 
   it('sets up bridge hooks after mobile init event', function (done) {
@@ -155,5 +189,39 @@ describe('trNativeAppBridge service', function () {
     expect($window.postMessage).toHaveBeenCalledWith(
       '{"action":"openUrl","url":"https://external.example/app"}',
     );
+  });
+
+  it('does not forward urlified clicks when an anchor has no href', function () {
+    let onMessage;
+
+    document.body.innerHTML =
+      '<a id="external" href="https://external.example/app">External</a>';
+
+    spyOn(document, 'addEventListener').and.callFake(function (_type, handler) {
+      if (_type === 'message') {
+        onMessage = handler;
+      }
+    });
+
+    trNativeAppBridge.activate();
+    onMessage({ data: 'trMobileAppInit' });
+
+    $window.isNativeMobileApp = true;
+    $rootScope.$broadcast('$stateChangeSuccess');
+    $timeout.flush();
+
+    const external = document.getElementById('external');
+    external.removeAttribute('href');
+    const clickEvent = new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+    });
+    const preventDefaultSpy = spyOn(clickEvent, 'preventDefault');
+    $window.postMessage.calls.reset();
+
+    external.dispatchEvent(clickEvent);
+
+    expect(preventDefaultSpy).not.toHaveBeenCalled();
+    expect($window.postMessage).not.toHaveBeenCalled();
   });
 });

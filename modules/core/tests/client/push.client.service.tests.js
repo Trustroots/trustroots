@@ -54,16 +54,23 @@ describe('Push Service Tests', function () {
     if (!$window.navigator) {
       $window.navigator = {};
     }
-    if (!$window.navigator.serviceWorker) {
-      $window.navigator.serviceWorker = {};
-    }
-    if (!$window.PushManager) {
-      $window.PushManager = {};
-    }
+    Object.defineProperty($window.navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        register: jasmine.createSpy('serviceWorker.register'),
+      },
+    });
+    Object.defineProperty($window, 'PushManager', {
+      configurable: true,
+      value: {},
+    });
 
-    $window.Notification = function (title, options) {
-      notifications.push({ title, options });
-    };
+    Object.defineProperty($window, 'Notification', {
+      configurable: true,
+      value(title, options) {
+        notifications.push({ title, options });
+      },
+    });
   }));
 
   afterEach(function () {
@@ -100,6 +107,36 @@ describe('Push Service Tests', function () {
     expect(Authentication.user.pushRegistration.length).toBe(1);
     expect(Authentication.user.pushRegistration[0].token).toBe(token);
     expect(locker.get('tr.push')).toBe('on');
+  }));
+
+  it('does not persist the enabled preference when storage is unsupported', inject(function (
+    push,
+    locker,
+    Authentication,
+  ) {
+    if (!push.isSupported) return;
+
+    const token = 'unsupported-storage-token';
+    spyOn(locker, 'supported').and.returnValue(false);
+    firebase.token = token;
+    firebase.permissionGranted = true;
+
+    $httpBackend
+      .expect('POST', '/api/users/push/registrations', {
+        token,
+        platform: 'web',
+      })
+      .respond(200, {
+        user: {
+          pushRegistration: [{ token, platform: 'web' }],
+        },
+      });
+
+    push.enable();
+
+    $httpBackend.flush();
+    expect(Authentication.user.pushRegistration[0].token).toBe(token);
+    expect(locker.get('tr.push')).toBeUndefined();
   }));
 
   it('will save to server during initialization if on but not present', inject(function (
@@ -144,6 +181,38 @@ describe('Push Service Tests', function () {
 
     expect(Authentication.user.pushRegistration.length).toBe(1);
     expect(Authentication.user.pushRegistration[0].token).toBe(token);
+  }));
+
+  it('registers refreshed tokens when saved preference is enabled', inject(function (
+    push,
+    locker,
+    $rootScope,
+    Authentication,
+  ) {
+    if (!push.isSupported) return;
+
+    const token = 'refreshed-token';
+    locker.put('tr.push', 'on');
+    firebase.permissionGranted = true;
+    firebase.token = token;
+
+    $httpBackend
+      .expect('POST', '/api/users/push/registrations', {
+        token,
+        platform: 'web',
+      })
+      .respond(200, {
+        user: {
+          pushRegistration: [{ token, platform: 'web' }],
+        },
+      });
+
+    firebase.triggerOnTokenRefresh();
+    $httpBackend.flush();
+    $rootScope.$apply();
+
+    expect(Authentication.user.pushRegistration[0].token).toBe(token);
+    expect(push.isEnabled).toBe(true);
   }));
 
   it('can be disabled and will be removed from server', inject(function (
@@ -196,6 +265,125 @@ describe('Push Service Tests', function () {
     expect(push.isEnabled).toBe(false);
   }));
 
+  it('resets busy state when Firebase delete token fails', function (done) {
+    inject(function (push, Authentication, $rootScope) {
+      if (!push.isSupported) return done();
+
+      const token = 'delete-failure-token';
+      firebase.token = token;
+      firebase.permissionGranted = true;
+      Authentication.user.pushRegistration.push({
+        token,
+        platform: 'web',
+      });
+
+      push.enable();
+      $rootScope.$apply();
+      expect(push.isEnabled).toBe(true);
+
+      const deleteError = new Error('delete failed');
+      firebase.deleteTokenError = deleteError;
+
+      push.disable().catch(function (error) {
+        expect(error).toBe(deleteError);
+        expect(push.isBusy).toBe(false);
+        expect(push.isEnabled).toBe(true);
+        expect(firebase.deletedTokens).toEqual([token]);
+        done();
+      });
+
+      $rootScope.$apply();
+    });
+  });
+
+  it('reports server errors when registering a token fails', function (done) {
+    inject(function (push, $rootScope, messageCenterService) {
+      if (!push.isSupported) return done();
+
+      spyOn(messageCenterService, 'add').and.callThrough();
+      firebase.token = 'server-rejected-token';
+      firebase.permissionGranted = true;
+
+      $httpBackend
+        .expect('POST', '/api/users/push/registrations', {
+          token: 'server-rejected-token',
+          platform: 'web',
+        })
+        .respond(500, { message: 'Registration failed' });
+
+      push.enable().catch(function (error) {
+        expect(error.message).toBe('Error: Registration failed');
+        expect(messageCenterService.add).toHaveBeenCalledWith(
+          'danger',
+          'Error: Registration failed',
+        );
+        expect(push.isBusy).toBe(false);
+        done();
+      });
+
+      $httpBackend.flush();
+      $rootScope.$apply();
+    });
+  });
+
+  it('reports a generic error when token registration fails without a response', function (done) {
+    inject(function (push, $http, $q, $rootScope, messageCenterService) {
+      if (!push.isSupported) return done();
+
+      spyOn($http, 'post').and.returnValue($q.reject());
+      spyOn(messageCenterService, 'add').and.callThrough();
+      firebase.token = 'network-failed-token';
+      firebase.permissionGranted = true;
+
+      push.enable().catch(function (error) {
+        expect(error.message).toBe('Something went wrong.');
+        expect(messageCenterService.add).toHaveBeenCalledWith(
+          'danger',
+          'Something went wrong.',
+        );
+        expect(push.isBusy).toBe(false);
+        done();
+      });
+
+      $rootScope.$apply();
+    });
+  });
+
+  it('reports fallback server errors when unregistering a token fails', function (done) {
+    inject(function (push, Authentication, $rootScope, messageCenterService) {
+      if (!push.isSupported) return done();
+
+      spyOn(messageCenterService, 'add').and.callThrough();
+      const token = 'delete-server-error-token';
+      firebase.token = token;
+      firebase.permissionGranted = true;
+      Authentication.user.pushRegistration.push({
+        token,
+        platform: 'web',
+      });
+
+      push.enable();
+      $rootScope.$apply();
+
+      $httpBackend
+        .expect('DELETE', '/api/users/push/registrations/' + token)
+        .respond(503, {});
+
+      push.disable().catch(function (error) {
+        expect(error.message).toBe('Error: Something went wrong.');
+        expect(messageCenterService.add).toHaveBeenCalledWith(
+          'danger',
+          'Error: Something went wrong.',
+        );
+        expect(push.isBusy).toBe(false);
+        done();
+      });
+
+      $httpBackend.flush();
+      $rootScope.$apply();
+    });
+  });
+
   it('will not save to server if enabling and already registered', inject(function (
     push,
     Authentication,
@@ -217,6 +405,62 @@ describe('Push Service Tests', function () {
     expect(push.isEnabled).toBe(true);
     expect(locker.get('tr.push')).toBe('on');
   }));
+
+  it('rejects unknown Firebase token failures with a default error', function (done) {
+    inject(function (push, $rootScope) {
+      if (!push.isSupported) return done();
+
+      firebase.rejectTokenWithoutError = true;
+
+      push.enable().catch(function (error) {
+        expect(error.message).toBe('Unknown error');
+        expect(push.isBusy).toBe(false);
+        expect(push.isBlocked).toBe(false);
+        done();
+      });
+
+      $rootScope.$apply();
+    });
+  });
+
+  it('resets busy state when requesting permission fails', function (done) {
+    inject(function (push, $rootScope) {
+      if (!push.isSupported) return done();
+
+      const permissionError = new Error('permission request failed');
+      firebase.requestPermissionError = permissionError;
+
+      push.enable().catch(function (error) {
+        expect(error).toBe(permissionError);
+        expect(firebase.requestPermissionCalled).toBe(1);
+        expect(push.isBusy).toBe(false);
+        expect(push.isBlocked).toBe(false);
+        done();
+      });
+
+      $rootScope.$apply();
+    });
+  });
+
+  it('rejects instead of retrying forever when no token is returned after permission', function (done) {
+    inject(function (push, $rootScope) {
+      if (!push.isSupported) return done();
+
+      firebase.token = null;
+      firebase.permissionGranted = false;
+
+      push.enable().catch(function (error) {
+        expect(error.message).toBe(
+          'push token unavailable after permission request',
+        );
+        expect(firebase.requestPermissionCalled).toBe(1);
+        expect(push.isBusy).toBe(false);
+        done();
+      });
+
+      $rootScope.$apply();
+    });
+  });
 
   it('should trigger a notification when a message is received', inject(function (
     push,
@@ -249,33 +493,17 @@ describe('Push Service Tests', function () {
     modalOpen.and.callFake(function (config) {
       modalOpenConfig = config;
 
-      const fakeScope = {
-        $on(eventName, callback) {
-          if (eventName === 'modal.closing') {
-            modalClosingHandler = callback;
-          }
-        },
-      };
-
-      if (typeof config.controller === 'function') {
-        const viewModel = {};
-        config.controller.call(viewModel, fakeScope, modalInstance);
-        if (typeof viewModel.yes === 'function') {
-          viewModel.yes();
-        }
-      }
-
       return {};
     });
 
     firebase.token = 'existing-token';
     firebase.permissionGranted = true;
+    Authentication.user.pushRegistration.push({
+      token: 'existing-token',
+      platform: 'web',
+    });
     locker.forget('tr.push');
     locker.forget('tr.push.asked');
-
-    Authentication.user = {
-      pushRegistration: [],
-    };
 
     firebaseMessaging.shouldInitialize = true;
     push.init();
@@ -287,16 +515,53 @@ describe('Push Service Tests', function () {
         controllerAs: 'askPushNotificationsModal',
       }),
     );
-    if (typeof modalClosingHandler === 'function') {
-      modalClosingHandler();
-    }
-    modalInstance.dismiss();
-    expect(modalInstance.dismiss).toHaveBeenCalled();
 
-    if (modalClosingHandler) {
-      expect(locker.get('tr.push.asked')).toBe('yes');
-    }
+    const fakeScope = {
+      $on(eventName, callback) {
+        if (eventName === 'modal.closing') {
+          modalClosingHandler = callback;
+        }
+      },
+    };
+    const viewModel = {};
+    const controller = modalOpenConfig.controller.at(-1);
+    controller.call(viewModel, fakeScope, modalInstance);
+    viewModel.yes();
+    $rootScope.$apply();
+
+    expect(modalInstance.dismiss).toHaveBeenCalled();
+    expect(push.isEnabled).toBe(true);
+
+    modalClosingHandler();
+    expect(locker.get('tr.push.asked')).toBe('yes');
   }));
+
+  it('disables saved preference on init and rejects actions when unsupported', function (done) {
+    inject(function (push, locker, firebaseMessaging, $rootScope, $q) {
+      push.isSupported = false;
+      locker.put('tr.push', 'on');
+      firebaseMessaging.shouldInitialize = true;
+
+      push.init();
+      $rootScope.$apply();
+
+      expect(push.isEnabled).toBe(false);
+      expect(locker.get('tr.push')).toBeFalsy();
+
+      $q.all([
+        push.enable().catch(function (error) {
+          expect(error.message).toBe('push is unsupported');
+        }),
+        push.disable().catch(function (error) {
+          expect(error.message).toBe('push is unsupported');
+        }),
+      ]).then(function () {
+        done();
+      }, done.fail);
+
+      $rootScope.$apply();
+    });
+  });
 
   it('does not ask for consent again once user has already been asked', inject(function (
     push,
@@ -474,6 +739,19 @@ describe('Push Service Tests', function () {
 
     expect(firebase.removeServiceWorkerCalled).toBe(0);
   }));
+
+  it('skips unload service worker cleanup when push is unsupported', inject(function (
+    push,
+    locker,
+    $window,
+  ) {
+    push.isSupported = false;
+    locker.put('tr.push', 'off');
+
+    $window.onbeforeunload();
+
+    expect(firebase.removeServiceWorkerCalled).toBe(0);
+  }));
 });
 
 function createFirebaseMock() {
@@ -508,6 +786,8 @@ function createFirebaseMock() {
     firebase.deletedTokens.length = 0;
     firebase.tokenError = null;
     firebase.requestPermissionError = null;
+    firebase.rejectTokenWithoutError = false;
+    firebase.deleteTokenError = null;
     firebase.requestPermissionCalled = 0;
     firebase.removeServiceWorkerCalled = 0;
   }
@@ -523,6 +803,9 @@ function createFirebaseMock() {
       name: 'fcm-mock',
       shouldInitialize: false, // means core does not set it up for us
       getToken() {
+        if (firebase.rejectTokenWithoutError) {
+          return $q.reject();
+        }
         if (firebase.tokenError) {
           return $q.reject(firebase.tokenError);
         }
@@ -533,15 +816,18 @@ function createFirebaseMock() {
         }
       },
       requestPermission() {
+        firebase.requestPermissionCalled++;
         if (firebase.requestPermissionError) {
           return $q.reject(firebase.requestPermissionError);
         }
         firebase.permissionGranted = true;
-        firebase.requestPermissionCalled++;
         return $q.resolve();
       },
       deleteToken(token) {
         firebase.deletedTokens.push(token);
+        if (firebase.deleteTokenError) {
+          return $q.reject(firebase.deleteTokenError);
+        }
         return $q.resolve();
       },
       onTokenRefresh(fn) {

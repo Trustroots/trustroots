@@ -49,6 +49,43 @@ describe('<BlockMember />', () => {
     expect(blockApi.block).not.toHaveBeenCalled();
   });
 
+  it('does not call the unblock API when confirmation is cancelled', () => {
+    window.confirm.mockReturnValue(false);
+    render(<BlockMember username="alice" isBlocked />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Unblock member "alice"' }),
+    );
+
+    expect(blockApi.unblock).not.toHaveBeenCalled();
+  });
+
+  it('blocks without showing an error when the API succeeds', async () => {
+    window.confirm.mockReturnValue(true);
+    blockApi.block.mockResolvedValue(true);
+    render(<BlockMember username="alice" />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Block member "alice"' }),
+    );
+
+    await waitFor(() => expect(blockApi.block).toHaveBeenCalledWith('alice'));
+    expect(window.alert).not.toHaveBeenCalled();
+  });
+
+  it('unblocks without showing an error when the API succeeds', async () => {
+    window.confirm.mockReturnValue(true);
+    blockApi.unblock.mockResolvedValue(true);
+    render(<BlockMember username="alice" isBlocked />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Unblock member "alice"' }),
+    );
+
+    await waitFor(() => expect(blockApi.unblock).toHaveBeenCalledWith('alice'));
+    expect(window.alert).not.toHaveBeenCalled();
+  });
+
   it('alerts when blocking fails', async () => {
     window.confirm.mockReturnValue(true);
     blockApi.block.mockResolvedValue(false);

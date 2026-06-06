@@ -45,4 +45,15 @@ describe('<LanguageList />', () => {
     expect(screen.getByText('English')).toBeInTheDocument();
     expect(screen.getByText('zzz')).toBeInTheDocument();
   });
+
+  it('renders nothing when language codes are omitted', () => {
+    useLanguagesQuery.mockReturnValue({
+      data: { eng: 'English' },
+      isLoading: false,
+    });
+
+    const { container } = render(<LanguageList className="languages" />);
+
+    expect(container).toBeEmptyDOMElement();
+  });
 });

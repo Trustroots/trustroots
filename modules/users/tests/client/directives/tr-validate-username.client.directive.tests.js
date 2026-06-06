@@ -25,14 +25,14 @@ describe('trValidateUsername directive', function () {
     $timeout = _$timeout_;
   }));
 
-  function compileTemplate(sourceAttribute) {
+  function compileTemplate(sourceAttribute, attributes = 'minlength="4"') {
     const scope = $rootScope.$new();
     scope.username = 'existing-username';
 
     $compile(
       `<form name="form"><input name="username" ng-model="username" tr-validate-username="${
         sourceAttribute || ''
-      }" minlength="4"></form>`,
+      }" ${attributes}></form>`,
     )(scope);
     scope.$digest();
 
@@ -46,6 +46,16 @@ describe('trValidateUsername directive', function () {
     const { field } = compileTemplate();
 
     field.$setViewValue('abc');
+    $rootScope.$digest();
+
+    expect(SignupValidation.post).not.toHaveBeenCalled();
+    expect(field.$pending).toBeUndefined();
+  });
+
+  it('does not trigger validation when username is empty', function () {
+    const { field } = compileTemplate();
+
+    field.$setViewValue('');
     $rootScope.$digest();
 
     expect(SignupValidation.post).not.toHaveBeenCalled();
@@ -66,6 +76,24 @@ describe('trValidateUsername directive', function () {
 
     expect(SignupValidation.post).not.toHaveBeenCalled();
     expect(field.$error.username).toBeUndefined();
+  });
+
+  it('uses a one-character minimum when minlength is omitted', function () {
+    const { field } = compileTemplate('', '');
+
+    SignupValidation.post.and.returnValue({
+      $promise: $q.resolve({ valid: true }),
+    });
+
+    field.$setViewValue('a');
+    $rootScope.$digest();
+    $timeout.flush(1000);
+    $rootScope.$digest();
+
+    expect(SignupValidation.post).toHaveBeenCalledWith({
+      username: 'a',
+    });
+    expect(field.$error.username).toBeFalsy();
   });
 
   it('flags usernames that the server rejects', function () {

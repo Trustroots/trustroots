@@ -87,6 +87,24 @@ describe('Admin notes controller unit tests', () => {
       saved.note.should.not.containEql('script');
       saved.admin.toString().should.equal(admin._id.toString());
     });
+
+    it('returns 400 when saving the note fails', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(2));
+      const admin = users[0];
+      const target = users[1];
+      sinon.stub(AdminNote.prototype, 'save').rejects(new Error('save failed'));
+
+      const res = mockResponse();
+      await adminNotes.addNote(
+        {
+          body: { userId: target._id.toString(), note: 'test note' },
+          user: admin,
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+    });
   });
 
   describe('getNotes', () => {
@@ -128,6 +146,24 @@ describe('Admin notes controller unit tests', () => {
       await res.waitForResponse();
 
       res.body.should.eql([]);
+    });
+
+    it('returns 400 when note lookup fails', async () => {
+      sinon.stub(AdminNote, 'find').returns({
+        sort: () => ({
+          populate: () => ({
+            exec: cb => cb(new Error('lookup failed')),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminNotes.getNotes(
+        { query: { userId: new mongoose.Types.ObjectId().toString() } },
+        res,
+      );
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(400);
     });
   });
 });

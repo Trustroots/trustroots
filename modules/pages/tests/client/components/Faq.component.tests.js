@@ -59,4 +59,24 @@ describe('<Faq />', () => {
     expect(screen.getByText('about technology')).toBeInTheDocument();
     expect(screen.getByText('technology content')).toBeInTheDocument();
   });
+
+  it('renders circle and foundation category headings', () => {
+    const { rerender } = render(
+      <Faq category="tribes">
+        <div>circle content</div>
+      </Faq>,
+    );
+
+    expect(screen.getByText('about circles')).toBeInTheDocument();
+    expect(screen.getByText('circle content')).toBeInTheDocument();
+
+    rerender(
+      <Faq category="foundation">
+        <div>foundation content</div>
+      </Faq>,
+    );
+
+    expect(screen.getByText('about the foundation')).toBeInTheDocument();
+    expect(screen.getByText('foundation content')).toBeInTheDocument();
+  });
 });

@@ -218,6 +218,37 @@ describe('ProfileEditPhotoController', function () {
     );
   });
 
+  it('uses octet-stream content type when the selected image type is cleared before upload', function () {
+    const file = imageFile();
+
+    ProfileEditPhotoController.fileSelected([file]);
+    file.type = '';
+    MockFileReader.instances[0].onloadend();
+
+    expect(Upload.upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+        data: {
+          avatar: file,
+        },
+      }),
+    );
+  });
+
+  it('does not upload when avatar source changes before the preview is ready', function () {
+    const file = imageFile();
+
+    ProfileEditPhotoController.fileSelected([file]);
+    Upload.upload.calls.reset();
+    ProfileEditPhotoController.user.avatarSource = 'none';
+    MockFileReader.instances[0].onloadend();
+
+    expect(ProfileEditPhotoController.avatarPreview).toBe(true);
+    expect(Upload.upload).not.toHaveBeenCalled();
+  });
+
   it('shows the processing error returned by the avatar upload endpoint', function () {
     selectValidImage();
 
@@ -254,6 +285,44 @@ describe('ProfileEditPhotoController', function () {
     expect(messageCenterService.add).toHaveBeenCalledWith(
       'danger',
       'Sorry, we do not support this type of file.',
+    );
+  });
+
+  it('shows the generic avatar upload error for unknown upload failures', function () {
+    selectValidImage();
+
+    uploadErrorCallback(null, 500);
+
+    expect(ProfileEditPhotoController.avatarUploading).toBe(false);
+    expect(ProfileEditPhotoController.avatarPreview).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Oops! Something went wrong. Try again later.',
+    );
+  });
+
+  it('formats zero-byte upload limits in upload error messages', function () {
+    selectValidImage();
+    appSettings.maxUploadSize = 0;
+
+    uploadErrorCallback(null, 413);
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Whoops, your file is too big. Please keep it up to 0 Byte.',
+    );
+  });
+
+  it('shows a generic profile update message when the API omits an error message', function () {
+    selectValidImage();
+
+    $httpBackend.expectPUT('/api/users').respond(500, {});
+    uploadSuccessCallback();
+    $httpBackend.flush();
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Oops! Something went wrong.',
     );
   });
 });

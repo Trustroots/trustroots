@@ -1,4 +1,5 @@
 const proxyquire = require('proxyquire');
+const sinon = require('sinon');
 const config = require('../../../../../config/config');
 
 require('should');
@@ -46,17 +47,32 @@ describe('Service: spam', function () {
     result.should.equal('unknown');
   });
 
+  it('returns "unknown" when the message has no useragent', async function () {
+    config.akismet.enabled = true;
+    const checkSpam = sinon.stub().resolves(false);
+    const spamService = buildService(checkSpam);
+    const result = await spamService.check({ ip: '1.2.3.4' });
+    result.should.equal('unknown');
+    checkSpam.called.should.be.false();
+  });
+
   it('returns "spam" when Akismet flags the message', async function () {
     config.akismet.enabled = true;
     const spamService = buildService(async () => true);
-    const result = await spamService.check({ ip: '1.2.3.4' });
+    const result = await spamService.check({
+      ip: '1.2.3.4',
+      useragent: 'Unit test agent',
+    });
     result.should.equal('spam');
   });
 
   it('returns "not-spam" when Akismet clears the message', async function () {
     config.akismet.enabled = true;
     const spamService = buildService(async () => false);
-    const result = await spamService.check({ ip: '1.2.3.4' });
+    const result = await spamService.check({
+      ip: '1.2.3.4',
+      useragent: 'Unit test agent',
+    });
     result.should.equal('not-spam');
   });
 
@@ -65,7 +81,10 @@ describe('Service: spam', function () {
     const spamService = buildService(async () => {
       throw new Error('Akismet unreachable');
     });
-    const result = await spamService.check({ ip: '1.2.3.4' });
+    const result = await spamService.check({
+      ip: '1.2.3.4',
+      useragent: 'Unit test agent',
+    });
     result.should.equal('unknown');
   });
 });

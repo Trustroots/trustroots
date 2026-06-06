@@ -34,6 +34,38 @@ describe('messages api', () => {
     });
   });
 
+  it('fetches threads with default params', async () => {
+    const threads = [{ _id: 'thread-1' }];
+    axios.get.mockResolvedValueOnce({
+      data: threads,
+      headers: {},
+    });
+
+    await expect(fetchThreads()).resolves.toEqual({
+      threads,
+      nextParams: undefined,
+    });
+
+    expect(axios.get).toHaveBeenCalledWith('/api/messages', {
+      params: {},
+    });
+  });
+
+  it('ignores pagination links without next params', async () => {
+    const threads = [{ _id: 'thread-1' }];
+    axios.get.mockResolvedValueOnce({
+      data: threads,
+      headers: {
+        link: '</api/messages?before=abc123&limit=10>; rel="prev"',
+      },
+    });
+
+    await expect(fetchThreads()).resolves.toEqual({
+      threads,
+      nextParams: undefined,
+    });
+  });
+
   it('fetches messages for a user without pagination params', async () => {
     const messages = [{ _id: 'message-1', content: 'Hello' }];
     axios.get.mockResolvedValueOnce({
@@ -48,6 +80,21 @@ describe('messages api', () => {
 
     expect(axios.get).toHaveBeenCalledWith('/api/messages/user-1', {
       params: {},
+    });
+  });
+
+  it('fetches messages for a user and extracts next pagination params', async () => {
+    const messages = [{ _id: 'message-1', content: 'Hello' }];
+    axios.get.mockResolvedValueOnce({
+      data: messages,
+      headers: {
+        link: '</api/messages/user-1?before=def456>; rel="next"',
+      },
+    });
+
+    await expect(fetchMessages('user-1')).resolves.toEqual({
+      messages,
+      nextParams: { before: 'def456' },
     });
   });
 

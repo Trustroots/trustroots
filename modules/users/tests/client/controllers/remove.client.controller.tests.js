@@ -100,6 +100,20 @@ describe('RemoveProfileController', function () {
     expect(messageCenterService.add).not.toHaveBeenCalled();
   });
 
+  it('uses fallback confirmation message when resend confirmation has no message', function () {
+    removeProfilePromise = () => $q.resolve();
+    resendProfilePromise = () => $q.resolve({});
+
+    const vm = createController();
+    $rootScope.$apply();
+
+    vm.resendConfirmation();
+    $rootScope.$apply();
+
+    expect(vm.removeProfileInitialized).toBe('Success.');
+    expect(messageCenterService.add).not.toHaveBeenCalled();
+  });
+
   it('adds an error message when resend confirmation fails', function () {
     removeProfilePromise = () => $q.resolve();
     resendProfilePromise = () => $q.reject({ message: 'Nope' });

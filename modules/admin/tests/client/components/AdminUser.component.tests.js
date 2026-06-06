@@ -95,6 +95,22 @@ const makeReportCard = overrides => ({
 });
 
 describe('<AdminUser />', () => {
+  it('handles role helpers safely before a profile has loaded', () => {
+    const component = new AdminUser({});
+
+    expect(component.hasRole('moderator')).toBe(false);
+    expect(() => component.handleUserRoleChange('moderator')).not.toThrow();
+    expect(usersApi.setUserRole).not.toHaveBeenCalled();
+
+    component.state.user = {
+      profile: {
+        roles: ['moderator'],
+      },
+    };
+
+    expect(component.hasRole('moderator')).toBe(true);
+  });
+
   it('loads a valid member id from the URL and renders the report card', async () => {
     window.history.pushState({}, '', `/admin/user?id=${userId}`);
     usersApi.getUser.mockResolvedValueOnce(
@@ -152,6 +168,64 @@ describe('<AdminUser />', () => {
     fireEvent.click(showButton);
 
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+  });
+
+  it('submits short ids without querying the API', () => {
+    render(<AdminUser />);
+
+    const input = screen.getByLabelText('Member ID');
+    fireEvent.change(input, { target: { value: 'short-id' } });
+    fireEvent.submit(input.closest('form'));
+
+    expect(usersApi.getUser).not.toHaveBeenCalled();
+  });
+
+  it('uses profile username and id fallbacks for report headings and counts', async () => {
+    usersApi.getUser
+      .mockResolvedValueOnce(
+        makeReportCard({
+          messageFromCount: undefined,
+          messageToCount: undefined,
+          profile: {
+            _id: userId,
+            email: 'alice@example.org',
+            roles: [],
+            username: 'alice',
+          },
+          threadCount: undefined,
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeReportCard({
+          profile: {
+            _id: userId,
+            email: 'alice@example.org',
+            roles: [],
+          },
+        }),
+      );
+
+    const { rerender } = render(<AdminUser />);
+
+    fireEvent.change(screen.getByLabelText('Member ID'), {
+      target: { value: userId },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+
+    expect(await screen.findByText('alice')).toBeInTheDocument();
+    expect(screen.getByText('0 sent')).toBeInTheDocument();
+    expect(screen.getByText('0 received')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: '0 threads total' }),
+    ).toHaveAttribute('href', `/admin/threads?userId=${userId}`);
+
+    rerender(<AdminUser />);
+    fireEvent.change(screen.getByLabelText('Member ID'), {
+      target: { value: userId },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+
+    expect(await screen.findByText(userId)).toBeInTheDocument();
   });
 
   it('changes a member role after confirmation and refreshes the profile', async () => {

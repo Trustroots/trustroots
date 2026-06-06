@@ -102,6 +102,16 @@ function UserDoesNotExist() {
   );
 }
 
+function FailedToLoadThread() {
+  const { t } = useTranslation('messages');
+  return (
+    <div className="content-empty">
+      <i className="icon-3x icon-messages-alt" />
+      <h4>{t('Failed to load messages. Please try again.')}</h4>
+    </div>
+  );
+}
+
 function Loading() {
   return (
     <LoadingContainer>
@@ -133,6 +143,7 @@ export default function Thread({ user, profileMinimumLength }) {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [otherUser, setOtherUser] = useState(null);
   const [doesNotExist, setDoesNotExist] = useState(false);
+  const [failedToLoad, setFailedToLoad] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [messages, setMessages] = useState([]);
   const cacheKey = `messages.thread.${user._id}-${username}`;
@@ -178,7 +189,6 @@ export default function Thread({ user, profileMinimumLength }) {
   }
 
   async function fetchData() {
-    if (isFetching) return;
     try {
       setIsFetching(true);
       let otherUser;
@@ -193,10 +203,11 @@ export default function Thread({ user, profileMinimumLength }) {
             userRemoved = true;
           } else {
             setDoesNotExist(true);
-            throw error;
+            return;
           }
         } else {
-          throw error;
+          setFailedToLoad(true);
+          return;
         }
       }
       setRemoved(userRemoved);
@@ -289,6 +300,14 @@ export default function Thread({ user, profileMinimumLength }) {
     return (
       <section className="container-spacer">
         <UserDoesNotExist />
+      </section>
+    );
+  }
+
+  if (failedToLoad) {
+    return (
+      <section className="container-spacer">
+        <FailedToLoadThread />
       </section>
     );
   }

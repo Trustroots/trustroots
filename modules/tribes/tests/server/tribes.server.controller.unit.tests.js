@@ -2,6 +2,7 @@
  * Unit tests for tribes controller list and middleware branches.
  */
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 
 const tribesController = require('../../server/controllers/tribes.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -46,7 +47,10 @@ function deferredResponse() {
 }
 
 describe('Tribes controller unit tests', () => {
-  afterEach(utils.clearDatabase);
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
 
   describe('listTribes', () => {
     it('returns public tribes sorted by count', async () => {
@@ -99,9 +103,63 @@ describe('Tribes controller unit tests', () => {
       await res.waitForResponse();
       res.body[0].slug.should.equal('zulu');
     });
+
+    it('returns 400 when tribe lookup fails', async () => {
+      sinon.stub(Tribe, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              skip: () => ({
+                exec: cb => cb(new Error('find failed')),
+              }),
+            }),
+          }),
+        }),
+      });
+
+      const res = deferredResponse();
+      tribesController.listTribes(
+        { query: {}, protocol: 'https', originalUrl: '/api/tribes' },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when tribe count fails', async () => {
+      sinon.stub(Tribe, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              skip: () => ({
+                exec: cb => cb(null, []),
+              }),
+            }),
+          }),
+        }),
+      });
+      sinon.stub(Tribe, 'countDocuments').callsFake((query, cb) => {
+        cb(new Error('count failed'));
+      });
+
+      const res = deferredResponse();
+      tribesController.listTribes(
+        { query: {}, protocol: 'https', originalUrl: '/api/tribes' },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
   });
 
   describe('getTribe', () => {
+    it('returns an empty object when no tribe is attached', async () => {
+      const res = deferredResponse();
+      tribesController.getTribe({}, res);
+      await res.waitForResponse();
+      res.body.should.deepEqual({});
+    });
+
     it('returns the tribe attached to the request', async () => {
       const tribe = await new Tribe({ label: 'Shown', slug: 'shown' }).save();
       const res = deferredResponse();
@@ -133,6 +191,17 @@ describe('Tribes controller unit tests', () => {
       });
       nextCalled.should.be.true();
       req.tribe._id.toString().should.equal(tribe._id.toString());
+    });
+
+    it('returns 400 when tribe lookup fails', async () => {
+      sinon.stub(Tribe, 'findOne').returns({
+        exec: cb => cb(new Error('find failed')),
+      });
+      const res = deferredResponse();
+
+      tribesController.tribeBySlug({}, res, () => {}, 'missing-slug');
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(400);
     });
   });
 });

@@ -45,6 +45,30 @@ test.describe('confirmed member flows', () => {
     ).toBeVisible();
   });
 
+  test('third seeded host profile is visible to signed-in members', async ({
+    page,
+  }) => {
+    const beijing = SEEDED_MEMBERS[2];
+
+    await page.goto(`/profile/${beijing.username}`);
+
+    await expect(page).toHaveURL(new RegExp(`/profile/${beijing.username}`));
+    await expect(
+      page.getByText(`${beijing.firstName} ${beijing.lastName}`).first(),
+    ).toBeVisible();
+  });
+
+  test('seeded host profile API returns profile data', async ({ request }) => {
+    const host = SEEDED_MEMBERS[0];
+    const response = await request.get(`/api/users/${host.username}`);
+
+    expect(response.ok()).toBeTruthy();
+
+    const profile = await response.json();
+    expect(profile.username).toBe(host.username);
+    expect(profile.displayName).toBe(`${host.firstName} ${host.lastName}`);
+  });
+
   test('another host accommodation page shows hosting details', async ({
     page,
   }) => {
@@ -140,5 +164,65 @@ test.describe('confirmed member flows', () => {
       new RegExp(`/messages/${portland.username}\\?userId=${portlandId}`),
     );
     await expect(page.getByText(/yes, happy to host you!/i)).toBeVisible();
+  });
+
+  test('host offer edit page loads for a confirmed member', async ({
+    page,
+  }) => {
+    await page.goto('/offer/host');
+
+    await expect(page).toHaveURL(/\/offer\/host/);
+    await expect(page).toHaveTitle(/Host travellers - Trustroots/);
+    await expect(
+      page.getByRole('heading', { name: /can you host\?/i }),
+    ).toBeVisible();
+  });
+
+  test('meet offers list page shows the empty state', async ({ page }) => {
+    await page.goto('/offer/meet');
+
+    await expect(page).toHaveURL(/\/offer\/meet/);
+    await expect(page).toHaveTitle(/Meet - Trustroots/);
+    await expect(
+      page.getByRole('heading', { name: /your meetups/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/meetups stay visible on map at most one month/i),
+    ).toBeVisible();
+  });
+
+  test('profile tribes tab lists joined circles', async ({ page }) => {
+    await page.goto(`/profile/${berlin.username}/tribes`);
+
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${berlin.username}/tribes`),
+    );
+    await expect(page.getByText('Hitchhikers').first()).toBeVisible();
+    await expect(page.getByText('Cyclists').first()).toBeVisible();
+  });
+
+  test('new message thread shows the empty conversation state', async ({
+    page,
+    request,
+  }) => {
+    const beijing = SEEDED_MEMBERS[2];
+    const beijingId = await fetchUserIdByUsername(request, beijing.username);
+
+    await page.goto(`/messages/${beijing.username}?userId=${beijingId}`);
+
+    await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
+  });
+
+  test('experience form shows duplicate when already shared', async ({
+    page,
+  }) => {
+    await page.goto(`/profile/${portland.username}/experiences/new`);
+
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${portland.username}/experiences/new`),
+    );
+    await expect(
+      page.getByText(/you already shared your experience with them/i),
+    ).toBeVisible();
   });
 });

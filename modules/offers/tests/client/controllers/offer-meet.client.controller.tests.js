@@ -120,6 +120,40 @@ describe('OfferMeetAddController', function () {
     );
     expect(vm.isLoading).toBe(false);
   });
+
+  it('falls back to a generic error when saving fails without a message', function () {
+    const saveOffer = { $save: jasmine.createSpy() };
+    saveOffer.$save.and.callFake(function (_success, error) {
+      error({ data: {} });
+    });
+    OffersService = jasmine
+      .createSpy('OffersService')
+      .and.returnValue(saveOffer);
+
+    const vm = $controller('OfferMeetAddController as vm', {
+      $scope: $rootScope.$new(),
+      $state,
+      $analytics,
+      leafletData: {},
+      OffersService,
+      messageCenterService,
+      defaultLocation,
+    });
+
+    vm.offer = {
+      description: 'Need company',
+      validUntil: new Date('2026-01-01T12:00:00.000Z'),
+    };
+    vm.isLoading = true;
+
+    vm.editOffer();
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Error occured. Please try again.',
+    );
+    expect(vm.isLoading).toBe(false);
+  });
 });
 
 describe('OfferMeetEditController', function () {
@@ -212,6 +246,57 @@ describe('OfferMeetEditController', function () {
     expect(vm.mapCenter.lat).toBe(60);
     expect(vm.mapCenter.lng).toBe(24);
     expect(vm.mapCenter.zoom).toBe(16);
+  });
+
+  it('loads offers without dates or locations without changing the default map center', function () {
+    createOffer({
+      validUntil: null,
+      location: null,
+    });
+    const vm = $controller('OfferMeetEditController as vm', {
+      $scope: $rootScope.$new(),
+      $state,
+      $analytics,
+      moment: require('moment'),
+      leafletData: {},
+      messageCenterService,
+      offer,
+      defaultLocation,
+    });
+
+    offerDeferred.resolve(offer);
+    $rootScope.$apply();
+
+    expect(vm.offer.validUntil).toBeNull();
+    expect(vm.mapCenter).toEqual({
+      lat: 10,
+      lng: 20,
+    });
+  });
+
+  it('falls back invalid map coordinates to zero when loading an offer', function () {
+    createOffer({
+      location: ['not-a-latitude', 'not-a-longitude'],
+    });
+    const vm = $controller('OfferMeetEditController as vm', {
+      $scope: $rootScope.$new(),
+      $state,
+      $analytics,
+      moment: require('moment'),
+      leafletData: {},
+      messageCenterService,
+      offer,
+      defaultLocation,
+    });
+
+    offerDeferred.resolve(offer);
+    $rootScope.$apply();
+
+    expect(vm.mapCenter).toEqual({
+      lat: 0,
+      lng: 0,
+      zoom: 16,
+    });
   });
 
   it('updates offer and sends user back to offer list with hash on success', function () {
@@ -495,6 +580,67 @@ describe('OfferListMeetController', function () {
       'Could not delete',
     );
     expect(vm.offers).toHaveLength(1);
+  });
+
+  it('falls back to a generic error when offer deletion fails without a message', function () {
+    const offerToRemove = { _id: 'one', description: 'foo' };
+    const offers = [offerToRemove];
+    const $confirm = jasmine.createSpy().and.returnValue($q.resolve());
+    const OffersService = jasmine
+      .createSpy('OffersService')
+      .and.callFake(() => ({
+        $delete: jasmine.createSpy().and.callFake(function (_success, error) {
+          error({ data: {} });
+        }),
+      }));
+    const vm = $controller('OfferListMeetController as vm', {
+      $scope: $rootScope.$new(),
+      offers,
+      $timeout: jasmine.createSpy().and.callFake(fn => fn()),
+      $anchorScroll() {},
+      $analytics,
+      $confirm,
+      OffersService,
+      messageCenterService,
+    });
+
+    vm.remove(offerToRemove);
+    $rootScope.$apply();
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Error occured. Please try again.',
+    );
+    expect(vm.offers).toEqual([offerToRemove]);
+  });
+
+  it('does not remove another offer when deleted offer is not in the current list', function () {
+    const offerToRemove = { _id: 'missing', description: 'foo' };
+    const offers = [{ _id: 'one', description: 'bar' }];
+    const $confirm = jasmine.createSpy().and.returnValue($q.resolve());
+    const deleteSpy = jasmine.createSpy().and.callFake(function (success) {
+      success();
+    });
+    const OffersService = jasmine
+      .createSpy('OffersService')
+      .and.callFake(() => ({ $delete: deleteSpy }));
+    const vm = $controller('OfferListMeetController as vm', {
+      $scope: $rootScope.$new(),
+      offers,
+      $timeout: jasmine.createSpy().and.callFake(fn => fn()),
+      $anchorScroll() {},
+      $analytics,
+      $confirm,
+      OffersService,
+      messageCenterService,
+    });
+
+    vm.remove(offerToRemove);
+    $rootScope.$apply();
+
+    expect(OffersService).toHaveBeenCalledWith(offerToRemove);
+    expect(deleteSpy).toHaveBeenCalled();
+    expect(vm.offers).toEqual([{ _id: 'one', description: 'bar' }]);
   });
 
   it('keeps offers unchanged when delete confirmation is cancelled', function () {

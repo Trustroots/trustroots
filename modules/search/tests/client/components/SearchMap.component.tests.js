@@ -3,6 +3,8 @@ import { act, render, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
+import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
+import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import SearchMap from '@/modules/search/client/components/SearchMap.component';
 
 const mockGetOffer = jest.fn();
@@ -65,11 +67,13 @@ const mockMap = {
   getZoom: jest.fn(),
   setFeatureState: jest.fn(),
 };
+let mockMapInstance = mockMap;
 let mockMapProps;
 let mockSourceProps;
 const mockSource = {
   getClusterExpansionZoom: jest.fn(),
 };
+let mockSourceInstance = mockSource;
 jest.mock('react-map-gl', () => {
   const React = require('react');
 
@@ -79,7 +83,7 @@ jest.mock('react-map-gl', () => {
   ) {
     mockMapProps = props;
     React.useImperativeHandle(ref, () => ({
-      getMap: () => mockMap,
+      getMap: () => mockMapInstance,
     }));
     return React.createElement(
       'div',
@@ -97,7 +101,7 @@ jest.mock('react-map-gl', () => {
   ) {
     mockSourceProps = props;
     React.useImperativeHandle(ref, () => ({
-      getSource: () => mockSource,
+      getSource: () => mockSourceInstance,
     }));
     return React.createElement(
       'div',
@@ -164,9 +168,11 @@ beforeEach(() => {
   });
   mockMap.getFeatureState.mockReturnValue({ existing: true });
   mockMap.getZoom.mockReturnValue(8);
+  mockMapInstance = mockMap;
   mockSource.getClusterExpansionZoom.mockImplementation((clusterId, done) =>
     done(null, 18),
   );
+  mockSourceInstance = mockSource;
   mockGetOffer.mockResolvedValue({ _id: 'offer-1' });
   mockQueryOffers.mockResolvedValue({
     features: [],
@@ -211,6 +217,20 @@ describe('Search', () => {
     expect(mockMapProps.width).toBe('100%');
   });
 
+  it('uses the default map location when persisted coordinates are missing', () => {
+    mockPersistentMapLocation = {
+      zoom: 2,
+    };
+
+    renderSearchMap();
+
+    expect(mockMapProps.location).toEqual([
+      DEFAULT_LOCATION.lat,
+      DEFAULT_LOCATION.lng,
+    ]);
+    expect(mockMapProps.zoom).toBe(2);
+  });
+
   it('queries public offers inside the visible map bounds', async () => {
     mockPersistentMapLocation = {
       ...mockPersistentMapLocation,
@@ -244,6 +264,10 @@ describe('Search', () => {
 
   it('does not query private member map offers', async () => {
     const onOfferClose = jest.fn();
+    mockPersistentMapLocation = {
+      ...mockPersistentMapLocation,
+      zoom: 6,
+    };
 
     renderSearchMap({
       isUserPublic: false,
@@ -251,6 +275,19 @@ describe('Search', () => {
     });
 
     await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
+    expect(mockQueryOffers).not.toHaveBeenCalled();
+  });
+
+  it('does not query offers when the map ref is not available yet', async () => {
+    mockPersistentMapLocation = {
+      ...mockPersistentMapLocation,
+      zoom: 6,
+    };
+    mockMapInstance = null;
+
+    renderSearchMap();
+
+    await waitFor(() => expect(mockMapProps.zoom).toBe(6));
     expect(mockQueryOffers).not.toHaveBeenCalled();
   });
 
@@ -266,6 +303,33 @@ describe('Search', () => {
     });
 
     expect(onOfferClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores hover events that do not identify a new offer point', () => {
+    renderSearchMap();
+
+    act(() => {
+      mockMapProps.onHover({ features: [] });
+      mockMapProps.onHover({
+        features: [
+          {
+            id: 'cluster-1',
+            layer: { id: 'clusters' },
+            source: 'offers',
+          },
+        ],
+      });
+      mockMapProps.onHover({
+        features: [
+          {
+            layer: { id: 'unclustered-point' },
+            source: 'offers',
+          },
+        ],
+      });
+    });
+
+    expect(mockMap.setFeatureState).not.toHaveBeenCalled();
   });
 
   it('marks clicked offers selected and opens the offer details', async () => {
@@ -298,7 +362,127 @@ describe('Search', () => {
     await waitFor(() => expect(onOfferOpen).toHaveBeenCalledWith(offer));
   });
 
+  it('ignores unclustered offer clicks that do not include an offer id', () => {
+    renderSearchMap();
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            layer: { id: 'unclustered-point' },
+            source: 'offers',
+          },
+        ],
+      });
+    });
+
+    expect(mockGetOffer).not.toHaveBeenCalled();
+  });
+
+  it('clears the previous selected offer when selecting another one', () => {
+    renderSearchMap();
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            id: 'offer-1',
+            layer: { id: 'unclustered-point' },
+            source: 'offers',
+          },
+        ],
+      });
+    });
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            id: 'offer-2',
+            layer: { id: 'unclustered-point' },
+            source: 'offers',
+          },
+        ],
+      });
+    });
+
+    expect(mockMap.setFeatureState).toHaveBeenCalledWith(
+      { id: 'offer-1', source: 'offers' },
+      {
+        existing: true,
+        selected: false,
+      },
+    );
+  });
+
+  it('does not open the sidebar when clicked offer details are unavailable', async () => {
+    const onOfferOpen = jest.fn();
+    mockGetOffer.mockResolvedValueOnce(null);
+
+    renderSearchMap({ onOfferOpen });
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            id: 'missing-offer',
+            layer: { id: 'unclustered-point' },
+            source: 'offers',
+          },
+        ],
+      });
+    });
+
+    await waitFor(() =>
+      expect(mockGetOffer).toHaveBeenCalledWith('missing-offer'),
+    );
+    expect(onOfferOpen).not.toHaveBeenCalled();
+  });
+
   it('updates offer hover state and clears it when leaving the map', () => {
+    renderSearchMap();
+    const hoverEvent = {
+      features: [
+        {
+          id: 'offer-1',
+          layer: { id: 'unclustered-point' },
+          source: 'offers',
+        },
+      ],
+    };
+
+    act(() => {
+      mockMapProps.onHover(hoverEvent);
+    });
+
+    expect(mockMap.setFeatureState).toHaveBeenLastCalledWith(
+      { id: 'offer-1', source: 'offers' },
+      {
+        existing: true,
+        hover: true,
+      },
+    );
+    const callsAfterFirstHover = mockMap.setFeatureState.mock.calls.length;
+
+    act(() => {
+      mockMapProps.onHover(hoverEvent);
+    });
+
+    expect(mockMap.setFeatureState).toHaveBeenCalledTimes(callsAfterFirstHover);
+
+    act(() => {
+      mockMapProps.onMouseLeave();
+    });
+
+    expect(mockMap.setFeatureState).toHaveBeenLastCalledWith(
+      { id: 'offer-1', source: 'offers' },
+      {
+        existing: true,
+        hover: false,
+      },
+    );
+  });
+
+  it('clears the previous hover state before hovering a different offer', () => {
     renderSearchMap();
 
     act(() => {
@@ -313,23 +497,30 @@ describe('Search', () => {
       });
     });
 
-    expect(mockMap.setFeatureState).toHaveBeenLastCalledWith(
-      { id: 'offer-1', source: 'offers' },
-      {
-        existing: true,
-        hover: true,
-      },
-    );
-
     act(() => {
-      mockMapProps.onMouseLeave();
+      mockMapProps.onHover({
+        features: [
+          {
+            id: 'offer-2',
+            layer: { id: 'unclustered-point' },
+            source: 'offers',
+          },
+        ],
+      });
     });
 
-    expect(mockMap.setFeatureState).toHaveBeenLastCalledWith(
+    expect(mockMap.setFeatureState).toHaveBeenCalledWith(
       { id: 'offer-1', source: 'offers' },
       {
         existing: true,
         hover: false,
+      },
+    );
+    expect(mockMap.setFeatureState).toHaveBeenLastCalledWith(
+      { id: 'offer-2', source: 'offers' },
+      {
+        existing: true,
+        hover: true,
       },
     );
   });
@@ -356,5 +547,120 @@ describe('Search', () => {
     expect(mockMapProps.latitude).toBe(60);
     expect(mockMapProps.longitude).toBe(24);
     expect(mockMapProps.zoom).toBe(12);
+  });
+
+  it('centers on a cluster when the source is unavailable', () => {
+    mockSourceInstance = null;
+
+    renderSearchMap();
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [24, 60] },
+            layer: { id: 'clusters' },
+            properties: { cluster_id: 123 },
+          },
+        ],
+      });
+    });
+
+    expect(mockSource.getClusterExpansionZoom).not.toHaveBeenCalled();
+    expect(mockMapProps.latitude).toBe(60);
+    expect(mockMapProps.longitude).toBe(24);
+  });
+
+  it('ignores clusters without an expansion id or expansion zoom', () => {
+    renderSearchMap();
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [24, 60] },
+            layer: { id: 'clusters' },
+            properties: {},
+          },
+        ],
+      });
+    });
+
+    expect(mockSource.getClusterExpansionZoom).not.toHaveBeenCalled();
+
+    mockSource.getClusterExpansionZoom.mockImplementationOnce(
+      (clusterId, done) => done(new Error('missing zoom')),
+    );
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [24, 60] },
+            layer: { id: 'clusters' },
+            properties: { cluster_id: 123 },
+          },
+        ],
+      });
+    });
+
+    expect(mockMapProps.zoom).toBe(2);
+  });
+
+  it('applies external location bounds and selected location updates', async () => {
+    renderSearchMap({
+      location: { lat: 10, lng: 20 },
+      locationBounds: {
+        northEast: { lat: 54, lng: 25 },
+        southWest: { lat: 50, lng: 20 },
+      },
+    });
+
+    await waitFor(() =>
+      expect(mockFitBounds).toHaveBeenCalledWith(
+        [
+          [25, 54],
+          [20, 50],
+        ],
+        { padding: 40 },
+      ),
+    );
+    await waitFor(() => expect(mockMapProps.latitude).toBe(10));
+    expect(mockMapProps.longitude).toBe(20);
+    expect(mockMapProps.zoom).toBe(6);
+  });
+
+  it('logs offer query failures in development without replacing current offers', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const consoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    process.env.NODE_ENV = 'development';
+    mockPersistentMapLocation = {
+      ...mockPersistentMapLocation,
+      zoom: 6,
+    };
+    mockQueryOffers.mockRejectedValueOnce(new Error('network failed'));
+
+    renderSearchMap();
+
+    await waitFor(() =>
+      expect(consoleError).toHaveBeenCalledWith('Could not load offers.'),
+    );
+    expect(mockSourceProps.data).toEqual({
+      features: [],
+      type: 'FeatureCollection',
+    });
+
+    process.env.NODE_ENV = originalNodeEnv;
+    consoleError.mockRestore();
+  });
+
+  it('uses the OSM cluster count layer when the persisted map style is OSM', () => {
+    mockMapStyle = MAP_STYLE_OSM;
+
+    renderSearchMap();
+
+    expect(mockMapProps.mapStyle).toBe(MAP_STYLE_OSM);
   });
 });

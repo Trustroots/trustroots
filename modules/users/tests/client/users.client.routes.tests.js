@@ -227,6 +227,28 @@ describe('Users Route Tests', function () {
       $rootScope.$apply();
     });
 
+    it('skips profile contact lookup when profile loading failed', function (done) {
+      const ContactByService = {
+        get: jasmine.createSpy('ContactByService.get'),
+      };
+
+      const result = resolveFromProfileState('contact', {
+        ContactByService,
+        profile: {
+          $promise: $q.reject(new Error('profile failed')),
+        },
+        Authentication,
+      });
+
+      result.then(function (resolved) {
+        expect(resolved).toBeUndefined();
+        expect(ContactByService.get).not.toHaveBeenCalled();
+        done();
+      }, done.fail);
+
+      $rootScope.$apply();
+    });
+
     it('returns profile contacts list for resolved profile id', function (done) {
       const ContactsListService = {
         query: jasmine.createSpy('ContactsListService.query').and.returnValue([
@@ -491,6 +513,26 @@ describe('Users Route Tests', function () {
     it('loads profile edit photo settings through route resolve', function (done) {
       const state = $state.get('profile-edit.photo');
       const appSettings = { avatars: true };
+      const SettingsService = {
+        get: jasmine.createSpy('get').and.returnValue($q.when(appSettings)),
+      };
+
+      const result = $injector.invoke(state.resolve.appSettings, null, {
+        SettingsService,
+      });
+
+      result.then(function (resolved) {
+        expect(resolved).toEqual(appSettings);
+        expect(SettingsService.get).toHaveBeenCalled();
+        done();
+      }, done.fail);
+
+      $rootScope.$apply();
+    });
+
+    it('resolves app settings for signup route', function (done) {
+      const state = $state.get('signup');
+      const appSettings = { signupEnabled: true };
       const SettingsService = {
         get: jasmine.createSpy('get').and.returnValue($q.when(appSettings)),
       };

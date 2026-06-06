@@ -95,6 +95,14 @@ describe('Service: error', function () {
       const message = errorService.getErrorMessage({});
       message.should.startWith('Snap! Something went wrong.');
     });
+    it('falls back to the default message when validation errors have no message', function () {
+      const message = errorService.getErrorMessage({
+        errors: {
+          email: {},
+        },
+      });
+      message.should.startWith('Snap! Something went wrong.');
+    });
   });
 
   describe('errorResponse middleware', function () {
@@ -119,6 +127,23 @@ describe('Service: error', function () {
       const res = mockResponse('application/json');
       errorService.errorResponse(new Error('Boom'), {}, res);
       res.statusCode.should.equal(500);
+    });
+
+    it('uses the default message when err.message is empty', function () {
+      const res = mockResponse('application/json');
+      errorService.errorResponse({ message: '' }, {}, res);
+      res.body.message.should.startWith('Snap! Something went wrong.');
+    });
+
+    it('does not include the error object outside development mode', function () {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'test';
+
+      const res = mockResponse('application/json');
+      errorService.errorResponse(new Error('Boom'), {}, res);
+
+      process.env.NODE_ENV = originalEnv;
+      res.body.error.should.be.undefined();
     });
 
     it('renders the HTML error view for text/html requests', function () {

@@ -171,4 +171,88 @@ describe('<ExperienceCounts />', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('shows all-guest interaction stats', () => {
+    render(
+      <ExperienceCounts
+        experiences={[
+          experience({
+            _id: 'experience-1',
+            interactions: { met: true, guest: true, host: false },
+          }),
+          experience({
+            _id: 'experience-2',
+            interactions: { met: true, guest: true, host: false },
+          }),
+          experience({
+            _id: 'experience-3',
+            interactions: { met: true, guest: true, host: false },
+          }),
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByText('They hosted everyone. Met with everyone.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows partial met-only interaction stats', () => {
+    render(
+      <ExperienceCounts
+        experiences={[
+          experience({
+            _id: 'experience-1',
+            interactions: { met: true, guest: false, host: false },
+          }),
+          experience({
+            _id: 'experience-2',
+            interactions: { met: false, guest: false, host: false },
+          }),
+          experience({
+            _id: 'experience-3',
+            interactions: { met: false, guest: false, host: false },
+          }),
+        ]}
+      />,
+    );
+
+    expect(screen.getByText('Met with 33% of members.')).toBeInTheDocument();
+  });
+
+  it('shows partial female-only and male-only gender stats', () => {
+    const { rerender } = render(
+      <ExperienceCounts
+        experiences={[
+          experience({
+            _id: 'experience-1',
+            userFrom: { gender: 'female' },
+          }),
+          experience({ _id: 'experience-2' }),
+          experience({ _id: 'experience-3' }),
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByText('33% of experiences are by female members.'),
+    ).toBeInTheDocument();
+
+    rerender(
+      <ExperienceCounts
+        experiences={[
+          experience({
+            _id: 'experience-1',
+            userFrom: { gender: 'male' },
+          }),
+          experience({ _id: 'experience-2' }),
+          experience({ _id: 'experience-3' }),
+        ]}
+      />,
+    );
+
+    expect(
+      screen.getByText('33% of experiences are by male members.'),
+    ).toBeInTheDocument();
+  });
 });

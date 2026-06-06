@@ -17,6 +17,15 @@ describe('<UserLink />', () => {
     );
   });
 
+  it('uses the username as link text when no display name is available', () => {
+    render(<UserLink user={{ username: 'alice' }} />);
+
+    expect(screen.getByRole('link', { name: 'alice' })).toHaveAttribute(
+      'href',
+      '/profile/alice',
+    );
+  });
+
   it('falls back to an anonymous label when no username is available', () => {
     render(<UserLink className="text-muted" user={{}} />);
 

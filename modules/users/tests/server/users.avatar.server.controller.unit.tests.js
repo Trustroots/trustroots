@@ -154,6 +154,46 @@ describe('Avatar controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('redirects to a local avatar url when the user uploaded one', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarUploaded = true;
+      userDoc.avatarSource = 'local';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
+    it('redirects to a facebook avatar url when requested by the owner', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.additionalProvidersData = { facebook: { id: 'fb-123' } };
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { source: 'facebook', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('graph.facebook.com');
+    });
+
     it('redirects to a gravatar url when requested by the owner', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);
@@ -267,22 +307,33 @@ describe('Avatar controller unit tests', () => {
     });
 
     it('uploads an avatar using the processor fallback', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(user._id);
-      const tmpFile = path.join(os.tmpdir(), `avatar-${Date.now()}.jpg`);
-      fs.writeFileSync(tmpFile, 'fake-image');
+      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
 
-      const res = deferredResponse();
-      avatarController.avatarUpload(
-        {
-          user: userDoc,
-          file: { path: tmpFile },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(200);
-      res.body.message.should.equal('Avatar image uploaded.');
+      try {
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        const tmpFile = path.join(os.tmpdir(), `avatar-${Date.now()}.jpg`);
+        fs.writeFileSync(tmpFile, 'fake-image');
+
+        const res = deferredResponse();
+        avatarController.avatarUpload(
+          {
+            user: userDoc,
+            file: { path: tmpFile },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        res.body.message.should.equal('Avatar image uploaded.');
+      } finally {
+        if (previousFallback === undefined) {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
+        }
+      }
     });
   });
 });

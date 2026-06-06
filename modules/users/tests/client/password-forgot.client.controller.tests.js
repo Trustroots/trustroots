@@ -44,6 +44,26 @@ describe('ForgotPasswordController', function () {
       expect($location.path).not.toHaveBeenCalledWith('/');
     });
 
+    it('starts with an empty username when no userhandle parameter is present', function () {
+      expect($scope.vm.credentials.username).toBe('');
+    });
+
+    it('prefills username from the userhandle parameter', inject(function (
+      $controller,
+      $rootScope,
+    ) {
+      const scope = $rootScope.$new();
+
+      $controller('ForgotPasswordController as vm', {
+        $scope: scope,
+        $stateParams: {
+          userhandle: 'alice',
+        },
+      });
+
+      expect(scope.vm.credentials.username).toBe('alice');
+    }));
+
     describe('askForPasswordReset', function () {
       const credentials = {
         username: 'test',

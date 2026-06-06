@@ -18,6 +18,12 @@ describe('tribes utils', () => {
     );
   });
 
+  it('builds circle background URLs with jpg format by default', () => {
+    expect(getCircleBackgroundUrl('circle-1', '742x496')).toBe(
+      '/uploads-circle/circle-1/742x496.jpg',
+    );
+  });
+
   it('builds style with image and color using webp when supported', () => {
     jest.spyOn(domUtils, 'canUseWebP').mockReturnValue(true);
 

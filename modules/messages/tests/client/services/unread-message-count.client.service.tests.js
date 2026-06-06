@@ -83,6 +83,17 @@ describe('Unread Message Count Service', () => {
     }, 100);
   });
 
+  it('stops polling when userUpdated fires without a logged-in user', () => {
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    getUser.mockReturnValue(null);
+
+    unreadMessageCountService.enable();
+    $broadcast('userUpdated');
+
+    expect(api.messages.unreadCount).not.toHaveBeenCalled();
+    expect(clearIntervalSpy).not.toHaveBeenCalled();
+  });
+
   it('does not notify subscribers when unread count is unchanged', async () => {
     getUser.mockReturnValue(user);
     api.messages.unreadCount

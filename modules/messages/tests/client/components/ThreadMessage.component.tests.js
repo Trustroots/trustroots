@@ -72,4 +72,23 @@ describe('<ThreadMessage />', function () {
 
     expect(screen.getByText('Unknown member')).toBeInTheDocument();
   });
+
+  it('marks messages that explicitly say hosting was declined', () => {
+    const { container } = render(
+      <ThreadMessage
+        user={me}
+        message={{
+          _id: 'msg-4',
+          created: '2026-06-05T12:00:00.000Z',
+          content: '<p data-hosting="no">Not hosting this time</p>',
+          userFrom: me,
+        }}
+      />,
+    );
+
+    expect(container.querySelector('.message')).toHaveAttribute(
+      'data-hosting',
+      'no',
+    );
+  });
 });

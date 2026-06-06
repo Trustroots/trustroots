@@ -7,16 +7,18 @@ import Contact from '@/modules/contacts/client/components/Contact';
 
 jest.mock('@/modules/contacts/client/components/RemoveContactContainer', () => {
   const React = require('react');
-  function MockRemoveContact({ show, onSuccess }) {
+  function MockRemoveContact({ show, onCancel, onSuccess }) {
     return show ? (
       <div>
         <div>remove-modal-open</div>
+        <button onClick={() => onCancel && onCancel()}>remove-cancel</button>
         <button onClick={() => onSuccess && onSuccess()}>remove-success</button>
       </div>
     ) : null;
   }
   MockRemoveContact.propTypes = {
     show: () => null,
+    onCancel: () => null,
     onSuccess: () => null,
   };
   return MockRemoveContact;
@@ -90,5 +92,39 @@ describe('<Contact />', () => {
     fireEvent.click(screen.getByText('remove-success'));
 
     expect(onContactRemoved).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the remove modal when removal is cancelled', () => {
+    render(
+      <Contact
+        contact={makeContact({ confirmed: false, userFrom: 'me' })}
+        selfId="me"
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Revoke Request'));
+    expect(screen.getByText('remove-modal-open')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('remove-cancel'));
+
+    expect(screen.queryByText('remove-modal-open')).not.toBeInTheDocument();
+  });
+
+  it('uses a no-op removal callback when none is provided', () => {
+    render(
+      <Contact
+        contact={makeContact({
+          confirmed: false,
+          userFrom: 'someone-else',
+          userTo: 'me',
+        })}
+        selfId="me"
+      />,
+    );
+
+    fireEvent.click(screen.getByText('Decline Request'));
+    fireEvent.click(screen.getByText('remove-success'));
+
+    expect(screen.queryByText('remove-modal-open')).not.toBeInTheDocument();
   });
 });

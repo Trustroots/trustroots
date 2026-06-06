@@ -150,6 +150,18 @@ describe('AvatarEditorController', function () {
     );
   });
 
+  it('renders zero-byte max upload sizes in oversized file warnings', function () {
+    appSettings.maxUploadSize = 0;
+    const controller = createController();
+
+    controller.fileSelected([validImageFile({ size: 1 })]);
+
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Whoops, your file is too big. Please keep it up to 0 Byte. Sorry!',
+    );
+  });
+
   it('previews valid image before upload', function () {
     const controller = createController();
     const file = validImageFile();
@@ -188,6 +200,24 @@ describe('AvatarEditorController', function () {
     uploadSuccessCallback();
     expect(controller.avatarUploading).toBe(false);
     expect($uibModalInstance.close).toHaveBeenCalledWith(controller.user);
+  });
+
+  it('uses octet-stream content type when selected file type is cleared before upload', function () {
+    const controller = createController();
+    const file = validImageFile();
+
+    controller.fileSelected([file]);
+    MockFileReader.instances[0].onloadend();
+    file.type = '';
+    controller.saveAvatar();
+
+    expect(Upload.upload).toHaveBeenCalledWith(
+      jasmine.objectContaining({
+        headers: {
+          'Content-Type': 'application/octet-stream',
+        },
+      }),
+    );
   });
 
   it('shows warning when upload fails', function () {

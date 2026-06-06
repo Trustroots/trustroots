@@ -140,6 +140,32 @@ describe('OfferHostEditController', function () {
     });
   });
 
+  it('loads an existing hosting offer without map coordinates', function () {
+    const { controller } = createController({
+      offerItems: [
+        {
+          _id: 'offer-1',
+          description: 'Existing hosting offer',
+          location: null,
+          status: 'maybe',
+        },
+      ],
+    });
+
+    expect(controller.offer).toBe(createdOffers[0]);
+    expect(controller.mapCenter).toEqual(defaultLocation);
+  });
+
+  it('keeps defaults when the existing offer list is empty', function () {
+    const { controller } = createController({
+      offerItems: [],
+    });
+
+    expect(controller.isLoading).toBe(false);
+    expect(controller.offer).toBeUndefined();
+    expect(createdOffers).toHaveLength(0);
+  });
+
   it('creates a default hosting offer and searches from the living location', function () {
     const { controller } = createController({
       offers: offersWithPromise([], $q.reject({ status: 404 })),
@@ -174,6 +200,15 @@ describe('OfferHostEditController', function () {
     });
 
     expect(controller.searchQuery).toBe('Lisbon, Portugal');
+  });
+
+  it('leaves the search query empty for new hosts without profile locations', function () {
+    const { controller } = createController({
+      offers: offersWithPromise([], $q.reject({ status: 404 })),
+    });
+
+    expect(controller.searchQuery).toBe('');
+    expect(controller.firstTimeAround).toBe(true);
   });
 
   it('marks the offer as unavailable when loading fails with a non-404 error', function () {
@@ -237,6 +272,31 @@ describe('OfferHostEditController', function () {
     });
   });
 
+  it('does not submit while the initial offer is still loading', function () {
+    const { controller } = createController({
+      digest: false,
+    });
+
+    controller.editOffer();
+
+    expect(controller.isLoading).toBe(true);
+    expect(createdOffers).toHaveLength(0);
+  });
+
+  it('returns desktop users to their profile about page after saving', function () {
+    const { $state, controller } = createController({
+      innerWidth: 1024,
+    });
+
+    controller.editOffer();
+    createOrUpdateDeferred.resolve();
+    $rootScope.$digest();
+
+    expect($state.go).toHaveBeenCalledWith('profile.about', {
+      username: 'alice',
+    });
+  });
+
   it('shows the API error message when saving fails', function () {
     const { controller } = createController();
 
@@ -252,6 +312,20 @@ describe('OfferHostEditController', function () {
     expect(messageCenterService.add).toHaveBeenCalledWith(
       'danger',
       'Please choose a valid location.',
+    );
+  });
+
+  it('shows a generic error when saving fails without an API message', function () {
+    const { controller } = createController();
+
+    controller.editOffer();
+    createOrUpdateDeferred.reject({});
+    $rootScope.$digest();
+
+    expect(controller.isLoading).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Snap! Something went wrong. If this keeps happening, please contact us.',
     );
   });
 });

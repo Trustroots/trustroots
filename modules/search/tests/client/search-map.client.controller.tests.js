@@ -127,6 +127,39 @@ describe('SearchMapController', function () {
     });
   });
 
+  it('previews offers without recentering the map when recentering is disabled', function () {
+    const offer = {
+      _id: 'offer-1',
+      location: [60.17, 24.94],
+    };
+    const { controller } = createController();
+    controller.location = {
+      lat: 50,
+      lng: 10,
+      zoom: 5,
+    };
+
+    controller.previewOffer(offer, false);
+
+    expect(controller.location).toEqual({
+      lat: 50,
+      lng: 10,
+      zoom: 5,
+    });
+  });
+
+  it('skips URL offer preview when the resolved offer is unavailable', function () {
+    const { $state } = createController({
+      stateParams: {
+        offer: 'offer-2',
+      },
+    });
+
+    $rootScope.$digest();
+
+    expect($state.go).not.toHaveBeenCalled();
+  });
+
   it('ignores previews for offers without a location', function () {
     const { $analytics, $scope, $state, controller } = createController();
 

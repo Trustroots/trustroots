@@ -50,4 +50,12 @@ describe('trSpinner directive', function () {
     expect(large.find('circle').attr('stroke-width')).toBe('4');
     expect(xsmall.find('circle').attr('stroke-width')).toBe('1');
   });
+
+  it('keeps rendering markup for unknown sizes', function () {
+    const element = compile('custom');
+
+    expect(element.html()).toContain('spinner spinner-custom');
+    expect(element.find('svg').attr('width')).toBe('undefinedpx');
+    expect(element.find('circle').attr('stroke-width')).toBe('undefined');
+  });
 });

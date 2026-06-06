@@ -7,7 +7,11 @@ describe('AppConfig', function () {
 
     jest.isolateModules(() => {
       jest.resetModules();
-      process.env.NODE_ENV = nodeEnv;
+      if (nodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = nodeEnv;
+      }
       window.SENTRY_DSN = sentryDsn;
 
       jest.doMock('@/config/client/sentry', () => ({
@@ -39,6 +43,16 @@ describe('AppConfig', function () {
     );
   });
 
+  it('falls back to test config when NODE_ENV is missing', function () {
+    const { AppConfig } = loadAppConfig({
+      nodeEnv: undefined,
+      sentryDsn: undefined,
+    });
+
+    expect(AppConfig.appEnv).toBe('test');
+    expect(AppConfig.appModuleVendorDependencies).toContain('angulartics.null');
+  });
+
   it('registers production analytics and initializes sentry when DSN exists', function () {
     const { AppConfig, sentryInit } = loadAppConfig({
       nodeEnv: 'production',
@@ -62,6 +76,24 @@ describe('AppConfig', function () {
     });
 
     expect(AppConfig.appModuleVendorDependencies).toContain(
+      'angulartics.debug',
+    );
+    expect(AppConfig.appModuleVendorDependencies).not.toContain(
+      'angulartics.google.analytics',
+    );
+  });
+
+  it('does not register optional analytics modules for unknown environments', function () {
+    const { AppConfig } = loadAppConfig({
+      nodeEnv: 'staging',
+      sentryDsn: undefined,
+    });
+
+    expect(AppConfig.appEnv).toBe('staging');
+    expect(AppConfig.appModuleVendorDependencies).not.toContain(
+      'angulartics.null',
+    );
+    expect(AppConfig.appModuleVendorDependencies).not.toContain(
       'angulartics.debug',
     );
     expect(AppConfig.appModuleVendorDependencies).not.toContain(

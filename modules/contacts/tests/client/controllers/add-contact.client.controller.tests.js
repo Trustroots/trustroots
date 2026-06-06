@@ -185,4 +185,20 @@ describe('ContactAddController', function () {
     expect(vm.isConnected).toBe(false);
     expect(vm.error).toBe('Server is down.');
   });
+
+  it('uses the default error message when an unexpected add error has no message', function () {
+    const vm = createController();
+
+    vm.contact.$save.and.callFake(function (_onSuccess, onError) {
+      onError({
+        status: 500,
+      });
+    });
+
+    vm.add();
+
+    expect(vm.isConnected).toBe(false);
+    expect(vm.isLoading).toBe(false);
+    expect(vm.error).toBe('Something went wrong. Try again.');
+  });
 });

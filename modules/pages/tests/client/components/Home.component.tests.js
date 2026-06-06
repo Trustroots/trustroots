@@ -68,6 +68,34 @@ describe('<Home />', () => {
     ).toHaveAttribute('href', '/signup');
   });
 
+  it('uses compact board height on small screens', async () => {
+    const originalInnerWidth = window.innerWidth;
+    const originalInnerHeight = window.innerHeight;
+    circlesAPI.read.mockResolvedValueOnce([]);
+    mockGetRouteParams.mockReturnValue({});
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: 480,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: 640,
+    });
+
+    render(<Home user={null} />);
+
+    expect(await screen.findByText('How does it work?')).toBeInTheDocument();
+
+    Object.defineProperty(window, 'innerWidth', {
+      configurable: true,
+      value: originalInnerWidth,
+    });
+    Object.defineProperty(window, 'innerHeight', {
+      configurable: true,
+      value: originalInnerHeight,
+    });
+  });
+
   it('renders fetched circles', async () => {
     circlesAPI.read.mockResolvedValueOnce([
       { _id: 'c1', slug: 'hitchhikers', label: 'Hitchhikers' },
@@ -108,6 +136,34 @@ describe('<Home />', () => {
     expect(
       await screen.findByRole('link', { name: 'Join Trustroots now' }),
     ).toHaveAttribute('href', '/signup?tribe=hitchhikers');
+  });
+
+  it('uses legacy tribe route params for circle-specific signup links', async () => {
+    circlesAPI.read.mockResolvedValueOnce([
+      { _id: 'c1', slug: 'cyclists', label: 'Cyclists' },
+    ]);
+    mockGetRouteParams.mockReturnValue({ tribe: 'cyclists' });
+
+    render(<Home user={null} photoCredits={{}} />);
+
+    expect(
+      await screen.findByRole('link', { name: 'Join Trustroots now' }),
+    ).toHaveAttribute('href', '/signup?tribe=cyclists');
+    expect(circlesAPI.get).not.toHaveBeenCalled();
+  });
+
+  it('does not prepend unresolved route circles', async () => {
+    circlesAPI.read.mockResolvedValueOnce([
+      { _id: 'c1', slug: 'mountainbiking', label: 'Mountain Bikers' },
+    ]);
+    circlesAPI.get.mockResolvedValueOnce(null);
+    mockGetRouteParams.mockReturnValue({ circle: 'hitchhikers' });
+
+    render(<Home user={null} photoCredits={{}} />);
+
+    expect(await screen.findByText('Mountain Bikers')).toBeInTheDocument();
+    expect(screen.queryByText('Hitchhikers')).not.toBeInTheDocument();
+    expect(circlesAPI.get).toHaveBeenCalledWith('hitchhikers');
   });
 
   it('does not show the top join link for logged-in users', async () => {

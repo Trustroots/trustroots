@@ -102,6 +102,30 @@ describe('Search filter toggle directives', function () {
       host: true,
       meet: true,
     });
+
+    scope.types = [];
+    scope.$digest();
+
+    expect(controller.toggles).toEqual({});
+  });
+
+  it('accepts object-backed offer type filters from outside the directive', function () {
+    const { controller, scope } = compileDirective(
+      '<div tr-types-toggle="types"></div>',
+      {
+        types: [],
+      },
+    );
+
+    expect(controller.toggles).toEqual({});
+
+    scope.types = [{ id: 'host' }, { id: 'meet' }];
+    scope.$digest();
+
+    expect(controller.toggles).toEqual({
+      host: true,
+      meet: true,
+    });
   });
 
   it('keeps tribe filters synchronized with toggles', function () {
@@ -134,6 +158,27 @@ describe('Search filter toggle directives', function () {
       cyclists: true,
       families: true,
     });
+  });
+
+  it('keeps tribe toggles empty when no tribe filters are selected', function () {
+    const { controller, scope } = compileDirective(
+      '<div tr-tribes-toggle="tribeIds"></div>',
+      {
+        tribeIds: [],
+      },
+    );
+
+    expect(controller.toggles).toEqual({});
+
+    scope.tribeIds = ['cyclists'];
+    scope.$digest();
+    expect(controller.toggles).toEqual({
+      cyclists: true,
+    });
+
+    scope.tribeIds = [];
+    scope.$digest();
+    expect(controller.toggles).toEqual({});
   });
 
   it('can replace tribe filters with the current member circles', function () {
@@ -180,5 +225,22 @@ describe('Search filter toggle directives', function () {
     expect(controller.initialized).toBe(true);
     expect(controller.userTribes).toEqual([]);
     expect(scope.tribeIds).toEqual([]);
+  });
+
+  it('does not replace tribe filters when my-circle toggle is off', function () {
+    const { controller, scope } = compileDirective(
+      '<div tr-my-tribes-toggle="tribeIds"></div>',
+      {
+        tribeIds: ['nomads'],
+      },
+    );
+
+    $rootScope.$digest();
+
+    controller.toggle = false;
+    controller.onChange();
+    scope.$digest();
+
+    expect(scope.tribeIds).toEqual(['nomads']);
   });
 });

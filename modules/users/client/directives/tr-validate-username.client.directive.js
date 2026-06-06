@@ -64,6 +64,8 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
                 },
               );
             }, 1000);
+          } else {
+            resolve();
           }
         });
       };
