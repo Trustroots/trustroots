@@ -90,6 +90,18 @@ describe('Controller: core', function () {
       });
     });
 
+    it("exposes the signed in user's own roles for role based route guards", function () {
+      const res = mockResponse();
+      coreController.renderIndex(
+        {
+          path: '/',
+          user: { username: 'bob', roles: ['user', 'admin'] },
+        },
+        res,
+      );
+      res.renderVars.user.roles.should.deepEqual(['user', 'admin']);
+    });
+
     it('exposes the current tribe when browsing a tribe page', function () {
       const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
       const res = mockResponse();
