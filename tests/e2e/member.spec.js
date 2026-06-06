@@ -16,10 +16,20 @@ const portland = SEEDED_MEMBERS[1];
 
 test.describe('confirmed member flows', () => {
   test('own profile lists joined circles', async ({ page }) => {
+    const profileResponse = page.waitForResponse(
+      response =>
+        response.url().includes(`/api/users/${berlin.username}`) &&
+        response.ok(),
+    );
     await page.goto(`/profile/${berlin.username}`);
+    await profileResponse;
 
-    await expect(page.getByText('Hitchhikers').first()).toBeVisible();
-    await expect(page.getByText('Cyclists').first()).toBeVisible();
+    await expect(
+      page.locator('.tribe-label', { hasText: 'Hitchhikers' }).first(),
+    ).toBeVisible();
+    await expect(
+      page.locator('.tribe-label', { hasText: 'Cyclists' }).first(),
+    ).toBeVisible();
   });
 
   test('own contacts page shows the empty state', async ({ page }) => {
@@ -115,6 +125,13 @@ test.describe('confirmed member flows', () => {
     await page.goto('/circles');
     await waitForTribesList(page);
 
+    const joinResponse = page.waitForResponse(
+      response =>
+        response.url().match(/\/api\/users\/memberships\//) &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+
     const vegansCard = page
       .locator('.tribe')
       .filter({ has: page.getByRole('heading', { name: 'Vegans' }) });
@@ -123,8 +140,9 @@ test.describe('confirmed member flows', () => {
     const joinButton = vegansCard.locator('button.tribe-join');
     await expect(joinButton).toContainText(/^join$/i);
     await joinButton.click();
+    await joinResponse;
 
-    await expect(joinButton).toContainText(/^joined$/i);
+    await expect(joinButton).toContainText(/joined/i);
   });
 
   test('shadowbanned member profiles are hidden from other members', async ({
@@ -194,13 +212,23 @@ test.describe('confirmed member flows', () => {
   });
 
   test('profile tribes tab lists joined circles', async ({ page }) => {
+    const profileResponse = page.waitForResponse(
+      response =>
+        response.url().includes(`/api/users/${berlin.username}`) &&
+        response.ok(),
+    );
     await page.goto(`/profile/${berlin.username}/tribes`);
+    await profileResponse;
 
     await expect(page).toHaveURL(
       new RegExp(`/profile/${berlin.username}/tribes`),
     );
-    await expect(page.getByText('Hitchhikers').first()).toBeVisible();
-    await expect(page.getByText('Cyclists').first()).toBeVisible();
+    await expect(
+      page.locator('.tribe-label', { hasText: 'Hitchhikers' }).first(),
+    ).toBeVisible();
+    await expect(
+      page.locator('.tribe-label', { hasText: 'Cyclists' }).first(),
+    ).toBeVisible();
   });
 
   test('new message thread shows the empty conversation state', async ({

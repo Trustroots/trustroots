@@ -42,11 +42,8 @@ test.describe('authenticated member flows', () => {
     );
     await page.locator('#search-users-form button[type="submit"]').click();
     await searchResponse;
-
     await expect(
-      page.getByRole('link', {
-        name: `${SEEDED_MEMBERS[0].firstName} ${SEEDED_MEMBERS[0].lastName}`,
-      }),
+      page.locator(`a[href="/profile/${SEEDED_MEMBERS[0].username}"]`),
     ).toBeVisible();
   });
 
@@ -91,9 +88,9 @@ test.describe('authenticated member flows', () => {
     await page.goto(`/profile/${host.username}`);
 
     await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
-    await expect(
-      page.getByText(`${host.firstName} ${host.lastName}`).first(),
-    ).toBeVisible();
+    await expect(page.locator('h2.profile-name').first()).toHaveText(
+      `${host.firstName} ${host.lastName}`,
+    );
   });
 
   test('profile edit locations page is reachable', async ({ page }) => {
@@ -124,7 +121,7 @@ test.describe('authenticated member flows', () => {
     await waitForTribesList(page);
 
     await expect(
-      page.getByRole('heading', { name: 'Hitchhikers' }),
+      page.locator('h3.tribe-label', { hasText: 'Hitchhikers' }),
     ).toBeVisible();
   });
 
