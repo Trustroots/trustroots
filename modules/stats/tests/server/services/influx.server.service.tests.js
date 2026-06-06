@@ -2,9 +2,18 @@ const should = require('should');
 const sinon = require('sinon');
 const influx = require('influx');
 const Promise = require('promise');
+const proxyquire = require('proxyquire').noCallThru();
 // influx = require('influx'),
 const influxService = require('../../../server/services/influx.server.service');
 const config = require('../../../../../config/config');
+
+const servicePath = '../../../server/services/influx.server.service';
+
+function loadInfluxServiceWithLogger(logger) {
+  return proxyquire(servicePath, {
+    '../../../../config/lib/logger': logger,
+  });
+}
 
 describe('Service: influx', function () {
   // restore the stubbed services
@@ -177,6 +186,48 @@ describe('Service: influx', function () {
           },
         );
       });
+
+      it('logs validation failures outside test mode', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement(
+          'test',
+          null,
+          { tag: 'tag' },
+          function (fieldsErr) {
+            service._writeMeasurement(
+              'test',
+              { value: 1 },
+              null,
+              function (tagsErr) {
+                service._writeMeasurement(
+                  'test',
+                  { value: 1, time: 'bad-time' },
+                  { tag: 'tag' },
+                  function (timeErr) {
+                    process.env.NODE_ENV = originalEnv;
+
+                    try {
+                      fieldsErr.message.should.containEql('no `fields`');
+                      tagsErr.message.should.containEql('no `tags`');
+                      timeErr.message.should.containEql(
+                        'expected `fields.time`',
+                      );
+                      sinon.assert.calledThrice(logger);
+                      return done();
+                    } catch (e) {
+                      return done(e);
+                    }
+                  },
+                );
+              },
+            );
+          },
+        );
+      });
     }); // end of context 'invalid data'
 
     context('valid data', function () {
@@ -322,6 +373,36 @@ describe('Service: influx', function () {
           function (err) {
             err.message.should.equal('write failed');
             done();
+          },
+        );
+      });
+
+      it('logs writeMeasurement promise rejections outside test mode', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+        influx.InfluxDB.prototype.writeMeasurement.returns(
+          Promise.reject(new Error('write failed')),
+        );
+
+        service._writeMeasurement(
+          'test',
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            process.env.NODE_ENV = originalEnv;
+
+            try {
+              err.message.should.equal('write failed');
+              sinon.assert.calledOnce(logger);
+              logger.firstCall.args[1].should.equal(
+                'InfluxDB Service: Error while writing to InfluxDB #fj38hh',
+              );
+              done();
+            } catch (e) {
+              done(e);
+            }
           },
         );
       });

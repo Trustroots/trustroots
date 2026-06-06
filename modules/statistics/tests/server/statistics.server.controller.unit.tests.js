@@ -135,45 +135,53 @@ describe('Statistics controller unit tests', () => {
       });
     });
 
-    ['bewelcome', 'couchsurfing', 'warmshowers', 'facebook', 'twitter'].forEach(
-      site => {
-        it(`counts users connected to ${site}`, async () => {
-          const [saved] = await utils.saveUsers(utils.generateUsers(1));
-          const userDoc = await User.findById(saved._id);
-          userDoc.public = true;
+    [
+      'couchers',
+      'bewelcome',
+      'couchsurfing',
+      'warmshowers',
+      'facebook',
+      'twitter',
+    ].forEach(site => {
+      it(`counts users connected to ${site}`, async () => {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(saved._id);
+        userDoc.public = true;
 
-          switch (site) {
-            case 'bewelcome':
-              userDoc.extSitesBW = 'https://bewelcome.org/member/1';
-              break;
-            case 'couchsurfing':
-              userDoc.extSitesCS = 'https://couchsurfing.com/1';
-              break;
-            case 'warmshowers':
-              userDoc.extSitesWS = 'https://warmshowers.org/1';
-              break;
-            case 'facebook':
-              userDoc.additionalProvidersData = { facebook: { id: '1' } };
-              break;
-            case 'twitter':
-              userDoc.additionalProvidersData = { twitter: { id: '1' } };
-              break;
-            default:
-              break;
-          }
+        switch (site) {
+          case 'couchers':
+            userDoc.extSitesCouchers = 'https://couchers.org/user/1';
+            break;
+          case 'bewelcome':
+            userDoc.extSitesBW = 'https://bewelcome.org/member/1';
+            break;
+          case 'couchsurfing':
+            userDoc.extSitesCS = 'https://couchsurfing.com/1';
+            break;
+          case 'warmshowers':
+            userDoc.extSitesWS = 'https://warmshowers.org/1';
+            break;
+          case 'facebook':
+            userDoc.additionalProvidersData = { facebook: { id: '1' } };
+            break;
+          case 'twitter':
+            userDoc.additionalProvidersData = { twitter: { id: '1' } };
+            break;
+          default:
+            break;
+        }
 
-          await userDoc.save();
+        await userDoc.save();
 
-          await new Promise((resolve, reject) => {
-            statistics.getExternalSiteCount(site, (err, count) => {
-              if (err) return reject(err);
-              count.should.equal(1);
-              resolve();
-            });
+        await new Promise((resolve, reject) => {
+          statistics.getExternalSiteCount(site, (err, count) => {
+            if (err) return reject(err);
+            count.should.equal(1);
+            resolve();
           });
         });
-      },
-    );
+      });
+    });
   });
 
   describe('count helpers', () => {
@@ -360,6 +368,30 @@ describe('Statistics controller unit tests', () => {
         });
       },
     );
+
+    it('returns 400 when newsletter count fails', async () => {
+      sinon
+        .stub(statistics, 'getNewsletterSubscriptionsCount')
+        .callsFake(cb => {
+          cb(new Error('newsletter count failed'));
+        });
+
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when hosting count fails', async () => {
+      sinon.stub(statistics, 'getHostOffersCount').callsFake(cb => {
+        cb(new Error('hosting count failed'));
+      });
+
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
 
     it('returns zeroed hosting stats when there are no host offers', async () => {
       const res = deferredResponse();

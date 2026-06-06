@@ -29,6 +29,7 @@ exports.getUsersCount = function (callback) {
 exports.getExternalSiteCount = function (site, callback) {
   const validSites = [
     'bewelcome',
+    'couchers',
     'couchsurfing',
     'warmshowers',
     'facebook',
