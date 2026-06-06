@@ -52,6 +52,42 @@ function loadUploadFileWithStubbedMulter(reqFile, multerError) {
   }).uploadFile;
 }
 
+function loadUploadFileWithFileFilter(file, reqFile, configOverrides) {
+  let capturedMulterOptions;
+  const stubConfig = Object.assign(
+    {},
+    require('../../../../../config/config'),
+    configOverrides,
+  );
+
+  const uploadFile = proxyquire(
+    '../../../server/services/file-upload.service',
+    {
+      multer: options => {
+        capturedMulterOptions = options;
+        return {
+          single: () => (req, res, callback) => {
+            options.fileFilter(req, file, err => {
+              if (err) {
+                return callback(err);
+              }
+              req.file = reqFile;
+              callback(null);
+            });
+          },
+        };
+      },
+      '../../../../config/config': stubConfig,
+      './error.server.service': errorService,
+    },
+  ).uploadFile;
+
+  return {
+    getMulterOptions: () => capturedMulterOptions,
+    uploadFile,
+  };
+}
+
 describe('file-upload.service unit tests', () => {
   const validMimeTypes = [
     'image/jpeg',
@@ -121,6 +157,62 @@ describe('file-upload.service unit tests', () => {
     });
 
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
+
+  it('rejects multer files without a mime type before magic-byte validation', done => {
+    const { uploadFile } = loadUploadFileWithFileFilter(
+      {},
+      { path: '/tmp/not-used' },
+    );
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(415);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('unsupported-media-type'),
+      );
+      done();
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
+
+  it('rejects multer files with unsupported mime types before magic-byte validation', done => {
+    const { uploadFile } = loadUploadFileWithFileFilter(
+      { mimetype: 'text/plain' },
+      { path: '/tmp/not-used' },
+    );
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(415);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('unsupported-media-type'),
+      );
+      done();
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
+
+  it('accepts multer files with supported mime types before magic-byte validation', done => {
+    const filePath = writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00]));
+    const { getMulterOptions, uploadFile } = loadUploadFileWithFileFilter(
+      { mimetype: 'image/jpeg' },
+      { path: filePath },
+      {
+        uploadTmpDir: '',
+      },
+    );
+
+    uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
+      try {
+        const options = getMulterOptions();
+        options.dest.should.equal(os.tmpdir());
+        options.limits.fileSize.should.be.a.Number();
+        fs.unlinkSync(filePath);
+        done();
+      } catch (err) {
+        fs.unlinkSync(filePath);
+        done(err);
+      }
+    });
   });
 
   it('rejects requests without an uploaded file', done => {
