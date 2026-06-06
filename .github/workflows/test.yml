@@ -271,9 +271,14 @@ jobs:
           source: ./docs
           destination: ./_site
       - name: Add coverage report to site
-        run: mkdir -p _site/coverage && cp -r coverage-report/. _site/coverage/
+        run: |
+          cp -r _site site
+          mkdir -p site/coverage
+          cp -r coverage-report/. site/coverage/
       - name: Upload site
         uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
       - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@v5
