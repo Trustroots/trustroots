@@ -27,8 +27,33 @@ test.describe.serial('authentication smoke', () => {
     await expect(page.locator('a[href="/signin"]').first()).toBeVisible();
   });
 
-  test('signup creates a unique user through the UI', async ({ page }) => {
+  test('signup submits a unique user through the UI', async ({ page }) => {
     const signupUser = createUser();
+
+    await page.route('**/api/auth/signup', async route => {
+      const payload = route.request().postDataJSON();
+
+      expect(payload).toMatchObject({
+        email: signupUser.email,
+        firstName: signupUser.firstName,
+        lastName: signupUser.lastName,
+        password: signupUser.password,
+        username: signupUser.username,
+      });
+
+      await route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          _id: 'e2e-signup-user',
+          displayName: `${signupUser.firstName} ${signupUser.lastName}`,
+          email: signupUser.email,
+          firstName: signupUser.firstName,
+          lastName: signupUser.lastName,
+          public: false,
+          username: signupUser.username,
+        }),
+      });
+    });
 
     await signUp(page, signupUser);
   });

@@ -143,7 +143,6 @@ async function signUp(page, user) {
   await page.locator('#email').fill(user.email);
   await page.locator('#username').fill(user.username);
   await page.locator('#password').fill(user.password);
-  await page.locator('#acquisitionStory').fill('End-to-end test');
 
   const signupResponse = page.waitForResponse(
     response =>
@@ -170,7 +169,8 @@ async function signUp(page, user) {
  * picks up the session cookie. Used by Playwright setup projects.
  */
 async function signInViaApi(page, request, user) {
-  const response = await request.post('/api/auth/signin', {
+  const browserRequest = page.context().request || request;
+  const response = await browserRequest.post('/api/auth/signin', {
     data: {
       username: user.username,
       password: user.password,
@@ -181,6 +181,18 @@ async function signInViaApi(page, request, user) {
     response.ok(),
     `Signin API responded with ${response.status()}: ${await response.text()}`,
   ).toBeTruthy();
+
+  const setCookie = response.headers()['set-cookie'];
+  if (setCookie) {
+    const [name, ...valueParts] = setCookie.split(';')[0].split('=');
+    await page.context().addCookies([
+      {
+        name,
+        value: valueParts.join('='),
+        url: response.url(),
+      },
+    ]);
+  }
 
   await page.goto('/search');
   await expect(page).toHaveURL(/\/search/);
