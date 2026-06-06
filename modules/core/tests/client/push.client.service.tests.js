@@ -67,7 +67,7 @@ describe('Push Service Tests', function () {
 
     Object.defineProperty($window, 'Notification', {
       configurable: true,
-      value(title, options) {
+      value: function NotificationMock(title, options) {
         notifications.push({ title, options });
       },
     });

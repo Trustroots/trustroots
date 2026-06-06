@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom/extend-expect';
+
 import AppConfig from '@/modules/core/client/app/config';
 import '@/modules/core/client/directives/tr-switch.client.directive';
 
