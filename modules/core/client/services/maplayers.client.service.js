@@ -32,10 +32,8 @@ function MapLayersFactory(SettingsFactory, LocationService) {
    * Return object for Mapbox layer
    */
   function getMapboxLayer(label, TRStyle, layerConf) {
-    if (!isMapboxAvailable || !layerConf) return;
-
     const layer = {
-      name: label || 'Mapbox',
+      name: label,
       type: 'xyz',
       layerParams: {
         map: layerConf.map,
@@ -46,7 +44,7 @@ function MapLayersFactory(SettingsFactory, LocationService) {
         attribution:
           '<a href="https://www.mapbox.com/about/maps/" target="_blank" rel="noopener">© Mapbox © OpenStreetMap</a>',
         continuousWorld: true,
-        TRStyle: TRStyle || 'streets', // Not native Leaflet key, required by our layer switch
+        TRStyle, // Not native Leaflet key, required by our layer switch
       },
     };
 

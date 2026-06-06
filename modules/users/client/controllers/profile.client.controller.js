@@ -28,7 +28,13 @@ function ProfileController(
    * Remove contact via React RemoveContact component
    */
   vm.removeContact = function (contact) {
-    vm.contacts.splice(vm.contacts.indexOf(contact), 1);
+    const contactIndex = vm.contacts ? vm.contacts.indexOf(contact) : -1;
+
+    if (contactIndex === -1) {
+      return;
+    }
+
+    vm.contacts.splice(contactIndex, 1);
 
     // @TODO a hacky solution to remove the contact from vm.contact and keep its "promise" resolved
     // if we just delete vm.contact, the angular app will be confused
@@ -78,8 +84,11 @@ function ProfileController(
      * When contact removal modal signals that the contact was removed, remove it from this scope as well
      * @todo: any better way to keep vm.contact $resolved but wipe out the actual content?
      */
-    $scope.$on('contactRemoved', function () {
-      if (vm.contact) {
+    $scope.$on('contactRemoved', function (event, removedContact) {
+      if (
+        vm.contact &&
+        (!removedContact || removedContact._id === vm.contact._id)
+      ) {
         delete vm.contact._id;
       }
     });

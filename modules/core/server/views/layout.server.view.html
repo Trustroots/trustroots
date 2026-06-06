@@ -22,9 +22,9 @@
     <script nonce="{{ nonce }}">
       window.SENTRY_DSN = '{{ sentry.options.dsn }}';
     </script>
-    {% endif %} {% if env === 'development' %} {# in dev load js in head, as it
-    also contains CSS, so we prevent flash of unstyled page #} {% for jsFile in
-    jsFiles %}
+    {% endif %} {% if env === 'development' or env === 'test' %} {# in dev/test
+    load js in head, as it also contains CSS, so we prevent flash of unstyled
+    page #} {% for jsFile in jsFiles %}
     <script
       src="/{{jsFile}}?c={{appSettings.commit}}"
       nonce="{{ nonce }}"

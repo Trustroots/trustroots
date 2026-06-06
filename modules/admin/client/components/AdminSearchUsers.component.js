@@ -109,6 +109,7 @@ export default class AdminSearchUsers extends Component {
                   name="role"
                   className="form-control input-md"
                   onChange={this.onRoleChange}
+                  value={this.state.role}
                 >
                   {[
                     'admin',
@@ -118,11 +119,7 @@ export default class AdminSearchUsers extends Component {
                     'volunteer-alumni',
                     'volunteer',
                   ].map(role => (
-                    <option
-                      value={role}
-                      key={role}
-                      selected={role === this.state.role}
-                    >
+                    <option value={role} key={role}>
                       {role}
                     </option>
                   ))}

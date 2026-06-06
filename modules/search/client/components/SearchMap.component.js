@@ -357,11 +357,9 @@ export default function SearchMap({
       return;
     }
 
-    if (!hoveredOffer || hoveredOffer?.id !== feature.id) {
-      clearPreviouslyHoveredState();
-      setHoveredOffer(feature);
-      updateFeatureState(feature, { hover: true });
-    }
+    clearPreviouslyHoveredState();
+    setHoveredOffer(feature);
+    updateFeatureState(feature, { hover: true });
   };
 
   /**
@@ -482,10 +480,6 @@ export default function SearchMap({
    * Fetch offer data and open it on seach sidebar (handled by Angular)
    */
   async function openOfferById(offerId) {
-    if (!offerId) {
-      return;
-    }
-
     // @TODO: cancellation when opening another offer instead
     const offer = await getOffer(offerId);
 
@@ -520,10 +514,7 @@ export default function SearchMap({
 
   // Load and store Mapbox object for quick reference on render
   useEffect(() => {
-    if (!map) {
-      const currentMap = getMapRef();
-      setMap(currentMap);
-    }
+    setMap(getMapRef());
   }, []);
 
   // Apply externally changed bounds object

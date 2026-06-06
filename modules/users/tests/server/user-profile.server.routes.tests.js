@@ -592,6 +592,39 @@ describe('User profile CRUD tests', function () {
     });
   });
 
+  it('should reject a non-string nostr npub when updating own profile', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ nostrNpub: 12345 })
+            .expect(400)
+            .end(function (userInfoErr, userInfoRes) {
+              if (userInfoErr) {
+                return done(userInfoErr);
+              }
+
+              userInfoRes.body.message.should.equal(
+                'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+              );
+
+              return done();
+            });
+        });
+    });
+  });
+
   it('should not be able to add roles to own profile', function (done) {
     user.roles = ['user'];
 

@@ -107,8 +107,8 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
             />
           )}
           <LanguageList>
-            {filteredLocales.map(({ code, label }) => (
-              <li key={code}>
+            {filteredLocales.map(({ code, label }, index) => (
+              <li key={`${code}-${label}-${index}`}>
                 {code === currentLanguageCode && (
                   <SelectedLanguage lang={code}>{label}</SelectedLanguage>
                 )}

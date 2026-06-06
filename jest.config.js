@@ -1,4 +1,5 @@
 module.exports = {
+  watchman: false,
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^modules/(.*)$': '<rootDir>/modules/$1',
@@ -11,6 +12,15 @@ module.exports = {
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.js'],
   testEnvironment: 'jsdom',
+  collectCoverageFrom: [
+    '<rootDir>/modules/*/client/**/*.js',
+    '!<rootDir>/modules/*/tests/**',
+    '!<rootDir>/modules/*/client/**/*.module.js',
+    '!<rootDir>/modules/*/client/**/views/**',
+    '!<rootDir>/modules/*/client/**/less/**',
+  ],
+  coverageDirectory: '<rootDir>/coverage/client',
+  coverageReporters: ['text-summary', 'html', 'json-summary', 'lcov'],
   setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
   transform: {
     '^.+\\.js$': 'babel-jest',

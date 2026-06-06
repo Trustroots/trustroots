@@ -1,7 +1,7 @@
 import axios from 'axios';
 import parseLinkheader from 'parse-link-header';
 
-async function fetchWithNextParams(url, params = {}) {
+async function fetchWithNextParams(url, params) {
   const { data, headers } = await axios.get(url, {
     params,
   });

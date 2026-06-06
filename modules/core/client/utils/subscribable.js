@@ -28,7 +28,7 @@ export default function createSubscribable() {
     },
     notify(payload) {
       const errors = [];
-      for (const fn of subscribers) {
+      for (const fn of [...subscribers]) {
         try {
           fn(payload);
         } catch (err) {
