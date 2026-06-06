@@ -25,10 +25,10 @@ test.describe('confirmed member flows', () => {
     await profileResponse;
 
     await expect(
-      page.locator('.tribe-label', { hasText: 'Hitchhikers' }).first(),
+      page.locator('.tribe-badge-link', { hasText: 'Hitchhikers' }),
     ).toBeVisible();
     await expect(
-      page.locator('.tribe-label', { hasText: 'Cyclists' }).first(),
+      page.locator('.tribe-badge-link', { hasText: 'Cyclists' }),
     ).toBeVisible();
   });
 
@@ -224,10 +224,10 @@ test.describe('confirmed member flows', () => {
       new RegExp(`/profile/${berlin.username}/tribes`),
     );
     await expect(
-      page.locator('.tribe-label', { hasText: 'Hitchhikers' }).first(),
+      page.locator('.tribe-link', { hasText: 'Hitchhikers' }).first(),
     ).toBeVisible();
     await expect(
-      page.locator('.tribe-label', { hasText: 'Cyclists' }).first(),
+      page.locator('.tribe-link', { hasText: 'Cyclists' }).first(),
     ).toBeVisible();
   });
 

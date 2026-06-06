@@ -43,7 +43,10 @@ test.describe('authenticated member flows', () => {
     await page.locator('#search-users-form button[type="submit"]').click();
     await searchResponse;
     await expect(
-      page.locator(`a[href="/profile/${SEEDED_MEMBERS[0].username}"]`),
+      page.getByRole('link', {
+        name: `${SEEDED_MEMBERS[0].firstName} ${SEEDED_MEMBERS[0].lastName}`,
+        exact: true,
+      }),
     ).toBeVisible();
   });
 
@@ -88,8 +91,8 @@ test.describe('authenticated member flows', () => {
     await page.goto(`/profile/${host.username}`);
 
     await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
-    await expect(page.locator('h2.profile-name').first()).toHaveText(
-      `${host.firstName} ${host.lastName}`,
+    await expect(page.locator('.row.hidden-xs h4.profile-username')).toHaveText(
+      `@${host.username}`,
     );
   });
 
