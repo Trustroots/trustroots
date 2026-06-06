@@ -1,5 +1,8 @@
 set shell := ["bash", "-cu"]
 
+default:
+    @just --list
+
 test-all:
     npm run test:all
 
