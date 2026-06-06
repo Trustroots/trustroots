@@ -696,7 +696,7 @@ describe('Service: email', function () {
     });
   });
 
-  it('emails should have Sparkpost `campaign_id` header', function (done) {
+  it('emails should have Sparkpost transactional and campaign_id headers', function (done) {
     const user = {
       displayName: 'test user',
       email: 'test@test.com',
@@ -705,7 +705,10 @@ describe('Service: email', function () {
     emailService.sendResetPasswordConfirm(user, function (err) {
       if (err) return done(err);
       jobs[0].data.headers.should.deepEqual({
-        'X-MSYS-API': { campaign_id: 'reset-password-confirm' },
+        'X-MSYS-API': JSON.stringify({
+          options: { transactional: true },
+          campaign_id: 'reset-password-confirm',
+        }),
       });
       done();
     });
