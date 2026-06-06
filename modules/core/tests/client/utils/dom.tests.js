@@ -68,6 +68,7 @@ describe('canUseWebP', () => {
       global,
       'window',
     );
+    const originalWindow = global.window;
 
     Object.defineProperty(global, 'window', {
       configurable: true,
@@ -80,7 +81,11 @@ describe('canUseWebP', () => {
       if (originalWindowDescriptor) {
         Object.defineProperty(global, 'window', originalWindowDescriptor);
       } else {
-        delete global.window;
+        Object.defineProperty(global, 'window', {
+          configurable: true,
+          value: originalWindow,
+          writable: true,
+        });
       }
     }
   });

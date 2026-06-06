@@ -145,7 +145,18 @@ async function signUp(page, user) {
   await page.locator('#password').fill(user.password);
   await page.locator('#acquisitionStory').fill('End-to-end test');
 
+  const signupResponse = page.waitForResponse(
+    response =>
+      response.url().includes('/api/auth/signup') &&
+      response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: /^next$/i }).click();
+
+  const response = await signupResponse;
+  expect(
+    response.ok(),
+    `Signup responded with ${response.status()}: ${await response.text()}`,
+  ).toBeTruthy();
 
   const skipButton = page.getByRole('button', { name: /^skip$/i });
   await expect(skipButton).toBeVisible();
