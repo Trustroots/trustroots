@@ -15,6 +15,25 @@ export TRUSTROOTS_E2E_WEB_PORT="${TRUSTROOTS_E2E_WEB_PORT:-4300}"
 export TRUSTROOTS_E2E_API_PORT="${TRUSTROOTS_E2E_API_PORT:-4301}"
 export TRUSTROOTS_E2E_REUSE_SERVER="${TRUSTROOTS_E2E_REUSE_SERVER:-false}"
 
+if [ "${CI:-}" = "true" ]; then
+  if [ -z "${HOME:-}" ] || [ "$HOME" = "/root" ]; then
+    export HOME="$PWD/tmp/ci-home"
+  fi
+
+  export npm_config_cache="${npm_config_cache:-$PWD/tmp/npm-cache}"
+  export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$PWD/tmp/ci-cache}"
+
+  if [ -z "${PLAYWRIGHT_BROWSERS_PATH:-}" ]; then
+    if [ -d /home/app/ms-playwright ]; then
+      export PLAYWRIGHT_BROWSERS_PATH=/home/app/ms-playwright
+    else
+      export PLAYWRIGHT_BROWSERS_PATH="$PWD/tmp/ms-playwright"
+    fi
+  fi
+
+  mkdir -p "$HOME" "$npm_config_cache" "$XDG_CACHE_HOME" "$PLAYWRIGHT_BROWSERS_PATH"
+fi
+
 if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
   if [ "${CI:-}" = "true" ]; then
     export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false

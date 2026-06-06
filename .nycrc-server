@@ -3,6 +3,7 @@
   "include": ["modules/*/server/**/*.js"],
   "exclude": [
     "modules/*/tests/**",
+    "deploy/docker/data/**",
     "modules/*/server/**/*.model.js",
     "modules/*/server/models/**",
     "modules/core/server/jobs/send-push-message.server.job.js",

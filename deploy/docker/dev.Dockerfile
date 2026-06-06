@@ -26,6 +26,8 @@ RUN apt-get -qq update && apt-get -q install -y \
 # Pin npm to v7 to satisfy `engines` in package.json (`npm >=6 <8`).
 RUN npm -g i npm@latest-7
 
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/app/ms-playwright
+
 WORKDIR /home/app/trustroots
 
 COPY package*.json ./
@@ -33,4 +35,7 @@ RUN --mount=type=cache,target=/root/.npm \
   npm ci --quiet \
   && npm rebuild mmmagic --build-from-source
 
-RUN npx playwright install chromium
+RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
+  && chmod 777 "$PLAYWRIGHT_BROWSERS_PATH" \
+  && npx playwright install chromium \
+  && chmod -R 777 "$PLAYWRIGHT_BROWSERS_PATH"
