@@ -160,18 +160,43 @@ async function withSeededMemberPage(browser, baseURL, callback) {
 }
 
 async function showCommunityNotesSidebar(page) {
+  await page.waitForFunction(() => {
+    if (!window.angular) return false;
+
+    return Array.from(document.querySelectorAll('.search, .search *')).some(
+      element => {
+        const scope = window.angular.element(element).scope();
+        return Boolean(
+          scope &&
+            scope.search &&
+            typeof scope.search.openSidebar === 'function',
+        );
+      },
+    );
+  });
+
   await page.evaluate(
     ({ plusCode, noteText }) => {
-      const searchRoot = document.querySelector('.search');
-      if (!searchRoot || !window.angular) {
+      if (!window.angular) {
         throw new Error('Search Angular scope unavailable');
       }
 
-      const scope = window.angular.element(searchRoot).scope();
-      if (!scope || !scope.search) {
+      const searchElement = Array.from(
+        document.querySelectorAll('.search, .search *'),
+      ).find(element => {
+        const scope = window.angular.element(element).scope();
+        return Boolean(
+          scope &&
+            scope.search &&
+            typeof scope.search.openSidebar === 'function',
+        );
+      });
+
+      if (!searchElement) {
         throw new Error('Search controller scope unavailable');
       }
 
+      const scope = window.angular.element(searchElement).scope();
       const now = Math.floor(Date.now() / 1000);
       scope.$apply(() => {
         scope.search.offer = false;
