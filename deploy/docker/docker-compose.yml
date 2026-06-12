@@ -1,3 +1,5 @@
+name: ${TRUSTROOTS_COMPOSE_PROJECT_NAME:-trustroots}
+
 services:
   mongodb:
     image: mongo:4.4
@@ -10,8 +12,8 @@ services:
   mongodb-localhost:
     image: alpine/socat
     command:
-      - "tcp-listen:27017,fork,reuseaddr,bind=0.0.0.0"
-      - "tcp-connect:mongodb:27017"
+      - 'tcp-listen:27017,fork,reuseaddr,bind=0.0.0.0'
+      - 'tcp-connect:mongodb:27017'
     depends_on:
       - mongodb
     ports:
@@ -84,7 +86,7 @@ services:
       - NODE_ENV=production
     # Override the container's start command (which will start passenger) to
     # start the worker
-    command: ["node", "worker.js"]
+    command: ['node', 'worker.js']
 
   influxdb:
     image: influxdb:1.8.10
