@@ -3,64 +3,287 @@ name: Tests
 on:
   pull_request:
     branches: [master]
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      run_client:
+        description: Run client tests
+        type: boolean
+        default: true
+      run_server:
+        description: Run server tests
+        type: boolean
+        default: true
+      run_e2e:
+        description: Run e2e tests
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
+  build-dev-image:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      image-ref: ${{ steps.image.outputs.image-ref }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Set image reference
+        id: image
+        run: |
+          image_ref="ghcr.io/${GITHUB_REPOSITORY,,}/trustroots-dev:${GITHUB_SHA}"
+          echo "image-ref=$image_ref" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push dev image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/docker/dev.Dockerfile
+          tags: ${{ steps.image.outputs.image-ref }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          push: true
+
   client:
+    needs: build-dev-image
+    if: >
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_client) &&
+      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        if: needs.build-dev-image.result == 'skipped'
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        if: needs.build-dev-image.result == 'success'
+        uses: docker/login-action@v3
         with:
-          node-version: 14
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull dev image
+        if: needs.build-dev-image.result == 'success'
+        run: |
+          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
+          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
+      - name: Build dev image
+        if: needs.build-dev-image.result == 'skipped'
+        uses: docker/build-push-action@v7
         with:
-          path: |
-            ~/.node-gyp
-            ~/.npm
-          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-node-
-            ${{ runner.OS }}-
-      - name: Reconfigure git to use HTTP authentication
-        run: >
-          git config --global url."https://github.com/".insteadOf
-          ssh://git@github.com/
-      - name: Install dependencies
-        run: npm ci
-      - name: Test client
-        run: npm run test:client
+          context: .
+          file: deploy/docker/dev.Dockerfile
+          tags: trustroots-dev:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+      - name: Prepare compose local config
+        run: node ./scripts/ci/ensure-compose-local.js
+      - name: Test client with coverage
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            dev npm run test:coverage:client
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            -e CI=true \
+            -e NODE_ENV=test \
+            dev npm run coverage:check -- --scope=client
+      - name: Upload client coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-client
+          path: coverage/client
 
   server:
+    needs: build-dev-image
+    if: >
+      always() &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_server) &&
+      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Use MongoDB
-        uses: supercharge/mongodb-github-action@1.6.0
+      - uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        if: needs.build-dev-image.result == 'skipped'
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        if: needs.build-dev-image.result == 'success'
+        uses: docker/login-action@v3
         with:
-          mongodb-version: '4.4'
-      - name: Install graphicsmagick
-        run: sudo apt-get install -y graphicsmagick
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull dev image
+        if: needs.build-dev-image.result == 'success'
+        run: |
+          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
+          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
+      - name: Build dev image
+        if: needs.build-dev-image.result == 'skipped'
+        uses: docker/build-push-action@v7
         with:
-          node-version: 14
-      - name: Cache Node.js modules
-        uses: actions/cache@v2
+          context: .
+          file: deploy/docker/dev.Dockerfile
+          tags: trustroots-dev:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+      - name: Prepare compose local config
+        run: node ./scripts/ci/ensure-compose-local.js
+      - name: Start MongoDB
+        working-directory: deploy/docker
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
+      - name: Test server with coverage
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+            dev npm run test:coverage:server
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
+            -e CI=true \
+            -e NODE_ENV=test \
+            dev npm run coverage:check -- --scope=server
+      - name: Upload server coverage report
+        uses: actions/upload-artifact@v7
         with:
-          path: |
-            ~/.node-gyp
-            ~/.npm
-          key: ${{ runner.OS }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-node-
-            ${{ runner.OS }}-
-      - name: Reconfigure git to use HTTP authentication
-        run: >
-          git config --global url."https://github.com/".insteadOf
-          ssh://git@github.com/
-      - name: Install dependencies
-        run: npm ci
-      - name: Test server
-        run: npm run test:server
+          name: coverage-server
+          path: coverage/server
+
+  e2e:
+    needs: build-dev-image
+    if: >
+      always() &&
+      (
+        (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
+        (github.event_name == 'pull_request' &&
+          contains(github.event.pull_request.labels.*.name, 'run-e2e'))
+      ) &&
+      (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        if: needs.build-dev-image.result == 'skipped'
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to GHCR
+        if: needs.build-dev-image.result == 'success'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull dev image
+        if: needs.build-dev-image.result == 'success'
+        run: |
+          docker pull "${{ needs.build-dev-image.outputs.image-ref }}"
+          docker tag "${{ needs.build-dev-image.outputs.image-ref }}" trustroots-dev:ci
+      - name: Build dev image
+        if: needs.build-dev-image.result == 'skipped'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/docker/dev.Dockerfile
+          tags: trustroots-dev:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+      - name: Prepare compose local config
+        run: node ./scripts/ci/ensure-compose-local.js
+      - name: Start MongoDB
+        working-directory: deploy/docker
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
+      - name: Test end-to-end smoke suite
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+            -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            dev npm run test:e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report
+      - name: Upload Playwright test results
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-test-results
+          path: test-results
+
+  pages:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: [client, server]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download client coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-client
+          path: coverage/client
+      - name: Download server coverage report
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-server
+          path: coverage/server
+      - name: Generate coverage report page
+        run: npm run coverage:report
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+      - name: Build docs site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+      - name: Add coverage report to site
+        run: |
+          cp -r _site site
+          mkdir -p site/coverage
+          cp -r coverage-report/. site/coverage/
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v5
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage-report

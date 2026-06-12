@@ -9,15 +9,28 @@
   <br>
 </p>
 
-## Maintenance mode
+## 2026 plans
 
-Trustroots is in maintenance mode.
+_Out of maintenance mode_
 
-No new features are being developed.
+As of June 2026 Trustroots some development will take place. (Trustroots was in maintenance mode from 2022 till June 2026.)
+
+Priorities:
+
+- solid test coverage, frontend, backend
+- DRY, simplify, upgrade
+  - react vs angular? probably finish transition to react?
+  - docker dev setup state
+  - upgrade npm packages
+- nostr
+  - basics done: nip5, nip7
+  - interaction with nostroots
+
+## Medium term plans
 
 Our medium term plan is decentralisation thru the nostr protocol, see https://github.com/Trustroots/nostroots
 
-We are also open to improvments that [make trustroots forkable](https://github.com/Trustroots/trustroots/issues/2669).
+We are also open to improvements that [make trustroots forkable](https://github.com/Trustroots/trustroots/issues/2669).
 
 ## nvm & npm
 
@@ -44,12 +57,15 @@ You might also need to run the linux equivalent of that if you see an error abou
 
 ## Running locally
 
-`npm start`
+`nvm use && npm start` (host, hot reload at http://localhost:3000)
 
-or 
+or
 
-`docker compose up`
+```bash
+cd deploy/docker && docker compose up
+```
 
+Docker dev (hot reload, maildev, shared mongo): see [`deploy/docker/README.md`](deploy/docker/README.md).
 
 If you experience docker issues you could try clearing up docker - even though it shouldn't be necessary, it can help:
 

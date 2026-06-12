@@ -3,7 +3,12 @@ export const limitTo = (text, length) => {
 };
 
 export const plainText = html => {
-  if (!html || typeof html !== 'string' || typeof document === 'undefined') {
+  if (
+    !html ||
+    typeof html !== 'string' ||
+    typeof document === 'undefined' ||
+    typeof document.createElement !== 'function'
+  ) {
     return '';
   }
   const div = document.createElement('div');

@@ -1,0 +1,23 @@
+default_permissions = "trustroots-tests"
+
+[permissions.trustroots-tests]
+description = "Workspace editing plus localhost access for MongoDB and Playwright test automation."
+
+[permissions.trustroots-tests.filesystem]
+":minimal" = "read"
+
+[permissions.trustroots-tests.filesystem.":workspace_roots"]
+"." = "write"
+
+[permissions.trustroots-tests.network]
+enabled = true
+allow_local_binding = true
+
+[permissions.trustroots-tests.network.domains]
+"127.0.0.1" = "allow"
+"localhost" = "allow"
+"::1" = "allow"
+
+[permissions.trustroots-tests.network.unix_sockets]
+"/Users/k/.docker/run/docker.sock" = "allow"
+"/var/run/docker.sock" = "allow"

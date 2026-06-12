@@ -1,11 +1,14 @@
 {
   "name": "Trustroots",
-  "dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"],
-  "service": "trustroots",
-  "workspaceFolder": "/trustroots",
+  "dockerComposeFile": [
+    "../deploy/docker/docker-compose.yml",
+    "docker-compose.yml"
+  ],
+  "service": "dev",
+  "workspaceFolder": "/home/app/trustroots",
   "shutdownAction": "stopCompose",
   "overrideCommand": true,
-  "postCreateCommand": "npm ci --quiet && npm run check-environment",
+  "postCreateCommand": "npm run check-environment",
   "postStartCommand": "npm run check-environment",
   "portsAttributes": {
     "3000": {

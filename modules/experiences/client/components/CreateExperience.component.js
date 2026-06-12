@@ -65,7 +65,6 @@ export default function CreateExperience({ userFrom, userTo }) {
       case 'guest':
         setHostedMe(guest => !guest);
         break;
-      default:
     }
   };
 
@@ -197,7 +196,7 @@ export default function CreateExperience({ userFrom, userTo }) {
       <Tabs
         activeKey={step}
         bsStyle="pills"
-        onSelect={() => {}}
+        id="create-experience-tabs"
         className="create-experience-tabs"
       >
         {tabs.map(({ id, component, title }, i) => {

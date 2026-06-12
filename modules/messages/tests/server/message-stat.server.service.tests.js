@@ -1,6 +1,7 @@
 const should = require('should');
 const async = require('async');
 const mongoose = require('mongoose');
+const sinon = require('sinon');
 const messageStatService = require('../../server/services/message-stat.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
@@ -40,50 +41,12 @@ describe('Convert Message Statistics to human readable form', function () {
 describe('Count Message Statistics of User', function () {
   const NOW = new Date('2002-02-20').getTime(); // an arbitrary date
   const DAY = 24 * 3600 * 1000; // a length of a day in milliseconds
-  const messageStats = [];
   const users = [];
 
-  // create testing users
-  before(function (done) {
-    for (let i = 0; i < 29; ++i) {
-      users.push(
-        new User({
-          firstName: 'firstName',
-          lastName: 'lastName',
-          displayName: 'displayName',
-          email: 'user' + i + '@example.com',
-          username: 'username' + i,
-          password: 'password123',
-          provider: 'local',
-          public: true,
-        }),
-      );
-    }
+  function seedMessageStats(done) {
+    const messageStats = [];
+    let userno = 1;
 
-    // Save the users to database
-    async.each(
-      users,
-      function (user, callback) {
-        user.save(callback);
-      },
-      done,
-    );
-  });
-
-  // create testing messageStats
-  before(function (done) {
-    // every thread is initiated by different user (user 0 is the receiver of all)
-
-    let userno = 1; // the index of user who sent the first message
-    // is incremented for every message, closure
-
-    /**
-     * DRYing generating the messageStats
-     * @param {number} count - amount of messageStats to create
-     * @param {number} count - amount of messageStats which are replied
-     * @param {number} replyTime - timeToFirstReply for messageStats [millisecond]
-     * @param {timeNow} number - minimum timestamp of the firstMessageCreated
-     */
     function generateMessageStats(count, repliedCount, replyTime, timeNow) {
       for (let i = 0; i < count; ++i) {
         const firstCreated = timeNow - replyTime - (i + 1) * DAY;
@@ -99,31 +62,62 @@ describe('Count Message Statistics of User', function () {
             timeToFirstReply: i < repliedCount ? replyTime : null,
           }),
         );
-        // increment the userFrom
         ++userno;
       }
     }
 
-    // 12 messages within last 0 - 30 days (6 of them replied within 2 days)
     generateMessageStats(12, 6, 2 * DAY, NOW);
-    // + 8 msg within last 30 - 60 days (2 replied within 1 day)
     generateMessageStats(8, 2, 1 * DAY, NOW - 30 * DAY);
-    // + 4 msg within last 60 - 90 days (3 replied within 3 days)
     generateMessageStats(4, 3, 3 * DAY, NOW - 60 * DAY);
-    // + 4 msg within last 90 - 120 days (0 replied)
     generateMessageStats(4, 0, 1 * DAY, NOW - 90 * DAY);
 
-    // Save the messageStats to database
     async.each(
       messageStats,
-      function (messageStat, callback) {
+      (messageStat, callback) => {
         messageStat.save(callback);
       },
       done,
     );
+  }
+
+  beforeEach(function (done) {
+    users.length = 0;
+
+    utils
+      .clearDatabase()
+      .then(() => {
+        for (let i = 0; i < 29; ++i) {
+          users.push(
+            new User({
+              firstName: 'firstName',
+              lastName: 'lastName',
+              displayName: 'displayName',
+              email: 'user' + i + '@example.com',
+              username: 'username' + i,
+              password: 'password123',
+              provider: 'local',
+              public: true,
+            }),
+          );
+        }
+
+        async.each(
+          users,
+          (user, callback) => {
+            user.save(callback);
+          },
+          err => {
+            if (err) {
+              return done(err);
+            }
+            seedMessageStats(done);
+          },
+        );
+      })
+      .catch(done);
   });
 
-  after(utils.clearDatabase);
+  afterEach(utils.clearDatabase);
 
   it('[< 10 messages in last 90 days] should use 90 days', function (done) {
     messageStatService.readMessageStatsOfUser(
@@ -699,6 +693,26 @@ describe('MessageStat Creation & Updating Test', function () {
           ],
           done,
         );
+      });
+    });
+
+    context('Empty thread', function () {
+      afterEach(function () {
+        sinon.restore();
+      });
+
+      it('returns an error when no first message exists in the thread', function (done) {
+        sinon.stub(Message, 'findOne').returns({
+          sort: () => ({
+            exec: cb => cb(null, null),
+          }),
+        });
+
+        messageStatService.updateMessageStat(firstReply, function (err) {
+          err.should.be.an.Error();
+          err.message.should.equal('The Thread is Empty');
+          done();
+        });
       });
     });
 

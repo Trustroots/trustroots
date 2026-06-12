@@ -1,32 +1,34 @@
 name: trustroots-devcontainer
 
 services:
-  trustroots:
-    container_name: trustroots-devcontainer
+  dev:
     init: true
-    build:
-      context: .
-      dockerfile: .devcontainer/Dockerfile
-    # Replace the base Compose port bindings with devcontainer-only aliases.
+    shm_size: '2gb'
+    # Devcontainer keeps the editor container available; start the app manually.
+    command: ['sleep', 'infinity']
+    # Replace the base Compose port binding with devcontainer-only aliases.
     # Defaults use container port + 10000 to avoid common host port clashes.
     ports: !override
-      - '127.0.0.1:${TRUSTROOTS_DEV_MAILDEV_HOST_PORT:-11080}:1080'
       - '127.0.0.1:${TRUSTROOTS_DEV_WEBPACK_HOST_PORT:-13000}:3000'
       - '127.0.0.1:${TRUSTROOTS_DEV_SERVER_HOST_PORT:-13001}:3001'
       - '127.0.0.1:${TRUSTROOTS_DEV_LIVERELOAD_HOST_PORT:-45729}:35729'
       - '127.0.0.1:${TRUSTROOTS_DEV_SERVER_INSPECTOR_HOST_PORT:-15858}:5858'
       - '127.0.0.1:${TRUSTROOTS_DEV_WORKER_INSPECTOR_HOST_PORT:-15859}:5859'
     environment:
+      - NODE_ENV=development
       - TRUSTROOTS_NODE_INSPECT_HOST=0.0.0.0
-    volumes:
-      # Keep the editor workspace pointed at the repository's public files.
-      - ./public:/trustroots/public
-      - npm-cache:/root/.npm
+      - DB_1_PORT_27017_TCP_ADDR=mongodb
+      - TRUSTROOTS_SKIP_LOCAL_CONFIG=true
+      - TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true
+      - TRUSTROOTS_FILE_MAGIC_FALLBACK=true
+      - TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test
+      - TRUSTROOTS_CODEX_MONGO_URI=mongodb://mongodb:27017/trustroots-test
+
+  maildev:
+    ports: !override
+      - '127.0.0.1:${TRUSTROOTS_DEV_MAILDEV_HOST_PORT:-11080}:1080'
 
   mongodb:
     container_name: trustroots-devcontainer-db
     ports: !override
       - '127.0.0.1:${TRUSTROOTS_DEV_MONGODB_HOST_PORT:-37017}:27017'
-
-volumes:
-  npm-cache:

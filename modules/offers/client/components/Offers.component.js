@@ -29,8 +29,8 @@ export class Offers extends Component {
     if (profile._id) {
       this.setState(() => ({
         profile,
-        isOwnOffer: authUser && authUser._id && authUser._id === profile._id,
-        isUserPublic: authUser && authUser.public,
+        isOwnOffer: authUser?._id === profile._id,
+        isUserPublic: Boolean(authUser?.public),
       }));
 
       const offers = await getOffers(profile._id, 'host');
@@ -49,15 +49,15 @@ export class Offers extends Component {
         isOwnOffer={isOwnOffer}
         isUserPublic={isUserPublic}
         offer={offer}
-        username={this.props.profile.username}
+        username={this.props.profile?.username}
       />
     );
   }
 }
 
 Offers.propTypes = {
-  authUser: PropTypes.object.isRequired,
-  profile: PropTypes.object.isRequired,
+  authUser: PropTypes.object,
+  profile: PropTypes.object,
 };
 
 export default Offers;

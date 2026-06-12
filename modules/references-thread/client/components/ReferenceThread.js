@@ -54,7 +54,7 @@ export default function ReferenceThread({ userToId }) {
         );
       } else {
         // Unknown error
-        allowCreatingReference(false);
+        setAllowCreatingReference(false);
       }
     } finally {
       setIsLoading(false);

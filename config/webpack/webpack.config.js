@@ -23,6 +23,9 @@ const config = require('../config');
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isProduction = process.env.NODE_ENV === 'production';
+const devServerPort = Number(process.env.PORT) || 3000;
+const devServerProxyTarget =
+  process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
 
 const styleLoaders = [
   isProduction
@@ -58,12 +61,12 @@ module.exports = webpackMerge.merge(shims, {
   devServer: {
     index: '',
     host: config.host,
-    port: 3000,
+    port: devServerPort,
     contentBase: false,
     publicPath: '/assets/',
     proxy: {
       context: () => true,
-      target: 'http://localhost:3001',
+      target: devServerProxyTarget,
     },
     // @pmmmwh/react-refresh-webpack-plugin is setting up an overlay too
     // which seems a bit cheeky for a plugin to do, but we don't want two!
@@ -83,7 +86,9 @@ module.exports = webpackMerge.merge(shims, {
     rules: [
       {
         test: /\.js$/,
-        exclude: /node_modules/,
+        // Transpile our own code, plus a few deps that ship modern syntax
+        // (e.g. optional chaining) which webpack 4's parser can't handle.
+        exclude: /node_modules\/(?!(nostr-tools|@noble|@scure)\/)/,
         use: [
           {
             loader: 'babel-loader',
@@ -148,7 +153,7 @@ module.exports = webpackMerge.merge(shims, {
     ],
   },
   plugins: compact([
-    new ESLintPlugin(),
+    !process.env.TRUSTROOTS_WEBPACK_SKIP_ESLINT && new ESLintPlugin(),
     config.bundleAnalyzer.enabled &&
       new BundleAnalyzerPlugin(config.bundleAnalyzer.options),
     isProduction &&

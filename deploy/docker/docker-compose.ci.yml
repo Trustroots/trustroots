@@ -1,0 +1,14 @@
+services:
+  mongodb:
+    volumes:
+      - type: tmpfs
+        target: /data/db
+
+  dev:
+    image: trustroots-dev:ci
+    shm_size: '2gb'
+    environment:
+      HOME: /home/app/trustroots/tmp/ci-home
+      npm_config_cache: /home/app/trustroots/tmp/npm-cache
+      PLAYWRIGHT_BROWSERS_PATH: /home/app/ms-playwright
+      XDG_CACHE_HOME: /home/app/trustroots/tmp/ci-cache

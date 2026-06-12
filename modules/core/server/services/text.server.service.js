@@ -23,7 +23,7 @@ exports.sanitizeOptions = {
     'em',
     'strong',
     'u',
-    // 'a',
+    'a',
     'li',
     'ul',
     'blockquote',
@@ -120,7 +120,7 @@ exports.html = function (content) {
     email: true,
 
     // Auto-link URLs
-    urls: false,
+    urls: true,
 
     // Auto-link phone numbers
     phone: true,

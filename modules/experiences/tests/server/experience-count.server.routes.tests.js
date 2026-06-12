@@ -58,18 +58,37 @@ describe('Read count of experiences received by user', () => {
     [5, 0],
   ];
 
-  before(async () => {
-    users = await utils.saveUsers(_users);
+  const credentialsPublic = {
+    username: _usersPublic[0].username,
+    password: _usersPublic[0].password,
+  };
+  const credentialsPrivate = {
+    username: _usersPrivate[0].username,
+    password: _usersPrivate[0].password,
+  };
+
+  beforeEach(async () => {
+    users = await utils.saveUsers(
+      _users.map(user => ({
+        ...user,
+        username: user.username,
+        password: user.password,
+      })),
+    );
 
     const _experiences = utils.generateExperiences(users, experienceData);
     await utils.saveExperiences(_experiences);
   });
 
-  after(utils.clearDatabase);
+  afterEach(utils.clearDatabase);
 
   context('logged in as public user', () => {
-    beforeEach(utils.signIn.bind(this, _usersPublic[0], agent));
-    afterEach(utils.signOut.bind(this, agent));
+    beforeEach(async () => {
+      await utils.signIn(credentialsPublic, agent);
+    });
+    afterEach(async () => {
+      await utils.signOut(agent);
+    });
 
     it('respond with all public experiences to userTo', async () => {
       const { body } = await agent
@@ -106,8 +125,12 @@ describe('Read count of experiences received by user', () => {
   });
 
   context('logged in as non-public user', () => {
-    beforeEach(utils.signIn.bind(this, _usersPrivate[0], agent));
-    afterEach(utils.signOut.bind(this, agent));
+    beforeEach(async () => {
+      await utils.signIn(credentialsPrivate, agent);
+    });
+    afterEach(async () => {
+      await utils.signOut(agent);
+    });
 
     it('403', async () => {
       await agent

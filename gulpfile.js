@@ -144,43 +144,62 @@ function mocha(done) {
   // Open mongoose connections
   const mongooseService = require('./config/lib/mongoose');
   const agenda = require('./config/lib/agenda');
+  const configuredTestFiles = process.env.SERVER_TEST_FILES
+    ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
+    : [];
   const testSuites =
-    changedTestFiles.length > 0
+    configuredTestFiles.length > 0
+      ? configuredTestFiles
+      : changedTestFiles.length > 0
       ? changedTestFiles
-      : 'modules/*/tests/server/**/*.js';
+      : [
+          'modules/*/tests/server/**/*.js',
+          // firebase-admin's dependency chain breaks on Node 22+
+          '!modules/core/tests/server/worker.tests.js',
+        ];
   let error;
 
   // Connect mongoose
   mongooseService.connect(function (db) {
     // Clean out test database to have clean base
     mongooseService.dropDatabase(db, function () {
-      mongooseService.loadModels();
+      mongooseService.loadModels(function () {
+        const modelNames = require('mongoose').connection.modelNames();
 
-      // Run the tests
-      gulp
-        .src(testSuites)
-        .pipe(
-          plugins.mocha({
-            reporter: 'spec',
-            timeout: 10000,
-          }),
-        )
-        .on('error', function (err) {
-          // If an error occurs, save it
-          error = err;
-          console.error(err);
-        })
-        .on('end', function () {
-          // When the tests are done, disconnect agenda/mongoose
-          // and pass the error state back to gulp
-          // @TODO: https://github.com/Trustroots/trustroots/issues/438
-          // @link https://github.com/agenda/agenda/pull/450
-          agenda._mdb.close(function () {
-            mongooseService.disconnect(function () {
-              done(error);
-            });
+        mongooseService
+          .ensureIndexes(modelNames)
+          .then(function () {
+            // Run the tests
+            gulp
+              .src(testSuites)
+              .pipe(
+                plugins.mocha({
+                  reporter: 'spec',
+                  timeout: 10000,
+                }),
+              )
+              .on('error', function (err) {
+                // If an error occurs, save it
+                error = err;
+                console.error(err);
+              })
+              .on('end', function () {
+                // When the tests are done, disconnect agenda/mongoose
+                // and pass the error state back to gulp
+                // @TODO: https://github.com/Trustroots/trustroots/issues/438
+                // @link https://github.com/agenda/agenda/pull/450
+                agenda._mdb.close(function () {
+                  mongooseService.disconnect(function () {
+                    done(error);
+                  });
+                });
+              });
+          })
+          .catch(function (err) {
+            console.error(err);
+            done(err);
           });
-        });
+      });
     });
   });
 }

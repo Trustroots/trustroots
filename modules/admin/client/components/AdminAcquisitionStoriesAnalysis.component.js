@@ -16,9 +16,13 @@ export default function AdminAcquisitionStoriesAnalysis() {
   const [analysis, setAnalysis] = useState(false);
   const [showAll, setShowAll] = useState(false);
 
-  useEffect(async () => {
-    const data = await getAcquisitionStoriesAnalysis();
-    setAnalysis(data);
+  useEffect(() => {
+    async function loadAcquisitionStoriesAnalysis() {
+      const data = await getAcquisitionStoriesAnalysis();
+      setAnalysis(data);
+    }
+
+    loadAcquisitionStoriesAnalysis();
   }, []);
 
   return (
@@ -48,17 +52,19 @@ export default function AdminAcquisitionStoriesAnalysis() {
                   <th>Percentage</th>
                 </tr>
               </thead>
-              {analysis.table.map(
-                ({ category, observed, percentage }, i) =>
-                  (observed > 2 || showAll) && (
-                    <tr key={category}>
-                      <td>{i + 1}</td>
-                      <td>{category}</td>
-                      <td>{observed}</td>
-                      <td>{percentage}</td>
-                    </tr>
-                  ),
-              )}
+              <tbody>
+                {analysis.table.map(
+                  ({ category, observed, percentage }, i) =>
+                    (observed > 2 || showAll) && (
+                      <tr key={category}>
+                        <td>{i + 1}</td>
+                        <td>{category}</td>
+                        <td>{observed}</td>
+                        <td>{percentage}</td>
+                      </tr>
+                    ),
+                )}
+              </tbody>
             </Table>
             {!showAll && (
               <button

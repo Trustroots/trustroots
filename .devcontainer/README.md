@@ -1,21 +1,25 @@
 # Dev Container
 
-This setup uses the existing development Docker configuration:
+Linux development and test environment for Trustroots. It uses the shared
+development Compose stack from [`deploy/docker`](../deploy/docker/README.md)
+and overlays only the devcontainer-specific command, environment, and port
+aliases.
 
-- `../docker-compose.yml` provides the `trustroots` and `mongodb` services.
-- `.devcontainer/Dockerfile` provides the Node 16 development image, native build dependencies, and the MongoDB shell for app-container debugging.
-- `../Dockerfile` is intentionally not used by the devcontainer so dev-only tooling does not affect the root image.
-- `../production.Dockerfile` is intentionally not used because it builds the Passenger/nginx production image.
+Open the repository with **Dev Containers: Reopen in Container**. The container
+uses the same `dev` service and image as local Docker development, then runs
+`npm run check-environment`, which creates `config/env/local.js` and upload
+directories when needed.
 
-Open the repository with **Dev Containers: Reopen in Container**. The container installs dependencies with `npm ci` and runs the existing environment checks, which create `config/env/local.js` and upload directories when needed.
-
-The app is not started automatically by the devcontainer so the editor container stays available even if the app crashes. Start it from the integrated terminal with:
+The app is not started automatically. Start it from the integrated terminal:
 
 ```sh
 npm start
 ```
 
-The devcontainer publishes the common development ports from `.devcontainer/docker-compose.yml` using localhost-only aliases so they do not clash with other host apps:
+## Port aliases
+
+Host ports default to container port + 10000 to avoid clashes with other local
+apps. Set `TRUSTROOTS_DEV_*_HOST_PORT` before rebuilding to customize.
 
 | Service               | Container port | Default host port |
 | --------------------- | -------------: | ----------------: |
@@ -27,10 +31,30 @@ The devcontainer publishes the common development ports from `.devcontainer/dock
 | Node server inspector |         `5858` |           `15858` |
 | Node worker inspector |         `5859` |           `15859` |
 
-Set the matching `TRUSTROOTS_DEV_*_HOST_PORT` environment variable before rebuilding the devcontainer if you need different host-side aliases.
+MongoDB is available inside the app container at `mongodb:27017`.
 
-Inside the app container, connect to the development database with:
+## Running tests
+
+Run tests directly in the devcontainer terminal (no nested Docker):
 
 ```sh
-mongo mongodb://mongodb:27017/trustroots-dev
+# Full suite with coverage checks
+npm run test:all
+
+# Individual suites
+npm run test:coverage:client
+npm run test:coverage:server
+npm run coverage:check -- --scope=client
+npm run coverage:check -- --scope=server
+npm run test:e2e
+npm run coverage:report
 ```
+
+For CI-parity E2E (prebuilt webpack, 2 workers):
+
+```sh
+CI=true npm run test:e2e
+```
+
+Headed Playwright (`npm run test:e2e:headed`) works inside the devcontainer when
+a display is forwarded.

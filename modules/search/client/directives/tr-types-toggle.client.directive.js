@@ -99,7 +99,7 @@ function trTypesToggleDirective() {
         if (newTypes && newTypes.length) {
           // Loop trough new values and set toggles on for requested types
           angular.forEach(newTypes, function (type) {
-            vm.toggles[type.id] = true;
+            vm.toggles[angular.isObject(type) ? type.id : type] = true;
           });
         }
       }

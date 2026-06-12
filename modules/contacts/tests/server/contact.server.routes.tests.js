@@ -5,6 +5,7 @@ const express = require('../../../../config/lib/express');
 const agenda = require('../../../../config/lib/agenda');
 const testutils = require('../../../../testutils/server/server.testutil');
 const utils = require('../../../../testutils/server/data.server.testutil');
+const errorService = require('../../../core/server/services/error.server.service');
 
 const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');
@@ -566,7 +567,7 @@ describe('Contact CRUD tests', function () {
             if (contactAddErr) return done(contactAddErr);
 
             contactAddRes.body.message.should.equal(
-              'Snap! Something went wrong. If this keeps happening, please contact us.',
+              errorService.getErrorMessageByKey('default'),
             );
 
             // No contact should have been created

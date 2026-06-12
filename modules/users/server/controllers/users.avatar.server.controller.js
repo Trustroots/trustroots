@@ -11,6 +11,7 @@ const fileUpload = require('../../../core/server/services/file-upload.service');
 const errorService = require('../../../core/server/services/error.server.service');
 
 const User = mongoose.model('User');
+const avatarSizes = [2048, 1024, 512, 256, 128, 64, 32];
 
 // Load either ImageMagick or GraphicsMagick as an image processor
 // Defaults to GraphicsMagick
@@ -69,6 +70,20 @@ const avatarUpload = (req, res) => {
 
       // Make the thumbnails
       function (done) {
+        if (process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK === 'true') {
+          return async.each(
+            avatarSizes,
+            function (thumbSize, callback) {
+              fs.copyFile(
+                req.file.path,
+                uploadDir + '/' + thumbSize + '.jpg',
+                callback,
+              );
+            },
+            done,
+          );
+        }
+
         let asyncQueueErrorHappened;
 
         // Create a queue worker
@@ -129,7 +144,7 @@ const avatarUpload = (req, res) => {
         }, 3); // How many thumbnails to process simultaneously?
 
         // Start processing these sizes
-        q.push([2048, 1024, 512, 256, 128, 64, 32]);
+        q.push(avatarSizes);
 
         // Assign a final callback to work queue
         // Done with all the thumbnail sizes, continue...

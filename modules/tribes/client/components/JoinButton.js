@@ -79,10 +79,6 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
    * - Leave: show confirmation modal
    */
   async function handleToggleMembership() {
-    if (isUpdating) {
-      return;
-    }
-
     if (isMember) {
       setIsLeaving(true);
     } else {

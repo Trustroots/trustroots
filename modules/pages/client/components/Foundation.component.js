@@ -36,36 +36,38 @@ export default function Foundation({ user }) {
               United Kingdom in March 2015.`)}
             </p>
 
-            <ul className="list-inline">
-              <li>
-                <a href="https://beta.companieshouse.gov.uk/company/09489825">
-                  {t('Details')}
-                </a>
-              </li>
-              <li>
-                <a href="https://ideas.trustroots.org/wordpress/wp-content/uploads/2015/03/Trustroots-Articles-2015.pdf">
-                  {t('Foundation’s Articles')}
-                </a>{' '}
-                <small className="text-muted">(pdf)</small>
-              </li>
-              <li>
-                <a href="/faq/foundation">{t('FAQ')}</a>
-              </li>
-              <li>
-                <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
-                  {t('Announcement')}
-                </a>{' '}
-                <small className="text-muted">
-                  ({t('{{date, LL}}', { date: new Date(2015, 2, 10) })})
-                </small>
-              </li>
-              <li>
-                <a href="/support">{t('Contact us')}</a>
-              </li>
-              <li>
-                <a href="/volunteering">{t('Volunteering')}</a>
-              </li>
-            </ul>
+            <div>
+              <ul className="list-inline">
+                <li>
+                  <a href="https://beta.companieshouse.gov.uk/company/09489825">
+                    {t('Details')}
+                  </a>
+                </li>
+                <li>
+                  <a href="https://ideas.trustroots.org/wordpress/wp-content/uploads/2015/03/Trustroots-Articles-2015.pdf">
+                    {t('Foundation’s Articles')}
+                  </a>{' '}
+                  <small className="text-muted">(pdf)</small>
+                </li>
+                <li>
+                  <a href="/faq/foundation">{t('FAQ')}</a>
+                </li>
+                <li>
+                  <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
+                    {t('Announcement')}
+                  </a>{' '}
+                  <small className="text-muted">
+                    ({t('{{date, LL}}', { date: new Date(2015, 2, 10) })})
+                  </small>
+                </li>
+                <li>
+                  <a href="/support">{t('Contact us')}</a>
+                </li>
+                <li>
+                  <a href="/volunteering">{t('Volunteering')}</a>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
         {/* /.row */}
@@ -126,18 +128,14 @@ export default function Foundation({ user }) {
                     <a href="https://automattic.com/">Automattic</a>.
                   </Trans>
                 </p>
-                <p>
-                  <ul className="list-inline">
-                    <li>
-                      <a href="https://www.mikaelkorpela.fi/">
-                        mikaelkorpela.fi
-                      </a>
-                    </li>
-                    <li>
-                      <a href="/profile/mikael">{t('Trustroots profile')}</a>
-                    </li>
-                  </ul>
-                </p>
+                <ul className="list-inline">
+                  <li>
+                    <a href="https://www.mikaelkorpela.fi/">mikaelkorpela.fi</a>
+                  </li>
+                  <li>
+                    <a href="/profile/mikael">{t('Trustroots profile')}</a>
+                  </li>
+                </ul>
               </div>
             </div>
             <br />
@@ -159,20 +157,18 @@ export default function Foundation({ user }) {
                     'Coming from a multinational business background, Natalia is an enthusiastic of the share and gift economy. Veteran globetrotter and volunteer for different NGOs from hospex as Couchsurfing to nonprofit lobbying orgs.',
                   )}
                 </p>
-                <p>
-                  <ul className="list-inline">
-                    <li>
-                      <a href="https://www.linkedin.com/in/natalia-s%C3%A1enz-alban%C3%A9s-38469227/">
-                        LinkedIn
-                      </a>
-                    </li>
-                    <li>
-                      <a href="/profile/natalia_sevilla">
-                        {t('Trustroots profile')}
-                      </a>
-                    </li>
-                  </ul>
-                </p>
+                <ul className="list-inline">
+                  <li>
+                    <a href="https://www.linkedin.com/in/natalia-s%C3%A1enz-alban%C3%A9s-38469227/">
+                      LinkedIn
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/profile/natalia_sevilla">
+                      {t('Trustroots profile')}
+                    </a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -212,18 +208,16 @@ export default function Foundation({ user }) {
                     'Long term nomad and technology expert. Volunteered for BeWelcome BoD in 2013 and for CouchSurfing in 2007.',
                   )}
                 </p>
-                <p>
-                  <ul className="list-inline">
-                    <li>
-                      <a href="https://www.callum-macdonald.com/">
-                        callum-macdonald.com
-                      </a>
-                    </li>
-                    <li>
-                      <a href="/profile/chmac">{t('Trustroots profile')}</a>
-                    </li>
-                  </ul>
-                </p>
+                <ul className="list-inline">
+                  <li>
+                    <a href="https://www.callum-macdonald.com/">
+                      callum-macdonald.com
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/profile/chmac">{t('Trustroots profile')}</a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -243,18 +237,16 @@ export default function Foundation({ user }) {
                     'Love to travel, passionate and enthusiastic about share economy and hospitality exchange as human development tools. Volunteered CouchSurfing from 2008 to 2010 as well as other NGOs.',
                   )}
                 </p>
-                <p>
-                  <ul className="list-inline">
-                    <li>
-                      <a href="https://www.linkedin.com/in/carlosmcardenas/">
-                        LinkedIn
-                      </a>
-                    </li>
-                    <li>
-                      <a href="/profile/carlos">{t('Trustroots profile')}</a>
-                    </li>
-                  </ul>
-                </p>
+                <ul className="list-inline">
+                  <li>
+                    <a href="https://www.linkedin.com/in/carlosmcardenas/">
+                      LinkedIn
+                    </a>
+                  </li>
+                  <li>
+                    <a href="/profile/carlos">{t('Trustroots profile')}</a>
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
@@ -286,7 +278,7 @@ export default function Foundation({ user }) {
                     <a href="https://moneyless.org/">moneyless.org</a>.
                   </Trans>
                 </p>
-                <p>
+                <div className="text-color-links">
                   <ul className="list-inline">
                     <li>
                       <a href="https://guaka.org/">guaka.org</a>
@@ -295,7 +287,7 @@ export default function Foundation({ user }) {
                       <a href="/profile/guaka">{t('Trustroots profile')}</a>
                     </li>
                   </ul>
-                </p>
+                </div>
               </div>
             </div>
           </div>
