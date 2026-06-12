@@ -2,6 +2,8 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
+import ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
+
 jest.mock('@/modules/search/client/services/nostr.client.service', () => {
   return {
     __esModule: true,
@@ -33,8 +35,6 @@ jest.mock(
   },
 );
 
-import ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
-
 describe('ProfileNostrBadge', () => {
   it('renders badge with "Nostroots" text when user has notes', async () => {
     render(<ProfileNostrBadge npubHex="abc123def456" />);
@@ -54,6 +54,6 @@ describe('ProfileNostrBadge', () => {
 
   it('renders nothing when npubHex is not provided', () => {
     const { container } = render(<ProfileNostrBadge npubHex={null} />);
-    expect(container.innerHTML).toBe('');
+    expect(container).toBeEmptyDOMElement();
   });
 });
