@@ -17,15 +17,25 @@ RUN apt-get -qq update && apt-get -q install -y \
   libnspr4 \
   libatk1.0-0 \
   libatk-bridge2.0-0 \
+  ffmpeg \
+  libcairo-gobject2 \
+  libdbus-1-3 \
+  libdbus-glib-1-2 \
   libdrm2 \
   libatspi2.0-0 \
   libxcomposite1 \
+  libxcursor1 \
   libxdamage1 \
   libxfixes3 \
+  libxi6 \
   libxrandr2 \
+  libxrender1 \
   libgbm1 \
   libxkbcommon0 \
+  libxcb-shm0 \
   libasound2 \
+  libxt6 \
+  libxtst6 \
   libcairo2-dev \
   libpango1.0-dev \
   libpng-dev \
@@ -50,5 +60,5 @@ RUN --mount=type=cache,target=/root/.npm \
 
 RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
   && chmod 777 "$PLAYWRIGHT_BROWSERS_PATH" \
-  && npx playwright install chromium \
+  && npx playwright install chromium firefox \
   && chmod -R 777 "$PLAYWRIGHT_BROWSERS_PATH"

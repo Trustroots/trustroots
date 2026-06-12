@@ -12,8 +12,8 @@ function sanitizeFileName(value) {
 }
 
 const test = base.extend({
-  page: async ({ page }, use, testInfo) => {
-    if (!collectCoverage) {
+  page: async ({ browserName, page }, use, testInfo) => {
+    if (!collectCoverage || browserName !== 'chromium') {
       await use(page);
       return;
     }
