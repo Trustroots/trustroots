@@ -1,3 +1,5 @@
+/* eslint-disable angular/log */
+
 import { Relay } from 'nostr-tools/relay';
 
 // Nostroots validation server pubkey — only kind 30398 events signed by this
