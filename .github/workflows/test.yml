@@ -2,10 +2,10 @@ name: Tests
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
     types: [opened, synchronize, reopened, labeled]
   push:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
     inputs:
       run_client:
@@ -239,7 +239,7 @@ jobs:
           path: test-results
 
   pages:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [client, server]
     runs-on: ubuntu-latest
     permissions:
