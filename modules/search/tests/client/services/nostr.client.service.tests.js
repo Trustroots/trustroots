@@ -63,6 +63,26 @@ describe('NostrService', () => {
     });
   });
 
+  describe('unsubscribeMapNotes()', () => {
+    it('closes only the mapNotes subscription', async () => {
+      const mapSub = { close: jest.fn() };
+      const otherSub = { close: jest.fn() };
+      service.subscriptions.set('mapNotes', mapSub);
+      service.subscriptions.set('other', otherSub);
+
+      service.unsubscribeMapNotes();
+
+      expect(mapSub.close).toHaveBeenCalled();
+      expect(otherSub.close).not.toHaveBeenCalled();
+      expect(service.subscriptions.has('mapNotes')).toBe(false);
+      expect(service.subscriptions.get('other')).toBe(otherSub);
+    });
+
+    it('handles missing mapNotes subscription', () => {
+      expect(() => service.unsubscribeMapNotes()).not.toThrow();
+    });
+  });
+
   describe('disconnect()', () => {
     it('closes all subscriptions and the relay', async () => {
       await service.connect();
@@ -168,13 +188,18 @@ describe('NostrService', () => {
         { id: '3', created_at: 200 },
       ];
 
+      let sub;
       relay.subscribe.mockImplementation((filters, callbacks) => {
+        sub = { close: jest.fn() };
         events.forEach(e => callbacks.onevent(e));
         callbacks.oneose();
-        return { close: jest.fn() };
+        return sub;
       });
 
       const result = await service.fetchUserNotes('aabbcc', 3);
+      await Promise.resolve();
+
+      expect(sub.close).toHaveBeenCalled();
 
       expect(relay.subscribe).toHaveBeenCalledWith(
         [{ kinds: [30397], authors: ['aabbcc'], limit: 3 }],
@@ -225,7 +250,9 @@ describe('NostrService', () => {
       await service.connect();
       const relay = Relay._lastInstance;
 
+      let sub;
       relay.subscribe.mockImplementation((filters, callbacks) => {
+        sub = { close: jest.fn() };
         callbacks.onevent({
           tags: [
             ['l', 'alice', 'org.trustroots:username'],
@@ -233,11 +260,13 @@ describe('NostrService', () => {
           ],
         });
         callbacks.oneose();
-        return { close: jest.fn() };
+        return sub;
       });
 
       const username = await service.resolveNpubToUsername('pubkey123');
+      await Promise.resolve();
       expect(username).toBe('alice');
+      expect(sub.close).toHaveBeenCalled();
     });
 
     it('returns null when no username tag found', async () => {

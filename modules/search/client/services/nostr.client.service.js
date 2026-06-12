@@ -2,6 +2,8 @@
 
 import { Relay } from 'nostr-tools/relay';
 
+export const NOSTR_RELAY_URL = 'wss://relay.trustroots.org';
+
 // Nostroots validation server pubkey — only kind 30398 events signed by this
 // key are considered verified map notes.
 const NOSTROOTS_VALIDATION_PUBKEY =
@@ -9,7 +11,7 @@ const NOSTROOTS_VALIDATION_PUBKEY =
 
 /**
  * NostrService — manages WebSocket relay connection and Nostr subscriptions.
- * Framework-agnostic; consumed by React components in later tasks.
+ * Framework-agnostic; consumed by React components.
  */
 export default class NostrService {
   /**
@@ -30,12 +32,8 @@ export default class NostrService {
     if (this.relay) {
       return this.relay;
     }
-    // eslint-disable-next-line no-console
-    console.log('[Nostr] Connecting to', this.relayUrl);
     const relay = new Relay(this.relayUrl);
     await relay.connect();
-    // eslint-disable-next-line no-console
-    console.log('[Nostr] Connected');
     this.relay = relay;
     return this.relay;
   }
@@ -56,6 +54,18 @@ export default class NostrService {
   }
 
   /**
+   * Close only the map notes subscription, leaving the relay open for other
+   * consumers (profile badge, username resolution).
+   */
+  unsubscribeMapNotes() {
+    const existing = this.subscriptions.get('mapNotes');
+    if (existing) {
+      existing.close();
+      this.subscriptions.delete('mapNotes');
+    }
+  }
+
+  /**
    * Subscribe to all verified map notes (kind 30398) from the Nostroots
    * validation server. No geographic filtering — fetches everything.
    * Closes any existing 'mapNotes' subscription before creating a new one.
@@ -66,16 +76,8 @@ export default class NostrService {
   async subscribeMapNotes(onEvent) {
     const relay = await this.connect();
 
-    // Close previous mapNotes subscription if any
-    const existing = this.subscriptions.get('mapNotes');
-    if (existing) {
-      existing.close();
-    }
+    this.unsubscribeMapNotes();
 
-    // eslint-disable-next-line no-console
-    console.log('[Nostr] Subscribing to all verified map notes');
-
-    let eventCount = 0;
     const sub = relay.subscribe(
       [
         {
@@ -84,29 +86,8 @@ export default class NostrService {
         },
       ],
       {
-        onevent: event => {
-          eventCount++;
-          const plusCodeTag = event.tags.find(
-            t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
-          );
-          // eslint-disable-next-line no-console
-          console.log(
-            '[Nostr] Map note received (#%d): kind=%d, pluscode=%s, content=%s, tags=%o',
-            eventCount,
-            event.kind,
-            plusCodeTag ? plusCodeTag[1] : 'NONE',
-            event.content?.substring(0, 80),
-            event.tags,
-          );
-          onEvent(event);
-        },
-        oneose: () => {
-          // eslint-disable-next-line no-console
-          console.log(
-            '[Nostr] Map notes subscription EOSE — %d events received',
-            eventCount,
-          );
-        },
+        onevent: onEvent,
+        oneose() {},
       },
     );
 
@@ -123,13 +104,11 @@ export default class NostrService {
    * @returns {Promise<object[]>} events sorted by created_at desc
    */
   async fetchUserNotes(pubkeyHex, limit = 3) {
-    // eslint-disable-next-line no-console
-    console.log('[Nostr] Fetching user notes for', pubkeyHex);
     const relay = await this.connect();
     const events = [];
 
     return new Promise(resolve => {
-      relay.subscribe(
+      const sub = relay.subscribe(
         [
           {
             kinds: [30397],
@@ -142,10 +121,9 @@ export default class NostrService {
             events.push(event);
           },
           oneose() {
-            // eslint-disable-next-line no-console
-            console.log('[Nostr] User notes EOSE — %d events', events.length);
             events.sort((a, b) => b.created_at - a.created_at);
             resolve(events);
+            queueMicrotask(() => sub.close());
           },
         },
       );
@@ -170,7 +148,7 @@ export default class NostrService {
     return new Promise(resolve => {
       let username = null;
 
-      relay.subscribe(
+      const sub = relay.subscribe(
         [
           {
             kinds: [10390],
@@ -192,9 +170,12 @@ export default class NostrService {
           oneose: () => {
             this.usernameCache.set(pubkeyHex, username);
             resolve(username);
+            queueMicrotask(() => sub.close());
           },
         },
       );
     });
   }
 }
+
+export const nostrService = new NostrService(NOSTR_RELAY_URL);

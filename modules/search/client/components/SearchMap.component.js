@@ -31,7 +31,7 @@ import {
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
-import NostrService from '../services/nostr.client.service';
+import { nostrService } from '../services/nostr.client.service';
 import {
   SOURCE_COMMUNITY_NOTES,
   communityNotesLayer,
@@ -42,8 +42,6 @@ import { OpenLocationCode } from 'open-location-code';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const olc = new OpenLocationCode();
-
-const nostrService = new NostrService('wss://relay.trustroots.org');
 
 function getPlusCodeFromRawEvent(event) {
   const tag = event.tags.find(
@@ -78,16 +76,12 @@ function reconstructEvent(properties) {
 }
 
 function nostrEventsToGeoJSON(events) {
-  // eslint-disable-next-line no-console
-  console.log('[Nostr] Converting %d events to GeoJSON', events.length);
   const features = events
     .map(event => {
       const plusCodeTag = event.tags.find(
         t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
       );
       if (!plusCodeTag) {
-        // eslint-disable-next-line no-console
-        console.warn('[Nostr] Event %s has no plus code tag', event.id);
         return null;
       }
       const code = plusCodeTag[1];
@@ -95,18 +89,8 @@ function nostrEventsToGeoJSON(events) {
       try {
         area = olc.decode(code);
       } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn('[Nostr] Failed to decode plus code %s:', code, e);
         return null;
       }
-      // eslint-disable-next-line no-console
-      console.log(
-        '[Nostr] Event %s: pluscode=%s → [%f, %f]',
-        event.id?.substring(0, 8),
-        code,
-        area.longitudeCenter,
-        area.latitudeCenter,
-      );
       return {
         type: 'Feature',
         id: event.id,
@@ -126,8 +110,6 @@ function nostrEventsToGeoJSON(events) {
       };
     })
     .filter(Boolean);
-  // eslint-disable-next-line no-console
-  console.log('[Nostr] GeoJSON: %d features created', features.length);
   return { type: 'FeatureCollection', features };
 }
 
@@ -556,7 +538,7 @@ export default function SearchMap({
     });
 
     return () => {
-      nostrService.disconnect();
+      nostrService.unsubscribeMapNotes();
       clearTimeout(communityNotesTimerRef.current);
     };
   }, [communityNotesEnabled]);

@@ -2,31 +2,28 @@ import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
-import ProfileNostrBadge from '@/modules/users/client/components/ProfileNostrBadge.component';
-
-jest.mock('@/modules/search/client/services/nostr.client.service', () => {
-  return {
-    __esModule: true,
-    default: jest.fn().mockImplementation(() => ({
-      fetchUserNotes: jest.fn().mockResolvedValue([
-        {
-          id: 'note1',
-          content: 'Great spot near Prague!',
-          created_at: Math.floor(Date.now() / 1000) - 86400,
-          tags: [],
-        },
-        {
-          id: 'note2',
-          content: 'Free camping by the river',
-          created_at: Math.floor(Date.now() / 1000) - 172800,
-          tags: [],
-        },
-      ]),
-      connect: jest.fn().mockResolvedValue(undefined),
-      disconnect: jest.fn(),
-    })),
-  };
-});
+jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
+  __esModule: true,
+  default: class NostrService {},
+  nostrService: {
+    fetchUserNotes: jest.fn().mockResolvedValue([
+      {
+        id: 'note1',
+        content: 'Great spot near Prague!',
+        created_at: Math.floor(Date.now() / 1000) - 86400,
+        tags: [],
+      },
+      {
+        id: 'note2',
+        content: 'Free camping by the river',
+        created_at: Math.floor(Date.now() / 1000) - 172800,
+        tags: [],
+      },
+    ]),
+    connect: jest.fn().mockResolvedValue(undefined),
+    disconnect: jest.fn(),
+  },
+}));
 
 jest.mock(
   '@/modules/core/client/components/NostrootsActionModal.component',
@@ -34,6 +31,9 @@ jest.mock(
     return { __esModule: true, default: () => null };
   },
 );
+
+const ProfileNostrBadge =
+  require('@/modules/users/client/components/ProfileNostrBadge.component').default;
 
 describe('ProfileNostrBadge', () => {
   it('renders badge with "Nostroots" text when user has notes', async () => {

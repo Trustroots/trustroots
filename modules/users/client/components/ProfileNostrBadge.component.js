@@ -1,28 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import NostrService from '@/modules/search/client/services/nostr.client.service';
+import { nostrService } from '@/modules/search/client/services/nostr.client.service';
+import { timeAgo } from '@/modules/search/client/utils/time-ago';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
-
-const nostrService = new NostrService('wss://relay.trustroots.org');
-
-/**
- * Convert a Unix timestamp to a relative time string.
- */
-function timeAgo(timestamp) {
-  const now = Math.floor(Date.now() / 1000);
-  const diff = now - timestamp;
-
-  if (diff < 3600) {
-    return `${Math.max(1, Math.floor(diff / 60))}m ago`;
-  }
-  if (diff < 86400) {
-    return `${Math.floor(diff / 3600)}h ago`;
-  }
-  if (diff < 86400 * 30) {
-    return `${Math.floor(diff / 86400)}d ago`;
-  }
-  return new Date(timestamp * 1000).toLocaleDateString();
-}
 
 export default function ProfileNostrBadge({ npubHex }) {
   const [notes, setNotes] = useState([]);
