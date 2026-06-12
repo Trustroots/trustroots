@@ -19,8 +19,11 @@ export default function ProfileViewBasics({ profile }) {
   const getBirthdate = birthdate =>
     t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
 
+  const getReplyRate = replyRate =>
+    t('Reply rate {{replyRate}}.', { replyRate });
+
   const getReplyTime = replyTime =>
-    t('Replies within {{replyTime, fromNow}}.', { replyTime });
+    t('Replies within {{replyTime}}.', { replyTime });
 
   const getMemberSince = created =>
     t('Member since {{date, ll}}', { date: new Date(created) });
@@ -35,9 +38,15 @@ export default function ProfileViewBasics({ profile }) {
   /*
    * Rendering functions
    */
-  const renderReplyTime = replyTime => (
+  const renderReplyData = (replyRate, replyTime) => (
     <div className="profile-sidebar-section text-muted">
-      <span>{getReplyTime(replyTime)}</span>
+      {replyRate && <span>{getReplyRate(replyRate)}</span>}
+      {replyTime && (
+        <span>
+          {replyRate && <br />}
+          {getReplyTime(replyTime)}
+        </span>
+      )}
     </div>
   );
 
@@ -211,8 +220,9 @@ export default function ProfileViewBasics({ profile }) {
         </div>
       )}
 
-      {/* reply time */}
-      {profile.replyTime && renderReplyTime(profile.replyTime)}
+      {/* reply rate and reply time */}
+      {(profile.replyRate || profile.replyTime) &&
+        renderReplyData(profile.replyRate, profile.replyTime)}
 
       {/* birthdate and gender */}
       {(profile.birthdate || profile.gender) &&
