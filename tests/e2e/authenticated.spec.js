@@ -160,43 +160,77 @@ async function withSeededMemberPage(browser, baseURL, callback) {
 }
 
 async function showCommunityNotesSidebar(page) {
-  await page.waitForFunction(() => {
-    if (!window.angular) return false;
+  await page.waitForFunction(
+    () => {
+      function findSearchScope(rootScope) {
+        const scopes = [rootScope];
 
-    return Array.from(document.querySelectorAll('.search, .search *')).some(
-      element => {
-        const scope = window.angular.element(element).scope();
-        return Boolean(
-          scope &&
-            scope.search &&
-            typeof scope.search.openSidebar === 'function',
-        );
-      },
-    );
-  });
+        while (scopes.length) {
+          const scope = scopes.pop();
+          if (scope.search && typeof scope.search.openSidebar === 'function') {
+            return scope;
+          }
+
+          for (
+            let child = scope.$$childHead;
+            child;
+            child = child.$$nextSibling
+          ) {
+            scopes.push(child);
+          }
+        }
+
+        return null;
+      }
+
+      if (!window.angular) return false;
+
+      const injector = window.angular
+        .element(document.documentElement)
+        .injector();
+      if (!injector) return false;
+
+      return Boolean(findSearchScope(injector.get('$rootScope')));
+    },
+    null,
+    { timeout: 30000 },
+  );
 
   await page.evaluate(
     ({ plusCode, noteText }) => {
-      if (!window.angular) {
-        throw new Error('Search Angular scope unavailable');
+      function findSearchScope(rootScope) {
+        const scopes = [rootScope];
+
+        while (scopes.length) {
+          const scope = scopes.pop();
+          if (scope.search && typeof scope.search.openSidebar === 'function') {
+            return scope;
+          }
+
+          for (
+            let child = scope.$$childHead;
+            child;
+            child = child.$$nextSibling
+          ) {
+            scopes.push(child);
+          }
+        }
+
+        return null;
       }
 
-      const searchElement = Array.from(
-        document.querySelectorAll('.search, .search *'),
-      ).find(element => {
-        const scope = window.angular.element(element).scope();
-        return Boolean(
-          scope &&
-            scope.search &&
-            typeof scope.search.openSidebar === 'function',
-        );
-      });
+      if (!window.angular) return false;
 
-      if (!searchElement) {
+      const injector = window.angular
+        .element(document.documentElement)
+        .injector();
+      if (!injector) throw new Error('Search Angular injector unavailable');
+
+      const scope = findSearchScope(injector.get('$rootScope'));
+      if (!scope) {
         throw new Error('Search controller scope unavailable');
       }
 
-      const scope = window.angular.element(searchElement).scope();
       const now = Math.floor(Date.now() / 1000);
       scope.$apply(() => {
         scope.search.offer = false;
