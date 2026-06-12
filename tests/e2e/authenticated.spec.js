@@ -395,14 +395,22 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveTitle(/Account - Trustroots/);
   });
 
-  test('member can view their own profile', async ({ page }) => {
-    await page.goto(`/profile/${user.username}`);
+  test('member can view their own profile', async ({ browser, baseURL }) => {
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
 
-    await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
-    await expect(page).toHaveTitle(/Profile - Trustroots/);
-    await expect(page.locator('.row.hidden-xs h2.profile-name')).toHaveText(
-      `${user.firstName} ${user.lastName}`,
-    );
+    try {
+      await signInViaApi(page, context.request, user);
+      await page.goto(`/profile/${user.username}`);
+
+      await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
+      await expect(page).toHaveTitle(/Profile - Trustroots/);
+      await expect(page.locator('.row.hidden-xs h2.profile-name')).toHaveText(
+        `${user.firstName} ${user.lastName}`,
+      );
+    } finally {
+      await context.close();
+    }
   });
 
   test('member can view a seeded host profile', async ({
