@@ -35,6 +35,7 @@ exports.getExternalSiteCount = function (site, callback) {
     'facebook',
     'twitter',
     'github',
+    'nostr',
   ];
 
   // Validate site
@@ -66,6 +67,9 @@ exports.getExternalSiteCount = function (site, callback) {
       break;
     case 'github':
       query['additionalProvidersData.github'] = { $exists: true };
+      break;
+    case 'nostr':
+      query.nostrNpub = { $exists: true, $ne: '' };
       break;
   }
 
@@ -346,6 +350,21 @@ exports.getPublicStatistics = function (req, res) {
           }
           req.statistics.connections.push({
             network: 'github',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
+          done();
+        });
+      },
+
+      // External sites - Nostr
+      function (done) {
+        exports.getExternalSiteCount('nostr', function (err, count) {
+          if (err) {
+            return done(err);
+          }
+          req.statistics.connections.push({
+            network: 'nostr',
             count,
             percentage: Math.round((count / req.statistics.total) * 100),
           });
