@@ -156,7 +156,7 @@ exports.remove = function (req, res) {
         message: errorService.getErrorMessage(err),
       });
     } else {
-      res.json(contact);
+      res.status(200).send({ message: 'Contact removed.' });
     }
   });
 };

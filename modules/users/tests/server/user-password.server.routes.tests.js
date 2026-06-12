@@ -317,6 +317,161 @@ describe('User password CRUD tests', function () {
     });
   });
 
+  it('forgot password should re-apply UTM parameters to the reset redirect', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (saveErr) {
+      should.not.exist(saveErr);
+      agent
+        .post('/api/auth/forgot')
+        .send({ username: user.username })
+        .expect(200)
+        .end(function (forgotErr) {
+          if (forgotErr) {
+            return done(forgotErr);
+          }
+
+          User.findOne(
+            { username: user.username.toLowerCase() },
+            function (findErr, userRes) {
+              should.not.exist(findErr);
+
+              agent
+                .get(
+                  '/api/auth/reset/' +
+                    userRes.resetPasswordToken +
+                    '?utm_source=transactional_email&utm_medium=email&utm_campaign=reset',
+                )
+                .expect(302)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+
+                  res.headers.location.should.containEql(
+                    '/password/reset/' + userRes.resetPasswordToken,
+                  );
+                  res.headers.location.should.containEql(
+                    'utm_source=transactional_email',
+                  );
+                  return done();
+                });
+            },
+          );
+        });
+    });
+  });
+
+  it('should be able to reset the password with a valid token and matching passwords', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (saveErr) {
+      should.not.exist(saveErr);
+      agent
+        .post('/api/auth/forgot')
+        .send({ username: user.username })
+        .expect(200)
+        .end(function (forgotErr) {
+          if (forgotErr) {
+            return done(forgotErr);
+          }
+
+          User.findOne(
+            { username: user.username.toLowerCase() },
+            function (findErr, userRes) {
+              should.not.exist(findErr);
+
+              agent
+                .post('/api/auth/reset/' + userRes.resetPasswordToken)
+                .send({
+                  newPassword: '1234567890Aa$',
+                  verifyPassword: '1234567890Aa$',
+                })
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+
+                  res.body.username.should.equal(user.username.toLowerCase());
+
+                  // The reset token should be cleared after a successful reset
+                  User.findOne(
+                    { username: user.username.toLowerCase() },
+                    function (err2, updated) {
+                      should.not.exist(err2);
+                      should.not.exist(updated.resetPasswordToken);
+                      should.not.exist(updated.resetPasswordExpires);
+                      return done();
+                    },
+                  );
+                });
+            },
+          );
+        });
+    });
+  });
+
+  it('should not be able to reset the password if passwords do not match', function (done) {
+    user.roles = ['user'];
+
+    user.save(function (saveErr) {
+      should.not.exist(saveErr);
+      agent
+        .post('/api/auth/forgot')
+        .send({ username: user.username })
+        .expect(200)
+        .end(function (forgotErr) {
+          if (forgotErr) {
+            return done(forgotErr);
+          }
+
+          User.findOne(
+            { username: user.username.toLowerCase() },
+            function (findErr, userRes) {
+              should.not.exist(findErr);
+
+              agent
+                .post('/api/auth/reset/' + userRes.resetPasswordToken)
+                .send({
+                  newPassword: '1234567890Aa$',
+                  verifyPassword: 'something-else-Aa$1',
+                })
+                .expect(400)
+                .end(function (err, res) {
+                  if (err) {
+                    return done(err);
+                  }
+
+                  res.body.message.should.equal('Passwords do not match.');
+                  return done();
+                });
+            },
+          );
+        });
+    });
+  });
+
+  it('should not be able to reset the password with an invalid token', function (done) {
+    agent
+      .post('/api/auth/reset/someInvalidToken1234567890')
+      .send({
+        newPassword: '1234567890Aa$',
+        verifyPassword: '1234567890Aa$',
+      })
+      .expect(400)
+      .end(function (err, res) {
+        if (err) {
+          return done(err);
+        }
+
+        res.body.message.should.equal(
+          'Password reset token is invalid or has expired.',
+        );
+        return done();
+      });
+  });
+
   it('should be able to change password successfully', function (done) {
     agent
       .post('/api/auth/signin')

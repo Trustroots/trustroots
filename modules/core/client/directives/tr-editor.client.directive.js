@@ -58,8 +58,7 @@ function trEditorDirective($parse) {
     // eslint-disable-next-line angular/document-service
     const tempEl = document.createElement('div');
     tempEl.innerHTML = value;
-    const text = tempEl.textContent || '';
-    return text.trim();
+    return tempEl.textContent.trim();
   }
 
   return {
@@ -85,13 +84,15 @@ function trEditorDirective($parse) {
       };
 
       ngModel.$isEmpty = function (value) {
-        if (/[<>]/.test(value)) {
-          return toInnerText(value).length === 0;
-        } else if (value) {
-          return value.length === 0;
-        } else {
+        if (value === null || value === undefined) {
           return true;
         }
+
+        if (/[<>]/.test(value)) {
+          return toInnerText(value).length === 0;
+        }
+
+        return String(value).trim().length === 0;
       };
 
       ngModel.editor.subscribe('editableInput', function (event, editable) {

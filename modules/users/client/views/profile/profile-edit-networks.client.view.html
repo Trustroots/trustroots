@@ -331,7 +331,7 @@
               class="form-control"
               ng-model="profileEditNetworks.user.nostrNpub"
               ng-change="profileEdit.unsavedModifications=true"
-              ng-pattern="/^(|npub.+)$/i"
+              ng-pattern="/^(|npub1[ac-hj-np-z02-9]+)$/i"
               placeholder="npub"
               aria-label="nostr npub"
             />
@@ -341,6 +341,20 @@
             >
               Invalid nostr key. Please provide your npub (public key) starting
               with "npub". Never use your nsec (secret key).
+            </p>
+            <p
+              class="help-block"
+              ng-if="profileEditNetworks.hasNostrNip07Suggestion()"
+            >
+              Your browser Nostr extension suggests
+              <code>{{ profileEditNetworks.nostrNip07SuggestedNpub }}</code>.
+              <button
+                type="button"
+                class="btn btn-default btn-xs"
+                ng-click="profileEditNetworks.applyNostrNip07Suggestion()"
+              >
+                {{ profileEditNetworks.nostrNip07SuggestionButtonText() }}
+              </button>
             </p>
             <!--
             <span

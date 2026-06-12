@@ -1,5 +1,0 @@
----
-# only guaka and mikael have signed the NDA
-ssh_users:
-  - guaka
-  - mikael

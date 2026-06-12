@@ -6,3 +6,6 @@ title: Trustroots Team Guide
 
 Help with the transition from platform to protocol: [notes.trustroots.org](https://notes.trustroots.org).
 
+## Test coverage
+
+See the [latest test coverage report](/coverage/).

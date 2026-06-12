@@ -51,7 +51,8 @@ function ContactConfirmController($stateParams, Authentication, contact) {
       function (errorResponse) {
         vm.isLoading = false;
         vm.error =
-          errorResponse.data.message || 'Something went wrong. Try again.';
+          (errorResponse && errorResponse.data && errorResponse.data.message) ||
+          'Something went wrong. Try again.';
       },
     );
   }

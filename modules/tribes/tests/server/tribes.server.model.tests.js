@@ -21,20 +21,20 @@ let tribe3;
  */
 describe('Tribe Model Unit Tests:', function () {
   before(function () {
-    tribe1 = new Tribe({
+    tribe1 = {
       label: 'Tribe label',
-    });
+    };
     /*
     tribe2 = new Tribe({
       label: 'Tribe label',
     });
     */
-    tribe3 = new Tribe({
+    tribe3 = {
       label: 'Different tribe label',
-    });
+    };
   });
 
-  after(utils.clearDatabase);
+  afterEach(utils.clearDatabase);
 
   describe('Method Save', function () {
     it('should begin with no tribes', function (done) {

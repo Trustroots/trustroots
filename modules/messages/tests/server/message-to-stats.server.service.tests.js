@@ -4,6 +4,7 @@
 const mongoose = require('mongoose');
 const _ = require('lodash');
 const async = require('async');
+const sinon = require('sinon');
 const config = require('../../../../config/config');
 const messageToStatsService = require('../../server/services/message-to-stats.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -50,7 +51,46 @@ describe('Message to stats server service Unit Tests:', function () {
     });
   });
 
-  afterEach(utils.clearDatabase);
+  afterEach(function () {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
+
+  describe('save', function () {
+    it('returns an error when influx is disabled', function (done) {
+      const originalEnabled = config.influxdb.enabled;
+      config.influxdb.enabled = false;
+
+      messageToStatsService.save(new Message(), function (err) {
+        config.influxdb.enabled = originalEnabled;
+        err.should.be.an.Error();
+        err.message.should.match(/InfluxDB disabled/);
+        done();
+      });
+    });
+  });
+
+  describe('process errors', function () {
+    it('returns an error when the first message cannot be found', function (done) {
+      sinon.stub(Message, 'findOne').returns({
+        sort: () => ({
+          exec: cb => cb(null, null),
+        }),
+      });
+
+      const message = new Message({
+        userFrom: user1._id,
+        userTo: user2._id,
+        content: 'orphan reply',
+      });
+
+      messageToStatsService.process(message, function (err) {
+        err.should.be.an.Error();
+        err.message.should.match(/first message not found/);
+        done();
+      });
+    });
+  });
 
   describe('Testing messageToStatsService.process(message)', function () {
     // here we create some example messages
@@ -250,6 +290,46 @@ describe('Message to stats server service Unit Tests:', function () {
         } catch (err) {
           return done(err);
         }
+      });
+    });
+  });
+
+  describe('spam status tags', function () {
+    it('tags confirmed spam messages as yes', function (done) {
+      const message = new Message({
+        content: 'hello',
+        userFrom: user1._id,
+        userTo: user2._id,
+        spam: true,
+      });
+
+      message.save(function (err) {
+        if (err) return done(err);
+
+        messageToStatsService.process(message, function (processErr, stat) {
+          if (processErr) return done(processErr);
+          stat.tags.spam.should.equal('yes');
+          done();
+        });
+      });
+    });
+
+    it('tags confirmed clean messages as no', function (done) {
+      const message = new Message({
+        content: 'hello again',
+        userFrom: user1._id,
+        userTo: user2._id,
+        spam: false,
+      });
+
+      message.save(function (err) {
+        if (err) return done(err);
+
+        messageToStatsService.process(message, function (processErr, stat) {
+          if (processErr) return done(processErr);
+          stat.tags.spam.should.equal('no');
+          done();
+        });
       });
     });
   });

@@ -13,7 +13,7 @@ export default function FaqTechnology() {
           Yes! Our code is available on{' '}
           <a href="https://github.com/Trustroots/trustroots/">GitHub</a> and
           licensed under the{' '}
-          <a href="https://github.com/Trustroots/trustroots/blob/master/LICENSE.md">
+          <a href="https://github.com/Trustroots/trustroots/blob/main/LICENSE.md">
             AGPL License
           </a>
           .

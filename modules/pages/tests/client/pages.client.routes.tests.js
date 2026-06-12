@@ -185,5 +185,62 @@ describe('Pages Route Tests', function () {
         expect(mainstate.requiresAuth).toBe(true);
       });
     });
+
+    describe('Additional Route Coverage', function () {
+      let state;
+
+      function getState(name) {
+        inject(function ($state) {
+          state = $state.get(name);
+        });
+      }
+
+      it('should include missing FAQ children', function () {
+        getState('faq.general');
+        expect(state.url).toEqual('');
+        expect(state.abstract).toBe(undefined);
+        expect(state.data.pageTitle).toBe('FAQ - Site & community');
+
+        getState('faq.circles');
+        expect(state.url).toEqual('/circles');
+        expect(state.data.pageTitle).toBe('FAQ - Circles');
+
+        getState('faq.technology');
+        expect(state.url).toEqual('/technology');
+        expect(state.data.pageTitle).toBe('FAQ - Technology');
+
+        getState('faq.bugs-and-features');
+        expect(state.url).toEqual('/bugs-and-features');
+        expect(state.data.pageTitle).toBe('FAQ - Bugs & Features');
+      });
+
+      it('should define home route for canonical non-escaped_fragment_ mode', function () {
+        getState('home');
+
+        expect(state.url).toEqual('/?tribe?circle');
+        expect(state.footerHidden).toBe(true);
+        expect(state.template).toContain('<home');
+      });
+
+      it('about route defines a controller and url', function () {
+        getState('about');
+        expect(state.controller).toBeTruthy();
+        expect(state.url).toBe('/about');
+      });
+
+      it('about route redirects to home', function () {
+        const $state = {
+          go: jest.fn(),
+        };
+
+        getState('about');
+        const controller = Array.isArray(state.controller)
+          ? state.controller[state.controller.length - 1]
+          : state.controller;
+        controller($state);
+
+        expect($state.go).toHaveBeenCalledWith('home');
+      });
+    });
   });
 });

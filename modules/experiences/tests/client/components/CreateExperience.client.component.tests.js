@@ -2,7 +2,7 @@ import React from 'react';
 import {
   render,
   fireEvent,
-  waitForElement,
+  waitFor,
   waitForElementToBeRemoved,
   screen,
 } from '@testing-library/react';
@@ -32,7 +32,7 @@ describe('<CreateExperience />', () => {
     userTo = { _id: '222222', displayName: 'to-name', username: 'userto' };
   });
 
-  it('should not be possible to leave an experience to self', () => {
+  it('should not be possible to leave an experience to self', async () => {
     const me = { _id: '123456', username: 'username' };
     experiencesApi.readMine.mockResolvedValueOnce([]);
     const { queryByRole } = render(
@@ -41,14 +41,21 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('alert')).toHaveTextContent(
       "Sorry, you can't share experience only with yourself.",
     );
+    await waitFor(() =>
+      expect(experiencesApi.readMine).toHaveBeenCalledWith({
+        userWith: me._id,
+      }),
+    );
   });
 
-  it('check whether the experience exists at the beginning', () => {
+  it('check whether the experience exists at the beginning', async () => {
     experiencesApi.readMine.mockResolvedValueOnce([]);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
-    expect(experiencesApi.readMine).toBeCalledWith({
-      userWith: userTo._id,
-    });
+    await waitFor(() =>
+      expect(experiencesApi.readMine).toBeCalledWith({
+        userWith: userTo._id,
+      }),
+    );
   });
 
   it('can not leave a second experience - without response', async () => {
@@ -126,14 +133,9 @@ describe('<CreateExperience />', () => {
         'Would you like to describe something about your experience with them? (Optional)',
       ),
     ).toBeInTheDocument();
-    fireEvent.change(
-      getByLabelText(
-        'Leave your public feedback here. Remember to be respectful of others and restrain from any kind of abusive behaviour.',
-      ),
-      {
-        target: { value: 'they made a tasty pie' },
-      },
-    );
+    fireEvent.change(getByLabelText(/Leave your public feedback here/), {
+      target: { value: 'they made a tasty pie' },
+    });
 
     fireEvent.click(getAllByText('Finish')[0]);
 
@@ -148,7 +150,7 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    const successMessage = await waitForElement(() =>
+    const successMessage = await waitFor(() =>
       getByText('Thank you for sharing your experience!').closest('div'),
     );
     expect(successMessage).toHaveTextContent(
@@ -207,12 +209,82 @@ describe('<CreateExperience />', () => {
       'they were mean to me',
     );
 
-    const successMessage = await waitForElement(() =>
+    const successMessage = await waitFor(() =>
       getByText('Thank you for sharing your experience!').closest('div'),
     );
     expect(successMessage).toHaveTextContent(
       `Your experience will become public when ${userTo.displayName} shares their experience, or at most in 14 days.`,
     );
     expect(successMessage).toHaveTextContent(`You also reported them to us.`);
+  });
+
+  it('can navigate back after choosing that members met in person', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+
+    const { getAllByText, getByLabelText, queryByLabelText } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+
+    await waitForLoader();
+
+    fireEvent.click(getByLabelText('Met in person'));
+    fireEvent.click(getAllByText('Next')[0]);
+
+    expect(
+      queryByLabelText(
+        'Besides your personal experience, would you recommend others to meet them?',
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.click(getAllByText('Back')[0]);
+
+    expect(getByLabelText('Met in person')).toBeInTheDocument();
+  });
+
+  it('uses hosting as the primary recommendation prompt', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+
+    const { getAllByText, getByLabelText, queryByLabelText } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+
+    await waitForLoader();
+
+    fireEvent.click(getByLabelText('I hosted them'));
+    fireEvent.click(getAllByText('Next')[0]);
+
+    expect(
+      queryByLabelText(
+        'Besides your personal experience, would you recommend others to host them?',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('skips recommendation when the other member already shared publicly', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce({
+      userFrom: userTo._id,
+      public: true,
+      response: null,
+    });
+
+    const { getAllByText, getByLabelText, queryByLabelText } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+
+    await waitForLoader();
+
+    fireEvent.click(getByLabelText('Met in person'));
+    fireEvent.click(getAllByText('Next')[0]);
+
+    expect(
+      queryByLabelText(
+        'Besides your personal experience, would you recommend others to meet them?',
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      queryByLabelText(
+        'Would you like to describe something about your experience with them? (Optional)',
+      ),
+    ).toBeInTheDocument();
   });
 });

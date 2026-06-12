@@ -110,7 +110,7 @@ describe('Job: user finish signup', function () {
   it('Remind unconfirmed users 2nd time >2 days after previous notification', function (done) {
     unConfirmedUser.publicReminderCount = 1;
     unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2 }),
+      moment.duration({ days: 2, hours: 1 }),
     );
     unConfirmedUser.save(function (err) {
       if (err) return done(err);
@@ -141,7 +141,7 @@ describe('Job: user finish signup', function () {
   it('Remind unconfirmed users 3rd time >2 days after previous notification', function (done) {
     unConfirmedUser.publicReminderCount = 2;
     unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2 }),
+      moment.duration({ days: 2, hours: 1 }),
     );
     unConfirmedUser.save(function (err) {
       if (err) return done(err);

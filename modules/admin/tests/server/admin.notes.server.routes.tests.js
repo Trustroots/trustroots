@@ -2,6 +2,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
+require('should');
 
 const AdminNote = mongoose.model('AdminNote');
 

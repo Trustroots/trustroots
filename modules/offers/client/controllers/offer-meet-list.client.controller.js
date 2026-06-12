@@ -64,7 +64,9 @@ function OfferListMeetController(
             });
 
             // Remove `offer` from `vm.offers` array
-            vm.offers.splice(index, 1);
+            if (index !== -1) {
+              vm.offers.splice(index, 1);
+            }
           },
           function (err) {
             const errorMessage = err.data.message
