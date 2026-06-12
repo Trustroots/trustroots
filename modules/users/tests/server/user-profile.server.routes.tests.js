@@ -453,7 +453,7 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should trim nostr npub when updating own profile', function (done) {
+  it('should trim and canonicalize nostr npub when updating own profile', function (done) {
     user.roles = ['user'];
 
     user.save(function (err) {
@@ -469,7 +469,7 @@ describe('User profile CRUD tests', function () {
 
           agent
             .put('/api/users')
-            .send({ nostrNpub: '  ' + validNpub + '  ' })
+            .send({ nostrNpub: '  ' + validNpub.toUpperCase() + '  ' })
             .expect(200)
             .end(function (userInfoErr, userInfoRes) {
               if (userInfoErr) {
@@ -486,6 +486,75 @@ describe('User profile CRUD tests', function () {
               });
             });
         });
+    });
+  });
+
+  it('should allow saving own existing nostr npub', function (done) {
+    user.roles = ['user'];
+    user.nostrNpub = validNpub;
+
+    user.save(function (err) {
+      should.not.exist(err);
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          if (signinErr) {
+            return done(signinErr);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ nostrNpub: validNpub })
+            .expect(200)
+            .end(function (userInfoErr, userInfoRes) {
+              if (userInfoErr) {
+                return done(userInfoErr);
+              }
+
+              userInfoRes.body.nostrNpub.should.equal(validNpub);
+
+              return done();
+            });
+        });
+    });
+  });
+
+  it('should reject nostr npub claimed by another user', function (done) {
+    user.roles = ['user'];
+    user2.nostrNpub = validNpub;
+
+    user2.save(function (saveUser2Err) {
+      should.not.exist(saveUser2Err);
+      user.save(function (saveUserErr) {
+        should.not.exist(saveUserErr);
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            if (signinErr) {
+              return done(signinErr);
+            }
+
+            agent
+              .put('/api/users')
+              .send({ nostrNpub: validNpub })
+              .expect(403)
+              .end(function (userInfoErr, userInfoRes) {
+                if (userInfoErr) {
+                  return done(userInfoErr);
+                }
+
+                userInfoRes.body.message.should.equal(
+                  'This nostr npub is already in use. Please use another one.',
+                );
+
+                return done();
+              });
+          });
+      });
     });
   });
 

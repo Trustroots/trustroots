@@ -6,11 +6,15 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const Offer = mongoose.model('Offer');
+const validNpub =
+  'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+const differentNpub =
+  'npub1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygse4sl3h';
 
 function assertStats(stats) {
   stats.total.should.equal(4);
 
-  stats.connections.should.have.lengthOf(6);
+  stats.connections.should.have.lengthOf(7);
   stats.connections.map(connection => {
     connection.count.should.equal(2);
     connection.percentage.should.equal(50);
@@ -62,6 +66,9 @@ describe('Statistics CRUD tests', () => {
         },
       },
     });
+
+    _usersPublic2[0].nostrNpub = validNpub;
+    _usersPublic2[1].nostrNpub = differentNpub;
 
     const _usersPrivate = utils.generateUsers(1, {
       public: false,

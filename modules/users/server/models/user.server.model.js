@@ -225,6 +225,7 @@ const UserSchema = new Schema({
   nostrNpub: {
     type: String,
     trim: true,
+    lowercase: true,
     set: setPlainTextField,
   },
   password: {
@@ -417,6 +418,13 @@ UserSchema.methods.authenticate = function (password) {
  */
 UserSchema.plugin(uniqueValidation);
 
+UserSchema.index(
+  { nostrNpub: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { nostrNpub: { $type: 'string', $gt: '' } },
+  },
+);
 UserSchema.index({ username: 'text', firstName: 'text', lastName: 'text' });
 
 mongoose.model('User', UserSchema);

@@ -50,6 +50,8 @@ export function getNetworkName(network) {
       return 'Facebook';
     case 'github':
       return 'Github';
+    case 'nostr':
+      return 'Nostr';
     case 'twitter':
       return 'Twitter';
     case 'warmshowers':
