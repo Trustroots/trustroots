@@ -1,3 +1,5 @@
+/* global document, window */
+
 const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('./test');
@@ -17,8 +19,188 @@ const seededMemberStoragePath = path.join(
   '.auth/seeded-member.json',
 );
 
+const communityNotePlusCode = '9F4MG82G+7Q';
+const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
+
 /** @type {ReturnType<typeof import('./helpers').createUser>} */
 let user;
+
+async function installNostrRelayStub(page) {
+  await page.addInitScript(() => {
+    const NativeWebSocket = window.WebSocket;
+
+    function createEvent(type, target, extra = {}) {
+      return {
+        type,
+        target,
+        currentTarget: target,
+        ...extra,
+      };
+    }
+
+    function MockRelayWebSocket(url) {
+      this.url = String(url);
+      this.readyState = MockRelayWebSocket.CONNECTING;
+      this.protocol = '';
+      this.extensions = '';
+      this.binaryType = 'blob';
+      this.onopen = null;
+      this.onmessage = null;
+      this.onerror = null;
+      this.onclose = null;
+      this.listeners = {
+        open: new Set(),
+        message: new Set(),
+        error: new Set(),
+        close: new Set(),
+      };
+
+      window.setTimeout(() => {
+        if (this.readyState !== MockRelayWebSocket.CONNECTING) return;
+        this.readyState = MockRelayWebSocket.OPEN;
+        this.dispatchEvent(createEvent('open', this));
+      }, 0);
+    }
+
+    MockRelayWebSocket.CONNECTING = 0;
+    MockRelayWebSocket.OPEN = 1;
+    MockRelayWebSocket.CLOSING = 2;
+    MockRelayWebSocket.CLOSED = 3;
+
+    MockRelayWebSocket.prototype.addEventListener = function addEventListener(
+      type,
+      listener,
+    ) {
+      if (this.listeners[type]) {
+        this.listeners[type].add(listener);
+      }
+    };
+
+    MockRelayWebSocket.prototype.removeEventListener =
+      function removeEventListener(type, listener) {
+        if (this.listeners[type]) {
+          this.listeners[type].delete(listener);
+        }
+      };
+
+    MockRelayWebSocket.prototype.dispatchEvent = function dispatchEvent(event) {
+      const handler = this[`on${event.type}`];
+      if (typeof handler === 'function') {
+        handler.call(this, event);
+      }
+      if (this.listeners[event.type]) {
+        this.listeners[event.type].forEach(listener => {
+          listener.call(this, event);
+        });
+      }
+      return true;
+    };
+
+    MockRelayWebSocket.prototype.send = function send(data) {
+      if (this.readyState !== MockRelayWebSocket.OPEN) return;
+
+      let message;
+      try {
+        message = JSON.parse(data);
+      } catch (e) {
+        return;
+      }
+
+      if (Array.isArray(message) && message[0] === 'REQ') {
+        const subscriptionId = message[1];
+        window.setTimeout(() => {
+          if (this.readyState !== MockRelayWebSocket.OPEN) return;
+          this.dispatchEvent(
+            createEvent('message', this, {
+              data: JSON.stringify(['EOSE', subscriptionId]),
+            }),
+          );
+        }, 0);
+      }
+    };
+
+    MockRelayWebSocket.prototype.close = function close(code, reason) {
+      if (this.readyState === MockRelayWebSocket.CLOSED) return;
+      this.readyState = MockRelayWebSocket.CLOSED;
+      this.dispatchEvent(
+        createEvent('close', this, {
+          code: code || 1000,
+          reason: reason || '',
+          wasClean: true,
+        }),
+      );
+    };
+
+    window.WebSocket = function WebSocket(url, protocols) {
+      if (String(url).startsWith('wss://relay.trustroots.org')) {
+        return new MockRelayWebSocket(url);
+      }
+      return new NativeWebSocket(url, protocols);
+    };
+
+    window.WebSocket.CONNECTING = MockRelayWebSocket.CONNECTING;
+    window.WebSocket.OPEN = MockRelayWebSocket.OPEN;
+    window.WebSocket.CLOSING = MockRelayWebSocket.CLOSING;
+    window.WebSocket.CLOSED = MockRelayWebSocket.CLOSED;
+  });
+}
+
+async function withSeededMemberPage(browser, baseURL, callback) {
+  const context = await browser.newContext({
+    baseURL,
+    storageState: seededMemberStoragePath,
+  });
+  const page = await context.newPage();
+
+  try {
+    await callback(page);
+  } finally {
+    await context.close();
+  }
+}
+
+async function showCommunityNotesSidebar(page) {
+  await page.evaluate(
+    ({ plusCode, noteText }) => {
+      const searchRoot = document.querySelector('.search');
+      if (!searchRoot || !window.angular) {
+        throw new Error('Search Angular scope unavailable');
+      }
+
+      const scope = window.angular.element(searchRoot).scope();
+      if (!scope || !scope.search) {
+        throw new Error('Search controller scope unavailable');
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      scope.$apply(() => {
+        scope.search.offer = false;
+        scope.search.loadingOffer = false;
+        scope.search.communityNote = {
+          plusCode,
+          notes: [
+            {
+              id: 'e2e-community-note-1',
+              content: noteText,
+              created_at: now - 3600,
+              pubkey:
+                '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+            },
+            {
+              id: 'e2e-community-note-2',
+              content: 'E2E community note: late trains but friendly locals.',
+              created_at: now - 7200,
+              pubkey:
+                'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
+            },
+          ],
+        };
+        scope.search.openSidebar('results');
+      });
+    },
+    { plusCode: communityNotePlusCode, noteText: communityNoteText },
+  );
+}
 
 test.describe('authenticated member flows', () => {
   test.beforeAll(async () => {
@@ -30,6 +212,74 @@ test.describe('authenticated member flows', () => {
 
     await expect(page).toHaveURL(/\/search/);
     await expect(page).toHaveTitle(/Search - Trustroots/);
+  });
+
+  test('Community Notes search filter toggles and persists', async ({
+    browser,
+    baseURL,
+  }) => {
+    await withSeededMemberPage(browser, baseURL, async page => {
+      await installNostrRelayStub(page);
+      await page.goto('/search');
+
+      const filterLabel = page
+        .locator('.search-sidebar-filters label')
+        .filter({ hasText: 'Community Notes' });
+      const checkbox = filterLabel.locator('input[type="checkbox"]');
+
+      await expect(filterLabel).toBeVisible();
+      if (await checkbox.isChecked()) {
+        await filterLabel.click();
+        await expect(checkbox).not.toBeChecked();
+      }
+
+      await filterLabel.click();
+      await expect(checkbox).toBeChecked();
+
+      await page.reload();
+      await expect(filterLabel).toBeVisible();
+      await expect(checkbox).toBeChecked();
+
+      await filterLabel.click();
+      await expect(checkbox).not.toBeChecked();
+    });
+  });
+
+  test('Community Notes sidebar opens the Nostroots action modal', async ({
+    browser,
+    baseURL,
+  }) => {
+    await withSeededMemberPage(browser, baseURL, async page => {
+      await installNostrRelayStub(page);
+      await page.goto('/search');
+      await showCommunityNotesSidebar(page);
+
+      const sidebar = page.locator('.community-notes-sidebar');
+      await expect(sidebar).toBeVisible();
+      await expect(
+        sidebar.getByRole('heading', { name: /Community Notes/ }),
+      ).toBeVisible();
+      await expect(sidebar.getByText(communityNotePlusCode)).toBeVisible();
+      await expect(sidebar.getByText(communityNoteText)).toBeVisible();
+      await expect(sidebar.getByText('via Nostroots')).toBeVisible();
+
+      await sidebar.getByRole('button', { name: 'Reply' }).click();
+
+      const dialog = page.getByRole('dialog', { name: 'Get Nostroots' });
+      await expect(dialog).toBeVisible();
+      await expect(
+        dialog.getByRole('link', { name: 'Join TestFlight for iOS' }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole('link', { name: 'Download for Android' }),
+      ).toBeVisible();
+      await expect(
+        dialog.getByRole('link', { name: 'Open web app' }),
+      ).toBeVisible();
+
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+    });
   });
 
   test('search members page loads', async ({ page }) => {
