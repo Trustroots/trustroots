@@ -12,6 +12,8 @@ const {
 // canonical "valid but empty" key the server-side tests reuse.
 const VALID_NPUB =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+const FORM_NPUB =
+  'npub1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygse4sl3h';
 // A secret key (nsec) must never be accepted in place of a public key.
 const NSEC = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 
@@ -164,13 +166,13 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     const input = page.locator('#nostrNpub');
     await expect(input).toBeVisible();
 
-    await input.fill(VALID_NPUB);
+    await input.fill(FORM_NPUB);
     await page.locator('.profile-editor-save').click();
 
     await expect(page.getByText(/networks updated/i)).toBeVisible();
 
     await page.goto('/profile/edit/networks');
-    await expect(page.locator('#nostrNpub')).toHaveValue(VALID_NPUB);
+    await expect(page.locator('#nostrNpub')).toHaveValue(FORM_NPUB);
   });
 
   test('links the saved npub to njump.me on the profile view', async ({
@@ -184,8 +186,12 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 
     await page.goto(`/profile/${user.username}`);
 
+    const nostrAddress = `${user.username}@trustroots.org`;
     await expect(
-      page.getByRole('link', { name: 'nostr npub' }),
-    ).toHaveAttribute('href', `https://njump.me/${VALID_NPUB}`);
+      page.getByRole('link', { name: nostrAddress }),
+    ).toHaveAttribute(
+      'href',
+      `https://njump.me/${encodeURIComponent(nostrAddress)}`,
+    );
   });
 });
