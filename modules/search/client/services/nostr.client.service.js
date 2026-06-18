@@ -3,6 +3,7 @@
 import { Relay } from 'nostr-tools/relay';
 
 export const NOSTR_RELAY_URL = 'wss://relay.trustroots.org';
+export const MAP_NOTES_LIMIT = 500;
 
 // Nostroots validation server pubkey — only kind 30398 events signed by this
 // key are considered verified map notes.
@@ -83,14 +84,15 @@ export default class NostrService {
   }
 
   /**
-   * Subscribe to all verified map notes (kind 30398) from the Nostroots
-   * validation server. No geographic filtering — fetches everything.
+   * Subscribe to recent verified map notes (kind 30398) from the Nostroots
+   * validation server.
    * Closes any existing 'mapNotes' subscription before creating a new one.
    *
    * @param {Function} onEvent — callback invoked for each matching event
+   * @param {number} [limit=MAP_NOTES_LIMIT] — maximum historical events
    * @returns {Promise<object>} the subscription handle
    */
-  async subscribeMapNotes(onEvent) {
+  async subscribeMapNotes(onEvent, limit = MAP_NOTES_LIMIT) {
     const relay = await this.connect();
 
     this.unsubscribeMapNotes();
@@ -100,6 +102,7 @@ export default class NostrService {
         {
           kinds: [30398],
           authors: [NOSTROOTS_VALIDATION_PUBKEY],
+          limit,
         },
       ],
       {
@@ -125,6 +128,7 @@ export default class NostrService {
     const events = [];
 
     return new Promise(resolve => {
+      const subscriptionRef = { current: null };
       let resolved = false;
 
       const finish = () => {
@@ -136,10 +140,10 @@ export default class NostrService {
           .sort((a, b) => b.created_at - a.created_at)
           .slice(0, limit);
         resolve(dedupedEvents);
-        queueMicrotask(() => sub?.close());
+        queueMicrotask(() => subscriptionRef.current?.close());
       };
 
-      const sub = relay.subscribe(
+      subscriptionRef.current = relay.subscribe(
         [
           { kinds: [30397], authors: [pubkeyHex], limit },
           {
@@ -176,6 +180,7 @@ export default class NostrService {
     const relay = await this.connect();
 
     return new Promise(resolve => {
+      const subscriptionRef = { current: null };
       let username = null;
       let resolved = false;
 
@@ -186,10 +191,10 @@ export default class NostrService {
         resolved = true;
         this.usernameCache.set(pubkeyHex, username);
         resolve(username);
-        queueMicrotask(() => sub?.close());
+        queueMicrotask(() => subscriptionRef.current?.close());
       };
 
-      const sub = relay.subscribe(
+      subscriptionRef.current = relay.subscribe(
         [
           {
             kinds: [10390],

@@ -165,6 +165,7 @@ describe('NostrService', () => {
             authors: [
               'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
             ],
+            limit: 500,
           },
         ],
         expect.objectContaining({
@@ -174,6 +175,27 @@ describe('NostrService', () => {
       );
       expect(sub).toBe(mockSub);
       expect(service.subscriptions.get('mapNotes')).toBe(mockSub);
+    });
+
+    it('allows callers to override the historical map note limit', async () => {
+      const mockSub = { close: jest.fn() };
+      await service.connect();
+      Relay._lastInstance.subscribe.mockReturnValue(mockSub);
+
+      await service.subscribeMapNotes(jest.fn(), 25);
+
+      expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
+        [
+          {
+            kinds: [30398],
+            authors: [
+              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
+            ],
+            limit: 25,
+          },
+        ],
+        expect.any(Object),
+      );
     });
 
     it('closes existing mapNotes subscription before creating new one', async () => {
