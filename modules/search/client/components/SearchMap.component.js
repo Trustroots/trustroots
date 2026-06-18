@@ -532,18 +532,22 @@ export default function SearchMap({
     }
 
     communityNotesEventsRef.current = [];
-    nostrService.subscribeMapNotes(event => {
-      communityNotesEventsRef.current.push({
-        ...event,
-        authorPubkey: getNostrEventAuthorPubkey(event),
+    nostrService
+      .subscribeMapNotes(event => {
+        communityNotesEventsRef.current.push({
+          ...event,
+          authorPubkey: getNostrEventAuthorPubkey(event),
+        });
+        clearTimeout(communityNotesTimerRef.current);
+        communityNotesTimerRef.current = setTimeout(() => {
+          setCommunityNotes(
+            nostrEventsToGeoJSON([...communityNotesEventsRef.current]),
+          );
+        }, 200);
+      })
+      .catch(() => {
+        setCommunityNotes({ type: 'FeatureCollection', features: [] });
       });
-      clearTimeout(communityNotesTimerRef.current);
-      communityNotesTimerRef.current = setTimeout(() => {
-        setCommunityNotes(
-          nostrEventsToGeoJSON([...communityNotesEventsRef.current]),
-        );
-      }, 200);
-    });
 
     return () => {
       nostrService.unsubscribeMapNotes();

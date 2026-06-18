@@ -85,6 +85,16 @@ describe('NostrService', () => {
       expect(relay1).toBe(relay2);
       expect(Relay).toHaveBeenCalledTimes(1);
     });
+
+    it('creates a new relay if the previous relay has closed', async () => {
+      const relay1 = await service.connect();
+      relay1.connected = false;
+
+      const relay2 = await service.connect();
+
+      expect(relay2).not.toBe(relay1);
+      expect(Relay).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('unsubscribeMapNotes()', () => {
@@ -287,6 +297,19 @@ describe('NostrService', () => {
       const result = await service.fetchUserNotes('aabbcc');
       expect(result).toEqual([]);
     });
+
+    it('resolves with collected events when the subscription closes early', async () => {
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent({ id: '1', created_at: 100 });
+        callbacks.onclose('relay closed');
+        return { close: jest.fn() };
+      });
+
+      const result = await service.fetchUserNotes('aabbcc');
+
+      expect(result).toEqual([{ id: '1', created_at: 100 }]);
+    });
   });
 
   describe('resolveNpubToUsername()', () => {
@@ -377,6 +400,18 @@ describe('NostrService', () => {
           oneose: expect.any(Function),
         }),
       );
+    });
+
+    it('resolves null when the username subscription closes early', async () => {
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onclose('relay closed');
+        return { close: jest.fn() };
+      });
+
+      await expect(
+        service.resolveNpubToUsername('pubkey123'),
+      ).resolves.toBeNull();
     });
   });
 });

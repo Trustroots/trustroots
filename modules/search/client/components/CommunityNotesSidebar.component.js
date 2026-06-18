@@ -29,6 +29,7 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
             setUsernames(prev => ({ ...prev, [pubkey]: name }));
           }
         })
+        .catch(() => {})
         .finally(() => {
           remaining -= 1;
           if (remaining <= 0) setResolving(false);

@@ -40,11 +40,17 @@ export default class NostrService {
    * @returns {Promise<Relay>}
    */
   async connect() {
-    if (this.relay) {
+    if (this.relay && this.relay.connected !== false) {
       return this.relay;
     }
     const relay = new Relay(this.relayUrl);
     await relay.connect();
+    relay.onclose = () => {
+      if (this.relay === relay) {
+        this.relay = null;
+      }
+      this.subscriptions.clear();
+    };
     this.relay = relay;
     return this.relay;
   }
@@ -119,6 +125,20 @@ export default class NostrService {
     const events = [];
 
     return new Promise(resolve => {
+      let resolved = false;
+
+      const finish = () => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        const dedupedEvents = [...new Map(events.map(e => [e.id, e])).values()]
+          .sort((a, b) => b.created_at - a.created_at)
+          .slice(0, limit);
+        resolve(dedupedEvents);
+        queueMicrotask(() => sub?.close());
+      };
+
       const sub = relay.subscribe(
         [
           { kinds: [30397], authors: [pubkeyHex], limit },
@@ -133,15 +153,8 @@ export default class NostrService {
           onevent(event) {
             events.push(event);
           },
-          oneose() {
-            const dedupedEvents = [
-              ...new Map(events.map(e => [e.id, e])).values(),
-            ]
-              .sort((a, b) => b.created_at - a.created_at)
-              .slice(0, limit);
-            resolve(dedupedEvents);
-            queueMicrotask(() => sub.close());
-          },
+          oneose: finish,
+          onclose: finish,
         },
       );
     });
@@ -164,6 +177,17 @@ export default class NostrService {
 
     return new Promise(resolve => {
       let username = null;
+      let resolved = false;
+
+      const finish = () => {
+        if (resolved) {
+          return;
+        }
+        resolved = true;
+        this.usernameCache.set(pubkeyHex, username);
+        resolve(username);
+        queueMicrotask(() => sub?.close());
+      };
 
       const sub = relay.subscribe(
         [
@@ -184,11 +208,8 @@ export default class NostrService {
               username = tag[1];
             }
           },
-          oneose: () => {
-            this.usernameCache.set(pubkeyHex, username);
-            resolve(username);
-            queueMicrotask(() => sub.close());
-          },
+          oneose: finish,
+          onclose: finish,
         },
       );
     });
