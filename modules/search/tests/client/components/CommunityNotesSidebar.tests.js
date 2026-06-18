@@ -1,5 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  act,
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
@@ -119,5 +125,28 @@ describe('CommunityNotesSidebar', () => {
       <CommunityNotesSidebar notes={[]} plusCode="9F2X+3Q" />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('ignores username lookups that settle after unmount', async () => {
+    let resolveLookup;
+    nostrService.resolveNpubToUsername.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          resolveLookup = resolve;
+        }),
+    );
+
+    const { unmount } = render(
+      <CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />,
+    );
+
+    unmount();
+
+    await act(async () => {
+      resolveLookup('alice');
+      await Promise.resolve();
+    });
+
+    expect(nostrService.resolveNpubToUsername).toHaveBeenCalled();
   });
 });

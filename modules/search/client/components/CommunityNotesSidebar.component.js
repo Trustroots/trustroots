@@ -15,9 +15,24 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
 
   // Resolve usernames for all note authors
   useEffect(() => {
-    if (!notes || notes.length === 0) return;
+    let cancelled = false;
 
-    const pubkeys = [...new Set(notes.map(n => n.authorPubkey || n.pubkey))];
+    if (!notes || notes.length === 0) {
+      setUsernames({});
+      setResolving(false);
+      return;
+    }
+
+    const pubkeys = [
+      ...new Set(notes.map(n => n.authorPubkey || n.pubkey).filter(Boolean)),
+    ];
+    setUsernames({});
+
+    if (pubkeys.length === 0) {
+      setResolving(false);
+      return;
+    }
+
     setResolving(true);
     let remaining = pubkeys.length;
 
@@ -25,16 +40,23 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
       nostrService
         .resolveNpubToUsername(pubkey)
         .then(name => {
-          if (name) {
+          if (!cancelled && name) {
             setUsernames(prev => ({ ...prev, [pubkey]: name }));
           }
         })
         .catch(() => {})
         .finally(() => {
+          if (cancelled) {
+            return;
+          }
           remaining -= 1;
           if (remaining <= 0) setResolving(false);
         });
     });
+
+    return () => {
+      cancelled = true;
+    };
   }, [notes]);
 
   if (!notes || notes.length === 0) return null;
