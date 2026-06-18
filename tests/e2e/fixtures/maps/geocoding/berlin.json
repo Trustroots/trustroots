@@ -1,0 +1,22 @@
+{
+  "type": "FeatureCollection",
+  "query": ["berlin"],
+  "features": [
+    {
+      "id": "place.1",
+      "type": "Feature",
+      "place_type": ["place"],
+      "text": "Berlin",
+      "place_name": "Berlin, Germany",
+      "center": [13.405, 52.52],
+      "bbox": [13.0884, 52.3383, 13.7611, 52.6755],
+      "context": [
+        {
+          "id": "country.1",
+          "text": "Germany",
+          "short_code": "de"
+        }
+      ]
+    }
+  ]
+}

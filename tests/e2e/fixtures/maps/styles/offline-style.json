@@ -1,0 +1,22 @@
+{
+  "version": 8,
+  "name": "E2E Offline Map",
+  "sources": {
+    "e2e-background": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#f7f4ed"
+      }
+    }
+  ]
+}

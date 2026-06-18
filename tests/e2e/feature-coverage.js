@@ -95,6 +95,8 @@ const specPaths = {
   'messages.spec.js': 'features/messages/messages.spec.js',
   'nostr.spec.js': 'features/public-core/nostr.spec.js',
   'public-pages.spec.js': 'features/public-core/public-pages.spec.js',
+  'search-map-rendered.spec.js':
+    'features/search-offers-circles/search-map-rendered.spec.js',
   'seeded-content.spec.js': 'features/public-core/seeded-content.spec.js',
 };
 
@@ -1452,10 +1454,26 @@ const features = [
       'Location bounding-box query returns seeded offers.',
       'Offer deep-link query resolves the selected offer.',
       'Circle filter query resolves the selected circle.',
+      'Search map renders with deterministic offline style.',
+      'Route fixture offers populate the rendered map source.',
+      'Empty map-offers fixture leaves the search map usable.',
+      'Rendered map offer deep-link opens deterministic sidebar data.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'search page loads for a signed in member'),
       spec('member.spec.js', 'map offers API returns seeded hosts in Europe'),
+      spec(
+        'search-map-rendered.spec.js',
+        'search map renders with offline style and fixture offers',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'search map stays usable when offers fixture is empty',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'offer deep-link uses fixture offer data in the sidebar',
+      ),
     ],
   },
   {
