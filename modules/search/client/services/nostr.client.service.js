@@ -6,7 +6,7 @@ export const NOSTR_RELAY_URL = 'wss://relay.trustroots.org';
 
 // Nostroots validation server pubkey — only kind 30398 events signed by this
 // key are considered verified map notes.
-const NOSTROOTS_VALIDATION_PUBKEY =
+export const NOSTROOTS_VALIDATION_PUBKEY =
   'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b';
 
 export function getNostrEventAuthorPubkey(event) {
@@ -107,7 +107,7 @@ export default class NostrService {
   }
 
   /**
-   * One-shot query for kind 30397 events by a given author.
+   * One-shot query for map note events by a given author.
    * Resolves with events sorted by created_at descending when EOSE is received.
    *
    * @param {string} pubkeyHex — hex-encoded public key
@@ -121,9 +121,11 @@ export default class NostrService {
     return new Promise(resolve => {
       const sub = relay.subscribe(
         [
+          { kinds: [30397], authors: [pubkeyHex], limit },
           {
-            kinds: [30397],
-            authors: [pubkeyHex],
+            kinds: [30398],
+            authors: [NOSTROOTS_VALIDATION_PUBKEY],
+            '#p': [pubkeyHex],
             limit,
           },
         ],
@@ -132,8 +134,12 @@ export default class NostrService {
             events.push(event);
           },
           oneose() {
-            events.sort((a, b) => b.created_at - a.created_at);
-            resolve(events);
+            const dedupedEvents = [
+              ...new Map(events.map(e => [e.id, e])).values(),
+            ]
+              .sort((a, b) => b.created_at - a.created_at)
+              .slice(0, limit);
+            resolve(dedupedEvents);
             queueMicrotask(() => sub.close());
           },
         },

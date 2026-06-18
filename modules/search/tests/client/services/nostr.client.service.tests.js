@@ -226,7 +226,17 @@ describe('NostrService', () => {
       expect(sub.close).toHaveBeenCalled();
 
       expect(relay.subscribe).toHaveBeenCalledWith(
-        [{ kinds: [30397], authors: ['aabbcc'], limit: 3 }],
+        [
+          { kinds: [30397], authors: ['aabbcc'], limit: 3 },
+          {
+            kinds: [30398],
+            authors: [
+              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
+            ],
+            '#p': ['aabbcc'],
+            limit: 3,
+          },
+        ],
         expect.objectContaining({
           onevent: expect.any(Function),
           oneose: expect.any(Function),
@@ -252,7 +262,17 @@ describe('NostrService', () => {
       await service.fetchUserNotes('aabbcc');
 
       expect(relay.subscribe).toHaveBeenCalledWith(
-        [{ kinds: [30397], authors: ['aabbcc'], limit: 3 }],
+        [
+          { kinds: [30397], authors: ['aabbcc'], limit: 3 },
+          {
+            kinds: [30398],
+            authors: [
+              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
+            ],
+            '#p': ['aabbcc'],
+            limit: 3,
+          },
+        ],
         expect.any(Object),
       );
     });
