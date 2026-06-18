@@ -50,7 +50,9 @@ const NOTES = [
   {
     id: 'note-older',
     content: 'Older note at this spot',
-    pubkey: 'pubkey1111111111111111111111111111111111111111111111111111111111',
+    pubkey: 'validationserver1111111111111111111111111111111111111111111111',
+    authorPubkey:
+      'pubkey1111111111111111111111111111111111111111111111111111111111',
     created_at: Math.floor(Date.now() / 1000) - 7200,
     tags: [],
   },
@@ -94,6 +96,9 @@ describe('CommunityNotesSidebar', () => {
     render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
 
     await waitFor(() => {
+      expect(nostrService.resolveNpubToUsername).toHaveBeenCalledWith(
+        'pubkey1111111111111111111111111111111111111111111111111111111111',
+      );
       expect(screen.getByRole('link', { name: 'alice' })).toHaveAttribute(
         'href',
         '/profile/alice',

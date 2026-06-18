@@ -9,6 +9,17 @@ export const NOSTR_RELAY_URL = 'wss://relay.trustroots.org';
 const NOSTROOTS_VALIDATION_PUBKEY =
   'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b';
 
+export function getNostrEventAuthorPubkey(event) {
+  if (event?.kind === 30398) {
+    const originalAuthorTag = event.tags?.find(tag => tag[0] === 'p' && tag[1]);
+    if (originalAuthorTag) {
+      return originalAuthorTag[1];
+    }
+  }
+
+  return event?.pubkey;
+}
+
 /**
  * NostrService — manages WebSocket relay connection and Nostr subscriptions.
  * Framework-agnostic; consumed by React components.

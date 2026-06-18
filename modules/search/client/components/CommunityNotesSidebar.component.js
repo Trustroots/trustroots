@@ -17,7 +17,7 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
   useEffect(() => {
     if (!notes || notes.length === 0) return;
 
-    const pubkeys = [...new Set(notes.map(n => n.pubkey))];
+    const pubkeys = [...new Set(notes.map(n => n.authorPubkey || n.pubkey))];
     setResolving(true);
     let remaining = pubkeys.length;
 
@@ -54,7 +54,8 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
 
       <div className="community-notes-sidebar-thread">
         {sorted.map(note => {
-          const username = usernames[note.pubkey];
+          const authorPubkey = note.authorPubkey || note.pubkey;
+          const username = usernames[authorPubkey];
           const showSkeleton = resolving && !username;
           return (
             <div key={note.id} className="community-notes-sidebar-note">
@@ -75,7 +76,7 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
                         : '')
                     }
                   >
-                    {note.pubkey.substring(0, 12)}...
+                    {authorPubkey.substring(0, 12)}...
                   </span>
                 )}
                 <span className="community-notes-sidebar-time text-muted">

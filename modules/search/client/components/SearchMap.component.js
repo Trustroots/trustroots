@@ -31,7 +31,10 @@ import {
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
-import { nostrService } from '../services/nostr.client.service';
+import {
+  getNostrEventAuthorPubkey,
+  nostrService,
+} from '../services/nostr.client.service';
 import {
   SOURCE_COMMUNITY_NOTES,
   communityNotesLayer,
@@ -66,6 +69,7 @@ function reconstructEvent(properties) {
     id: properties.id,
     content: properties.content,
     pubkey: properties.pubkey,
+    authorPubkey: properties.authorPubkey,
     created_at: properties.created_at,
     kind: properties.kind,
     tags:
@@ -102,6 +106,7 @@ function nostrEventsToGeoJSON(events) {
           id: event.id,
           content: event.content,
           pubkey: event.pubkey,
+          authorPubkey: getNostrEventAuthorPubkey(event),
           created_at: event.created_at,
           verified: event.kind === 30398,
           kind: event.kind,
@@ -528,7 +533,10 @@ export default function SearchMap({
 
     communityNotesEventsRef.current = [];
     nostrService.subscribeMapNotes(event => {
-      communityNotesEventsRef.current.push(event);
+      communityNotesEventsRef.current.push({
+        ...event,
+        authorPubkey: getNostrEventAuthorPubkey(event),
+      });
       clearTimeout(communityNotesTimerRef.current);
       communityNotesTimerRef.current = setTimeout(() => {
         setCommunityNotes(

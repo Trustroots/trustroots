@@ -1,4 +1,6 @@
-import NostrService from '@/modules/search/client/services/nostr.client.service';
+import NostrService, {
+  getNostrEventAuthorPubkey,
+} from '@/modules/search/client/services/nostr.client.service';
 
 // Mock nostr-tools/relay
 jest.mock('nostr-tools/relay', () => {
@@ -25,6 +27,28 @@ describe('NostrService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new NostrService(RELAY_URL);
+  });
+
+  describe('getNostrEventAuthorPubkey()', () => {
+    it('returns the original author from kind 30398 reposts', () => {
+      expect(
+        getNostrEventAuthorPubkey({
+          kind: 30398,
+          pubkey: 'validation-server-pubkey',
+          tags: [['p', 'original-author-pubkey']],
+        }),
+      ).toBe('original-author-pubkey');
+    });
+
+    it('falls back to event pubkey for direct events', () => {
+      expect(
+        getNostrEventAuthorPubkey({
+          kind: 30397,
+          pubkey: 'direct-author-pubkey',
+          tags: [],
+        }),
+      ).toBe('direct-author-pubkey');
+    });
   });
 
   describe('constructor', () => {
