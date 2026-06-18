@@ -1,13 +1,19 @@
-const { test, expect } = require('./test');
+const { test, expect } = require('../../support/test');
 
 const {
   SEEDED_MEMBERS,
+  SEEDED_ADMIN,
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
-  fetchUserIdByUsername,
-} = require('./helpers');
+  signInViaApi,
+} = require('../../support/helpers');
+const { findUserByUsername } = require('../../support/db');
 
 test.describe('admin moderation flows', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_ADMIN);
+  });
+
   test('admin dashboard welcomes the signed in admin', async ({ page }) => {
     await page.goto('/admin');
 
@@ -102,13 +108,11 @@ test.describe('admin moderation flows', () => {
 
   test('admin messages tool shows shadow-hidden messages between members', async ({
     page,
-    request,
   }) => {
-    const shadowId = await fetchUserIdByUsername(
-      request,
-      SEEDED_SHADOW.username,
-    );
-    const berlinId = await fetchUserIdByUsername(request, 'e2e-seeded-berlin');
+    const shadow = await findUserByUsername(SEEDED_SHADOW.username);
+    const shadowId = String(shadow._id);
+    const berlin = await findUserByUsername('e2e-seeded-berlin');
+    const berlinId = String(berlin._id);
 
     const shadowDisplayName = `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`;
 
@@ -132,12 +136,9 @@ test.describe('admin moderation flows', () => {
 
   test('admin user report card shows message counts for a shadowbanned member', async ({
     page,
-    request,
   }) => {
-    const shadowId = await fetchUserIdByUsername(
-      request,
-      SEEDED_SHADOW.username,
-    );
+    const shadow = await findUserByUsername(SEEDED_SHADOW.username);
+    const shadowId = String(shadow._id);
 
     await page.goto(`/admin/user?id=${shadowId}`);
 

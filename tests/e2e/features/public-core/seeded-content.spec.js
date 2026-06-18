@@ -1,6 +1,6 @@
-const { test, expect } = require('./test');
+const { test, expect } = require('../../support/test');
 
-const { SEEDED_MEMBERS, waitForTribesList } = require('./helpers');
+const { SEEDED_MEMBERS, waitForTribesList } = require('../../support/helpers');
 
 test.describe('seeded content and public API flows', () => {
   test('languages API returns a non-empty list', async ({ request }) => {

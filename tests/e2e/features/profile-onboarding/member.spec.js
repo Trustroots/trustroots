@@ -1,4 +1,4 @@
-const { test, expect } = require('./test');
+const { test, expect } = require('../../support/test');
 
 const {
   SEEDED_EXPERIENCE,
@@ -8,13 +8,18 @@ const {
   SEEDED_SHADOW,
   EUROPE_OFFERS_QUERY,
   fetchUserIdByUsername,
+  signInViaApi,
   waitForTribesList,
-} = require('./helpers');
+} = require('../../support/helpers');
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
 
 test.describe('confirmed member flows', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, berlin);
+  });
+
   test('own profile lists joined circles', async ({ page }) => {
     const profileResponse = page.waitForResponse(
       response =>

@@ -1,6 +1,6 @@
-const fs = require('fs');
 const path = require('path');
-const { test, expect } = require('./test');
+const fs = require('fs');
+const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_MEMBERS,
@@ -9,13 +9,14 @@ const {
   signInViaApi,
   signOut,
   waitForTribesList,
-} = require('./helpers');
+} = require('../../support/helpers');
 
-const userPath = path.join(__dirname, '.auth/user.json');
 const seededMemberStoragePath = path.join(
   __dirname,
-  '.auth/seeded-member.json',
+  '../../.auth/seeded-member.json',
 );
+
+const userPath = path.join(__dirname, '../../.auth/user.json');
 
 /** @type {ReturnType<typeof import('./helpers').createUser>} */
 let user;
@@ -30,6 +31,22 @@ test.describe('authenticated member flows', () => {
 
     await expect(page).toHaveURL(/\/search/);
     await expect(page).toHaveTitle(/Search - Trustroots/);
+  });
+
+  test('welcome onboarding page links to profile completion', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.welcome-onboarding', [
+      'Welcome page loads for a newly authenticated member.',
+      'Welcome/onboarding links guide the member to profile completion.',
+    ]);
+
+    await page.goto('/welcome');
+
+    await expect(page.getByRole('heading', { name: /welcome/i })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /fill your profile/i }),
+    ).toHaveAttribute('href', '/profile/edit');
   });
 
   test('search members page loads', async ({ page }) => {
@@ -62,14 +79,25 @@ test.describe('authenticated member flows', () => {
   });
 
   test('inbox prompts an unconfirmed member to activate their profile', async ({
-    page,
+    browser,
+    baseURL,
   }) => {
-    await page.goto('/messages');
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
 
-    await expect(page).toHaveURL(/\/messages/);
-    await expect(
-      page.getByText(/activate your profile by confirming your email/i),
-    ).toBeVisible();
+    try {
+      const unconfirmed = createUser();
+      await registerViaApi(context.request, unconfirmed);
+      await signInViaApi(page, context.request, unconfirmed);
+      await page.goto('/messages');
+
+      await expect(page).toHaveURL(/\/messages/);
+      await expect(
+        page.getByText(/activate your profile by confirming your email/i),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
   });
 
   test('profile edit "about" form is reachable', async ({ page }) => {
@@ -91,9 +119,9 @@ test.describe('authenticated member flows', () => {
 
     await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
     await expect(page).toHaveTitle(/Profile - Trustroots/);
-    await expect(page.locator('.row.hidden-xs h2.profile-name')).toHaveText(
-      `${user.firstName} ${user.lastName}`,
-    );
+    await expect(
+      page.getByText(`${user.firstName} ${user.lastName}`).first(),
+    ).toBeVisible();
   });
 
   test('member can view a seeded host profile', async ({

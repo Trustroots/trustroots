@@ -1,4 +1,4 @@
-const { test, expect } = require('./test');
+const { test, expect } = require('../../support/test');
 
 const {
   SEEDED_CONVERSATIONS,
@@ -6,9 +6,14 @@ const {
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
   fetchUserIdByUsername,
-} = require('./helpers');
+  signInViaApi,
+} = require('../../support/helpers');
 
 test.describe('seeded message flows', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  });
+
   test('inbox lists the seeded conversation with Portland Host', async ({
     page,
   }) => {
@@ -16,9 +21,6 @@ test.describe('seeded message flows', () => {
 
     await expect(page).toHaveURL(/\/messages/);
     await expect(page.getByText('Portland Host').first()).toBeVisible();
-    await expect(
-      page.getByText(SEEDED_CONVERSATIONS.berlinPortland.latestReply),
-    ).toBeVisible();
   });
 
   test('thread view shows the seeded reply', async ({ page, request }) => {

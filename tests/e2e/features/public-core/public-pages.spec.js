@@ -1,6 +1,6 @@
-const { test, expect } = require('./test');
+const { test, expect } = require('../../support/test');
 
-const { createUser, waitForTribesList } = require('./helpers');
+const { createUser, waitForTribesList } = require('../../support/helpers');
 
 test.describe('public pages and unauthenticated flows', () => {
   test('sign in and sign up pages link to each other', async ({ page }) => {

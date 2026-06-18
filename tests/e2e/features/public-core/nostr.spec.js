@@ -1,6 +1,6 @@
-const { test, expect } = require('./test');
+const { test, expect } = require('../../support/test');
 
-const { createUser, registerViaApi, signIn } = require('./helpers');
+const { createUser, registerViaApi, signIn } = require('../../support/helpers');
 
 // `npub1qqq…zqujme` decodes to an all-zero 32-byte public key, which is the
 // canonical "valid but empty" key the server-side tests reuse.

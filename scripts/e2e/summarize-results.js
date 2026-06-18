@@ -3,11 +3,14 @@
 const fs = require('fs');
 const path = require('path');
 const { areaForSpec, computeAreaCoverage } = require('./areas');
+const { summarizeFeatureCoverage } = require('./feature-coverage-summary');
 const { mergeRawCoverage } = require('./merge-js-coverage');
 
 const root = path.resolve(__dirname, '../..');
 const resultsPath = path.join(root, 'coverage/e2e/playwright-results.json');
 const statusPath = path.join(root, 'coverage/e2e/status.json');
+const enforceFeatureCoverage =
+  process.env.TRUSTROOTS_E2E_ENFORCE_FEATURE_COVERAGE === 'true';
 
 const TERMINAL_FAILURES = new Set([
   'failed',
@@ -87,6 +90,15 @@ function summarizeReport(report) {
   walkSuites(report.suites);
 
   const areaCoverage = computeAreaCoverage(areaResults);
+  const featureCoverage = summarizeFeatureCoverage(report);
+  if (featureCoverage.validationErrors.length > 0) {
+    throw new Error(
+      [
+        'Feature coverage manifest is invalid:',
+        ...featureCoverage.validationErrors.map(error => `- ${error}`),
+      ].join('\n'),
+    );
+  }
 
   return {
     total,
@@ -103,6 +115,21 @@ function summarizeReport(report) {
     definedAreaCount: areaCoverage.defined,
     exercisedAreaCount: areaCoverage.exercised,
     greenAreaCount: areaCoverage.green,
+    featureCoverage: featureCoverage.featureCoverage,
+    featurePassCoverage: featureCoverage.featurePassCoverage,
+    scenarioCoverage: featureCoverage.scenarioCoverage,
+    activeFeatureCount: featureCoverage.activeFeatureCount,
+    coveredFeatureCount: featureCoverage.coveredFeatureCount,
+    missingFeatureCount: featureCoverage.missingFeatureCount,
+    excludedFeatureCount: featureCoverage.excludedFeatureCount,
+    touchedFeatureCount: featureCoverage.touchedFeatureCount,
+    greenFeatureCount: featureCoverage.greenFeatureCount,
+    requiredScenarioCount: featureCoverage.requiredScenarioCount,
+    coveredScenarioCount: featureCoverage.coveredScenarioCount,
+    missingScenarioCount: featureCoverage.missingScenarioCount,
+    missingByArea: featureCoverage.missingByArea,
+    featureDetails: featureCoverage.features,
+    excludedFeatures: featureCoverage.excludedFeatures,
   };
 }
 
@@ -144,10 +171,22 @@ function formatMessage(metrics, fallbackMessage) {
     );
   }
 
+  if (typeof metrics.featureCoverage === 'number') {
+    parts.push(
+      `${metrics.coveredFeatureCount}/${metrics.activeFeatureCount} features covered (${metrics.featureCoverage.toFixed(
+        2,
+      )}%)`,
+    );
+  }
+
   if (metrics.codeCoverage) {
     parts.push(
       `client code ${metrics.codeCoverage.statements.toFixed(2)}% statements`,
     );
+  }
+
+  if (enforceFeatureCoverage && metrics.missingScenarioCount > 0) {
+    parts.push(`${metrics.missingScenarioCount} feature scenarios missing`);
   }
 
   return `${parts.join('; ')}.`;
@@ -192,6 +231,15 @@ async function run() {
   }
 
   writeStatus(status, exitCode, message, metrics);
+
+  if (
+    enforceFeatureCoverage &&
+    (metrics.missingScenarioCount > 0 || metrics.featurePassCoverage < 100)
+  ) {
+    throw new Error(
+      `End-to-end feature coverage is below 100%: ${metrics.coveredScenarioCount}/${metrics.requiredScenarioCount} scenarios covered.`,
+    );
+  }
 }
 
 run().catch(error => {
