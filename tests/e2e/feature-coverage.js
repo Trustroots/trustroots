@@ -88,8 +88,7 @@ function apiRoute(method, path, routeSource, extra = {}) {
 const specPaths = {
   'admin.spec.js': 'features/admin-moderation/admin.spec.js',
   'auth-smoke.spec.js': 'features/auth-account/auth-smoke.spec.js',
-  'authenticated.spec.js':
-    'features/profile-onboarding/authenticated.spec.js',
+  'authenticated.spec.js': 'features/profile-onboarding/authenticated.spec.js',
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
   'member.spec.js': 'features/profile-onboarding/member.spec.js',
   'messages.spec.js': 'features/messages/messages.spec.js',

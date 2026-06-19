@@ -1,8 +1,4 @@
-const {
-  annotateFeature,
-  expect,
-  test,
-} = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
   SEEDED_ADMIN,
@@ -12,7 +8,10 @@ const {
   registerViaApi,
   signInViaApi,
 } = require('../../support/helpers');
-const { findUserByUsername, updateUserByUsername } = require('../../support/db');
+const {
+  findUserByUsername,
+  updateUserByUsername,
+} = require('../../support/db');
 
 test.describe.serial('admin moderation feature coverage', () => {
   test.beforeEach(async ({ page, request }) => {
@@ -79,9 +78,9 @@ test.describe.serial('admin moderation feature coverage', () => {
     const updated = await page.request.get('/api/admin/notes', {
       params: { userId: shadowId },
     });
-    expect((await updated.json()).some(note => note.note.includes(noteText))).toBe(
-      true,
-    );
+    expect(
+      (await updated.json()).some(note => note.note.includes(noteText)),
+    ).toBe(true);
   });
 
   test('admin can change roles and audit invalid role errors', async ({
@@ -161,7 +160,9 @@ test.describe.serial('admin moderation feature coverage', () => {
     await page.goto('/admin/reference-threads');
     await expect(page).toHaveURL(/\/admin\/reference-threads/);
 
-    const referenceThreads = await page.request.get('/api/admin/reference-threads');
+    const referenceThreads = await page.request.get(
+      '/api/admin/reference-threads',
+    );
     expect(referenceThreads.ok()).toBeTruthy();
     expect((await referenceThreads.json()).length).toBeGreaterThan(0);
 
@@ -191,7 +192,9 @@ test.describe.serial('admin moderation feature coverage', () => {
     ]);
 
     await page.goto('/admin/newsletter');
-    const disabledApi = await page.request.get('/api/admin/newsletter-subscribers');
+    const disabledApi = await page.request.get(
+      '/api/admin/newsletter-subscribers',
+    );
     expect(disabledApi.status()).toBe(404);
   });
 });

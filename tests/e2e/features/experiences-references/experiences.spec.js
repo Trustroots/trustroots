@@ -1,6 +1,9 @@
 const { test, expect } = require('../../support/test');
 
-const { SEEDED_EXPERIENCE, fetchUserIdByUsername } = require('../../support/helpers');
+const {
+  SEEDED_EXPERIENCE,
+  fetchUserIdByUsername,
+} = require('../../support/helpers');
 
 test.describe('seeded experience flows', () => {
   test('profile experiences tab shows the seeded public experience', async ({

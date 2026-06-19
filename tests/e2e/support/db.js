@@ -48,7 +48,9 @@ async function findOffersByUser(userId, query = {}) {
 }
 
 async function updateUserByUsername(username, update) {
-  return withE2eDb(db => db.collection('users').updateOne({ username }, update));
+  return withE2eDb(db =>
+    db.collection('users').updateOne({ username }, update),
+  );
 }
 
 async function removeUserByUsername(username) {

@@ -1,8 +1,4 @@
-const {
-  annotateFeature,
-  expect,
-  test,
-} = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
   SEEDED_RELATIONSHIP_MEMBERS,
@@ -11,7 +7,10 @@ const {
   registerViaApi,
   signInViaApi,
 } = require('../../support/helpers');
-const { findContactByUsers, updateUserByUsername } = require('../../support/db');
+const {
+  findContactByUsers,
+  updateUserByUsername,
+} = require('../../support/db');
 
 test.describe.serial('contacts and safety feature coverage', () => {
   test('members can create pending contacts and see duplicate state', async ({
@@ -76,7 +75,6 @@ test.describe.serial('contacts and safety feature coverage', () => {
     browser,
     baseURL,
     page,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'contacts.confirm', [
       'Confirm contact page loads for a pending contact.',
@@ -101,7 +99,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
         alicePage.getByRole('heading', { name: /confirm contact/i }),
       ).toBeVisible();
 
-      const confirm = await alicePage.request.put(`/api/contact/${contact._id}`);
+      const confirm = await alicePage.request.put(
+        `/api/contact/${contact._id}`,
+      );
       expect(confirm.ok()).toBeTruthy();
       expect((await confirm.json()).confirmed).toBe(true);
     } finally {
@@ -112,7 +112,6 @@ test.describe.serial('contacts and safety feature coverage', () => {
   test('members can remove contacts and lists update', async ({
     browser,
     baseURL,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'contacts.remove', [
       'Confirmed contact can be removed.',
@@ -154,7 +153,6 @@ test.describe.serial('contacts and safety feature coverage', () => {
   test('members can list, block, and unblock users', async ({
     browser,
     baseURL,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'safety.block-users', [
       'Blocked users list loads.',
@@ -181,7 +179,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
       );
       expect(unblock.ok()).toBeTruthy();
 
-      const block = await page.request.put(`/api/blocked-users/${bob.username}`);
+      const block = await page.request.put(
+        `/api/blocked-users/${bob.username}`,
+      );
       expect(block.ok()).toBeTruthy();
     } finally {
       await context.close();
@@ -191,7 +191,6 @@ test.describe.serial('contacts and safety feature coverage', () => {
   test('blocking hides protected profile and relationship actions', async ({
     browser,
     baseURL,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'safety.block-effects', [
       'Blocked profile actions are hidden or disabled.',
@@ -206,7 +205,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
     try {
       await signInViaApi(page, context.request, bob);
 
-      const hiddenProfile = await page.request.get(`/api/users/${alice.username}`);
+      const hiddenProfile = await page.request.get(
+        `/api/users/${alice.username}`,
+      );
       expect(hiddenProfile.status()).toBe(404);
 
       const blockedList = await page.request.get('/api/blocked-users');

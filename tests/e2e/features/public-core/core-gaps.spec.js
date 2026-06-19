@@ -1,8 +1,4 @@
-const {
-  annotateFeature,
-  test,
-  expect,
-} = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
 test.describe('public core manifest gap coverage', () => {
   test('support API accepts valid guest requests', async ({

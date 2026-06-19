@@ -1,6 +1,11 @@
 const { test, expect } = require('../../support/test');
 
-const { createUser, registerViaApi, signOut, signUp } = require('../../support/helpers');
+const {
+  createUser,
+  registerViaApi,
+  signOut,
+  signUp,
+} = require('../../support/helpers');
 
 const user = createUser();
 

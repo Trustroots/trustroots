@@ -1,8 +1,4 @@
-const {
-  annotateFeature,
-  expect,
-  test,
-} = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
   EUROPE_OFFERS_QUERY,
@@ -85,7 +81,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       params: { types: 'host' },
     });
     expect(listed.ok()).toBeTruthy();
-    expect((await listed.json()).some(offer => offer.type === 'host')).toBe(true);
+    expect((await listed.json()).some(offer => offer.type === 'host')).toBe(
+      true,
+    );
 
     const update = await page.request.put(`/api/offers/${createdOffer._id}`, {
       data: {
@@ -123,9 +121,12 @@ test.describe.serial('search offers and circles feature coverage', () => {
     ).toBeVisible();
 
     const aliceId = await fetchUserIdByUsername(request, alice.username);
-    const aliceMeetOffers = await page.request.get(`/api/offers-by/${aliceId}`, {
-      params: { types: 'meet' },
-    });
+    const aliceMeetOffers = await page.request.get(
+      `/api/offers-by/${aliceId}`,
+      {
+        params: { types: 'meet' },
+      },
+    );
     expect(aliceMeetOffers.ok()).toBeTruthy();
     expect((await aliceMeetOffers.json()).length).toBeGreaterThan(0);
 
@@ -163,9 +164,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       SEEDED_RELATIONSHIP_MEMBERS.bob.id,
       { type: 'meet' },
     );
-    expect(
-      expiredBobOffers.some(offer => offer.validUntil < new Date()),
-    ).toBe(true);
+    expect(expiredBobOffers.some(offer => offer.validUntil < new Date())).toBe(
+      true,
+    );
 
     const remove = await page.request.delete(`/api/offers/${createdOffer._id}`);
     expect(remove.ok()).toBeTruthy();
@@ -215,7 +216,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       );
       expect(leave.ok()).toBeTruthy();
 
-      const memberships = await memberPage.request.get('/api/users/memberships');
+      const memberships = await memberPage.request.get(
+        '/api/users/memberships',
+      );
       expect(memberships.ok()).toBeTruthy();
       expect(
         (await memberships.json()).map(item => item.tribe._id),

@@ -25,7 +25,9 @@ function readFixture(...segments) {
 function providerHostForUrl(url) {
   try {
     const { hostname } = new URL(url);
-    return providerHosts.find(host => hostname === host || hostname.endsWith(`.${host}`));
+    return providerHosts.find(
+      host => hostname === host || hostname.endsWith(`.${host}`),
+    );
   } catch {
     return false;
   }
@@ -41,6 +43,7 @@ async function seedMapState(page, state = {}) {
 
   await page.addInitScript(
     ({ mapStyle, mapLocation }) => {
+      /* global window */
       window.localStorage.setItem('search-map-style', JSON.stringify(mapStyle));
       window.localStorage.setItem(
         'search-map-location',
@@ -55,7 +58,10 @@ async function seedMapState(page, state = {}) {
 }
 
 async function useMapProviderHar(context, name, options = {}) {
-  const harPath = fixturePath('hars', name.endsWith('.har') ? name : `${name}.har`);
+  const harPath = fixturePath(
+    'hars',
+    name.endsWith('.har') ? name : `${name}.har`,
+  );
   if (!fs.existsSync(harPath)) {
     return false;
   }

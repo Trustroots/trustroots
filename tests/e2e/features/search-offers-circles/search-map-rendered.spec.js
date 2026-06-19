@@ -1,8 +1,4 @@
-const {
-  annotateFeature,
-  expect,
-  test,
-} = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/test');
 
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const {
@@ -35,6 +31,7 @@ test.describe('rendered search map feature coverage', () => {
     await waitForSearchMap(page);
 
     const mapState = await page.evaluate(() => {
+      /* global document, window */
       const canvas = document.querySelector('.mapboxgl-canvas');
       const persistedStyle = JSON.parse(
         window.localStorage.getItem('search-map-style'),
@@ -63,7 +60,9 @@ test.describe('rendered search map feature coverage', () => {
     await page.reload();
     await waitForSearchMap(page);
 
-    await expect(page.getByText(/choose something from the map/i)).toBeVisible();
+    await expect(
+      page.getByText(/choose something from the map/i),
+    ).toBeVisible();
   });
 
   test('offer deep-link uses fixture offer data in the sidebar', async ({

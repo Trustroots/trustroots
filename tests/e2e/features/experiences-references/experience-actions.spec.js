@@ -1,8 +1,4 @@
-const {
-  annotateFeature,
-  expect,
-  test,
-} = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
   SEEDED_EXPERIENCE,
@@ -159,11 +155,15 @@ test.describe.serial('experience and reference feature coverage', () => {
       });
       expect([200, 201, 400, 409]).toContain(create.status());
 
-      const read = await page.request.get(`/api/references-thread/${portlandId}`);
+      const read = await page.request.get(
+        `/api/references-thread/${portlandId}`,
+      );
       expect(read.ok()).toBeTruthy();
       expect(['yes', 'no']).toContain((await read.json()).reference);
 
-      const denied = await page.request.get(`/api/references-thread/${beijingId}`);
+      const denied = await page.request.get(
+        `/api/references-thread/${beijingId}`,
+      );
       expect([403, 404]).toContain(denied.status());
     } finally {
       await context.close();
