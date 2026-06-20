@@ -1,6 +1,8 @@
 /* eslint-disable angular/log */
 
-import { Relay } from 'nostr-tools/relay';
+// nostr-tools v2 exposes subpaths via the package.json `exports` map, which
+// webpack 4 can't resolve, so import the CJS build file directly.
+import { Relay } from 'nostr-tools/lib/cjs/relay.js';
 
 export const NOSTR_RELAY_URL = 'wss://relay.trustroots.org';
 export const MAP_NOTES_LIMIT = 500;

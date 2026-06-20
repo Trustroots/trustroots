@@ -3,7 +3,7 @@ import NostrService, {
 } from '@/modules/search/client/services/nostr.client.service';
 
 // Mock nostr-tools/relay
-jest.mock('nostr-tools/relay', () => {
+jest.mock('nostr-tools/lib/cjs/relay.js', () => {
   const MockRelay = jest.fn().mockImplementation(url => {
     const instance = {
       url,
@@ -18,7 +18,7 @@ jest.mock('nostr-tools/relay', () => {
   return { Relay: MockRelay };
 });
 
-const { Relay } = require('nostr-tools/relay');
+const { Relay } = require('nostr-tools/lib/cjs/relay.js');
 
 describe('NostrService', () => {
   let service;

@@ -66,7 +66,10 @@ module.exports.initLocalVariables = function (app) {
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   // Assets
-  if (process.env.NODE_ENV === 'production') {
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
+  ) {
     app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = ['assets/main.css'];
   } else {

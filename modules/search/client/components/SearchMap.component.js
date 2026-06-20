@@ -167,6 +167,13 @@ export default function SearchMap({
   const parsedFilters = filters ? JSON.parse(filters) : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
   const MAPBOX_TOKEN = getMapBoxToken();
+  // A Mapbox style can be persisted in localStorage from a session that had a
+  // token configured. Without a token, mapbox-gl can't load it and the map
+  // renders blank, so fall back to the tokenless OSM style.
+  const isMapboxStyle =
+    typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
+  const effectiveMapStyle =
+    !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles = !!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production';
   const sourceRef = createRef();
@@ -594,7 +601,7 @@ export default function SearchMap({
           persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
         ]}
         mapboxApiAccessToken={MAPBOX_TOKEN}
-        mapStyle={mapStyle}
+        mapStyle={effectiveMapStyle}
         onClick={onClickMap}
         onHover={onHover}
         onInteractionStateChange={debouncedUpdateOffers}
@@ -611,7 +618,10 @@ export default function SearchMap({
         <MapScaleControl />
         <MapNavigationControl />
         {showMapStyles && (
-          <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
+          <MapStyleControl
+            mapStyle={effectiveMapStyle}
+            setMapstyle={setMapstyle}
+          />
         )}
         <Source
           buffer={512}
@@ -627,7 +637,7 @@ export default function SearchMap({
         >
           <Layer {...clusterLayer} />
           {/* OSM and Mapbox use different fonts for cluster numbers */}
-          {mapStyle === MAP_STYLE_OSM ? (
+          {effectiveMapStyle === MAP_STYLE_OSM ? (
             <Layer {...clusterCountLayerOSM} />
           ) : (
             <Layer {...clusterCountLayerMapbox} />
