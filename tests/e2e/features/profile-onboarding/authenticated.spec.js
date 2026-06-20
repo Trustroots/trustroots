@@ -120,7 +120,9 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
     await expect(page).toHaveTitle(/Profile - Trustroots/);
     await expect(
-      page.getByText(`${user.firstName} ${user.lastName}`).first(),
+      page
+        .locator('.profile-name:visible')
+        .filter({ hasText: `${user.firstName} ${user.lastName}` }),
     ).toBeVisible();
   });
 
@@ -202,10 +204,20 @@ test.describe('authenticated member flows', () => {
 
     await expect(page).toHaveURL(/\/navigation/);
     await expect(page).toHaveTitle(/Navigation - Trustroots/);
-    await expect(page.getByText(/view your profile/i)).toBeVisible();
-    await expect(page.getByText(/edit profile/i).first()).toBeVisible();
     await expect(
-      page.getByRole('link', { name: /find people/i }),
+      page.locator('.page-navigation-profile', {
+        hasText: /view your profile/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.locator('a[href="/profile/edit"]', {
+        hasText: /edit profile/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.locator('a[href="/search/members"]', {
+        hasText: /find people/i,
+      }),
     ).toBeVisible();
   });
 

@@ -69,7 +69,9 @@ test.describe('confirmed member flows', () => {
 
     await expect(page).toHaveURL(new RegExp(`/profile/${beijing.username}`));
     await expect(
-      page.getByText(`${beijing.firstName} ${beijing.lastName}`).first(),
+      page
+        .locator('.profile-name:visible')
+        .filter({ hasText: `${beijing.firstName} ${beijing.lastName}` }),
     ).toBeVisible();
   });
 
