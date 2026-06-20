@@ -175,7 +175,7 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     await expect(page.locator('#nostrNpub')).toHaveValue(FORM_NPUB);
   });
 
-  test('links the saved npub to njump.me on the profile view', async ({
+  test('links the saved npub to nos.trustroots.org on the profile view', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-networks', [
@@ -191,7 +191,9 @@ test.describe.serial('nostr npub on the profile networks form', () => {
       page.getByRole('link', { name: nostrAddress }),
     ).toHaveAttribute(
       'href',
-      `https://njump.me/${encodeURIComponent(nostrAddress)}`,
+      `https://nos.trustroots.org/v0/#profile/${encodeURIComponent(
+        nostrAddress,
+      )}`,
     );
   });
 });

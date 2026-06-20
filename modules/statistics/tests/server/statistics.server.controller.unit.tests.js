@@ -334,7 +334,7 @@ describe('Statistics controller unit tests', () => {
       res.body.should.have.property('total');
       res.body.should.have.property('connections');
       res.body.should.have.property('hosting');
-      res.body.connections.length.should.be.aboveOrEqual(7);
+      res.body.connections.length.should.be.aboveOrEqual(6);
       res.body.connections
         .map(connection => connection.network)
         .should.containEql('nostr');
@@ -368,30 +368,25 @@ describe('Statistics controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    [
-      'couchsurfing',
-      'warmshowers',
-      'facebook',
-      'twitter',
-      'github',
-      'nostr',
-    ].forEach(site => {
-      it(`returns 400 when ${site} count fails`, async () => {
-        const original = statistics.getExternalSiteCount;
-        statistics.getExternalSiteCount = function (requestedSite, cb) {
-          if (requestedSite === site) {
-            return cb(new Error(`${site} count failed`));
-          }
-          return original.call(statistics, requestedSite, cb);
-        };
+    ['couchsurfing', 'warmshowers', 'facebook', 'github', 'nostr'].forEach(
+      site => {
+        it(`returns 400 when ${site} count fails`, async () => {
+          const original = statistics.getExternalSiteCount;
+          statistics.getExternalSiteCount = function (requestedSite, cb) {
+            if (requestedSite === site) {
+              return cb(new Error(`${site} count failed`));
+            }
+            return original.call(statistics, requestedSite, cb);
+          };
 
-        const res = deferredResponse();
-        statistics.getPublicStatistics({}, res);
-        await res.waitForResponse();
-        statistics.getExternalSiteCount = original;
-        res.statusCode.should.equal(400);
-      });
-    });
+          const res = deferredResponse();
+          statistics.getPublicStatistics({}, res);
+          await res.waitForResponse();
+          statistics.getExternalSiteCount = original;
+          res.statusCode.should.equal(400);
+        });
+      },
+    );
 
     it('returns 400 when newsletter count fails', async () => {
       sinon

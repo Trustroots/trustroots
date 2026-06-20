@@ -14,7 +14,7 @@ const differentNpub =
 function assertStats(stats) {
   stats.total.should.equal(4);
 
-  stats.connections.should.have.lengthOf(7);
+  stats.connections.should.have.lengthOf(6);
   stats.connections.map(connection => {
     connection.count.should.equal(2);
     connection.percentage.should.equal(50);
