@@ -16,6 +16,9 @@
     "passRate": 100,
     "areaCoverage": 0,
     "areaPassCoverage": 0,
+    "featureCoverage": 100,
+    "featurePassCoverage": 100,
+    "scenarioCoverage": 100,
     "code": {
       "statements": 0,
       "branches": 0,

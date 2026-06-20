@@ -1,0 +1,247 @@
+name: E2E screenshots
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - 'tests/e2e/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  screenshots:
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'screenshots')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find changed e2e specs
+        id: changed
+        run: |
+          git fetch origin "${GITHUB_BASE_REF}"
+          mapfile -t changed_specs < <(
+            git diff --name-only --diff-filter=ACMR \
+              "origin/${GITHUB_BASE_REF}...HEAD" \
+              -- 'tests/e2e/**/*.spec.js'
+          )
+
+          if [ "${#changed_specs[@]}" -eq 0 ]; then
+            echo "has_specs=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          {
+            echo "has_specs=true"
+            printf 'specs<<EOF\n'
+            printf '%s\n' "${changed_specs[@]}"
+            printf 'EOF\n'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Comment when no e2e spec changes
+        if: steps.changed.outputs.has_specs != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- e2e-screenshots -->';
+            const body = [
+              marker,
+              '## E2E screenshots',
+              '',
+              '_No changed `tests/e2e/**/*.spec.js` files were found in this PR, so no screenshots were captured._',
+            ].join('\n');
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+            const existing = comments.find(
+              comment => comment.body && comment.body.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Set up Docker Buildx
+        if: steps.changed.outputs.has_specs == 'true'
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build dev image
+        if: steps.changed.outputs.has_specs == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: deploy/docker/dev.Dockerfile
+          tags: trustroots-dev:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+
+      - name: Prepare compose local config
+        if: steps.changed.outputs.has_specs == 'true'
+        run: node ./scripts/ci/ensure-compose-local.js
+
+      - name: Start MongoDB
+        if: steps.changed.outputs.has_specs == 'true'
+        working-directory: deploy/docker
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d mongodb
+
+      - name: Run changed e2e specs with screenshots
+        if: steps.changed.outputs.has_specs == 'true'
+        id: run
+        working-directory: deploy/docker
+        env:
+          CHANGED_SPECS: ${{ steps.changed.outputs.specs }}
+        run: |
+          rm -rf ../../tmp/screenshots
+          mkdir -p ../../tmp/screenshots
+
+          mapfile -t specs <<< "$CHANGED_SPECS"
+          set +e
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e DB_1_PORT_27017_TCP_ADDR=mongodb \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
+            -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
+            -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            -e TRUSTROOTS_E2E_SCREENSHOTS=true \
+            -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
+            dev npm run test:e2e -- "${specs[@]}"
+          test_status="$?"
+          set -e
+          echo "test_status=$test_status" >> "$GITHUB_OUTPUT"
+
+      - name: Collect screenshots
+        if: steps.changed.outputs.has_specs == 'true'
+        id: collect
+        run: |
+          shopt -s nullglob
+          files=(tmp/screenshots/*.png)
+          echo "count=${#files[@]}" >> "$GITHUB_OUTPUT"
+
+      - name: Push screenshots to pr-screenshots branch
+        if: steps.changed.outputs.has_specs == 'true' && steps.collect.outputs.count != '0'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_DIR: pr-${{ github.event.pull_request.number }}/${{ github.run_id }}
+        run: |
+          workdir="$(mktemp -d)"
+          cp tmp/screenshots/*.png "$workdir/"
+
+          pushdir="$(mktemp -d)"
+          cd "$pushdir"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          if git fetch --depth=1 origin pr-screenshots:pr-screenshots 2>/dev/null; then
+            git checkout pr-screenshots
+          else
+            git checkout --orphan pr-screenshots
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p "$RUN_DIR"
+          cp "$workdir"/*.png "$RUN_DIR/"
+          git add "$RUN_DIR"
+          git commit -m "PR #${{ github.event.pull_request.number }} e2e screenshots (${{ github.run_id }})"
+          git push origin HEAD:pr-screenshots
+
+      - name: Upsert PR comment with screenshots
+        if: steps.changed.outputs.has_specs == 'true'
+        uses: actions/github-script@v7
+        env:
+          SCREENSHOT_COUNT: ${{ steps.collect.outputs.count }}
+          TEST_STATUS: ${{ steps.run.outputs.test_status }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const marker = '<!-- e2e-screenshots -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const runId = context.runId;
+            const screenshotCount = Number(process.env.SCREENSHOT_COUNT || '0');
+            const testStatus = Number(process.env.TEST_STATUS || '0');
+            const baseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/pr-screenshots/pr-${issue_number}/${runId}`;
+
+            const lines = [
+              marker,
+              '## E2E screenshots',
+              '',
+              `Run: \`${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}\``,
+            ];
+
+            if (testStatus !== 0) {
+              lines.push('', '_Some changed e2e specs failed; screenshots below may include failure states._');
+            }
+
+            if (screenshotCount === 0) {
+              lines.push('', '_No screenshots were captured._');
+            } else {
+              const screenshotDir = path.join(process.cwd(), 'tmp/screenshots');
+              const files = fs
+                .readdirSync(screenshotDir)
+                .filter(file => file.endsWith('.png'))
+                .sort();
+
+              for (const file of files) {
+                const title = file.replace(/\.png$/, '').replace(/_/g, ' ');
+                lines.push('', `### ${title}`, '', `![${title}](${baseUrl}/${encodeURIComponent(file)})`);
+              }
+            }
+
+            const body = `${lines.join('\n')}\n`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+            const existing = comments.find(
+              comment => comment.body && comment.body.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
