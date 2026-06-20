@@ -153,6 +153,7 @@ describe('Statistics controller unit tests', () => {
       'warmshowers',
       'facebook',
       'twitter',
+      'nostr',
     ].forEach(site => {
       it(`counts users connected to ${site}`, async () => {
         const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -177,6 +178,10 @@ describe('Statistics controller unit tests', () => {
             break;
           case 'twitter':
             userDoc.additionalProvidersData = { twitter: { id: '1' } };
+            break;
+          case 'nostr':
+            userDoc.nostrNpub =
+              'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
             break;
           default:
             break;
@@ -330,6 +335,9 @@ describe('Statistics controller unit tests', () => {
       res.body.should.have.property('connections');
       res.body.should.have.property('hosting');
       res.body.connections.length.should.be.aboveOrEqual(6);
+      res.body.connections
+        .map(connection => connection.network)
+        .should.containEql('nostr');
       res.body.should.have.property('newsletter');
     });
 
@@ -360,7 +368,7 @@ describe('Statistics controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    ['couchsurfing', 'warmshowers', 'facebook', 'twitter', 'github'].forEach(
+    ['couchsurfing', 'warmshowers', 'facebook', 'github', 'nostr'].forEach(
       site => {
         it(`returns 400 when ${site} count fails`, async () => {
           const original = statistics.getExternalSiteCount;

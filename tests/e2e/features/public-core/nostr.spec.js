@@ -12,6 +12,10 @@ const {
 // canonical "valid but empty" key the server-side tests reuse.
 const VALID_NPUB =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+const PUBLIC_MEMBER_NPUB =
+  'npub1yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3q2pw2gm';
+const FORM_NPUB =
+  'npub1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygse4sl3h';
 // A secret key (nsec) must never be accepted in place of a public key.
 const NSEC = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 
@@ -101,9 +105,10 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     await signInViaApi(page, request, host);
 
     const update = await page.request.put('/api/users', {
-      data: { nostrNpub: VALID_NPUB },
+      data: { nostrNpub: PUBLIC_MEMBER_NPUB },
     });
     expect(update.ok()).toBeTruthy();
+    expect((await update.json()).nostrNpub).toBe(PUBLIC_MEMBER_NPUB);
 
     const response = await request.get(
       `/.well-known/nostr.json?name=${host.username}`,
@@ -113,7 +118,7 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     expect(await response.json()).toEqual({
       names: {
         [host.username]:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+          '2222222222222222222222222222222222222222222222222222222222222222',
       },
     });
   });
@@ -164,16 +169,16 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     const input = page.locator('#nostrNpub');
     await expect(input).toBeVisible();
 
-    await input.fill(VALID_NPUB);
+    await input.fill(FORM_NPUB);
     await page.locator('.profile-editor-save').click();
 
     await expect(page.getByText(/networks updated/i)).toBeVisible();
 
     await page.goto('/profile/edit/networks');
-    await expect(page.locator('#nostrNpub')).toHaveValue(VALID_NPUB);
+    await expect(page.locator('#nostrNpub')).toHaveValue(FORM_NPUB);
   });
 
-  test('links the saved npub to njump.me on the profile view', async ({
+  test('links the saved npub to nos.trustroots.org on the profile view', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-networks', [
@@ -184,8 +189,14 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 
     await page.goto(`/profile/${user.username}`);
 
+    const nostrAddress = `${user.username}@trustroots.org`;
     await expect(
-      page.getByRole('link', { name: 'nostr npub' }),
-    ).toHaveAttribute('href', `https://njump.me/${VALID_NPUB}`);
+      page.getByRole('link', { name: nostrAddress }),
+    ).toHaveAttribute(
+      'href',
+      `https://nos.trustroots.org/v0/#profile/${encodeURIComponent(
+        nostrAddress,
+      )}`,
+    );
   });
 });

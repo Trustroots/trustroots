@@ -50,6 +50,7 @@ describe('<ProfileViewBasics />', () => {
           replyRate: '80%',
           replyTime: '2020-01-02T00:00:00.000Z',
           seen: '2020-01-03T00:00:00.000Z',
+          username: 'trustroots',
         }}
       />,
     );
@@ -77,9 +78,20 @@ describe('<ProfileViewBasics />', () => {
     expect(
       screen.queryByRole('link', { name: 'Facebook' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
+    const nostrLink = screen.getByRole('link', {
+      name: 'trustroots@trustroots.org',
+    });
+    expect(nostrLink).toHaveAttribute(
       'href',
-      'https://njump.me/npub1trustroots',
+      'https://nos.trustroots.org/v0/#profile/trustroots%40trustroots.org',
+    );
+    expect(nostrLink).toHaveAttribute(
+      'aria-describedby',
+      'nostr-address-note-trustroots',
+    );
+    expect(screen.getByText('Nostroots')).toBeInTheDocument();
+    expect(screen.getByText('Nostr address, not an email address')).toHaveClass(
+      'sr-only',
     );
     expect(screen.getByRole('link', { name: 'Couchers.org' })).toHaveAttribute(
       'href',
@@ -107,14 +119,17 @@ describe('<ProfileViewBasics />', () => {
           languages: [],
           nostrNpub: 'npub1onlynetwork',
           seen: null,
+          username: 'onlynetwork',
         }}
       />,
     );
 
     expect(screen.getByText('Elsewhere')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
+    expect(
+      screen.getByRole('link', { name: 'onlynetwork@trustroots.org' }),
+    ).toHaveAttribute(
       'href',
-      'https://njump.me/npub1onlynetwork',
+      'https://nos.trustroots.org/v0/#profile/onlynetwork%40trustroots.org',
     );
   });
 

@@ -2,8 +2,7 @@
 
 ## Nostr — decentralized social networking
 
-Online social networks built around the gift economy should rely less on individual-run servers and bureaucratic overhead. Nostr is a promising way to make that vision real. Learn more at [notes.trustroots.org](https://notes.trustroots.org).
-
+Online social networks built around the gift economy should rely less on individual-run servers and bureaucratic overhead. Nostr is a promising way to make that vision real. Learn more at [nos.trustroots.org](https://nos.trustroots.org).
 
 ## Support team
 
@@ -17,4 +16,3 @@ Role: Read, triage, and respond to incoming support requests.
 - Commitment: Flexible — even a few hours per month or being on-call for short periods helps.
 
 Simply send a message to [support](https://www.trustroots.org/support) if you want to help with this.
-
