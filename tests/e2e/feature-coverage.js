@@ -1255,7 +1255,7 @@ const features = [
       ),
       spec(
         'nostr.spec.js',
-        'links the saved npub to njump.me on the profile view',
+        'links the saved npub to nos.trustroots.org on the profile view',
       ),
     ],
   },

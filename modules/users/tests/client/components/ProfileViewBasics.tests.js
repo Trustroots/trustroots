@@ -83,12 +83,13 @@ describe('<ProfileViewBasics />', () => {
     });
     expect(nostrLink).toHaveAttribute(
       'href',
-      'https://njump.me/trustroots%40trustroots.org',
+      'https://nos.trustroots.org/v0/#profile/trustroots%40trustroots.org',
     );
     expect(nostrLink).toHaveAttribute(
       'aria-describedby',
       'nostr-address-note-trustroots',
     );
+    expect(screen.getByText('Nostr')).toBeInTheDocument();
     expect(screen.getByText('Nostr address, not an email address')).toHaveClass(
       'sr-only',
     );
@@ -126,7 +127,10 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.getByText('Elsewhere')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'onlynetwork@trustroots.org' }),
-    ).toHaveAttribute('href', 'https://njump.me/onlynetwork%40trustroots.org');
+    ).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/v0/#profile/onlynetwork%40trustroots.org',
+    );
   });
 
   it('renders Warmshowers usernames and volunteer alumni labels', () => {

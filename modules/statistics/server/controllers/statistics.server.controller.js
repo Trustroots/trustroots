@@ -327,21 +327,6 @@ exports.getPublicStatistics = function (req, res) {
         });
       },
 
-      // External sites - Twitter
-      function (done) {
-        exports.getExternalSiteCount('twitter', function (err, count) {
-          if (err) {
-            return done(err);
-          }
-          req.statistics.connections.push({
-            network: 'twitter',
-            count,
-            percentage: Math.round((count / req.statistics.total) * 100),
-          });
-          done();
-        });
-      },
-
       // External sites - GitHub
       function (done) {
         exports.getExternalSiteCount('github', function (err, count) {

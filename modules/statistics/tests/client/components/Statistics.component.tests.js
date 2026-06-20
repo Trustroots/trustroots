@@ -76,7 +76,7 @@ describe('<Statistics />', () => {
 
     const { container } = render(<Statistics isAuthenticated={false} />);
 
-    expect(container.querySelectorAll('li div')).toHaveLength(7);
+    expect(container.querySelectorAll('li div')).toHaveLength(6);
   });
 
   it('falls back to zero values when optional statistics are missing', async () => {

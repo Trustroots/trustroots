@@ -116,10 +116,13 @@ export default function ProfileViewBasics({ profile }) {
         {profile.nostrNpub && (
           <li className="social-profile">
             <i className="social-profile-icon icon-fw icon-lg"></i>
+            <span className="text-muted">{getNetworkName('nostr')}</span>{' '}
             <a
               rel="noopener"
               className="social-profile-handle"
-              href={`https://njump.me/${encodeURIComponent(nostrIdentifier)}`}
+              href={`https://nos.trustroots.org/v0/#profile/${encodeURIComponent(
+                nostrIdentifier,
+              )}`}
               aria-describedby={nostrDescriptionId}
             >
               {profile.username ? nostrIdentifier : 'nostr npub'}
