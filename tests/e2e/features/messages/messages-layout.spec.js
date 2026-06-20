@@ -1,14 +1,21 @@
 /* global document, window */
 
-const { test, expect } = require('./test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
-const { SEEDED_MEMBERS, fetchUserIdByUsername } = require('./helpers');
+const {
+  SEEDED_MEMBERS,
+  fetchUserIdByUsername,
+} = require('../../support/helpers');
 
 test.describe('message thread layout', () => {
   test('reply editor remains usable when long text overflows', async ({
     page,
     request,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Reply composer remains usable when draft content overflows.',
+    ]);
+
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
 

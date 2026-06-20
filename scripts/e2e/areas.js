@@ -13,6 +13,7 @@ const AREA_BY_SPEC = {
   'seeded-content.spec.js': 'Seeded content',
   'messages.spec.js': 'Messages',
   'message-actions.spec.js': 'Messages',
+  'messages-layout.spec.js': 'Messages',
   'experiences.spec.js': 'Experiences',
   'experience-actions.spec.js': 'Experiences',
   'admin.spec.js': 'Admin',

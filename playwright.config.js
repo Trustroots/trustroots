@@ -181,7 +181,7 @@ module.exports = defineConfig({
     },
     {
       name: 'messages-firefox-layout',
-      testMatch: /messages-layout\.spec\.js/,
+      testMatch: /features\/messages\/messages-layout\.spec\.js/,
       dependencies: ['setup-authenticated'],
       fullyParallel: true,
       use: {
