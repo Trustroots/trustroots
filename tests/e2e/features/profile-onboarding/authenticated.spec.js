@@ -121,8 +121,8 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveTitle(/Profile - Trustroots/);
     await expect(
       page
-        .locator('.profile-name:visible')
-        .filter({ hasText: `${user.firstName} ${user.lastName}` }),
+        .locator('.profile-username:visible')
+        .filter({ hasText: `@${user.username}` }),
     ).toBeVisible();
   });
 
@@ -204,18 +204,20 @@ test.describe('authenticated member flows', () => {
 
     await expect(page).toHaveURL(/\/navigation/);
     await expect(page).toHaveTitle(/Navigation - Trustroots/);
+    const shortcutLinks = page.locator('.list-group.container-spacer');
+
     await expect(
-      page.locator('.page-navigation-profile', {
+      shortcutLinks.locator('.page-navigation-profile', {
         hasText: /view your profile/i,
       }),
     ).toBeVisible();
     await expect(
-      page.locator('a[href="/profile/edit"]', {
+      shortcutLinks.locator('a[href="/profile/edit"]', {
         hasText: /edit profile/i,
       }),
     ).toBeVisible();
     await expect(
-      page.locator('a[href="/search/members"]', {
+      shortcutLinks.locator('a[href="/search/members"]', {
         hasText: /find people/i,
       }),
     ).toBeVisible();
