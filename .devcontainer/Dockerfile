@@ -7,18 +7,32 @@ FROM node:16-bullseye-slim
 
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
+  git \
   graphicsmagick \
+  libasound2 \
+  libatk-bridge2.0-0 \
+  libatk1.0-0 \
+  libatspi2.0-0 \
   openssl \
   unzip \
   wget \
   python3 \
   pkg-config \
   libcairo2-dev \
+  libdrm2 \
+  libgbm1 \
   libpango1.0-dev \
   libpng-dev \
   libjpeg-dev \
   libgif-dev \
   librsvg2-dev \
+  libnspr4 \
+  libnss3 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxfixes3 \
+  libxkbcommon0 \
+  libxrandr2 \
   procps \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

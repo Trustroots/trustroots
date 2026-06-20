@@ -2,14 +2,21 @@ const path = require('path');
 
 const AREA_BY_SPEC = {
   'auth-smoke.spec.js': 'Authentication',
+  'account-lifecycle.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'member.spec.js': 'Member flows',
+  'contacts-and-blocks.spec.js': 'Member flows',
+  'offers-and-circles.spec.js': 'Member flows',
   'public-pages.spec.js': 'Public pages',
+  'core-gaps.spec.js': 'Public pages',
   'nostr.spec.js': 'Nostr',
   'seeded-content.spec.js': 'Seeded content',
   'messages.spec.js': 'Messages',
+  'message-actions.spec.js': 'Messages',
   'experiences.spec.js': 'Experiences',
+  'experience-actions.spec.js': 'Experiences',
   'admin.spec.js': 'Admin',
+  'admin-actions.spec.js': 'Admin',
   'auth.setup.js': 'Setup',
 };
 
