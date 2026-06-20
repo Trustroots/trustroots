@@ -1,0 +1,26 @@
+{
+  "client": {
+    "statements": 53.89,
+    "branches": 45.15,
+    "functions": 49.33,
+    "lines": 54.02
+  },
+  "server": {
+    "statements": 94.74,
+    "branches": 86.15,
+    "functions": 97.26,
+    "lines": 95.24
+  },
+  "e2e": {
+    "tests": 46,
+    "passRate": 100,
+    "areaCoverage": 0,
+    "areaPassCoverage": 0,
+    "code": {
+      "statements": 0,
+      "branches": 0,
+      "functions": 0,
+      "lines": 0
+    }
+  }
+}

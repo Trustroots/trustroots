@@ -1,3 +1,7 @@
+// Import the explicit CJS path: webpack 4 doesn't support the package's
+// `exports` map, so `nostr-tools/nip19` can't be resolved here.
+const { npubEncode } = require('nostr-tools/lib/cjs/nip19.js');
+
 angular
   .module('users')
   .controller('ProfileEditNetworksController', ProfileEditNetworksController);
@@ -6,6 +10,8 @@ angular
 function ProfileEditNetworksController(
   $scope,
   $http,
+  $q,
+  $window,
   Users,
   Authentication,
   messageCenterService,
@@ -25,6 +31,73 @@ function ProfileEditNetworksController(
   vm.hasConnectedAdditionalSocialAccounts =
     hasConnectedAdditionalSocialAccounts;
   vm.isWarmshowersId = isWarmshowersId;
+  vm.nostrNip07Loading = false;
+  vm.nostrNip07SuggestedNpub = '';
+  vm.applyNostrNip07Suggestion = applyNostrNip07Suggestion;
+  vm.hasNostrNip07Suggestion = hasNostrNip07Suggestion;
+  vm.nostrNip07SuggestionButtonText = nostrNip07SuggestionButtonText;
+
+  detectNostrNip07();
+
+  /**
+   * Try to get user's nostr npub from a NIP-07 browser extension.
+   */
+  function detectNostrNip07() {
+    if (!$window.nostr || !angular.isFunction($window.nostr.getPublicKey)) {
+      return;
+    }
+
+    vm.nostrNip07Loading = true;
+
+    $q.when()
+      .then(function () {
+        return $window.nostr.getPublicKey();
+      })
+      .then(function (publicKey) {
+        vm.nostrNip07SuggestedNpub = npubEncode(publicKey);
+      })
+      .catch(angular.noop)
+      .finally(function () {
+        vm.nostrNip07Loading = false;
+      });
+  }
+
+  /**
+   * Check if the detected NIP-07 npub is useful for the current form value.
+   */
+  function hasNostrNip07Suggestion() {
+    return (
+      Boolean(vm.nostrNip07SuggestedNpub) &&
+      normalizeNpub(vm.user.nostrNpub) !==
+        normalizeNpub(vm.nostrNip07SuggestedNpub)
+    );
+  }
+
+  /**
+   * Button text depends on whether we're setting or replacing the npub.
+   */
+  function nostrNip07SuggestionButtonText() {
+    return vm.user.nostrNpub ? 'Replace with this npub' : 'Use this npub';
+  }
+
+  /**
+   * Apply the suggested NIP-07 npub to the existing profile form.
+   */
+  function applyNostrNip07Suggestion() {
+    if (!hasNostrNip07Suggestion()) {
+      return;
+    }
+
+    vm.user.nostrNpub = vm.nostrNip07SuggestedNpub;
+
+    if ($scope.profileEdit) {
+      $scope.profileEdit.unsavedModifications = true;
+    }
+  }
+
+  function normalizeNpub(npub) {
+    return (npub || '').trim().toLowerCase();
+  }
 
   /**
    * Determine if given user handle for Warmshowers is an id or username

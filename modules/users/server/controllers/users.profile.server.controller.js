@@ -22,6 +22,7 @@ const crypto = require('crypto');
 const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const moment = require('moment');
+const nip19 = require('nostr-tools/nip19');
 const User = mongoose.model('User');
 
 // Fields to send publicly about any user profile
@@ -101,10 +102,28 @@ exports.update = function (req, res) {
     });
   }
 
-  // Validate nostr npub - must start with npub (public key), not nsec (secret key)
-  if (req.body.nostrNpub && typeof req.body.nostrNpub === 'string') {
+  // Validate nostr npub - must be a public key, not nsec (secret key)
+  if (Object.prototype.hasOwnProperty.call(req.body, 'nostrNpub')) {
+    if (typeof req.body.nostrNpub !== 'string') {
+      return res.status(400).send({
+        message:
+          'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+      });
+    }
+
     const trimmedNpub = req.body.nostrNpub.trim();
-    if (trimmedNpub && !trimmedNpub.toLowerCase().startsWith('npub')) {
+    req.body.nostrNpub = trimmedNpub;
+
+    try {
+      const result = trimmedNpub && nip19.decode(trimmedNpub);
+      if (
+        trimmedNpub &&
+        (result.type !== 'npub' || !/^[0-9a-f]{64}$/i.test(result.data))
+      ) {
+        throw new Error('Invalid nostr npub.');
+      }
+    } catch (err) {
+      _.noop(err);
       return res.status(400).send({
         message:
           'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',

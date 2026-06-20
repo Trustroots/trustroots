@@ -4,6 +4,7 @@
 const _ = require('lodash');
 const core = require('../controllers/core.server.controller');
 const tribes = require('../../../tribes/server/controllers/tribes.server.controller');
+const authenticationService = require('../../../users/server/services/authentication.server.service');
 const nip19 = require('nostr-tools/nip19');
 
 module.exports = function (app) {
@@ -60,32 +61,58 @@ module.exports = function (app) {
     const mongoose = require('mongoose');
     const User = mongoose.model('User');
 
-    const name = Array.isArray(req.query.name)
-      ? req.query.name[0]
-      : req.query.name;
+    res.set('Access-Control-Allow-Origin', '*');
 
-    User.findOne({ username: name }, function (err, user) {
-      let response;
-      if (err) {
-        res.status(500).send({ error: 'Internal server error' });
-      } else if (!user) {
-        res.status(404).send({ error: 'User not found' });
-      } else {
+    const rawName = req.query.name;
+
+    if (
+      typeof rawName !== 'string' ||
+      !authenticationService.validateUsername(rawName)
+    ) {
+      return res.status(400).send({ error: 'Valid username required.' });
+    }
+
+    const name = rawName.toLowerCase();
+
+    User.findOne(
+      {
+        username: name,
+        public: true,
+        email: { $exists: true, $nin: ['', null] },
+        roles: { $nin: ['suspended', 'shadowban'] },
+      },
+      function (err, user) {
+        if (err) {
+          res.status(500).send({ error: 'Internal server error' });
+          return;
+        }
+
+        const obj = {
+          names: {},
+        };
+
+        if (!user) {
+          res.json(obj);
+          return;
+        }
+
         const nostrNpub = user.nostrNpub;
 
-        if (nostrNpub && nostrNpub.startsWith('npub1')) {
-          const result = nip19.decode(nostrNpub);
-          response = {
-            names: {
-              [name]: result.data,
-            },
-          };
-        } else {
-          response = {};
+        try {
+          if (nostrNpub) {
+            const result = nip19.decode(nostrNpub);
+            if (result.type === 'npub' && /^[0-9a-f]{64}$/i.test(result.data)) {
+              obj.names[name] = result.data.toLowerCase();
+            }
+          }
+        } catch (err) {
+          // Malformed stored Nostr keys should fail closed.
+          _.noop(err);
         }
-        res.json(response);
-      }
-    });
+
+        res.json(obj);
+      },
+    );
   });
 
   // Define application route

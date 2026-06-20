@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const sinon = require('sinon');
+require('should');
 
 describe('Worker tests', function () {
   const agenda = require('../../../../config/lib/agenda');

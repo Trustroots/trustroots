@@ -112,8 +112,8 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user', function (done) {
-    _unConfirmedUser.username = 'Register-New-User';
-    _unConfirmedUser.email = 'register_new_user_@example.org';
+    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.email = 'register-new-user@example.org';
 
     agent
       .post('/api/auth/signup')
@@ -153,8 +153,8 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user but not inject additional roles', function (done) {
-    _unConfirmedUser.username = 'Register-New-User';
-    _unConfirmedUser.email = 'register_new_user_@example.org';
+    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.email = 'register-new-user@example.org';
     _unConfirmedUser.roles = ['user', 'admin'];
 
     agent
@@ -175,8 +175,8 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user and confirm email with token and user should become public', function (done) {
-    _unConfirmedUser.username = 'Register-New-User';
-    _unConfirmedUser.email = 'register_new_user_@example.org';
+    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.email = 'register-new-user@example.org';
 
     agent
       .post('/api/auth/signup')
@@ -256,8 +256,8 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user and confirming email with wrong token should redirect error and yeld an error and user should not be public', function (done) {
-    _unConfirmedUser.username = 'Register-New-User';
-    _unConfirmedUser.email = 'register_new_user_@example.org';
+    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.email = 'register-new-user@example.org';
 
     agent
       .post('/api/auth/signup')
@@ -381,6 +381,42 @@ describe('User signup and authentication CRUD tests', function () {
 
             return done();
           });
+      });
+  });
+
+  it('should reject signin with an unknown username', function (done) {
+    agent
+      .post('/api/auth/signin')
+      .send({
+        username: 'nobody-here',
+        password: confirmedCredentials.password,
+      })
+      .expect(400)
+      .end(function (signinErr, signinRes) {
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        signinRes.body.message.should.equal('Unknown user or invalid password');
+        done();
+      });
+  });
+
+  it('should reject signin with an invalid password', function (done) {
+    agent
+      .post('/api/auth/signin')
+      .send({
+        username: confirmedCredentials.username,
+        password: 'definitely-not-the-password',
+      })
+      .expect(400)
+      .end(function (signinErr, signinRes) {
+        if (signinErr) {
+          return done(signinErr);
+        }
+
+        signinRes.body.message.should.equal('Unknown user or invalid password');
+        done();
       });
   });
 

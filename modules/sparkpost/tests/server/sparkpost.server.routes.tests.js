@@ -2,6 +2,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const config = require('../../../../config/config');
+require('should');
 
 /**
  * Globals

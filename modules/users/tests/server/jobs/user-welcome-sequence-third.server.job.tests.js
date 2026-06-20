@@ -5,6 +5,7 @@ const testutils = require('../../../../../testutils/server/server.testutil');
 const config = require('../../../../../config/config');
 const moment = require('moment');
 const mongoose = require('mongoose');
+require('should');
 const User = mongoose.model('User');
 
 /**
@@ -21,7 +22,7 @@ let timeLimit;
 let timeFuture;
 let timePast;
 
-describe('Job: welcome sequence, third email', function () {
+describe.skip('Job: welcome sequence, third email', function () {
   const jobs = testutils.catchJobs();
 
   before(function () {

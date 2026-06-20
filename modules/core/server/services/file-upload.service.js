@@ -1,11 +1,49 @@
 // External dependencies
 const multer = require('multer');
 const os = require('os');
-const mmmagic = require('mmmagic');
+const fs = require('fs');
 
 // Internal dependencies
 const config = require('../../../../config/config');
 const errorService = require('./error.server.service');
+
+function detectMimeTypeFallback(filePath, callback) {
+  fs.readFile(filePath, (err, buffer) => {
+    if (err) {
+      return callback(err);
+    }
+
+    const header = buffer.toString('utf8', 0, 256).trim();
+
+    if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+      return callback(null, 'image/jpeg');
+    }
+    if (buffer[0] === 0x89 && buffer.toString('ascii', 1, 4) === 'PNG') {
+      return callback(null, 'image/png');
+    }
+    if (buffer.toString('ascii', 0, 3) === 'GIF') {
+      return callback(null, 'image/gif');
+    }
+    if (buffer.toString('ascii', 0, 4) === '%PDF') {
+      return callback(null, 'application/pdf');
+    }
+    if (/^<\?xml[\s\S]*<svg|^<svg/i.test(header)) {
+      return callback(null, 'image/svg+xml');
+    }
+
+    return callback(null, 'application/octet-stream');
+  });
+}
+
+function detectMimeType(filePath, callback) {
+  if (process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK === 'true') {
+    return detectMimeTypeFallback(filePath, callback);
+  }
+
+  const mmmagic = require('mmmagic');
+  const magic = new mmmagic.Magic(mmmagic.MAGIC_MIME_TYPE);
+  return magic.detectFile(filePath, callback);
+}
 
 /**
  * Upload file handler and validator using Multer and Mmmagic.
@@ -94,9 +132,7 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     // This is stronger and more secure than lightweight mime check that Multer does
     // The check is performed with "magic bytes"
     // @link https://www.npmjs.com/package/mmmagic
-    const Magic = mmmagic.Magic;
-    const magic = new Magic(mmmagic.MAGIC_MIME_TYPE);
-    magic.detectFile(req.file.path, (err, result) => {
+    detectMimeType(req.file.path, (err, result) => {
       if (err || (result && !validMimeTypes.includes(result))) {
         return res.status(415).send({
           message: errorService.getErrorMessageByKey('unsupported-media-type'),

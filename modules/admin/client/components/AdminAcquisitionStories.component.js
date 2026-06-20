@@ -11,10 +11,14 @@ export default function AdminAcquisitionStories() {
   const [stories, setStories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(async () => {
-    const acquisitionStories = await getAcquisitionStories();
-    setStories(acquisitionStories || []);
-    setIsLoading(false);
+  useEffect(() => {
+    async function loadAcquisitionStories() {
+      const acquisitionStories = await getAcquisitionStories();
+      setStories(acquisitionStories || []);
+      setIsLoading(false);
+    }
+
+    loadAcquisitionStories();
   }, []);
 
   return (

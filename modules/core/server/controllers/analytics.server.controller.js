@@ -58,9 +58,9 @@ exports.appendUTMParams = function (trackUrl, utmParams) {
   ) {
     log('error', 'utmTrackify() missing one of the required variables.', {
       trackUrl,
-      utmParamsSource: utmParams.source,
-      utmParamsMedium: utmParams.medium,
-      utmParamsCampaign: utmParams.campaign,
+      utmParamsSource: utmParams && utmParams.source,
+      utmParamsMedium: utmParams && utmParams.medium,
+      utmParamsCampaign: utmParams && utmParams.campaign,
     });
     return trackUrl || '';
   }

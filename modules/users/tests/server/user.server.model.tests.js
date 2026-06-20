@@ -19,7 +19,7 @@ let user3;
  * Unit tests
  */
 describe('User Model Unit Tests:', function () {
-  before(function () {
+  before(function (done) {
     user = new User({
       firstName: 'Full',
       lastName: 'Name',
@@ -47,6 +47,8 @@ describe('User Model Unit Tests:', function () {
       password: 'different_password',
       provider: 'local',
     };
+
+    User.init().then(() => done(), done);
   });
 
   afterEach(utils.clearDatabase);

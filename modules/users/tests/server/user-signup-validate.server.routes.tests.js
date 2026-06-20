@@ -99,6 +99,28 @@ describe('User signup validation CRUD tests', function () {
       });
     });
 
+    it('should validate taken username case-insensitively', function (done) {
+      user = new User({
+        public: true,
+        firstName: 'Full',
+        lastName: 'Name',
+        displayName: 'Full Name',
+        email: 'case@example.org',
+        emailToken: 'initial email token',
+        username: 'taken-case-username',
+        password: 'TR-I$Aw3$0m4',
+        provider: 'local',
+      });
+      user.save(function () {
+        validationFailure(
+          { username: 'TAKEN-CASE-USERNAME' },
+          'username-not-available',
+          'Username is not available.',
+          done,
+        );
+      });
+    });
+
     it('should show an error when try to validate with not allowed username', function (done) {
       validationFailure(
         {

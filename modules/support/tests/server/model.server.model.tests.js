@@ -41,11 +41,8 @@ describe('Support request Model Unit Tests:', function () {
 
     support = new SupportRequest(_support);
 
-    // Create user
-    user.save(function (err, userRes) {
-      support.user = userRes._id;
-      return done();
-    });
+    support.user = user._id;
+    done();
   });
 
   after(utils.clearDatabase);

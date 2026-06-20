@@ -9,6 +9,7 @@ public/assets/
 public/push-messaging-sw.js
 public/uploads-profile/
 node_modules/
+.devcontainer/
 .migrate
 .dockerignore
 .gitignore

@@ -244,6 +244,7 @@ export default function ProfileViewBasics({ profile }) {
 
       {/* social networks */}
       {(hasConnectedAdditionalSocialAccounts(profile) ||
+        profile.nostrNpub ||
         profile.extSitesCouchers ||
         profile.extSitesBW ||
         profile.extSitesCS ||

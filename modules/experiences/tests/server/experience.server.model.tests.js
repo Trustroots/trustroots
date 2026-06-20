@@ -10,10 +10,12 @@ describe('Experience Model Unit Tests', () => {
     let user2;
     let user3;
 
-    beforeEach(() => {
+    beforeEach(async () => {
       [user1, user2, user3] = utils
         .generateUsers(3)
         .map(_user => new User(_user));
+
+      await Experience.init();
     });
 
     afterEach(utils.clearDatabase);
