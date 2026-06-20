@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { test: setup } = require('./test');
+const { test: setup } = require('../support/test');
 
 setup.describe.configure({ mode: 'serial' });
 const {
@@ -10,9 +10,9 @@ const {
   SEEDED_MEMBERS,
   signIn,
   signInViaApi,
-} = require('./helpers');
+} = require('../support/helpers');
 
-const authDir = path.join(__dirname, '.auth');
+const authDir = path.join(__dirname, '../.auth');
 const storagePath = path.join(authDir, 'member.json');
 const userPath = path.join(authDir, 'user.json');
 const seededMemberStoragePath = path.join(authDir, 'seeded-member.json');

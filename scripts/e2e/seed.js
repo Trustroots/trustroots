@@ -110,6 +110,23 @@ const MEMBERS = [
     roles: ['user', 'admin'],
     tribes: [],
   },
+  {
+    id: '665000000000000000000006',
+    username: 'e2e-seeded-alice',
+    email: 'e2e-seeded-alice@example.test',
+    firstName: 'Alice',
+    lastName: 'Contact',
+    acquisitionStory: 'I found Trustroots through hitchhiking friends online.',
+    tribes: ['Families'],
+  },
+  {
+    id: '665000000000000000000007',
+    username: 'e2e-seeded-bob',
+    email: 'e2e-seeded-bob@example.test',
+    firstName: 'Bob',
+    lastName: 'Blocked',
+    tribes: ['Climbers'],
+  },
 ];
 
 const CONVERSATIONS = [
@@ -150,6 +167,49 @@ const EXPERIENCES = [
     feedbackPublic:
       'E2E seeded experience: Portland was a welcoming host on my trip.',
   },
+  {
+    from: 'e2e-seeded-alice',
+    to: 'e2e-seeded-bob',
+    public: false,
+    recommend: 'unknown',
+    interactions: { met: true, guest: false, host: false },
+    feedbackPublic: 'E2E seeded private experience for coverage.',
+  },
+];
+
+const CONTACTS = [
+  {
+    from: 'e2e-seeded-portland',
+    to: 'e2e-seeded-alice',
+    confirmed: true,
+  },
+  {
+    from: 'e2e-seeded-bob',
+    to: 'e2e-seeded-alice',
+    confirmed: false,
+  },
+];
+
+const BLOCKS = [
+  {
+    blocker: 'e2e-seeded-alice',
+    blocked: 'e2e-seeded-bob',
+  },
+];
+
+const MEET_OFFERS = [
+  {
+    user: 'e2e-seeded-alice',
+    description: '<p>E2E seeded active meet offer</p>',
+    location: [51.5, -0.1],
+    validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+  },
+  {
+    user: 'e2e-seeded-bob',
+    description: '<p>E2E seeded expired meet offer</p>',
+    location: [48.8566, 2.3522],
+    validUntil: new Date(Date.now() - 24 * 60 * 60 * 1000),
+  },
 ];
 
 function buildUser(member) {
@@ -167,6 +227,7 @@ function buildUser(member) {
     description: PROFILE_DESCRIPTION,
     member: [],
     roles: member.roles || ['user'],
+    acquisitionStory: member.acquisitionStory,
   };
 }
 
@@ -271,6 +332,33 @@ async function seedShadowMessages(Message, usersByUsername, shadowMessages) {
   }
 }
 
+async function seedReferenceThreads(ReferenceThread, Thread, usersByUsername) {
+  const thread = await Thread.findOne({
+    $or: [
+      {
+        userFrom: usersByUsername['e2e-seeded-berlin']._id,
+        userTo: usersByUsername['e2e-seeded-portland']._id,
+      },
+      {
+        userFrom: usersByUsername['e2e-seeded-portland']._id,
+        userTo: usersByUsername['e2e-seeded-berlin']._id,
+      },
+    ],
+  });
+
+  if (!thread) {
+    return;
+  }
+
+  const referenceThread = new ReferenceThread({
+    thread: thread._id,
+    userFrom: usersByUsername['e2e-seeded-berlin']._id,
+    userTo: usersByUsername['e2e-seeded-portland']._id,
+    reference: 'no',
+  });
+  await referenceThread.save();
+}
+
 async function seedExperiences(Experience, usersByUsername, experiences) {
   for (const entry of experiences) {
     const experience = new Experience({
@@ -285,6 +373,41 @@ async function seedExperiences(Experience, usersByUsername, experiences) {
   }
 }
 
+async function seedContacts(Contact, usersByUsername, contacts) {
+  for (const entry of contacts) {
+    const contact = new Contact({
+      userFrom: usersByUsername[entry.from]._id,
+      userTo: usersByUsername[entry.to]._id,
+      confirmed: entry.confirmed,
+    });
+    await contact.save();
+  }
+}
+
+async function seedBlockedRelationships(User, usersByUsername, blocks) {
+  for (const entry of blocks) {
+    await User.updateOne(
+      { _id: usersByUsername[entry.blocker]._id },
+      { $addToSet: { blocked: usersByUsername[entry.blocked]._id } },
+    );
+  }
+}
+
+async function seedMeetOffers(Offer, usersByUsername, meetOffers) {
+  for (const entry of meetOffers) {
+    const offer = new Offer({
+      type: 'meet',
+      status: 'yes',
+      description: entry.description,
+      validUntil: entry.validUntil,
+      user: usersByUsername[entry.user]._id,
+      location: entry.location,
+      showOnlyInMyCircles: false,
+    });
+    await offer.save();
+  }
+}
+
 async function seedAdminNotes(AdminNote, usersByUsername) {
   const note = new AdminNote({
     admin: usersByUsername['e2e-seeded-admin']._id,
@@ -294,6 +417,18 @@ async function seedAdminNotes(AdminNote, usersByUsername) {
   await note.save();
 }
 
+async function seedAuditLogs(AuditLog, usersByUsername) {
+  const auditLog = new AuditLog({
+    body: { action: 'e2e seeded audit log' },
+    ip: '127.0.0.1',
+    params: {},
+    query: {},
+    route: '/api/admin/e2e-seeded',
+    user: usersByUsername['e2e-seeded-admin']._id,
+  });
+  await auditLog.save();
+}
+
 async function seedDatabase() {
   const Tribe = mongoose.model('Tribe');
   const User = mongoose.model('User');
@@ -301,7 +436,10 @@ async function seedDatabase() {
   const Message = mongoose.model('Message');
   const Thread = mongoose.model('Thread');
   const Experience = mongoose.model('Experience');
+  const Contact = mongoose.model('Contact');
+  const ReferenceThread = mongoose.model('ReferenceThread');
   const AdminNote = mongoose.model('AdminNote');
+  const AuditLog = mongoose.model('AuditLog');
 
   const { tribesByLabel, tribeCounts } = await seedTribes(Tribe);
   const usersByUsername = await seedUsers(
@@ -318,14 +456,21 @@ async function seedDatabase() {
   }
 
   await seedShadowMessages(Message, usersByUsername, SHADOW_MESSAGES);
+  await seedReferenceThreads(ReferenceThread, Thread, usersByUsername);
   await seedExperiences(Experience, usersByUsername, EXPERIENCES);
+  await seedContacts(Contact, usersByUsername, CONTACTS);
+  await seedBlockedRelationships(User, usersByUsername, BLOCKS);
+  await seedMeetOffers(Offer, usersByUsername, MEET_OFFERS);
   await seedAdminNotes(AdminNote, usersByUsername);
+  await seedAuditLogs(AuditLog, usersByUsername);
   await mongooseService.ensureIndexes(mongoose.modelNames());
 
   console.log(
     `Seeded ${TRIBES.length} tribes, ${MEMBERS.length} members, ` +
       `${CONVERSATIONS.length} conversations, ${SHADOW_MESSAGES.length} shadow-hidden messages, ` +
-      `${EXPERIENCES.length} experiences, and admin notes for e2e tests.`,
+      `${EXPERIENCES.length} experiences, ${CONTACTS.length} contacts, ` +
+      `${BLOCKS.length} blocked relationships, ${MEET_OFFERS.length} meet offers, ` +
+      `reference threads, admin notes, and audit logs for e2e tests.`,
   );
 }
 

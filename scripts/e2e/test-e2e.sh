@@ -363,6 +363,8 @@ if ! NODE_ENV=test \
 fi
 
 if [ "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-false}" != "true" ]; then
+  export TRUSTROOTS_E2E_USE_EXTRACTED_CSS=true
+
   if [ "${TRUSTROOTS_E2E_SKIP_WEB_BUILD:-false}" != "true" ]; then
     echo "Building client assets for end-to-end tests..."
     if ! npm run build:e2e; then

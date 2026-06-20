@@ -390,6 +390,20 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
       baseline.areaPassCoverage,
     ),
   };
+  const featureValues = {
+    featureCoverage: buildMetricComparison(
+      statusMetrics.featureCoverage,
+      baseline.featureCoverage,
+    ),
+    featurePassCoverage: buildMetricComparison(
+      statusMetrics.featurePassCoverage,
+      baseline.featurePassCoverage,
+    ),
+    scenarioCoverage: buildMetricComparison(
+      statusMetrics.scenarioCoverage,
+      baseline.scenarioCoverage,
+    ),
+  };
   const codeCoverage = buildE2eCodeCoverage(statusMetrics, baseline);
   const codePassed =
     !codeCoverage ||
@@ -398,6 +412,7 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
   return {
     testValues,
     areaValues,
+    featureValues,
     codeCoverage,
     durationMs: statusMetrics.durationMs || 0,
     areas: (statusMetrics.areas || []).filter(area => area !== 'Setup'),
@@ -405,9 +420,22 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
     definedAreaCount: statusMetrics.definedAreaCount || 0,
     exercisedAreaCount: statusMetrics.exercisedAreaCount || 0,
     greenAreaCount: statusMetrics.greenAreaCount || 0,
+    activeFeatureCount: statusMetrics.activeFeatureCount || 0,
+    coveredFeatureCount: statusMetrics.coveredFeatureCount || 0,
+    missingFeatureCount: statusMetrics.missingFeatureCount || 0,
+    excludedFeatureCount: statusMetrics.excludedFeatureCount || 0,
+    touchedFeatureCount: statusMetrics.touchedFeatureCount || 0,
+    greenFeatureCount: statusMetrics.greenFeatureCount || 0,
+    requiredScenarioCount: statusMetrics.requiredScenarioCount || 0,
+    coveredScenarioCount: statusMetrics.coveredScenarioCount || 0,
+    missingScenarioCount: statusMetrics.missingScenarioCount || 0,
+    missingByArea: statusMetrics.missingByArea || {},
+    featureDetails: statusMetrics.featureDetails || [],
+    excludedFeatures: statusMetrics.excludedFeatures || [],
     passed:
       e2eTestMetrics.every(metric => testValues[metric].passed) &&
       Object.keys(areaValues).every(metric => areaValues[metric].passed) &&
+      Object.keys(featureValues).every(metric => featureValues[metric].passed) &&
       codePassed,
   };
 }
@@ -1312,6 +1340,7 @@ function renderReportShell(metadata, initialLanes) {
         section.hidden = false;
 
         var areaCoverage = lane.e2eMetrics.areaValues || {};
+        var featureCoverage = lane.e2eMetrics.featureValues || {};
         var testValues = lane.e2eMetrics.testValues || {};
         var summaryParts = [
           'Duration ' + formatDuration(lane.e2eMetrics.durationMs),
@@ -1342,6 +1371,28 @@ function renderReportShell(metadata, initialLanes) {
               '/' +
               String(lane.e2eMetrics.definedAreaCount) +
               ')',
+          );
+        }
+
+        if (typeof featureCoverage.featureCoverage.current === 'number') {
+          summaryParts.push(
+            formatPercent(featureCoverage.featureCoverage.current) +
+              ' feature coverage (' +
+              String(lane.e2eMetrics.coveredFeatureCount) +
+              '/' +
+              String(lane.e2eMetrics.activeFeatureCount) +
+              ' active features)',
+          );
+        }
+
+        if (typeof featureCoverage.scenarioCoverage.current === 'number') {
+          summaryParts.push(
+            formatPercent(featureCoverage.scenarioCoverage.current) +
+              ' scenario coverage (' +
+              String(lane.e2eMetrics.coveredScenarioCount) +
+              '/' +
+              String(lane.e2eMetrics.requiredScenarioCount) +
+              ' scenarios)',
           );
         }
 
@@ -1376,6 +1427,23 @@ function renderReportShell(metadata, initialLanes) {
             );
           })
           .join('');
+        var missingFeatureRows = [];
+        var missingByArea = lane.e2eMetrics.missingByArea || {};
+        Object.keys(missingByArea)
+          .sort()
+          .forEach(function (area) {
+            (missingByArea[area] || []).forEach(function (feature) {
+              missingFeatureRows.push(
+                '<tr>' +
+                  '<td><strong>' + escapeHtml(area) + '</strong></td>' +
+                  '<td><code>' + escapeHtml(feature.id) + '</code></td>' +
+                  '<td>' +
+                    escapeHtml((feature.missingScenarios || []).join('; ')) +
+                  '</td>' +
+                '</tr>',
+              );
+            });
+          });
 
         if (!areaRows) {
           areaMetrics.innerHTML = '';
@@ -1389,6 +1457,23 @@ function renderReportShell(metadata, initialLanes) {
             '<table class="test-report-table">' +
               '<thead><tr><th>Area</th><th>Status</th><th>Passed</th><th>Failed</th><th>Total</th></tr></thead>' +
               '<tbody>' + areaRows + '</tbody>' +
+            '</table>' +
+          '</div>' +
+          '<strong>Manifest feature coverage</strong>' +
+          '<p class="subtle">' +
+            escapeHtml(
+              String(lane.e2eMetrics.excludedFeatureCount) +
+                ' excluded features are documented outside the denominator.',
+            ) +
+          '</p>' +
+          '<div class="table-wrap">' +
+            '<table class="test-report-table">' +
+              '<thead><tr><th>Area</th><th>Feature</th><th>Missing scenarios</th></tr></thead>' +
+              '<tbody>' +
+                (missingFeatureRows.length > 0
+                  ? missingFeatureRows.join('')
+                  : '<tr><td colspan="3">All active feature scenarios are covered.</td></tr>') +
+              '</tbody>' +
             '</table>' +
           '</div>';
       }
@@ -1435,6 +1520,18 @@ function renderReportShell(metadata, initialLanes) {
 
             Object.keys(lane.e2eMetrics.areaValues || {}).forEach(function (metric) {
               var values = lane.e2eMetrics.areaValues[metric];
+              if (values && !values.passed) {
+                failures.push({
+                  lane: lane,
+                  metric: metric,
+                  values: values,
+                  formatValue: formatPercent,
+                });
+              }
+            });
+
+            Object.keys(lane.e2eMetrics.featureValues || {}).forEach(function (metric) {
+              var values = lane.e2eMetrics.featureValues[metric];
               if (values && !values.passed) {
                 failures.push({
                   lane: lane,

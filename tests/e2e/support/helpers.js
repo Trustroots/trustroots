@@ -39,6 +39,25 @@ const SEEDED_ADMIN = {
   lastName: 'Admin',
 };
 
+const SEEDED_RELATIONSHIP_MEMBERS = {
+  alice: {
+    id: '665000000000000000000006',
+    username: 'e2e-seeded-alice',
+    email: 'e2e-seeded-alice@example.test',
+    password: DEFAULT_PASSWORD,
+    firstName: 'Alice',
+    lastName: 'Contact',
+  },
+  bob: {
+    id: '665000000000000000000007',
+    username: 'e2e-seeded-bob',
+    email: 'e2e-seeded-bob@example.test',
+    password: DEFAULT_PASSWORD,
+    firstName: 'Bob',
+    lastName: 'Blocked',
+  },
+};
+
 const SEEDED_SHADOW = {
   id: '665000000000000000000004',
   username: 'e2e-seeded-shadow',
@@ -64,12 +83,22 @@ const SEEDED_EXPERIENCE = {
   summary: 'One member shared their experience and they recommended them.',
 };
 
+const SEEDED_PRIVATE_EXPERIENCE = {
+  profileUsername: SEEDED_RELATIONSHIP_MEMBERS.bob.username,
+  feedbackPublic: 'E2E seeded private experience for coverage.',
+};
+
 const SEEDED_PROFILE_DESCRIPTION = 'Seeded member profile for end-to-end tests';
 
 const SEEDED_OFFER = {
   description: 'E2E seeded host offer',
   hostingStatus: 'Can host',
   maxGuestsLabel: 'At most 2 guests.',
+};
+
+const SEEDED_MEET_OFFER = {
+  description: 'E2E seeded active meet offer',
+  expiredDescription: 'E2E seeded expired meet offer',
 };
 
 const EUROPE_OFFERS_QUERY =
@@ -190,11 +219,12 @@ async function signInViaApi(page, request, user) {
   const setCookie = response.headers()['set-cookie'];
   if (setCookie) {
     const [name, ...valueParts] = setCookie.split(';')[0].split('=');
+    const cookieUrl = new URL(response.url()).origin;
     await page.context().addCookies([
       {
         name,
         value: valueParts.join('='),
-        url: response.url(),
+        url: cookieUrl,
       },
     ]);
   }
@@ -268,12 +298,15 @@ module.exports = {
   DEFAULT_PASSWORD,
   SEEDED_MEMBERS,
   SEEDED_ADMIN,
+  SEEDED_RELATIONSHIP_MEMBERS,
   SEEDED_SHADOW,
   SEEDED_CONVERSATIONS,
   SEEDED_SHADOW_MESSAGE,
   SEEDED_EXPERIENCE,
+  SEEDED_PRIVATE_EXPERIENCE,
   SEEDED_PROFILE_DESCRIPTION,
   SEEDED_OFFER,
+  SEEDED_MEET_OFFER,
   EUROPE_OFFERS_QUERY,
   createUser,
   registerViaApi,
