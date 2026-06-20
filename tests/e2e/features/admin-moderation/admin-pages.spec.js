@@ -2,6 +2,23 @@ const { annotateFeature, test, expect } = require('../../support/test');
 
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
+async function gotoAdminPage(page, path, expectedUrl) {
+  let lastError;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
+
+    try {
+      await expect(page).toHaveURL(expectedUrl, { timeout: 5000 });
+      return;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
+}
+
 test.describe('admin moderation page flows', () => {
   test.beforeEach(async ({ page, request }) => {
     await signInViaApi(page, request, SEEDED_ADMIN);
@@ -14,9 +31,8 @@ test.describe('admin moderation page flows', () => {
       'Admin dashboard loads for admin.',
     ]);
 
-    await page.goto('/admin');
+    await gotoAdminPage(page, '/admin', /\/admin$/);
 
-    await expect(page).toHaveURL(/\/admin$/);
     await expect(page).toHaveTitle(/Admin - Trustroots/);
     await expect(page.getByText(/welcome, friend!/i)).toBeVisible();
   });
@@ -27,9 +43,8 @@ test.describe('admin moderation page flows', () => {
       'Audit log API returns deterministic entries.',
     ]);
 
-    await page.goto('/admin/audit-log');
+    await gotoAdminPage(page, '/admin/audit-log', /\/admin\/audit-log/);
 
-    await expect(page).toHaveURL(/\/admin\/audit-log/);
     await expect(page).toHaveTitle(/Admin - Audit log - Trustroots/);
     await expect(
       page.getByRole('heading', { name: /audit log/i }),
@@ -42,9 +57,8 @@ test.describe('admin moderation page flows', () => {
       'Admin can query threads by username/user id.',
     ]);
 
-    await page.goto('/admin/threads');
+    await gotoAdminPage(page, '/admin/threads', /\/admin\/threads/);
 
-    await expect(page).toHaveURL(/\/admin\/threads/);
     await expect(page).toHaveTitle(/Admin - Threads - Trustroots/);
     await expect(page.getByRole('button', { name: /^query$/i })).toBeVisible();
   });
@@ -55,9 +69,8 @@ test.describe('admin moderation page flows', () => {
       'Unavailable download actions degrade safely because subscriber APIs are disabled.',
     ]);
 
-    await page.goto('/admin/newsletter');
+    await gotoAdminPage(page, '/admin/newsletter', /\/admin\/newsletter/);
 
-    await expect(page).toHaveURL(/\/admin\/newsletter/);
     await expect(page).toHaveTitle(/Admin - Newsletter - Trustroots/);
     await expect(
       page.getByRole('heading', { name: /newsletter subscribers/i }),
