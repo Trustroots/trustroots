@@ -120,9 +120,9 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
     await expect(page).toHaveTitle(/Profile - Trustroots/);
     await expect(
-      page
-        .locator('.profile-username:visible')
-        .filter({ hasText: `@${user.username}` }),
+      page.locator('a[href="/profile/edit/about"]', {
+        hasText: /edit your profile/i,
+      }),
     ).toBeVisible();
   });
 
