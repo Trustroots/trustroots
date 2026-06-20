@@ -14,41 +14,54 @@ source code (modules/**/*.js)
   → main
 ```
 
-## After merging translation PRs
+Repo fixes can be overwritten by the next Weblate sync if the strings are not also corrected in Weblate's database. Always verify at the Weblate source after landing fixes in GitHub.
 
-Weblate tracks this GitHub repo. After a fix lands in `main`:
+## Completed (repo)
 
-1. Weblate should pull upstream on its next repository update (webhook or scheduled).
-2. If strings do not update, a maintainer with repo access: **Manage → Repository maintenance → Update**.
-3. Verify the corrected strings no longer contain typos (e.g. `{{count}}}` with an extra `}`).
+Merged in [#2746](https://github.com/Trustroots/trustroots/pull/2746) (June 2026), which superseded closed #2711:
 
-## Fixing broken placeholders in Weblate
+- Weblate translation batch (58 locale files: Tamil, Esperanto, Czech, Spanish, Finnish, and others)
+- Placeholder fixes: `{{var}}}` typos that leaked a literal `}` in the UI (ta, pt, pt_BR, it)
+- Markup fixes: broken React Trans tags in he, es, cs, it, ta
+- QA tooling: [bin/check-i18n-placeholders.js](../bin/check-i18n-placeholders.js), `npm run i18n:check-placeholders`
 
-If repo fixes get overwritten by the next Weblate sync, correct the strings at the source:
+## Open follow-up (Weblate / maintainers)
+
+Track progress in [#2747](https://github.com/Trustroots/trustroots/issues/2747).
+
+### 1. Confirm Weblate synced from `main`
+
+- [ ] Weblate pulled upstream (auto via webhook/schedule, or manual: **Manage → Repository maintenance → Update**)
+- [ ] Verified the strings in the table below no longer contain `{{var}}}` typos in the Weblate UI
+
+### 2. Fix strings in Weblate if sync did not apply
+
+If repo fixes did not propagate, edit at the source:
 
 1. Create an account at https://hosted.weblate.org
 2. Request translate rights from a Trustroots maintainer
-3. Open the component + language and search for the source string
+3. Open the component + language (links below) and search for the source string
 4. Edit the translation so placeholders match the English source exactly (`{{count}}`, not `{{count}}}`)
 5. Save
 
-Known strings to verify after the 2026 placeholder fix batch:
+| Component   | Language           | Source key fragment                                                    | Weblate link                                                                     |
+| ----------- | ------------------ | ---------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| experiences | Tamil              | Your experience will become public in {{count}} days                   | [experiences/ta](https://hosted.weblate.org/projects/trustroots/experiences/ta/) |
+| contacts    | Tamil              | {{count}} contacts in common                                           | [contacts/ta](https://hosted.weblate.org/projects/trustroots/contacts/ta/)       |
+| users       | Portuguese (pt)    | Replies within {{replyTime, fromNow}} / Open user profile for {{name}} | [users/pt](https://hosted.weblate.org/projects/trustroots/users/pt/)             |
+| users       | Portuguese (pt_BR) | Replies within {{replyTime, fromNow}} / Open user profile for {{name}} | [users/pt_BR](https://hosted.weblate.org/projects/trustroots/users/pt_BR/)       |
+| pages       | Italian            | Launched {{date, LL}}                                                  | [pages/it](https://hosted.weblate.org/projects/trustroots/pages/it/)             |
 
-| Component   | Language               | Source key fragment                                                    |
-| ----------- | ---------------------- | ---------------------------------------------------------------------- |
-| experiences | Tamil                  | Your experience will become public in {{count}} days                   |
-| contacts    | Tamil                  | {{count}} contacts in common                                           |
-| users       | Portuguese (pt, pt_BR) | Replies within {{replyTime, fromNow}} / Open user profile for {{name}} |
-| pages       | Italian                | Launched {{date, LL}}                                                  |
+### 3. Enable placeholder quality checks (component admin)
 
-## Quality checks (maintainers)
+- [ ] Open each component: **Settings → Checks**
+- [ ] Ensure **Placeholders** / i18next interpolation checks are enabled
+- [ ] Optionally add the placeholder check to **Enforced checks** so broken placeholders cannot be saved
+- [ ] Review existing failures under each component's **Failing checks** list
 
-Prevent recurrence by enabling Weblate placeholder checks:
+### 4. Optional broader cleanup
 
-1. Open each component: **Settings → Checks**
-2. Ensure **Placeholders** / i18next interpolation checks are enabled
-3. Optionally add the placeholder check to **Enforced checks** so broken placeholders cannot be saved
-4. Review existing failures under the component's **Failing checks** list
+`npm run i18n:check-placeholders` may still report pre-existing issues in other locales (e.g. Hebrew pages missing `<2>` tags, German plural keys). These were out of scope for #2746 but worth a separate pass.
 
 ## Local QA
 
