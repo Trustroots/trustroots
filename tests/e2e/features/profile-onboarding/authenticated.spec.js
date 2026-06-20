@@ -291,9 +291,6 @@ test.describe('authenticated member flows', () => {
   test('profile edit photo page is reachable', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-photo', [
       'Photo edit page is reachable.',
-      'Valid upload succeeds through deterministic file processing.',
-      'Invalid upload shows an error.',
-      'Avatar endpoint returns uploaded or fallback image.',
     ]);
 
     await page.goto('/profile/edit/photo');
@@ -301,6 +298,146 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveURL(/\/profile\/edit\/photo/);
     await expect(page).toHaveTitle(/Edit profile photo - Trustroots/);
     await expect(page.getByText(/profile photo/i).first()).toBeVisible();
+  });
+
+  test('member can upload a valid profile photo', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Valid upload succeeds through deterministic file processing.',
+    ]);
+
+    const validAvatarPath = path.join(
+      __dirname,
+      '../../../../modules/users/tests/server/img/avatar.png',
+    );
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      await page.goto('/profile/edit/photo');
+      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
+
+      const uploadResponse = page.waitForResponse(
+        response =>
+          response.url().includes('/api/users-avatar') && response.ok(),
+      );
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        page.locator('#profile-edit-avatar-file').click(),
+      ]);
+      await fileChooser.setFiles(validAvatarPath);
+      await uploadResponse;
+
+      await expect(
+        page.locator('#mc-messages-wrapper .alert-success'),
+      ).toContainText('Profile photo updated.');
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('invalid profile photo upload shows an error', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Invalid upload shows an error.',
+    ]);
+
+    const invalidAvatarPath = path.join(
+      __dirname,
+      '../../../../modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg',
+    );
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      await page.goto('/profile/edit/photo');
+      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
+
+      const uploadResponse = page.waitForResponse(
+        response =>
+          response.url().includes('/api/users-avatar') &&
+          response.status() === 415,
+      );
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        page.locator('#profile-edit-avatar-file').click(),
+      ]);
+      await fileChooser.setFiles(invalidAvatarPath);
+      await uploadResponse;
+
+      await expect(
+        page.locator('#mc-messages-wrapper .alert-danger'),
+      ).toContainText('Sorry, we do not support this type of file.');
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('avatar endpoint returns uploaded or fallback image', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Avatar endpoint returns uploaded or fallback image.',
+    ]);
+
+    const validAvatarPath = path.join(
+      __dirname,
+      '../../../../modules/users/tests/server/img/avatar.png',
+    );
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      const registered = await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      const fallbackResponse = await page.request.get(
+        `/api/users/${registered._id}/avatar?source=none`,
+        { maxRedirects: 0 },
+      );
+      expect(fallbackResponse.status()).toBe(302);
+      expect(fallbackResponse.headers().location).toContain('/img/avatar-');
+
+      await page.goto('/profile/edit/photo');
+      const uploadResponse = page.waitForResponse(
+        response =>
+          response.url().includes('/api/users-avatar') && response.ok(),
+      );
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        page.locator('#profile-edit-avatar-file').click(),
+      ]);
+      await fileChooser.setFiles(validAvatarPath);
+      await uploadResponse;
+      await expect(
+        page.locator('#mc-messages-wrapper .alert-success'),
+      ).toContainText('Profile photo updated.');
+
+      const uploadedResponse = await page.request.get(
+        `/api/users/${registered._id}/avatar?source=local`,
+        { maxRedirects: 0 },
+      );
+      expect(uploadedResponse.status()).toBe(302);
+      expect(uploadedResponse.headers().location).toContain(
+        `/uploads-profile/${registered._id}/avatar/`,
+      );
+    } finally {
+      await context.close();
+    }
   });
 
   test('navigation page lists member shortcuts', async ({ page }, testInfo) => {

@@ -1209,6 +1209,15 @@ const features = [
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit photo page is reachable'),
+      spec('authenticated.spec.js', 'member can upload a valid profile photo'),
+      spec(
+        'authenticated.spec.js',
+        'invalid profile photo upload shows an error',
+      ),
+      spec(
+        'authenticated.spec.js',
+        'avatar endpoint returns uploaded or fallback image',
+      ),
     ],
   },
   {
