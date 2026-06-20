@@ -216,7 +216,9 @@ describe('SignupController', function () {
           $error: { pattern: true },
           $valid: false,
         }),
-      ).toBe('Invalid username.');
+      ).toBe(
+        'Use only letters, numbers, periods, and hyphens—no underscores or spaces.',
+      );
       expect(
         controller.getUsernameValidationError({
           $dirty: true,
