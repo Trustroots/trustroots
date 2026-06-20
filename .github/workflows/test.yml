@@ -225,6 +225,9 @@ jobs:
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
+            -e TRUSTROOTS_E2E_WORKERS=2 \
+            -e TRUSTROOTS_E2E_SERIAL_PROJECTS=true \
+            -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
             dev npm run test:e2e
       - name: Upload Playwright report
         if: failure()
