@@ -52,16 +52,16 @@ const webServers = useWebpackDevServer
 
 module.exports = defineConfig({
   testDir: './tests/e2e',
-  globalSetup: require.resolve('./tests/e2e/global-setup.js'),
-  globalTeardown: require.resolve('./tests/e2e/global-teardown.js'),
+  globalSetup: require.resolve('./tests/e2e/setup/global-setup.js'),
+  globalTeardown: require.resolve('./tests/e2e/setup/global-teardown.js'),
   timeout: 60 * 1000,
   expect: {
     timeout: 10 * 1000,
   },
-  // Run projects (and parallel-safe specs) concurrently. CI keeps a fixed,
-  // conservative worker count for stability; locally we let Playwright scale to
-  // half the available cores instead of running everything serially.
-  workers: process.env.CI ? 2 : undefined,
+  // The e2e suite reuses server-side session cookies across storage states.
+  // Running with one worker avoids cross-project session mutation races when
+  // specs intentionally sign in as different users.
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: [
     ['list'],
@@ -78,12 +78,12 @@ module.exports = defineConfig({
   projects: [
     {
       name: 'setup-authenticated',
-      testMatch: /auth\.setup\.js/,
+      testMatch: /setup\/auth\.setup\.js/,
       timeout: 120 * 1000,
     },
     {
       name: 'auth-smoke',
-      testMatch: /auth-smoke\.spec\.js/,
+      testMatch: /features\/auth-account\/.*\.spec\.js/,
       fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
@@ -98,7 +98,7 @@ module.exports = defineConfig({
     },
     {
       name: 'authenticated',
-      testMatch: /authenticated\.spec\.js/,
+      testMatch: /features\/profile-onboarding\/authenticated\.spec\.js/,
       dependencies: ['setup-authenticated'],
       fullyParallel: true,
       use: {
@@ -115,7 +115,7 @@ module.exports = defineConfig({
     },
     {
       name: 'public',
-      testMatch: /(public-pages|nostr|seeded-content)\.spec\.js/,
+      testMatch: /features\/public-core\/.*\.spec\.js/,
       fullyParallel: true,
       use: {
         ...devices['Desktop Chrome'],
@@ -130,7 +130,41 @@ module.exports = defineConfig({
     },
     {
       name: 'messages',
-      testMatch: /messages\.spec\.js/,
+      testMatch: /features\/messages\/.*\.spec\.js/,
+      dependencies: ['setup-authenticated'],
+      fullyParallel: true,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: seededMemberStorageState,
+        ...(chromiumExecutablePath
+          ? {
+              launchOptions: {
+                executablePath: chromiumExecutablePath,
+              },
+            }
+          : {}),
+      },
+    },
+    {
+      name: 'relationships-safety',
+      testMatch: /features\/relationships-safety\/.*\.spec\.js/,
+      dependencies: ['setup-authenticated'],
+      fullyParallel: true,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: seededMemberStorageState,
+        ...(chromiumExecutablePath
+          ? {
+              launchOptions: {
+                executablePath: chromiumExecutablePath,
+              },
+            }
+          : {}),
+      },
+    },
+    {
+      name: 'search-offers-circles',
+      testMatch: /features\/search-offers-circles\/.*\.spec\.js/,
       dependencies: ['setup-authenticated'],
       fullyParallel: true,
       use: {
@@ -147,7 +181,7 @@ module.exports = defineConfig({
     },
     {
       name: 'experiences',
-      testMatch: /experiences\.spec\.js/,
+      testMatch: /features\/experiences-references\/.*\.spec\.js/,
       dependencies: ['setup-authenticated'],
       fullyParallel: true,
       use: {
@@ -164,7 +198,7 @@ module.exports = defineConfig({
     },
     {
       name: 'member',
-      testMatch: /member\.spec\.js/,
+      testMatch: /features\/profile-onboarding\/member\.spec\.js/,
       dependencies: ['setup-authenticated'],
       fullyParallel: true,
       use: {
@@ -181,7 +215,7 @@ module.exports = defineConfig({
     },
     {
       name: 'admin',
-      testMatch: /admin\.spec\.js/,
+      testMatch: /features\/admin-moderation\/.*\.spec\.js/,
       dependencies: ['setup-authenticated'],
       fullyParallel: false,
       use: {
