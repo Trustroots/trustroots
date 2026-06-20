@@ -51,7 +51,7 @@ export function getNetworkName(network) {
     case 'github':
       return 'Github';
     case 'nostr':
-      return 'Nostr';
+      return 'Nostroots';
     case 'twitter':
       return 'Twitter';
     case 'warmshowers':

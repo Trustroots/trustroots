@@ -89,7 +89,7 @@ describe('<ProfileViewBasics />', () => {
       'aria-describedby',
       'nostr-address-note-trustroots',
     );
-    expect(screen.getByText('Nostr')).toBeInTheDocument();
+    expect(screen.getByText('Nostroots')).toBeInTheDocument();
     expect(screen.getByText('Nostr address, not an email address')).toHaveClass(
       'sr-only',
     );

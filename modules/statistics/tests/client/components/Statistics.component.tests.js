@@ -50,7 +50,7 @@ describe('<Statistics />', () => {
     expect(
       screen.getByRole('link', { name: 'Subscribe to newsletter' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Nostr 1%')).toBeInTheDocument();
+    expect(screen.getByText('Nostroots 1%')).toBeInTheDocument();
   });
 
   it('hides the newsletter subscribe link for unauthenticated visitors', async () => {
