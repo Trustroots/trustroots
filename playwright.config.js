@@ -22,6 +22,25 @@ const seededMemberStorageState = path.join(
   'tests/e2e/.auth/seeded-member.json',
 );
 const adminStorageState = path.join(__dirname, 'tests/e2e/.auth/admin.json');
+const configuredWorkers = Number.parseInt(
+  process.env.TRUSTROOTS_E2E_WORKERS || '1',
+  10,
+);
+const workers =
+  Number.isFinite(configuredWorkers) && configuredWorkers > 0
+    ? configuredWorkers
+    : 1;
+const hasProjectFilter = process.argv.some(
+  arg => arg === '--project' || arg.startsWith('--project='),
+);
+const serializeProjects =
+  process.env.TRUSTROOTS_E2E_SERIAL_PROJECTS === undefined
+    ? workers > 1 && !hasProjectFilter
+    : process.env.TRUSTROOTS_E2E_SERIAL_PROJECTS === 'true';
+
+function serializedDependencies(defaultDependencies, serializedDependencies) {
+  return serializeProjects ? serializedDependencies : defaultDependencies;
+}
 
 const webServers = useWebpackDevServer
   ? [
@@ -58,10 +77,9 @@ module.exports = defineConfig({
   expect: {
     timeout: 10 * 1000,
   },
-  // The e2e suite reuses server-side session cookies across storage states.
-  // Running with one worker avoids cross-project session mutation races when
-  // specs intentionally sign in as different users.
-  workers: 1,
+  // Keep local runs conservative by default while allowing CI to opt into
+  // limited file-level parallelism once specs isolate mutating state.
+  workers,
   retries: process.env.CI ? 2 : 0,
   reporter: [
     ['list'],
@@ -73,7 +91,7 @@ module.exports = defineConfig({
     baseURL,
     trace: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: process.env.CI ? 'on-first-retry' : 'retain-on-failure',
   },
   projects: [
     {
@@ -84,6 +102,7 @@ module.exports = defineConfig({
     {
       name: 'auth-smoke',
       testMatch: /features\/auth-account\/.*\.spec\.js/,
+      dependencies: serializedDependencies([], ['setup-authenticated']),
       fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
@@ -99,8 +118,8 @@ module.exports = defineConfig({
     {
       name: 'authenticated',
       testMatch: /features\/profile-onboarding\/authenticated\.spec\.js/,
-      dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      dependencies: serializedDependencies(['setup-authenticated'], ['public']),
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: authStorageState,
@@ -116,7 +135,8 @@ module.exports = defineConfig({
     {
       name: 'public',
       testMatch: /features\/public-core\/.*\.spec\.js/,
-      fullyParallel: true,
+      dependencies: serializedDependencies([], ['auth-smoke']),
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         ...(chromiumExecutablePath
@@ -130,9 +150,32 @@ module.exports = defineConfig({
     },
     {
       name: 'messages',
-      testMatch: /features\/messages\/.*\.spec\.js/,
-      dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      testMatch: /features\/messages\/messages\.spec\.js/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['authenticated'],
+      ),
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: seededMemberStorageState,
+        ...(chromiumExecutablePath
+          ? {
+              launchOptions: {
+                executablePath: chromiumExecutablePath,
+              },
+            }
+          : {}),
+      },
+    },
+    {
+      name: 'message-actions',
+      testMatch: /features\/messages\/message-actions\.spec\.js/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['messages'],
+      ),
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: seededMemberStorageState,
@@ -148,8 +191,11 @@ module.exports = defineConfig({
     {
       name: 'relationships-safety',
       testMatch: /features\/relationships-safety\/.*\.spec\.js/,
-      dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['message-actions'],
+      ),
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: seededMemberStorageState,
@@ -164,9 +210,34 @@ module.exports = defineConfig({
     },
     {
       name: 'search-offers-circles',
-      testMatch: /features\/search-offers-circles\/.*\.spec\.js/,
-      dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      testMatch:
+        /features\/search-offers-circles\/offers-and-circles\.spec\.js/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['relationships-safety'],
+      ),
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: seededMemberStorageState,
+        ...(chromiumExecutablePath
+          ? {
+              launchOptions: {
+                executablePath: chromiumExecutablePath,
+              },
+            }
+          : {}),
+      },
+    },
+    {
+      name: 'search-map-rendered',
+      testMatch:
+        /features\/search-offers-circles\/search-map-rendered\.spec\.js/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['search-offers-circles'],
+      ),
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: seededMemberStorageState,
@@ -192,8 +263,11 @@ module.exports = defineConfig({
     {
       name: 'experiences',
       testMatch: /features\/experiences-references\/.*\.spec\.js/,
-      dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['search-map-rendered'],
+      ),
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: seededMemberStorageState,
@@ -209,8 +283,11 @@ module.exports = defineConfig({
     {
       name: 'member',
       testMatch: /features\/profile-onboarding\/member\.spec\.js/,
-      dependencies: ['setup-authenticated'],
-      fullyParallel: true,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['experiences'],
+      ),
+      fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
         storageState: seededMemberStorageState,
@@ -226,7 +303,7 @@ module.exports = defineConfig({
     {
       name: 'admin',
       testMatch: /features\/admin-moderation\/.*\.spec\.js/,
-      dependencies: ['setup-authenticated'],
+      dependencies: serializedDependencies(['setup-authenticated'], ['member']),
       fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
