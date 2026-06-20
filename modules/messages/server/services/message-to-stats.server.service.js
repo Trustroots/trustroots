@@ -15,6 +15,8 @@ const textService = require('../../../core/server/services/text.server.service')
 require('../models/message.server.model');
 
 const Message = mongoose.model('Message');
+const INFLUXDB_DISABLED_ERROR_MESSAGE =
+  'InfluxDB disabled. Not creating a point for message statistics.';
 
 /**
  * The object which stats api .stat method expects as parameter
@@ -72,11 +74,7 @@ module.exports.save = function (message, callback) {
       // Quit if InfluxDB stats are disabled. The further computation is not necessary.
       function (done) {
         if (!config?.influxdb?.enabled) {
-          return done(
-            new Error(
-              'InfluxDB disabled. Not creating a point for message statistics.',
-            ),
-          );
+          return done(new Error(INFLUXDB_DISABLED_ERROR_MESSAGE));
         }
         return done();
       },
@@ -96,7 +94,11 @@ module.exports.save = function (message, callback) {
       },
     ],
     function (err) {
-      if (err && process.NODE_ENV !== 'test') {
+      if (
+        err &&
+        err.message !== INFLUXDB_DISABLED_ERROR_MESSAGE &&
+        process.env.NODE_ENV !== 'test'
+      ) {
         log('error', 'Saving message stats failed.', err);
       }
       if (typeof callback === 'function') {
