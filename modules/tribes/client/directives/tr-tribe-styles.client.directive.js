@@ -29,16 +29,10 @@ function trTribeStylesDirective() {
 
       // Set background image
       if (tribe.image) {
-        const dimensions =
-          angular.isDefined(attrs.trTribeStylesDimensions) &&
-          attrs.trTribeStylesDimensions !== ''
-            ? attrs.trTribeStylesDimensions
-            : '1024x768';
-
         const imageFormat = canUseWebP() ? 'webp' : 'jpg';
         const imageUrl = getCircleBackgroundUrl(
           tribe.slug,
-          dimensions,
+          attrs.trTribeStylesDimensions,
           imageFormat,
         );
 

@@ -159,7 +159,7 @@ function push(
     }
   }
 
-  function enable() {
+  function enable(permissionRequested) {
     push.isBusy = true;
     return firebaseMessaging
       .getToken()
@@ -171,14 +171,22 @@ function push(
             push.isBusy = false;
           });
         } else {
+          if (permissionRequested) {
+            return $q.reject(
+              new Error('push token unavailable after permission request'),
+            );
+          }
           // no token yet, have to ask user nicely
-          return firebaseMessaging.requestPermission().then(enable);
+          return firebaseMessaging.requestPermission().then(function () {
+            return enable(true);
+          });
         }
       })
       .catch(function (err) {
         if (
-          err.code === 'messaging/notifications-blocked' ||
-          err.code === 'messaging/permission-blocked'
+          err &&
+          (err.code === 'messaging/notifications-blocked' ||
+            err.code === 'messaging/permission-blocked')
         ) {
           push.isBlocked = true;
         }

@@ -21,7 +21,6 @@ import screenshotSearchPng from '../img/screenshot-search.png';
 import screenshotSearchPng2x from '../img/screenshot-search-2x.png';
 import screenshotSearchWebp from '../img/screenshot-search.webp';
 import screenshotSearchWebp2x from '../img/screenshot-search-2x.webp';
-import Tooltip from '@/modules/core/client/components/Tooltip.js';
 
 /**
  * List of photos to randomly pick as cover photo for homepage
@@ -79,14 +78,14 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
-export default function Home({ user, isNativeMobileApp, photoCredits }) {
+export default function Home({ user, photoCredits }) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
   const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
-  const memberCount = new Intl.NumberFormat().format(100000);
+  const memberCount = new Intl.NumberFormat().format(130000);
 
   // TODO get header height instead of magic number 56
   // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
@@ -160,6 +159,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                   >
                     {t('Join Trustroots now')}
                   </a>
+                  {/*
                   {!isNativeMobileApp && (
                     <div className="home-apps">
                       <a
@@ -180,6 +180,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                       </a>
                     </div>
                   )}
+                  */}
                   <div className="home-down hidden-xs">
                     <i className="icon-down"></i>
                   </div>
@@ -389,14 +390,14 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
             <div className="col-sm-6 col-md-3">
               <h3 className="font-brand-light">{t('Free and open source')}</h3>
               <p>
-                {t(`We think it's a shame that former non profits have been sold to
+                {t(`We think it's a shame that former non-profits have been sold to
                 venture capital. We've been running other notable free and open
                 projects for a decade now and we hope our deeds so far speak for us.`)}
               </p>
               <p>
                 <i className="icon-right"></i>
                 <a
-                  href="http://team.trustroots.org/"
+                  href="https://team.trustroots.org/"
                   className="home-footer-more font-brand-semibold"
                 >
                   {t('For developers')}
@@ -426,6 +427,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
 
           <div className="row text-center">
             <hr className="hr-white hr-xs" />
+            {/*
             {!isNativeMobileApp && (
               <div className="home-apps">
                 <a
@@ -488,6 +490,7 @@ export default function Home({ user, isNativeMobileApp, photoCredits }) {
                 </Tooltip>
               </li>
             </ul>
+            */}
 
             <BoardCredits photoCredits={photoCredits} />
           </div>

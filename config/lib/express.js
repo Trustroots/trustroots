@@ -66,7 +66,10 @@ module.exports.initLocalVariables = function (app) {
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
 
   // Assets
-  if (process.env.NODE_ENV === 'production') {
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
+  ) {
     app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = ['assets/main.css'];
   } else {
@@ -426,8 +429,6 @@ module.exports.initModulesClientRoutes = function (app) {
   // Setting the app router and static folder
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
-  if (config.featureFlags.apidocs)
-    app.use('/api/', express.static(path.resolve('./apidocs')));
 };
 
 /**

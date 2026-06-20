@@ -22,6 +22,7 @@ const crypto = require('crypto');
 const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const moment = require('moment');
+const nip19 = require('nostr-tools/nip19');
 const User = mongoose.model('User');
 
 // Fields to send publicly about any user profile
@@ -51,6 +52,7 @@ exports.userProfileFields = [
   'extSitesBW', // BeWelcome username
   'extSitesCS', // CouchSurfing username
   'extSitesWS', // WarmShowers username
+  'nostrNpub', // nostr npub
   'emailHash', // MD5 hashed email to use with Gravatars
   'additionalProvidersData.facebook.id', // For FB avatars and profile links
   'additionalProvidersData.twitter.screen_name', // For Twitter profile links
@@ -98,6 +100,35 @@ exports.update = function (req, res) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('bad-request'),
     });
+  }
+
+  // Validate nostr npub - must be a public key, not nsec (secret key)
+  if (Object.prototype.hasOwnProperty.call(req.body, 'nostrNpub')) {
+    if (typeof req.body.nostrNpub !== 'string') {
+      return res.status(400).send({
+        message:
+          'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+      });
+    }
+
+    const trimmedNpub = req.body.nostrNpub.trim();
+    req.body.nostrNpub = trimmedNpub;
+
+    try {
+      const result = trimmedNpub && nip19.decode(trimmedNpub);
+      if (
+        trimmedNpub &&
+        (result.type !== 'npub' || !/^[0-9a-f]{64}$/i.test(result.data))
+      ) {
+        throw new Error('Invalid nostr npub.');
+      }
+    } catch (err) {
+      _.noop(err);
+      return res.status(400).send({
+        message:
+          'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+      });
+    }
   }
 
   async.waterfall(

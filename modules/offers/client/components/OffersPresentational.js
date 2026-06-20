@@ -5,7 +5,6 @@ import React, { Component } from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
-import OfferLocation from './OfferLocation.component';
 import OfferStatusButton from './OfferStatusButton';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
 
@@ -120,40 +119,6 @@ export class OffersPresentational extends Component {
     );
   }
 
-  renderMap() {
-    const { isMobile } = this.state;
-    const { offer, t } = this.props;
-    return (
-      <>
-        {this.isHosting() && (
-          <OfferLocation
-            location={offer.location}
-            offerType={offer.type}
-            offerStatus={offer.status}
-          />
-        )}
-        {this.isHosting() && (
-          <div className="panel-footer text-center">
-            <a
-              className="btn btn-sm btn-inverse-primary"
-              href={`/search?offer=${offer._id}`}
-            >
-              {t('Bigger map')}
-            </a>
-            {isMobile && (
-              <a
-                className="btn btn-sm btn-inverse-primary"
-                href={`geo:${offer.location[0]},${offer.location[1]};u=200`}
-              >
-                {t('Open on device')}
-              </a>
-            )}
-          </div>
-        )}
-      </>
-    );
-  }
-
   renderOffer() {
     const { t } = this.props;
     const { isOwnOffer, offer, username } = this.props;
@@ -176,9 +141,6 @@ export class OffersPresentational extends Component {
           {/* Hosting: no */}
           {!this.isHosting() && this.renderHostingNo()}
         </div>
-
-        {/* The map (React component) */}
-        {this.renderMap()}
       </div>
     );
   }

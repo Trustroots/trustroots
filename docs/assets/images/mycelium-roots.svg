@@ -1,0 +1,58 @@
+<svg viewBox="0 0 1200 140" xmlns="http://www.w3.org/2000/svg" fill="none">
+  <!-- Ground line -->
+  <path d="M0 28 Q100 24 200 28 Q300 32 400 27 Q500 23 600 28 Q700 33 800 27 Q900 23 1000 28 Q1100 32 1200 28" stroke="#8b7355" stroke-width="2" fill="none"/>
+  <!-- Grass tufts -->
+  <path d="M60 28 Q57 18 62 8" stroke="#6a7d45" stroke-width="1.3" fill="none"/>
+  <path d="M67 28 Q70 16 65 6" stroke="#5a7038" stroke-width="1" fill="none"/>
+  <path d="M200 27 Q197 17 202 7" stroke="#6a7d45" stroke-width="1.3" fill="none"/>
+  <path d="M207 27 Q210 15 205 5" stroke="#5a7038" stroke-width="1" fill="none"/>
+  <path d="M380 28 Q377 18 382 8" stroke="#6a7d45" stroke-width="1.3" fill="none"/>
+  <path d="M500 27 Q497 17 502 7" stroke="#6a7d45" stroke-width="1.2" fill="none"/>
+  <path d="M507 27 Q510 15 505 5" stroke="#5a7038" stroke-width="1" fill="none"/>
+  <path d="M660 28 Q657 18 662 8" stroke="#6a7d45" stroke-width="1.3" fill="none"/>
+  <path d="M667 28 Q670 16 665 6" stroke="#5a7038" stroke-width="1" fill="none"/>
+  <path d="M830 27 Q827 17 832 7" stroke="#6a7d45" stroke-width="1.2" fill="none"/>
+  <path d="M1000 28 Q997 18 1002 8" stroke="#6a7d45" stroke-width="1.3" fill="none"/>
+  <path d="M1007 28 Q1010 16 1005 6" stroke="#5a7038" stroke-width="1" fill="none"/>
+  <path d="M1140 27 Q1137 17 1142 7" stroke="#6a7d45" stroke-width="1.2" fill="none"/>
+  <!-- Falling leaves -->
+  <path d="M120 14 Q124 10 128 13 Q124 17 120 14Z" fill="#6a7d45" opacity="0.35"/>
+  <path d="M450 10 Q454 6 458 9 Q454 13 450 10Z" fill="#8b7355" opacity="0.3"/>
+  <path d="M750 12 Q754 8 758 11 Q754 15 750 12Z" fill="#6a7d45" opacity="0.3"/>
+  <path d="M1050 8 Q1054 4 1058 7 Q1054 11 1050 8Z" fill="#b87333" opacity="0.25"/>
+  <path d="M300 6 Q304 2 308 5 Q304 9 300 6Z" fill="#6a7d45" opacity="0.25"/>
+  <path d="M900 14 Q904 10 908 13 Q904 17 900 14Z" fill="#8b7355" opacity="0.3"/>
+  <!-- Root network -->
+  <path d="M100 30 Q85 55 115 65 Q145 75 125 100 Q110 118 122 138" stroke="#7a5c3a" stroke-width="1.8" fill="none"/>
+  <path d="M100 30 Q130 50 108 72 Q88 90 100 115" stroke="#a08b6e" stroke-width="1.2" fill="none"/>
+  <path d="M100 30 Q75 48 95 68 Q108 82 92 108" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.6"/>
+  <path d="M300 28 Q278 55 310 65 Q340 75 318 100 Q302 118 314 138" stroke="#7a5c3a" stroke-width="1.8" fill="none"/>
+  <path d="M300 28 Q325 48 305 70 Q285 88 298 115" stroke="#a08b6e" stroke-width="1.2" fill="none"/>
+  <path d="M300 28 Q275 45 295 68 Q310 82 292 108" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.6"/>
+  <path d="M500 28 Q478 55 510 65 Q540 75 518 100 Q502 118 514 138" stroke="#7a5c3a" stroke-width="1.8" fill="none"/>
+  <path d="M500 28 Q525 50 505 72 Q485 88 498 115" stroke="#a08b6e" stroke-width="1.2" fill="none"/>
+  <path d="M700 28 Q678 55 710 65 Q740 75 718 100 Q702 118 714 138" stroke="#7a5c3a" stroke-width="1.6" fill="none"/>
+  <path d="M700 28 Q725 48 705 70 Q685 88 698 115" stroke="#a08b6e" stroke-width="1.1" fill="none"/>
+  <path d="M700 28 Q675 45 695 68 Q710 82 692 108" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.6"/>
+  <path d="M900 28 Q878 55 910 65 Q940 75 918 100 Q902 118 914 138" stroke="#7a5c3a" stroke-width="1.6" fill="none"/>
+  <path d="M900 28 Q925 48 905 70 Q885 88 898 115" stroke="#a08b6e" stroke-width="1.1" fill="none"/>
+  <path d="M1100 28 Q1078 55 1110 65 Q1135 72 1118 95 Q1105 110 1115 135" stroke="#7a5c3a" stroke-width="1.5" fill="none"/>
+  <path d="M1100 28 Q1120 48 1100 70 Q1085 85 1095 110" stroke="#a08b6e" stroke-width="1" fill="none"/>
+  <!-- Cross-connections -->
+  <path d="M115 65 Q210 58 310 65" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.5"/>
+  <path d="M310 65 Q410 58 510 65" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.5"/>
+  <path d="M510 65 Q610 58 710 65" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.5"/>
+  <path d="M710 65 Q810 58 910 65" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.5"/>
+  <path d="M910 65 Q1010 58 1110 65" stroke="#a08b6e" stroke-width="0.9" fill="none" opacity="0.5"/>
+  <path d="M125 100 Q215 90 318 100" stroke="#a08b6e" stroke-width="0.7" fill="none" opacity="0.4"/>
+  <path d="M318 100 Q415 90 518 100" stroke="#a08b6e" stroke-width="0.7" fill="none" opacity="0.4"/>
+  <path d="M518 100 Q615 90 718 100" stroke="#a08b6e" stroke-width="0.7" fill="none" opacity="0.4"/>
+  <path d="M718 100 Q815 90 918 100" stroke="#a08b6e" stroke-width="0.7" fill="none" opacity="0.4"/>
+  <!-- Nodes -->
+  <circle cx="115" cy="65" r="3" fill="#6a7d45" opacity="0.45"/>
+  <circle cx="310" cy="65" r="3.5" fill="#6a7d45" opacity="0.45"/>
+  <circle cx="510" cy="65" r="3" fill="#6a7d45" opacity="0.45"/>
+  <circle cx="710" cy="65" r="3.5" fill="#6a7d45" opacity="0.45"/>
+  <circle cx="910" cy="65" r="3" fill="#6a7d45" opacity="0.45"/>
+  <circle cx="1110" cy="65" r="3" fill="#6a7d45" opacity="0.45"/>
+</svg>

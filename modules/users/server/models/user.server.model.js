@@ -221,6 +221,12 @@ const UserSchema = new Schema({
     trim: true,
     set: setPlainTextField,
   },
+  // nostr npub
+  nostrNpub: {
+    type: String,
+    trim: true,
+    set: setPlainTextField,
+  },
   password: {
     type: String,
     default: '',

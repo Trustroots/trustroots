@@ -113,7 +113,9 @@ export default function Statistics({ isAuthenticated }) {
                         count: numberFormat(statistics?.hosting?.total ?? 0),
                       })}
                     >
-                      <Count>{`${statistics?.hosting?.percentage}%`}</Count>
+                      <Count>{`${
+                        statistics?.hosting?.percentage ?? 0
+                      }%`}</Count>
                     </Tooltip>
                     <Tooltip
                       id="hosts-yes-tooltip"
@@ -159,8 +161,8 @@ export default function Statistics({ isAuthenticated }) {
               <Stat title={t('Connected to networks')}>
                 <ul className="list-unstyled text-right">
                   {!statistics
-                    ? Array(6).map(i => (
-                        <li key={i}>
+                    ? Array.from({ length: 6 }, (_, index) => (
+                        <li key={index}>
                           <CountPlaceholder />
                         </li>
                       ))

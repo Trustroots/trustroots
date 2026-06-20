@@ -36,26 +36,16 @@ export default function Volunteering() {
             </p>
             <p>
               {t(
-                'Trustroots needs developers, designers, people handling support queue, copywriting and much more.',
-              )}
-            </p>
-            <p>
-              {t(
                 'Please head over to our Team Guide to learn how to get started.',
               )}
             </p>
-            <p>
-              <ul className="list-inline">
-                <li>
-                  <a href="https://team.trustroots.org/Volunteering.html">
-                    {t('Team Guide')}
-                  </a>
-                </li>
-                <li>
-                  <a href="/team">{t('Meet the team')}</a>
-                </li>
-              </ul>
-            </p>
+            <ul className="list-inline">
+              <li>
+                <a href="https://team.trustroots.org/Volunteering.html">
+                  {t('Team Guide')}
+                </a>
+              </li>
+            </ul>
           </div>
         </div>
       </section>

@@ -103,9 +103,21 @@ export default function ProfileViewBasics({ profile }) {
         {t('Elsewhere')}
       </h4>
       <ul
-        className="social-profiles list-unstyled"
+        className="elsewhere-profiles list-unstyled"
         aria-describedby="profile-networks"
       >
+        {profile.nostrNpub && (
+          <li className="social-profile">
+            <i className="social-profile-icon icon-fw icon-lg"></i>
+            <a
+              rel="noopener"
+              className="social-profile-handle"
+              href={`https://njump.me/${profile.nostrNpub}`}
+            >
+              nostr npub
+            </a>
+          </li>
+        )}
         {/*
           Facebook profile link is hidden here until issue with their API gets resolved
           See https://github.com/Trustroots/trustroots/issues/237
@@ -140,7 +152,7 @@ export default function ProfileViewBasics({ profile }) {
             <a
               rel="noopener"
               className="social-profile-handle"
-              href={`https://app.couchers.org/user/${profile.extSitesCouchers}`}
+              href={`https://couchers.org/user/${profile.extSitesCouchers}`}
             >
               Couchers.org
             </a>
@@ -232,6 +244,7 @@ export default function ProfileViewBasics({ profile }) {
 
       {/* social networks */}
       {(hasConnectedAdditionalSocialAccounts(profile) ||
+        profile.nostrNpub ||
         profile.extSitesCouchers ||
         profile.extSitesBW ||
         profile.extSitesCS ||

@@ -28,12 +28,12 @@
  * Module dependencies.
  */
 const _ = require('lodash');
-const pushService = require('../../../core/server/services/push.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const log = require('../../../../config/lib/logger');
 const config = require('../../../../config/config');
 const async = require('async');
 const moment = require('moment');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
 const User = mongoose.model('User');
@@ -228,6 +228,7 @@ function sendUnreadMessageReminders(reminder, callback) {
               'email',
               'displayName',
               'username',
+              'roles',
               // Used for web/mobile push notifications:
               'pushRegistration.token',
               'pushRegistration.platform',
@@ -286,6 +287,15 @@ function sendUnreadMessageReminders(reminder, callback) {
             );
           }
 
+          // Suppress reminders related to suspended/shadowbanned profiles.
+          // We still increment notificationCount later to avoid retrying forever.
+          if (
+            userRolesService.hasRestrictedMessagingRole(userFrom) ||
+            userRolesService.hasRestrictedMessagingRole(userTo)
+          ) {
+            return notificationCallback();
+          }
+
           // Process email notifications
           //
           // finish early if we don't want to send it
@@ -305,6 +315,9 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
+              /* Disable push notifications - Callum 6/Apr/2026
+              // We're having problems with emails not sending properly, so
+              // we're disabling push notifications as they are also failing
               push(callback) {
                 pushService.notifyMessagesUnread(
                   userFrom,
@@ -313,6 +326,7 @@ function sendUnreadMessageReminders(reminder, callback) {
                   callback,
                 );
               },
+              */
             },
             notificationCallback,
           );

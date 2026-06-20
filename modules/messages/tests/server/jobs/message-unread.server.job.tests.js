@@ -1,9 +1,11 @@
 /**
  * Module dependencies.
  */
-// should = require('should'),
+require('should');
 const moment = require('moment');
+const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
+const async = require('async');
 const testutils = require('../../../../../testutils/server/server.testutil');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
@@ -226,6 +228,56 @@ describe('Job: message unread', function () {
     message.save(function (err) {
       if (err) return done(err);
       userFrom.remove(function (err) {
+        if (err) return done(err);
+
+        messageUnreadJobHandler({}, function (err) {
+          if (err) return done(err);
+
+          jobs.length.should.equal(0);
+          Message.find({}, function (err, messages) {
+            if (err) return done(err);
+            messages[0].notificationCount.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('Suppress reminder emails when sender is shadowbanned', function (done) {
+    message.created = moment().subtract(
+      moment.duration({ minutes: 10, seconds: 1 }),
+    );
+    message.save(function (err) {
+      if (err) return done(err);
+
+      userFrom.roles = ['user', 'shadowban'];
+      userFrom.save(function (err) {
+        if (err) return done(err);
+
+        messageUnreadJobHandler({}, function (err) {
+          if (err) return done(err);
+
+          jobs.length.should.equal(0);
+          Message.find({}, function (err, messages) {
+            if (err) return done(err);
+            messages[0].notificationCount.should.equal(1);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+  it('Suppress reminder emails when recipient is suspended', function (done) {
+    message.created = moment().subtract(
+      moment.duration({ minutes: 10, seconds: 1 }),
+    );
+    message.save(function (err) {
+      if (err) return done(err);
+
+      userTo.roles = ['user', 'suspended'];
+      userTo.save(function (err) {
         if (err) return done(err);
 
         messageUnreadJobHandler({}, function (err) {
@@ -506,6 +558,132 @@ describe('Job: message unread', function () {
 
             return done();
           });
+        });
+      });
+    });
+  });
+
+  describe('error handling branches', function () {
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it('logs queue drain errors but still completes', function (done) {
+      const jobPath = '../../../server/jobs/message-unread.server.job';
+      const jobWithQueueError = proxyquire(jobPath, {
+        async: {
+          eachSeries: async.eachSeries,
+          series: async.series,
+          waterfall: async.waterfall,
+          queue() {
+            const queue = {
+              push() {
+                setImmediate(() => {
+                  if (typeof queue.drain === 'function') {
+                    queue.drain(new Error('queue failed'));
+                  }
+                });
+              },
+              drain: null,
+            };
+            return queue;
+          },
+        },
+      });
+
+      sinon.stub(Message, 'aggregate').yields(null, [
+        {
+          _id: { userTo: userToId, userFrom: userFromId },
+          messages: [
+            { id: message._id, content: 'a message', created: new Date() },
+          ],
+          notificationCount: 0,
+        },
+      ]);
+      sinon.stub(User, 'find').returns({
+        exec: cb =>
+          cb(null, [
+            {
+              _id: userFromId,
+              email: _userFrom.email,
+              displayName: _userFrom.displayName,
+              roles: ['user'],
+            },
+            {
+              _id: userToId,
+              email: _userTo.email,
+              displayName: _userTo.displayName,
+              roles: ['user'],
+            },
+          ]),
+      });
+      sinon.stub(Message, 'update').yields(null);
+
+      jobWithQueueError({}, function (err) {
+        if (err) return done(err);
+        done();
+      });
+    });
+
+    it('continues when notifications have no message ids', function (done) {
+      const jobPath = '../../../server/jobs/message-unread.server.job';
+      const jobWithEmptyMessages = proxyquire(jobPath, {
+        async: {
+          eachSeries: async.eachSeries,
+          series: async.series,
+          waterfall: async.waterfall,
+          queue: async.queue,
+        },
+        '../../../core/server/services/email.server.service': {
+          sendMessagesUnread: (from, to, notification, cb) => cb(),
+        },
+      });
+
+      sinon.stub(Message, 'aggregate').yields(null, [
+        {
+          _id: { userTo: userToId, userFrom: userFromId },
+          messages: [],
+          notificationCount: 0,
+        },
+      ]);
+      sinon.stub(User, 'find').returns({
+        exec: cb =>
+          cb(null, [
+            {
+              _id: userFromId,
+              email: _userFrom.email,
+              displayName: _userFrom.displayName,
+              roles: ['user'],
+            },
+            {
+              _id: userToId,
+              email: _userTo.email,
+              displayName: _userTo.displayName,
+              roles: ['user'],
+            },
+          ]),
+      });
+      sinon.stub(Message, 'update').yields(null);
+
+      jobWithEmptyMessages({}, function (err) {
+        if (err) return done(err);
+        done();
+      });
+    });
+
+    it('fails when marking messages as notified errors', function (done) {
+      message.created = moment().subtract(
+        moment.duration({ minutes: 10, seconds: 1 }),
+      );
+      message.save(function (err) {
+        if (err) return done(err);
+
+        sinon.stub(Message, 'update').yields(new Error('update failed'));
+
+        messageUnreadJobHandler({}, function (err) {
+          err.should.be.an.Error();
+          err.message.should.equal('update failed');
+          done();
         });
       });
     });

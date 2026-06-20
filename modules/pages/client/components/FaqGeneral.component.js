@@ -45,20 +45,14 @@ export default function FaqGeneral() {
       <div className="faq-question" id="is-there-mobile-app">
         <h3>{t('Is there a mobile app?')}</h3>
         {t(
-          'Yes! We currently have a very simple Android version, which basically wraps around our website and gives you push notifications to your phone when you have new messages.',
+          'No. There used to be an android app, but it is no longer maintained and not available.',
         )}
         <br />
         <br />
         <Trans t={t} ns="pages">
-          Install from <a href="http://android.trustroots.org">Play Store</a> or
-          download APK file from{' '}
-          <a href="http://apk.trustroots.org">apk.trustroots.org</a>. <br />
-        </Trans>
-        <br />
-        <Trans t={t} ns="pages">
-          Additionally our website is mobile optimized, so you could also add it
-          to your phone&apos;s home screen for quick access. Here are
-          instructions for{' '}
+          However, our website is mobile optimized, so you could also add it to
+          your phone&apos;s home screen for quick access. Here are instructions
+          for{' '}
           <a
             href="https://www.wikihow.com/Add-a-Link-Button-to-the-Home-Screen-of-an-iPhone"
             rel="noopener"
@@ -81,22 +75,6 @@ export default function FaqGeneral() {
           </a>
           . <br />
         </Trans>
-        <br />
-        <Trans t={t} ns="pages">
-          If you would like to help out developing our mobile apps, read more
-          about{' '}
-          <a href="http://team.trustroots.org/" rel="noopener">
-            developing Trustroots
-          </a>{' '}
-          . <br />
-        </Trans>
-        <br />
-        <em>
-          {t('See also')}{' '}
-          <a href="/faq/technology#f-droid">
-            {t('Could you offer mobile app at F-Droid store?')}
-          </a>
-        </em>
       </div>
 
       <div className="faq-question" id="is-trustroots-alternative">
@@ -203,35 +181,6 @@ export default function FaqGeneral() {
           says &quot;Report member&quot; that will lead you to a report form.
           Also, at any point, you can <a href="/support">contact us</a> with
           your report.
-        </Trans>
-      </div>
-
-      <div className="faq-question" id="covid-19">
-        <h3>{t('Trustroots and COVID-19 outbreak')}</h3>
-        <Trans t={t} ns="pages">
-          We are all waiting to get back to &quot;normal&quot;, for
-          international travel to open up again, and to having people enjoy the
-          Trustroots community.
-        </Trans>
-        <br />
-        <br />
-        <Trans t={t} ns="pages">
-          Until then, be patient. Please help stop the spread of the virus.
-          Consider not traveling, especially internationally. Consider not
-          hosting people, especially if you live with{' '}
-          <a href="https://www.who.int/westernpacific/emergencies/covid-19/information/high-risk-groups">
-            people at higher risk
-          </a>
-        </Trans>
-        .
-        <br />
-        <br />
-        <Trans t={t} ns="pages">
-          When you do travel or host, take care of your own and other&apos;s
-          safety. Communicate to your guests and hosts what your expectations
-          regarding safety are. <a href="/rules">Remember to stay respectful</a>{' '}
-          towards each other and each other&apos;s needs when it comes to
-          safety.
         </Trans>
       </div>
     </Faq>

@@ -6,7 +6,7 @@
 # - /srv/ci-deploy.sh (this file)
 # - /srv/ci-versions (folder)
 # - /srv/configs/ci-deploy.conf (file with these contents:
-# DEFAULT_DEPLOYMENT_BRANCH=master
+# DEFAULT_DEPLOYMENT_BRANCH=main
 # DEPLOYMENT_URL=http://dev.trustroots.org
 # GITHUB_REPOSITORY=https://github.com/Trustroots/trustroots
 #

@@ -171,6 +171,7 @@ export default function Team({ user }) {
               >
                 {t('Blog')}
               </a>
+              {/*
               <a
                 href="https://www.facebook.com/trustroots.org"
                 className="btn btn-link btn-lg"
@@ -195,6 +196,7 @@ export default function Team({ user }) {
               >
                 Twitter
               </a>
+              */}
             </div>
             <br />
             <br />

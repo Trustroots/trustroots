@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const request = require('supertest');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
+require('should');
 
 describe('Admin acquisition stories CRUD tests', () => {
   // Get application
@@ -27,21 +28,31 @@ describe('Admin acquisition stories CRUD tests', () => {
     'www.example.org', // Url normalization to "example"
   ];
 
-  // Generate one user per story
-  let users = utils.generateUsers(acquisitionStories.length);
-  users[0].roles = ['user', 'admin'];
+  let credentialsAdmin;
+  let credentialsRegular;
 
-  // Apply acquisition stories one per user
-  users = users.map((user, i) => {
-    user.acquisitionStory = acquisitionStories[i];
-    return user;
+  beforeEach(async () => {
+    const users = utils
+      .generateUsers(acquisitionStories.length)
+      .map((user, index) => {
+        user.acquisitionStory = acquisitionStories[index];
+        return user;
+      });
+    users[0].roles = ['user', 'admin'];
+
+    const savedUsers = await utils.saveUsers(users);
+
+    credentialsAdmin = {
+      username: savedUsers[0].username,
+      password: users[0].password,
+    };
+    credentialsRegular = {
+      username: savedUsers[1].username,
+      password: users[1].password,
+    };
   });
 
-  before(async () => {
-    await utils.saveUsers(users);
-  });
-
-  after(utils.clearDatabase);
+  afterEach(utils.clearDatabase);
 
   describe('Acquisition stories', () => {
     it('non-authenticated users should not be allowed to read acquisition stories', async () => {
@@ -54,17 +65,17 @@ describe('Admin acquisition stories CRUD tests', () => {
       });
 
       it('non-admin users should not be allowed to read acquisition stories', async () => {
-        await utils.signIn(users[1], agent);
+        await utils.signIn(credentialsRegular, agent);
         await agent.post('/api/admin/acquisition-stories').expect(403);
       });
 
       it('admin users should be allowed to read acquisition stories', async () => {
-        await utils.signIn(users[0], agent);
+        await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/acquisition-stories')
           .expect(200);
 
-        body.length.should.equal(users.length);
+        body.length.should.equal(acquisitionStories.length);
       });
     });
   });
@@ -80,17 +91,20 @@ describe('Admin acquisition stories CRUD tests', () => {
       });
 
       it('non-admin users should not be allowed to read acquisition stories analysis', async () => {
-        await utils.signIn(users[1], agent);
+        await utils.signIn(credentialsRegular, agent);
         await agent.post('/api/admin/acquisition-stories/analysis').expect(403);
       });
 
       it('admin users should be allowed to read acquisition stories analysis and analysis have certain shape', async () => {
-        await utils.signIn(users[0], agent);
+        await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/acquisition-stories/analysis')
           .expect(200);
 
-        body.table.should.match([
+        const sortByCategory = rows =>
+          rows.slice().sort((a, b) => a.category.localeCompare(b.category));
+
+        const expectedRows = [
           {
             category: 'example',
             observed: 4,
@@ -98,18 +112,12 @@ describe('Admin acquisition stories CRUD tests', () => {
             expected: 2.1429,
           },
           {
-            category: 'warmshowers',
-            observed: 4,
-            percentage: 26.6667,
-            expected: 2.1429,
-          },
-          { category: 'google', observed: 3, percentage: 20, expected: 2.1429 },
-          {
-            category: 'something',
+            category: 'facebook',
             observed: 1,
             percentage: 6.6667,
             expected: 2.1429,
           },
+          { category: 'google', observed: 3, percentage: 20, expected: 2.1429 },
           {
             category: 'else',
             observed: 1,
@@ -123,12 +131,20 @@ describe('Admin acquisition stories CRUD tests', () => {
             expected: 2.1429,
           },
           {
-            category: 'facebook',
+            category: 'something',
             observed: 1,
             percentage: 6.6667,
             expected: 2.1429,
           },
-        ]);
+          {
+            category: 'warmshowers',
+            observed: 4,
+            percentage: 26.6667,
+            expected: 2.1429,
+          },
+        ];
+
+        sortByCategory(body.table).should.match(sortByCategory(expectedRows));
         body.size.should.be.Number();
         body.sum.should.be.Number();
         body.x2.should.be.Number();

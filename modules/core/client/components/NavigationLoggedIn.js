@@ -52,7 +52,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
             {t('Frequently Asked Questions')}
           </DropMenuItem>
           <DropMenuItem href="/faq/bugs-and-features">
-            {t('Bugs & Features')}
+            {t('Report a bug')}
           </DropMenuItem>
           <DropMenuItem href="/support">{t('Contact us')}</DropMenuItem>
         </NavDropdown>
@@ -108,14 +108,15 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
-          path="/offer/meet"
+          path="https://notes.trustroots.org/"
+          target="_blank"
           className="hidden-xs"
         >
-          {t('Meet')}
+          Nostroots
         </MenuItem>
         <NavDropdown
           className="dropdown-user hidden-xs cursor-pointer"
-          id="support-dropdown"
+          id="profile-dropdown"
           pullRight
           title={
             <>
@@ -181,10 +182,12 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 href: '/rules',
                 label: t('Rules'),
               },
+              /* Disable shop and navigation links - issue #2672
               {
                 href: 'https://trustroots.teemill.com',
                 label: t('Shop'),
               },
+              */
               {
                 href: '/team',
                 label: t('Team'),
@@ -198,6 +201,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           <DropMenuItem divider />
           <SubMenuList
             list={[
+              /*
               {
                 href: 'https://www.facebook.com/trustroots.org',
                 ariaLabel: t('Trustroots at Facebook'),
@@ -213,6 +217,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 ariaLabel: t('Trustroots at Instagram'),
                 label: 'Instagram',
               },
+              */
               {
                 href: 'https://ideas.trustroots.org/',
                 label: t('Blog'),

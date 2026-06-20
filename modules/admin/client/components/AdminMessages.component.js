@@ -76,7 +76,7 @@ export default function AdminMessages() {
           <button
             className="btn btn-lg btn-default"
             disabled={
-              userId1.length !== MONGO_OBJECT_ID_LENGTH &&
+              userId1.length !== MONGO_OBJECT_ID_LENGTH ||
               userId2.length !== MONGO_OBJECT_ID_LENGTH
             }
             type="submit"

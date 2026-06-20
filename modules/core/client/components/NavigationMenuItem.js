@@ -8,6 +8,7 @@ export default function NavigationMenuItem({
   className,
   currentPath,
   path,
+  target,
   ...rest
 }) {
   return (
@@ -17,7 +18,9 @@ export default function NavigationMenuItem({
       })}
       {...rest}
     >
-      <a href={path}>{children}</a>
+      <a href={path} target={target}>
+        {children}
+      </a>
     </li>
   );
 }
@@ -27,4 +30,5 @@ NavigationMenuItem.propTypes = {
   className: PropTypes.string,
   currentPath: PropTypes.string.isRequired,
   path: PropTypes.string.isRequired,
+  target: PropTypes.string,
 };

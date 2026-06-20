@@ -9,7 +9,6 @@ const adminThreads = require('../controllers/admin.threads.server.controller');
 const adminUsers = require('../controllers/admin.users.server.controller');
 const adminNotes = require('../controllers/admin.notes.server.controller');
 const adminReferenceThreads = require('../controllers/admin.reference-threads.server.controller');
-const adminNewsletter = require('../controllers/admin.newsletter.server.controller');
 
 module.exports = app => {
   app
@@ -72,13 +71,14 @@ module.exports = app => {
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminReferenceThreads.list);
 
-  app
-    .route('/api/admin/newsletter-subscribers')
-    .all(adminPolicy.isAllowed)
-    .get(adminNewsletter.list);
+  // #egW6Qq Disable email download
+  // app
+  //   .route('/api/admin/newsletter-subscribers')
+  //   .all(adminPolicy.isAllowed)
+  //   .get(adminNewsletter.list);
 
-  app
-    .route('/api/admin/newsletter-subscribers/circle')
-    .all(adminPolicy.isAllowed)
-    .get(adminNewsletter.listCircleMembers);
+  // app
+  //   .route('/api/admin/newsletter-subscribers/circle')
+  //   .all(adminPolicy.isAllowed)
+  //   .get(adminNewsletter.listCircleMembers);
 };

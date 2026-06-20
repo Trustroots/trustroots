@@ -4,6 +4,8 @@
 const _ = require('lodash');
 const core = require('../controllers/core.server.controller');
 const tribes = require('../../../tribes/server/controllers/tribes.server.controller');
+const authenticationService = require('../../../users/server/services/authentication.server.service');
+const nip19 = require('nostr-tools/nip19');
 
 module.exports = function (app) {
   const redirect = function (src, dst) {
@@ -53,6 +55,65 @@ module.exports = function (app) {
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
   app.route('/circles/:tribe').get(core.renderIndex);
+
+  app.route('/.well-known/nostr.json').get(function (req, res) {
+    // NIP05 work in progress, https://github.com/Trustroots/trustroots/issues/2692
+    const mongoose = require('mongoose');
+    const User = mongoose.model('User');
+
+    res.set('Access-Control-Allow-Origin', '*');
+
+    const rawName = req.query.name;
+
+    if (
+      typeof rawName !== 'string' ||
+      !authenticationService.validateUsername(rawName)
+    ) {
+      return res.status(400).send({ error: 'Valid username required.' });
+    }
+
+    const name = rawName.toLowerCase();
+
+    User.findOne(
+      {
+        username: name,
+        public: true,
+        email: { $exists: true, $nin: ['', null] },
+        roles: { $nin: ['suspended', 'shadowban'] },
+      },
+      function (err, user) {
+        if (err) {
+          res.status(500).send({ error: 'Internal server error' });
+          return;
+        }
+
+        const obj = {
+          names: {},
+        };
+
+        if (!user) {
+          res.json(obj);
+          return;
+        }
+
+        const nostrNpub = user.nostrNpub;
+
+        try {
+          if (nostrNpub) {
+            const result = nip19.decode(nostrNpub);
+            if (result.type === 'npub' && /^[0-9a-f]{64}$/i.test(result.data)) {
+              obj.names[name] = result.data.toLowerCase();
+            }
+          }
+        } catch (err) {
+          // Malformed stored Nostr keys should fail closed.
+          _.noop(err);
+        }
+
+        res.json(obj);
+      },
+    );
+  });
 
   // Define application route
   app.route('/*').get(core.renderIndex);

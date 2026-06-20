@@ -47,29 +47,36 @@ exports.listTribes = function (req, res) {
       ? { label: 'desc' }
       : { count: 'desc' };
 
-  Tribe.paginate(
-    {
-      public: true,
-    },
-    {
-      page: parseInt(req.query.page, 10) || 1, // Note: `parseInt('0')` will return `NaN`, `page` will be set to `1` in such case.
-      limit: parseInt(req.query.limit, 10) || 0, // `0` for infinite
-      sort,
-      select: exports.tribeFields,
-    },
-    function (err, data) {
+  const page = parseInt(req.query.page, 10) || 1;
+  const limitMatch = req.originalUrl?.match(/limit=(\d+)/);
+  const limit = limitMatch
+    ? parseInt(limitMatch[1], 10)
+    : parseInt(req.query.limit, 10) || 0;
+
+  Tribe.find({ public: true })
+    .select(exports.tribeFields)
+    .sort(sort)
+    .limit(limit)
+    .skip((page - 1) * limit)
+    .exec(function (err, docs) {
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
         });
-      } else {
-        // Pass pagination data to construct link header
-        setLinkHeader(req, res, data.pages);
-
-        res.json(data.docs);
       }
-    },
-  );
+      Tribe.countDocuments({ public: true }, function (countErr, total) {
+        if (countErr) {
+          return res.status(400).send({
+            message: errorService.getErrorMessage(countErr),
+          });
+        }
+        const pages = Math.ceil(total / limit);
+        if (pages > page) {
+          setLinkHeader(req, res, pages);
+        }
+        res.json(docs);
+      });
+    });
 };
 
 /**

@@ -92,8 +92,16 @@ function localAvatarUrl(user, size) {
   if (isValid) {
     // Cache buster
     const timestamp = user.updated ? new Date(user.updated).getTime() : '';
-    // 32 is the smallest and 2048 biggest file size we're generating.
-    const fileSize = Math.min(Math.max(size, 32), 2048);
+    // We only generate profile images at 32, 64, 128, 256, 512, 1024 and 2048
+    // pixels. Other sizes will return a 404. There should be some kind of
+    // config value somewhere that sets which sizes are generated. But for now,
+    // hacking this to only return valid URLs.
+    const validSizes = [32, 64, 128, 256, 512, 1024, 2048];
+    // Pick the first valid size which is equal to or greater than the target,
+    // and fall back on the largest size if that fails.
+    const fileSize =
+      validSizes.find(validSize => validSize === size || validSize > size) ||
+      2048;
 
     return `/uploads-profile/${user._id}/avatar/${fileSize}.jpg?${timestamp}`;
   }

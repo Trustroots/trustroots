@@ -10,19 +10,10 @@ export default function FaqFoundation() {
       <div className="faq-question" id="what-is-your-legal-status">
         <h3>{t("What's your legal status?")}</h3>
         <Trans t={t} ns="pages">
-          As of May 2022{' '}
-          <a href="https://find-and-update.company-information.service.gov.uk/company/09489825/filing-history">
-            Trustroots Foundation is dissolved
-          </a>
-          . What does it mean for the community? We don’t know exactly yet!
-        </Trans>
-        <br />
-        <br />
-        <Trans t={t} ns="pages">
-          Prior to that, the website was owned and operated by{' '}
-          <a href="/foundation">Trustroots Foundation</a>, a non-profit Limited
-          by Guarantee (LBG) under section 60 exemption, registered in the
-          United Kingdom in March 2015.
+          The website is owned and operated by{' '}
+          <a href="/faq/foundation">Trustroots Foundation</a>, a non-profit
+          Limited by Guarantee (LBG) under section 60 exemption, registered in
+          the United Kingdom in March 2015.
         </Trans>
       </div>
 
@@ -123,6 +114,13 @@ export default function FaqFoundation() {
         .
       </div>
 
+      <div className="faq-question" id="who-are-the-board">
+        <h3>{t('Who are the board?')}</h3>
+        <Trans t={t} ns="pages">
+          <a href="/foundation#board">We</a>: Callum and Kasper.
+        </Trans>
+      </div>
+
       <div
         className="faq-question"
         id="how-do-you-want-to-make-the-project-financially-sustainable"
@@ -133,39 +131,18 @@ export default function FaqFoundation() {
         <Trans t={t} ns="pages">
           <a href="/contribute">Donations</a> and grants are the most likely
           ways. There are many inspiring organisations out there serving as
-          great examples:{' '}
-          <a href="http://www.abgefahren-ev.de/">Abgefahren e.V.</a>{' '}
+          great examples: <a href="https://couchers.org/">Couchers.org</a>,{' '}
           (Hitchwiki), <a href="https://www.bevolunteer.org/">BeVolunteer</a>,{' '}
           <a href="https://servas.org/">Servas</a>,{' '}
-          <a href="https://wwoof.net/">WWOOF</a> and many more. Again, if you
-          have experience with this it would be great if you{' '}
-          <a href="/support">contact us</a>.
+          <a href="https://wwoof.net/">WWOOF</a> and many more.
         </Trans>
       </div>
 
       <div className="faq-question" id="who-decides-what-gets-done">
         <h3>{t('Who decides what gets done?')}</h3>
         <Trans t={t} ns="pages">
-          Anyone can join us as a <a href="/volunteering">volunteer</a>.
-          We&apos;re huge fans of do-cracy and getting things done attitude. We
-          have <a href="/team">a core team</a> which is formed from the most
-          active volunteers. There isn&apos;t voting or other buraucratic
-          processes involved, but you get more responsibility by simply becoming
-          active contributor and showing your communication skills. Great
-          community values simple translation jobs just as much as highly
-          skilled development. We&apos;ll aim to keep the entry level for
-          volunteers as low as possible. No bureaucracy. Pragmatic approach.
-          Trust.
-        </Trans>
-        <br />
-        <br />
-        <Trans t={t} ns="pages">
-          That said, any well organized project needs efficient teams working on
-          specific issues (such as <i>safety</i> or site&apos;s{' '}
-          <i>features/UX</i>). Rather than building complicated voting
-          mechanisms or other structures, we&apos;ll try to concentrate in
-          fostering volunteers into responsible, skilled teams. It&apos;s also
-          important to make sure everyone has the same goal and vision.
+          Since we went into maintenance mode in late 2022, the project is lead
+          by a small team of volunteers, including 2 of the original founders.
         </Trans>
       </div>
     </Faq>

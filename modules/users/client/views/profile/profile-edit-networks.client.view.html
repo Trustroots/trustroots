@@ -12,7 +12,7 @@
                 !profileEditNetworks.isConnectedSocialAccount('github')"
       >
         <h4>Connect to</h4>
-        <ul class="list-unstyled social-profiles">
+        <ul class="list-unstyled elsewhere-profiles">
           <li
             class="social-profile social-profile-connect"
             ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
@@ -34,7 +34,7 @@
 
       <div ng-if="profileEditNetworks.hasConnectedAdditionalSocialAccounts()">
         <h4>Connected to networks</h4>
-        <ul class="list-unstyled social-profiles">
+        <ul class="list-unstyled elsewhere-profiles">
           <li
             class="social-profile social-profile-connect"
             ng-repeat="(providerName, providerData) in profileEditNetworks.user.additionalProvidersData track by providerName"
@@ -106,14 +106,14 @@
               ></a>
               <script type="text/ng-template" id="couchersGuidePopover.html">
                 <div>
-                  Go to your <a href="https://app.couchers.org/account-settings">Couchers.org account settings</a> and copy the username.
+                  Go to your <a href="https://couchers.org/account-settings">Couchers.org account settings</a> and copy the username.
                   <br><br>
                   <img class="img-responsive clearfix" src="/img/guide-couchers.png" alt="" width="319" height="32" aria-hidden="true">
                 </div>
               </script>
             </div>
             <label class="input-group-addon" for="extSitesCouchers">
-              <span class="hidden-xs">app.couchers.org/user/</span>
+              <span class="hidden-xs">couchers.org/user/</span>
               <span class="visible-xs-inline">Couchers.org:</span>
             </label>
             <input
@@ -130,7 +130,7 @@
               ng-if="profileEditNetworks.user.extSitesCouchers.length"
             >
               <a
-                ng-href="https://app.couchers.org/user/{{ profileEditNetworks.user.extSitesCouchers }}"
+                ng-href="https://couchers.org/user/{{ profileEditNetworks.user.extSitesCouchers }}"
                 target="_blank"
                 class="btn btn-primary"
                 role="button"
@@ -290,6 +290,89 @@
           >
             This should be your <strong>numeric user id</strong>, not username.
           </p>
+        </div>
+      </div>
+
+      <div class="extsites">
+        <h4>nostr</h4>
+        <!--
+      Note:
+        - links here have `rel="noopener"` because;
+          https://mathiasbynens.github.io/rel-noopener/
+        - CS link has `rel="noreferrer"` because;
+          https://github.com/Trustroots/trustroots/issues/464
+      -->
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">
+              <a
+                tabindex="0"
+                class="icon-help cursor-help tr-help"
+                popover-placement="bottom-left"
+                popover-trigger="'mouseenter'"
+                uib-popover-template="'nostrGuidePopover.html'"
+              ></a>
+              <script type="text/ng-template" id="nostrGuidePopover.html">
+                <div>
+                  Paste your nostr npub (public key) in here.
+                  <br><br>
+                  <strong>Important:</strong> Never paste your nsec (secret key) here. Only use your npub (public key).
+                </div>
+              </script>
+            </div>
+            <label class="input-group-addon" for="extSitesCouchers">
+              <span class="hidden-xs"></span>
+              <span class="visible-xs-inline">npub:</span>
+            </label>
+            <input
+              id="nostrNpub"
+              name="nostrNpub"
+              type="text"
+              class="form-control"
+              ng-model="profileEditNetworks.user.nostrNpub"
+              ng-change="profileEdit.unsavedModifications=true"
+              ng-pattern="/^(|npub1[ac-hj-np-z02-9]+)$/i"
+              placeholder="npub"
+              aria-label="nostr npub"
+            />
+            <p
+              class="help-block text-danger"
+              ng-if="userForm.nostrNpub.$dirty && userForm.nostrNpub.$error.pattern"
+            >
+              Invalid nostr key. Please provide your npub (public key) starting
+              with "npub". Never use your nsec (secret key).
+            </p>
+            <p
+              class="help-block"
+              ng-if="profileEditNetworks.hasNostrNip07Suggestion()"
+            >
+              Your browser Nostr extension suggests
+              <code>{{ profileEditNetworks.nostrNip07SuggestedNpub }}</code>.
+              <button
+                type="button"
+                class="btn btn-default btn-xs"
+                ng-click="profileEditNetworks.applyNostrNip07Suggestion()"
+              >
+                {{ profileEditNetworks.nostrNip07SuggestionButtonText() }}
+              </button>
+            </p>
+            <!--
+            <span
+              class="input-group-btn"
+              ng-if="profileEditNetworks.user.nostrNpub.length"
+            >
+              <a
+                ng-href="https://couchers.org/user/{{ profileEditNetworks.user.extSitesCouchers }}"
+                target="_blank"
+                class="btn btn-primary"
+                role="button"
+                rel="noopener"
+              >
+                <small>Test</small>
+              </a>
+            </span>
+	    -->
+          </div>
         </div>
       </div>
 

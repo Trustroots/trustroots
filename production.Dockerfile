@@ -1,11 +1,12 @@
-FROM phusion/passenger-nodejs:2.3.0 as builder
+FROM phusion/passenger-nodejs:2.3.1 as builder
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get
 # Base image should also have these already installed: gcc, git, make, python
 # - `build-essential` and `make` are required by some Node modules
 # - `unzip` & `wget` are required by API docs generator
-RUN apt-get -qq update && apt-get -q install -y \
+RUN rm -f /etc/apt/sources.list.d/passenger.list \
+  && apt-get -qq update && apt-get -q install -y \
   build-essential \
   graphicsmagick \
   openssl \
@@ -13,6 +14,8 @@ RUN apt-get -qq update && apt-get -q install -y \
   wget \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN npm install -g npm@latest-7
 
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
@@ -38,23 +41,20 @@ COPY public public
 COPY testutils testutils
 
 # Build the app
-# RUN npm run build
-# BROKEN - The `npm run build` fails currently, so for testing, I'm building it
-# on the host and copying it (above in the public folder).
-RUN npm run build:generate-circle-images
-RUN npm run build:webpack
+RUN npm run build
 
 # ------------------------------------------------------------------------------
 # Create the production container
 # ------------------------------------------------------------------------------
 
-FROM phusion/passenger-nodejs:2.3.0
+FROM phusion/passenger-nodejs:2.3.1
 
 # Enable nginx in the passenger container
 RUN rm -f /etc/service/nginx/down
 
 # Install the production dependencies into the production container
-RUN apt-get -qq update && apt-get -q install -y \
+RUN rm -f /etc/apt/sources.list.d/passenger.list \
+  && apt-get -qq update && apt-get -q install -y \
   graphicsmagick \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

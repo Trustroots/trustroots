@@ -42,7 +42,7 @@ export default function ProfileTabs({
   );
 
   return (
-    <div className="profile-tabs hidden-xs" role="navigation">
+    <div className="profile-tabs" role="navigation">
       <ul
         className="nav panel panel-default nav-pills nav-narrow nav-underline"
         role="tablist"

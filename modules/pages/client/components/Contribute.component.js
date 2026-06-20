@@ -33,20 +33,16 @@ export default function Contribute() {
                   March 2015
                 </a>
                 . At the moment our costs are mainly for servers and other
-                technical aspects, currently between €1000 and €2000 per year.
-                As accepting donations would lead to higher total costs (due to
+                technical aspects, currently well below €1000 per year. As
+                accepting donations would lead to higher total costs (due to
                 accounting etc.) and require more effort than it seems worth,
-                everything is currently being covered by the board.
-              </Trans>
-            </p>
-            <p className="lead">
-              <Trans t={t} ns="pages">
-                That said, there are still other ways to support us!
+                everything is currently being covered by private donations.
               </Trans>
             </p>
             <hr />
           </div>
         </div>
+        {/*
         <div className="row">
           <div className="col-xs-12  col-sm-6 col-md-offset-2 col-md-4">
             <h2>{t('Volunteering')}</h2>
@@ -92,6 +88,7 @@ export default function Contribute() {
             </p>
           </div>
         </div>
+        */}
       </section>
       {/* /.container */}
     </>

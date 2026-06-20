@@ -13,6 +13,7 @@ const render = require('../../../../config/lib/render');
 const agenda = require('../../../../config/lib/agenda');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**
@@ -31,6 +32,13 @@ exports.sendMessagesUnread = function (
   notification,
   callback,
 ) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(userFrom) ||
+    userRolesService.hasRestrictedMessagingRole(userTo)
+  ) {
+    return callback();
+  }
+
   // Is the notification the first one?
   // If not, we send a different subject.
   const isFirst = !(notification.notificationCount > 0);
@@ -84,6 +92,13 @@ exports.sendConfirmContact = function (
   messageText,
   callback,
 ) {
+  if (
+    userRolesService.hasRestrictedMessagingRole(user) ||
+    userRolesService.hasRestrictedMessagingRole(friend)
+  ) {
+    return callback();
+  }
+
   const meURL = url + '/profile/' + user.username;
   const urlConfirm = url + '/contact-confirm/' + contact._id;
   const campaign = 'confirm-contact';
@@ -629,15 +644,15 @@ exports.renderEmail = function (templateName, params, callback) {
       if (params.replyTo) {
         email.replyTo = params.replyTo;
       }
-      // Add SparkPost `campaign_id` to headers if available
-      // @link https://developers.sparkpost.com/api/smtp-api.html
+      // Add SparkPost SMTP API headers
+      // @link https://developers.sparkpost.com/api/smtp/#header-using-the-x-msys-api-custom-header
+      const sparkpostHeader = { options: { transactional: true } };
       if (params.sparkpostCampaign) {
-        email.headers = {
-          'X-MSYS-API': {
-            campaign_id: params.sparkpostCampaign,
-          },
-        };
+        sparkpostHeader.campaign_id = params.sparkpostCampaign;
       }
+      email.headers = {
+        'X-MSYS-API': JSON.stringify(sparkpostHeader),
+      };
       callback(null, email);
     },
   );

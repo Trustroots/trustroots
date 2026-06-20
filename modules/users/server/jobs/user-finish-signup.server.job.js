@@ -38,8 +38,8 @@ module.exports = function (job, agendaDone) {
           },
           // Exlude users with `suspended` role
           roles: {
-            $elemMatch: {
-              $ne: 'suspended',
+            $not: {
+              $eq: 'suspended',
             },
           },
         })
