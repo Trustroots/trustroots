@@ -1,5 +1,4 @@
 const path = require('path');
-const fs = require('fs');
 const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
@@ -16,16 +15,7 @@ const seededMemberStoragePath = path.join(
   '../../.auth/seeded-member.json',
 );
 
-const userPath = path.join(__dirname, '../../.auth/user.json');
-
-/** @type {ReturnType<typeof import('./helpers').createUser>} */
-let user;
-
 test.describe('authenticated member flows', () => {
-  test.beforeAll(async () => {
-    user = JSON.parse(fs.readFileSync(userPath, 'utf8'));
-  });
-
   test('search page loads for a signed in member', async ({ page }) => {
     await page.goto('/search');
 
@@ -114,17 +104,32 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveTitle(/Account - Trustroots/);
   });
 
-  test('member can view their own profile', async ({ page }) => {
-    const profileResponse = page.waitForResponse(
-      response =>
-        response.url().includes(`/api/users/${user.username}`) && response.ok(),
-    );
+  test('member can view their own profile', async ({ browser, baseURL }) => {
+    // Own profile is tied to the session user. Use an isolated context so the
+    // viewed username always matches the signed-in member, even when other
+    // specs mutate the shared authenticated storage state.
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
 
-    await page.goto(`/profile/${user.username}`);
-    await profileResponse;
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
 
-    await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
-    await expect(page).toHaveTitle(/Profile - Trustroots/);
+      const profileResponse = page.waitForResponse(
+        response =>
+          response.url().includes(`/api/users/${member.username}`) &&
+          response.ok(),
+      );
+
+      await page.goto(`/profile/${member.username}`);
+      await profileResponse;
+
+      await expect(page).toHaveURL(new RegExp(`/profile/${member.username}`));
+      await expect(page).toHaveTitle(/Profile - Trustroots/);
+    } finally {
+      await context.close();
+    }
   });
 
   test('member can view a seeded host profile', async ({
