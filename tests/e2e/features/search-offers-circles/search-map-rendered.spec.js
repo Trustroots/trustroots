@@ -60,8 +60,13 @@ test.describe('rendered search map feature coverage', () => {
     await page.reload();
     await waitForSearchMap(page);
 
+    const sidebar = page.locator('.search-sidebar-container');
+    await expect(sidebar).toBeVisible();
+    await sidebar.locator('.nav-tabs > li').nth(1).locator('a').click();
     await expect(
-      page.getByText(/choose something from the map/i),
+      sidebar
+        .locator('.search-sidebar-results')
+        .getByText(/choose something from the map/i),
     ).toBeVisible();
   });
 
@@ -75,8 +80,12 @@ test.describe('rendered search map feature coverage', () => {
     await page.goto('/search?offer=665100000000000000000001');
     await waitForSearchMap(page);
 
-    await expect(page.getByText(/E2E offline map host offer/i)).toBeVisible();
-    await expect(page.getByText(/Berlin Host/i)).toBeVisible();
+    const result = page
+      .locator('.search-sidebar-results .search-result')
+      .filter({ hasText: /E2E offline map host offer/i });
+
+    await expect(result).toBeVisible();
+    await expect(result.getByText(/Berlin Host/i)).toBeVisible();
   });
 
   test('location search uses deterministic geocoding fixture', async ({
