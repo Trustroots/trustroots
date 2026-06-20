@@ -1,0 +1,93 @@
+const { annotateFeature, test, expect } = require('../../support/test');
+
+const {
+  SEEDED_ADMIN,
+  SEEDED_MEMBERS,
+  SEEDED_SHADOW,
+  signInViaApi,
+} = require('../../support/helpers');
+
+test.describe('admin moderation search flows', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_ADMIN);
+  });
+
+  test('admin search finds a confirmed seeded member', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Admin search finds a confirmed member.',
+      'Admin search finds a shadowbanned member.',
+      'Search handles no-result state.',
+    ]);
+
+    const berlin = SEEDED_MEMBERS[0];
+
+    await page.goto('/admin/search-users');
+
+    await page.locator('input[type="search"]').fill(berlin.username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.getByRole('button', { name: /^search$/i }).click();
+    await searchResponse;
+
+    await expect(page.getByText(berlin.username).first()).toBeVisible();
+    await expect(page.getByText(berlin.email).first()).toBeVisible();
+  });
+
+  test('admin search finds the shadowbanned member', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Admin search finds a confirmed member.',
+      'Admin search finds a shadowbanned member.',
+      'Search handles no-result state.',
+    ]);
+
+    await page.goto('/admin/search-users');
+
+    await page.locator('input[type="search"]').fill(SEEDED_SHADOW.username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.getByRole('button', { name: /^search$/i }).click();
+    await searchResponse;
+
+    const shadowBanRow = page
+      .locator('table tbody tr')
+      .filter({ hasText: SEEDED_SHADOW.username })
+      .first();
+    await expect(shadowBanRow).toBeVisible();
+    await expect(shadowBanRow.getByText('shadowban')).toBeVisible();
+  });
+
+  test('admin can list members in the shadowban role', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.list-users-by-role', [
+      'Admin can list members in a selected role.',
+      'Role list respects deterministic seeded users.',
+    ]);
+
+    await page.goto('/admin/search-users');
+
+    await page.locator('select[name="role"]').selectOption('shadowban');
+    const listRoleResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.getByRole('button', { name: /list users in role/i }).click();
+    await listRoleResponse;
+
+    await expect(page.getByText(SEEDED_SHADOW.username).first()).toBeVisible();
+  });
+});

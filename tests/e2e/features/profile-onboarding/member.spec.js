@@ -43,6 +43,7 @@ test.describe('confirmed member flows', () => {
 
   test('own contacts page shows the empty state', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.view-contacts', [
       'Own contacts tab can show empty state.',
@@ -55,9 +56,22 @@ test.describe('confirmed member flows', () => {
       'Common contacts endpoint filters to shared contacts.',
     ]);
 
+    const berlinId = await fetchUserIdByUsername(request, berlin.username);
+    const contacts = await page.request.get(`/api/contacts/${berlinId}`);
+    expect(contacts.ok()).toBeTruthy();
+    expect(await contacts.json()).toEqual([]);
+
     await page.goto(`/profile/${berlin.username}/contacts`);
 
-    await expect(page.getByText(/no contacts yet/i)).toBeVisible();
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${berlin.username}/contacts`),
+    );
+    await expect(
+      page
+        .locator('.profile-tabs a')
+        .filter({ hasText: /contacts/i })
+        .getByText('0'),
+    ).toBeVisible();
   });
 
   test('profile edit networks page is reachable', async ({

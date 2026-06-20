@@ -86,7 +86,10 @@ function apiRoute(method, path, routeSource, extra = {}) {
 }
 
 const specPaths = {
-  'admin.spec.js': 'features/admin-moderation/admin.spec.js',
+  'admin-inspection.spec.js':
+    'features/admin-moderation/admin-inspection.spec.js',
+  'admin-pages.spec.js': 'features/admin-moderation/admin-pages.spec.js',
+  'admin-search.spec.js': 'features/admin-moderation/admin-search.spec.js',
   'auth-smoke.spec.js': 'features/auth-account/auth-smoke.spec.js',
   'authenticated.spec.js': 'features/profile-onboarding/authenticated.spec.js',
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
@@ -1960,7 +1963,7 @@ const features = [
         'member thread API hides shadow-hidden messages from the recipient',
       ),
       spec(
-        'admin.spec.js',
+        'admin-inspection.spec.js',
         'admin messages tool shows shadow-hidden messages between members',
       ),
     ],
@@ -2368,7 +2371,10 @@ const features = [
       'Regular member is denied access to admin tools.',
     ],
     relatedSpecs: [
-      spec('admin.spec.js', 'admin dashboard welcomes the signed in admin'),
+      spec(
+        'admin-pages.spec.js',
+        'admin dashboard welcomes the signed in admin',
+      ),
       spec(
         'authenticated.spec.js',
         'regular members are turned away from admin tools',
@@ -2394,7 +2400,7 @@ const features = [
       'Audit log page loads.',
       'Audit log API returns deterministic entries.',
     ],
-    relatedSpecs: [spec('admin.spec.js', 'admin audit log page loads')],
+    relatedSpecs: [spec('admin-pages.spec.js', 'admin audit log page loads')],
   },
   {
     id: 'admin.acquisition-stories',
@@ -2472,7 +2478,7 @@ const features = [
     ],
     relatedSpecs: [
       spec(
-        'admin.spec.js',
+        'admin-inspection.spec.js',
         'admin messages tool shows shadow-hidden messages between members',
       ),
     ],
@@ -2496,7 +2502,7 @@ const features = [
       'Admin threads page loads.',
       'Admin can query threads by username/user id.',
     ],
-    relatedSpecs: [spec('admin.spec.js', 'admin threads page loads')],
+    relatedSpecs: [spec('admin-pages.spec.js', 'admin threads page loads')],
   },
   {
     id: 'admin.search-users',
@@ -2521,8 +2527,14 @@ const features = [
       'Search handles no-result state.',
     ],
     relatedSpecs: [
-      spec('admin.spec.js', 'admin search finds a confirmed seeded member'),
-      spec('admin.spec.js', 'admin search finds the shadowbanned member'),
+      spec(
+        'admin-search.spec.js',
+        'admin search finds a confirmed seeded member',
+      ),
+      spec(
+        'admin-search.spec.js',
+        'admin search finds the shadowbanned member',
+      ),
     ],
   },
   {
@@ -2549,7 +2561,10 @@ const features = [
       'Role list respects deterministic seeded users.',
     ],
     relatedSpecs: [
-      spec('admin.spec.js', 'admin can list members in the shadowban role'),
+      spec(
+        'admin-search.spec.js',
+        'admin can list members in the shadowban role',
+      ),
     ],
   },
   {
@@ -2574,7 +2589,7 @@ const features = [
     ],
     relatedSpecs: [
       spec(
-        'admin.spec.js',
+        'admin-inspection.spec.js',
         'admin user report card shows message counts for a shadowbanned member',
       ),
     ],
@@ -2677,7 +2692,7 @@ const features = [
       'Newsletter admin page loads.',
       'Unavailable download actions degrade safely because subscriber APIs are disabled.',
     ],
-    relatedSpecs: [spec('admin.spec.js', 'admin newsletter page loads')],
+    relatedSpecs: [spec('admin-pages.spec.js', 'admin newsletter page loads')],
   },
   {
     id: 'admin.newsletter-downloads',

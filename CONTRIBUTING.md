@@ -50,3 +50,5 @@ In Codex, use `npm run test:client` for client tests and `npm run test:server:co
 For a single server test file locally, use `SERVER_TEST_FILES=modules/foo/tests/server/bar.tests.js npm run test:server`.
 
 End-to-end tests build the client bundle once (`npm run build:e2e`) and serve pages from the API server. Set `TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true` to use the webpack dev server instead (slower startup, closer to day-to-day frontend development).
+
+Playwright runs one worker by default for local stability. Set `TRUSTROOTS_E2E_WORKERS=2` to opt into limited file-level parallelism, matching CI. Full multi-worker runs serialize Playwright projects by default to avoid shared seeded-state races; set `TRUSTROOTS_E2E_SERIAL_PROJECTS=false` only when deliberately checking project overlap. CI also sets `TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true` because the smoke lane publishes Playwright results, not browser JavaScript coverage, and records Playwright video only on retries to keep green runs lighter.
