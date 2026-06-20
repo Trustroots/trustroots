@@ -12,6 +12,8 @@ const {
 // canonical "valid but empty" key the server-side tests reuse.
 const VALID_NPUB =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+const PUBLIC_MEMBER_NPUB =
+  'npub1yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3q2pw2gm';
 const FORM_NPUB =
   'npub1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygse4sl3h';
 // A secret key (nsec) must never be accepted in place of a public key.
@@ -103,9 +105,10 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     await signInViaApi(page, request, host);
 
     const update = await page.request.put('/api/users', {
-      data: { nostrNpub: VALID_NPUB },
+      data: { nostrNpub: PUBLIC_MEMBER_NPUB },
     });
     expect(update.ok()).toBeTruthy();
+    expect((await update.json()).nostrNpub).toBe(PUBLIC_MEMBER_NPUB);
 
     const response = await request.get(
       `/.well-known/nostr.json?name=${host.username}`,
@@ -115,7 +118,7 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     expect(await response.json()).toEqual({
       names: {
         [host.username]:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+          '2222222222222222222222222222222222222222222222222222222222222222',
       },
     });
   });
