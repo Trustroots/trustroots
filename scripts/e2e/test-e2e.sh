@@ -42,14 +42,6 @@ if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
   fi
 fi
 
-if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
-  if [ "${CI:-}" = "true" ]; then
-    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false
-  else
-    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true
-  fi
-fi
-
 NODE_MAJOR="$(node -e "console.log(process.versions.node.split('.')[0])")"
 if [ "$NODE_MAJOR" -ge 17 ]; then
   case " ${NODE_OPTIONS:-} " in

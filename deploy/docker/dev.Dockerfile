@@ -1,7 +1,7 @@
 # Development image for local `docker compose up` and devcontainer.
 #
 # Node 16, native build deps, npm ci to seed the `node_modules` named volume.
-# App code is bind-mounted at runtime. Playwright Chromium is baked for E2E.
+# App code is bind-mounted at runtime. Playwright browsers are baked for E2E.
 
 FROM node:16-bullseye-slim
 
@@ -22,6 +22,7 @@ RUN apt-get -qq update && apt-get -q install -y \
   libdbus-1-3 \
   libdbus-glib-1-2 \
   libdrm2 \
+  libgtk-3-0 \
   libatspi2.0-0 \
   libxcomposite1 \
   libxcursor1 \
