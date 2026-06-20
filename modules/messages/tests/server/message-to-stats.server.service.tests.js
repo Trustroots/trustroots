@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const _ = require('lodash');
 const async = require('async');
 const sinon = require('sinon');
+const proxyquire = require('proxyquire').noCallThru();
 const config = require('../../../../config/config');
 const messageToStatsService = require('../../server/services/message-to-stats.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -66,6 +67,35 @@ describe('Message to stats server service Unit Tests:', function () {
         err.should.be.an.Error();
         err.message.should.match(/InfluxDB disabled/);
         done();
+      });
+    });
+
+    it('does not log expected disabled influx errors', function (done) {
+      const originalEnabled = config.influxdb.enabled;
+      const originalNodeEnv = process.env.NODE_ENV;
+      const log = sinon.spy();
+      const service = proxyquire(
+        '../../server/services/message-to-stats.server.service',
+        {
+          '../../../../config/lib/logger': log,
+        },
+      );
+
+      config.influxdb.enabled = false;
+      process.env.NODE_ENV = 'development';
+
+      service.save(new Message(), function (err) {
+        try {
+          err.should.be.an.Error();
+          err.message.should.match(/InfluxDB disabled/);
+          sinon.assert.notCalled(log);
+          done();
+        } catch (error) {
+          done(error);
+        } finally {
+          config.influxdb.enabled = originalEnabled;
+          process.env.NODE_ENV = originalNodeEnv;
+        }
       });
     });
   });

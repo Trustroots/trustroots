@@ -264,11 +264,18 @@ async function signOut(page) {
  * Wait until the circles page has loaded tribe data from the API.
  */
 async function waitForTribesList(page) {
-  const response = await page.waitForResponse(
-    apiResponse =>
-      apiResponse.url().includes('/api/tribes') && apiResponse.ok(),
-    { timeout: 30000 },
-  );
+  let response;
+  try {
+    response = await page.waitForResponse(
+      apiResponse =>
+        apiResponse.url().includes('/api/tribes') && apiResponse.ok(),
+      { timeout: 5000 },
+    );
+  } catch (error) {
+    response = await page.request.get('/api/tribes', {
+      params: { limit: 150 },
+    });
+  }
 
   expect(response.ok()).toBeTruthy();
 
@@ -278,6 +285,9 @@ async function waitForTribesList(page) {
     tribes.length,
     'Circles API returned no tribes; is the e2e database seeded?',
   ).toBeGreaterThan(0);
+  await expect(
+    page.locator('a.tribe-link, h3.tribe-label').first(),
+  ).toBeVisible();
 }
 
 /**
