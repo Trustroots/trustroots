@@ -1,6 +1,11 @@
-const { test, expect } = require('./test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
-const { createUser, registerViaApi, signOut, signUp } = require('./helpers');
+const {
+  createUser,
+  registerViaApi,
+  signOut,
+  signUp,
+} = require('../../support/helpers');
 
 const user = createUser();
 
@@ -19,7 +24,13 @@ test.describe.serial('authentication smoke', () => {
 
   test('homepage loads and exposes authentication entry points', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.home', [
+      'Homepage loads for visitors.',
+      'Sign in and sign up entry points are visible.',
+      'Optional circle/tribe query parameters do not break the page.',
+    ]);
+
     await page.goto('/');
 
     await expect(page).toHaveTitle(/Trustroots/);
@@ -27,7 +38,15 @@ test.describe.serial('authentication smoke', () => {
     await expect(page.locator('a[href="/signin"]').first()).toBeVisible();
   });
 
-  test('signup submits a unique user through the UI', async ({ page }) => {
+  test('signup submits a unique user through the UI', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+      'Signup succeeds for a unique user.',
+      'Signup can preload suggested circles from the tribe query parameter.',
+    ]);
+
     const signupUser = createUser();
 
     await page.route('**/api/auth/signup', async route => {
@@ -57,12 +76,28 @@ test.describe.serial('authentication smoke', () => {
     await signUp(page, signupUser);
   });
 
-  test('signed out user can sign in with username', async ({ page }) => {
+  test('signed out user can sign in with username', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signin', [
+      'Sign in page links to signup.',
+      'Username sign in succeeds.',
+      'Email sign in succeeds.',
+      'Continue query redirects to the original protected destination.',
+    ]);
+
     await signOut(page);
     await signInExisting(page, user.username);
   });
 
-  test('signed out user can sign in with email', async ({ page }) => {
+  test('signed out user can sign in with email', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signin', [
+      'Sign in page links to signup.',
+      'Username sign in succeeds.',
+      'Email sign in succeeds.',
+      'Continue query redirects to the original protected destination.',
+    ]);
+
     await signOut(page);
     await signInExisting(page, user.email);
   });

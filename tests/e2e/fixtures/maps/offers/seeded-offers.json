@@ -1,0 +1,31 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "665100000000000000000001",
+        "status": "yes",
+        "type": "host",
+        "offer": "host-yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [13.405, 52.52]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "665100000000000000000002",
+        "status": "yes",
+        "type": "meet",
+        "offer": "meet-yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [13.42, 52.51]
+      }
+    }
+  ]
+}

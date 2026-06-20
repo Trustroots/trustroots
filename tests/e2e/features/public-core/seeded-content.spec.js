@@ -1,9 +1,15 @@
-const { test, expect } = require('./test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
-const { SEEDED_MEMBERS, waitForTribesList } = require('./helpers');
+const { SEEDED_MEMBERS, waitForTribesList } = require('../../support/helpers');
 
 test.describe('seeded content and public API flows', () => {
-  test('languages API returns a non-empty list', async ({ request }) => {
+  test('languages API returns a non-empty list', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.languages-api', [
+      'Languages API returns a non-empty locale list.',
+    ]);
+
     const response = await request.get('/api/languages?format=array');
 
     expect(response.ok()).toBeTruthy();
@@ -13,7 +19,13 @@ test.describe('seeded content and public API flows', () => {
     expect(languages.length).toBeGreaterThan(0);
   });
 
-  test('statistics page loads for visitors', async ({ page }) => {
+  test('statistics page loads for visitors', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'public.statistics', [
+      'Statistics page loads for visitors.',
+      'Statistics page loads for signed-in members.',
+      'Public statistics API returns deterministic data.',
+    ]);
+
     await page.goto('/statistics');
 
     await expect(page).toHaveURL(/\/statistics/);
@@ -22,7 +34,12 @@ test.describe('seeded content and public API flows', () => {
 
   test('viewing a host profile while signed out redirects to sign in', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.signed-out-redirect', [
+      'Signed-out profile access redirects to sign in.',
+      'Redirect preserves enough context to continue after authentication when supported.',
+    ]);
+
     const host = SEEDED_MEMBERS[0];
 
     await page.goto(`/profile/${host.username}`);
@@ -31,7 +48,14 @@ test.describe('seeded content and public API flows', () => {
     await expect(page.locator('#username')).toBeVisible();
   });
 
-  test('circle detail page loads for a seeded tribe', async ({ page }) => {
+  test('circle detail page loads for a seeded tribe', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.detail', [
+      'Seeded circle detail page loads.',
+      'Unknown circle shows a user-facing error or not found state.',
+    ]);
+
     await page.goto('/circles');
     await waitForTribesList(page);
 
@@ -46,7 +70,11 @@ test.describe('seeded content and public API flows', () => {
     ).toBeVisible();
   });
 
-  test('tribes API returns seeded circles', async ({ request }) => {
+  test('tribes API returns seeded circles', async ({ request }, testInfo) => {
+    annotateFeature(testInfo, 'circles.list', [
+      'Tribes API returns seeded circles.',
+    ]);
+
     const response = await request.get('/api/tribes', {
       params: { limit: 150 },
     });

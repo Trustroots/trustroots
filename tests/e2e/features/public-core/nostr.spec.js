@@ -1,6 +1,12 @@
-const { test, expect } = require('./test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
-const { createUser, registerViaApi, signIn } = require('./helpers');
+const {
+  createUser,
+  registerViaApi,
+  signIn,
+  SEEDED_MEMBERS,
+  signInViaApi,
+} = require('../../support/helpers');
 
 // `npub1qqq…zqujme` decodes to an all-zero 32-byte public key, which is the
 // canonical "valid but empty" key the server-side tests reuse.
@@ -10,7 +16,13 @@ const VALID_NPUB =
 const NSEC = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 
 test.describe('nostr NIP-05 .well-known endpoint', () => {
-  test('rejects a non-string username with a 400', async ({ request }) => {
+  test('rejects a non-string username with a 400', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.nostr-well-known', [
+      'Invalid name query returns 400.',
+    ]);
+
     const response = await request.get('/.well-known/nostr.json?name[$ne]=x');
 
     expect(response.status()).toBe(400);
@@ -19,7 +31,13 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     });
   });
 
-  test('rejects an empty username with a 400', async ({ request }) => {
+  test('rejects an empty username with a 400', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.nostr-well-known', [
+      'Invalid name query returns 400.',
+    ]);
+
     const response = await request.get('/.well-known/nostr.json?name=');
 
     expect(response.status()).toBe(400);
@@ -27,7 +45,11 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
 
   test('returns empty names with an open CORS header for unknown users', async ({
     request,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.nostr-well-known', [
+      'Unknown user returns an empty names object with CORS headers.',
+    ]);
+
     const response = await request.get(
       `/.well-known/nostr.json?name=nobody${Date.now()}`,
     );
@@ -40,7 +62,11 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
   test('does not expose npubs for non-public (unconfirmed) members', async ({
     page,
     request,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.nostr-well-known', [
+      'Unconfirmed or hidden users are not exposed.',
+    ]);
+
     // Freshly registered members stay non-public until they confirm their
     // email, so even with a saved npub the endpoint must fail closed.
     const user = createUser();
@@ -62,6 +88,35 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     expect(response.status()).toBe(200);
     expect(await response.json()).toEqual({ names: {} });
   });
+
+  test('exposes npubs for confirmed public members', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.nostr-well-known', [
+      'Public member with a valid npub is exposed as NIP-05 hex key.',
+    ]);
+
+    const host = SEEDED_MEMBERS[0];
+    await signInViaApi(page, request, host);
+
+    const update = await page.request.put('/api/users', {
+      data: { nostrNpub: VALID_NPUB },
+    });
+    expect(update.ok()).toBeTruthy();
+
+    const response = await request.get(
+      `/.well-known/nostr.json?name=${host.username}`,
+    );
+
+    expect(response.status()).toBe(200);
+    expect(await response.json()).toEqual({
+      names: {
+        [host.username]:
+          '0000000000000000000000000000000000000000000000000000000000000000',
+      },
+    });
+  });
 });
 
 test.describe.serial('nostr npub on the profile networks form', () => {
@@ -77,7 +132,13 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 
   test('shows a validation error when a secret key is entered', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Invalid Nostr secret key is rejected.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
     await page.goto('/profile/edit/networks');
 
     const input = page.locator('#nostrNpub');
@@ -91,7 +152,13 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 
   test('saves a valid npub and persists it across reloads', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Invalid Nostr secret key is rejected.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
     await page.goto('/profile/edit/networks');
 
     const input = page.locator('#nostrNpub');
@@ -108,7 +175,13 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 
   test('links the saved npub to njump.me on the profile view', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Invalid Nostr secret key is rejected.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
     await page.goto(`/profile/${user.username}`);
 
     await expect(

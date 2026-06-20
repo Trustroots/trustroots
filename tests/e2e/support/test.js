@@ -1,8 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const { test: base, expect } = require('@playwright/test');
+const {
+  annotateFeature,
+  featureAnnotation,
+} = require('../../../scripts/e2e/feature-coverage-summary');
 
-const coverageDir = path.join(__dirname, '../../coverage/e2e/js-raw');
+const coverageDir = path.join(__dirname, '../../../coverage/e2e/js-raw');
 const collectCoverage = process.env.TRUSTROOTS_E2E_SKIP_JS_COVERAGE !== 'true';
 
 function sanitizeFileName(value) {
@@ -42,4 +46,6 @@ const test = base.extend({
 module.exports = {
   test,
   expect,
+  annotateFeature,
+  featureAnnotation,
 };

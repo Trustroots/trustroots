@@ -1,0 +1,18 @@
+{
+  "_id": "665100000000000000000001",
+  "type": "host",
+  "status": "yes",
+  "description": "<p>E2E offline map host offer</p>",
+  "maxGuests": 2,
+  "location": [52.52, 13.405],
+  "updated": "2026-01-01T00:00:00.000Z",
+  "showOnlyInMyCircles": false,
+  "user": {
+    "_id": "665000000000000000000001",
+    "displayName": "Berlin Host",
+    "username": "e2e-seeded-berlin",
+    "member": [],
+    "languages": [],
+    "emailHash": "e2e"
+  }
+}
