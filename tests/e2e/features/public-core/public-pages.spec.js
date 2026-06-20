@@ -249,7 +249,9 @@ test.describe('public pages and unauthenticated flows', () => {
       if (pagePath === '/team') {
         const volunteers = await request.get('/api/volunteers');
         expect(volunteers.ok()).toBeTruthy();
-        expect(Array.isArray(await volunteers.json())).toBeTruthy();
+        const body = await volunteers.json();
+        expect(Array.isArray(body.volunteers)).toBeTruthy();
+        expect(Array.isArray(body.alumni)).toBeTruthy();
       }
     });
   }
