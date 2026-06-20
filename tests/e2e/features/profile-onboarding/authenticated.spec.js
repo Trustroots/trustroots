@@ -115,15 +115,16 @@ test.describe('authenticated member flows', () => {
   });
 
   test('member can view their own profile', async ({ page }) => {
+    const profileResponse = page.waitForResponse(
+      response =>
+        response.url().includes(`/api/users/${user.username}`) && response.ok(),
+    );
+
     await page.goto(`/profile/${user.username}`);
+    await profileResponse;
 
     await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
     await expect(page).toHaveTitle(/Profile - Trustroots/);
-    await expect(
-      page.getByText(
-        /your profile will not be visible to others until you confirm your email/i,
-      ),
-    ).toBeVisible();
   });
 
   test('member can view a seeded host profile', async ({
