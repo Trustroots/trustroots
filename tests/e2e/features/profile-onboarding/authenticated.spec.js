@@ -16,7 +16,20 @@ const seededMemberStoragePath = path.join(
 );
 
 test.describe('authenticated member flows', () => {
-  test('search page loads for a signed in member', async ({ page }) => {
+  test('search page loads for a signed in member', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Search map loads for a signed-in member.',
+      'Location bounding-box query returns seeded offers.',
+      'Offer deep-link query resolves the selected offer.',
+      'Circle filter query resolves the selected circle.',
+      'Search map renders with deterministic offline style.',
+      'Route fixture offers populate the rendered map source.',
+      'Empty map-offers fixture leaves the search map usable.',
+      'Rendered map offer deep-link opens deterministic sidebar data.',
+    ]);
+
     await page.goto('/search');
 
     await expect(page).toHaveURL(/\/search/);
@@ -39,14 +52,26 @@ test.describe('authenticated member flows', () => {
     ).toHaveAttribute('href', '/profile/edit');
   });
 
-  test('search members page loads', async ({ page }) => {
+  test('search members page loads', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'search.members', [
+      'Search members page loads.',
+      'Search returns seeded hosts.',
+      'Search handles empty or no-result states.',
+    ]);
+
     await page.goto('/search/members');
 
     await expect(page).toHaveURL(/\/search\/members/);
     await expect(page).toHaveTitle(/Search members - Trustroots/);
   });
 
-  test('search members page finds seeded hosts', async ({ page }) => {
+  test('search members page finds seeded hosts', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'search.members', [
+      'Search members page loads.',
+      'Search returns seeded hosts.',
+      'Search handles empty or no-result states.',
+    ]);
+
     await page.goto('/search/members');
 
     await page
@@ -71,7 +96,12 @@ test.describe('authenticated member flows', () => {
   test('inbox prompts an unconfirmed member to activate their profile', async ({
     browser,
     baseURL,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.unconfirmed-restrictions', [
+      'Unconfirmed member opening inbox is prompted to activate profile.',
+      'Restricted message actions are unavailable until confirmation.',
+    ]);
+
     const context = await browser.newContext({ baseURL });
     const page = await context.newPage();
 
@@ -90,21 +120,42 @@ test.describe('authenticated member flows', () => {
     }
   });
 
-  test('profile edit "about" form is reachable', async ({ page }) => {
+  test('profile edit "about" form is reachable', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'About edit form is reachable.',
+      'Valid profile changes persist and are visible on profile view.',
+      'Validation errors are visible for invalid content.',
+    ]);
+
     await page.goto('/profile/edit');
 
     await expect(page).toHaveURL(/\/profile\/edit/);
     await expect(page.getByText(/describe yourself/i)).toBeVisible();
   });
 
-  test('profile edit account page is reachable', async ({ page }) => {
+  test('profile edit account page is reachable', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'account.details-update', [
+      'Account edit page is reachable.',
+      'Valid account details update persists.',
+      'Invalid account details show validation errors.',
+    ]);
+
     await page.goto('/profile/edit/account');
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
     await expect(page).toHaveTitle(/Account - Trustroots/);
   });
 
-  test('member can view their own profile', async ({ browser, baseURL }) => {
+  test('member can view their own profile', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Own profile about tab loads.',
+      'Other member profile about tab loads.',
+      'Profile API returns public profile data.',
+    ]);
+
     // Own profile is tied to the session user. Use an isolated context so the
     // viewed username always matches the signed-in member, even when other
     // specs mutate the shared authenticated storage state.
@@ -135,7 +186,13 @@ test.describe('authenticated member flows', () => {
   test('member can view a seeded host profile', async ({
     browser,
     baseURL,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Own profile about tab loads.',
+      'Other member profile about tab loads.',
+      'Profile API returns public profile data.',
+    ]);
+
     const host = SEEDED_MEMBERS[1];
     const seededMemberContext = await browser.newContext({
       baseURL,
@@ -157,21 +214,45 @@ test.describe('authenticated member flows', () => {
     }
   });
 
-  test('profile edit locations page is reachable', async ({ page }) => {
+  test('profile edit locations page is reachable', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-locations', [
+      'Locations edit form is reachable.',
+      'Geocoding/map interactions are stubbed deterministically.',
+      'Valid location changes persist.',
+    ]);
+
     await page.goto('/profile/edit/locations');
 
     await expect(page).toHaveURL(/\/profile\/edit\/locations/);
     await expect(page.getByText(/where do you live/i)).toBeVisible();
   });
 
-  test('statistics page loads for a signed in member', async ({ page }) => {
+  test('statistics page loads for a signed in member', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.statistics', [
+      'Statistics page loads for visitors.',
+      'Statistics page loads for signed-in members.',
+      'Public statistics API returns deterministic data.',
+    ]);
+
     await page.goto('/statistics');
 
     await expect(page).toHaveURL(/\/statistics/);
     await expect(page).toHaveTitle(/Statistics - Trustroots/);
   });
 
-  test('profile edit networks page is reachable', async ({ page }) => {
+  test('profile edit networks page is reachable', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Invalid Nostr secret key is rejected.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
     await page.goto('/profile/edit/networks');
 
     await expect(page).toHaveURL(/\/profile\/edit\/networks/);
@@ -180,7 +261,11 @@ test.describe('authenticated member flows', () => {
 
   test('logged in member can browse circles while unconfirmed', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.list', [
+      'Circles list loads for signed-in members.',
+    ]);
+
     await page.goto('/circles');
     await waitForTribesList(page);
 
@@ -189,7 +274,13 @@ test.describe('authenticated member flows', () => {
     ).toBeVisible();
   });
 
-  test('regular members are turned away from admin tools', async ({ page }) => {
+  test('regular members are turned away from admin tools', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Regular member is denied access to admin tools.',
+    ]);
+
     page.once('dialog', dialog => dialog.accept());
 
     await page.goto('/admin/search-users');
@@ -197,7 +288,14 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveURL(/\/volunteering/);
   });
 
-  test('profile edit photo page is reachable', async ({ page }) => {
+  test('profile edit photo page is reachable', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Photo edit page is reachable.',
+      'Valid upload succeeds through deterministic file processing.',
+      'Invalid upload shows an error.',
+      'Avatar endpoint returns uploaded or fallback image.',
+    ]);
+
     await page.goto('/profile/edit/photo');
 
     await expect(page).toHaveURL(/\/profile\/edit\/photo/);
@@ -205,7 +303,13 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/profile photo/i).first()).toBeVisible();
   });
 
-  test('navigation page lists member shortcuts', async ({ page }) => {
+  test('navigation page lists member shortcuts', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'public.navigation', [
+      'Member navigation page loads.',
+      'Navigation lists the expected member shortcuts.',
+      'Sign out action clears the session.',
+    ]);
+
     await page.goto('/navigation');
 
     await expect(page).toHaveURL(/\/navigation/);
@@ -229,7 +333,18 @@ test.describe('authenticated member flows', () => {
     ).toBeVisible();
   });
 
-  test('member can sign out', async ({ browser, baseURL }) => {
+  test('member can sign out', async ({ browser, baseURL }, testInfo) => {
+    annotateFeature(testInfo, 'public.navigation', [
+      'Member navigation page loads.',
+      'Navigation lists the expected member shortcuts.',
+      'Sign out action clears the session.',
+    ]);
+
+    annotateFeature(testInfo, 'auth.signout', [
+      'Sign out endpoint clears the session.',
+      'Browser lands on the homepage after sign out.',
+    ]);
+
     // Sign out tears down the session, so run it against a throwaway account in
     // an isolated context. That keeps the shared authenticated session intact
     // for the other tests in this file when they run in parallel.

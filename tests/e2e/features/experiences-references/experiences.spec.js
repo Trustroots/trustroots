@@ -1,4 +1,4 @@
-const { test, expect } = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_EXPERIENCE,
@@ -8,7 +8,11 @@ const {
 test.describe('seeded experience flows', () => {
   test('profile experiences tab shows the seeded public experience', async ({
     page,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'experiences.profile-list', [
+      'Seeded public experience is displayed.',
+    ]);
+
     const experiencesResponse = page.waitForResponse(
       response => response.url().includes('/api/experiences') && response.ok(),
     );
@@ -26,7 +30,11 @@ test.describe('seeded experience flows', () => {
 
   test('experiences API returns the seeded public experience', async ({
     request,
-  }) => {
+  }, testInfo) => {
+    annotateFeature(testInfo, 'experiences.profile-list', [
+      'Experiences API returns public experiences for a member.',
+    ]);
+
     const portlandId = await fetchUserIdByUsername(
       request,
       SEEDED_EXPERIENCE.profileUsername,

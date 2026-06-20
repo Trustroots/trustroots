@@ -259,12 +259,11 @@ function summarizeFeatureCoverage(report, featureManifest = manifest) {
     const annotations = evidence.annotated.get(feature.id);
     const relatedSpecs = evidence.relatedPassingSpecs.get(feature.id) || [];
     const passedScenarios = annotations ? annotations.passedScenarios : new Set();
-    const coveredByLegacyRelatedSpecs = relatedSpecs.length > 0;
     const missingScenarios = [];
 
     for (const scenario of feature.requiredScenarios || []) {
       requiredScenarioCount += 1;
-      if (passedScenarios.has(scenario) || coveredByLegacyRelatedSpecs) {
+      if (passedScenarios.has(scenario)) {
         coveredScenarioCount += 1;
       } else {
         missingScenarios.push(scenario);
