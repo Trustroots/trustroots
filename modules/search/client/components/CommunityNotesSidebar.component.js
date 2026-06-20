@@ -129,6 +129,7 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
       <NostrootsActionModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
+        plusCode={plusCode}
       />
     </div>
   );

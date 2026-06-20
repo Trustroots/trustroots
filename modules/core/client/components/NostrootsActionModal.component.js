@@ -6,8 +6,12 @@ import PropTypes from 'prop-types';
  * Nostroots (e.g. replying to a community note). Prompts the user to open the
  * Nostroots web app or dismiss.
  */
-export default function NostrootsActionModal({ isOpen, onClose }) {
+export default function NostrootsActionModal({ isOpen, onClose, plusCode }) {
   const ctaRef = useRef(null);
+
+  const webAppUrl = plusCode
+    ? `https://nos.trustroots.org/v0/#${plusCode}`
+    : 'https://nos.trustroots.org';
 
   useEffect(() => {
     if (!isOpen) return;
@@ -65,15 +69,15 @@ export default function NostrootsActionModal({ isOpen, onClose }) {
         <div className="nostroots-modal-actions">
           <a
             ref={ctaRef}
-            href="https://testflight.apple.com/join/n5WGu8Hu"
+            href="https://apps.apple.com/us/app/nostroots/id6755037304"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary btn-block nostroots-modal-btn"
           >
-            Join TestFlight for iOS
+            Download for iOS
           </a>
           <a
-            href="https://github.com/Trustroots/nostroots/releases"
+            href="https://play.google.com/store/apps/details?id=org.trustroots.nostroots"
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-primary btn-block nostroots-modal-btn"
@@ -81,7 +85,7 @@ export default function NostrootsActionModal({ isOpen, onClose }) {
             Download for Android
           </a>
           <a
-            href="https://nos.trustroots.org"
+            href={webAppUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-default btn-block nostroots-modal-btn"
@@ -105,4 +109,5 @@ export default function NostrootsActionModal({ isOpen, onClose }) {
 NostrootsActionModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
+  plusCode: PropTypes.string,
 };

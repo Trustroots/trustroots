@@ -26,15 +26,15 @@ describe('NostrootsActionModal', () => {
     const { getByText } = render(
       <NostrootsActionModal isOpen={true} onClose={onClose} />,
     );
-    const iosLink = getByText('Join TestFlight for iOS');
+    const iosLink = getByText('Download for iOS');
     expect(iosLink).toHaveAttribute(
       'href',
-      'https://testflight.apple.com/join/n5WGu8Hu',
+      'https://apps.apple.com/us/app/nostroots/id6755037304',
     );
     const androidLink = getByText('Download for Android');
     expect(androidLink).toHaveAttribute(
       'href',
-      'https://github.com/Trustroots/nostroots/releases',
+      'https://play.google.com/store/apps/details?id=org.trustroots.nostroots',
     );
   });
 
@@ -44,6 +44,21 @@ describe('NostrootsActionModal', () => {
     );
     const link = getByText('Open web app');
     expect(link).toHaveAttribute('href', 'https://nos.trustroots.org');
+  });
+
+  it('links the web app to the note plus code when provided', () => {
+    const { getByText } = render(
+      <NostrootsActionModal
+        isOpen={true}
+        onClose={onClose}
+        plusCode="8FMHR6CC+"
+      />,
+    );
+    const link = getByText('Open web app');
+    expect(link).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/v0/#8FMHR6CC+',
+    );
   });
 
   it('calls onClose when "Not now" is clicked', () => {
