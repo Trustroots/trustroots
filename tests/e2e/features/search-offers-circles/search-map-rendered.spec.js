@@ -331,7 +331,7 @@ test.describe('rendered search map feature coverage', () => {
     const dialog = page.getByRole('dialog', { name: 'Get Nostroots' });
     await expect(dialog).toBeVisible();
     await expect(
-      dialog.getByRole('link', { name: 'Join TestFlight for iOS' }),
+      dialog.getByRole('link', { name: 'Download for iOS' }),
     ).toBeVisible();
     await expect(
       dialog.getByRole('link', { name: 'Download for Android' }),
