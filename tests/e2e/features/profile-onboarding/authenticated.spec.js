@@ -120,9 +120,9 @@ test.describe('authenticated member flows', () => {
     await expect(page).toHaveURL(new RegExp(`/profile/${user.username}`));
     await expect(page).toHaveTitle(/Profile - Trustroots/);
     await expect(
-      page.locator('a.btn-primary[href="/profile/edit"]', {
-        hasText: /edit your profile/i,
-      }),
+      page.getByText(
+        /your profile will not be visible to others until you confirm your email/i,
+      ),
     ).toBeVisible();
   });
 
