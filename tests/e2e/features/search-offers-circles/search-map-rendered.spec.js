@@ -296,9 +296,16 @@ test.describe('rendered search map feature coverage', () => {
     const initialZoom = await readZoom();
     expect(initialZoom).toBeLessThanOrEqual(7);
 
-    // The cluster renders at the centre of the map, which is the centre of the
-    // canvas element, so a default click lands on it.
-    await page.locator('.mapboxgl-canvas').click();
+    // The cluster renders at the centre of the map. react-map-gl layers an
+    // event-handling overlay on top of the canvas, so click by coordinates with
+    // the mouse rather than targeting the canvas locator (whose actionability
+    // hit-test gets intercepted by that overlay).
+    const canvasBox = await page.locator('.mapboxgl-canvas').boundingBox();
+    expect(canvasBox).not.toBeNull();
+    await page.mouse.click(
+      canvasBox.x + canvasBox.width / 2,
+      canvasBox.y + canvasBox.height / 2,
+    );
 
     await page.waitForFunction(
       previousZoom => {
