@@ -374,10 +374,13 @@ export default function SearchMap({
       transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
     };
 
-    const source = sourceRef?.current?.getSource();
+    // react-map-gl v5's <Source> is a plain function component and does not
+    // forward refs, so `sourceRef.current` is always null. Read the clustered
+    // source straight from the live map instead.
+    const source = getMapRef()?.getSource(SOURCE_OFFERS);
 
     if (!source) {
-      // @TODO: sometimes source doesn't return map. At least center the group if no zooming — not ideal, should just re-attempt.
+      // At least center the group if the source isn't ready yet.
       setViewport({
         ...viewport,
         ...newLocation,

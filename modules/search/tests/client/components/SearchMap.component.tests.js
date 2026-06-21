@@ -64,6 +64,7 @@ const mockFitBounds = jest.fn();
 const mockMap = {
   getBounds: jest.fn(),
   getFeatureState: jest.fn(),
+  getSource: jest.fn(),
   getZoom: jest.fn(),
   setFeatureState: jest.fn(),
 };
@@ -173,6 +174,7 @@ beforeEach(() => {
     done(null, 18),
   );
   mockSourceInstance = mockSource;
+  mockMap.getSource.mockImplementation(() => mockSourceInstance);
   mockGetOffer.mockResolvedValue({ _id: 'offer-1' });
   mockQueryOffers.mockResolvedValue({
     features: [],
