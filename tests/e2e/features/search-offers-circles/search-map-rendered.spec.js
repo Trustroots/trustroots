@@ -272,6 +272,48 @@ test.describe('rendered search map feature coverage', () => {
     });
   });
 
+  test('clicking a pin cluster zooms the map in to expand it', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Nearby offers group into a single rendered cluster.',
+      'Clicking a cluster zooms the map in to expand it.',
+    ]);
+
+    // Several offers sit on top of the seeded map centre so they render as one
+    // cluster in the middle of the map canvas.
+    await useMapRouteFixtures(context, { offers: 'clustered-offers.json' });
+    await page.reload();
+    await waitForSearchMap(page);
+
+    const readZoom = () =>
+      page.evaluate(() => {
+        const raw = window.localStorage.getItem('search-map-location');
+        return raw ? JSON.parse(raw).zoom : null;
+      });
+
+    const initialZoom = await readZoom();
+    expect(initialZoom).toBeLessThanOrEqual(7);
+
+    // The cluster renders at the centre of the map, which is the centre of the
+    // canvas element, so a default click lands on it.
+    await page.locator('.mapboxgl-canvas').click();
+
+    await page.waitForFunction(
+      previousZoom => {
+        const raw = window.localStorage.getItem('search-map-location');
+        if (!raw) return false;
+        const { zoom } = JSON.parse(raw);
+        return typeof zoom === 'number' && zoom > previousZoom + 0.5;
+      },
+      initialZoom,
+      { timeout: 20000 },
+    );
+
+    expect(await readZoom()).toBeGreaterThan(initialZoom);
+  });
+
   test('Community Notes search filter toggles and persists', async ({
     page,
   }, testInfo) => {

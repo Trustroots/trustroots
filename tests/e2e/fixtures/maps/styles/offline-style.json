@@ -9,5831 +9,3862 @@
         "features": [
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-180, -84],
-                [-180, 84]
+                [-25, 30],
+                [-25, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-179, -84],
-                [-179, 84]
+                [-24.5, 30],
+                [-24.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-178, -84],
-                [-178, 84]
+                [-24, 30],
+                [-24, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-177, -84],
-                [-177, 84]
+                [-23.5, 30],
+                [-23.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-176, -84],
-                [-176, 84]
+                [-23, 30],
+                [-23, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-175, -84],
-                [-175, 84]
+                [-22.5, 30],
+                [-22.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-174, -84],
-                [-174, 84]
+                [-22, 30],
+                [-22, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-173, -84],
-                [-173, 84]
+                [-21.5, 30],
+                [-21.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-172, -84],
-                [-172, 84]
+                [-21, 30],
+                [-21, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-171, -84],
-                [-171, 84]
+                [-20.5, 30],
+                [-20.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-170, -84],
-                [-170, 84]
+                [-20, 30],
+                [-20, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-169, -84],
-                [-169, 84]
+                [-19.5, 30],
+                [-19.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-168, -84],
-                [-168, 84]
+                [-19, 30],
+                [-19, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-167, -84],
-                [-167, 84]
+                [-18.5, 30],
+                [-18.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-166, -84],
-                [-166, 84]
+                [-18, 30],
+                [-18, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-165, -84],
-                [-165, 84]
+                [-17.5, 30],
+                [-17.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-164, -84],
-                [-164, 84]
+                [-17, 30],
+                [-17, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-163, -84],
-                [-163, 84]
+                [-16.5, 30],
+                [-16.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-162, -84],
-                [-162, 84]
+                [-16, 30],
+                [-16, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-161, -84],
-                [-161, 84]
+                [-15.5, 30],
+                [-15.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-160, -84],
-                [-160, 84]
+                [-15, 30],
+                [-15, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-159, -84],
-                [-159, 84]
+                [-14.5, 30],
+                [-14.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-158, -84],
-                [-158, 84]
+                [-14, 30],
+                [-14, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-157, -84],
-                [-157, 84]
+                [-13.5, 30],
+                [-13.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-156, -84],
-                [-156, 84]
+                [-13, 30],
+                [-13, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-155, -84],
-                [-155, 84]
+                [-12.5, 30],
+                [-12.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-154, -84],
-                [-154, 84]
+                [-12, 30],
+                [-12, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-153, -84],
-                [-153, 84]
+                [-11.5, 30],
+                [-11.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-152, -84],
-                [-152, 84]
+                [-11, 30],
+                [-11, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-151, -84],
-                [-151, 84]
+                [-10.5, 30],
+                [-10.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-150, -84],
-                [-150, 84]
+                [-10, 30],
+                [-10, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-149, -84],
-                [-149, 84]
+                [-9.5, 30],
+                [-9.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-148, -84],
-                [-148, 84]
+                [-9, 30],
+                [-9, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-147, -84],
-                [-147, 84]
+                [-8.5, 30],
+                [-8.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-146, -84],
-                [-146, 84]
+                [-8, 30],
+                [-8, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-145, -84],
-                [-145, 84]
+                [-7.5, 30],
+                [-7.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-144, -84],
-                [-144, 84]
+                [-7, 30],
+                [-7, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-143, -84],
-                [-143, 84]
+                [-6.5, 30],
+                [-6.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-142, -84],
-                [-142, 84]
+                [-6, 30],
+                [-6, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-141, -84],
-                [-141, 84]
+                [-5.5, 30],
+                [-5.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-140, -84],
-                [-140, 84]
+                [-5, 30],
+                [-5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-139, -84],
-                [-139, 84]
+                [-4.5, 30],
+                [-4.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-138, -84],
-                [-138, 84]
+                [-4, 30],
+                [-4, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-137, -84],
-                [-137, 84]
+                [-3.5, 30],
+                [-3.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-136, -84],
-                [-136, 84]
+                [-3, 30],
+                [-3, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-135, -84],
-                [-135, 84]
+                [-2.5, 30],
+                [-2.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-134, -84],
-                [-134, 84]
+                [-2, 30],
+                [-2, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-133, -84],
-                [-133, 84]
+                [-1.5, 30],
+                [-1.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-132, -84],
-                [-132, 84]
+                [-1, 30],
+                [-1, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-131, -84],
-                [-131, 84]
+                [-0.5, 30],
+                [-0.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-130, -84],
-                [-130, 84]
+                [0, 30],
+                [0, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-129, -84],
-                [-129, 84]
+                [0.5, 30],
+                [0.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-128, -84],
-                [-128, 84]
+                [1, 30],
+                [1, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-127, -84],
-                [-127, 84]
+                [1.5, 30],
+                [1.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-126, -84],
-                [-126, 84]
+                [2, 30],
+                [2, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-125, -84],
-                [-125, 84]
+                [2.5, 30],
+                [2.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-124, -84],
-                [-124, 84]
+                [3, 30],
+                [3, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-123, -84],
-                [-123, 84]
+                [3.5, 30],
+                [3.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-122, -84],
-                [-122, 84]
+                [4, 30],
+                [4, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-121, -84],
-                [-121, 84]
+                [4.5, 30],
+                [4.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-120, -84],
-                [-120, 84]
+                [5, 30],
+                [5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-119, -84],
-                [-119, 84]
+                [5.5, 30],
+                [5.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-118, -84],
-                [-118, 84]
+                [6, 30],
+                [6, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-117, -84],
-                [-117, 84]
+                [6.5, 30],
+                [6.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-116, -84],
-                [-116, 84]
+                [7, 30],
+                [7, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-115, -84],
-                [-115, 84]
+                [7.5, 30],
+                [7.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-114, -84],
-                [-114, 84]
+                [8, 30],
+                [8, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-113, -84],
-                [-113, 84]
+                [8.5, 30],
+                [8.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-112, -84],
-                [-112, 84]
+                [9, 30],
+                [9, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-111, -84],
-                [-111, 84]
+                [9.5, 30],
+                [9.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-110, -84],
-                [-110, 84]
+                [10, 30],
+                [10, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-109, -84],
-                [-109, 84]
+                [10.5, 30],
+                [10.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-108, -84],
-                [-108, 84]
+                [11, 30],
+                [11, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-107, -84],
-                [-107, 84]
+                [11.5, 30],
+                [11.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-106, -84],
-                [-106, 84]
+                [12, 30],
+                [12, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-105, -84],
-                [-105, 84]
+                [12.5, 30],
+                [12.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-104, -84],
-                [-104, 84]
+                [13, 30],
+                [13, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-103, -84],
-                [-103, 84]
+                [13.5, 30],
+                [13.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-102, -84],
-                [-102, 84]
+                [14, 30],
+                [14, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-101, -84],
-                [-101, 84]
+                [14.5, 30],
+                [14.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-100, -84],
-                [-100, 84]
+                [15, 30],
+                [15, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-99, -84],
-                [-99, 84]
+                [15.5, 30],
+                [15.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-98, -84],
-                [-98, 84]
+                [16, 30],
+                [16, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-97, -84],
-                [-97, 84]
+                [16.5, 30],
+                [16.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-96, -84],
-                [-96, 84]
+                [17, 30],
+                [17, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-95, -84],
-                [-95, 84]
+                [17.5, 30],
+                [17.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-94, -84],
-                [-94, 84]
+                [18, 30],
+                [18, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-93, -84],
-                [-93, 84]
+                [18.5, 30],
+                [18.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-92, -84],
-                [-92, 84]
+                [19, 30],
+                [19, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-91, -84],
-                [-91, 84]
+                [19.5, 30],
+                [19.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-90, -84],
-                [-90, 84]
+                [20, 30],
+                [20, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-89, -84],
-                [-89, 84]
+                [20.5, 30],
+                [20.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-88, -84],
-                [-88, 84]
+                [21, 30],
+                [21, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-87, -84],
-                [-87, 84]
+                [21.5, 30],
+                [21.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-86, -84],
-                [-86, 84]
+                [22, 30],
+                [22, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-85, -84],
-                [-85, 84]
+                [22.5, 30],
+                [22.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-84, -84],
-                [-84, 84]
+                [23, 30],
+                [23, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-83, -84],
-                [-83, 84]
+                [23.5, 30],
+                [23.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-82, -84],
-                [-82, 84]
+                [24, 30],
+                [24, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-81, -84],
-                [-81, 84]
+                [24.5, 30],
+                [24.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-80, -84],
-                [-80, 84]
+                [25, 30],
+                [25, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-79, -84],
-                [-79, 84]
+                [25.5, 30],
+                [25.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-78, -84],
-                [-78, 84]
+                [26, 30],
+                [26, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-77, -84],
-                [-77, 84]
+                [26.5, 30],
+                [26.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-76, -84],
-                [-76, 84]
+                [27, 30],
+                [27, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-75, -84],
-                [-75, 84]
+                [27.5, 30],
+                [27.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-74, -84],
-                [-74, 84]
+                [28, 30],
+                [28, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-73, -84],
-                [-73, 84]
+                [28.5, 30],
+                [28.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-72, -84],
-                [-72, 84]
+                [29, 30],
+                [29, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-71, -84],
-                [-71, 84]
+                [29.5, 30],
+                [29.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-70, -84],
-                [-70, 84]
+                [30, 30],
+                [30, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-69, -84],
-                [-69, 84]
+                [30.5, 30],
+                [30.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-68, -84],
-                [-68, 84]
+                [31, 30],
+                [31, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-67, -84],
-                [-67, 84]
+                [31.5, 30],
+                [31.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-66, -84],
-                [-66, 84]
+                [32, 30],
+                [32, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-65, -84],
-                [-65, 84]
+                [32.5, 30],
+                [32.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-64, -84],
-                [-64, 84]
+                [33, 30],
+                [33, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-63, -84],
-                [-63, 84]
+                [33.5, 30],
+                [33.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-62, -84],
-                [-62, 84]
+                [34, 30],
+                [34, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-61, -84],
-                [-61, 84]
+                [34.5, 30],
+                [34.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-60, -84],
-                [-60, 84]
+                [35, 30],
+                [35, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-59, -84],
-                [-59, 84]
+                [35.5, 30],
+                [35.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-58, -84],
-                [-58, 84]
+                [36, 30],
+                [36, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-57, -84],
-                [-57, 84]
+                [36.5, 30],
+                [36.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-56, -84],
-                [-56, 84]
+                [37, 30],
+                [37, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-55, -84],
-                [-55, 84]
+                [37.5, 30],
+                [37.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-54, -84],
-                [-54, 84]
+                [38, 30],
+                [38, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-53, -84],
-                [-53, 84]
+                [38.5, 30],
+                [38.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-52, -84],
-                [-52, 84]
+                [39, 30],
+                [39, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-51, -84],
-                [-51, 84]
+                [39.5, 30],
+                [39.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-50, -84],
-                [-50, 84]
+                [40, 30],
+                [40, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-49, -84],
-                [-49, 84]
+                [40.5, 30],
+                [40.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-48, -84],
-                [-48, 84]
+                [41, 30],
+                [41, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-47, -84],
-                [-47, 84]
+                [41.5, 30],
+                [41.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-46, -84],
-                [-46, 84]
+                [42, 30],
+                [42, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-45, -84],
-                [-45, 84]
+                [42.5, 30],
+                [42.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-44, -84],
-                [-44, 84]
+                [43, 30],
+                [43, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-43, -84],
-                [-43, 84]
+                [43.5, 30],
+                [43.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-42, -84],
-                [-42, 84]
+                [44, 30],
+                [44, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-41, -84],
-                [-41, 84]
+                [44.5, 30],
+                [44.5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-40, -84],
-                [-40, 84]
+                [45, 30],
+                [45, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-39, -84],
-                [-39, 84]
+                [-25, 30],
+                [45, 30]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-38, -84],
-                [-38, 84]
+                [-25, 30.5],
+                [45, 30.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-37, -84],
-                [-37, 84]
+                [-25, 31],
+                [45, 31]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-36, -84],
-                [-36, 84]
+                [-25, 31.5],
+                [45, 31.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-35, -84],
-                [-35, 84]
+                [-25, 32],
+                [45, 32]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-34, -84],
-                [-34, 84]
+                [-25, 32.5],
+                [45, 32.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-33, -84],
-                [-33, 84]
+                [-25, 33],
+                [45, 33]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-32, -84],
-                [-32, 84]
+                [-25, 33.5],
+                [45, 33.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-31, -84],
-                [-31, 84]
+                [-25, 34],
+                [45, 34]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-30, -84],
-                [-30, 84]
+                [-25, 34.5],
+                [45, 34.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-29, -84],
-                [-29, 84]
+                [-25, 35],
+                [45, 35]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-28, -84],
-                [-28, 84]
+                [-25, 35.5],
+                [45, 35.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-27, -84],
-                [-27, 84]
+                [-25, 36],
+                [45, 36]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-26, -84],
-                [-26, 84]
+                [-25, 36.5],
+                [45, 36.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-25, -84],
-                [-25, 84]
+                [-25, 37],
+                [45, 37]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-24, -84],
-                [-24, 84]
+                [-25, 37.5],
+                [45, 37.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-23, -84],
-                [-23, 84]
+                [-25, 38],
+                [45, 38]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-22, -84],
-                [-22, 84]
+                [-25, 38.5],
+                [45, 38.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-21, -84],
-                [-21, 84]
+                [-25, 39],
+                [45, 39]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-20, -84],
-                [-20, 84]
+                [-25, 39.5],
+                [45, 39.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-19, -84],
-                [-19, 84]
+                [-25, 40],
+                [45, 40]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-18, -84],
-                [-18, 84]
+                [-25, 40.5],
+                [45, 40.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-17, -84],
-                [-17, 84]
+                [-25, 41],
+                [45, 41]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-16, -84],
-                [-16, 84]
+                [-25, 41.5],
+                [45, 41.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-15, -84],
-                [-15, 84]
+                [-25, 42],
+                [45, 42]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-14, -84],
-                [-14, 84]
+                [-25, 42.5],
+                [45, 42.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-13, -84],
-                [-13, 84]
+                [-25, 43],
+                [45, 43]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-12, -84],
-                [-12, 84]
+                [-25, 43.5],
+                [45, 43.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-11, -84],
-                [-11, 84]
+                [-25, 44],
+                [45, 44]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-10, -84],
-                [-10, 84]
+                [-25, 44.5],
+                [45, 44.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-9, -84],
-                [-9, 84]
+                [-25, 45],
+                [45, 45]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-8, -84],
-                [-8, 84]
+                [-25, 45.5],
+                [45, 45.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-7, -84],
-                [-7, 84]
+                [-25, 46],
+                [45, 46]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-6, -84],
-                [-6, 84]
+                [-25, 46.5],
+                [45, 46.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-5, -84],
-                [-5, 84]
+                [-25, 47],
+                [45, 47]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-4, -84],
-                [-4, 84]
+                [-25, 47.5],
+                [45, 47.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-3, -84],
-                [-3, 84]
+                [-25, 48],
+                [45, 48]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-2, -84],
-                [-2, 84]
+                [-25, 48.5],
+                [45, 48.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [-1, -84],
-                [-1, 84]
+                [-25, 49],
+                [45, 49]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [0, -84],
-                [0, 84]
+                [-25, 49.5],
+                [45, 49.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [1, -84],
-                [1, 84]
+                [-25, 50],
+                [45, 50]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [2, -84],
-                [2, 84]
+                [-25, 50.5],
+                [45, 50.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [3, -84],
-                [3, 84]
+                [-25, 51],
+                [45, 51]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [4, -84],
-                [4, 84]
+                [-25, 51.5],
+                [45, 51.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [5, -84],
-                [5, 84]
+                [-25, 52],
+                [45, 52]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [6, -84],
-                [6, 84]
+                [-25, 52.5],
+                [45, 52.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [7, -84],
-                [7, 84]
+                [-25, 53],
+                [45, 53]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [8, -84],
-                [8, 84]
+                [-25, 53.5],
+                [45, 53.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [9, -84],
-                [9, 84]
+                [-25, 54],
+                [45, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [10, -84],
-                [10, 84]
+                [-25, 54.5],
+                [45, 54.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [11, -84],
-                [11, 84]
+                [-25, 55],
+                [45, 55]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [12, -84],
-                [12, 84]
+                [-25, 55.5],
+                [45, 55.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [13, -84],
-                [13, 84]
+                [-25, 56],
+                [45, 56]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [14, -84],
-                [14, 84]
+                [-25, 56.5],
+                [45, 56.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [15, -84],
-                [15, 84]
+                [-25, 57],
+                [45, 57]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [16, -84],
-                [16, 84]
+                [-25, 57.5],
+                [45, 57.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [17, -84],
-                [17, 84]
+                [-25, 58],
+                [45, 58]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [18, -84],
-                [18, 84]
+                [-25, 58.5],
+                [45, 58.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [19, -84],
-                [19, 84]
+                [-25, 59],
+                [45, 59]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [20, -84],
-                [20, 84]
+                [-25, 59.5],
+                [45, 59.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [21, -84],
-                [21, 84]
+                [-25, 60],
+                [45, 60]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [22, -84],
-                [22, 84]
+                [-25, 60.5],
+                [45, 60.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [23, -84],
-                [23, 84]
+                [-25, 61],
+                [45, 61]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [24, -84],
-                [24, 84]
+                [-25, 61.5],
+                [45, 61.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [25, -84],
-                [25, 84]
+                [-25, 62],
+                [45, 62]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [26, -84],
-                [26, 84]
+                [-25, 62.5],
+                [45, 62.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [27, -84],
-                [27, 84]
+                [-25, 63],
+                [45, 63]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [28, -84],
-                [28, 84]
+                [-25, 63.5],
+                [45, 63.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [29, -84],
-                [29, 84]
+                [-25, 64],
+                [45, 64]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [30, -84],
-                [30, 84]
+                [-25, 64.5],
+                [45, 64.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [31, -84],
-                [31, 84]
+                [-25, 65],
+                [45, 65]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [32, -84],
-                [32, 84]
+                [-25, 65.5],
+                [45, 65.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [33, -84],
-                [33, 84]
+                [-25, 66],
+                [45, 66]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [34, -84],
-                [34, 84]
+                [-25, 66.5],
+                [45, 66.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [35, -84],
-                [35, 84]
+                [-25, 67],
+                [45, 67]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [36, -84],
-                [36, 84]
+                [-25, 67.5],
+                [45, 67.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [37, -84],
-                [37, 84]
+                [-25, 68],
+                [45, 68]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [38, -84],
-                [38, 84]
+                [-25, 68.5],
+                [45, 68.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [39, -84],
-                [39, 84]
+                [-25, 69],
+                [45, 69]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [40, -84],
-                [40, 84]
+                [-25, 69.5],
+                [45, 69.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "minor" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [41, -84],
-                [41, 84]
+                [-25, 70],
+                [45, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [42, -84],
-                [42, 84]
+                [-25, 30],
+                [-25, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [43, -84],
-                [43, 84]
+                [-23, 30],
+                [-23, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [44, -84],
-                [44, 84]
+                [-21, 30],
+                [-21, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [45, -84],
-                [45, 84]
+                [-19, 30],
+                [-19, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [46, -84],
-                [46, 84]
+                [-17, 30],
+                [-17, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [47, -84],
-                [47, 84]
+                [-15, 30],
+                [-15, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [48, -84],
-                [48, 84]
+                [-13, 30],
+                [-13, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [49, -84],
-                [49, 84]
+                [-11, 30],
+                [-11, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [50, -84],
-                [50, 84]
+                [-9, 30],
+                [-9, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [51, -84],
-                [51, 84]
+                [-7, 30],
+                [-7, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [52, -84],
-                [52, 84]
+                [-5, 30],
+                [-5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [53, -84],
-                [53, 84]
+                [-3, 30],
+                [-3, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [54, -84],
-                [54, 84]
+                [-1, 30],
+                [-1, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [55, -84],
-                [55, 84]
+                [1, 30],
+                [1, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [56, -84],
-                [56, 84]
+                [3, 30],
+                [3, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [57, -84],
-                [57, 84]
+                [5, 30],
+                [5, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [58, -84],
-                [58, 84]
+                [7, 30],
+                [7, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [59, -84],
-                [59, 84]
+                [9, 30],
+                [9, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [60, -84],
-                [60, 84]
+                [11, 30],
+                [11, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [61, -84],
-                [61, 84]
+                [13, 30],
+                [13, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [62, -84],
-                [62, 84]
+                [15, 30],
+                [15, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [63, -84],
-                [63, 84]
+                [17, 30],
+                [17, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [64, -84],
-                [64, 84]
+                [19, 30],
+                [19, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [65, -84],
-                [65, 84]
+                [21, 30],
+                [21, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [66, -84],
-                [66, 84]
+                [23, 30],
+                [23, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [67, -84],
-                [67, 84]
+                [25, 30],
+                [25, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [68, -84],
-                [68, 84]
+                [27, 30],
+                [27, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [69, -84],
-                [69, 84]
+                [29, 30],
+                [29, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [70, -84],
-                [70, 84]
+                [31, 30],
+                [31, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [71, -84],
-                [71, 84]
+                [33, 30],
+                [33, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [72, -84],
-                [72, 84]
+                [35, 30],
+                [35, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [73, -84],
-                [73, 84]
+                [37, 30],
+                [37, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [74, -84],
-                [74, 84]
+                [39, 30],
+                [39, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [75, -84],
-                [75, 84]
+                [41, 30],
+                [41, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [76, -84],
-                [76, 84]
+                [43, 30],
+                [43, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [77, -84],
-                [77, 84]
+                [45, 30],
+                [45, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [78, -84],
-                [78, 84]
+                [-25, 30],
+                [45, 30]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [79, -84],
-                [79, 84]
+                [-25, 32],
+                [45, 32]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [80, -84],
-                [80, 84]
+                [-25, 34],
+                [45, 34]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [81, -84],
-                [81, 84]
+                [-25, 36],
+                [45, 36]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [82, -84],
-                [82, 84]
+                [-25, 38],
+                [45, 38]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [83, -84],
-                [83, 84]
+                [-25, 40],
+                [45, 40]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [84, -84],
-                [84, 84]
+                [-25, 42],
+                [45, 42]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [85, -84],
-                [85, 84]
+                [-25, 44],
+                [45, 44]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [86, -84],
-                [86, 84]
+                [-25, 46],
+                [45, 46]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [87, -84],
-                [87, 84]
+                [-25, 48],
+                [45, 48]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [88, -84],
-                [88, 84]
+                [-25, 50],
+                [45, 50]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [89, -84],
-                [89, 84]
+                [-25, 52],
+                [45, 52]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [90, -84],
-                [90, 84]
+                [-25, 54],
+                [45, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [91, -84],
-                [91, 84]
+                [-25, 56],
+                [45, 56]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [92, -84],
-                [92, 84]
+                [-25, 58],
+                [45, 58]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [93, -84],
-                [93, 84]
+                [-25, 60],
+                [45, 60]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [94, -84],
-                [94, 84]
+                [-25, 62],
+                [45, 62]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [95, -84],
-                [95, 84]
+                [-25, 64],
+                [45, 64]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [96, -84],
-                [96, 84]
+                [-25, 66],
+                [45, 66]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [97, -84],
-                [97, 84]
+                [-25, 68],
+                [45, 68]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "major" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [98, -84],
-                [98, 84]
+                [-25, 70],
+                [45, 70]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [99, -84],
-                [99, 84]
+                [11.5, 51],
+                [11.5, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [100, -84],
-                [100, 84]
+                [11.6, 51],
+                [11.6, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [101, -84],
-                [101, 84]
+                [11.7, 51],
+                [11.7, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [102, -84],
-                [102, 84]
+                [11.8, 51],
+                [11.8, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [103, -84],
-                [103, 84]
+                [11.9, 51],
+                [11.9, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [104, -84],
-                [104, 84]
+                [12, 51],
+                [12, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [105, -84],
-                [105, 84]
+                [12.1, 51],
+                [12.1, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [106, -84],
-                [106, 84]
+                [12.2, 51],
+                [12.2, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [107, -84],
-                [107, 84]
+                [12.3, 51],
+                [12.3, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [108, -84],
-                [108, 84]
+                [12.4, 51],
+                [12.4, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [109, -84],
-                [109, 84]
+                [12.5, 51],
+                [12.5, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [110, -84],
-                [110, 84]
+                [12.6, 51],
+                [12.6, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [111, -84],
-                [111, 84]
+                [12.7, 51],
+                [12.7, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [112, -84],
-                [112, 84]
+                [12.8, 51],
+                [12.8, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [113, -84],
-                [113, 84]
+                [12.9, 51],
+                [12.9, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [114, -84],
-                [114, 84]
+                [13, 51],
+                [13, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [115, -84],
-                [115, 84]
+                [13.1, 51],
+                [13.1, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [116, -84],
-                [116, 84]
+                [13.2, 51],
+                [13.2, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [117, -84],
-                [117, 84]
+                [13.3, 51],
+                [13.3, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [118, -84],
-                [118, 84]
+                [13.4, 51],
+                [13.4, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [119, -84],
-                [119, 84]
+                [13.5, 51],
+                [13.5, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [120, -84],
-                [120, 84]
+                [13.6, 51],
+                [13.6, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [121, -84],
-                [121, 84]
+                [13.7, 51],
+                [13.7, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [122, -84],
-                [122, 84]
+                [13.8, 51],
+                [13.8, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [123, -84],
-                [123, 84]
+                [13.9, 51],
+                [13.9, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [124, -84],
-                [124, 84]
+                [14, 51],
+                [14, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [125, -84],
-                [125, 84]
+                [14.1, 51],
+                [14.1, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [126, -84],
-                [126, 84]
+                [14.2, 51],
+                [14.2, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [127, -84],
-                [127, 84]
+                [14.3, 51],
+                [14.3, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [128, -84],
-                [128, 84]
+                [14.4, 51],
+                [14.4, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [129, -84],
-                [129, 84]
+                [14.5, 51],
+                [14.5, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [130, -84],
-                [130, 84]
+                [14.6, 51],
+                [14.6, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [131, -84],
-                [131, 84]
+                [14.7, 51],
+                [14.7, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [132, -84],
-                [132, 84]
+                [14.8, 51],
+                [14.8, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [133, -84],
-                [133, 84]
+                [14.9, 51],
+                [14.9, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [134, -84],
-                [134, 84]
+                [15, 51],
+                [15, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [135, -84],
-                [135, 84]
+                [15.1, 51],
+                [15.1, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [136, -84],
-                [136, 84]
+                [15.2, 51],
+                [15.2, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [137, -84],
-                [137, 84]
+                [15.3, 51],
+                [15.3, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [138, -84],
-                [138, 84]
+                [15.4, 51],
+                [15.4, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [139, -84],
-                [139, 84]
+                [15.5, 51],
+                [15.5, 54]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [140, -84],
-                [140, 84]
+                [11.5, 51],
+                [15.5, 51]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [141, -84],
-                [141, 84]
+                [11.5, 51.1],
+                [15.5, 51.1]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [142, -84],
-                [142, 84]
+                [11.5, 51.2],
+                [15.5, 51.2]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [143, -84],
-                [143, 84]
+                [11.5, 51.3],
+                [15.5, 51.3]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [144, -84],
-                [144, 84]
+                [11.5, 51.4],
+                [15.5, 51.4]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [145, -84],
-                [145, 84]
+                [11.5, 51.5],
+                [15.5, 51.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [146, -84],
-                [146, 84]
+                [11.5, 51.6],
+                [15.5, 51.6]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [147, -84],
-                [147, 84]
+                [11.5, 51.7],
+                [15.5, 51.7]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [148, -84],
-                [148, 84]
+                [11.5, 51.8],
+                [15.5, 51.8]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [149, -84],
-                [149, 84]
+                [11.5, 51.9],
+                [15.5, 51.9]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [150, -84],
-                [150, 84]
+                [11.5, 52],
+                [15.5, 52]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [151, -84],
-                [151, 84]
+                [11.5, 52.1],
+                [15.5, 52.1]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [152, -84],
-                [152, 84]
+                [11.5, 52.2],
+                [15.5, 52.2]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [153, -84],
-                [153, 84]
+                [11.5, 52.3],
+                [15.5, 52.3]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [154, -84],
-                [154, 84]
+                [11.5, 52.4],
+                [15.5, 52.4]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [155, -84],
-                [155, 84]
+                [11.5, 52.5],
+                [15.5, 52.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [156, -84],
-                [156, 84]
+                [11.5, 52.6],
+                [15.5, 52.6]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [157, -84],
-                [157, 84]
+                [11.5, 52.7],
+                [15.5, 52.7]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [158, -84],
-                [158, 84]
+                [11.5, 52.8],
+                [15.5, 52.8]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [159, -84],
-                [159, 84]
+                [11.5, 52.9],
+                [15.5, 52.9]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [160, -84],
-                [160, 84]
+                [11.5, 53],
+                [15.5, 53]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [161, -84],
-                [161, 84]
+                [11.5, 53.1],
+                [15.5, 53.1]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [162, -84],
-                [162, 84]
+                [11.5, 53.2],
+                [15.5, 53.2]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [163, -84],
-                [163, 84]
+                [11.5, 53.3],
+                [15.5, 53.3]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [164, -84],
-                [164, 84]
+                [11.5, 53.4],
+                [15.5, 53.4]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [165, -84],
-                [165, 84]
+                [11.5, 53.5],
+                [15.5, 53.5]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [166, -84],
-                [166, 84]
+                [11.5, 53.6],
+                [15.5, 53.6]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [167, -84],
-                [167, 84]
+                [11.5, 53.7],
+                [15.5, 53.7]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [168, -84],
-                [168, 84]
+                [11.5, 53.8],
+                [15.5, 53.8]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": false },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [169, -84],
-                [169, 84]
+                [11.5, 53.9],
+                [15.5, 53.9]
               ]
             }
           },
           {
             "type": "Feature",
-            "properties": { "major": true },
+            "properties": { "kind": "fine" },
             "geometry": {
               "type": "LineString",
               "coordinates": [
-                [170, -84],
-                [170, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [171, -84],
-                [171, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [172, -84],
-                [172, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [173, -84],
-                [173, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [174, -84],
-                [174, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [175, -84],
-                [175, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [176, -84],
-                [176, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [177, -84],
-                [177, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [178, -84],
-                [178, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [179, -84],
-                [179, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [180, -84],
-                [180, 84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -84],
-                [180, -84]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -83],
-                [180, -83]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -82],
-                [180, -82]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -81],
-                [180, -81]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -80],
-                [180, -80]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -79],
-                [180, -79]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -78],
-                [180, -78]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -77],
-                [180, -77]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -76],
-                [180, -76]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -75],
-                [180, -75]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -74],
-                [180, -74]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -73],
-                [180, -73]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -72],
-                [180, -72]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -71],
-                [180, -71]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -70],
-                [180, -70]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -69],
-                [180, -69]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -68],
-                [180, -68]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -67],
-                [180, -67]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -66],
-                [180, -66]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -65],
-                [180, -65]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -64],
-                [180, -64]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -63],
-                [180, -63]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -62],
-                [180, -62]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -61],
-                [180, -61]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -60],
-                [180, -60]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -59],
-                [180, -59]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -58],
-                [180, -58]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -57],
-                [180, -57]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -56],
-                [180, -56]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -55],
-                [180, -55]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -54],
-                [180, -54]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -53],
-                [180, -53]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -52],
-                [180, -52]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -51],
-                [180, -51]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -50],
-                [180, -50]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -49],
-                [180, -49]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -48],
-                [180, -48]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -47],
-                [180, -47]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -46],
-                [180, -46]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -45],
-                [180, -45]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -44],
-                [180, -44]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -43],
-                [180, -43]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -42],
-                [180, -42]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -41],
-                [180, -41]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -40],
-                [180, -40]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -39],
-                [180, -39]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -38],
-                [180, -38]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -37],
-                [180, -37]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -36],
-                [180, -36]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -35],
-                [180, -35]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -34],
-                [180, -34]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -33],
-                [180, -33]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -32],
-                [180, -32]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -31],
-                [180, -31]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -30],
-                [180, -30]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -29],
-                [180, -29]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -28],
-                [180, -28]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -27],
-                [180, -27]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -26],
-                [180, -26]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -25],
-                [180, -25]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -24],
-                [180, -24]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -23],
-                [180, -23]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -22],
-                [180, -22]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -21],
-                [180, -21]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -20],
-                [180, -20]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -19],
-                [180, -19]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -18],
-                [180, -18]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -17],
-                [180, -17]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -16],
-                [180, -16]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -15],
-                [180, -15]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -14],
-                [180, -14]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -13],
-                [180, -13]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -12],
-                [180, -12]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -11],
-                [180, -11]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -10],
-                [180, -10]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -9],
-                [180, -9]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -8],
-                [180, -8]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -7],
-                [180, -7]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -6],
-                [180, -6]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -5],
-                [180, -5]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -4],
-                [180, -4]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -3],
-                [180, -3]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -2],
-                [180, -2]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, -1],
-                [180, -1]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 0],
-                [180, 0]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 1],
-                [180, 1]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 2],
-                [180, 2]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 3],
-                [180, 3]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 4],
-                [180, 4]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 5],
-                [180, 5]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 6],
-                [180, 6]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 7],
-                [180, 7]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 8],
-                [180, 8]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 9],
-                [180, 9]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 10],
-                [180, 10]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 11],
-                [180, 11]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 12],
-                [180, 12]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 13],
-                [180, 13]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 14],
-                [180, 14]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 15],
-                [180, 15]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 16],
-                [180, 16]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 17],
-                [180, 17]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 18],
-                [180, 18]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 19],
-                [180, 19]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 20],
-                [180, 20]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 21],
-                [180, 21]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 22],
-                [180, 22]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 23],
-                [180, 23]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 24],
-                [180, 24]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 25],
-                [180, 25]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 26],
-                [180, 26]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 27],
-                [180, 27]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 28],
-                [180, 28]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 29],
-                [180, 29]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 30],
-                [180, 30]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 31],
-                [180, 31]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 32],
-                [180, 32]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 33],
-                [180, 33]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 34],
-                [180, 34]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 35],
-                [180, 35]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 36],
-                [180, 36]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 37],
-                [180, 37]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 38],
-                [180, 38]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 39],
-                [180, 39]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 40],
-                [180, 40]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 41],
-                [180, 41]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 42],
-                [180, 42]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 43],
-                [180, 43]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 44],
-                [180, 44]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 45],
-                [180, 45]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 46],
-                [180, 46]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 47],
-                [180, 47]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 48],
-                [180, 48]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 49],
-                [180, 49]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 50],
-                [180, 50]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 51],
-                [180, 51]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 52],
-                [180, 52]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 53],
-                [180, 53]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 54],
-                [180, 54]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 55],
-                [180, 55]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 56],
-                [180, 56]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 57],
-                [180, 57]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 58],
-                [180, 58]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 59],
-                [180, 59]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 60],
-                [180, 60]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 61],
-                [180, 61]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 62],
-                [180, 62]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 63],
-                [180, 63]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 64],
-                [180, 64]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 65],
-                [180, 65]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 66],
-                [180, 66]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 67],
-                [180, 67]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 68],
-                [180, 68]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 69],
-                [180, 69]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 70],
-                [180, 70]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 71],
-                [180, 71]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 72],
-                [180, 72]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 73],
-                [180, 73]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 74],
-                [180, 74]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 75],
-                [180, 75]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 76],
-                [180, 76]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 77],
-                [180, 77]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 78],
-                [180, 78]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 79],
-                [180, 79]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": true },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 80],
-                [180, 80]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 81],
-                [180, 81]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 82],
-                [180, 82]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 83],
-                [180, 83]
-              ]
-            }
-          },
-          {
-            "type": "Feature",
-            "properties": { "major": false },
-            "geometry": {
-              "type": "LineString",
-              "coordinates": [
-                [-180, 84],
-                [180, 84]
+                [11.5, 54],
+                [15.5, 54]
               ]
             }
           }
@@ -5845,21 +3876,29 @@
     {
       "id": "background",
       "type": "background",
-      "paint": { "background-color": "#dde6ec" }
+      "paint": { "background-color": "#e9eef3" }
+    },
+    {
+      "id": "graticule-fine",
+      "type": "line",
+      "source": "e2e-graticule",
+      "filter": ["==", ["get", "kind"], "fine"],
+      "minzoom": 9,
+      "paint": { "line-color": "#d4dde6", "line-width": 0.6 }
     },
     {
       "id": "graticule-minor",
       "type": "line",
       "source": "e2e-graticule",
-      "filter": ["==", ["get", "major"], false],
-      "paint": { "line-color": "#bccad4", "line-width": 1 }
+      "filter": ["==", ["get", "kind"], "minor"],
+      "paint": { "line-color": "#d4dde6", "line-width": 0.6 }
     },
     {
       "id": "graticule-major",
       "type": "line",
       "source": "e2e-graticule",
-      "filter": ["==", ["get", "major"], true],
-      "paint": { "line-color": "#9aacb8", "line-width": 1.4 }
+      "filter": ["==", ["get", "kind"], "major"],
+      "paint": { "line-color": "#bcc8d4", "line-width": 1.1 }
     }
   ]
 }
