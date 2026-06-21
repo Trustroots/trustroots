@@ -1,19 +1,18 @@
 ---
 ---
 
-// Notes-style warm palette (notes.trustroots.org)
 :root {
-  --green: #12b591;
-  --green-dark: #0e9a7b;
-  --bg: #f5f0e6;
-  --text: #3a2e1f;
-  --text-muted: #6b5940;
-  --card-bg: #faf6ed;
-  --card-border: #d4c9b0;
-  --radius: 14px;
-  --brown: #7a5c3a;
-  --olive: #6a7d45;
-  --rust: #b87333;
+  --background: #f7f8ef;
+  --foreground: #08261f;
+  --muted: #5f7169;
+  --line: #dbe3d2;
+  --panel: #fffdf4;
+  --accent: #128a78;
+  --accent-dark: #004b3f;
+  --olive: #98ad46;
+  --gold: #d0a337;
+  --orange: #ee8619;
+  --shadow: rgba(0, 75, 63, 0.14);
   --white: #fff;
 }
 
@@ -26,21 +25,28 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  color: var(--text);
-  background: var(--bg);
-  line-height: 1.6;
+  min-height: 100vh;
+  font-family: Nunito, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--foreground);
+  background:
+    linear-gradient(180deg, rgba(152, 173, 70, 0.18), transparent 360px),
+    linear-gradient(90deg, rgba(49, 189, 166, 0.08), rgba(243, 181, 42, 0.08)),
+    var(--background);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: var(--brown);
+  color: var(--accent-dark);
   text-decoration: none;
+  font-weight: 700;
 }
 
-a:hover {
-  color: var(--rust);
+a:hover,
+a:focus-visible {
+  color: var(--accent);
   text-decoration: underline;
+  outline: none;
 }
 
 #skip-to-content {
@@ -56,142 +62,224 @@ a:hover {
     left: 10px;
     height: auto;
     width: auto;
-    background: var(--white);
-    outline: thick solid var(--green);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--accent-dark);
+    outline: 3px solid rgba(47, 159, 145, 0.3);
     z-index: 1000;
   }
 }
 
-/* Header (notes-style) */
 .header {
-  background: var(--green);
-  padding: 1rem 2rem 0.75rem;
+  width: min(1040px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 42px 0 10px;
+}
+
+.header-inner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 0.35rem 1.25rem;
-  position: relative;
-  overflow: hidden;
+  justify-content: space-between;
+  gap: 18px 28px;
 }
 
-.header-vines {
-  position: absolute;
-  inset: 0;
+.brand {
   display: flex;
   align-items: center;
-  justify-content: center;
-  pointer-events: none;
-
-  img {
-    width: 100%;
-    min-height: 100%;
-    object-fit: cover;
-    opacity: 0.15;
-  }
+  gap: 18px;
+  color: var(--accent-dark);
+  text-decoration: none;
 }
 
-.header-logo-link {
-  position: relative;
-  z-index: 1;
+a.brand:hover,
+a.brand:focus-visible {
+  color: var(--accent-dark);
+  text-decoration: none;
 }
 
-.header-logo {
-  height: 32px;
-  width: auto;
+.brand-icon {
+  width: 66px;
+  height: 66px;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: var(--accent-dark);
+  color: var(--white);
+  box-shadow:
+    inset 0 -16px 0 rgba(49, 189, 166, 0.28),
+    0 14px 34px rgba(0, 75, 63, 0.18);
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.brand-name,
+.brand-url {
   display: block;
 }
 
-.header-title {
-  color: var(--white);
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 1.4rem;
+.brand-name {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.brand-url {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 15px;
   font-weight: 700;
-  position: relative;
-  z-index: 1;
 }
 
-.header-url {
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 0.9rem;
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  text-align: center;
-  letter-spacing: 0.04em;
+.hub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 700;
 }
 
-a.header-url:hover {
-  color: var(--white);
-  text-decoration: none;
+.hub-nav a {
+  color: var(--muted);
+}
+
+.hub-nav a:hover,
+.hub-nav a:focus-visible {
+  color: var(--accent-dark);
+}
+
+.hub-nav .sep {
+  color: rgba(95, 113, 105, 0.45);
 }
 
 @media (max-width: 600px) {
   .header {
-    padding: 0.75rem 1rem;
-    gap: 0.5rem;
+    padding-top: 28px;
   }
 
-  .header-title {
-    font-size: 1.2rem;
+  .brand {
+    gap: 14px;
   }
 
-  .header-url {
-    font-size: 0.85rem;
+  .brand-icon {
+    width: 58px;
+    height: 58px;
+    font-size: 19px;
+  }
+
+  .brand-name {
+    font-size: 24px;
+  }
+
+  .hub-nav {
+    justify-content: flex-start;
   }
 }
 
-/* Main content */
 .main-content {
-  max-width: 960px;
+  width: min(1040px, calc(100% - 32px));
+  max-width: none;
   margin: 0 auto;
-  padding: 1.5rem 1.5rem 3rem;
+  padding: 26px 0 56px;
   min-height: 50vh;
 }
 
-/* Typography */
 h1, h2, h3, h4, h5, h6 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 700;
-  color: var(--text);
+  font-weight: 800;
+  color: var(--foreground);
+  letter-spacing: 0;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
   line-height: 1.2;
 }
 
 h1 {
-  font-size: 2rem;
+  max-width: 760px;
+  font-size: clamp(38px, 5vw, 58px);
+  line-height: 1.08;
   margin-top: 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid var(--green);
 }
 
 h2 {
-  font-size: 1.5rem;
-  margin-top: 1.75em;
-  color: var(--brown);
+  margin-top: 2.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--line);
+  font-size: 28px;
+  color: var(--accent-dark);
+}
+
+h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 h3 {
-  font-size: 1.25rem;
+  margin-top: 1.75rem;
+  font-size: 22px;
+  color: var(--accent);
+}
+
+h4 {
+  margin-top: 1.25rem;
+  font-size: 18px;
+  color: var(--muted);
 }
 
 .main-content {
+  > * + * {
+    margin-top: 1rem;
+  }
+
   p, li {
-    color: var(--text);
+    color: var(--foreground);
   }
 
   ul, ol {
-    margin: 0.75em 0;
-    padding-left: 1.5em;
+    margin: 0.75rem 0;
+    padding-left: 0;
   }
 
   ul {
-    list-style-type: disc;
+    list-style: none;
+
+    li {
+      position: relative;
+      padding: 0.3rem 0 0.3rem 1.4rem;
+
+      &::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        color: var(--olive);
+        font-weight: 900;
+      }
+    }
   }
 
   ol {
-    list-style-type: decimal;
+    list-style: none;
+    counter-reset: ol-counter;
+
+    li {
+      position: relative;
+      padding: 0.3rem 0 0.3rem 2rem;
+      counter-increment: ol-counter;
+
+      &::before {
+        content: counter(ol-counter) ".";
+        position: absolute;
+        left: 0;
+        color: var(--olive);
+        font-weight: 800;
+      }
+    }
   }
 
   li {
@@ -200,18 +288,19 @@ h3 {
 }
 
 code {
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(0, 75, 63, 0.08);
   padding: 0.2em 0.4em;
   border-radius: 4px;
   font-size: 0.9em;
 }
 
 pre {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
+  box-shadow: 0 18px 42px var(--shadow);
 
   code {
     background: transparent;
@@ -220,24 +309,26 @@ pre {
 }
 
 blockquote {
-  border-left: 4px solid var(--green);
-  padding-left: 1rem;
+  border-left: 3px solid var(--line);
+  padding: 0.75rem 1rem;
   margin: 1rem 0;
-  color: var(--text-muted);
-  font-style: italic;
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 253, 244, 0.7);
+  color: var(--muted);
+  font-size: 15px;
 }
 
-/* TOC box (if used in pages) */
 .toc-box {
   float: right;
   clear: right;
   width: 280px;
   max-width: 100%;
   margin: 0 0 1.5rem 1.5rem;
-  padding: 1rem 1.25rem;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius);
+  padding: 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px var(--shadow);
 
   h2 {
     margin-top: 0;
@@ -254,13 +345,12 @@ blockquote {
   }
 }
 
-/* Footer (notes-style links row) */
 .site-footer {
   margin-top: 2.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--card-border);
-  color: var(--text-muted);
-  font-size: 0.95rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .footer-links {
@@ -271,11 +361,13 @@ blockquote {
   gap: 0.5rem 1rem;
 
   a {
-    color: var(--brown);
+    color: var(--muted);
+    font-weight: 800;
   }
 
-  a:hover {
-    color: var(--rust);
+  a:hover,
+  a:focus-visible {
+    color: var(--accent-dark);
   }
 }
 
@@ -289,17 +381,15 @@ blockquote {
   margin-left: auto;
 }
 
-
-/* Mycelium illustration */
 .mycelium {
   display: flex;
   justify-content: center;
   padding: 0;
-  opacity: 0.55;
+  opacity: 0.35;
 
   img {
     width: 100%;
-    max-width: 960px;
+    max-width: 1040px;
     height: auto;
     display: block;
   }

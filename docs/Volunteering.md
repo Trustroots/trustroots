@@ -2,19 +2,27 @@
 
 ## Nostr — decentralized social networking
 
-Online social networks built around the gift economy should rely less on individual-run servers and bureaucratic overhead. Nostr is a promising way to make that vision real. Learn more at [notes.trustroots.org](https://notes.trustroots.org).
+Trustroots is exploring how hospitality networks can rely less on individually run servers and administrative overhead. Nostr offers a promising path toward a more decentralized, gift-economy social web.
 
+Learn more at [nos.trustroots.org](https://nos.trustroots.org).
+
+## Technical help
+
+Trustroots is no longer in maintenance mode. As of June 2026, development work is happening again, and technical help is very welcome.
+
+Useful areas include improving test coverage, simplifying old code, upgrading dependencies, improving the Docker development setup, helping with the React transition, and connecting Trustroots with Nostr/Nostroots.
+
+If you would like to contribute code, start with the [Trustroots repository](https://github.com/Trustroots/trustroots) and the current notes in the README.
 
 ## Support team
 
-We need volunteers to respond to support requests. Although the volume is low, timely and appropriate replies can be important.
-Role: Read, triage, and respond to incoming support requests.
+Trustroots also needs volunteers to help with support requests. The volume is usually low, but a timely, kind reply can make a real difference when someone is stuck.
 
-- Typical tasks: Answer user questions, escalate bugs, update users on progress, and close resolved tickets.
-- Hours & load: Low average volume; availability for occasional swift responses is valuable.
-- Skills helpful: Clear written communication, basic troubleshooting, empathy, familiarity with the platform.
-- How to start: Join the support channel and review the contribution guidelines in the support repo (or contact the current support coordinator).
-- Commitment: Flexible — even a few hours per month or being on-call for short periods helps.
+The role is to read, triage, and respond to incoming support messages.
 
-Simply send a message to [support](https://www.trustroots.org/support) if you want to help with this.
+- Typical tasks: Answer user questions, identify bugs, escalate issues, share progress updates, and close resolved requests.
+- Time needed: Flexible. A few hours per month, or occasional availability for quicker replies, is already helpful.
+- Helpful skills: Clear writing, basic troubleshooting, empathy, and familiarity with Trustroots.
+- How to start: Message support and we will point you to the support channel, contribution guidelines, and current coordination process.
 
+If you would like to help, send a message to [Trustroots support](https://www.trustroots.org/support).

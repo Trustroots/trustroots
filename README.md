@@ -9,26 +9,25 @@
   <br>
 </p>
 
-## 2026 plans
+## Current development
 
 _Out of maintenance mode_
 
-As of June 2026 Trustroots some development will take place. (Trustroots was in maintenance mode from 2022 till June 2026.)
+As of June 2026, Trustroots is no longer in maintenance mode. The project was mostly in maintenance mode from 2022 until June 2026, and development work is welcome again.
 
 Priorities:
 
-- solid test coverage, frontend, backend
-- DRY, simplify, upgrade
-  - react vs angular? probably finish transition to react?
-  - docker dev setup state
-  - upgrade npm packages
-- nostr
-  - basics done: nip5, nip7
-  - interaction with nostroots
+- Simplify old code and reduce duplication.
+- Upgrade dependencies and improve the development setup, including Docker.
+- Continue the React transition where it makes sense.
+- Work on Nostr/Nostroots integration. The basics are in place for NIP-5 and NIP-7.
+- Make Trustroots easier to fork and run independently.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [docs/Volunteering.md](docs/Volunteering.md) for more ways to help.
 
 ## Medium term plans
 
-Our medium term plan is decentralisation thru the nostr protocol, see https://github.com/Trustroots/nostroots
+Our medium term plan is decentralisation through the Nostr protocol. See https://github.com/Trustroots/nostroots.
 
 We are also open to improvements that [make trustroots forkable](https://github.com/Trustroots/trustroots/issues/2669).
 
