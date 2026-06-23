@@ -48,7 +48,7 @@ describe('<ProfileViewBasics />', () => {
           locationLiving: 'Helsinki',
           nostrNpub: 'npub1trustroots',
           replyRate: '80%',
-          replyTime: '2020-01-02T00:00:00.000Z',
+          replyTime: '3 hours',
           seen: '2020-01-03T00:00:00.000Z',
         }}
       />,
@@ -56,6 +56,7 @@ describe('<ProfileViewBasics />', () => {
 
     expect(screen.getByText('Trustroots volunteer')).toBeInTheDocument();
     expect(screen.getByText('Reply rate 80%.')).toBeInTheDocument();
+    expect(screen.getByText('Replies within 3 hours.')).toBeInTheDocument();
     expect(screen.getByText(/Female\./)).toBeInTheDocument();
     expect(screen.getByText(/Member since/)).toBeInTheDocument();
     expect(screen.getByText(/Online/)).toBeInTheDocument();
@@ -138,6 +139,23 @@ describe('<ProfileViewBasics />', () => {
     );
   });
 
+  it('renders zero reply rate without reply time', () => {
+    render(
+      <ProfileViewBasics
+        profile={{
+          created: '2020-01-01T00:00:00.000Z',
+          languages: [],
+          replyRate: '0%',
+          replyTime: '',
+          seen: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByText('Reply rate 0%.')).toBeInTheDocument();
+    expect(screen.queryByText(/^Replies within/)).not.toBeInTheDocument();
+  });
+
   it('renders sparse profile fallback details without optional sections', () => {
     render(
       <ProfileViewBasics
@@ -151,6 +169,8 @@ describe('<ProfileViewBasics />', () => {
 
     expect(screen.getByText(/Member since/)).toBeInTheDocument();
     expect(screen.getByText('Online long ago')).toBeInTheDocument();
+    expect(screen.queryByText(/^Reply rate/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Replies within/)).not.toBeInTheDocument();
     expect(screen.queryByText('Languages')).not.toBeInTheDocument();
     expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument();
     expect(
