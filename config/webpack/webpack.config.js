@@ -80,6 +80,17 @@ module.exports = webpackMerge.merge(shims, {
       img: join(basedir, 'public', 'img'),
       less: join(basedir, 'modules', 'core', 'client', 'less'),
       modules: join(basedir, 'modules'),
+
+      // nostr-tools v2 uses package.json "exports" for subpath imports,
+      // which webpack 4 doesn't support. Map them to the CJS builds.
+      'nostr-tools/relay': join(
+        basedir,
+        'node_modules/nostr-tools/lib/cjs/relay.js',
+      ),
+      'nostr-tools/nip19': join(
+        basedir,
+        'node_modules/nostr-tools/lib/cjs/nip19.js',
+      ),
     },
   },
   module: {
