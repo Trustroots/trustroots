@@ -14,8 +14,8 @@ const coverageDir = path.join(__dirname, '../../../coverage/e2e/js-raw');
 const collectCoverage = process.env.TRUSTROOTS_E2E_SKIP_JS_COVERAGE !== 'true';
 
 const test = base.extend({
-  page: async ({ page }, use, testInfo) => {
-    if (!collectCoverage) {
+  page: async ({ browserName, page }, use, testInfo) => {
+    if (!collectCoverage || browserName !== 'chromium') {
       await use(page);
       await captureEndOfTestScreenshot(page, testInfo);
       return;

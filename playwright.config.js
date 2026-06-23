@@ -251,6 +251,16 @@ module.exports = defineConfig({
       },
     },
     {
+      name: 'messages-firefox-layout',
+      testMatch: /features\/messages\/messages-layout\.spec\.js/,
+      dependencies: ['setup-authenticated'],
+      fullyParallel: true,
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: seededMemberStorageState,
+      },
+    },
+    {
       name: 'experiences',
       testMatch: /features\/experiences-references\/.*\.spec\.js/,
       dependencies: serializedDependencies(

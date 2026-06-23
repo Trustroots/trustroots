@@ -42,14 +42,6 @@ if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
   fi
 fi
 
-if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
-  if [ "${CI:-}" = "true" ]; then
-    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=false
-  else
-    export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true
-  fi
-fi
-
 NODE_MAJOR="$(node -e "console.log(process.versions.node.split('.')[0])")"
 if [ "$NODE_MAJOR" -ge 17 ]; then
   case " ${NODE_OPTIONS:-} " in
@@ -125,29 +117,55 @@ NODE
   return 1
 }
 
-ensure_playwright_browser() {
+needs_firefox_browser() {
+  case " $* " in
+    *" --project=messages-firefox-layout "* | *" --project messages-firefox-layout "*)
+      return 0
+      ;;
+    *" --project"*)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+ensure_playwright_browsers() {
   local output
+  local browsers=()
 
   if [ -n "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-}" ]; then
     if [ -x "$PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH" ]; then
-      return 0
+      :
+    else
+      PLAYWRIGHT_ERROR="PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH is set but is not executable: $PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"
+      return 1
     fi
-
-    PLAYWRIGHT_ERROR="PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH is set but is not executable: $PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH"
-    return 1
+  else
+    browsers+=("chromium")
   fi
 
-  # Install the Chromium build bundled with the installed @playwright/test
-  # version. This keeps the browser binary in sync with Playwright and avoids
+  if needs_firefox_browser "$@"; then
+    browsers+=("firefox")
+  fi
+
+  if [ "${#browsers[@]}" -eq 0 ]; then
+    return 0
+  fi
+
+  # Install browser builds bundled with the installed @playwright/test
+  # version. This keeps the browser binaries in sync with Playwright and avoids
   # relying on a manually installed system Chrome. Wrap the install in a timeout
   # so automation records a blocked status instead of hanging indefinitely.
-  if output="$(node <<'NODE' 2>&1
+  if output="$(PLAYWRIGHT_BROWSERS="${browsers[*]}" node <<'NODE' 2>&1
 const { spawnSync } = require('child_process');
 
 const timeout = Number(process.env.TRUSTROOTS_PLAYWRIGHT_INSTALL_TIMEOUT_MS) || 120000;
+const browsers = process.env.PLAYWRIGHT_BROWSERS.split(/\s+/).filter(Boolean);
 const result = spawnSync(
   process.platform === 'win32' ? 'npx.cmd' : 'npx',
-  ['playwright', 'install', 'chromium'],
+  ['playwright', 'install', ...browsers],
   {
     encoding: 'utf8',
     timeout,
@@ -175,16 +193,18 @@ NODE
 
   PLAYWRIGHT_ERROR="$output"
 
-  for browser_path in \
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
-    "/Applications/Chromium.app/Contents/MacOS/Chromium" \
-    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
-  do
-    if [ -x "$browser_path" ]; then
-      export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$browser_path"
-      return 0
-    fi
-  done
+  if [ "${#browsers[@]}" -eq 1 ] && [ "${browsers[0]}" = "chromium" ]; then
+    for browser_path in \
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+      "/Applications/Chromium.app/Contents/MacOS/Chromium" \
+      "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+    do
+      if [ -x "$browser_path" ]; then
+        export PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="$browser_path"
+        return 0
+      fi
+    done
+  fi
 
   return 1
 }
@@ -297,20 +317,20 @@ if ! mongo_eval ping; then
     "End-to-end tests blocked because MongoDB did not become reachable."
 fi
 
-if ! ensure_playwright_browser; then
+if ! ensure_playwright_browsers "$@"; then
   if has_codex_network_denial "$PLAYWRIGHT_ERROR"; then
-    echo "Network access is required to download the Playwright Chromium browser. Grant network permission, then rerun." >&2
+    echo "Network access is required to download the required Playwright browser. Grant network permission, then rerun." >&2
     exit_with_status \
       "blocked" \
       1 \
-      "End-to-end tests blocked by network permission while installing the Playwright Chromium browser."
+      "End-to-end tests blocked by network permission while installing the required Playwright browser."
   fi
 
   echo "$PLAYWRIGHT_ERROR" >&2
   exit_with_status \
     "blocked" \
     1 \
-    "End-to-end tests blocked because the Playwright Chromium browser could not be installed."
+    "End-to-end tests blocked because the required Playwright browser could not be installed."
 fi
 
 rm -rf coverage/e2e/js-raw coverage/e2e/captured-bundles

@@ -11,7 +11,8 @@ import ThreadMessage from '@/modules/messages/client/components/ThreadMessage';
 import { userType } from '@/modules/users/client/users.prop-types';
 
 const MessagesContainer = styled.div`
-  flex-grow: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding-top: 30px;
   padding-right: 30px;
