@@ -1,6 +1,10 @@
 const config = require('../../../../config/config');
 const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
 
+exports.usernameFormatErrorMessage =
+  'Use 3-34 lowercase letters and numbers, including at least one letter.';
+exports.usernameUnavailableMessage = 'Username is not available.';
+
 exports.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;
   const buf = Buffer.concat([saltBuffer, Buffer.from(email)]);
@@ -30,6 +34,24 @@ exports.validateUsername = function (username) {
 
 exports.isUsernameFormatValid = function (username) {
   return usernameRegex.test(String(username));
+};
+
+/**
+ * User-facing rejection message for signup and username changes, or null if ok.
+ *
+ * @param {String} username
+ * @returns {String|null}
+ */
+exports.getUsernameRejectionMessage = function (username) {
+  if (!exports.isUsernameFormatValid(username)) {
+    return exports.usernameFormatErrorMessage;
+  }
+
+  if (exports.isUsernameReserved(username)) {
+    return exports.usernameUnavailableMessage;
+  }
+
+  return null;
 };
 
 /**

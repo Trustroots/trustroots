@@ -17,9 +17,6 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
-const usernameFormatErrorMessage =
-  'Use 3-34 lowercase letters and numbers, including at least one letter.';
-
 function isNameSpam(input) {
   if (
     // The username field says it limits to 34, so apply that to all the fields
@@ -83,11 +80,10 @@ exports.signup = function (req, res) {
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
-        if (!authenticationService.isUsernameFormatValid(username)) {
-          return done(getUserFacingError(usernameFormatErrorMessage));
-        }
-        if (authenticationService.isUsernameReserved(username)) {
-          return done(getUserFacingError('Username is not available.'));
+        const usernameRejectionMessage =
+          authenticationService.getUsernameRejectionMessage(username);
+        if (usernameRejectionMessage) {
+          return done(getUserFacingError(usernameRejectionMessage));
         }
         if (
           isNameSpam(firstName) ||
@@ -231,7 +227,7 @@ exports.signupValidation = function (req, res) {
         // You can modify the list from `config/env/default.js`
         if (authenticationService.isUsernameReserved(username)) {
           return done(
-            new Error('Username is not available.'),
+            new Error(authenticationService.usernameUnavailableMessage),
             'username-not-available-reserved',
           );
         }

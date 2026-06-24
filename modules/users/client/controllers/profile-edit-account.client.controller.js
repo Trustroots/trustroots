@@ -1,3 +1,10 @@
+import {
+  USERNAME_FORMAT_MESSAGE,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_REGEX,
+} from '@/modules/users/client/config/username.client.constants';
+
 angular
   .module('users')
   .controller('ProfileEditAccountController', ProfileEditAccountController);
@@ -25,9 +32,12 @@ function ProfileEditAccountController(
   vm.user = Authentication.user;
   vm.getUsernameValidationError = getUsernameValidationError;
   vm.hasLegacyUsername = hasLegacyUsername;
+  vm.usernameMinlength = USERNAME_MIN_LENGTH;
+  vm.usernameMaxlength = USERNAME_MAX_LENGTH;
+  vm.usernamePattern = USERNAME_REGEX;
+  vm.usernameHint = USERNAME_FORMAT_MESSAGE;
 
   const initialUsername = vm.user && vm.user.username;
-  const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
 
   // Related to profile removal
   vm.removeProfileConfirm = false;
@@ -67,15 +77,19 @@ function ProfileEditAccountController(
     }
 
     if (err.maxlength) {
-      return 'Too long, maximum length is 34 characters.';
+      return (
+        'Too long, maximum length is ' + vm.usernameMaxlength + ' characters.'
+      );
     }
 
     if (err.minlength) {
-      return 'Too short, minumum length is 3 characters.';
+      return (
+        'Too short, minumum length is ' + vm.usernameMinlength + ' characters.'
+      );
     }
 
     if (err.pattern) {
-      return 'Use 3-34 lowercase letters and numbers, including at least one letter.';
+      return USERNAME_FORMAT_MESSAGE;
     }
 
     if (err.username) {
@@ -86,7 +100,7 @@ function ProfileEditAccountController(
   }
 
   function hasLegacyUsername() {
-    return Boolean(initialUsername && !usernameRegex.test(initialUsername));
+    return Boolean(initialUsername && !USERNAME_REGEX.test(initialUsername));
   }
 
   // Activate controller

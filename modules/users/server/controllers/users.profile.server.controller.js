@@ -188,16 +188,13 @@ exports.update = function (req, res) {
       // User wants to change the username
       function (token, email, done) {
         if (req.body.username && req.body.username !== req.user.username) {
-          if (!authenticationService.isUsernameFormatValid(req.body.username)) {
+          const usernameRejectionMessage =
+            authenticationService.getUsernameRejectionMessage(
+              req.body.username,
+            );
+          if (usernameRejectionMessage) {
             return res.status(400).send({
-              message:
-                'Use 3-34 lowercase letters and numbers, including at least one letter.',
-            });
-          }
-
-          if (authenticationService.isUsernameReserved(req.body.username)) {
-            return res.status(400).send({
-              message: 'Username is not available.',
+              message: usernameRejectionMessage,
             });
           }
 

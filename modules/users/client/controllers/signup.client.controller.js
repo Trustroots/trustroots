@@ -1,5 +1,11 @@
 import rulesModalTemplateUrl from '@/modules/users/client/views/authentication/rules-modal.client.view.html';
 import shuffle from 'lodash/shuffle';
+import {
+  USERNAME_FORMAT_MESSAGE,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_REGEX,
+} from '@/modules/users/client/config/username.client.constants';
 
 angular.module('users').controller('SignupController', SignupController);
 
@@ -36,8 +42,10 @@ function SignupController(
   vm.openRules = openRules;
   vm.tribe = null;
   vm.suggestedTribes = [];
-  vm.usernameMinlength = 3;
-  vm.usernameMaxlength = 34;
+  vm.usernameMinlength = USERNAME_MIN_LENGTH;
+  vm.usernameMaxlength = USERNAME_MAX_LENGTH;
+  vm.usernamePattern = USERNAME_REGEX;
+  vm.usernameHint = USERNAME_FORMAT_MESSAGE;
   vm.suggestedTribesLimit = 4;
 
   // Initialize controller
@@ -80,7 +88,7 @@ function SignupController(
     }
 
     if (err.pattern) {
-      return 'Use 3-34 lowercase letters and numbers, including at least one letter.';
+      return USERNAME_FORMAT_MESSAGE;
     }
 
     if (err.username) {

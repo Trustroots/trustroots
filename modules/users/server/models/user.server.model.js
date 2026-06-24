@@ -186,10 +186,7 @@ const UserSchema = new Schema({
     type: String,
     unique: 'Username exists already.',
     required: true,
-    validate: [
-      validateUsername,
-      'Please fill in valid username: 3-34 characters long, only lowercase letters and numbers, including at least one letter.',
-    ],
+    validate: [validateUsername, 'Please fill in a username.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true,
   },

@@ -284,11 +284,11 @@
               class="form-control"
               required
               autocapitalize="off"
-              ng-minlength="3"
-              ng-maxlength="34"
-              ng-pattern="/^(?=.*[a-z])[a-z0-9]{3,34}$/"
+              ng-minlength="profileEditAccount.usernameMinlength"
+              ng-maxlength="profileEditAccount.usernameMaxlength"
+              ng-pattern="profileEditAccount.usernamePattern"
               tr-validate-username="{{::profileEditAccount.user.username}}"
-              tr-focustip="'Use 3-34 lowercase letters and numbers, including at least one letter.'"
+              tr-focustip="profileEditAccount.usernameHint"
               tooltip-is-open="!settingsUsernameForm.username.$pending && settingsUsernameForm.username.$dirty && !settingsUsernameForm.username.$valid"
               uib-tooltip="{{profileEditAccount.getUsernameValidationError(settingsUsernameForm.username)}}"
               tooltip-popup-delay="500"
@@ -304,8 +304,8 @@
               class="help-block"
               ng-show="profileEditAccount.hasLegacyUsername()"
             >
-              Your current username can stay, but if you change it, use 3-34
-              lowercase letters and numbers, including at least one letter.
+              Your current username can stay, but if you change it, {{
+              profileEditAccount.usernameHint | lowercase }}.
             </p>
             <p
               class="help-block"
