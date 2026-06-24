@@ -2,7 +2,6 @@ const should = require('should');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
-const config = require('../../../../config/config');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
@@ -85,13 +84,13 @@ describe('User signup validation CRUD tests', function () {
         displayName: 'Full Name',
         email: 'test@example.org',
         emailToken: 'initial email token',
-        username: 'taken-username',
+        username: 'takenusername',
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
       user.save(function () {
         validationFailure(
-          { username: 'taken-username' },
+          { username: 'takenusername' },
           'username-not-available',
           'Username is not available.',
           done,
@@ -99,7 +98,7 @@ describe('User signup validation CRUD tests', function () {
       });
     });
 
-    it('should validate taken username case-insensitively', function (done) {
+    it('should reject uppercase username before checking availability', function (done) {
       user = new User({
         public: true,
         firstName: 'Full',
@@ -107,15 +106,15 @@ describe('User signup validation CRUD tests', function () {
         displayName: 'Full Name',
         email: 'case@example.org',
         emailToken: 'initial email token',
-        username: 'taken-case-username',
+        username: 'takencaseusername',
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
       });
       user.save(function () {
         validationFailure(
-          { username: 'TAKEN-CASE-USERNAME' },
-          'username-not-available',
-          'Username is not available.',
+          { username: 'TAKENCASEUSERNAME' },
+          'username-invalid',
+          'Username is in invalid format.',
           done,
         );
       });
@@ -123,15 +122,26 @@ describe('User signup validation CRUD tests', function () {
 
     it('should show an error when try to validate with not allowed username', function (done) {
       validationFailure(
-        {
-          username:
-            config.illegalStrings[
-              Math.floor(Math.random() * config.illegalStrings.length)
-            ],
-        },
+        { username: 'trustroots' },
         'username-not-available-reserved',
         'Username is not available.',
         done,
+      );
+    });
+
+    it('should show an error when validating newly reserved usernames', function (done) {
+      validationFailure(
+        { username: 'nostr' },
+        'username-not-available-reserved',
+        'Username is not available.',
+        function () {
+          validationFailure(
+            { username: 'messages' },
+            'username-not-available-reserved',
+            'Username is not available.',
+            done,
+          );
+        },
       );
     });
 
@@ -183,11 +193,38 @@ describe('User signup validation CRUD tests', function () {
         );
       });
 
+      it('should show error validating a digits-only username', function (done) {
+        validationFailure(
+          { username: '123' },
+          'username-invalid',
+          invalidMessage,
+          done,
+        );
+      });
+
+      it('should show error validating an uppercase username', function (done) {
+        validationFailure(
+          { username: 'Login' },
+          'username-invalid',
+          invalidMessage,
+          done,
+        );
+      });
+
+      it('should show error validating a username with a hyphen', function (done) {
+        validationFailure(
+          { username: 'log-in' },
+          'username-invalid',
+          invalidMessage,
+          done,
+        );
+      });
+
       it('should show error validating a username with underscores', function (done) {
         validationFailure(
           { username: 'underscores_score' },
           'username-invalid',
-          'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.',
+          invalidMessage,
           done,
         );
       });
@@ -203,8 +240,8 @@ describe('User signup validation CRUD tests', function () {
     });
 
     describe('Username is valid', function () {
-      it('should validate username with dot in the middle', function (done) {
-        validationSuccess({ username: 'log.in' }, done);
+      it('should validate lowercase alphanumeric username with a letter', function (done) {
+        validationSuccess({ username: 'login123' }, done);
       });
     });
   });

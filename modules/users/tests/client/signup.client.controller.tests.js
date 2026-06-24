@@ -217,7 +217,7 @@ describe('SignupController', function () {
           $valid: false,
         }),
       ).toBe(
-        'Use only letters, numbers, periods, and hyphens—no underscores or spaces.',
+        'Use 3-34 lowercase letters and numbers, including at least one letter.',
       );
       expect(
         controller.getUsernameValidationError({

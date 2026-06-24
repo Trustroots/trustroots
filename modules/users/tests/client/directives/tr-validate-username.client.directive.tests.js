@@ -103,13 +103,13 @@ describe('trValidateUsername directive', function () {
       $promise: $q.resolve({ valid: false }),
     });
 
-    field.$setViewValue('taken-username');
+    field.$setViewValue('takenusername');
     $rootScope.$digest();
     $timeout.flush(1000);
     $rootScope.$digest();
 
     expect(SignupValidation.post).toHaveBeenCalledWith({
-      username: 'taken-username',
+      username: 'takenusername',
     });
     expect(field.$error.username).toBe(true);
   });

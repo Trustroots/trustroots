@@ -37,34 +37,59 @@ describe('Service: authentication', function () {
   });
 
   describe('validateUsername', function () {
-    it('accepts valid usernames and normalizes uppercase input', function () {
-      authenticationService.validateUsername('Good_Name-1').should.be.true();
-      authenticationService.validateUsername('good.name-1').should.be.true();
+    it('accepts lowercase alphanumeric usernames with at least one letter', function () {
+      authenticationService.validateUsername('alice').should.be.true();
+      authenticationService.validateUsername('alice123').should.be.true();
+      authenticationService.validateUsername('a123').should.be.true();
+      authenticationService.validateUsername('abc').should.be.true();
+      authenticationService
+        .validateUsername('a' + '1'.repeat(33))
+        .should.be.true();
     });
 
     it('rejects usernames that are too short or too long', function () {
+      authenticationService.validateUsername('').should.be.false();
       authenticationService.validateUsername('ab').should.be.false();
       authenticationService.validateUsername('a'.repeat(35)).should.be.false();
     });
 
-    it('rejects usernames without an alphanumeric character', function () {
-      authenticationService.validateUsername('---').should.be.false();
-      authenticationService.validateUsername('...').should.be.false();
+    it('rejects usernames without at least one letter', function () {
+      authenticationService.validateUsername('123').should.be.false();
+      authenticationService.validateUsername('000').should.be.false();
     });
 
-    it('rejects usernames with unsupported characters', function () {
-      authenticationService.validateUsername('bad/name').should.be.false();
-      authenticationService.validateUsername('bad name').should.be.false();
-    });
-
-    it('rejects usernames with invalid dot placement', function () {
-      authenticationService.validateUsername('.alice').should.be.false();
-      authenticationService.validateUsername('alice.').should.be.false();
-      authenticationService.validateUsername('al..ice').should.be.false();
+    it('rejects uppercase and unsupported characters', function () {
+      authenticationService.validateUsername('Alice').should.be.false();
+      authenticationService.validateUsername('ALICE').should.be.false();
+      authenticationService.validateUsername('ali-ce').should.be.false();
+      authenticationService.validateUsername('ali.ce').should.be.false();
+      authenticationService.validateUsername('ali_ce').should.be.false();
+      authenticationService.validateUsername('ali ce').should.be.false();
+      authenticationService.validateUsername('alice!').should.be.false();
+      authenticationService.validateUsername('ålice').should.be.false();
     });
 
     it('rejects reserved usernames case-insensitively', function () {
+      authenticationService.validateUsername('trustroots').should.be.false();
       authenticationService.validateUsername('TrustRoots').should.be.false();
+    });
+
+    it('rejects newly reserved usernames', function () {
+      const authenticationService = proxyquire(
+        '../../../server/services/authentication.server.service',
+        {
+          '../../../../config/config': {
+            illegalStrings: ['nostr', 'npub', 'help', 'search', 'messages'],
+          },
+        },
+      );
+
+      authenticationService.validateUsername('nostr').should.be.false();
+      authenticationService.validateUsername('npub').should.be.false();
+      authenticationService.validateUsername('help').should.be.false();
+      authenticationService.validateUsername('search').should.be.false();
+      authenticationService.validateUsername('messages').should.be.false();
+      authenticationService.isUsernameReserved('nostroots').should.be.false();
     });
   });
 

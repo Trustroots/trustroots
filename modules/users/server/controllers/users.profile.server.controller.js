@@ -10,6 +10,7 @@ const tribesHandler = require('../../../tribes/server/controllers/tribes.server.
 const contactHandler = require('../../../contacts/server/controllers/contacts.server.controller');
 const messageHandler = require('../../../messages/server/controllers/messages.server.controller');
 const offerHandler = require('../../../offers/server/controllers/offers.server.controller');
+const authenticationService = require('../services/authentication.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const pushService = require('../../../core/server/services/push.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');
@@ -187,6 +188,19 @@ exports.update = function (req, res) {
       // User wants to change the username
       function (token, email, done) {
         if (req.body.username && req.body.username !== req.user.username) {
+          if (!authenticationService.isUsernameFormatValid(req.body.username)) {
+            return res.status(400).send({
+              message:
+                'Use 3-34 lowercase letters and numbers, including at least one letter.',
+            });
+          }
+
+          if (authenticationService.isUsernameReserved(req.body.username)) {
+            return res.status(400).send({
+              message: 'Username is not available.',
+            });
+          }
+
           // They are not allowed to do so
           if (!isUsernameUpdateAllowed(req.user)) {
             return res.status(403).send({

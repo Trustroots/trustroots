@@ -105,7 +105,9 @@ describe('ProfileEditAccountController', function () {
             $error: { pattern: true },
             $valid: false,
           }),
-        ).toEqual('Invalid username.');
+        ).toEqual(
+          'Use 3-34 lowercase letters and numbers, including at least one letter.',
+        );
         expect(
           ProfileEditAccountController.getUsernameValidationError({
             $dirty: true,
@@ -121,22 +123,54 @@ describe('ProfileEditAccountController', function () {
           }),
         ).toEqual('Invalid username.');
       });
+
+      it('detects a legacy current username', function () {
+        Authentication.user.username = 'legacy-name';
+        inject(function ($controller, $rootScope) {
+          ProfileEditAccountController = $controller(
+            'ProfileEditAccountController',
+            {
+              messageCenterService,
+              $scope: $rootScope.$new(),
+              push: {},
+            },
+          );
+        });
+
+        expect(ProfileEditAccountController.hasLegacyUsername()).toEqual(true);
+      });
+
+      it('does not treat a current lowercase alphanumeric username as legacy', function () {
+        Authentication.user.username = 'currentname1';
+        inject(function ($controller, $rootScope) {
+          ProfileEditAccountController = $controller(
+            'ProfileEditAccountController',
+            {
+              messageCenterService,
+              $scope: $rootScope.$new(),
+              push: {},
+            },
+          );
+        });
+
+        expect(ProfileEditAccountController.hasLegacyUsername()).toEqual(false);
+      });
     });
 
     describe('change username', function () {
       it('updates username without sending a changed email', function () {
-        ProfileEditAccountController.user.username = 'new-username';
+        ProfileEditAccountController.user.username = 'newusername';
         ProfileEditAccountController.user.email = 'changed@example.com';
         const expectedPutData = {
           _id: 'user',
           displayName: 'User',
           emailTemporary: 'foo@foo.com',
-          username: 'new-username',
+          username: 'newusername',
         };
         const updatedUser = {
           _id: 'user',
           displayName: 'User',
-          username: 'new-username',
+          username: 'newusername',
         };
 
         $httpBackend
@@ -153,7 +187,7 @@ describe('ProfileEditAccountController', function () {
       });
 
       it('shows the username update error returned by the API', function () {
-        ProfileEditAccountController.user.username = 'taken-username';
+        ProfileEditAccountController.user.username = 'takenusername';
 
         $httpBackend.expect('PUT', '/api/users').respond(400, {
           message: 'Username is already taken.',
@@ -167,7 +201,7 @@ describe('ProfileEditAccountController', function () {
       });
 
       it('falls back to a generic username update error', function () {
-        ProfileEditAccountController.user.username = 'new-username';
+        ProfileEditAccountController.user.username = 'newusername';
 
         $httpBackend.expect('PUT', '/api/users').respond(500);
         ProfileEditAccountController.updateUsername();

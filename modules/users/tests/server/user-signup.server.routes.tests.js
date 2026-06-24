@@ -89,14 +89,14 @@ describe('User signup and authentication CRUD tests', function () {
 
   afterEach(dataUtils.clearDatabase);
 
-  it('should reject signup with underscore in username and return a clear message', function (done) {
+  function expectSignupUsernameRejected(username, done) {
     agent
       .post('/api/auth/signup')
       .send({
         firstName: 'Test',
         lastName: 'User',
-        email: 'underscore-signup-test@example.org',
-        username: 'has_an_underscore',
+        email: 'invalid-signup-test-' + Date.now() + '@example.org',
+        username,
         password: 'TR-I$Aw3$0m4',
         provider: 'local',
         acquisitionStory: 'Unit test',
@@ -105,14 +105,46 @@ describe('User signup and authentication CRUD tests', function () {
       .end(function (err, res) {
         should.not.exist(err);
         res.body.message.should.equal(
-          'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.',
+          'Use 3-34 lowercase letters and numbers, including at least one letter.',
         );
+        done();
+      });
+  }
+
+  it('should reject signup with invalid username formats and return a clear message', function (done) {
+    expectSignupUsernameRejected('has_an_underscore', function () {
+      expectSignupUsernameRejected('has-hyphen', function () {
+        expectSignupUsernameRejected('has.dot', function () {
+          expectSignupUsernameRejected('HasUppercase', function () {
+            expectSignupUsernameRejected('123', done);
+          });
+        });
+      });
+    });
+  });
+
+  it('should reject signup with reserved username and return availability message', function (done) {
+    agent
+      .post('/api/auth/signup')
+      .send({
+        firstName: 'Test',
+        lastName: 'User',
+        email: 'reserved-signup-test@example.org',
+        username: 'nostr',
+        password: 'TR-I$Aw3$0m4',
+        provider: 'local',
+        acquisitionStory: 'Unit test',
+      })
+      .expect(400)
+      .end(function (err, res) {
+        should.not.exist(err);
+        res.body.message.should.equal('Username is not available.');
         done();
       });
   });
 
   it('should be able to register a new user', function (done) {
-    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.username = 'registernewuser';
     _unConfirmedUser.email = 'register-new-user@example.org';
 
     agent
@@ -124,10 +156,7 @@ describe('User signup and authentication CRUD tests', function () {
         if (signupErr) {
           return done(signupErr);
         }
-        signupRes.body.username.should.equal(
-          _unConfirmedUser.username.toLowerCase(),
-        );
-        signupRes.body.username.should.not.equal(_unConfirmedUser.username);
+        signupRes.body.username.should.equal(_unConfirmedUser.username);
         signupRes.body.email.should.equal(_unConfirmedUser.email);
         signupRes.body.emailTemporary.should.equal(_unConfirmedUser.email);
         signupRes.body.provider.should.equal('local');
@@ -153,7 +182,7 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user but not inject additional roles', function (done) {
-    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.username = 'registernewuser';
     _unConfirmedUser.email = 'register-new-user@example.org';
     _unConfirmedUser.roles = ['user', 'admin'];
 
@@ -175,7 +204,7 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user and confirm email with token and user should become public', function (done) {
-    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.username = 'registernewuser';
     _unConfirmedUser.email = 'register-new-user@example.org';
 
     agent
@@ -256,7 +285,7 @@ describe('User signup and authentication CRUD tests', function () {
   });
 
   it('should be able to register a new user and confirming email with wrong token should redirect error and yeld an error and user should not be public', function (done) {
-    _unConfirmedUser.username = 'RegisterNewUser';
+    _unConfirmedUser.username = 'registernewuser';
     _unConfirmedUser.email = 'register-new-user@example.org';
 
     agent

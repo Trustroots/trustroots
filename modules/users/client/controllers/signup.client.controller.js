@@ -80,7 +80,7 @@ function SignupController(
     }
 
     if (err.pattern) {
-      return 'Use only letters, numbers, periods, and hyphens—no underscores or spaces.';
+      return 'Use 3-34 lowercase letters and numbers, including at least one letter.';
     }
 
     if (err.username) {

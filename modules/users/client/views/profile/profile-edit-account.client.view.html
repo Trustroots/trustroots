@@ -286,9 +286,9 @@
               autocapitalize="off"
               ng-minlength="3"
               ng-maxlength="34"
-              ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
+              ng-pattern="/^(?=.*[a-z])[a-z0-9]{3,34}$/"
               tr-validate-username="{{::profileEditAccount.user.username}}"
-              tr-focustip="'Can contain only letters, numbers, periods, hyphens, and underscores.<br>3—34 characters long.'"
+              tr-focustip="'Use 3-34 lowercase letters and numbers, including at least one letter.'"
               tooltip-is-open="!settingsUsernameForm.username.$pending && settingsUsernameForm.username.$dirty && !settingsUsernameForm.username.$valid"
               uib-tooltip="{{profileEditAccount.getUsernameValidationError(settingsUsernameForm.username)}}"
               tooltip-popup-delay="500"
@@ -299,6 +299,13 @@
             />
             <p class="help-block" ng-show="!profileEditAccount.usernameError">
               Changing username is limited to once in 3 months.
+            </p>
+            <p
+              class="help-block"
+              ng-show="profileEditAccount.hasLegacyUsername()"
+            >
+              Your current username can stay, but if you change it, use 3-34
+              lowercase letters and numbers, including at least one letter.
             </p>
             <p
               class="help-block"

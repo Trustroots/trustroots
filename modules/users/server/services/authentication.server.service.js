@@ -1,4 +1,5 @@
 const config = require('../../../../config/config');
+const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
 
 exports.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;
@@ -9,26 +10,26 @@ exports.generateEmailToken = function (user, saltBuffer) {
 /**
  * A Validation function for username
  *
- * Used at Mongoose Schema
+ * Used for signup and username changes.
  *
  * - at least 3 characters
- * - only a-z0-9-. (underscores are rejected at signup; some legacy usernames may still contain them)
- * - contain at least one alphanumeric character
+ * - at most 34 characters
+ * - only a-z0-9
+ * - contain at least one letter
  * - not in list of illegal usernames
- * - no consecutive dots: "." ok, ".." nope
- * - not begin or end with "."
  */
 exports.validateUsername = function (username) {
-  username = String(username).toLowerCase();
-  const usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
-  const dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
+  username = String(username);
 
-  return (
+  return Boolean(
     username &&
-    usernameRegex.test(username) &&
-    dotsRegex.test(username) &&
-    !exports.isUsernameReserved(username)
+      exports.isUsernameFormatValid(username) &&
+      !exports.isUsernameReserved(username),
   );
+};
+
+exports.isUsernameFormatValid = function (username) {
+  return usernameRegex.test(String(username));
 };
 
 /**

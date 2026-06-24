@@ -127,7 +127,7 @@ describe('Profile controller unit tests', () => {
         profileController.update(
           {
             user: userDoc,
-            body: { username: 'brand-new-username' },
+            body: { username: 'brandnewusername' },
             login: (user, cb) => cb(),
           },
           res,

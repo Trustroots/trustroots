@@ -24,6 +24,10 @@ function ProfileEditAccountController(
   vm.changeUserPassword = changeUserPassword;
   vm.user = Authentication.user;
   vm.getUsernameValidationError = getUsernameValidationError;
+  vm.hasLegacyUsername = hasLegacyUsername;
+
+  const initialUsername = vm.user && vm.user.username;
+  const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
 
   // Related to profile removal
   vm.removeProfileConfirm = false;
@@ -71,7 +75,7 @@ function ProfileEditAccountController(
     }
 
     if (err.pattern) {
-      return 'Invalid username.';
+      return 'Use 3-34 lowercase letters and numbers, including at least one letter.';
     }
 
     if (err.username) {
@@ -79,6 +83,10 @@ function ProfileEditAccountController(
     }
 
     return 'Invalid username.';
+  }
+
+  function hasLegacyUsername() {
+    return Boolean(initialUsername && !usernameRegex.test(initialUsername));
   }
 
   // Activate controller

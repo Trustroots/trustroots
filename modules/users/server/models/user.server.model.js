@@ -4,7 +4,6 @@
 const _ = require('lodash');
 const textService = require('../../../core/server/services/text.server.service');
 const languages = require('../../../../config/languages/languages.json');
-const authenticationService = require('../services/authentication.server.service');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const uniqueValidation = require('mongoose-beautiful-unique-validation');
@@ -40,10 +39,10 @@ const validatePassword = function (password) {
  * A Validation function for username
  */
 const validateUsername = function (username) {
-  return (
-    this.provider !== 'local' ||
-    authenticationService.validateUsername(username)
-  );
+  // User-facing signup and username-change routes enforce the current username
+  // policy. Keep document saves tolerant so legacy usernames can still be
+  // loaded, tested, imported, and saved for unrelated field changes.
+  return Boolean(username);
 };
 
 const setPlainTextField = function (value) {
@@ -189,7 +188,7 @@ const UserSchema = new Schema({
     required: true,
     validate: [
       validateUsername,
-      'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.',
+      'Please fill in valid username: 3-34 characters long, only lowercase letters and numbers, including at least one letter.',
     ],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true,

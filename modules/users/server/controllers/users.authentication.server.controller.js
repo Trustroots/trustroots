@@ -17,8 +17,8 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
-const usernameUnderscoreErrorMessage =
-  'Usernames cannot contain underscores (_). Use letters, numbers, periods, or hyphens instead.';
+const usernameFormatErrorMessage =
+  'Use 3-34 lowercase letters and numbers, including at least one letter.';
 
 function isNameSpam(input) {
   if (
@@ -47,8 +47,8 @@ function isUsernameInvalid(input) {
   return false;
 }
 
-function getUsernameUnderscoreError() {
-  const err = new Error(usernameUnderscoreErrorMessage);
+function getUserFacingError(message) {
+  const err = new Error(message);
   err.userFacing = true;
   return err;
 }
@@ -83,8 +83,11 @@ exports.signup = function (req, res) {
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
-        if (String(username || '').includes('_')) {
-          return done(getUsernameUnderscoreError());
+        if (!authenticationService.isUsernameFormatValid(username)) {
+          return done(getUserFacingError(usernameFormatErrorMessage));
+        }
+        if (authenticationService.isUsernameReserved(username)) {
+          return done(getUserFacingError('Username is not available.'));
         }
         if (
           isNameSpam(firstName) ||
@@ -202,7 +205,7 @@ exports.signup = function (req, res) {
  * Signup validation
  */
 exports.signupValidation = function (req, res) {
-  const username = String(req.body.username || '').toLowerCase();
+  const username = String(req.body.username || '');
 
   async.waterfall(
     [
@@ -216,34 +219,20 @@ exports.signupValidation = function (req, res) {
           );
         }
 
+        // Is username valid?
+        if (!authenticationService.isUsernameFormatValid(username)) {
+          return done(
+            new Error('Username is in invalid format.'),
+            'username-invalid',
+          );
+        }
+
         // Is username reserved?
         // You can modify the list from `config/env/default.js`
         if (authenticationService.isUsernameReserved(username)) {
           return done(
             new Error('Username is not available.'),
             'username-not-available-reserved',
-          );
-        }
-
-        if (!/[0-9a-z]/.test(username)) {
-          return done(
-            new Error('Username is in invalid format.'),
-            'username-invalid',
-          );
-        }
-
-        if (username.includes('_')) {
-          return done(
-            new Error(usernameUnderscoreErrorMessage),
-            'username-invalid',
-          );
-        }
-
-        // Is username valid?
-        if (!authenticationService.validateUsername(username)) {
-          return done(
-            new Error('Username is in invalid format.'),
-            'username-invalid',
           );
         }
 
