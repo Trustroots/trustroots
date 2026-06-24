@@ -114,6 +114,25 @@ describe('trValidateUsername directive', function () {
     expect(field.$error.username).toBe(true);
   });
 
+  it('stores the server validation message on the model', function () {
+    const { field } = compileTemplate();
+
+    SignupValidation.post.and.returnValue({
+      $promise: $q.resolve({
+        valid: false,
+        message: 'Username is not available.',
+      }),
+    });
+
+    field.$setViewValue('nostr');
+    $rootScope.$digest();
+    $timeout.flush(1000);
+    $rootScope.$digest();
+
+    expect(field.$usernameValidationMessage).toBe('Username is not available.');
+    expect(field.$error.username).toBe(true);
+  });
+
   it('accepts valid usernames returned by the server', function () {
     const { field } = compileTemplate();
 

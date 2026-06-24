@@ -35,6 +35,9 @@ module.exports = {
   },
   maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
   port: Number(process.env.PORT) || 3001,
+  // Subset of `default.js` illegalStrings for route tests. The full production
+  // list lives in default.js; extend this when adding reserved names that need
+  // explicit signup/profile test coverage.
   illegalStrings: [
     'trustroots',
     'trust',

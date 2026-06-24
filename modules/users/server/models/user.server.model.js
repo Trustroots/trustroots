@@ -36,12 +36,14 @@ const validatePassword = function (password) {
 };
 
 /**
- * A Validation function for username
+ * Mongoose username validator.
+ *
+ * Username policy (format, reserved names) is enforced only at user-facing
+ * routes: signup, signup validation, and profile username changes. Do not rely
+ * on this hook for policy — it only rejects empty usernames so legacy records,
+ * imports, and unrelated profile saves keep working.
  */
 const validateUsername = function (username) {
-  // User-facing signup and username-change routes enforce the current username
-  // policy. Keep document saves tolerant so legacy usernames can still be
-  // loaded, tested, imported, and saved for unrelated field changes.
   return Boolean(username);
 };
 

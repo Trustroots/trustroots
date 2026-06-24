@@ -37,6 +37,14 @@ exports.isUsernameFormatValid = function (username) {
   return usernameRegex.test(String(username));
 };
 
+/**
+ * NIP-05 and other legacy username lookups.
+ *
+ * Uses the pre-policy character set (including `.`, `-`, `_`) and does not
+ * require a letter, so existing users like `123` or `legacy.user` stay
+ * addressable. New signups use `isUsernameFormatValid` instead — do not
+ * merge these regexes.
+ */
 exports.isLegacyUsernameLookupValid = function (username) {
   return (
     typeof username === 'string' && legacyUsernameLookupRegex.test(username)

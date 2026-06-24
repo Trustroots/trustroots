@@ -93,7 +93,10 @@ function ProfileEditAccountController(
     }
 
     if (err.username) {
-      return 'This username is already in use or invalid.';
+      return (
+        usernameModel.$usernameValidationMessage ||
+        'This username is already in use or invalid.'
+      );
     }
 
     return 'Invalid username.';

@@ -92,7 +92,10 @@ function SignupController(
     }
 
     if (err.username) {
-      return 'This username is already in use.';
+      return (
+        usernameModel.$usernameValidationMessage ||
+        'This username is already in use.'
+      );
     }
 
     return 'Invalid username.';

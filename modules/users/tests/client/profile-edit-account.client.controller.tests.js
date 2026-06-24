@@ -118,6 +118,14 @@ describe('ProfileEditAccountController', function () {
         expect(
           ProfileEditAccountController.getUsernameValidationError({
             $dirty: true,
+            $error: { username: true },
+            $usernameValidationMessage: 'Username is not available.',
+            $valid: false,
+          }),
+        ).toEqual('Username is not available.');
+        expect(
+          ProfileEditAccountController.getUsernameValidationError({
+            $dirty: true,
             $error: {},
             $valid: false,
           }),
