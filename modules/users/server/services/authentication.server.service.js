@@ -1,5 +1,6 @@
 const config = require('../../../../config/config');
 const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
+const legacyUsernameLookupRegex = /^[A-Za-z0-9._-]{3,34}$/;
 
 exports.usernameFormatErrorMessage =
   'Use 3-34 lowercase letters and numbers, including at least one letter.';
@@ -34,6 +35,12 @@ exports.validateUsername = function (username) {
 
 exports.isUsernameFormatValid = function (username) {
   return usernameRegex.test(String(username));
+};
+
+exports.isLegacyUsernameLookupValid = function (username) {
+  return (
+    typeof username === 'string' && legacyUsernameLookupRegex.test(username)
+  );
 };
 
 /**

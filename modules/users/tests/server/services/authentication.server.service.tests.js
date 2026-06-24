@@ -93,6 +93,57 @@ describe('Service: authentication', function () {
     });
   });
 
+  describe('isLegacyUsernameLookupValid', function () {
+    it('accepts legacy username formats for read-only lookups', function () {
+      authenticationService
+        .isLegacyUsernameLookupValid('nostruser')
+        .should.be.true();
+      authenticationService
+        .isLegacyUsernameLookupValid('NostrUser')
+        .should.be.true();
+      authenticationService
+        .isLegacyUsernameLookupValid('legacy-user')
+        .should.be.true();
+      authenticationService
+        .isLegacyUsernameLookupValid('legacy.user')
+        .should.be.true();
+      authenticationService
+        .isLegacyUsernameLookupValid('legacy_user')
+        .should.be.true();
+      authenticationService.isLegacyUsernameLookupValid('123').should.be.true();
+    });
+
+    it('does not apply reserved username checks to legacy lookups', function () {
+      authenticationService
+        .isLegacyUsernameLookupValid('trustroots')
+        .should.be.true();
+    });
+
+    it('rejects invalid lookup usernames', function () {
+      authenticationService.isLegacyUsernameLookupValid('').should.be.false();
+      authenticationService.isLegacyUsernameLookupValid('ab').should.be.false();
+      authenticationService
+        .isLegacyUsernameLookupValid('a'.repeat(35))
+        .should.be.false();
+      authenticationService
+        .isLegacyUsernameLookupValid('legacy user')
+        .should.be.false();
+      authenticationService
+        .isLegacyUsernameLookupValid('legacy!')
+        .should.be.false();
+      authenticationService
+        .isLegacyUsernameLookupValid('ålice')
+        .should.be.false();
+      authenticationService.isLegacyUsernameLookupValid(null).should.be.false();
+      authenticationService
+        .isLegacyUsernameLookupValid(['alice'])
+        .should.be.false();
+      authenticationService
+        .isLegacyUsernameLookupValid({ username: 'alice' })
+        .should.be.false();
+    });
+  });
+
   describe('isUsernameReserved', function () {
     it('detects reserved usernames case-insensitively', function () {
       authenticationService.isUsernameReserved('TRUST').should.be.true();
