@@ -437,6 +437,31 @@ const features = [
     ],
   },
   {
+    id: 'public.footer',
+    area: AREA.publicCore,
+    status: STATUS.active,
+    description:
+      'Public pages render a compact footer with stable links and deployed build metadata.',
+    roles: ['visitor'],
+    references: {
+      clientRoutes: [clientRoute('faq.general', '/faq', source.pagesClient)],
+      apiRoutes: [],
+    },
+    requiredScenarios: [
+      'Standard footer shows compact public links on desktop.',
+      'Standard footer omits the Contribute navigation link.',
+      'Standard footer links to the deployed GitHub commit.',
+      'Standard footer remains hidden on mobile.',
+    ],
+    relatedSpecs: [
+      spec(
+        'footer.spec.js',
+        'standard footer shows compact links and build metadata on desktop',
+      ),
+      spec('footer.spec.js', 'standard footer stays hidden on mobile'),
+    ],
+  },
+  {
     id: 'public.support-page',
     area: AREA.publicCore,
     status: STATUS.active,
