@@ -10,7 +10,7 @@ import { getRouteParams } from '@/modules/core/client/services/angular-compat';
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from '@/modules/core/client/components/Board.js';
-import BoardCredits from '@/modules/core/client/components/BoardCredits.js';
+import SiteFooter from '@/modules/core/client/components/SiteFooter.component.js';
 import ManifestoText from './ManifestoText.component.js';
 import Screenshot from '@/modules/core/client/components/Screenshot.js';
 import screenshotProfilePng from '../img/screenshot-profile.png';
@@ -78,7 +78,7 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
-export default function Home({ user, photoCredits }) {
+export default function Home({ user, photoCredits, build }) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
   const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
@@ -492,7 +492,11 @@ export default function Home({ user, photoCredits }) {
             </ul>
             */}
 
-            <BoardCredits photoCredits={photoCredits} />
+            <SiteFooter
+              variant="home"
+              photoCredits={photoCredits}
+              build={build}
+            />
           </div>
           {/* .row */}
         </div>
@@ -506,4 +510,5 @@ Home.propTypes = {
   user: userType,
   isNativeMobileApp: PropTypes.bool,
   photoCredits: PropTypes.object,
+  build: PropTypes.object,
 };
