@@ -44,6 +44,18 @@ function isUsernameInvalid(input) {
   return false;
 }
 
+function getUserFacingError(message) {
+  const err = new Error(message);
+  err.userFacing = true;
+  return err;
+}
+
+function getSignupErrorMessage(err) {
+  return err && err.userFacing
+    ? err.message
+    : errorService.getErrorMessage(err);
+}
+
 /**
  * Signup
  */
@@ -68,6 +80,11 @@ exports.signup = function (req, res) {
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
+        const usernameRejectionMessage =
+          authenticationService.getUsernameRejectionMessage(username);
+        if (usernameRejectionMessage) {
+          return done(getUserFacingError(usernameRejectionMessage));
+        }
         if (
           isNameSpam(firstName) ||
           isNameSpam(lastName) ||
@@ -162,7 +179,7 @@ exports.signup = function (req, res) {
         statService.stat(statsObject, function () {
           // Send error to the API
           res.status(400).send({
-            message: errorService.getErrorMessage(err),
+            message: getSignupErrorMessage(err),
           });
         });
 
@@ -184,7 +201,7 @@ exports.signup = function (req, res) {
  * Signup validation
  */
 exports.signupValidation = function (req, res) {
-  const username = String(req.body.username || '').toLowerCase();
+  const username = String(req.body.username || '');
 
   async.waterfall(
     [
@@ -198,20 +215,20 @@ exports.signupValidation = function (req, res) {
           );
         }
 
+        // Is username valid?
+        if (!authenticationService.isUsernameFormatValid(username)) {
+          return done(
+            new Error('Username is in invalid format.'),
+            'username-invalid',
+          );
+        }
+
         // Is username reserved?
         // You can modify the list from `config/env/default.js`
         if (authenticationService.isUsernameReserved(username)) {
           return done(
-            new Error('Username is not available.'),
+            new Error(authenticationService.usernameUnavailableMessage),
             'username-not-available-reserved',
-          );
-        }
-
-        // Is username valid?
-        if (!authenticationService.validateUsername(username)) {
-          return done(
-            new Error('Username is in invalid format.'),
-            'username-invalid',
           );
         }
 

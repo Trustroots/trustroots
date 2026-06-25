@@ -1,4 +1,10 @@
 const config = require('../../../../config/config');
+const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
+const legacyUsernameLookupRegex = /^[A-Za-z0-9._-]{3,34}$/;
+
+exports.usernameFormatErrorMessage =
+  'Use 3-34 lowercase letters and numbers, including at least one letter.';
+exports.usernameUnavailableMessage = 'Username is not available.';
 
 exports.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;
@@ -9,26 +15,58 @@ exports.generateEmailToken = function (user, saltBuffer) {
 /**
  * A Validation function for username
  *
- * Used at Mongoose Schema
+ * Used for signup and username changes.
  *
  * - at least 3 characters
- * - only a-z0-9_-.
- * - contain at least one alphanumeric character
+ * - at most 34 characters
+ * - only a-z0-9
+ * - contain at least one letter
  * - not in list of illegal usernames
- * - no consecutive dots: "." ok, ".." nope
- * - not begin or end with "."
  */
 exports.validateUsername = function (username) {
-  username = String(username).toLowerCase();
-  const usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
-  const dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
+  username = String(username);
 
-  return (
+  return Boolean(
     username &&
-    usernameRegex.test(username) &&
-    dotsRegex.test(username) &&
-    !exports.isUsernameReserved(username)
+      exports.isUsernameFormatValid(username) &&
+      !exports.isUsernameReserved(username),
   );
+};
+
+exports.isUsernameFormatValid = function (username) {
+  return usernameRegex.test(String(username));
+};
+
+/**
+ * NIP-05 and other legacy username lookups.
+ *
+ * Uses the pre-policy character set (including `.`, `-`, `_`) and does not
+ * require a letter, so existing users like `123` or `legacy.user` stay
+ * addressable. New signups use `isUsernameFormatValid` instead — do not
+ * merge these regexes.
+ */
+exports.isLegacyUsernameLookupValid = function (username) {
+  return (
+    typeof username === 'string' && legacyUsernameLookupRegex.test(username)
+  );
+};
+
+/**
+ * User-facing rejection message for signup and username changes, or null if ok.
+ *
+ * @param {String} username
+ * @returns {String|null}
+ */
+exports.getUsernameRejectionMessage = function (username) {
+  if (!exports.isUsernameFormatValid(username)) {
+    return exports.usernameFormatErrorMessage;
+  }
+
+  if (exports.isUsernameReserved(username)) {
+    return exports.usernameUnavailableMessage;
+  }
+
+  return null;
 };
 
 /**
