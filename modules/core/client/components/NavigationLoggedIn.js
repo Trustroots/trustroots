@@ -163,10 +163,6 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('About'),
               },
               {
-                href: '/contribute',
-                label: t('Contribute'),
-              },
-              {
                 href: '/foundation',
                 label: t('Foundation'),
               },

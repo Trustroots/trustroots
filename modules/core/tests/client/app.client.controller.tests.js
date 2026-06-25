@@ -254,6 +254,7 @@ describe('App Controller Tests', function () {
 
     expect($scope.vm.isFooterHidden).toBe(true);
     expect($scope.vm.isHeaderHidden).toBe(true);
+    expect($scope.vm.footerVariant).toBe('standard');
     expect($scope.vm.photoCredits).toEqual({});
     expect($scope.vm.photoCreditsCount).toBe(0);
     expect($window.scrollTo).toHaveBeenCalledWith(0, 0);
@@ -262,12 +263,23 @@ describe('App Controller Tests', function () {
   it('should use visible header and footer defaults on state changes', function () {
     $scope.vm.isFooterHidden = true;
     $scope.vm.isHeaderHidden = true;
+    $scope.vm.footerVariant = 'admin';
 
     $scope.$broadcast('$stateChangeSuccess', {});
 
     expect($scope.vm.isFooterHidden).toBe(false);
     expect($scope.vm.isHeaderHidden).toBe(false);
+    expect($scope.vm.footerVariant).toBe('standard');
     expect($window.scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it('should use a route-specific footer variant on state changes', function () {
+    $scope.$broadcast('$stateChangeSuccess', {
+      footerVariant: 'admin',
+    });
+
+    expect($scope.vm.isFooterHidden).toBe(false);
+    expect($scope.vm.footerVariant).toBe('admin');
   });
 
   it('should update photo credits from directive events', function () {
