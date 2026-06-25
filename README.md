@@ -56,28 +56,21 @@ You might also need to run the linux equivalent of that if you see an error abou
 
 ## Running locally
 
-`nvm use && npm start` (host, hot reload at http://localhost:3000)
+Choose the setup that fits what you're doing:
 
-or
+- Host development: `nvm use && npm start`
+- Docker development: `cd deploy/docker && docker compose up`
+- Dev container: open the repository with **Dev Containers: Reopen in Container**
+  and run `npm start` inside the integrated terminal
 
-```bash
-cd deploy/docker && docker compose up
-```
+The host and Docker setups serve the app at http://localhost:3000. Docker also
+starts MailDev at http://localhost:1080.
 
-Docker dev (hot reload, maildev, shared mongo): see [`deploy/docker/README.md`](deploy/docker/README.md).
-
-If you experience docker issues you could try clearing up docker - even though it shouldn't be necessary, it can help:
-
-```
-docker image prune
-docker image prune -a
-docker container prune
-docker volume prune
-docker builder prune
-docker builder prune -a
-docker system prune
-docker system prune -a --volumes -f
-```
+Docker dev uses hot reload, MailDev, and a shared MongoDB service. See
+[`deploy/docker/README.md`](deploy/docker/README.md) for first-time setup,
+troubleshooting, dependency rebuilds, test workflows, and production-like image
+checks. See [`.devcontainer/README.md`](.devcontainer/README.md) for editor and
+test workflow details.
 
 ## Building for production
 
