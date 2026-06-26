@@ -25,7 +25,7 @@ export default function AdminAcquisitionStories() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
         <p>Based on latest 3000 stories</p>
 
@@ -33,29 +33,32 @@ export default function AdminAcquisitionStories() {
 
         {isLoading && <LoadingIndicator />}
 
-        {!isLoading &&
-          stories.length > 0 &&
-          stories.map((story, index) => (
-            <div
-              key={story._id}
-              className="panel"
-              id={`acquisition-story-${index + 1}`}
-            >
-              <div className="panel-body">
-                <p className="lead">{story.acquisitionStory}</p>
-                <ul className="list-inline">
-                  <li>
+        {!isLoading && stories.length > 0 && (
+          <table className="table table-condensed table-striped admin-acquisition-stories-table">
+            <thead>
+              <tr>
+                <th>Story</th>
+                <th>Created</th>
+                <th>Member</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stories.map((story, index) => (
+                <tr key={story._id} id={`acquisition-story-${index + 1}`}>
+                  <td>{story.acquisitionStory}</td>
+                  <td>
                     <a href={`#acquisition-story-${index + 1}`}>
                       <time className="text-muted">{story.created}</time>
                     </a>
-                  </li>
-                  <li>
+                  </td>
+                  <td>
                     <UserLink user={story} />
-                  </li>
-                </ul>
-              </div>
-            </div>
-          ))}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         {!isLoading && stories.length === 0 && (
           <p>No acquisition stories found.</p>

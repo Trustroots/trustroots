@@ -84,7 +84,7 @@ export default function Admin() {
   return (
     <>
       <AdminHeader />
-      <div className="container container-spacer admin-landing">
+      <div className="container admin-landing">
         <header className="admin-landing__hero">
           <h1 className="admin-landing__title">Admin Dashboard</h1>
           <p className="admin-landing__subtitle">
@@ -93,14 +93,10 @@ export default function Admin() {
           </p>
         </header>
 
-        <section className="panel panel-default admin-landing__search-panel">
-          <div className="panel-heading">
-            <h2 className="panel-title">Member search</h2>
-          </div>
-          <div className="panel-body admin-landing__search-body">
-            <AdminSearchUsersContent />
-          </div>
-        </section>
+        <div className="admin-landing__search">
+          <AdminSearchUsersContent showHeading={false} />
+        </div>
+
         <div className="row admin-index">
           {adminGroups.map(({ title, links }) => (
             <div className="col-sm-6" key={title}>

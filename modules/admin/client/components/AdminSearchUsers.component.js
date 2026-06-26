@@ -1,5 +1,6 @@
 // External dependencies
 import React, { Component } from 'react';
+import PropTypes from 'prop-types';
 
 // Internal dependencies
 import { searchUsers, listUsersByRole } from '../api/users.api';
@@ -73,11 +74,12 @@ export class AdminSearchUsersContent extends Component {
   }
 
   render() {
+    const { showHeading } = this.props;
     const { userResults } = this.state;
 
     return (
       <>
-        <h2>Search members</h2>
+        {showHeading && <h2>Search members</h2>}
 
         <div className="row">
           <div className="col-xs-12 col-md-6">
@@ -156,4 +158,10 @@ export default function AdminSearchUsers() {
 }
 
 AdminSearchUsers.propTypes = {};
-AdminSearchUsersContent.propTypes = {};
+AdminSearchUsersContent.propTypes = {
+  showHeading: PropTypes.bool,
+};
+
+AdminSearchUsersContent.defaultProps = {
+  showHeading: true,
+};
