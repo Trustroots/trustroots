@@ -1,5 +1,6 @@
 // External dependencies
 import get from 'lodash/get';
+import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
 // Internal dependencies
@@ -20,6 +21,75 @@ import {
   normalizeAdminQuery,
   isSuspendedUser,
 } from './userSearch.helpers';
+
+function formatDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function formatLocation(location) {
+  if (!Array.isArray(location) || location.length < 2) {
+    return null;
+  }
+
+  return `${location[1]}, ${location[0]}`;
+}
+
+function getUserId(user) {
+  return get(user, ['_id']) || user;
+}
+
+function getContactOtherMember(contact, currentUserId) {
+  const userFrom = get(contact, ['userFrom']);
+  const userTo = get(contact, ['userTo']);
+
+  if (getUserId(userFrom) === currentUserId) {
+    return userTo;
+  }
+
+  if (getUserId(userTo) === currentUserId) {
+    return userFrom;
+  }
+
+  return get(contact, ['user']) || userTo || userFrom;
+}
+
+function newestFirstByCreated(first, second) {
+  return new Date(second.created) - new Date(first.created);
+}
+
+function InfoTable({ rows }) {
+  const visibleRows = rows.filter(([, value]) => value);
+
+  if (!visibleRows.length) {
+    return null;
+  }
+
+  return (
+    <table className="table table-condensed admin-readable-table">
+      <tbody>
+        {visibleRows.map(([label, value]) => (
+          <tr key={label}>
+            <th>{label}</th>
+            <td>{value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+InfoTable.propTypes = {
+  rows: PropTypes.arrayOf(PropTypes.array).isRequired,
+};
 
 export default class AdminUser extends Component {
   constructor(props) {
@@ -163,6 +233,14 @@ export default class AdminUser extends Component {
               </a>
             ),
           ],
+          [
+            'Public profile',
+            user.profile.username && (
+              <a href={`/profile/${user.profile.username}`}>
+                /profile/{user.profile.username}
+              </a>
+            ),
+          ],
           ['Email', user.profile.email],
           ['Temporary email', user.profile.emailTemporary],
           [
@@ -172,14 +250,14 @@ export default class AdminUser extends Component {
               : null,
           ],
           ['Profile visible', user.profile.public ? 'Yes' : 'No'],
+          ['Signed up', formatDate(user.profile.created)],
+          ['Last seen', formatDate(user.profile.seen)],
           [
-            'Signed up',
-            user.profile.created &&
-              new Date(user.profile.created).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              }),
+            'Location',
+            user.profile.location &&
+              [user.profile.location.city, user.profile.location.country]
+                .filter(Boolean)
+                .join(', '),
           ],
         ].filter(([, value]) => value)
       : [];
@@ -234,29 +312,29 @@ export default class AdminUser extends Component {
     return (
       <>
         <AdminHeader />
-        <div className="container">
-          <h2>Member report card</h2>
+        <div className="container admin-user-page">
+          <div className="admin-user-page__search">
+            <h2>Member report card</h2>
 
-          <form onSubmit={this.queryUser} className="form-inline">
-            <label>
-              Member username, email or ID
-              <br />
+            <form
+              onSubmit={this.queryUser}
+              className="form-inline admin-user-search-form"
+            >
               <input
+                aria-label="Member username, email or ID"
                 className="form-control input-lg"
                 onChange={this.onQueryChange}
+                placeholder="Member username, email or ID"
                 size={32}
                 type="search"
                 value={query}
               />
-            </label>
-            <button
-              className="btn btn-lg btn-default"
-              disabled={query.trim().length < SEARCH_STRING_LIMIT}
-              type="submit"
-            >
-              Show
-            </button>
-          </form>
+            </form>
+
+            {isSearching && (
+              <p className="admin-user-loading text-muted">Loading member...</p>
+            )}
+          </div>
 
           {!isProfile && <AdminUserResultsTable userResults={matchingUsers} />}
 
@@ -269,63 +347,62 @@ export default class AdminUser extends Component {
 
           {isProfile && (
             <>
-              <h3 className="pull-left">
-                <strong>{profileLabel}</strong> report card
-              </h3>
+              <div className="admin-user-report-header">
+                <h3>
+                  <strong>{profileLabel}</strong>
+                </h3>
 
-              <div className="btn-group">
-                {user.profile.username && !isSuspended && (
-                  <a
-                    className="btn btn-default"
-                    href={`/profile/${user.profile.username}`}
-                  >
-                    Public profile
-                  </a>
-                )}
-                {[
-                  {
-                    role: 'suspended',
-                    color: 'danger',
-                    label: 'Suspend',
-                  },
-                  ...(isSuspended
-                    ? []
-                    : [
-                        {
-                          role: 'shadowban',
-                          color: 'danger',
-                          label: 'Shadow ban',
-                        },
-                        {
-                          role: 'volunteer',
-                          color: 'success',
-                          label: 'Make volunteer',
-                        },
-                        {
-                          role: 'volunteer-alumni',
-                          color: 'success',
-                          label: 'Make volunteer alumni',
-                        },
-                      ]),
-                ].map(({ role, color, label }) => (
-                  <button
-                    key={role}
-                    className={`btn btn-${color}`}
-                    disabled={
-                      user.profile.roles.includes(role) || isSettingUserRole
-                    }
-                    onClick={() => this.handleUserRoleChange(role)}
-                  >
-                    {label}
-                  </button>
-                ))}
+                <div className="admin-user-actions">
+                  {user.profile.username && !isSuspended && (
+                    <a
+                      className="btn btn-default"
+                      href={`/profile/${user.profile.username}`}
+                    >
+                      Public profile
+                    </a>
+                  )}
+                  {[
+                    {
+                      role: 'suspended',
+                      color: 'danger',
+                      label: 'Suspend',
+                    },
+                    ...(isSuspended
+                      ? []
+                      : [
+                          {
+                            role: 'shadowban',
+                            color: 'danger',
+                            label: 'Shadow ban',
+                          },
+                          {
+                            role: 'volunteer',
+                            color: 'success',
+                            label: 'Make volunteer',
+                          },
+                          {
+                            role: 'volunteer-alumni',
+                            color: 'success',
+                            label: 'Make volunteer alumni',
+                          },
+                        ]),
+                  ].map(({ role, color, label }) => (
+                    <button
+                      key={role}
+                      className={`btn btn-${color}`}
+                      disabled={
+                        user.profile.roles.includes(role) || isSettingUserRole
+                      }
+                      onClick={() => this.handleUserRoleChange(role)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <h4 id="stats">
-                Stats
-                <a href="#stats" className="btn btn-link">
-                  #
-                </a>
+                <a href="#stats">Stats</a>
               </h4>
               <div className="panel panel-default admin-user">
                 <div className="panel-body">
@@ -399,10 +476,7 @@ export default class AdminUser extends Component {
               {hasThreadVotes && (
                 <>
                   <h4 id="thread-votes">
-                    Thread votes
-                    <a href="#thread-votes" className="btn btn-link">
-                      #
-                    </a>
+                    <a href="#thread-votes">Thread votes</a>
                   </h4>
                   <div className="panel panel-default">
                     <div className="panel-body">
@@ -432,27 +506,15 @@ export default class AdminUser extends Component {
               <AdminNotes id={userId} />
 
               <h4 id="profile">
-                Profile
-                <a href="#profile" className="btn btn-link">
-                  #
-                </a>
+                <a href="#profile">Profile</a>
+                <details className="admin-section-raw-data">
+                  <summary>raw data</summary>
+                  <Json content={user.profile} />
+                </details>
               </h4>
               <div className="panel panel-default">
                 <div className="panel-body">
-                  <table className="table table-condensed">
-                    <tbody>
-                      {profileRows.map(([label, value]) => (
-                        <tr key={label}>
-                          <th>{label}</th>
-                          <td>{value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <details>
-                    <summary>Raw profile data</summary>
-                    <Json content={user.profile} />
-                  </details>
+                  <InfoTable rows={profileRows} />
                 </div>
               </div>
             </>
@@ -461,30 +523,45 @@ export default class AdminUser extends Component {
           {user && (
             <>
               <h4 id="offers">
-                Hosting & meeting offers
-                <a href="#offers" className="btn btn-link">
-                  #
-                </a>
+                <a href="#offers">Hosting & meeting offers</a>
               </h4>
               <div className="panel panel-default">
                 <div className="panel-body">
                   {user.offers.length ? (
                     user.offers.map(offer => (
-                      <div key={offer._id}>
-                        <Json content={offer} />
-                        <a
-                          href={`/search?offer=${offer._id}`}
-                          className="btn btn-sm btn-default"
-                        >
-                          Show offer on map
-                        </a>
-                        <a
-                          href={`/search?location=${offer.location[1]},${offer.location[0]}`}
-                          className="btn btn-sm btn-default"
-                        >
-                          Show location on map
-                        </a>
-                        <hr className="hr-gray" />
+                      <div className="admin-readable-item" key={offer._id}>
+                        <InfoTable
+                          rows={[
+                            ['Type', offer.type],
+                            ['Status', offer.status],
+                            ['Description', offer.description],
+                            ['Location', formatLocation(offer.location)],
+                            ['Created', formatDate(offer.created)],
+                            ['Updated', formatDate(offer.updated)],
+                          ]}
+                        />
+                        <p>
+                          <a
+                            href={`/search?offer=${offer._id}`}
+                            className="btn btn-sm btn-default"
+                          >
+                            Show offer on map
+                          </a>
+                          {formatLocation(offer.location) && (
+                            <a
+                              href={`/search?location=${formatLocation(
+                                offer.location,
+                              )}`}
+                              className="btn btn-sm btn-default"
+                            >
+                              Show location on map
+                            </a>
+                          )}
+                        </p>
+                        <details>
+                          <summary>Raw offer data</summary>
+                          <Json content={offer} />
+                        </details>
                       </div>
                     ))
                   ) : (
@@ -496,17 +573,51 @@ export default class AdminUser extends Component {
               </div>
 
               <h4 id="contacts">
-                Contacts
-                <a href="#contacts" className="btn btn-link">
-                  #
-                </a>
+                <a href="#contacts">Contacts</a>
               </h4>
               <div className="panel panel-default">
                 <div className="panel-body">
                   {user.contacts.length ? (
-                    user.contacts.map(contact => (
-                      <Json content={contact} key={contact._id} />
-                    ))
+                    <table className="table table-condensed table-striped">
+                      <thead>
+                        <tr>
+                          <th>Member</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...user.contacts]
+                          .sort(newestFirstByCreated)
+                          .map(contact => {
+                            const contactMember = getContactOtherMember(
+                              contact,
+                              userId,
+                            );
+                            const contactName =
+                              get(contactMember, ['username']) ||
+                              get(contactMember, ['displayName']) ||
+                              'Unknown member';
+                            const contactMemberId = get(contactMember, ['_id']);
+
+                            return (
+                              <tr key={contact._id}>
+                                <td>
+                                  {contactMemberId ? (
+                                    <a
+                                      href={`/admin/user?id=${contactMemberId}`}
+                                    >
+                                      {contactName}
+                                    </a>
+                                  ) : (
+                                    contactName
+                                  )}
+                                </td>
+                                <td>{formatDate(contact.created)}</td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
                   ) : (
                     <p>
                       <em>{"Member doesn't have any contacts."}</em>

@@ -50,25 +50,19 @@ export default function AdminHeader() {
   );
 
   return (
-    <>
-      <br />
-      <br />
-      <nav className="navbar navbar-white navbar-admin">
-        <div className="container">
-          <div className="navbar-header">
-            <a className="navbar-brand" href="/admin">
-              Admin
-            </a>
-          </div>
-          <ul className="nav navbar-nav">
-            {pages.map(page => renderTab(page))}
-          </ul>
-          <ul className="nav navbar-nav pull-right">
-            {renderTab({ path: 'audit-log', label: 'Audit log' })}
-          </ul>
+    <nav className="navbar navbar-white navbar-admin">
+      <div className="container">
+        <div className="navbar-header">
+          <a className="navbar-brand" href="/admin">
+            Admin
+          </a>
         </div>
-      </nav>
-    </>
+        <ul className="nav navbar-nav">{pages.map(page => renderTab(page))}</ul>
+        <ul className="nav navbar-nav pull-right">
+          {renderTab({ path: 'audit-log', label: 'Audit log' })}
+        </ul>
+      </div>
+    </nav>
   );
 }
 
