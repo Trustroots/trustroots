@@ -39,6 +39,10 @@ describe('Admin access route tests', () => {
       path: '/api/admin/audit-log',
     },
     {
+      method: 'get',
+      path: '/api/admin/dashboard',
+    },
+    {
       method: 'post',
       path: '/api/admin/messages',
       body: { user1: targetUserId, user2: targetUserId },
