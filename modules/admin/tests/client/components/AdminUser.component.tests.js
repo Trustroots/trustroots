@@ -216,6 +216,47 @@ describe('<AdminUser />', () => {
     ).toHaveAttribute('href', '/search?location=60.17,24.94');
   });
 
+  it('hides public profile and role actions for suspended members', async () => {
+    usersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: {
+          _id: userId,
+          email: 'alice@example.org',
+          roles: ['user', 'suspended'],
+          username: 'alice',
+        },
+        messageFromCount: 0,
+        messageToCount: 0,
+        threadCount: 0,
+        threadReferencesReceivedNo: 0,
+        threadReferencesReceivedYes: 0,
+        threadReferencesSentNo: 0,
+        threadReferencesSentYes: 0,
+        offers: [],
+        contacts: [],
+      }),
+    );
+
+    window.history.pushState({}, '', `/admin/user?id=${userId}`);
+    render(<AdminUser />);
+
+    expect(
+      await screen.findByRole('heading', { name: 'alice report card' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Public profile' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Shadow ban' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Make volunteer' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Make volunteer alumni' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('updates the URL while typing and queries valid member ids', async () => {
     usersApi.getUser.mockResolvedValueOnce(makeReportCard());
 

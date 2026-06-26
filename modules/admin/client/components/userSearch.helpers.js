@@ -78,3 +78,12 @@ export function isObviousSpamUser(user) {
       /\b(date|meet|waiting|gaze)\b/i.test(displayName))
   );
 }
+
+export function isSuspendedUser(user) {
+  const roles = getUserRoles(user);
+  return roles.includes('suspended');
+}
+
+function getUserRoles(user) {
+  return (user && (user.roles || (user.profile && user.profile.roles))) || [];
+}

@@ -18,6 +18,7 @@ import {
   isMongoObjectId,
   isObviousSpamUser,
   normalizeAdminQuery,
+  isSuspendedUser,
 } from './userSearch.helpers';
 
 export default class AdminUser extends Component {
@@ -144,6 +145,7 @@ export default class AdminUser extends Component {
       user,
     } = this.state;
     const isProfile = user && user.profile;
+    const isSuspended = isSuspendedUser(get(user, ['profile']));
     const hasNoMatchingUsers =
       hasSearched && !isSearching && matchingUsers.length === 0;
     const userId = get(user, ['profile', '_id']);
@@ -272,7 +274,7 @@ export default class AdminUser extends Component {
               </h3>
 
               <div className="btn-group">
-                {user.profile.username && (
+                {user.profile.username && !isSuspended && (
                   <a
                     className="btn btn-default"
                     href={`/profile/${user.profile.username}`}
@@ -286,21 +288,25 @@ export default class AdminUser extends Component {
                     color: 'danger',
                     label: 'Suspend',
                   },
-                  {
-                    role: 'shadowban',
-                    color: 'danger',
-                    label: 'Shadow ban',
-                  },
-                  {
-                    role: 'volunteer',
-                    color: 'success',
-                    label: 'Make volunteer',
-                  },
-                  {
-                    role: 'volunteer-alumni',
-                    color: 'success',
-                    label: 'Make volunteer alumni',
-                  },
+                  ...(isSuspended
+                    ? []
+                    : [
+                        {
+                          role: 'shadowban',
+                          color: 'danger',
+                          label: 'Shadow ban',
+                        },
+                        {
+                          role: 'volunteer',
+                          color: 'success',
+                          label: 'Make volunteer',
+                        },
+                        {
+                          role: 'volunteer-alumni',
+                          color: 'success',
+                          label: 'Make volunteer alumni',
+                        },
+                      ]),
                 ].map(({ role, color, label }) => (
                   <button
                     key={role}

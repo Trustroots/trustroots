@@ -186,4 +186,30 @@ describe('<AdminSearchUsers />', () => {
     expect(screen.getByText('new@example.org')).toBeInTheDocument();
     expect(screen.getByText('(temporary email)')).toBeInTheDocument();
   });
+
+  it('hides public profile links for suspended members in search results', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([
+      makeUser({
+        _id: '123456789012345678901235',
+        displayName: 'Suspended member',
+        email: 'suspended@example.org',
+        username: 'suspended-member',
+        roles: ['user', 'suspended'],
+      }),
+    ]);
+
+    render(<AdminSearchUsers />);
+
+    fireEvent.change(screen.getByLabelText('Name, username or email'), {
+      target: { value: 'suspended-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(
+      await screen.findByText('suspended-member (Suspended member)'),
+    ).toHaveAttribute('href', '/admin/user?id=123456789012345678901235');
+    expect(
+      screen.queryByRole('link', { name: 'Public profile' }),
+    ).not.toBeInTheDocument();
+  });
 });
