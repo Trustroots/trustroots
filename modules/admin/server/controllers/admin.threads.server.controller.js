@@ -56,9 +56,11 @@ exports.getThreads = async (req, res) => {
         updated: 1,
         'userToProfile._id': 1,
         'userToProfile.username': 1,
+        'userToProfile.displayName': 1,
         'userToProfile.email': 1,
         'userFromProfile._id': 1,
         'userFromProfile.username': 1,
+        'userFromProfile.displayName': 1,
       },
     },
     {

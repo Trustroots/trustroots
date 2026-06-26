@@ -213,7 +213,7 @@ describe('User profile CRUD tests', function () {
     });
   });
 
-  it('should be able to get other users details successfully that have "shadowban" role when with role "moderator"', function (done) {
+  it('should not be able to get other users details successfully that have "shadowban" role when with legacy role "moderator"', function (done) {
     user.roles = ['user', 'moderator'];
     user2.roles = ['user', 'shadowban'];
 
@@ -231,7 +231,7 @@ describe('User profile CRUD tests', function () {
             // Get their user details
             agent
               .get('/api/users/' + user2.username)
-              .expect(200)
+              .expect(404)
               .end(done);
           });
       });

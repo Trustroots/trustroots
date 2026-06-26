@@ -2,7 +2,9 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
-import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers.component';
+import AdminSearchUsers, {
+  AdminSearchUsersContent,
+} from '@/modules/admin/client/components/AdminSearchUsers.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
 jest.mock('@/modules/admin/client/api/users.api');
@@ -28,7 +30,7 @@ describe('<AdminSearchUsers />', () => {
   it('lists users by role when called without a form event', async () => {
     const userResults = [makeUser({ displayName: 'Direct Admin' })];
     usersApi.listUsersByRole.mockResolvedValueOnce(userResults);
-    const component = new AdminSearchUsers({});
+    const component = new AdminSearchUsersContent({});
     component.setState = jest.fn(update => {
       component.state = {
         ...component.state,
@@ -40,6 +42,12 @@ describe('<AdminSearchUsers />', () => {
 
     expect(usersApi.listUsersByRole).toHaveBeenCalledWith('admin');
     expect(component.setState).toHaveBeenCalledWith({ userResults });
+  });
+
+  it('does not show legacy moderator as a listable role', () => {
+    render(<AdminSearchUsers />);
+
+    expect(screen.getByRole('combobox')).not.toHaveTextContent('moderator');
   });
 
   it('runs an initial search from the URL and renders result details', async () => {
@@ -56,12 +64,14 @@ describe('<AdminSearchUsers />', () => {
 
     render(<AdminSearchUsers />);
 
-    expect(await screen.findByText('Alice 0')).toHaveAttribute(
+    expect(await screen.findByText('alice0 (Alice 0)')).toHaveAttribute(
       'href',
       '/admin/user?id=123456789012345678901200',
     );
     expect(usersApi.searchUsers).toHaveBeenCalledWith('alice');
     expect(screen.getByText('50 user(s).')).toBeInTheDocument();
+    expect(screen.getAllByText('2024-01-15')).toHaveLength(50);
+    expect(screen.queryByText('ID')).not.toBeInTheDocument();
     expect(
       screen.getByText(/There might be more results but 50 is maximum./),
     ).toBeInTheDocument();
@@ -99,11 +109,55 @@ describe('<AdminSearchUsers />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-    expect(await screen.findByText('Boundary Search')).toHaveAttribute(
-      'href',
-      '/admin/user?id=searchsearchsearchsearch0001',
-    );
+    expect(
+      await screen.findByText('boundary (Boundary Search)'),
+    ).toHaveAttribute('href', '/admin/user?id=searchsearchsearchsearch0001');
     expect(usersApi.searchUsers).toHaveBeenCalledWith('ali');
+  });
+
+  it('hides obvious spam users from text search results', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([
+      makeUser({
+        _id: 'spamspamspamspamspam0001',
+        displayName: 'Hot Daria Wants To Date',
+        email: 'feedonthefriction+3@hotmail.com',
+        emailTemporary: 'feedonthefriction+3@hotmail.com',
+        public: false,
+        roles: ['user', 'suspended'],
+        username: '24721768s',
+      }),
+      makeUser({
+        _id: 'realrealrealrealreal0001',
+        displayName: 'The Friender',
+        email: 'friend@example.org',
+        username: 'thefri',
+      }),
+      makeUser({
+        _id: 'spamspamspamspamspam0002',
+        displayName:
+          'Pretty Jenifer is waiting for your gaze https://bit.ly/jennig',
+        email: 'jenifer@example.org',
+        username: 'as2372978',
+      }),
+    ]);
+
+    render(<AdminSearchUsers />);
+
+    fireEvent.change(screen.getByLabelText('Name, username or email'), {
+      target: { value: 'thefri' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(
+      await screen.findByText('thefri (The Friender)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('Hot Daria Wants To Date'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Pretty Jenifer is waiting/),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('1 user(s).')).toBeInTheDocument();
   });
 
   it('lists users by role and renders temporary email state', async () => {
@@ -125,10 +179,9 @@ describe('<AdminSearchUsers />', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'List users in role' }));
 
-    expect(await screen.findByText('Volunteer Example')).toHaveAttribute(
-      'href',
-      '/admin/user?id=abcdefabcdefabcdefabcdef',
-    );
+    expect(
+      await screen.findByText('volunteer (Volunteer Example)'),
+    ).toHaveAttribute('href', '/admin/user?id=abcdefabcdefabcdefabcdef');
     expect(usersApi.listUsersByRole).toHaveBeenCalledWith('volunteer');
     expect(screen.getByText('new@example.org')).toBeInTheDocument();
     expect(screen.getByText('(temporary email)')).toBeInTheDocument();

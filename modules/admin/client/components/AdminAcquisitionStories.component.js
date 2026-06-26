@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
 import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
+import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
 export default function AdminAcquisitionStories() {
@@ -34,18 +35,22 @@ export default function AdminAcquisitionStories() {
 
         {!isLoading &&
           stories.length > 0 &&
-          stories.map(({ _id: userId, acquisitionStory, created }) => (
-            <div key={userId} className="panel" id={userId}>
+          stories.map((story, index) => (
+            <div
+              key={story._id}
+              className="panel"
+              id={`acquisition-story-${index + 1}`}
+            >
               <div className="panel-body">
-                <p className="lead">{acquisitionStory}</p>
+                <p className="lead">{story.acquisitionStory}</p>
                 <ul className="list-inline">
                   <li>
-                    <a href={`#${userId}`}>
-                      <time className="text-muted">{created}</time>
+                    <a href={`#acquisition-story-${index + 1}`}>
+                      <time className="text-muted">{story.created}</time>
                     </a>
                   </li>
                   <li>
-                    <a href={`/admin/user?id=${userId}`}>Member report card</a>
+                    <UserLink user={story} />
                   </li>
                 </ul>
               </div>

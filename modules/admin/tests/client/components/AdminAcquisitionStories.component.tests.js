@@ -25,6 +25,8 @@ describe('<AdminAcquisitionStories />', () => {
         _id: '111111111111111111111111',
         acquisitionStory: 'I met people at a hitchhiking festival.',
         created: '2026-04-05T06:07:08.000Z',
+        displayName: 'Alice Example',
+        username: 'alice',
       },
     ]);
 
@@ -35,14 +37,8 @@ describe('<AdminAcquisitionStories />', () => {
       await screen.findByText('I met people at a hitchhiking festival.'),
     ).toBeInTheDocument();
     expect(
-      screen
-        .getAllByRole('link', { name: 'Member report card' })
-        .some(
-          link =>
-            link.getAttribute('href') ===
-            '/admin/user?id=111111111111111111111111',
-        ),
-    ).toBe(true);
+      screen.getByRole('link', { name: 'alice (Alice Example)' }),
+    ).toHaveAttribute('href', '/admin/user?id=111111111111111111111111');
     expect(
       screen.getByRole('link', { name: 'Stories' }).closest('li'),
     ).toHaveClass('active');
