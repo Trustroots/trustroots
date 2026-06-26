@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getAdminDashboard } from '../api/admin-dashboard.api.js';
 import AdminHeader from './AdminHeader.component.js';
 import { AdminSearchUsersContent } from './AdminSearchUsers.component.js';
+import UserLink from './UserLink.component.js';
 
 const adminGroups = [
   {
@@ -80,7 +82,61 @@ const adminGroups = [
   },
 ];
 
+function formatDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 10);
+}
+
+function adminMessagesUrl(userFrom, userTo) {
+  if (!userFrom || !userFrom._id || !userTo || !userTo._id) {
+    return null;
+  }
+
+  return `/admin/messages?userId1=${userFrom._id}&userId2=${userTo._id}`;
+}
+
 export default function Admin() {
+  const [dashboard, setDashboard] = useState({
+    negativeReviews: [],
+    topMessengers: [],
+  });
+  const [isDashboardLoading, setIsDashboardLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadDashboard() {
+      try {
+        const data = await getAdminDashboard();
+
+        if (isMounted) {
+          setDashboard({
+            negativeReviews: data.negativeReviews || [],
+            topMessengers: data.topMessengers || [],
+          });
+        }
+      } finally {
+        if (isMounted) {
+          setIsDashboardLoading(false);
+        }
+      }
+    }
+
+    loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <>
       <AdminHeader />
@@ -95,6 +151,92 @@ export default function Admin() {
 
         <div className="admin-landing__search">
           <AdminSearchUsersContent showHeading={false} />
+        </div>
+
+        <div className="row admin-dashboard-boxes">
+          <div className="col-sm-6">
+            <section className="panel panel-default admin-dashboard-box">
+              <div className="panel-heading">
+                <h2 className="panel-title">Top 10 Messengers Last Week</h2>
+              </div>
+              <div className="panel-body">
+                {isDashboardLoading && <p className="text-muted">Loading...</p>}
+                {!isDashboardLoading &&
+                  dashboard.topMessengers.length === 0 && (
+                    <p className="text-muted">No messages last week.</p>
+                  )}
+                {!isDashboardLoading && dashboard.topMessengers.length > 0 && (
+                  <table className="table table-condensed admin-dashboard-table">
+                    <tbody>
+                      {dashboard.topMessengers.map(
+                        ({ messageCount, user }, index) => (
+                          <tr
+                            key={user && user._id ? user._id : `row-${index}`}
+                          >
+                            <td>
+                              <UserLink user={user || {}} />
+                            </td>
+                            <td className="text-right">
+                              {messageCount} messages
+                            </td>
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </section>
+          </div>
+          <div className="col-sm-6">
+            <section className="panel panel-default admin-dashboard-box">
+              <div className="panel-heading">
+                <h2 className="panel-title">
+                  <a href="/admin/reference-threads">Last 5 Negative Reviews</a>
+                </h2>
+              </div>
+              <div className="panel-body">
+                {isDashboardLoading && <p className="text-muted">Loading...</p>}
+                {!isDashboardLoading &&
+                  dashboard.negativeReviews.length === 0 && (
+                    <p className="text-muted">No negative reviews found.</p>
+                  )}
+                {!isDashboardLoading && dashboard.negativeReviews.length > 0 && (
+                  <table className="table table-condensed admin-dashboard-table">
+                    <tbody>
+                      {dashboard.negativeReviews.map(
+                        ({ _id, created, thread, userFrom, userTo }) => {
+                          const messagesUrl = adminMessagesUrl(
+                            userFrom,
+                            userTo,
+                          );
+
+                          return (
+                            <tr key={_id}>
+                              <td>
+                                <UserLink user={userFrom || {}} />
+                                {' -> '}
+                                <UserLink user={userTo || {}} />
+                              </td>
+                              <td className="text-right">
+                                {messagesUrl ? (
+                                  <a href={messagesUrl}>
+                                    {formatDate(created) || thread}
+                                  </a>
+                                ) : (
+                                  formatDate(created) || thread
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        },
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </section>
+          </div>
         </div>
 
         <div className="row admin-index">

@@ -3,8 +3,10 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import Admin from '@/modules/admin/client/components/Admin.component';
+import * as dashboardApi from '@/modules/admin/client/api/admin-dashboard.api';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
+jest.mock('@/modules/admin/client/api/admin-dashboard.api');
 jest.mock('@/modules/admin/client/api/users.api');
 
 function expectLink(name, href) {
@@ -17,11 +19,43 @@ function expectLink(name, href) {
 }
 
 afterEach(() => {
+  jest.clearAllMocks();
   window.history.pushState({}, '', '/');
 });
 
 describe('<Admin />', () => {
-  it('renders grouped admin workflow links', () => {
+  beforeEach(() => {
+    dashboardApi.getAdminDashboard.mockResolvedValue({
+      negativeReviews: [
+        {
+          _id: 'review-1',
+          created: '2026-06-20T12:00:00.000Z',
+          userFrom: {
+            _id: 'user-from-1',
+            displayName: 'Sender',
+            username: 'sender',
+          },
+          userTo: {
+            _id: 'user-to-1',
+            displayName: 'Receiver',
+            username: 'receiver',
+          },
+        },
+      ],
+      topMessengers: [
+        {
+          messageCount: 12,
+          user: {
+            _id: 'user-1',
+            displayName: 'Alice',
+            username: 'alice',
+          },
+        },
+      ],
+    });
+  });
+
+  it('renders grouped admin workflow links', async () => {
     window.history.pushState({}, '', '/admin');
     render(<Admin />);
 
@@ -30,8 +64,8 @@ describe('<Admin />', () => {
       screen.queryByRole('link', { name: 'Team Guide' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'Search members' }),
-    ).toBeInTheDocument();
+      screen.queryByRole('heading', { name: 'Search members' }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByLabelText('Name, username or email'),
     ).toBeInTheDocument();
@@ -75,5 +109,17 @@ describe('<Admin />', () => {
       screen.queryByText('Remember to logout on public computers!'),
     ).not.toBeInTheDocument();
     expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Top 10 Messengers Last Week',
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('12 messages')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Last 5 Negative Reviews' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'sender (Sender)' }),
+    ).toHaveAttribute('href', '/admin/user?id=user-from-1');
   });
 });
