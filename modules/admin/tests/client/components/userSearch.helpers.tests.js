@@ -4,6 +4,7 @@ import {
   isExactUserMatch,
   isMongoObjectId,
   isObviousSpamUser,
+  isSuspendedUser,
   normalizeAdminQuery,
   resolveExactMemberId,
 } from '@/modules/admin/client/components/userSearch.helpers';
@@ -87,5 +88,21 @@ describe('admin user search helpers', () => {
     expect(
       getReferenceUserId({ userFrom: '222222222222222222222222' }, 'userFrom'),
     ).toBe('222222222222222222222222');
+  });
+
+  it('detects suspended users', () => {
+    expect(
+      isSuspendedUser({
+        roles: ['user', 'suspended'],
+      }),
+    ).toBe(true);
+    expect(
+      isSuspendedUser({
+        profile: {
+          roles: ['user', 'suspended'],
+        },
+      }),
+    ).toBe(true);
+    expect(isSuspendedUser({ roles: ['user', 'volunteer'] })).toBe(false);
   });
 });

@@ -6,7 +6,7 @@ import React from 'react';
 import UserLink from './UserLink.component';
 import UserState from './UserState.component';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component';
-import { formatAdminDate } from './userSearch.helpers';
+import { formatAdminDate, isSuspendedUser } from './userSearch.helpers';
 
 export default function AdminUserResultsTable({
   showLimitWarning,
@@ -35,12 +35,14 @@ export default function AdminUserResultsTable({
           <tbody>
             {userResults.map(user => {
               const { _id, created, email, emailTemporary, username } = user;
+              const showProfileLink =
+                showPublicProfileLink && !isSuspendedUser(user);
               return (
                 <tr key={_id}>
                   <td className="admin-search-users__actions">
                     <UserLink user={user} />
                     {showUserState && <UserState user={user} />}
-                    {showPublicProfileLink && (
+                    {showProfileLink && (
                       <a
                         className="admin-action"
                         href={`/profile/${username}`}
