@@ -11,7 +11,7 @@ describe('<UserLink />', () => {
     expect(screen.getByText('Unknown').tagName).toBe('EM');
   });
 
-  it('prefers display name, then username, then id for link text', () => {
+  it('prefers username, includes display name, and avoids id link text', () => {
     const { rerender } = render(
       <UserLink
         user={{
@@ -22,7 +22,7 @@ describe('<UserLink />', () => {
       />,
     );
 
-    expect(screen.getByText('Alice Example')).toHaveAttribute(
+    expect(screen.getByText('alice (Alice Example)')).toHaveAttribute(
       'href',
       '/admin/user?id=user-id-1',
     );
@@ -34,7 +34,7 @@ describe('<UserLink />', () => {
     );
 
     rerender(<UserLink user={{ _id: 'user-id-3' }} />);
-    expect(screen.getByText('user-id-3')).toHaveAttribute(
+    expect(screen.getByText('Unknown member')).toHaveAttribute(
       'href',
       '/admin/user?id=user-id-3',
     );

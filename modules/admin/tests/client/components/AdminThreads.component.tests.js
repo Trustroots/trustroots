@@ -20,11 +20,8 @@ jest.mock('@/modules/core/client/components/TimeAgo', () => {
   return MockTimeAgo;
 });
 
-const originalAlert = window.alert;
-
 afterEach(() => {
   jest.clearAllMocks();
-  window.alert = originalAlert;
   window.history.pushState({}, '', '/');
 });
 
@@ -43,22 +40,17 @@ describe('<AdminThreads />', () => {
 
     render(<AdminThreads />);
 
-    expect(screen.getByLabelText('Member ID')).toHaveValue(userId);
-    expect(screen.getByText('Press "Query"')).toBeInTheDocument();
+    expect(screen.getByLabelText('Member username or ID')).toHaveValue(userId);
+    expect(screen.queryByText('Press "Query"')).not.toBeInTheDocument();
   });
 
-  it('alerts instead of querying when a member id has the wrong length', () => {
-    window.alert = jest.fn();
+  it('uses a username from the URL as the initial query', () => {
+    window.history.pushState({}, '', '/admin/threads?username=alice');
 
     render(<AdminThreads />);
 
-    fireEvent.change(screen.getByLabelText('Member ID'), {
-      target: { value: 'short-id' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
-
-    expect(window.alert).toHaveBeenCalledWith('User ID is wrong length');
-    expect(threadsApi.getThreads).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Member username or ID')).toHaveValue('alice');
+    expect(screen.queryByText('Press "Query"')).not.toBeInTheDocument();
   });
 
   it('queries by username and renders thread state and links', async () => {
@@ -74,7 +66,7 @@ describe('<AdminThreads />', () => {
 
     render(<AdminThreads />);
 
-    fireEvent.change(screen.getByLabelText('Username'), {
+    fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Query' }));
@@ -93,6 +85,24 @@ describe('<AdminThreads />', () => {
     );
   });
 
+  it('queries by member id from the single input', async () => {
+    threadsApi.getThreads.mockResolvedValueOnce([]);
+
+    render(<AdminThreads />);
+
+    fireEvent.change(screen.getByLabelText('Member username or ID'), {
+      target: { value: userId },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
+
+    await waitFor(() =>
+      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+        userId,
+        username: '',
+      }),
+    );
+  });
+
   it('renders read threads with success state', async () => {
     threadsApi.getThreads.mockResolvedValueOnce([
       {
@@ -106,7 +116,7 @@ describe('<AdminThreads />', () => {
 
     render(<AdminThreads />);
 
-    fireEvent.change(screen.getByLabelText('Username'), {
+    fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Query' }));
@@ -119,7 +129,7 @@ describe('<AdminThreads />', () => {
 
     render(<AdminThreads />);
 
-    fireEvent.change(screen.getByLabelText('Username'), {
+    fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Query' }));
@@ -132,7 +142,7 @@ describe('<AdminThreads />', () => {
 
     render(<AdminThreads />);
 
-    fireEvent.change(screen.getByLabelText('Username'), {
+    fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Query' }));

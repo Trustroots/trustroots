@@ -3,43 +3,69 @@ import get from 'lodash/get';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getUser, setUserRole } from '../api/users.api';
+import { getUser, searchUsers, setUserRole } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminNotes from './AdminNotes';
+import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
+import AdminUserResultsTable from './AdminUserResultsTable.component';
 import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
-
-// Mongo ObjectId is always 24 chars long
-const MONGO_OBJECT_ID_LENGTH = 24;
+import {
+  SEARCH_STRING_LIMIT,
+  getReferenceUserId,
+  isExactUserMatch,
+  isMongoObjectId,
+  isObviousSpamUser,
+  normalizeAdminQuery,
+} from './userSearch.helpers';
 
 export default class AdminUser extends Component {
   constructor(props) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
     this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
-    this.onIdChange = this.onIdChange.bind(this);
+    this.onQueryChange = this.onQueryChange.bind(this);
     this.queryUser = this.queryUser.bind(this);
-    this.state = { id: '', user: false, isSettingUserRole: false };
+    this.state = {
+      hasSearched: false,
+      isSettingUserRole: false,
+      isSearching: false,
+      matchingUsers: [],
+      query: '',
+      user: false,
+    };
   }
 
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+    const query = urlParams.get('q');
 
-    if (id && id.length === MONGO_OBJECT_ID_LENGTH) {
-      this.setState({ id }, this.queryUser);
+    if (id && isMongoObjectId(id)) {
+      this.setState({ query: id }, this.queryUser);
+    } else if (query) {
+      this.setState({ query }, this.queryUser);
     }
   }
 
-  onIdChange(event) {
-    const id = event.target.value;
-    this.setState({ id });
+  onQueryChange(event) {
+    const query = event.target.value;
+    const normalizedQuery = normalizeAdminQuery(query);
+    this.setState({ query });
 
     // Update URL
     const url = new URL(document.location);
-    url.searchParams.set('id', id);
-    window.history.pushState({ id }, window.document.title, url.toString());
+    url.searchParams.delete('id');
+    url.searchParams.delete('q');
+    if (query) {
+      if (isMongoObjectId(normalizedQuery)) {
+        url.searchParams.set('id', normalizedQuery);
+      } else {
+        url.searchParams.set('q', query);
+      }
+    }
+    window.history.pushState({ query }, window.document.title, url.toString());
   }
 
   handleUserRoleChange(role) {
@@ -61,17 +87,47 @@ export default class AdminUser extends Component {
     if (event) {
       event.preventDefault();
     }
-    const { id } = this.state;
-    this.getUserById(id);
+    const query = normalizeAdminQuery(this.state.query);
+    if (query.length < SEARCH_STRING_LIMIT) {
+      return;
+    }
+
+    if (isMongoObjectId(query)) {
+      this.getUserById(query);
+      return;
+    }
+
+    this.setState(
+      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
+      async () => {
+        const matchingUsers = await searchUsers(query);
+        const exactMatch = matchingUsers.find(user =>
+          isExactUserMatch(query, user),
+        );
+
+        if (exactMatch) {
+          this.getUserById(exactMatch._id);
+          return;
+        }
+
+        this.setState({
+          isSearching: false,
+          matchingUsers: matchingUsers.filter(user => !isObviousSpamUser(user)),
+        });
+      },
+    );
   }
 
   getUserById(id) {
-    this.setState({ user: false }, async () => {
-      if (id.length === MONGO_OBJECT_ID_LENGTH) {
-        const user = await getUser(id);
-        this.setState({ user });
-      }
-    });
+    this.setState(
+      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
+      async () => {
+        if (isMongoObjectId(id)) {
+          const user = await getUser(id);
+          this.setState({ isSearching: false, user });
+        }
+      },
+    );
   }
 
   hasRole(role) {
@@ -79,8 +135,99 @@ export default class AdminUser extends Component {
   }
 
   render() {
-    const { user, isSettingUserRole } = this.state;
+    const {
+      hasSearched,
+      isSearching,
+      isSettingUserRole,
+      matchingUsers,
+      query,
+      user,
+    } = this.state;
     const isProfile = user && user.profile;
+    const hasNoMatchingUsers =
+      hasSearched && !isSearching && matchingUsers.length === 0;
+    const userId = get(user, ['profile', '_id']);
+    const profileLabel = isProfile
+      ? user.profile.username || user.profile.displayName || 'Unknown member'
+      : '';
+    const profileRows = isProfile
+      ? [
+          ['Display name', user.profile.displayName],
+          [
+            'Username',
+            user.profile.username && (
+              <a href={`/profile/${user.profile.username}`}>
+                {user.profile.username}
+              </a>
+            ),
+          ],
+          ['Email', user.profile.email],
+          ['Temporary email', user.profile.emailTemporary],
+          [
+            'Roles',
+            user.profile.roles && user.profile.roles.length
+              ? user.profile.roles.join(', ')
+              : null,
+          ],
+          ['Profile visible', user.profile.public ? 'Yes' : 'No'],
+          [
+            'Signed up',
+            user.profile.created &&
+              new Date(user.profile.created).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              }),
+          ],
+        ].filter(([, value]) => value)
+      : [];
+    const threadReferences =
+      user && user.threadReferences ? user.threadReferences : [];
+    const threadVoteGroups = isProfile
+      ? [
+          {
+            id: 'thread-votes-received-positive',
+            label: 'Positive votes received',
+            reference: 'yes',
+            votes: threadReferences.filter(
+              referenceThread =>
+                getReferenceUserId(referenceThread, 'userTo') === userId &&
+                referenceThread.reference === 'yes',
+            ),
+          },
+          {
+            id: 'thread-votes-received-negative',
+            label: 'Negative votes received',
+            reference: 'no',
+            votes: threadReferences.filter(
+              referenceThread =>
+                getReferenceUserId(referenceThread, 'userTo') === userId &&
+                referenceThread.reference === 'no',
+            ),
+          },
+          {
+            id: 'thread-votes-gave-positive',
+            label: 'Positive votes gave',
+            reference: 'yes',
+            votes: threadReferences.filter(
+              referenceThread =>
+                getReferenceUserId(referenceThread, 'userFrom') === userId &&
+                referenceThread.reference === 'yes',
+            ),
+          },
+          {
+            id: 'thread-votes-gave-negative',
+            label: 'Negative votes gave',
+            reference: 'no',
+            votes: threadReferences.filter(
+              referenceThread =>
+                getReferenceUserId(referenceThread, 'userFrom') === userId &&
+                referenceThread.reference === 'no',
+            ),
+          },
+        ]
+      : [];
+    const hasThreadVotes = threadVoteGroups.some(({ votes }) => votes.length);
 
     return (
       <>
@@ -90,38 +237,49 @@ export default class AdminUser extends Component {
 
           <form onSubmit={this.queryUser} className="form-inline">
             <label>
-              Member ID
+              Member username, email or ID
               <br />
               <input
                 className="form-control input-lg"
-                onChange={this.onIdChange}
-                size={MONGO_OBJECT_ID_LENGTH + 2}
-                maxLength={MONGO_OBJECT_ID_LENGTH}
-                type="text"
-                value={this.state.id}
+                onChange={this.onQueryChange}
+                size={32}
+                type="search"
+                value={query}
               />
             </label>
             <button
               className="btn btn-lg btn-default"
-              disabled={this.state.id.length !== MONGO_OBJECT_ID_LENGTH}
+              disabled={query.trim().length < SEARCH_STRING_LIMIT}
               type="submit"
             >
               Show
             </button>
           </form>
 
+          {!isProfile && <AdminUserResultsTable userResults={matchingUsers} />}
+
+          {!isProfile && hasNoMatchingUsers && (
+            <p>
+              <br />
+              <em className="text-muted">No matching members found.</em>
+            </p>
+          )}
+
           {isProfile && (
             <>
               <h3 className="pull-left">
-                <strong>
-                  {user.profile.displayName ||
-                    user.profile.username ||
-                    user.profile._id}
-                </strong>{' '}
-                report card
+                <strong>{profileLabel}</strong> report card
               </h3>
 
               <div className="btn-group">
+                {user.profile.username && (
+                  <a
+                    className="btn btn-default"
+                    href={`/profile/${user.profile.username}`}
+                  >
+                    Public profile
+                  </a>
+                )}
                 {[
                   {
                     role: 'suspended',
@@ -132,11 +290,6 @@ export default class AdminUser extends Component {
                     role: 'shadowban',
                     color: 'danger',
                     label: 'Shadow ban',
-                  },
-                  {
-                    role: 'moderator',
-                    color: 'success',
-                    label: 'Make moderator',
                   },
                   {
                     role: 'volunteer',
@@ -187,22 +340,42 @@ export default class AdminUser extends Component {
                     <li>
                       <strong>Thread votes received</strong>
                     </li>
-                    <li className="text-success">
-                      {user.threadReferencesReceivedYes} positive
+                    <li>
+                      <a
+                        className="text-success"
+                        href="#thread-votes-received-positive"
+                      >
+                        {user.threadReferencesReceivedYes} positive
+                      </a>
                     </li>
-                    <li className="text-danger">
-                      {user.threadReferencesReceivedNo} negative
+                    <li>
+                      <a
+                        className="text-danger"
+                        href="#thread-votes-received-negative"
+                      >
+                        {user.threadReferencesReceivedNo} negative
+                      </a>
                     </li>
                   </ul>
                   <ul className="list-inline">
                     <li>
                       <strong>Thread votes gave</strong>
                     </li>
-                    <li className="text-success">
-                      {user.threadReferencesSentYes} positive
+                    <li>
+                      <a
+                        className="text-success"
+                        href="#thread-votes-gave-positive"
+                      >
+                        {user.threadReferencesSentYes} positive
+                      </a>
                     </li>
-                    <li className="text-danger">
-                      {user.threadReferencesSentNo} negative
+                    <li>
+                      <a
+                        className="text-danger"
+                        href="#thread-votes-gave-negative"
+                      >
+                        {user.threadReferencesSentNo} negative
+                      </a>
                     </li>
                   </ul>
                   <p>
@@ -217,7 +390,40 @@ export default class AdminUser extends Component {
                 </div>
               </div>
 
-              <AdminNotes id={this.state.id} />
+              {hasThreadVotes && (
+                <>
+                  <h4 id="thread-votes">
+                    Thread votes
+                    <a href="#thread-votes" className="btn btn-link">
+                      #
+                    </a>
+                  </h4>
+                  <div className="panel panel-default">
+                    <div className="panel-body">
+                      {threadVoteGroups.map(
+                        ({ id, label, votes }) =>
+                          votes.length > 0 && (
+                            <section id={id} key={id}>
+                              <h5>{label}</h5>
+                              <ul className="list-unstyled">
+                                {votes.map(referenceThread => (
+                                  <AdminReferenceVoteItem
+                                    key={referenceThread._id}
+                                    referenceThread={referenceThread}
+                                    showBadge
+                                    showMessagesLink
+                                  />
+                                ))}
+                              </ul>
+                            </section>
+                          ),
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <AdminNotes id={userId} />
 
               <h4 id="profile">
                 Profile
@@ -227,7 +433,20 @@ export default class AdminUser extends Component {
               </h4>
               <div className="panel panel-default">
                 <div className="panel-body">
-                  <Json content={user.profile} />
+                  <table className="table table-condensed">
+                    <tbody>
+                      {profileRows.map(([label, value]) => (
+                        <tr key={label}>
+                          <th>{label}</th>
+                          <td>{value}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <details>
+                    <summary>Raw profile data</summary>
+                    <Json content={user.profile} />
+                  </details>
                 </div>
               </div>
             </>

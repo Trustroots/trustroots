@@ -8,11 +8,11 @@ export default function UserLink({ user }) {
   }
 
   const { _id, displayName, username } = user;
-  return (
-    <a href={`/admin/user?id=${_id}`} title="Show user report card">
-      {displayName || username || _id}
-    </a>
-  );
+  const label =
+    username && displayName
+      ? `${username} (${displayName})`
+      : username || displayName || 'Unknown member';
+  return <a href={`/admin/user?id=${_id}`}>{label}</a>;
 }
 
 UserLink.propTypes = {
