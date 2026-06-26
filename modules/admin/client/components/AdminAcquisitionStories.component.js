@@ -5,8 +5,20 @@ import React, { useState, useEffect } from 'react';
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
 import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
-import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+
+function formatDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 10);
+}
 
 export default function AdminAcquisitionStories() {
   const [stories, setStories] = useState([]);
@@ -37,23 +49,27 @@ export default function AdminAcquisitionStories() {
           <table className="table table-condensed table-striped admin-acquisition-stories-table">
             <thead>
               <tr>
+                <th>Date</th>
+                <th>Username</th>
                 <th>Story</th>
-                <th>Created</th>
-                <th>Member</th>
               </tr>
             </thead>
             <tbody>
               {stories.map((story, index) => (
                 <tr key={story._id} id={`acquisition-story-${index + 1}`}>
-                  <td>{story.acquisitionStory}</td>
                   <td>
                     <a href={`#acquisition-story-${index + 1}`}>
-                      <time className="text-muted">{story.created}</time>
+                      <time className="text-muted">
+                        {formatDate(story.created)}
+                      </time>
                     </a>
                   </td>
                   <td>
-                    <UserLink user={story} />
+                    <a href={`/admin/user?id=${story._id}`}>
+                      {story.username || story.displayName || 'Unknown member'}
+                    </a>
                   </td>
+                  <td>{story.acquisitionStory}</td>
                 </tr>
               ))}
             </tbody>
