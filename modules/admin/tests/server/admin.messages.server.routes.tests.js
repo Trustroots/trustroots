@@ -1,6 +1,7 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
+const ReferenceThread = mongoose.model('ReferenceThread');
 const User = mongoose.model('User');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -91,6 +92,7 @@ describe('Admin Message CRUD tests', () => {
 
       const message1 = new Message({
         content: 'test',
+        created: new Date('2026-06-01T10:00:00.000Z'),
         notificationCount: 0,
         userFrom: userRegular1Id,
         userTo: userRegular2Id,
@@ -98,6 +100,7 @@ describe('Admin Message CRUD tests', () => {
 
       const message2 = new Message({
         content: 'test',
+        created: new Date('2026-06-01T10:01:00.000Z'),
         notificationCount: 0,
         userFrom: userRegular2Id,
         userTo: userRegular1Id,
@@ -105,6 +108,13 @@ describe('Admin Message CRUD tests', () => {
 
       await message1.save();
       await message2.save();
+
+      await new ReferenceThread({
+        reference: 'yes',
+        thread: new mongoose.Types.ObjectId(),
+        userFrom: userRegular1Id,
+        userTo: userRegular2Id,
+      }).save();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.error(err);
@@ -161,9 +171,21 @@ describe('Admin Message CRUD tests', () => {
             .send({ user1: userRegular1Id, user2: userRegular2Id })
             .expect(200)
             .end((err, res) => {
-              res.body.length.should.equal(2);
-              res.body[0].userFrom.username.should.equal('user-regular1');
-              res.body[0].userTo.username.should.equal('user-regular2');
+              res.body.messages.length.should.equal(2);
+              res.body.messages[0].userFrom.username.should.equal(
+                'user-regular1',
+              );
+              res.body.messages[0].userTo.username.should.equal(
+                'user-regular2',
+              );
+              res.body.referenceThreads.length.should.equal(1);
+              res.body.referenceThreads[0].reference.should.equal('yes');
+              res.body.referenceThreads[0].userFrom.username.should.equal(
+                'user-regular1',
+              );
+              res.body.referenceThreads[0].userTo.username.should.equal(
+                'user-regular2',
+              );
               return done(err);
             });
         });

@@ -618,14 +618,14 @@ function classifyPermission(user, profile) {
   const isOwnProfile = user._id.equals(profile._id);
   const isBannedProfile =
     profile.roles.includes('suspended') || profile.roles.includes('shadowban');
-  const isAdminOrModerator =
-    user.roles.includes('moderator') || user.roles.includes('admin');
+  // Only full admins may view banned profiles; moderators no longer have this access.
+  const isAdmin = user.roles.includes('admin');
   const isBlocked = !!profile.blocked && profile.blocked.indexOf(user._id) >= 0;
   const hasBlocked = !!user.blocked && user.blocked.indexOf(profile._id) >= 0;
   return {
     isOwnProfile,
     isBannedProfile,
-    isAdminOrModerator,
+    isAdmin,
     isBlocked,
     hasBlocked,
   };
@@ -672,16 +672,11 @@ exports.userMiniByID = function (req, res, next, userId) {
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
-    const {
-      isAdminOrModerator,
-      isOwnProfile,
-      isBannedProfile,
-      isBlocked,
-      hasBlocked,
-    } = classifyPermission(req.user, profile);
+    const { isAdmin, isOwnProfile, isBannedProfile, isBlocked, hasBlocked } =
+      classifyPermission(req.user, profile);
     // Not own profile, and not public, or suspended, or shadowbanned user
     if (
-      !isAdminOrModerator &&
+      !isAdmin &&
       !isOwnProfile &&
       (!profile.public || isBannedProfile || isBlocked || hasBlocked)
     ) {
@@ -744,16 +739,12 @@ exports.userByUsername = function (req, res, next, username) {
               });
             }
 
-            const {
-              isAdminOrModerator,
-              isOwnProfile,
-              isBannedProfile,
-              isBlocked,
-            } = classifyPermission(req.user, profile);
+            const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
+              classifyPermission(req.user, profile);
 
             // Not own profile, and not public, or suspended, or shadowbanned user
             if (
-              !isAdminOrModerator &&
+              !isAdmin &&
               !isOwnProfile &&
               (!profile.public || isBannedProfile || isBlocked)
             ) {

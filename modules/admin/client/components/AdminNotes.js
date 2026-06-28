@@ -49,10 +49,7 @@ export default function AdminNotes({ id }) {
   return (
     <>
       <h4 id="notes">
-        Admin notes about user
-        <a href="#notes" className="btn btn-link">
-          #
-        </a>
+        <a href="#notes">Admin notes about user</a>
       </h4>
       <div className="panel panel-default admin-notes">
         <div className="panel-body">

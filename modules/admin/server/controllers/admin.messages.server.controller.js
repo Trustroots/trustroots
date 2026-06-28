@@ -5,6 +5,7 @@ const _ = require('lodash');
 const errorService = require('../../../core/server/services/error.server.service');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
+const ReferenceThread = mongoose.model('ReferenceThread');
 const MessagesController = require('../../../messages/server/controllers/messages.server.controller.js');
 
 /*
@@ -49,6 +50,34 @@ exports.getMessages = (req, res) => {
         });
       }
 
-      return res.send(MessagesController.sanitizeMessages(messages));
+      ReferenceThread.find({
+        $or: [
+          { userFrom: user1, userTo: user2 },
+          { userFrom: user2, userTo: user1 },
+        ],
+      })
+        .sort({ created: 1 })
+        .populate({
+          path: 'userFrom',
+          select: 'username displayName',
+          model: 'User',
+        })
+        .populate({
+          path: 'userTo',
+          select: 'username displayName',
+          model: 'User',
+        })
+        .exec((referenceThreadErr, referenceThreads) => {
+          if (referenceThreadErr) {
+            return res.status(400).send({
+              message: errorService.getErrorMessage(referenceThreadErr),
+            });
+          }
+
+          return res.send({
+            messages: MessagesController.sanitizeMessages(messages),
+            referenceThreads: referenceThreads || [],
+          });
+        });
     });
 };

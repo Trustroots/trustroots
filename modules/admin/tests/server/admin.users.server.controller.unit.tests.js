@@ -143,6 +143,14 @@ describe('Admin users controller unit tests', () => {
       res.body.message.should.equal('Invalid role.');
     });
 
+    it('rejects the legacy moderator role', async () => {
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'moderator' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
     it('returns users with the requested role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
@@ -160,7 +168,9 @@ describe('Admin users controller unit tests', () => {
       sinon.stub(User, 'find').returns({
         select: () => ({
           sort: () => ({
-            exec: cb => cb(new Error('role lookup failed')),
+            limit: () => ({
+              exec: cb => cb(new Error('role lookup failed')),
+            }),
           }),
         }),
       });
@@ -298,6 +308,22 @@ describe('Admin users controller unit tests', () => {
       await adminUsers.changeRole(
         {
           body: { id: users[0]._id.toString(), role: 'admin' },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
+    it('rejects the legacy moderator role', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: { id: users[0]._id.toString(), role: 'moderator' },
           user: users[0],
         },
         res,

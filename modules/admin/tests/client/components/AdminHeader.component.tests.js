@@ -14,7 +14,7 @@ describe('<AdminHeader />', () => {
 
     render(<AdminHeader />);
 
-    expect(screen.getByLabelText('Admin dash index')).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
       'href',
       '/admin',
     );
@@ -34,5 +34,19 @@ describe('<AdminHeader />', () => {
     expect(
       screen.getByRole('link', { name: 'Acquisition stories' }).closest('li'),
     ).toHaveClass('active');
+  });
+
+  it('focuses the first available admin input', () => {
+    render(
+      <>
+        <AdminHeader />
+        <main className="container">
+          <input aria-label="First field" />
+          <input aria-label="Second field" />
+        </main>
+      </>,
+    );
+
+    expect(screen.getByLabelText('First field')).toHaveFocus();
   });
 });

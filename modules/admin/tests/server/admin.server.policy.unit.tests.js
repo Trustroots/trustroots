@@ -49,6 +49,9 @@ describe('Admin policy unit tests', () => {
       .should.containEql('/api/admin/acquisition-stories');
     policies[0].allows
       .map(allow => allow.resources)
+      .should.containEql('/api/admin/dashboard');
+    policies[0].allows
+      .map(allow => allow.resources)
       .should.containEql('/api/admin/reference-threads');
   });
 

@@ -79,6 +79,13 @@ function loadController(options = {}) {
 }
 
 describe('Support controller unit tests', () => {
+  const build = {
+    committedAt: '2026-06-21 18:06',
+    commitUrl:
+      'https://github.com/Trustroots/trustroots/commit/7a1d63965692fdb3361d3fd9ad1a6a17fb391b92',
+    shortCommit: '7a1d639',
+  };
+
   it('sends a guest support request and records normal guest stats', async () => {
     const harness = loadController();
     const res = mockResponse();
@@ -125,6 +132,35 @@ describe('Support controller unit tests', () => {
       authenticated: 'no',
       type: 'normal',
     });
+  });
+
+  it('adds build metadata to the support email data', async () => {
+    const harness = loadController();
+    const res = mockResponse();
+
+    harness.controller.supportRequest(
+      {
+        app: {
+          locals: {
+            appSettings: {
+              build,
+            },
+          },
+        },
+        body: {
+          message: 'Need help',
+          email: 'guest@example.com',
+          username: 'guest',
+        },
+        headers: { 'user-agent': 'TestAgent' },
+      },
+      res,
+    );
+
+    await res.waitForResponse();
+
+    const supportRequestData = harness.sendSupportRequest.firstCall.args[1];
+    supportRequestData.build.should.deepEqual(build);
   });
 
   it('falls back to support email for invalid guest reply-to addresses', async () => {

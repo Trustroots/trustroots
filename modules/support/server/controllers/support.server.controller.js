@@ -14,6 +14,12 @@ const validator = require('validator');
  * Send support request to our support systems
  */
 exports.supportRequest = function (req, res) {
+  const build =
+    req.app &&
+    req.app.locals &&
+    req.app.locals.appSettings &&
+    req.app.locals.appSettings.build;
+
   // Prepare support request variables for the email template
   const supportRequestData = {
     /* eslint-disable key-spacing */
@@ -36,6 +42,7 @@ exports.supportRequest = function (req, res) {
     reportMember: req.body.reportMember
       ? textService.plainText(req.body.reportMember)
       : false,
+    build: build || false,
     /* eslint-enable key-spacing */
   };
 
