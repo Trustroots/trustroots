@@ -3,6 +3,8 @@
  */
 const mongoose = require('mongoose');
 
+const errorService = require('../../../core/server/services/error.server.service');
+
 const Message = mongoose.model('Message');
 const ReferenceThread = mongoose.model('ReferenceThread');
 const User = mongoose.model('User');
@@ -66,13 +68,19 @@ async function getNegativeReviews() {
 }
 
 exports.getDashboard = async (req, res) => {
-  const [topMessengers, negativeReviews] = await Promise.all([
-    getTopMessengers(),
-    getNegativeReviews(),
-  ]);
+  try {
+    const [topMessengers, negativeReviews] = await Promise.all([
+      getTopMessengers(),
+      getNegativeReviews(),
+    ]);
 
-  res.send({
-    negativeReviews,
-    topMessengers,
-  });
+    res.send({
+      negativeReviews,
+      topMessengers,
+    });
+  } catch (err) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err),
+    });
+  }
 };

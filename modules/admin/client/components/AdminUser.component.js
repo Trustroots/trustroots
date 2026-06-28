@@ -43,6 +43,14 @@ function formatLocation(location) {
   return `${location[1]}, ${location[0]}`;
 }
 
+function formatLocationForSearch(location) {
+  if (!Array.isArray(location) || location.length < 2) {
+    return null;
+  }
+
+  return `${location[1]},${location[0]}`;
+}
+
 function getUserId(user) {
   return get(user, ['_id']) || user;
 }
@@ -549,7 +557,7 @@ export default class AdminUser extends Component {
                           </a>
                           {formatLocation(offer.location) && (
                             <a
-                              href={`/search?location=${formatLocation(
+                              href={`/search?location=${formatLocationForSearch(
                                 offer.location,
                               )}`}
                               className="btn btn-sm btn-default"
