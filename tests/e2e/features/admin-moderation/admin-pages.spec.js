@@ -41,7 +41,10 @@ test.describe('admin moderation page flows', () => {
     await gotoAdminPage(page, '/admin', /\/admin$/);
 
     await expect(page).toHaveTitle(/Admin - Trustroots/);
-    await expect(page.getByText(/welcome, friend!/i)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Admin Dashboard' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Name, username or email')).toBeVisible();
 
     const footer = page.locator('#tr-footer');
     await expect(footer).toBeVisible();
