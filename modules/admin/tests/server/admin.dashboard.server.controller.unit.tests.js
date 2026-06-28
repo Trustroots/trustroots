@@ -14,6 +14,10 @@ function mockResponse() {
     resolveResponse = resolve;
   });
   const res = { statusCode: 200, body: null };
+  res.status = code => {
+    res.statusCode = code;
+    return res;
+  };
   res.send = body => {
     res.body = body;
     resolveResponse(res);
@@ -73,5 +77,18 @@ describe('Admin dashboard controller unit tests', () => {
         },
       ],
     });
+  });
+
+  it('returns an error response when dashboard queries fail', async () => {
+    sinon.stub(Message, 'aggregate').returns({
+      exec: () => Promise.reject(new Error('db failed')),
+    });
+
+    const res = mockResponse();
+    adminDashboard.getDashboard({}, res);
+    const response = await res.waitForResponse();
+
+    response.statusCode.should.equal(400);
+    response.body.message.should.equal('db failed');
   });
 });

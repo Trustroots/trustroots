@@ -54,6 +54,7 @@ const MessageSchema = new Schema({
 });
 
 MessageSchema.index({ read: 1, created: 1, notificationSent: 1 });
+MessageSchema.index({ created: -1, userFrom: 1 });
 
 MessageSchema.plugin(mongoosePaginate);
 

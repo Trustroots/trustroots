@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
 import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
+import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
 function formatDate(value) {
@@ -65,9 +66,13 @@ export default function AdminAcquisitionStories() {
                     </a>
                   </td>
                   <td>
-                    <a href={`/admin/user?id=${story._id}`}>
-                      {story.username || story.displayName || 'Unknown member'}
-                    </a>
+                    <UserLink
+                      user={{
+                        _id: story._id,
+                        displayName: story.displayName,
+                        username: story.username,
+                      }}
+                    />
                   </td>
                   <td>{story.acquisitionStory}</td>
                 </tr>

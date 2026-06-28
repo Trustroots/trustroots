@@ -40,5 +40,6 @@ const ReferenceThreadSchema = new Schema({
  * Indexing
  */
 ReferenceThreadSchema.index({ userFrom: 1, userTo: 1 });
+ReferenceThreadSchema.index({ reference: 1, created: -1 });
 
 mongoose.model('ReferenceThread', ReferenceThreadSchema);

@@ -618,6 +618,7 @@ function classifyPermission(user, profile) {
   const isOwnProfile = user._id.equals(profile._id);
   const isBannedProfile =
     profile.roles.includes('suspended') || profile.roles.includes('shadowban');
+  // Only full admins may view banned profiles; moderators no longer have this access.
   const isAdmin = user.roles.includes('admin');
   const isBlocked = !!profile.blocked && profile.blocked.indexOf(user._id) >= 0;
   const hasBlocked = !!user.blocked && user.blocked.indexOf(profile._id) >= 0;

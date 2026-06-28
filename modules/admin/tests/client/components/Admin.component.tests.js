@@ -122,4 +122,16 @@ describe('<Admin />', () => {
       screen.getByRole('link', { name: 'sender (Sender)' }),
     ).toHaveAttribute('href', '/admin/user?id=user-from-1');
   });
+
+  it('shows an error when dashboard activity cannot be loaded', async () => {
+    dashboardApi.getAdminDashboard.mockRejectedValueOnce(new Error('failed'));
+
+    render(<Admin />);
+
+    expect(
+      await screen.findByText('Could not load dashboard activity.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('No messages last week.')).toBeInTheDocument();
+    expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
+  });
 });

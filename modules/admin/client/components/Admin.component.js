@@ -109,6 +109,7 @@ export default function Admin() {
     topMessengers: [],
   });
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -122,6 +123,11 @@ export default function Admin() {
             negativeReviews: data.negativeReviews || [],
             topMessengers: data.topMessengers || [],
           });
+          setDashboardError(null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setDashboardError('Could not load dashboard activity.');
         }
       } finally {
         if (isMounted) {
@@ -154,6 +160,11 @@ export default function Admin() {
         </div>
 
         <div className="row admin-dashboard-boxes">
+          {dashboardError && (
+            <div className="col-sm-12">
+              <p className="text-danger">{dashboardError}</p>
+            </div>
+          )}
           <div className="col-sm-6">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">

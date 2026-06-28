@@ -95,6 +95,12 @@ const makeReportCard = overrides => ({
   ...overrides,
 });
 
+function submitMemberSearch(value) {
+  const input = screen.getByLabelText('Member username, email or ID');
+  fireEvent.change(input, { target: { value } });
+  fireEvent.submit(input.closest('form'));
+}
+
 describe('<AdminUser />', () => {
   it('handles role helpers safely before a profile has loaded', () => {
     const component = new AdminUser({});
@@ -163,7 +169,7 @@ describe('<AdminUser />', () => {
       userId,
     );
     expect(
-      await screen.findByRole('heading', { name: 'alice report card' }),
+      await screen.findByRole('heading', { name: 'alice' }),
     ).toBeInTheDocument();
     expect(usersApi.getUser).toHaveBeenCalledWith(userId);
     expect(screen.getByText('State for alice')).toBeInTheDocument();
@@ -179,7 +185,7 @@ describe('<AdminUser />', () => {
       'href',
       '/profile/alice',
     );
-    expect(screen.getByText('Raw profile data')).toBeInTheDocument();
+    expect(screen.getByText('raw data')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: '5 threads total' }),
     ).toHaveAttribute('href', `/admin/threads?userId=${userId}`);
@@ -241,7 +247,7 @@ describe('<AdminUser />', () => {
     render(<AdminUser />);
 
     expect(
-      await screen.findByRole('heading', { name: 'alice report card' }),
+      await screen.findByRole('heading', { name: 'alice' }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: 'Public profile' }),
@@ -263,18 +269,13 @@ describe('<AdminUser />', () => {
     render(<AdminUser />);
 
     const input = screen.getByLabelText('Member username, email or ID');
-    const showButton = screen.getByRole('button', { name: 'Show' });
-
-    expect(showButton).toBeDisabled();
 
     fireEvent.change(input, { target: { value: 'short-id' } });
 
     expect(window.location.search).toBe('?q=short-id');
-    expect(showButton).toBeEnabled();
     expect(usersApi.getUser).not.toHaveBeenCalled();
 
-    fireEvent.change(input, { target: { value: userId } });
-    fireEvent.click(showButton);
+    submitMemberSearch(userId);
 
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
   });
@@ -303,17 +304,14 @@ describe('<AdminUser />', () => {
 
     render(<AdminUser />);
 
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: 'alice' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch('alice');
 
     await waitFor(() =>
       expect(usersApi.searchUsers).toHaveBeenCalledWith('alice'),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
-      await screen.findByRole('heading', { name: 'alice report card' }),
+      await screen.findByRole('heading', { name: 'alice' }),
     ).toBeInTheDocument();
   });
 
@@ -330,17 +328,14 @@ describe('<AdminUser />', () => {
 
     render(<AdminUser />);
 
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: 'ALICE@EXAMPLE.ORG' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch('ALICE@EXAMPLE.ORG');
 
     await waitFor(() =>
       expect(usersApi.searchUsers).toHaveBeenCalledWith('ALICE@EXAMPLE.ORG'),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
-      await screen.findByRole('heading', { name: 'alice report card' }),
+      await screen.findByRole('heading', { name: 'alice' }),
     ).toBeInTheDocument();
   });
 
@@ -368,10 +363,7 @@ describe('<AdminUser />', () => {
 
     render(<AdminUser />);
 
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: 'alice' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch('alice');
 
     expect(
       await screen.findByText('alice-similar (Alice Similar)'),
@@ -392,10 +384,7 @@ describe('<AdminUser />', () => {
 
     render(<AdminUser />);
 
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: 'missing' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch('missing');
 
     expect(
       await screen.findByText('No matching members found.'),
@@ -429,13 +418,10 @@ describe('<AdminUser />', () => {
 
     const { rerender } = render(<AdminUser />);
 
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: userId },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch(userId);
 
     expect(
-      await screen.findByRole('heading', { name: 'alice report card' }),
+      await screen.findByRole('heading', { name: 'alice' }),
     ).toBeInTheDocument();
     expect(screen.getByText('0 sent')).toBeInTheDocument();
     expect(screen.getByText('0 received')).toBeInTheDocument();
@@ -444,15 +430,12 @@ describe('<AdminUser />', () => {
     ).toHaveAttribute('href', `/admin/threads?userId=${userId}`);
 
     rerender(<AdminUser />);
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: userId },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch(userId);
 
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
     expect(
       await screen.findByRole('heading', {
-        name: 'Unknown member report card',
+        name: 'Unknown member',
       }),
     ).toBeInTheDocument();
   });
@@ -474,12 +457,9 @@ describe('<AdminUser />', () => {
 
     render(<AdminUser />);
 
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: userId },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'alice report card' });
+    await screen.findByRole('heading', { name: 'alice' });
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     expect(window.confirm).toHaveBeenCalledWith('Set alice role to suspended?');
@@ -505,12 +485,9 @@ describe('<AdminUser />', () => {
 
     render(<AdminUser />);
 
-    fireEvent.change(screen.getByLabelText('Member username, email or ID'), {
-      target: { value: userId },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Show' }));
+    submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'alice report card' });
+    await screen.findByRole('heading', { name: 'alice' });
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     expect(usersApi.setUserRole).not.toHaveBeenCalled();
