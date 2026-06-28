@@ -92,6 +92,7 @@ describe('Admin Message CRUD tests', () => {
 
       const message1 = new Message({
         content: 'test',
+        created: new Date('2026-06-01T10:00:00.000Z'),
         notificationCount: 0,
         userFrom: userRegular1Id,
         userTo: userRegular2Id,
@@ -99,6 +100,7 @@ describe('Admin Message CRUD tests', () => {
 
       const message2 = new Message({
         content: 'test',
+        created: new Date('2026-06-01T10:01:00.000Z'),
         notificationCount: 0,
         userFrom: userRegular2Id,
         userTo: userRegular1Id,

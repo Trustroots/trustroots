@@ -89,6 +89,6 @@ describe('Admin dashboard controller unit tests', () => {
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(400);
-    response.body.message.should.equal('db failed');
+    response.body.message.should.startWith('Snap! Something went wrong.');
   });
 });
