@@ -200,6 +200,28 @@ describe('Core CRUD tests', function () {
     });
   });
 
+  describe('Frontend app root selection', function () {
+    it('renders React assets and root for React-owned pages', function (done) {
+      agent.get('/support').end(function (err, res) {
+        should.not.exist(err);
+        res.text.should.containEql('id="tr-react-root"');
+        res.text.should.containEql('assets/react-main.js');
+
+        return done();
+      });
+    });
+
+    it('keeps rendering Angular assets and root for Angular-owned pages', function (done) {
+      agent.get('/profile/alice').end(function (err, res) {
+        should.not.exist(err);
+        res.text.should.containEql('data-ui-view');
+        res.text.should.containEql('assets/main.js');
+
+        return done();
+      });
+    });
+  });
+
   describe('Legacy redirect routes', function () {
     afterEach(utils.clearDatabase);
 

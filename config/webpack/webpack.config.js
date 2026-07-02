@@ -53,7 +53,10 @@ const styleLoaders = [
 module.exports = webpackMerge.merge(shims, {
   mode: isProduction ? 'production' : 'development',
   devtool: isProduction ? 'source-map' : 'cheap-module-eval-source-map',
-  entry: require.resolve('./entries/main'),
+  entry: {
+    main: require.resolve('./entries/main'),
+    'react-main': require.resolve('./entries/react-main'),
+  },
   output: {
     path: join(basedir, 'public/assets'),
     publicPath: '/assets/',
@@ -158,7 +161,7 @@ module.exports = webpackMerge.merge(shims, {
       new BundleAnalyzerPlugin(config.bundleAnalyzer.options),
     isProduction &&
       new MiniCssExtractPlugin({
-        filename: 'main.css',
+        filename: '[name].css',
       }),
     // @TODO: run RTL also on inlined CSS?
     isProduction &&

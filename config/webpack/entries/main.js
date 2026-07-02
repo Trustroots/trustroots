@@ -3,7 +3,9 @@
  *
  */
 
+/* global document, window */
 import angular from 'angular';
+import { isReactOwnedPath } from '@/modules/core/shared/react-route-ownership';
 
 import '@/modules/core/client/app/init';
 
@@ -36,6 +38,32 @@ importAll(require.context('../../../modules/', true, /\.less$/));
 function importAll(r) {
   r.keys().forEach(r);
 }
+
+document.addEventListener('click', event => {
+  if (
+    event.defaultPrevented ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey
+  ) {
+    return;
+  }
+
+  const link = event.target.closest && event.target.closest('a[href]');
+
+  if (
+    !link ||
+    link.target ||
+    link.download ||
+    link.origin !== window.location.origin ||
+    !isReactOwnedPath(link.pathname)
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  window.location.href = link.href;
+});
 
 /*
  *  Imports all react components from modules/ and register them as angular components

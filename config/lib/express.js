@@ -72,9 +72,13 @@ module.exports.initLocalVariables = function (app) {
   ) {
     app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = ['assets/main.css'];
+    app.locals.reactJsFiles = ['assets/react-main.js'];
+    app.locals.reactCssFiles = ['assets/react-main.css'];
   } else {
     app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = []; // style is bundled with javascript
+    app.locals.reactJsFiles = ['assets/react-main.js'];
+    app.locals.reactCssFiles = []; // style is bundled with javascript
   }
 
   // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
