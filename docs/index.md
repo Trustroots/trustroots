@@ -1,5 +1,12 @@
 ---
 title: Trustroots Team Guide
+redirect_from:
+  - /Volunteering
+  - /Volunteering/
+  - /Volunteering.html
+  - /volunteering
+  - /volunteering/
+  - /volunteering.html
 ---
 
 ## Volunteer
