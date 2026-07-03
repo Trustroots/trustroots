@@ -6,6 +6,7 @@ const path = require('path');
 require('should');
 
 const {
+  AREA_BY_SPEC,
   DEFINED_AREAS,
   areaForSpec,
   computeAreaCoverage,
@@ -65,6 +66,26 @@ function manifest(features) {
 
 describe('E2E coverage reporter unit tests', () => {
   describe('areaForSpec', () => {
+    function featureSpecFiles(dir = path.resolve('tests/e2e/features')) {
+      return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+        const entryPath = path.join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+          return featureSpecFiles(entryPath);
+        }
+
+        return entry.name.endsWith('.spec.js') ? [entryPath] : [];
+      });
+    }
+
+    it('maps every current feature spec to a named area', () => {
+      const unmappedSpecs = featureSpecFiles().filter(
+        specPath => !AREA_BY_SPEC[path.basename(specPath)],
+      );
+
+      unmappedSpecs.should.deepEqual([]);
+    });
+
     it('maps rendered search map specs to a defined area', () => {
       areaForSpec(
         '/repo/tests/e2e/features/search-offers-circles/search-map-rendered.spec.js',

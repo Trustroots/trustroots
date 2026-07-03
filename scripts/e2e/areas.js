@@ -3,6 +3,8 @@ const path = require('path');
 const AREA_BY_SPEC = {
   'auth-smoke.spec.js': 'Authentication',
   'account-lifecycle.spec.js': 'Authentication',
+  'account-email-tokens.spec.js': 'Authentication',
+  'account-settings.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
   'member.spec.js': 'Member flows',
   'contacts-and-blocks.spec.js': 'Member flows',
@@ -18,6 +20,14 @@ const AREA_BY_SPEC = {
   'experience-actions.spec.js': 'Experiences',
   'admin.spec.js': 'Admin',
   'admin-actions.spec.js': 'Admin',
+  'admin-acquisition.spec.js': 'Admin',
+  'admin-inspection.spec.js': 'Admin',
+  'admin-newsletter-api.spec.js': 'Admin',
+  'admin-notes.spec.js': 'Admin',
+  'admin-pages.spec.js': 'Admin',
+  'admin-reference-errors.spec.js': 'Admin',
+  'admin-role-audit.spec.js': 'Admin',
+  'admin-search.spec.js': 'Admin',
   'auth.setup.js': 'Setup',
 };
 
