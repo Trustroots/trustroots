@@ -1102,6 +1102,16 @@ function renderReportShell(metadata, initialLanes) {
         color: var(--text);
         text-decoration: none;
       }
+      .artifact-list .artifact {
+        white-space: nowrap;
+      }
+      .feature-list {
+        margin: 8px 0 0;
+        padding-left: 1.1rem;
+      }
+      .feature-list li {
+        margin-bottom: 4px;
+      }
       .site-footer {
         margin-top: 28px;
         padding-top: 20px;
@@ -1588,6 +1598,10 @@ function renderReportShell(metadata, initialLanes) {
         var section = document.getElementById('e2e-area-section');
         var areaMetrics = document.getElementById('e2e-area-metrics');
 
+        function formatAreaLabel(area) {
+          return area === 'Other' ? 'Other (unmapped specs)' : area;
+        }
+
         if (!lane || !lane.e2eMetrics || lane.status === 'skipped') {
           section.hidden = true;
           return;
@@ -1674,7 +1688,7 @@ function renderReportShell(metadata, initialLanes) {
 
             return (
               '<tr>' +
-                '<td><strong>' + escapeHtml(area) + '</strong></td>' +
+                '<td><strong>' + escapeHtml(formatAreaLabel(area)) + '</strong></td>' +
                 '<td class="' + areaClass + '">' + escapeHtml(areaStatus) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.passed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.failed)) + '</td>' +
@@ -1691,7 +1705,7 @@ function renderReportShell(metadata, initialLanes) {
             (missingByArea[area] || []).forEach(function (feature) {
               missingFeatureRows.push(
                 '<tr>' +
-                  '<td><strong>' + escapeHtml(area) + '</strong></td>' +
+                  '<td><strong>' + escapeHtml(formatAreaLabel(area)) + '</strong></td>' +
                   '<td><code>' + escapeHtml(feature.id) + '</code></td>' +
                   '<td>' +
                     escapeHtml((feature.missingScenarios || []).join('; ')) +
@@ -1700,6 +1714,29 @@ function renderReportShell(metadata, initialLanes) {
               );
             });
           });
+
+        var excludedFeatureSummary = lane.e2eMetrics.excludedFeatures || [];
+        var excludedFeatureList = excludedFeatureSummary
+          .map(function (feature) {
+            var details = [];
+            if (feature.area) {
+              details.push(formatAreaLabel(feature.area));
+            }
+
+            if (feature.exclusionReason) {
+              details.push(feature.exclusionReason);
+            }
+
+            return (
+              '<li>' +
+              '<code>' +
+              escapeHtml(feature.id) +
+              '</code> (' +
+              (details.length ? escapeHtml(details.join(' · ')) : 'excluded') +
+              ')</li>'
+            );
+          })
+          .join('');
 
         if (!areaRows) {
           areaMetrics.innerHTML = '';
@@ -1721,7 +1758,15 @@ function renderReportShell(metadata, initialLanes) {
               String(lane.e2eMetrics.excludedFeatureCount) +
                 ' excluded features are documented outside the denominator.',
             ) +
-          '</p>' +
+            '</p>' +
+          (excludedFeatureList.length
+            ? '<ul class="feature-list">' +
+              excludedFeatureList +
+              '</ul>'
+            : '<p class="subtle">This suite currently has no excluded feature list.</p>') +
+          '<p class="subtle">' +
+            'Manifest features missing scenarios in this run:' +
+            '</p>' +
           '<div class="table-wrap">' +
             '<table class="test-report-table">' +
               '<thead><tr><th>Area</th><th>Feature</th><th>Missing scenarios</th></tr></thead>' +
@@ -1790,7 +1835,9 @@ function renderReportShell(metadata, initialLanes) {
             .map(function (lane) {
               return {
                 label: lane.artifactName,
-                href: null,
+                href: reportMetadata.runUrl
+                  ? reportMetadata.runUrl + '#artifacts'
+                  : null,
               };
             });
           copy.textContent = 'Download the workflow artifacts from the linked Actions run.';
