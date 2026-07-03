@@ -96,7 +96,7 @@ describe('profile onboarding components', () => {
     ).toHaveAttribute('data-save-to-api', 'true');
     expect(
       screen.getByRole('link', { name: 'You can help us out!' }),
-    ).toHaveAttribute('href', '/volunteering');
+    ).toHaveAttribute('href', 'https://team.trustroots.org/');
   });
 
   it('points members to hosting location editing', () => {
