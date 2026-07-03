@@ -287,7 +287,21 @@ Check what's been going on recently, your help is very welcome.
       <h3 id="coverage-panel-title">Coverage status</h3>
       <p id="coverage-panel-summary">Loading latest coverage status.</p>
     </div>
-    <a class="coverage-panel-link" href="/coverage/">Open report</a>
+    <div class="coverage-panel-actions">
+      <a
+        class="ci-badge"
+        href="https://github.com/Trustroots/trustroots/actions/workflows/test.yml"
+        aria-label="GitHub Actions test workflow"
+      >
+        <img
+          src="https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg"
+          alt="Tests"
+          width="99"
+          height="20"
+        />
+      </a>
+      <a class="coverage-panel-link" href="/coverage/">Open report</a>
+    </div>
   </div>
   <div class="coverage-table-wrap">
     <table class="coverage-table" aria-label="Coverage suite results">

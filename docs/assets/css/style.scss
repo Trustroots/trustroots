@@ -365,6 +365,28 @@ blockquote {
   background: rgba(18, 138, 120, 0.08);
 }
 
+.coverage-panel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+
+.ci-badge {
+  display: inline-flex;
+  line-height: 0;
+
+  img {
+    display: block;
+    height: 20px;
+    width: auto;
+  }
+}
+
+.coverage-report-ci {
+  margin: 12px 0 0;
+}
+
 .coverage-table-wrap {
   margin-top: 16px;
   overflow-x: auto;
