@@ -16,14 +16,14 @@ Trustroots was in maintenance mode from 2022 till June 2026, development work is
 
 Useful areas include simplifying old code, upgrading dependencies, helping with the React transition, and connecting Trustroots with Nostr/Nostroots.
 
-If you would like to contribute code, start with the [Trustroots repository](https://github.com/Trustroots/trustroots) and the current notes in the README.
+Check what's been going on recently—your help is very welcome.
 
 ## Recent activity
 
 <section class="activity-panel" data-activity-panel>
   <div class="activity-panel-main">
     <div>
-      <h3 id="activity-panel-title">Recent GitHub activity</h3>
+      <h3 id="activity-panel-title">Recent activity</h3>
       <p id="activity-panel-summary">Loading recent activity.</p>
     </div>
   </div>
@@ -191,7 +191,7 @@ If you would like to contribute code, start with the [Trustroots repository](htt
         throw new Error("No recent activity found");
       }
 
-      summary.textContent = `Recent activity from project repositories.`;
+      summary.textContent = `Recent updates from your team repositories.`;
 
       const badgeType = type =>
         ({ PR: "pr", Issue: "issue", Commit: "commit" })[type] || "commit";
@@ -223,7 +223,7 @@ If you would like to contribute code, start with the [Trustroots repository](htt
     };
 
     const showUnavailable = () => {
-      summary.textContent = "Recent GitHub activity is temporarily unavailable.";
+      summary.textContent = "Recent activity is temporarily unavailable.";
       list.innerHTML =
         '<p class="activity-empty">Open GitHub for the latest issues, pull requests, and commits.</p>';
     };
@@ -508,31 +508,42 @@ If you would like to contribute code, start with the [Trustroots repository](htt
 
     const formatSummary = lanes => {
       const status = overallStatus(lanes);
+      const formatList = items =>
+        items.length <= 1
+          ? items.join("")
+          : items.length === 2
+            ? `${items[0]} and ${items[1]}`
+            : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
       const byStatus = lanes.reduce((result, lane) => {
         result[lane.status] = result[lane.status] || [];
         result[lane.status].push(lane.label);
         return result;
       }, {});
-      const parts = [];
 
-      if (byStatus.passed) {
-        parts.push(`${byStatus.passed.join(" and ")} passing`);
+      if (status === "passing") {
+        return {
+          status: "passing",
+          text: "All suites passing.",
+        };
       }
 
+      const parts = [];
+
       if (byStatus.failed) {
-        parts.push(`${byStatus.failed.join(" and ")} failing`);
+        parts.push(`${formatList(byStatus.failed)} failing`);
       }
 
       if (byStatus.blocked || byStatus.unknown) {
         parts.push(
-          `${[...(byStatus.blocked || []), ...(byStatus.unknown || [])].join(
-            " and ",
-          )} incomplete`,
+          `${formatList([
+            ...(byStatus.blocked || []),
+            ...(byStatus.unknown || []),
+          ])} incomplete`,
         );
       }
 
       if (byStatus.skipped) {
-        parts.push(`${byStatus.skipped.join(" and ")} pending`);
+        parts.push(`${formatList(byStatus.skipped)} pending`);
       }
 
       return {
