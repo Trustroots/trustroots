@@ -23,10 +23,8 @@ If you would like to contribute code, start with the [Trustroots repository](htt
 <section class="activity-panel" data-activity-panel>
   <div class="activity-panel-main">
     <div>
-      <h3 id="activity-panel-title">Project activity</h3>
-      <p id="activity-panel-summary">
-        Loading recent issues, pull requests, and commits.
-      </p>
+      <h3 id="activity-panel-title">Recent GitHub activity</h3>
+      <p id="activity-panel-summary">Loading recent activity.</p>
     </div>
     <a class="activity-panel-link" href="https://github.com/Trustroots"
       >Open GitHub</a
@@ -196,7 +194,7 @@ If you would like to contribute code, start with the [Trustroots repository](htt
         throw new Error("No recent activity found");
       }
 
-      summary.textContent = `Recent project updates across Trustroots and Nostroots.`;
+      summary.textContent = `Recent activity from project repositories.`;
 
       const badgeType = type =>
         ({ PR: "pr", Issue: "issue", Commit: "commit" })[type] || "commit";
