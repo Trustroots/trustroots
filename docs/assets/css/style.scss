@@ -597,12 +597,14 @@ blockquote {
   }
 }
 
-.footer-links-left {
+.footer-links-left,
+.footer-links-right {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 0 1rem;
 }
 
-.footer-edit {
+.footer-links-right {
   margin-left: auto;
 }
