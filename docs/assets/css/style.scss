@@ -365,26 +365,85 @@ blockquote {
   background: rgba(18, 138, 120, 0.08);
 }
 
-.coverage-suite-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.coverage-table-wrap {
   margin-top: 16px;
+  overflow-x: auto;
 }
 
-.coverage-suite {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0.4rem 0.55rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--white);
+.coverage-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  thead th {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
 }
 
 .coverage-suite-name {
   color: var(--foreground);
   font-weight: 800;
+}
+
+.coverage-recorded {
+  font-variant-numeric: tabular-nums;
+}
+
+td.coverage-result {
+  white-space: normal;
+
+  .coverage-pill {
+    margin: 2px 6px 2px 0;
+  }
+}
+
+.coverage-result-empty {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: normal;
+}
+
+.coverage-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+
+  strong {
+    color: var(--foreground);
+    font-size: 13px;
+  }
+}
+
+.coverage-pill-pass strong {
+  color: #128a78;
+}
+
+.coverage-pill-fail strong {
+  color: #a6422d;
 }
 
 .coverage-status {

@@ -86,8 +86,45 @@ If you would like to contribute code, start with the [Trustroots repository](htt
       return "just now";
     };
 
+    // GitHub allows only 60 unauthenticated API requests per hour per IP,
+    // so cache results locally and reuse stale data when rate-limited.
+    const cacheKey = "team-trustroots-activity-v1";
+    const cacheTtlMs = 10 * 60 * 1000;
+
+    const readCache = () => {
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey));
+
+        if (
+          cached &&
+          typeof cached.savedAt === "number" &&
+          Array.isArray(cached.items) &&
+          cached.items.length > 0
+        ) {
+          return cached;
+        }
+      } catch (error) {
+        // Ignore unavailable or corrupt localStorage.
+      }
+
+      return null;
+    };
+
+    const writeCache = items => {
+      try {
+        localStorage.setItem(
+          cacheKey,
+          JSON.stringify({ savedAt: Date.now(), items }),
+        );
+      } catch (error) {
+        // Ignore unavailable localStorage.
+      }
+    };
+
     const fetchJson = async url => {
-      const response = await fetch(url, { cache: "no-store" });
+      const response = await fetch(url, {
+        headers: { Accept: "application/vnd.github+json" },
+      });
 
       if (!response.ok) {
         throw new Error(`GitHub response ${response.status}`);
@@ -97,12 +134,16 @@ If you would like to contribute code, start with the [Trustroots repository](htt
     };
 
     const repoActivity = async repo => {
-      const [issueResponse, commitResponse] = await Promise.all([
+      const [issueResult, commitResult] = await Promise.allSettled([
         fetchJson(
           `https://api.github.com/repos/${repo.name}/issues?state=open&sort=created&direction=desc&per_page=20`,
         ),
         fetchJson(`https://api.github.com/repos/${repo.name}/commits?per_page=20`),
       ]);
+      const issueResponse =
+        issueResult.status === "fulfilled" ? issueResult.value : [];
+      const commitResponse =
+        commitResult.status === "fulfilled" ? commitResult.value : [];
 
       const pulls = issueResponse
         .filter(item => item.pull_request)
@@ -184,13 +225,35 @@ If you would like to contribute code, start with the [Trustroots repository](htt
         .join("");
     };
 
-    Promise.all(repos.map(repoActivity))
-      .then(results => renderActivity(results.flat()))
-      .catch(() => {
-        summary.textContent = "Recent GitHub activity is temporarily unavailable.";
-        list.innerHTML =
-          '<p class="activity-empty">Open GitHub for the latest issues, pull requests, and commits.</p>';
-      });
+    const showUnavailable = () => {
+      summary.textContent = "Recent GitHub activity is temporarily unavailable.";
+      list.innerHTML =
+        '<p class="activity-empty">Open GitHub for the latest issues, pull requests, and commits.</p>';
+    };
+
+    const loadActivity = async () => {
+      const cached = readCache();
+
+      if (cached && Date.now() - cached.savedAt < cacheTtlMs) {
+        renderActivity(cached.items);
+        return;
+      }
+
+      try {
+        const items = (await Promise.all(repos.map(repoActivity))).flat();
+        renderActivity(items);
+        writeCache(items);
+      } catch (error) {
+        // Rate-limited or offline; stale cache beats no data.
+        if (cached) {
+          renderActivity(cached.items);
+        } else {
+          showUnavailable();
+        }
+      }
+    };
+
+    loadActivity().catch(showUnavailable);
   })();
 </script>
 
@@ -204,19 +267,41 @@ If you would like to contribute code, start with the [Trustroots repository](htt
     </div>
     <a class="coverage-panel-link" href="/coverage/">Open report</a>
   </div>
-  <div class="coverage-suite-list" aria-label="Coverage suite statuses">
-    <span class="coverage-suite" data-coverage-suite="client">
-      <span class="coverage-suite-name">Client</span>
-      <span class="coverage-status coverage-status-loading">Loading</span>
-    </span>
-    <span class="coverage-suite" data-coverage-suite="server">
-      <span class="coverage-suite-name">Server</span>
-      <span class="coverage-status coverage-status-loading">Loading</span>
-    </span>
-    <span class="coverage-suite" data-coverage-suite="e2e">
-      <span class="coverage-suite-name">End-to-end</span>
-      <span class="coverage-status coverage-status-loading">Loading</span>
-    </span>
+  <div class="coverage-table-wrap">
+    <table class="coverage-table" aria-label="Coverage suite results">
+      <thead>
+        <tr>
+          <th>Suite</th>
+          <th>Status</th>
+          <th>Recorded</th>
+          <th>Result</th>
+          <th>Report</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr data-coverage-suite="client">
+          <td class="coverage-suite-name">Client</td>
+          <td><span class="coverage-status coverage-status-loading">Loading</span></td>
+          <td class="coverage-recorded"></td>
+          <td class="coverage-result"></td>
+          <td class="coverage-report"></td>
+        </tr>
+        <tr data-coverage-suite="server">
+          <td class="coverage-suite-name">Server</td>
+          <td><span class="coverage-status coverage-status-loading">Loading</span></td>
+          <td class="coverage-recorded"></td>
+          <td class="coverage-result"></td>
+          <td class="coverage-report"></td>
+        </tr>
+        <tr data-coverage-suite="e2e">
+          <td class="coverage-suite-name">End-to-end</td>
+          <td><span class="coverage-status coverage-status-loading">Loading</span></td>
+          <td class="coverage-recorded"></td>
+          <td class="coverage-result"></td>
+          <td class="coverage-report"></td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </section>
 
@@ -242,20 +327,166 @@ If you would like to contribute code, start with the [Trustroots repository](htt
     const normalizeStatus = status =>
       knownStatuses.includes(status) ? status : "unknown";
 
-    const setSuiteStatus = lane => {
-      const element = document.querySelector(
-        `[data-coverage-suite="${lane.name}"] .coverage-status`,
+    const escapeCoverageHtml = value =>
+      String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    const formatPercent = value =>
+      typeof value === "number" ? `${value.toFixed(2)}%` : "n/a";
+
+    const formatRecorded = isoString => {
+      const date = new Date(isoString || "");
+
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
+
+      const pad = value => String(value).padStart(2, "0");
+      return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(
+        date.getUTCDate(),
+      )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
+    };
+
+    const formatDuration = durationMs => {
+      if (typeof durationMs !== "number" || durationMs <= 0) {
+        return "n/a";
+      }
+
+      const totalSeconds = Math.round(durationMs / 1000);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return minutes === 0 ? `${seconds}s` : `${minutes}m ${seconds}s`;
+    };
+
+    const resultPill = (label, value, passed) => `
+      <span class="coverage-pill ${passed ? "coverage-pill-pass" : "coverage-pill-fail"}">
+        ${escapeCoverageHtml(label)} <strong>${escapeCoverageHtml(value)}</strong>
+      </span>
+    `;
+
+    const coverageResultHtml = lane => {
+      if (!lane.metrics || Object.keys(lane.metrics).length === 0) {
+        return "";
+      }
+
+      return ["statements", "branches", "functions", "lines"]
+        .map(metric => {
+          const values = lane.metrics[metric] || {};
+          const label = metric.charAt(0).toUpperCase() + metric.slice(1);
+          return resultPill(label, formatPercent(values.current), values.passed);
+        })
+        .join("");
+    };
+
+    const e2eResultHtml = lane => {
+      const e2e = lane.e2eMetrics;
+
+      if (!e2e) {
+        return "";
+      }
+
+      const testValues = e2e.testValues || {};
+      const areaValues = e2e.areaValues || {};
+      const featureValues = e2e.featureValues || {};
+      const scenarioValues = featureValues.scenarioCoverage || {};
+      const parts = [];
+
+      if (testValues.passed && testValues.total) {
+        parts.push(
+          resultPill(
+            "Tests",
+            `${testValues.passed.current}/${testValues.total.current}`,
+            testValues.passed.passed && testValues.total.passed,
+          ),
+        );
+      }
+
+      if (testValues.passRate) {
+        parts.push(
+          resultPill(
+            "Pass rate",
+            formatPercent(testValues.passRate.current),
+            testValues.passRate.passed,
+          ),
+        );
+      }
+
+      if (
+        areaValues.areaCoverage &&
+        typeof areaValues.areaCoverage.current === "number"
+      ) {
+        parts.push(
+          resultPill(
+            "Areas",
+            `${e2e.exercisedAreaCount}/${e2e.definedAreaCount}`,
+            areaValues.areaCoverage.passed,
+          ),
+        );
+      }
+
+      if (
+        featureValues.featureCoverage &&
+        typeof featureValues.featureCoverage.current === "number"
+      ) {
+        parts.push(
+          resultPill(
+            "Features",
+            `${e2e.coveredFeatureCount}/${e2e.activeFeatureCount}`,
+            featureValues.featureCoverage.passed,
+          ),
+        );
+      }
+
+      if (typeof scenarioValues.current === "number") {
+        parts.push(
+          resultPill(
+            "Scenarios",
+            `${e2e.coveredScenarioCount}/${e2e.requiredScenarioCount}`,
+            scenarioValues.passed,
+          ),
+        );
+      }
+
+      parts.push(resultPill("Duration", formatDuration(e2e.durationMs), true));
+
+      return parts.join("");
+    };
+
+    const setSuiteRow = lane => {
+      const row = document.querySelector(
+        `[data-coverage-suite="${lane.name}"]`,
       );
 
-      if (!element) {
+      if (!row) {
         return;
       }
 
-      element.className = `coverage-status coverage-status-${lane.status}`;
-      element.textContent = statusLabel(lane.status);
+      const status = row.querySelector(".coverage-status");
+      status.className = `coverage-status coverage-status-${lane.status}`;
+      status.textContent = statusLabel(lane.status);
       if (lane.message) {
-        element.title = lane.message;
+        status.title = lane.message;
       }
+
+      row.querySelector(".coverage-recorded").textContent = formatRecorded(
+        lane.generatedAt,
+      );
+
+      const resultHtml =
+        lane.kind === "test" ? e2eResultHtml(lane) : coverageResultHtml(lane);
+      row.querySelector(".coverage-result").innerHTML =
+        resultHtml ||
+        `<span class="coverage-result-empty">${escapeCoverageHtml(
+          lane.message || "No results recorded.",
+        )}</span>`;
+
+      row.querySelector(".coverage-report").innerHTML = lane.localReportHref
+        ? `<a href="/coverage/${escapeCoverageHtml(lane.localReportHref)}">HTML</a>`
+        : "—";
     };
 
     const overallStatus = lanes => {
@@ -328,6 +559,7 @@ If you would like to contribute code, start with the [Trustroots repository](htt
 
           const lane = await response.json();
           return {
+            ...lane,
             ...suite,
             status: normalizeStatus(lane.status),
             message: lane.message || "",
@@ -343,7 +575,7 @@ If you would like to contribute code, start with the [Trustroots repository](htt
     ).then(lanes => {
       const result = formatSummary(lanes);
 
-      lanes.forEach(setSuiteStatus);
+      lanes.forEach(setSuiteRow);
       summary.className = `coverage-panel-summary coverage-summary-${result.status}`;
       summary.textContent = result.text;
     });
