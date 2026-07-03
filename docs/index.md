@@ -23,19 +23,12 @@ Trustroots was in maintenance mode from 2022 till June 2026, development work is
 
 Useful areas include simplifying old code, upgrading dependencies, helping with the React transition, and connecting Trustroots with Nostr/Nostroots.
 
-Check what's been going on recently—your help is very welcome.
+Check what's been going on recently, your help is very welcome.
 
 ## Recent activity
 
 <section class="activity-panel" data-activity-panel>
-  <div class="activity-panel-main">
-    <div>
-      <h3 id="activity-panel-title">Recent activity</h3>
-      <p id="activity-panel-summary">Loading recent activity.</p>
-    </div>
-  </div>
   <div id="activity-list" class="activity-list" aria-live="polite">
-    <p class="activity-empty">Loading recent activity.</p>
   </div>
 </section>
 
@@ -46,7 +39,6 @@ Check what's been going on recently—your help is very welcome.
       { name: "Trustroots/nostroots", label: "Nostroots" },
     ];
     const list = document.getElementById("activity-list");
-    const summary = document.getElementById("activity-panel-summary");
     const limits = {
       commits: 3,
       issues: 3,
@@ -60,6 +52,61 @@ Check what's been going on recently—your help is very welcome.
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
+
+    const activityColumns = ["Type", "Update", "Repository", "Author", "When"];
+    const activityHeader = activityColumns
+      .map(label => `<th scope="col">${escapeHtml(label)}</th>`)
+      .join("");
+    const loadingActivityMessage = "Loading recent activity.";
+    const fallbackActivityMessage =
+      "Open GitHub for the latest issues, pull requests, and commits.";
+    const activityTypeClass = type =>
+      ({ PR: "pr", Issue: "issue", Commit: "commit" })[type] || "commit";
+    const renderActivityRows = items =>
+      items
+        .map(item => {
+          const author = item.author ? `by ${item.author}` : "";
+          const relative = relativeDate(item.date);
+
+          return `
+            <tr>
+              <td class="activity-type">
+                <span class="activity-badge activity-badge-${activityTypeClass(
+                  item.type,
+                )}">${escapeHtml(item.type)}</span>
+              </td>
+              <td class="activity-title-cell">
+                <a class="activity-title-link" href="${escapeHtml(item.url)}">
+                  <span class="activity-title">${escapeHtml(item.title)}</span>
+                </a>
+              </td>
+              <td class="activity-repo">${escapeHtml(item.repo)}</td>
+              <td class="activity-author">${escapeHtml(author)}</td>
+              <td class="activity-time">
+                <time datetime="${escapeHtml(item.date)}">${escapeHtml(relative)}</time>
+              </td>
+            </tr>
+          `;
+        })
+        .join("");
+    const renderActivityTable = rows => `
+      <div class="activity-table-wrap">
+        <table class="activity-table coverage-table" aria-label="Recent team activity">
+          <thead>
+            <tr>${activityHeader}</tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+    const renderActivityMessage = message =>
+      `<p class="activity-empty">${escapeHtml(message)}</p>`;
+    const renderActivityLoading = () => {
+      list.innerHTML = renderActivityMessage(loadingActivityMessage);
+    };
+    const renderActivityUnavailable = () => {
+      list.innerHTML = renderActivityMessage(fallbackActivityMessage);
+    };
 
     const relativeDate = value => {
       const date = new Date(value);
@@ -198,41 +245,11 @@ Check what's been going on recently—your help is very welcome.
         throw new Error("No recent activity found");
       }
 
-      summary.textContent = `Recent updates from your team repositories.`;
-
-      const badgeType = type =>
-        ({ PR: "pr", Issue: "issue", Commit: "commit" })[type] || "commit";
-
-      list.innerHTML = sorted
-        .map(item => {
-          const meta = [
-            item.repo,
-            item.author ? `by ${item.author}` : "",
-            relativeDate(item.date),
-          ]
-            .filter(Boolean)
-            .map(escapeHtml)
-            .join('<span class="activity-dot" aria-hidden="true">·</span>');
-
-          return `
-            <a class="activity-item" href="${escapeHtml(item.url)}">
-              <span class="activity-badge activity-badge-${badgeType(
-                item.type,
-              )}">${escapeHtml(item.type)}</span>
-              <span class="activity-body">
-                <span class="activity-title">${escapeHtml(item.title)}</span>
-                <span class="activity-meta">${meta}</span>
-              </span>
-            </a>
-          `;
-        })
-        .join("");
+      list.innerHTML = renderActivityTable(renderActivityRows(sorted));
     };
 
     const showUnavailable = () => {
-      summary.textContent = "Recent activity is temporarily unavailable.";
-      list.innerHTML =
-        '<p class="activity-empty">Open GitHub for the latest issues, pull requests, and commits.</p>';
+      renderActivityUnavailable();
     };
 
     const loadActivity = async () => {
@@ -257,6 +274,7 @@ Check what's been going on recently—your help is very welcome.
       }
     };
 
+    renderActivityLoading();
     loadActivity().catch(showUnavailable);
   })();
 </script>
