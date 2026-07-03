@@ -65,7 +65,7 @@ Check what's been going on recently, your help is very welcome.
     const renderActivityRows = items =>
       items
         .map(item => {
-          const author = item.author ? `by ${item.author}` : "";
+          const author = item.author || "";
           const relative = relativeDate(item.date);
 
           return `
@@ -289,17 +289,10 @@ Check what's been going on recently, your help is very welcome.
     </div>
     <div class="coverage-panel-actions">
       <a
-        class="ci-badge"
+        class="coverage-panel-link"
         href="https://github.com/Trustroots/trustroots/actions/workflows/test.yml"
-        aria-label="GitHub Actions test workflow"
+        >GitHub Actions tests</a
       >
-        <img
-          src="https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg"
-          alt="Tests"
-          width="99"
-          height="20"
-        />
-      </a>
       <a class="coverage-panel-link" href="/coverage/">Open report</a>
     </div>
   </div>

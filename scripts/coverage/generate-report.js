@@ -1072,18 +1072,9 @@ function renderReportShell(metadata, initialLanes) {
           <h1>Trustroots Coverage Report</h1>
           <p>${escapeHtml(summaryText)}</p>
           <p class="coverage-report-ci">
-            <a
-              class="ci-badge"
-              href="https://github.com/Trustroots/trustroots/actions/workflows/test.yml"
-              aria-label="GitHub Actions test workflow"
+            <a href="https://github.com/Trustroots/trustroots/actions/workflows/test.yml"
+              >GitHub Actions tests</a
             >
-              <img
-                src="https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg"
-                alt="Tests"
-                width="99"
-                height="20"
-              />
-            </a>
           </p>
           <div class="coverage-report-meta">
             ${branchLink}
