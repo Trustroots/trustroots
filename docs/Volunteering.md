@@ -1,5 +1,5 @@
 ---
-redirect_to: https://team.trustroots.org/
+redirect_to: https://www.trustroots.org/volunteering
 redirect_from:
   - /Volunteering
   - /Volunteering/
