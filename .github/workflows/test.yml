@@ -260,7 +260,7 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://team.trustroots.org/
     steps:
       - uses: actions/checkout@v6
       - name: Configure GitHub Pages
@@ -270,6 +270,11 @@ jobs:
         with:
           source: ./docs
           destination: ./_site
+      - name: Add pending coverage report placeholder
+        run: |
+          npm run coverage:report
+          mkdir -p _site/coverage
+          cp -r coverage-report/. _site/coverage/
       - name: Upload site
         uses: actions/upload-pages-artifact@v5
         with:
@@ -297,7 +302,7 @@ jobs:
       id-token: write
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: https://team.trustroots.org/
     steps:
       - uses: actions/checkout@v6
       - name: Download client coverage report
@@ -312,6 +317,7 @@ jobs:
           path: coverage/server
       - name: Download e2e coverage status
         uses: actions/download-artifact@v8
+        continue-on-error: true
         with:
           name: coverage-e2e
           path: coverage/e2e
