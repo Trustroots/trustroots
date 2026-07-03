@@ -413,7 +413,7 @@ export default function Home({ user, photoCredits }) {
                   <a href="https://ideas.trustroots.org/">{t('Blog')}</a>
                 </li>
                 <li>
-                  <a href="/volunteering">{t('Volunteering')}</a>
+                  <a href="https://team.trustroots.org/">{t('Volunteering')}</a>
                 </li>
                 <li>
                   <a href="/media">{t('Media')}</a>

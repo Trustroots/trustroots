@@ -193,7 +193,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('Team'),
               },
               {
-                href: '/volunteering',
+                href: 'https://team.trustroots.org/',
                 label: t('Volunteering'),
               },
             ]}

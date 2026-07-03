@@ -122,6 +122,21 @@ function getRunUrl() {
   return `${serverUrl}/${repository}/actions/runs/${runId}`;
 }
 
+function encodeGitRef(refName) {
+  return String(refName).split('/').map(encodeURIComponent).join('/');
+}
+
+function getRepositoryUrl() {
+  const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
+  const repository = process.env.GITHUB_REPOSITORY;
+
+  if (!repository) {
+    return null;
+  }
+
+  return `${serverUrl}/${repository}`;
+}
+
 function formatDatetime(isoString) {
   if (!isoString) {
     return 'n/a';
@@ -148,13 +163,26 @@ function fileGeneratedAt(filePath) {
 
 function getMetadata() {
   const runUrl = getRunUrl();
+  const repositoryUrl = getRepositoryUrl();
+  const branch =
+    process.env.GITHUB_REF_NAME || process.env.GITHUB_REF || 'local';
+  const commit = process.env.GITHUB_SHA || 'local';
   const generatedAt = new Date().toISOString();
   return {
-    branch: process.env.GITHUB_REF_NAME || process.env.GITHUB_REF || 'local',
-    commit: process.env.GITHUB_SHA || 'local',
+    branch,
+    branchUrl:
+      repositoryUrl && branch !== 'local'
+        ? `${repositoryUrl}/tree/${encodeGitRef(branch)}`
+        : null,
+    commit,
+    commitUrl:
+      repositoryUrl && commit !== 'local'
+        ? `${repositoryUrl}/commit/${commit}`
+        : null,
     generatedAt,
     generatedAtDisplay: formatDatetime(generatedAt),
     isGitHubActions: process.env.GITHUB_ACTIONS === 'true',
+    repositoryUrl,
     runUrl,
   };
 }
@@ -216,7 +244,11 @@ function syncBundledCoverageReports() {
 
 function localReportHref(suite) {
   if (suite.name === 'e2e') {
-    const bundledReport = path.join(outputDir, 'playwright-report', 'index.html');
+    const bundledReport = path.join(
+      outputDir,
+      'playwright-report',
+      'index.html',
+    );
     if (fs.existsSync(bundledReport)) {
       return relativeHref(bundledReport);
     }
@@ -256,6 +288,7 @@ function baseLane(suite, metadata) {
     status: 'unknown',
     message: 'No status message was recorded.',
     generatedAt: metadata.generatedAt,
+    reportGeneratedAt: metadata.generatedAt,
     command: suite.command,
     artifactName: suite.artifactName,
     localReportHref: localReportHref(suite),
@@ -324,8 +357,8 @@ function readCoverageLane(suiteName, baseline, metadata) {
     ...baseLane(suite, metadata),
     status: passed ? 'passed' : 'failed',
     message: passed
-      ? `${suite.label} coverage meets the checked-in baseline.`
-      : `${suite.label} coverage is below the checked-in baseline.`,
+      ? `${suite.label} coverage meets the checked-in minimum.`
+      : `${suite.label} coverage is below the checked-in minimum.`,
     generatedAt,
     metrics: metricValues,
   };
@@ -407,7 +440,9 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
   const codeCoverage = buildE2eCodeCoverage(statusMetrics, baseline);
   const codePassed =
     !codeCoverage ||
-    metrics.every(metric => !codeCoverage[metric] || codeCoverage[metric].passed);
+    metrics.every(
+      metric => !codeCoverage[metric] || codeCoverage[metric].passed,
+    );
 
   return {
     testValues,
@@ -435,7 +470,9 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
     passed:
       e2eTestMetrics.every(metric => testValues[metric].passed) &&
       Object.keys(areaValues).every(metric => areaValues[metric].passed) &&
-      Object.keys(featureValues).every(metric => featureValues[metric].passed) &&
+      Object.keys(featureValues).every(
+        metric => featureValues[metric].passed,
+      ) &&
       codePassed,
   };
 }
@@ -545,18 +582,9 @@ function renderHelpLabel(label, helpText) {
       aria-label="${escapeHtml(`${label}: ${helpText}`)}"
     >
       ${escapeHtml(label)}
-      <span class="help-marker" aria-hidden="true">?</span>
       <span class="help-tooltip" role="tooltip">${text}</span>
     </span>
   `;
-}
-
-function renderHeader(metric, isBaseline = false) {
-  const label = isBaseline ? `${metric} baseline` : metric;
-  return `<th>${renderHelpLabel(
-    label,
-    metricHelpText(metric, isBaseline),
-  )}</th>`;
 }
 
 function capitalizeMetric(metric) {
@@ -564,43 +592,39 @@ function capitalizeMetric(metric) {
 }
 
 function renderSuiteTableHead() {
-  const groupHeaders = metrics
-    .map(metric => {
-      const label = capitalizeMetric(metric);
-      const helpText =
-        metric === 'statements'
-          ? `${metricHelp[metric]} For end-to-end, this is client code coverage collected during Playwright runs.`
-          : metricHelp[metric] || metric;
-      return `<th colspan="2">${renderHelpLabel(label, helpText)}</th>`;
-    })
-    .join('');
-  const subHeaders = metrics
-    .map(() => '<th class="subhead">Current</th><th class="subhead">Baseline</th>')
-    .join('');
-
   return `
     <tr>
-      <th rowspan="2">${renderHelpLabel('Suite', metricHelp.suite)}</th>
-      <th rowspan="2">Status</th>
-      <th rowspan="2">${renderHelpLabel(
+      <th>${renderHelpLabel('Suite', metricHelp.suite)}</th>
+      <th>Status</th>
+      <th>${renderHelpLabel(
         'Recorded',
         'When this suite last produced the results shown in the row.',
       )}</th>
-      ${groupHeaders}
-      <th rowspan="2">Report</th>
+      <th>${renderHelpLabel(
+        'Result',
+        'Coverage suites show JavaScript code coverage. End-to-end shows Playwright test, product area, feature, and scenario coverage.',
+      )}</th>
+      <th>Report</th>
     </tr>
-    <tr>${subHeaders}</tr>
   `;
 }
 
-function metricHelpText(metric, isBaseline = false) {
-  const metricDescription = metricHelp[metric] || metric;
-
-  if (!isBaseline) {
-    return metricDescription;
+function formatMetadataTimestamp(isoString) {
+  if (!isoString) {
+    return 'n/a';
   }
 
-  return `Checked-in minimum for ${metric}. The ratchet fails when current ${metric} coverage drops below this value.`;
+  const date = new Date(isoString);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(isoString);
+  }
+
+  const pad = value => String(value).padStart(2, "0");
+
+  return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(
+    date.getUTCDate(),
+  )} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
 function renderReportShell(metadata, initialLanes) {
@@ -609,9 +633,42 @@ function renderReportShell(metadata, initialLanes) {
     : 'local run';
   const shortSha =
     metadata.commit === 'local' ? 'local' : metadata.commit.slice(0, 12);
+  const branchLink = metadata.branchUrl
+    ? `<a href="${escapeHtml(metadata.branchUrl)}">${escapeHtml(
+        metadata.branch,
+      )}</a>`
+    : escapeHtml(metadata.branch);
+  const commitLink = metadata.commitUrl
+    ? `<a href="${escapeHtml(metadata.commitUrl)}">${escapeHtml(shortSha)}</a>`
+    : escapeHtml(shortSha);
   const summaryText = metadata.isGitHubActions
     ? 'Latest main coverage summary generated by GitHub Actions.'
     : 'Coverage summary generated locally from available coverage data.';
+  const buildText =
+    metadata.commit === 'local'
+      ? 'local'
+      : `${formatMetadataTimestamp(metadata.generatedAtDisplay)} UTC (${shortSha})`;
+  const buildHref =
+    metadata.commitUrl || 'https://github.com/Trustroots/trustroots';
+  const githubIconLink = `
+    <a
+      class="github-icon-link"
+      href="https://github.com/Trustroots/trustroots"
+      aria-label="GitHub repository"
+    >
+      <svg
+        class="github-icon"
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          fill="currentColor"
+          d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.36c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+        />
+      </svg>
+    </a>
+  `;
   const suiteConfig = suiteOrder.map(suiteName => {
     const suite = reportSuites[suiteName];
     return {
@@ -630,64 +687,71 @@ function renderReportShell(metadata, initialLanes) {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Trustroots Coverage Report</title>
+    <meta name="theme-color" content="#12b591">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    >
+    <link rel="stylesheet" href="/assets/css/style.css?v=0">
     <style>
       :root {
-        color-scheme: light;
-        --bg: #f7f7f4;
-        --panel: #ffffff;
-        --text: #20231f;
-        --muted: #61665c;
-        --border: #d9ded3;
-        --pass: #177245;
-        --pass-bg: #e7f4eb;
-        --fail: #a33a2b;
-        --fail-bg: #f8e8e5;
-        --warn: #8a5a00;
+        --pass: #128a78;
+        --pass-bg: #e3f3ed;
+        --fail: #a6422d;
+        --fail-bg: #f9e8e2;
+        --warn: #8b5e00;
         --warn-bg: #fff3cf;
         --skip: #58606a;
         --skip-bg: #eef0f2;
-        --accent: #246b8f;
+        --accent: #128a78;
+        --accent-dark: #004b3f;
+        --olive: #98ad46;
+        --shadow: rgba(0, 75, 63, 0.14);
+        --white: #fff;
       }
-      * {
-        box-sizing: border-box;
+      .coverage-report-wrap {
+        margin-top: 8px;
       }
-      body {
-        margin: 0;
-        background: var(--bg);
-        color: var(--text);
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        line-height: 1.45;
-      }
-      main {
-        max-width: 1240px;
-        margin: 0 auto;
-        padding: 40px 24px;
-      }
-      header {
+      .coverage-report-hero {
         display: flex;
         gap: 24px;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 28px;
+        margin-bottom: 22px;
+        padding: 26px 28px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 253, 244, 0.82);
+        box-shadow: 0 18px 42px var(--shadow);
       }
-      h1 {
+      .coverage-report-hero h1 {
         margin: 0 0 8px;
-        font-size: 32px;
-        letter-spacing: 0;
+        max-width: 760px;
       }
-      p {
-        margin: 0;
+      .coverage-report-meta {
+        margin-top: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
         color: var(--muted);
+        font-size: 15px;
+        font-weight: 700;
       }
-      a {
-        color: var(--accent);
+      .coverage-report-meta .meta-separator {
+        color: rgba(95, 113, 105, 0.5);
+      }
+      .coverage-report-meta a {
+        overflow-wrap: anywhere;
       }
       .status {
         min-width: 160px;
         padding: 12px 16px;
         border: 1px solid;
         border-radius: 6px;
-        font-weight: 700;
+        font-weight: 800;
         text-align: center;
       }
       .status.pass {
@@ -716,6 +780,7 @@ function renderReportShell(metadata, initialLanes) {
         border-radius: 8px;
         margin: 18px 0;
         overflow: hidden;
+        box-shadow: 0 18px 42px rgba(0, 75, 63, 0.08);
       }
       .section-body {
         padding: 20px;
@@ -737,7 +802,9 @@ function renderReportShell(metadata, initialLanes) {
       th:nth-child(2),
       td:nth-child(2),
       th:nth-child(3),
-      td:nth-child(3) {
+      td:nth-child(3),
+      th:nth-child(4),
+      td:nth-child(4) {
         text-align: left;
       }
       thead th {
@@ -745,10 +812,6 @@ function renderReportShell(metadata, initialLanes) {
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.02em;
-      }
-      thead th.subhead {
-        font-size: 11px;
-        font-weight: 600;
       }
       .suite-table .suite-name {
         font-weight: 700;
@@ -814,24 +877,43 @@ function renderReportShell(metadata, initialLanes) {
         color: var(--fail);
         font-weight: 700;
       }
+      .result-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        white-space: normal;
+      }
+      .result-pill {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 5px;
+        padding: 3px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--panel-strong);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+      .result-pill strong {
+        color: var(--text);
+        font-size: 13px;
+      }
+      .result-pill.pass strong {
+        color: var(--pass);
+      }
+      .result-pill.fail strong {
+        color: var(--fail);
+      }
       .help-label {
         position: relative;
         display: inline-flex;
         align-items: center;
-        gap: 5px;
+        border-bottom: 1px dotted rgba(95, 113, 105, 0.75);
+        cursor: help;
         outline: none;
-      }
-      .help-marker {
-        display: inline-grid;
-        width: 16px;
-        height: 16px;
-        place-items: center;
-        border: 1px solid var(--border);
-        border-radius: 50%;
-        color: var(--accent);
-        font-size: 11px;
-        line-height: 1;
-        text-transform: none;
       }
       .help-tooltip {
         position: absolute;
@@ -895,30 +977,23 @@ function renderReportShell(metadata, initialLanes) {
         font-weight: 700;
       }
       td.skip,
-      td.baseline,
       td.missing {
         color: var(--muted);
       }
-      .delta {
-        display: inline;
-        margin-left: 4px;
-        font-size: 11px;
-        font-weight: 600;
-      }
-      .delta.pass {
-        color: var(--pass);
-      }
-      .delta.fail {
-        color: var(--fail);
-      }
       .meta {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 15px;
+        font-weight: 700;
       }
-      .meta strong {
-        display: block;
-        margin-bottom: 3px;
+      .meta a {
+        overflow-wrap: anywhere;
+      }
+      .meta-separator {
+        color: rgba(95, 113, 105, 0.5);
       }
       .artifact-list {
         display: flex;
@@ -934,13 +1009,18 @@ function renderReportShell(metadata, initialLanes) {
         color: var(--text);
         text-decoration: none;
       }
-      .status-details {
-        margin: 12px 0 0;
-        padding-left: 20px;
-        color: var(--muted);
+      .artifact-list .artifact {
+        white-space: nowrap;
+      }
+      .feature-list {
+        margin: 8px 0 0;
+        padding-left: 1.1rem;
+      }
+      .feature-list li {
+        margin-bottom: 4px;
       }
       @media (max-width: 760px) {
-        header {
+        .coverage-report-hero {
           display: block;
         }
         .status {
@@ -954,14 +1034,60 @@ function renderReportShell(metadata, initialLanes) {
     </style>
   </head>
   <body>
-    <main>
-      <header>
-        <div>
+    <a id="skip-to-content" href="#content">Skip to the content.</a>
+    <header class="header" role="banner">
+      <div class="header-inner">
+        <a
+          href="/"
+          class="brand"
+          aria-label="Team Trustroots home"
+        >
+          <img
+            class="brand-logo brand-logo-full"
+            src="/assets/img/horizontal-white.svg"
+            alt="Trustroots"
+            width="177"
+            height="31"
+          />
+          <img
+            class="brand-logo brand-logo-tree"
+            src="/assets/img/tree-white.svg"
+            alt="Trustroots"
+            width="31"
+            height="31"
+          />
+          <span class="brand-team">team</span>
+        </a>
+        <nav class="hub-nav" aria-label="Site links">
+          <a href="https://www.trustroots.org/">Trustroots.org</a>
+          <a href="https://nos.trustroots.org/">Nostroots</a>
+          <a href="https://www.trustroots.org/support">Support</a>
+          ${githubIconLink}
+        </nav>
+      </div>
+    </header>
+    <main id="content" class="main-content" role="main">
+      <section class="coverage-report-hero">
+        <div class="coverage-report-wrap">
           <h1>Trustroots Coverage Report</h1>
           <p>${escapeHtml(summaryText)}</p>
+          <p class="coverage-report-ci">
+            <a href="https://github.com/Trustroots/trustroots/actions/workflows/test.yml"
+              >GitHub Actions tests</a
+            >
+          </p>
+          <div class="coverage-report-meta">
+            ${branchLink}
+            <span class="meta-separator" aria-hidden="true">&middot;</span>
+            ${commitLink}
+            <span class="meta-separator" aria-hidden="true">&middot;</span>
+            <span>${escapeHtml(metadata.generatedAtDisplay)}</span>
+            <span class="meta-separator" aria-hidden="true">&middot;</span>
+            ${runLink}
+          </div>
         </div>
         <div id="overall-status" class="status skip">Loading</div>
-      </header>
+      </section>
 
       <section>
         <div class="table-wrap">
@@ -978,34 +1104,6 @@ function renderReportShell(metadata, initialLanes) {
         <div class="section-body" id="e2e-area-metrics"></div>
       </section>
 
-      <section>
-        <div class="section-body">
-          <strong>Status details</strong>
-          <ul id="status-details" class="status-details"></ul>
-        </div>
-      </section>
-
-      <section>
-        <div class="section-body meta">
-          <div>
-            <strong>Branch</strong>
-            ${escapeHtml(metadata.branch)}
-          </div>
-          <div>
-            <strong>Commit</strong>
-            ${escapeHtml(shortSha)}
-          </div>
-          <div>
-            <strong>Generated</strong>
-            ${escapeHtml(metadata.generatedAtDisplay)}
-          </div>
-          <div>
-            <strong>Workflow</strong>
-            ${runLink}
-          </div>
-        </div>
-      </section>
-
       <section id="detailed-reports" hidden>
         <div class="section-body">
           <strong>Detailed reports</strong>
@@ -1013,6 +1111,42 @@ function renderReportShell(metadata, initialLanes) {
           <div id="artifact-list" class="artifact-list"></div>
         </div>
       </section>
+      <footer class="site-footer" role="contentinfo">
+        <div class="site-footer-content">
+          <ul class="site-footer-links">
+            <li><a href="https://www.trustroots.org/">Trustroots.org</a></li>
+            <li><a href="https://nos.trustroots.org/">Nostroots</a></li>
+            <li><a href="https://www.trustroots.org/support">Support</a></li>
+          </ul>
+          <div class="site-footer-meta">
+            <a
+              class="site-footer-build"
+              href="${escapeHtml(buildHref)}"
+              aria-label="Coverage report metadata"
+            >
+              <svg
+                class="github-icon"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  fill="currentColor"
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.36c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+                />
+              </svg>
+              <span class="site-footer-build-commit">${buildText}</span>
+            </a>
+            <small>
+              <a
+                class="footer-edit"
+                href="https://github.com/Trustroots/trustroots/edit/main/scripts/coverage/generate-report.js"
+                >Edit this page</a
+              >
+            </small>
+          </div>
+        </div>
+      </footer>
     </main>
     <script>
       var reportMetadata = ${JSON.stringify(metadata)};
@@ -1037,14 +1171,6 @@ function renderReportShell(metadata, initialLanes) {
         }
 
         return value.toFixed(2) + '%';
-      }
-
-      function formatDelta(value) {
-        if (typeof value !== 'number') {
-          return '';
-        }
-
-        return (value >= 0 ? '+' : '') + value.toFixed(2);
       }
 
       function formatDuration(durationMs) {
@@ -1139,26 +1265,6 @@ function renderReportShell(metadata, initialLanes) {
           escapeHtml(lane.localReportHref) +
           '">HTML</a>'
         );
-      }
-
-      function renderMetricValue(className, current, delta, deltaClass) {
-        var html =
-          '<span class="metric-value ' +
-          className +
-          '">' +
-          escapeHtml(current) +
-          '</span>';
-
-        if (delta) {
-          html +=
-            '<span class="delta ' +
-            deltaClass +
-            '">' +
-            escapeHtml(delta) +
-            '</span>';
-        }
-
-        return html;
       }
 
       function skippedLane(config, message) {
@@ -1257,66 +1363,157 @@ function renderReportShell(metadata, initialLanes) {
         return labels[status] || status;
       }
 
-      function renderMetricCells(lane) {
+      function resultPill(label, value, passed) {
+        return (
+          '<span class="result-pill ' +
+          (passed ? 'pass' : 'fail') +
+          '">' +
+          escapeHtml(label) +
+          ' <strong>' +
+          escapeHtml(value) +
+          '</strong></span>'
+        );
+      }
+
+      function renderCoverageResult(lane) {
         if (!lane.metrics || Object.keys(lane.metrics).length === 0) {
-          return '<td class="missing" colspan="' + metrics.length * 2 + '">' +
+          return (
+            '<span class="missing">' +
             escapeHtml(lane.message) +
-            '</td>';
+            '</span>'
+          );
         }
 
-        return metrics
-          .map(function (metric) {
-            var values = lane.metrics[metric] || {};
-            var className = values.passed ? 'pass' : 'fail';
-            var deltaClass = values.delta >= 0 ? 'pass' : 'fail';
-            return (
-              '<td>' +
-                renderMetricValue(
-                  className,
+        return (
+          '<span class="result-list">' +
+          metrics
+            .map(function (metric) {
+              var values = lane.metrics[metric] || {};
+              return resultPill(
+                metric.charAt(0).toUpperCase() + metric.slice(1),
+                formatPercent(values.current),
+                values.passed,
+              );
+            })
+            .join('') +
+          '</span>'
+        );
+      }
+
+      function renderE2eResult(lane) {
+        if (!lane.e2eMetrics) {
+          return (
+            '<span class="missing">' +
+            escapeHtml(
+              lane.message || 'End-to-end test data is not available for this run.',
+            ) +
+            '</span>'
+          );
+        }
+
+        var testValues = lane.e2eMetrics.testValues || {};
+        var areaValues = lane.e2eMetrics.areaValues || {};
+        var featureValues = lane.e2eMetrics.featureValues || {};
+        var scenarioValues = featureValues.scenarioCoverage || {};
+        var parts = [];
+
+        if (testValues.passed && testValues.total) {
+          parts.push(
+            resultPill(
+              'Tests',
+              String(testValues.passed.current) +
+                '/' +
+                String(testValues.total.current),
+              testValues.passed.passed && testValues.total.passed,
+            ),
+          );
+        }
+
+        if (testValues.passRate) {
+          parts.push(
+            resultPill(
+              'Pass rate',
+              formatE2eMetricValue('passRate', testValues.passRate.current),
+              testValues.passRate.passed,
+            ),
+          );
+        }
+
+        if (typeof areaValues.areaCoverage.current === 'number') {
+          parts.push(
+            resultPill(
+              'Areas',
+              String(lane.e2eMetrics.exercisedAreaCount) +
+                '/' +
+                String(lane.e2eMetrics.definedAreaCount),
+              areaValues.areaCoverage.passed,
+            ),
+          );
+        }
+
+        if (typeof featureValues.featureCoverage.current === 'number') {
+          parts.push(
+            resultPill(
+              'Features',
+              String(lane.e2eMetrics.coveredFeatureCount) +
+                '/' +
+                String(lane.e2eMetrics.activeFeatureCount),
+              featureValues.featureCoverage.passed,
+            ),
+          );
+        }
+
+        if (typeof scenarioValues.current === 'number') {
+          parts.push(
+            resultPill(
+              'Scenarios',
+              String(lane.e2eMetrics.coveredScenarioCount) +
+                '/' +
+                String(lane.e2eMetrics.requiredScenarioCount),
+              scenarioValues.passed,
+            ),
+          );
+        }
+
+        if (lane.e2eMetrics.codeCoverage) {
+          metrics.forEach(function (metric) {
+            var values = lane.e2eMetrics.codeCoverage[metric];
+            if (values) {
+              parts.push(
+                resultPill(
+                  'Code ' + metric,
                   formatPercent(values.current),
-                  formatDelta(values.delta),
-                  deltaClass,
-                ) +
-              '</td>' +
-              '<td class="baseline metric-value">' +
-                escapeHtml(formatPercent(values.baseline)) +
-              '</td>'
-            );
-          })
-          .join('');
+                  values.passed,
+                ),
+              );
+            }
+          });
+        }
+
+        parts.push(resultPill('Duration', formatDuration(lane.e2eMetrics.durationMs), true));
+
+        return '<span class="result-list">' + parts.join('') + '</span>';
+      }
+
+      function renderResultCell(lane) {
+        if (lane.kind === 'coverage') {
+          return renderCoverageResult(lane);
+        }
+
+        return renderE2eResult(lane);
       }
 
       function renderSuiteTable(lanes) {
         var rows = lanes
           .map(function (lane) {
-            var metricCells;
-            if (lane.kind === 'coverage') {
-              metricCells = renderMetricCells(lane);
-            } else if (lane.e2eMetrics && lane.e2eMetrics.codeCoverage) {
-              metricCells = renderMetricCells({
-                metrics: lane.e2eMetrics.codeCoverage,
-                message: lane.message,
-              });
-            } else {
-              metricCells =
-                '<td class="missing" colspan="' +
-                metrics.length * 2 +
-                '">' +
-                escapeHtml(
-                  lane.message ||
-                    'End-to-end code coverage is not available for this run.',
-                ) +
-                '</td>';
-            }
-
             return (
               '<tr>' +
                 '<td>' + renderSuiteNameCell(lane) + '</td>' +
                 '<td>' + renderStatusCell(lane) + '</td>' +
-                '<td class="baseline metric-value">' +
+                '<td class="metric-value">' +
                   escapeHtml(formatDatetime(lane.generatedAt)) +
                 '</td>' +
-                metricCells +
+                '<td>' + renderResultCell(lane) + '</td>' +
                 '<td>' + renderReportCell(lane) + '</td>' +
               '</tr>'
             );
@@ -1331,6 +1528,10 @@ function renderReportShell(metadata, initialLanes) {
         });
         var section = document.getElementById('e2e-area-section');
         var areaMetrics = document.getElementById('e2e-area-metrics');
+
+        function formatAreaLabel(area) {
+          return area === 'Other' ? 'Other (unmapped specs)' : area;
+        }
 
         if (!lane || !lane.e2eMetrics || lane.status === 'skipped') {
           section.hidden = true;
@@ -1418,7 +1619,7 @@ function renderReportShell(metadata, initialLanes) {
 
             return (
               '<tr>' +
-                '<td><strong>' + escapeHtml(area) + '</strong></td>' +
+                '<td><strong>' + escapeHtml(formatAreaLabel(area)) + '</strong></td>' +
                 '<td class="' + areaClass + '">' + escapeHtml(areaStatus) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.passed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.failed)) + '</td>' +
@@ -1435,7 +1636,7 @@ function renderReportShell(metadata, initialLanes) {
             (missingByArea[area] || []).forEach(function (feature) {
               missingFeatureRows.push(
                 '<tr>' +
-                  '<td><strong>' + escapeHtml(area) + '</strong></td>' +
+                  '<td><strong>' + escapeHtml(formatAreaLabel(area)) + '</strong></td>' +
                   '<td><code>' + escapeHtml(feature.id) + '</code></td>' +
                   '<td>' +
                     escapeHtml((feature.missingScenarios || []).join('; ')) +
@@ -1444,6 +1645,29 @@ function renderReportShell(metadata, initialLanes) {
               );
             });
           });
+
+        var excludedFeatureSummary = lane.e2eMetrics.excludedFeatures || [];
+        var excludedFeatureList = excludedFeatureSummary
+          .map(function (feature) {
+            var details = [];
+            if (feature.area) {
+              details.push(formatAreaLabel(feature.area));
+            }
+
+            if (feature.exclusionReason) {
+              details.push(feature.exclusionReason);
+            }
+
+            return (
+              '<li>' +
+              '<code>' +
+              escapeHtml(feature.id) +
+              '</code> (' +
+              (details.length ? escapeHtml(details.join(' · ')) : 'excluded') +
+              ')</li>'
+            );
+          })
+          .join('');
 
         if (!areaRows) {
           areaMetrics.innerHTML = '';
@@ -1465,7 +1689,15 @@ function renderReportShell(metadata, initialLanes) {
               String(lane.e2eMetrics.excludedFeatureCount) +
                 ' excluded features are documented outside the denominator.',
             ) +
-          '</p>' +
+            '</p>' +
+          (excludedFeatureList.length
+            ? '<ul class="feature-list">' +
+              excludedFeatureList +
+              '</ul>'
+            : '<p class="subtle">This suite currently has no excluded feature list.</p>') +
+          '<p class="subtle">' +
+            'Manifest features missing scenarios in this run:' +
+            '</p>' +
           '<div class="table-wrap">' +
             '<table class="test-report-table">' +
               '<thead><tr><th>Area</th><th>Feature</th><th>Missing scenarios</th></tr></thead>' +
@@ -1476,90 +1708,6 @@ function renderReportShell(metadata, initialLanes) {
               '</tbody>' +
             '</table>' +
           '</div>';
-      }
-
-      function failedMetrics(lanes) {
-        var coverageFailures = lanes
-          .filter(function (lane) {
-            return lane.kind === 'coverage' && lane.status !== 'skipped' && lane.metrics;
-          })
-          .flatMap(function (lane) {
-            return metrics
-              .filter(function (metric) {
-                return lane.metrics[metric] && !lane.metrics[metric].passed;
-              })
-              .map(function (metric) {
-                return {
-                  lane: lane,
-                  metric: metric,
-                  values: lane.metrics[metric],
-                  formatValue: formatPercent,
-                };
-              });
-          });
-        var e2eFailures = lanes
-          .filter(function (lane) {
-            return lane.name === 'e2e' && lane.status !== 'skipped' && lane.e2eMetrics;
-          })
-          .flatMap(function (lane) {
-            var failures = [];
-
-            if (lane.e2eMetrics.codeCoverage) {
-              metrics.forEach(function (metric) {
-                var values = lane.e2eMetrics.codeCoverage[metric];
-                if (values && !values.passed) {
-                  failures.push({
-                    lane: lane,
-                    metric: 'code ' + metric,
-                    values: values,
-                    formatValue: formatPercent,
-                  });
-                }
-              });
-            }
-
-            Object.keys(lane.e2eMetrics.areaValues || {}).forEach(function (metric) {
-              var values = lane.e2eMetrics.areaValues[metric];
-              if (values && !values.passed) {
-                failures.push({
-                  lane: lane,
-                  metric: metric,
-                  values: values,
-                  formatValue: formatPercent,
-                });
-              }
-            });
-
-            Object.keys(lane.e2eMetrics.featureValues || {}).forEach(function (metric) {
-              var values = lane.e2eMetrics.featureValues[metric];
-              if (values && !values.passed) {
-                failures.push({
-                  lane: lane,
-                  metric: metric,
-                  values: values,
-                  formatValue: formatPercent,
-                });
-              }
-            });
-
-            e2eTestMetrics.forEach(function (metric) {
-              var values = lane.e2eMetrics.testValues[metric];
-              if (values && !values.passed) {
-                failures.push({
-                  lane: lane,
-                  metric: e2eTestMetricLabels[metric] || metric,
-                  values: values,
-                  formatValue: function (value) {
-                    return formatE2eMetricValue(metric, value);
-                  },
-                });
-              }
-            });
-
-            return failures;
-          });
-
-        return coverageFailures.concat(e2eFailures);
       }
 
       function overallStatus(lanes) {
@@ -1604,72 +1752,6 @@ function renderReportShell(metadata, initialLanes) {
         element.textContent = status.label;
       }
 
-      function renderStatusDetails(lanes) {
-        var details = [];
-        var metricFailures = failedMetrics(lanes);
-        var failedTests = lanes.filter(function (lane) {
-          return lane.kind === 'test' && lane.status === 'failed';
-        });
-        var incomplete = lanes.filter(function (lane) {
-          return lane.status === 'blocked' || lane.status === 'unknown';
-        });
-        var passing = lanes.filter(function (lane) {
-          return lane.status === 'passed';
-        });
-        var skipped = lanes.filter(function (lane) {
-          return lane.status === 'skipped';
-        });
-
-        metricFailures.forEach(function (failure) {
-          details.push(
-            failure.lane.label +
-              ' ' +
-              failure.metric +
-              ' is ' +
-              failure.formatValue(failure.values.current) +
-              ', below baseline ' +
-              failure.formatValue(failure.values.baseline) +
-              ' by ' +
-              formatDelta(failure.values.delta) +
-              ' points.',
-          );
-        });
-        failedTests.forEach(function (lane) {
-          details.push(lane.label + ' tests failed: ' + lane.message);
-        });
-        incomplete.forEach(function (lane) {
-          details.push(lane.label + ' checks are ' + lane.status + ': ' + lane.message);
-        });
-
-        if (details.length === 0) {
-          if (passing.length > 0 && skipped.length > 0) {
-            details.push(
-              passing.map(function (lane) { return lane.label; }).join(' and ') +
-                ' checks passed. ' +
-                skipped.map(function (lane) { return lane.label; }).join(' and ') +
-                ' were not refreshed for this report run.',
-            );
-          } else if (passing.length > 0) {
-            details.push(
-              'All coverage metrics meet or exceed the checked-in baseline, and recorded test reports passed.',
-            );
-          } else {
-            details.push('No suite data was refreshed for this report run.');
-          }
-        } else if (passing.length > 0) {
-          details.unshift(
-            passing.map(function (lane) { return lane.label; }).join(' and ') +
-              ' checks passed.',
-          );
-        }
-
-        document.getElementById('status-details').innerHTML = details
-          .map(function (detail) {
-            return '<li>' + escapeHtml(detail) + '</li>';
-          })
-          .join('');
-      }
-
       function renderDetailedReports(lanes) {
         var section = document.getElementById('detailed-reports');
         var copy = document.getElementById('detailed-reports-copy');
@@ -1684,7 +1766,9 @@ function renderReportShell(metadata, initialLanes) {
             .map(function (lane) {
               return {
                 label: lane.artifactName,
-                href: null,
+                href: reportMetadata.runUrl
+                  ? reportMetadata.runUrl + '#artifacts'
+                  : null,
               };
             });
           copy.textContent = 'Download the workflow artifacts from the linked Actions run.';
@@ -1730,7 +1814,6 @@ function renderReportShell(metadata, initialLanes) {
         renderOverallStatus(lanes);
         renderSuiteTable(lanes);
         renderE2eAreaMetrics(lanes);
-        renderStatusDetails(lanes);
         renderDetailedReports(lanes);
       }
 
