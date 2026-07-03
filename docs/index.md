@@ -197,24 +197,33 @@ If you would like to contribute code, start with the [Trustroots repository](htt
       }
 
       summary.textContent = `Recent project updates across Trustroots and Nostroots.`;
+
+      const badgeType = type =>
+        ({ PR: "pr", Issue: "issue", Commit: "commit" })[type] || "commit";
+
       list.innerHTML = sorted
-        .map(
-          item => `
+        .map(item => {
+          const meta = [
+            item.repo,
+            item.author ? `by ${item.author}` : "",
+            relativeDate(item.date),
+          ]
+            .filter(Boolean)
+            .map(escapeHtml)
+            .join('<span class="activity-dot" aria-hidden="true">·</span>');
+
+          return `
             <a class="activity-item" href="${escapeHtml(item.url)}">
-              <span class="activity-meta">
-                <span class="activity-badge">${escapeHtml(item.type)}</span>
-                <span>${escapeHtml(item.repo)}</span>
-                <span>${escapeHtml(relativeDate(item.date))}</span>
+              <span class="activity-badge activity-badge-${badgeType(
+                item.type,
+              )}">${escapeHtml(item.type)}</span>
+              <span class="activity-body">
+                <span class="activity-title">${escapeHtml(item.title)}</span>
+                <span class="activity-meta">${meta}</span>
               </span>
-              <span class="activity-title">${escapeHtml(item.title)}</span>
-              ${
-                item.author
-                  ? `<span class="activity-author">by ${escapeHtml(item.author)}</span>`
-                  : ""
-              }
             </a>
-          `,
-        )
+          `;
+        })
         .join("");
     };
 
