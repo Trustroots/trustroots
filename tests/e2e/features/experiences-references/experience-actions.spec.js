@@ -127,6 +127,76 @@ test.describe.serial('experience and reference feature coverage', () => {
     expect(hidden.status()).toBe(400);
   });
 
+  test('my-experience endpoint returns an existing private experience', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'experiences.duplicate-prevention', [
+      'Existing experience is detected.',
+    ]);
+
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      const userA = await createPublicUser(context.request);
+      const userB = await createPublicUser(context.request);
+      const userBId = await fetchUserIdByUsername(
+        context.request,
+        userB.username,
+      );
+      await signInViaApi(page, context.request, userA);
+
+      const invalid = await page.request.get('/api/my-experience');
+      expect(invalid.status()).toBe(400);
+
+      const create = await page.request.post('/api/experiences', {
+        data: {
+          userTo: userBId,
+          interactions: { met: true, guest: true, host: false },
+          recommend: 'yes',
+          feedbackPublic: 'E2E my-experience lookup target.',
+        },
+      });
+      expect(create.status()).toBe(201);
+
+      const mine = await page.request.get('/api/my-experience', {
+        params: { userWith: userBId },
+      });
+      expect(mine.ok()).toBeTruthy();
+      expect(await mine.json()).toMatchObject({
+        feedbackPublic: 'E2E my-experience lookup target.',
+        public: false,
+      });
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('members cannot create experiences for themselves', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'experiences.create', [
+      'Validation errors are shown for invalid submissions.',
+    ]);
+
+    const user = await createPublicUser(request);
+    const userId = await fetchUserIdByUsername(request, user.username);
+    await signInViaApi(page, request, user);
+
+    const response = await page.request.post('/api/experiences', {
+      data: {
+        userTo: userId,
+        interactions: { met: true, guest: false, host: false },
+        recommend: 'yes',
+        feedbackPublic: 'E2E invalid self experience.',
+      },
+    });
+    expect(response.status()).toBe(400);
+    expect((await response.json()).details).toMatchObject({ userTo: 'self' });
+  });
+
   test('legacy reference thread API can create and read references', async ({
     browser,
     baseURL,

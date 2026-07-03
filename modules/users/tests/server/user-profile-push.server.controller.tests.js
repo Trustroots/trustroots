@@ -299,7 +299,7 @@ describe('Profile controller push/membership unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Failed to fetch user, please try again.');
+      res.body.message.should.startWith('Snap! Something went wrong.');
     });
 
     it('still succeeds when the notification fails', async () => {

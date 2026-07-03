@@ -75,4 +75,17 @@ test.describe('admin moderation inspection flows', () => {
     await expect(page.getByText('shadowban').first()).toBeVisible();
     await expect(page.getByText('1 sent').first()).toBeVisible();
   });
+
+  test('admin user report API rejects malformed ids', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.user-report', [
+      'Missing user id shows a usable error state.',
+    ]);
+
+    const malformed = await page.request.post('/api/admin/user', {
+      data: { id: 'not-a-mongo-id' },
+    });
+    expect(malformed.status()).toBe(400);
+  });
 });

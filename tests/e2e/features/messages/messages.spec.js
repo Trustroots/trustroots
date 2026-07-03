@@ -29,6 +29,34 @@ test.describe('seeded message flows', () => {
     await expect(page.getByText('Portland Host').first()).toBeVisible();
   });
 
+  test('inbox API returns sanitized thread excerpts', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.inbox', [
+      'Inbox lists seeded conversation.',
+      'Inbox excludes shadow-hidden conversations.',
+    ]);
+
+    const inbox = await page.request.get('/api/messages', {
+      params: { limit: 5 },
+    });
+    expect(inbox.ok()).toBeTruthy();
+
+    const threads = await inbox.json();
+    expect(Array.isArray(threads)).toBeTruthy();
+    expect(threads.length).toBeGreaterThan(0);
+
+    const seededThread = threads.find(
+      thread => thread.userFrom?.username === SEEDED_MEMBERS[1].username,
+    );
+    expect(seededThread).toBeTruthy();
+    expect(seededThread.message.excerpt).toContain(
+      SEEDED_CONVERSATIONS.berlinPortland.latestReply,
+    );
+    expect(seededThread.message.content).toBeUndefined();
+    expect(seededThread.message.spam).toBeUndefined();
+  });
+
   test('thread view shows the seeded reply', async ({
     page,
     request,

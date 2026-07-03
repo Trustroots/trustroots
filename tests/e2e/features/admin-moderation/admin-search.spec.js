@@ -90,4 +90,29 @@ test.describe('admin moderation search flows', () => {
 
     await expect(page.getByText(SEEDED_SHADOW.username).first()).toBeVisible();
   });
+
+  test('admin search APIs reject invalid input', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Search handles no-result state.',
+    ]);
+    annotateFeature(testInfo, 'admin.list-users-by-role', [
+      'Role list respects deterministic seeded users.',
+    ]);
+
+    const shortSearch = await page.request.post('/api/admin/users', {
+      data: { search: 'ab' },
+    });
+    expect(shortSearch.status()).toBe(400);
+    expect(await shortSearch.json()).toMatchObject({
+      message: 'Query string at least 3 characters long required.',
+    });
+
+    const invalidRole = await page.request.post('/api/admin/users/by-role', {
+      data: { role: 'not-a-role' },
+    });
+    expect(invalidRole.status()).toBe(400);
+    expect(await invalidRole.json()).toMatchObject({
+      message: 'Invalid role.',
+    });
+  });
 });
