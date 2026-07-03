@@ -3,7 +3,7 @@ name: Tests
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
   push:
     branches: [main]
   workflow_dispatch:
@@ -19,7 +19,7 @@ on:
       run_e2e:
         description: Run e2e tests
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -177,9 +177,7 @@ jobs:
       (
         (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
         (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-        (github.event_name == 'pull_request' &&
-          (github.event.action == 'opened' ||
-            contains(github.event.pull_request.labels.*.name, 'run-e2e')))
+        github.event_name == 'pull_request'
       ) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
