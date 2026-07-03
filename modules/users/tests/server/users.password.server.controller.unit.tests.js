@@ -253,7 +253,10 @@ describe('Password controller unit tests', () => {
       controller.reset(
         {
           params: { token: 'reset-token' },
-          body: { newPassword: 'newpass', verifyPassword: 'newpass' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
           login: (user, cb) => cb(new Error('login failed')),
         },
         res,
@@ -406,6 +409,62 @@ describe('Password controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Password changed successfully!');
+    });
+
+    it('returns 400 when login fails after changing the password', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.password = 'oldpassword1';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(new Error('login failed')),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('login failed');
+    });
+
+    it('returns 400 when the password change confirmation email fails', async () => {
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(),
+          sendResetPasswordConfirm: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.password = 'oldpassword1';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('confirm email failed');
     });
   });
 });

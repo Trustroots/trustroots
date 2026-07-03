@@ -7,6 +7,8 @@ const path = require('path');
 const mongoose = require('mongoose');
 const proxyquire = require('proxyquire').noCallThru();
 
+require('../../server/models/user.server.model');
+
 const avatarController = require('../../server/controllers/users.avatar.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
@@ -47,7 +49,9 @@ function deferredResponse() {
 }
 
 describe('Avatar controller unit tests', () => {
-  afterEach(utils.clearDatabase);
+  afterEach(() => {
+    return mongoose.connection.readyState ? utils.clearDatabase() : undefined;
+  });
 
   describe('avatarUploadField', () => {
     it('responds with 403 without a user', async () => {
@@ -55,6 +59,28 @@ describe('Avatar controller unit tests', () => {
       avatarController.avatarUploadField({}, res, () => {});
       await res.waitForResponse();
       res.statusCode.should.equal(403);
+    });
+
+    it('delegates authenticated uploads to the file upload service', () => {
+      let uploadArgs;
+      const controller = loadAvatarWithStubs({
+        '../../../core/server/services/file-upload.service': {
+          uploadFile: (...args) => {
+            uploadArgs = args;
+          },
+        },
+      });
+      const req = { user: { _id: new mongoose.Types.ObjectId() } };
+      const res = deferredResponse();
+      const next = () => {};
+
+      controller.avatarUploadField(req, res, next);
+
+      uploadArgs[0].should.containEql('image/jpeg');
+      uploadArgs[1].should.equal('avatar');
+      uploadArgs[2].should.equal(req);
+      uploadArgs[3].should.equal(res);
+      uploadArgs[4].should.equal(next);
     });
   });
 
@@ -239,6 +265,13 @@ describe('Avatar controller unit tests', () => {
     );
   }
 
+  function loadAvatarWithStubs(stubs) {
+    return proxyquire(
+      '../../server/controllers/users.avatar.server.controller',
+      stubs,
+    );
+  }
+
   describe('avatarUpload', () => {
     it('uploads an avatar using the image processor', async () => {
       const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
@@ -262,6 +295,71 @@ describe('Avatar controller unit tests', () => {
         await res.waitForResponse();
         res.statusCode.should.equal(200);
         res.body.message.should.equal('Avatar image uploaded.');
+      } finally {
+        if (previousFallback === undefined) {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
+        }
+      }
+    });
+
+    it('returns 400 when the upload directory cannot be created', async () => {
+      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+
+      try {
+        const controller = loadAvatarWithStubs({
+          'mkdir-recursive': {
+            mkdir: (directory, cb) => cb(new Error('mkdir failed')),
+          },
+        });
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        const res = deferredResponse();
+
+        controller.avatarUpload(
+          {
+            user: userDoc,
+            file: { path: '/tmp/missing-avatar-source.jpg' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+      } finally {
+        if (previousFallback === undefined) {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
+        }
+      }
+    });
+
+    it('returns 400 when fallback upload cleanup fails', async () => {
+      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
+
+      try {
+        const controller = loadAvatarWithStubs({
+          fs: {
+            copyFile: (source, destination, cb) => cb(),
+            unlink: (source, cb) => cb(new Error('unlink failed')),
+          },
+        });
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        const res = deferredResponse();
+
+        controller.avatarUpload(
+          {
+            user: userDoc,
+            file: { path: '/tmp/avatar-cleanup-fails.jpg' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
       } finally {
         if (previousFallback === undefined) {
           delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
