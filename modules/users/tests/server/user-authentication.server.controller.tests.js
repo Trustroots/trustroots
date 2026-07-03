@@ -786,6 +786,8 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
     it('logs in a valid user', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
+      userDoc.created = new Date('2020-05-27T19:23:44.733Z');
+      await userDoc.save();
       const controller = loadSigninController(() => [null, userDoc, null]);
       const res = deferredResponse();
       const req = { login: (user, cb) => cb() };
@@ -793,6 +795,7 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body._id.toString().should.equal(userDoc._id.toString());
+      res.body.usernameUpdateAllowed.should.be.true();
     });
 
     it('returns 400 when login fails after authentication', async () => {

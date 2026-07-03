@@ -4,6 +4,7 @@ const {
   DEFAULT_PASSWORD,
   createUser,
   registerViaApi,
+  signIn,
   signInViaApi,
 } = require('../../support/helpers');
 const {
@@ -69,6 +70,44 @@ test.describe.serial('account settings feature coverage', () => {
     });
     expect(valid.ok()).toBeTruthy();
     expect((await valid.json()).tagline).toBe(tagline);
+  });
+
+  test('older members who sign in through the UI can change username', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.details-update', [
+      'Account edit page is reachable.',
+      'Valid account details update persists.',
+      'Invalid account details show validation errors.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await updateUserByUsername(user.username, {
+      $set: { created: new Date('2020-05-27T19:23:44.733Z') },
+      $unset: { usernameUpdated: '' },
+    });
+
+    await signIn(page, user);
+
+    const profileResponse = await page.request.get(
+      `/api/users/${user.username}`,
+    );
+    expect(profileResponse.ok()).toBeTruthy();
+    const profile = await profileResponse.json();
+    expect(profile.usernameUpdateAllowed).toBe(true);
+
+    await page.evaluate(`
+      const injector = window.angular.element(document.body).injector();
+      injector.get('$state').go('profile-edit.account');
+      injector.get('$rootScope').$applyAsync();
+    `);
+
+    await expect(page).toHaveURL(/\/profile\/edit\/account/);
+    await expect(
+      page.locator('form[name="settingsUsernameForm"] input[name="username"]'),
+    ).toBeEnabled();
   });
 
   test('members can request and confirm profile removal', async ({
