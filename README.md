@@ -11,6 +11,8 @@
 
 ## Current development
 
+[![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://team.trustroots.org/coverage/)
+
 _Out of maintenance mode_
 
 As of June 2026, Trustroots is no longer in maintenance mode. The project was mostly in maintenance mode from 2022 until June 2026, and development work is welcome again.
