@@ -258,6 +258,12 @@ jobs:
       contents: read
       pages: write
       id-token: write
+    # Serialize all GitHub Pages deployments (across runs and the two deploy
+    # jobs below) so actions/deploy-pages does not fail with "Deployment
+    # failed, try again later." when deployments to this environment overlap.
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: https://team.trustroots.org/
@@ -316,6 +322,9 @@ jobs:
       contents: read
       pages: write
       id-token: write
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
     environment:
       name: github-pages
       url: https://team.trustroots.org/
