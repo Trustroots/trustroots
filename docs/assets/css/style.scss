@@ -76,7 +76,7 @@ a:focus-visible {
 }
 
 .header {
-  width: min(1040px, calc(100% - 32px));
+  width: min(1240px, calc(100% - 32px));
   margin: 0 auto;
   padding: 42px 0 10px;
 }
@@ -157,10 +157,6 @@ a.brand:focus-visible {
   color: var(--accent-dark);
 }
 
-.hub-nav .sep {
-  color: rgba(95, 113, 105, 0.45);
-}
-
 .github-icon-link {
   display: inline-flex;
   align-items: center;
@@ -204,7 +200,7 @@ a.brand:focus-visible {
 }
 
 .main-content {
-  width: min(1040px, calc(100% - 32px));
+  width: min(1240px, calc(100% - 32px));
   max-width: none;
   margin: 0 auto;
   padding: 26px 0 56px;
@@ -454,6 +450,98 @@ blockquote {
   color: #58606a;
   border-color: #cfd5db;
   background: #eef0f2;
+}
+
+.activity-panel {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 253, 244, 0.82);
+  box-shadow: 0 18px 42px rgba(0, 75, 63, 0.08);
+}
+
+.activity-panel-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 22px;
+}
+
+.activity-panel h3 {
+  margin: 0 0 0.35rem;
+  color: var(--accent-dark);
+}
+
+.activity-panel-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid rgba(18, 138, 120, 0.28);
+  border-radius: 6px;
+  background: rgba(18, 138, 120, 0.08);
+}
+
+.activity-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.activity-item {
+  display: block;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--foreground);
+}
+
+.activity-item:hover,
+.activity-item:focus-visible {
+  color: var(--foreground);
+  text-decoration: none;
+  border-color: rgba(18, 138, 120, 0.38);
+}
+
+.activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.activity-badge {
+  padding: 0.12rem 0.42rem;
+  border: 1px solid #b8ddc4;
+  border-radius: 999px;
+  background: #e3f3ed;
+  color: var(--accent-dark);
+  line-height: 1;
+}
+
+.activity-title,
+.activity-author {
+  display: block;
+}
+
+.activity-title {
+  margin-top: 8px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.activity-author,
+.activity-empty {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .toc-box {

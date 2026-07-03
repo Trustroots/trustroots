@@ -4,7 +4,165 @@ title: Trustroots Team Guide
 
 ## Volunteer
 
-Help with the transition from platform to protocol: [nos.trustroots.org](https://nos.trustroots.org).
+### Nostr — decentralized social networking
+
+Trustroots is exploring how hospitality networks can rely less on individually run servers and administrative overhead. Nostr offers a promising path toward a more decentralized, gift-economy social web. One of the most helpful actions you can take is to try it out and provide feedback, negative or positive.
+
+Learn more at [nos.trustroots.org](https://nos.trustroots.org).
+
+### Technical help
+
+Trustroots was in maintenance mode from 2022 till June 2026, development work is happening again and technical help is very welcome.
+
+Useful areas include simplifying old code, upgrading dependencies, helping with the React transition, and connecting Trustroots with Nostr/Nostroots.
+
+If you would like to contribute code, start with the [Trustroots repository](https://github.com/Trustroots/trustroots) and the current notes in the README.
+
+## Recent activity
+
+<section class="activity-panel" data-activity-panel>
+  <div class="activity-panel-main">
+    <div>
+      <h3 id="activity-panel-title">Project activity</h3>
+      <p id="activity-panel-summary">
+        Loading recent issues, pull requests, and commits.
+      </p>
+    </div>
+    <a class="activity-panel-link" href="https://github.com/Trustroots"
+      >Open GitHub</a
+    >
+  </div>
+  <div id="activity-list" class="activity-list" aria-live="polite">
+    <p class="activity-empty">Loading recent activity.</p>
+  </div>
+</section>
+
+<script>
+  (() => {
+    const repos = [
+      { name: "Trustroots/trustroots", label: "Trustroots" },
+      { name: "Trustroots/nostroots", label: "Nostroots" },
+    ];
+    const list = document.getElementById("activity-list");
+    const summary = document.getElementById("activity-panel-summary");
+    const limit = 8;
+
+    const escapeHtml = value =>
+      String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
+    const relativeDate = value => {
+      const date = new Date(value);
+
+      if (Number.isNaN(date.getTime())) {
+        return "";
+      }
+
+      const seconds = Math.round((date.getTime() - Date.now()) / 1000);
+      const units = [
+        ["year", 31536000],
+        ["month", 2592000],
+        ["week", 604800],
+        ["day", 86400],
+        ["hour", 3600],
+        ["minute", 60],
+      ];
+      const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+
+      for (const [unit, unitSeconds] of units) {
+        if (Math.abs(seconds) >= unitSeconds) {
+          return formatter.format(Math.round(seconds / unitSeconds), unit);
+        }
+      }
+
+      return "just now";
+    };
+
+    const fetchJson = async url => {
+      const response = await fetch(url, { cache: "no-store" });
+
+      if (!response.ok) {
+        throw new Error(`GitHub response ${response.status}`);
+      }
+
+      return response.json();
+    };
+
+    const repoActivity = async repo => {
+      const [issues, commits] = await Promise.all([
+        fetchJson(
+          `https://api.github.com/repos/${repo.name}/issues?state=open&sort=created&direction=desc&per_page=8`,
+        ),
+        fetchJson(`https://api.github.com/repos/${repo.name}/commits?per_page=8`),
+      ]);
+
+      return [
+        ...issues.map(item => ({
+          repo: repo.label,
+          type: item.pull_request ? "PR" : "Issue",
+          title: item.title,
+          url: item.html_url,
+          author: item.user && item.user.login,
+          date: item.created_at,
+        })),
+        ...commits.map(item => ({
+          repo: repo.label,
+          type: "Commit",
+          title: (item.commit.message || "").split("\n")[0],
+          url: item.html_url,
+          author:
+            (item.author && item.author.login) ||
+            (item.commit.author && item.commit.author.name),
+          date: item.commit.author && item.commit.author.date,
+        })),
+      ];
+    };
+
+    const renderActivity = items => {
+      const sorted = items
+        .filter(item => item.date && item.title && item.url)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+        .slice(0, limit);
+
+      if (sorted.length === 0) {
+        throw new Error("No recent activity found");
+      }
+
+      summary.textContent = `Showing ${sorted.length} recent updates across Trustroots and Nostroots.`;
+      list.innerHTML = sorted
+        .map(
+          item => `
+            <a class="activity-item" href="${escapeHtml(item.url)}">
+              <span class="activity-meta">
+                <span class="activity-badge">${escapeHtml(item.type)}</span>
+                <span>${escapeHtml(item.repo)}</span>
+                <span>${escapeHtml(relativeDate(item.date))}</span>
+              </span>
+              <span class="activity-title">${escapeHtml(item.title)}</span>
+              ${
+                item.author
+                  ? `<span class="activity-author">by ${escapeHtml(item.author)}</span>`
+                  : ""
+              }
+            </a>
+          `,
+        )
+        .join("");
+    };
+
+    Promise.all(repos.map(repoActivity))
+      .then(results => renderActivity(results.flat()))
+      .catch(() => {
+        summary.textContent = "Recent GitHub activity is temporarily unavailable.";
+        list.innerHTML =
+          '<p class="activity-empty">Open GitHub for the latest issues, pull requests, and commits.</p>';
+      });
+  })();
+</script>
 
 ## Test coverage
 
