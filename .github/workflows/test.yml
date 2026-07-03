@@ -176,6 +176,7 @@ jobs:
       always() &&
       (
         (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
         (github.event_name == 'pull_request' &&
           (github.event.action == 'opened' ||
             contains(github.event.pull_request.labels.*.name, 'run-e2e')))
@@ -230,11 +231,19 @@ jobs:
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
             dev npm run test:e2e
       - name: Upload Playwright report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report
+          if-no-files-found: ignore
+      - name: Upload e2e coverage status
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+          if-no-files-found: ignore
       - name: Upload Playwright test results
         if: failure()
         uses: actions/upload-artifact@v7
@@ -273,8 +282,14 @@ jobs:
           artifact_name: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
 
   pages-coverage:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-    needs: [client, server]
+    if: >
+      always() &&
+      github.event_name != 'pull_request' &&
+      github.ref == 'refs/heads/main' &&
+      needs.client.result == 'success' &&
+      needs.server.result == 'success' &&
+      (needs.e2e.result == 'success' || needs.e2e.result == 'failure')
+    needs: [client, server, e2e]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -295,6 +310,17 @@ jobs:
         with:
           name: coverage-server
           path: coverage/server
+      - name: Download e2e coverage status
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+      - name: Download Playwright report
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: playwright-report
+          path: playwright-report
       - name: Generate coverage report page
         run: npm run coverage:report
       - name: Configure GitHub Pages
