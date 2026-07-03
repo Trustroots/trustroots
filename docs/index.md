@@ -196,14 +196,7 @@ If you would like to contribute code, start with the [Trustroots repository](htt
         throw new Error("No recent activity found");
       }
 
-      const expected = repos.length * Object.keys(limits).reduce((value, key) => {
-        value += limits[key];
-        return value;
-      }, 0);
-      summary.textContent = `Showing up to ${Math.min(
-        sorted.length,
-        expected,
-      )} recent updates: ${limits.pulls} PRs, ${limits.issues} issues, and ${limits.commits} commits from each repo.`;
+      summary.textContent = `Recent project updates across Trustroots and Nostroots.`;
       list.innerHTML = sorted
         .map(
           item => `
