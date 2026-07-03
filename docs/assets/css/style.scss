@@ -485,19 +485,20 @@ blockquote {
 
 .activity-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
   margin-top: 16px;
 }
 
 .activity-item {
   display: block;
   min-width: 0;
-  padding: 12px;
+  padding: 9px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--white);
   color: var(--foreground);
+  font-size: 13px;
 }
 
 .activity-item:hover,
@@ -511,14 +512,14 @@ blockquote {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
 }
 
 .activity-badge {
-  padding: 0.12rem 0.42rem;
+  padding: 0.08rem 0.38rem;
   border: 1px solid #b8ddc4;
   border-radius: 999px;
   background: #e3f3ed;
@@ -532,16 +533,17 @@ blockquote {
 }
 
 .activity-title {
-  margin-top: 8px;
+  margin-top: 6px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
+  font-size: 13px;
 }
 
 .activity-author,
 .activity-empty {
-  margin-top: 5px;
+  margin-top: 4px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .toc-box {

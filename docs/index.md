@@ -45,7 +45,11 @@ If you would like to contribute code, start with the [Trustroots repository](htt
     ];
     const list = document.getElementById("activity-list");
     const summary = document.getElementById("activity-panel-summary");
-    const limit = 8;
+    const limits = {
+      commits: 3,
+      issues: 3,
+      pulls: 3,
+    };
 
     const escapeHtml = value =>
       String(value)
@@ -93,46 +97,72 @@ If you would like to contribute code, start with the [Trustroots repository](htt
     };
 
     const repoActivity = async repo => {
-      const [issues, commits] = await Promise.all([
+      const [issueResponse, commitResponse] = await Promise.all([
         fetchJson(
-          `https://api.github.com/repos/${repo.name}/issues?state=open&sort=created&direction=desc&per_page=8`,
+          `https://api.github.com/repos/${repo.name}/issues?state=open&sort=created&direction=desc&per_page=20`,
         ),
-        fetchJson(`https://api.github.com/repos/${repo.name}/commits?per_page=8`),
+        fetchJson(`https://api.github.com/repos/${repo.name}/commits?per_page=20`),
       ]);
 
-      return [
-        ...issues.map(item => ({
+      const pulls = issueResponse
+        .filter(item => item.pull_request)
+        .slice(0, limits.pulls)
+        .map(item => ({
           repo: repo.label,
-          type: item.pull_request ? "PR" : "Issue",
+          type: "PR",
           title: item.title,
           url: item.html_url,
           author: item.user && item.user.login,
           date: item.created_at,
-        })),
-        ...commits.map(item => ({
+        }));
+
+      const issues = issueResponse
+        .filter(item => !item.pull_request)
+        .slice(0, limits.issues)
+        .map(item => ({
           repo: repo.label,
-          type: "Commit",
-          title: (item.commit.message || "").split("\n")[0],
+          type: "Issue",
+          title: item.title,
           url: item.html_url,
-          author:
-            (item.author && item.author.login) ||
-            (item.commit.author && item.commit.author.name),
-          date: item.commit.author && item.commit.author.date,
-        })),
+          author: item.user && item.user.login,
+          date: item.created_at,
+        }));
+
+      const commits = commitResponse.slice(0, limits.commits).map(item => ({
+        repo: repo.label,
+        type: "Commit",
+        title: (item.commit.message || "").split("\n")[0],
+        url: item.html_url,
+        author:
+          (item.author && item.author.login) ||
+          (item.commit.author && item.commit.author.name),
+        date: item.commit.author && item.commit.author.date,
+      }));
+
+      return [
+        ...pulls,
+        ...issues,
+        ...commits,
       ];
     };
 
     const renderActivity = items => {
       const sorted = items
         .filter(item => item.date && item.title && item.url)
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-        .slice(0, limit);
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
 
       if (sorted.length === 0) {
         throw new Error("No recent activity found");
       }
 
-      summary.textContent = `Showing ${sorted.length} recent updates across Trustroots and Nostroots.`;
+      const expected = repos.length * Object.keys(limits).reduce((value, key) => {
+        value += limits[key];
+        return value;
+      }, 0);
+      summary.textContent = `Showing up to ${Math.min(
+        sorted.length,
+        expected,
+      )} recent updates: ${limits.pulls} PRs, ${limits.issues} issues, and ${limits.commits} commits from each repo.`;
       list.innerHTML = sorted
         .map(
           item => `
