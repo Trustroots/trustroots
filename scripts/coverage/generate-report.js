@@ -794,9 +794,6 @@ function renderReportShell(metadata, initialLanes) {
       .hub-nav a:focus {
         color: var(--accent-dark);
       }
-      .hub-nav .sep {
-        color: rgba(95, 113, 105, 0.45);
-      }
       .github-icon-link {
         display: inline-flex;
         align-items: center;
@@ -1147,13 +1144,9 @@ function renderReportShell(metadata, initialLanes) {
         </a>
         <nav class="hub-nav" aria-label="Site links">
           <a href="/">Team home</a>
-          <span class="sep" aria-hidden="true">/</span>
           <a href="https://www.trustroots.org/">Trustroots.org</a>
-          <span class="sep" aria-hidden="true">/</span>
           <a href="https://nos.trustroots.org/">Nostroots</a>
-          <span class="sep" aria-hidden="true">/</span>
           <a href="https://www.trustroots.org/support">Support</a>
-          <span class="sep" aria-hidden="true">/</span>
           ${githubIconLink}
         </nav>
       </div>
@@ -1210,7 +1203,6 @@ function renderReportShell(metadata, initialLanes) {
       </section>
       <footer class="site-footer">
         <a href="/">Team Trustroots</a>
-        <span aria-hidden="true"> / </span>
         ${githubIconLink}
       </footer>
     </main>

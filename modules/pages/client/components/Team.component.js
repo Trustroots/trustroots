@@ -102,7 +102,7 @@ export default function Team({ user }) {
             <p>
               <a
                 className="btn btn-lg btn-primary"
-                href="https://team.trustroots.org/Volunteering.html"
+                href="https://team.trustroots.org/"
               >
                 {t('Get active!')}
               </a>
