@@ -11,7 +11,7 @@
 
 ## Current development
 
-[![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://github.com/Trustroots/trustroots/actions/workflows/test.yml)
+[![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://team.trustroots.org/coverage/)
 
 _Out of maintenance mode_
 
