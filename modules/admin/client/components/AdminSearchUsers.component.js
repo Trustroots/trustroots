@@ -18,13 +18,17 @@ export class AdminSearchUsersContent extends Component {
   constructor(props) {
     super(props);
     this.onSearchChange = this.onSearchChange.bind(this);
+    this.onHideObviousSpamUsersChange =
+      this.onHideObviousSpamUsersChange.bind(this);
     this.onRoleChange = this.onRoleChange.bind(this);
     this.doSearch = this.doSearch.bind(this);
     this.doListUsersByRole = this.doListUsersByRole.bind(this);
     this.state = {
+      hideObviousSpamUsers: true,
       role: 'admin',
       search: '',
       userResults: [],
+      userResultsSource: false,
     };
   }
 
@@ -51,13 +55,17 @@ export class AdminSearchUsersContent extends Component {
     window.history.pushState({ search }, window.document.title, url.toString());
   }
 
+  onHideObviousSpamUsersChange(event) {
+    this.setState({ hideObviousSpamUsers: event.target.checked });
+  }
+
   async doListUsersByRole(event) {
     if (event) {
       event.preventDefault();
     }
     const { role } = this.state;
     const userResults = await listUsersByRole(role);
-    this.setState({ userResults });
+    this.setState({ userResults, userResultsSource: 'role' });
   }
 
   async doSearch(event) {
@@ -67,15 +75,22 @@ export class AdminSearchUsersContent extends Component {
     const { search } = this.state;
     if (search.length >= SEARCH_STRING_LIMIT) {
       const userResults = await searchUsers(search);
-      this.setState({
-        userResults: userResults.filter(user => !isObviousSpamUser(user)),
-      });
+      this.setState({ userResults, userResultsSource: 'search' });
     }
   }
 
   render() {
     const { showHeading } = this.props;
-    const { userResults } = this.state;
+    const { hideObviousSpamUsers, userResults, userResultsSource } = this.state;
+    const shouldHideObviousSpamUsers =
+      hideObviousSpamUsers && userResultsSource === 'search';
+    const visibleUserResults = shouldHideObviousSpamUsers
+      ? userResults.filter(user => !isObviousSpamUser(user))
+      : userResults;
+    const hiddenObviousSpamUserCount =
+      userResultsSource === 'search'
+        ? userResults.length - visibleUserResults.length
+        : 0;
 
     return (
       <>
@@ -101,6 +116,16 @@ export class AdminSearchUsersContent extends Component {
               >
                 Search
               </button>
+              <div className="checkbox">
+                <label>
+                  <input
+                    checked={hideObviousSpamUsers}
+                    onChange={this.onHideObviousSpamUsersChange}
+                    type="checkbox"
+                  />{' '}
+                  Hide obvious spam
+                </label>
+              </div>
             </form>
           </div>
           <div className="col-xs-12 col-md-6">
@@ -138,9 +163,15 @@ export class AdminSearchUsersContent extends Component {
           showPublicProfileLink
           showUserState
           showZendeskActions
-          userResults={userResults}
+          userResults={visibleUserResults}
           usersLimit={SEARCH_USERS_LIMIT}
         />
+
+        {hiddenObviousSpamUserCount > 0 && (
+          <p className="text-muted">
+            {hiddenObviousSpamUserCount} likely spam hidden.
+          </p>
+        )}
       </>
     );
   }

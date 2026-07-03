@@ -41,7 +41,10 @@ describe('<AdminSearchUsers />', () => {
     await component.doListUsersByRole();
 
     expect(usersApi.listUsersByRole).toHaveBeenCalledWith('admin');
-    expect(component.setState).toHaveBeenCalledWith({ userResults });
+    expect(component.setState).toHaveBeenCalledWith({
+      userResults,
+      userResultsSource: 'role',
+    });
   });
 
   it('does not show legacy moderator as a listable role', () => {
@@ -158,6 +161,50 @@ describe('<AdminSearchUsers />', () => {
       screen.queryByText(/Pretty Jenifer is waiting/),
     ).not.toBeInTheDocument();
     expect(screen.getByText('1 user(s).')).toBeInTheDocument();
+    expect(screen.getByText('2 likely spam hidden.')).toBeInTheDocument();
+  });
+
+  it('reveals obvious spam users from text search results when toggled off', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([
+      makeUser({
+        _id: 'spamspamspamspamspam0001',
+        displayName: 'Hot Daria Wants To Date',
+        email: 'feedonthefriction+3@hotmail.com',
+        emailTemporary: 'feedonthefriction+3@hotmail.com',
+        public: false,
+        roles: ['user', 'suspended'],
+        username: '24721768s',
+      }),
+      makeUser({
+        _id: 'realrealrealrealreal0001',
+        displayName: 'The Friender',
+        email: 'friend@example.org',
+        username: 'thefri',
+      }),
+    ]);
+
+    render(<AdminSearchUsers />);
+
+    fireEvent.change(screen.getByLabelText('Name, username or email'), {
+      target: { value: 'thefri' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(
+      await screen.findByText('thefri (The Friender)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('24721768s (Hot Daria Wants To Date)'),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Hide obvious spam'));
+
+    expect(
+      screen.getByText('24721768s (Hot Daria Wants To Date)'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('2 user(s).')).toBeInTheDocument();
+    expect(screen.queryByText('1 likely spam hidden.')).not.toBeInTheDocument();
+    expect(usersApi.searchUsers).toHaveBeenCalledTimes(1);
   });
 
   it('lists users by role and renders temporary email state', async () => {
@@ -185,6 +232,33 @@ describe('<AdminSearchUsers />', () => {
     expect(usersApi.listUsersByRole).toHaveBeenCalledWith('volunteer');
     expect(screen.getByText('new@example.org')).toBeInTheDocument();
     expect(screen.getByText('(temporary email)')).toBeInTheDocument();
+  });
+
+  it('does not hide obvious spam users from role lists', async () => {
+    usersApi.listUsersByRole.mockResolvedValueOnce([
+      makeUser({
+        _id: 'spamspamspamspamspam0001',
+        displayName: 'Hot Daria Wants To Date',
+        email: 'feedonthefriction+3@hotmail.com',
+        emailTemporary: 'feedonthefriction+3@hotmail.com',
+        public: false,
+        roles: ['user', 'suspended'],
+        username: '24721768s',
+      }),
+    ]);
+
+    render(<AdminSearchUsers />);
+
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'suspended' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'List users in role' }));
+
+    expect(
+      await screen.findByText('24721768s (Hot Daria Wants To Date)'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('1 user(s).')).toBeInTheDocument();
+    expect(screen.queryByText('1 likely spam hidden.')).not.toBeInTheDocument();
   });
 
   it('hides public profile links for suspended members in search results', async () => {

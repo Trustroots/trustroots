@@ -104,10 +104,13 @@ export default class AdminUser extends Component {
     super(props);
     this.getUserById = this.getUserById.bind(this);
     this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
+    this.onHideObviousSpamUsersChange =
+      this.onHideObviousSpamUsersChange.bind(this);
     this.onQueryChange = this.onQueryChange.bind(this);
     this.queryUser = this.queryUser.bind(this);
     this.state = {
       hasSearched: false,
+      hideObviousSpamUsers: true,
       isSettingUserRole: false,
       isSearching: false,
       matchingUsers: [],
@@ -145,6 +148,10 @@ export default class AdminUser extends Component {
       }
     }
     window.history.pushState({ query }, window.document.title, url.toString());
+  }
+
+  onHideObviousSpamUsersChange(event) {
+    this.setState({ hideObviousSpamUsers: event.target.checked });
   }
 
   handleUserRoleChange(role) {
@@ -191,7 +198,7 @@ export default class AdminUser extends Component {
 
         this.setState({
           isSearching: false,
-          matchingUsers: matchingUsers.filter(user => !isObviousSpamUser(user)),
+          matchingUsers,
         });
       },
     );
@@ -216,6 +223,7 @@ export default class AdminUser extends Component {
   render() {
     const {
       hasSearched,
+      hideObviousSpamUsers,
       isSearching,
       isSettingUserRole,
       matchingUsers,
@@ -224,8 +232,13 @@ export default class AdminUser extends Component {
     } = this.state;
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
+    const visibleMatchingUsers = hideObviousSpamUsers
+      ? matchingUsers.filter(user => !isObviousSpamUser(user))
+      : matchingUsers;
+    const hiddenObviousSpamUserCount =
+      matchingUsers.length - visibleMatchingUsers.length;
     const hasNoMatchingUsers =
-      hasSearched && !isSearching && matchingUsers.length === 0;
+      hasSearched && !isSearching && visibleMatchingUsers.length === 0;
     const userId = get(user, ['profile', '_id']);
     const profileLabel = isProfile
       ? user.profile.username || user.profile.displayName || 'Unknown member'
@@ -337,6 +350,16 @@ export default class AdminUser extends Component {
                 type="search"
                 value={query}
               />
+              <div className="checkbox">
+                <label>
+                  <input
+                    checked={hideObviousSpamUsers}
+                    onChange={this.onHideObviousSpamUsersChange}
+                    type="checkbox"
+                  />{' '}
+                  Hide obvious spam
+                </label>
+              </div>
             </form>
 
             {isSearching && (
@@ -344,7 +367,15 @@ export default class AdminUser extends Component {
             )}
           </div>
 
-          {!isProfile && <AdminUserResultsTable userResults={matchingUsers} />}
+          {!isProfile && (
+            <AdminUserResultsTable userResults={visibleMatchingUsers} />
+          )}
+
+          {!isProfile && hiddenObviousSpamUserCount > 0 && (
+            <p className="text-muted">
+              {hiddenObviousSpamUserCount} likely spam hidden.
+            </p>
+          )}
 
           {!isProfile && hasNoMatchingUsers && (
             <p>

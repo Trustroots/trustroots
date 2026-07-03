@@ -376,7 +376,88 @@ describe('<AdminUser />', () => {
     expect(
       screen.queryByText(/Hot Daria Wants To Date/),
     ).not.toBeInTheDocument();
+    expect(screen.getByText('1 likely spam hidden.')).toBeInTheDocument();
     expect(usersApi.getUser).not.toHaveBeenCalled();
+  });
+
+  it('reveals non-exact obvious spam matches when toggled off', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([
+      {
+        _id: otherUserId,
+        created: '2024-02-03T04:05:06.000Z',
+        displayName: 'Alice Similar',
+        email: 'similar@example.org',
+        username: 'alice-similar',
+      },
+      {
+        _id: '333333333333333333333333',
+        created: '2021-07-06T00:00:00.000Z',
+        displayName: 'Hot Daria Wants To Date https://bit.ly/lovezones Come In',
+        email: 'spam@example.org',
+        emailTemporary: 'spam@example.org',
+        public: false,
+        roles: ['user', 'suspended'],
+        username: '24721768s',
+      },
+    ]);
+
+    render(<AdminUser />);
+
+    submitMemberSearch('alice');
+
+    expect(
+      await screen.findByText('alice-similar (Alice Similar)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Hot Daria Wants To Date/),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText('Hide obvious spam'));
+
+    expect(
+      screen.getByText(
+        '24721768s (Hot Daria Wants To Date https://bit.ly/lovezones Come In)',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('1 likely spam hidden.')).not.toBeInTheDocument();
+    expect(usersApi.searchUsers).toHaveBeenCalledTimes(1);
+  });
+
+  it('loads an exact obvious spam match instead of hiding it', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([
+      {
+        _id: userId,
+        displayName: 'Hot Daria Wants To Date',
+        email: 'spam@example.org',
+        emailTemporary: 'spam@example.org',
+        public: false,
+        roles: ['user', 'suspended'],
+        username: '24721768s',
+      },
+    ]);
+    usersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: {
+          _id: userId,
+          displayName: 'Hot Daria Wants To Date',
+          email: 'spam@example.org',
+          roles: ['user', 'suspended'],
+          username: '24721768s',
+        },
+      }),
+    );
+
+    render(<AdminUser />);
+
+    submitMemberSearch('24721768s');
+
+    await waitFor(() =>
+      expect(usersApi.searchUsers).toHaveBeenCalledWith('24721768s'),
+    );
+    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+    expect(
+      await screen.findByRole('heading', { name: '24721768s' }),
+    ).toBeInTheDocument();
   });
 
   it('shows an empty state when no users match', async () => {
