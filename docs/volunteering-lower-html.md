@@ -1,6 +1,6 @@
 ---
 layout: null
-permalink: /Volunteering
+permalink: /volunteering.html
 ---
 
 <!DOCTYPE html>
