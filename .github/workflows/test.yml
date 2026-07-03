@@ -282,10 +282,13 @@ jobs:
       - name: Upload site
         uses: actions/upload-pages-artifact@v5
         with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: site
       - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Upload coverage report
         uses: actions/upload-artifact@v7
         with:
