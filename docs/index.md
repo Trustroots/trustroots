@@ -26,9 +26,6 @@ If you would like to contribute code, start with the [Trustroots repository](htt
       <h3 id="activity-panel-title">Recent GitHub activity</h3>
       <p id="activity-panel-summary">Loading recent activity.</p>
     </div>
-    <a class="activity-panel-link" href="https://github.com/Trustroots"
-      >Open GitHub</a
-    >
   </div>
   <div id="activity-list" class="activity-list" aria-live="polite">
     <p class="activity-empty">Loading recent activity.</p>
