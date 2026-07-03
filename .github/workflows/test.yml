@@ -105,10 +105,12 @@ jobs:
             -e NODE_ENV=test \
             dev npm run coverage:check -- --scope=client
       - name: Upload client coverage report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-client
           path: coverage/client
+          if-no-files-found: ignore
 
   server:
     needs: build-dev-image
@@ -165,10 +167,12 @@ jobs:
             -e NODE_ENV=test \
             dev npm run coverage:check -- --scope=server
       - name: Upload server coverage report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-server
           path: coverage/server
+          if-no-files-found: ignore
 
   e2e:
     needs: build-dev-image
@@ -227,17 +231,113 @@ jobs:
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
             dev npm run test:e2e
       - name: Upload Playwright report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: playwright-report
+          if-no-files-found: ignore
       - name: Upload Playwright test results
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-test-results
           path: test-results
+          if-no-files-found: ignore
+      - name: Upload end-to-end status
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+          if-no-files-found: ignore
+
+  coverage-summary:
+    if: always() && github.event_name == 'pull_request'
+    needs: [client, server, e2e]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download client coverage
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-client
+          path: coverage/client
+      - name: Download server coverage
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-server
+          path: coverage/server
+      - name: Download end-to-end status
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+      - name: Download Playwright report
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: playwright-report
+          path: playwright-report
+      - name: Record skipped end-to-end status
+        if: needs.e2e.result == 'skipped'
+        run: |
+          mkdir -p coverage/e2e
+          node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'npm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
+      - name: Generate coverage overview
+        run: npm run coverage:report
+      - name: Generate pull request summary
+        run: |
+          npm run coverage:pr-summary > coverage-report/pr-summary.md
+          cat coverage-report/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload coverage overview
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage-report
+      - name: Update pull request coverage comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- trustroots-coverage-report -->';
+            const body = fs.readFileSync('coverage-report/pr-summary.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
 
   pages:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

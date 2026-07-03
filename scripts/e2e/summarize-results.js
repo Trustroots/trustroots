@@ -8,7 +8,9 @@ const { mergeRawCoverage } = require('./merge-js-coverage');
 
 const root = path.resolve(__dirname, '../..');
 const resultsPath = path.join(root, 'coverage/e2e/playwright-results.json');
-const statusPath = path.join(root, 'coverage/e2e/status.json');
+const statusPath = process.env.TRUSTROOTS_E2E_STATUS_PATH
+  ? path.resolve(process.env.TRUSTROOTS_E2E_STATUS_PATH)
+  : path.join(root, 'coverage/e2e/status.json');
 const enforceFeatureCoverage =
   process.env.TRUSTROOTS_E2E_ENFORCE_FEATURE_COVERAGE === 'true';
 
