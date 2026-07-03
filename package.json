@@ -79,6 +79,7 @@
     "test:e2e:ui": "./scripts/e2e/test-e2e.sh --ui",
     "test:selenium": "python ./scripts/selenium/test.py",
     "test:server:codex": "TRUSTROOTS_SKIP_LOCAL_CONFIG=true ./scripts/codex/test-server.sh",
+    "test:server:files": "node ./scripts/test-server-files.js",
     "test:codex": "npm run test:client && npm run test:server:codex",
     "test:server:watch": "npm run check-environment && NODE_ENV=test gulp test:server:watch",
     "test:server": "NODE_ENV=test gulp test:server",

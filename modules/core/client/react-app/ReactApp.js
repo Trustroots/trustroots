@@ -1,10 +1,13 @@
+import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
 import AppHeader from '@/modules/core/client/components/AppHeader.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
+import { getReactRouteAccessRedirect } from '@/modules/core/shared/react-route-ownership';
+import { useAuth } from './auth';
 import ReactFooter from './ReactFooter';
 import { findRoute } from './routes';
-import { useAuth, useAppConfig } from './AppProviders';
+import { useAppConfig } from './AppProviders';
 
 function signout(event) {
   if (event) {
@@ -25,11 +28,16 @@ function signout(event) {
   window.top.location.href = '/api/auth/signout';
 }
 
-export default function ReactApp() {
+function defaultNavigate(url) {
+  window.location.assign(url);
+}
+
+export default function ReactApp({ navigate = defaultNavigate }) {
   const { title } = useAppConfig();
   const { user } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const route = findRoute(currentPath);
+  const accessRedirect = getReactRouteAccessRedirect(route, user);
 
   useEffect(() => {
     const onPopState = () => setCurrentPath(window.location.pathname);
@@ -46,20 +54,30 @@ export default function ReactApp() {
       document.title = title;
     }
 
-    window.scrollTo(0, 0);
+    if (!route?.noScrollingTop) {
+      window.scrollTo(0, 0);
+    }
   }, [route, title]);
+
+  useEffect(() => {
+    if (accessRedirect) {
+      navigate(accessRedirect);
+    }
+  }, [accessRedirect, navigate]);
 
   return (
     <>
       <div id="tr-wrap">
-        <AppHeader onSignout={signout} user={user} />
+        {!route?.headerHidden && <AppHeader onSignout={signout} user={user} />}
         <article className="content" id="tr-main" role="main" tabIndex="-1">
-          {route ? route.render({ user }) : <NotFoundPage />}
+          {route && !accessRedirect ? route.render({ user }) : <NotFoundPage />}
         </article>
       </div>
-      <ReactFooter />
+      {!route?.footerHidden && <ReactFooter />}
     </>
   );
 }
 
-ReactApp.propTypes = {};
+ReactApp.propTypes = {
+  navigate: PropTypes.func,
+};

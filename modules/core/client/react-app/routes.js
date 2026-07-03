@@ -1,9 +1,20 @@
 import React from 'react';
 
 import {
-  REACT_OWNED_PATHS,
+  getReactRoutePolicy,
+  REACT_ROUTE_POLICIES,
   normalizePath,
 } from '@/modules/core/shared/react-route-ownership';
+import Admin from '@/modules/admin/client/components/Admin.component';
+import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
+import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component';
+import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
+import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
+import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
+import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
+import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers.component';
+import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
+import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import Contribute from '@/modules/pages/client/components/Contribute.component';
 import FaqBugsAndFeatures from '@/modules/pages/client/components/FaqBugsAndFeatures.component';
 import FaqFoundation from '@/modules/pages/client/components/FaqFoundation.component';
@@ -20,88 +31,51 @@ import SupportPage from '@/modules/support/client/components/SupportPage.compone
 import Team from '@/modules/pages/client/components/Team.component';
 import Volunteering from '@/modules/pages/client/components/Volunteering.component';
 
-export const routes = [
-  {
-    path: '/contact',
-    title: 'Contact us',
-    render: ({ user }) => <SupportPage user={user} />,
-  },
-  {
-    path: '/contribute',
-    title: 'Contribute',
-    render: () => <Contribute />,
-  },
-  {
-    path: '/faq',
-    title: 'FAQ - Site & community',
-    render: () => <FaqGeneral />,
-  },
-  {
-    path: '/faq/bugs-and-features',
-    title: 'FAQ - Bugs & Features',
-    render: () => <FaqBugsAndFeatures />,
-  },
-  {
-    path: '/faq/circles',
-    title: 'FAQ - Circles',
-    render: () => <FaqTribes />,
-  },
-  {
-    path: '/faq/foundation',
-    title: 'FAQ - Foundation',
-    render: () => <FaqFoundation />,
-  },
-  {
-    path: '/faq/technology',
-    title: 'FAQ - Technology',
-    render: () => <FaqTechnology />,
-  },
-  {
-    path: '/foundation',
-    title: 'Foundation',
-    render: ({ user }) => <Foundation user={user} />,
-  },
-  {
-    path: '/guide',
-    title: 'Guide',
-    render: () => <Guide />,
-  },
-  {
-    path: '/media',
-    title: 'Media',
-    render: () => <Media />,
-  },
-  {
-    path: '/privacy',
-    title: 'Privacy policy',
-    render: () => <Privacy />,
-  },
-  {
-    path: '/rules',
-    title: 'Rules',
-    render: () => <Rules />,
-  },
-  {
-    path: '/statistics',
-    title: 'Statistics',
-    render: ({ user }) => <Statistics isAuthenticated={Boolean(user)} />,
-  },
-  {
-    path: '/support',
-    title: 'Support',
-    render: ({ user }) => <SupportPage user={user} />,
-  },
-  {
-    path: '/team',
-    title: 'Team',
-    render: ({ user }) => <Team user={user} />,
-  },
-  {
-    path: '/volunteering',
-    title: 'Volunteering',
-    render: () => <Volunteering />,
-  },
-];
+function renderWithUser(Component) {
+  return function renderRoute({ user }) {
+    return React.createElement(Component, { user });
+  };
+}
+
+function renderStatistics({ user }) {
+  return React.createElement(Statistics, { isAuthenticated: Boolean(user) });
+}
+
+const renderByPath = {
+  '/admin': () => <Admin />,
+  '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
+  '/admin/acquisition-stories/analysis': () => (
+    <AdminAcquisitionStoriesAnalysis />
+  ),
+  '/admin/audit-log': () => <AdminAuditLog />,
+  '/admin/messages': () => <AdminMessages />,
+  '/admin/newsletter': () => <AdminNewsletter />,
+  '/admin/reference-threads': () => <AdminReferenceThreads />,
+  '/admin/search-users': () => <AdminSearchUsers />,
+  '/admin/threads': () => <AdminThreads />,
+  '/admin/user': () => <AdminUser />,
+  '/contact': renderWithUser(SupportPage),
+  '/contribute': () => <Contribute />,
+  '/faq': () => <FaqGeneral />,
+  '/faq/bugs-and-features': () => <FaqBugsAndFeatures />,
+  '/faq/circles': () => <FaqTribes />,
+  '/faq/foundation': () => <FaqFoundation />,
+  '/faq/technology': () => <FaqTechnology />,
+  '/foundation': renderWithUser(Foundation),
+  '/guide': () => <Guide />,
+  '/media': () => <Media />,
+  '/privacy': () => <Privacy />,
+  '/rules': () => <Rules />,
+  '/statistics': renderStatistics,
+  '/support': renderWithUser(SupportPage),
+  '/team': renderWithUser(Team),
+  '/volunteering': () => <Volunteering />,
+};
+
+export const routes = REACT_ROUTE_POLICIES.map(route => ({
+  ...route,
+  render: renderByPath[route.path],
+}));
 
 export function findRoute(path) {
   const normalizedPath = normalizePath(path);
@@ -110,5 +84,5 @@ export function findRoute(path) {
 }
 
 export function isReactRoute(path) {
-  return REACT_OWNED_PATHS.includes(normalizePath(path));
+  return Boolean(getReactRoutePolicy(path));
 }

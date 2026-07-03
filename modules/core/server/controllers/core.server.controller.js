@@ -5,7 +5,11 @@ const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
-const { isReactOwnedPath } = require('../../shared/react-route-ownership');
+const {
+  getReactRouteAccessRedirect,
+  getReactRoutePolicy,
+  isReactOwnedPath,
+} = require('../../shared/react-route-ownership');
 
 /**
  * Render the main application page
@@ -38,6 +42,16 @@ exports.renderIndex = function (req, res) {
   // https://expressjs.com/en/api.html#req.path
   if (req.path === '/signup') {
     renderVars.invite = true;
+  }
+
+  const reactRoutePolicy = getReactRoutePolicy(req.path);
+  const accessRedirect = getReactRouteAccessRedirect(
+    reactRoutePolicy,
+    renderVars.user,
+  );
+
+  if (accessRedirect) {
+    return res.redirect(accessRedirect);
   }
 
   res.render(

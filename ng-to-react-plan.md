@@ -1,6 +1,6 @@
 # AngularJS to React Migration Feasibility Plan
 
-Last updated: 2026-07-02
+Last updated: 2026-07-03
 
 ## Summary
 
@@ -19,22 +19,30 @@ The repo already has substantial React infrastructure:
 - React component tests using `@testing-library/react`
 - Existing React components across most frontend modules
 
-The main challenge is that AngularJS still owns the application lifecycle:
+The first React-owned app-root phase has now been completed. AngularJS still
+owns the application lifecycle for most routes, but a small public route group
+now boots through a separate React root selected by the server.
 
-- App bootstrap
-- `ui-router` route table
+AngularJS still owns these parts of the remaining app:
+
+- App bootstrap for non-migrated routes
+- `ui-router` route table for non-migrated routes
 - Route guards for authentication and roles
 - Route `resolve` data loading
-- Header/footer visibility
+- Header/footer visibility outside the React-owned root
 - Page title behavior
 - Scroll reset on navigation
 - Flash/message center plumbing
 - Some global app state
 - Many controllers, services, directives, filters, and HTML templates
 
-React currently runs mostly inside Angular through `ngreact`, so the migration is
-best approached by first creating a React app shell, then moving routes and data
-loading into React gradually.
+React now runs in two modes:
+
+- Existing Angular-owned routes still mount React components through `ngreact`.
+- React-owned routes render through a separate React app entry and root element.
+
+The migration should continue by expanding React route ownership gradually while
+keeping Angular-owned routes stable until they are deliberately moved.
 
 ## Version Strategy
 
@@ -56,18 +64,22 @@ Possible routing options:
 - Or write a small internal hook-based router around `history.pushState`,
   `popstate`, route matching, route params, and query params.
 
-The custom-router option avoids adding another major abstraction, but
-`react-router-dom@5.x` would reduce custom route-matching code. Either can work.
+The first React-owned root uses the custom-router option with exact route
+matching. `react-router-dom@5.x` remains an option if later route complexity
+starts to outweigh the small internal matcher.
 
 ## Current Architecture Notes
 
-### Client Entry
+### Client Entries
 
-The main client bundle is `config/webpack/entries/main.js`.
+There are now two client entrypoints:
 
-It imports Angular, registers all Angular modules, imports global styles, imports
-module Less files, and auto-registers React `.component.js` files as Angular
-directives:
+- `config/webpack/entries/main.js` for Angular-owned routes.
+- `config/webpack/entries/react-main.js` for React-owned routes.
+
+The Angular bundle still imports Angular, registers all Angular modules, imports
+global styles, imports module Less files, and auto-registers React
+`.component.js` files as Angular directives:
 
 - `modules/*/client/*.module.js` files register Angular feature modules.
 - `require.context('../../../modules/', true, /\.component\.js$/)` loads React
@@ -75,11 +87,18 @@ directives:
 - Each React component is wrapped with `reactDirective` from `ngreact`.
 - Wrapped components become Angular directives on the `trustroots` module.
 
-This means React is currently mounted by Angular templates, not by a React root.
+The React bundle imports shared styles, initializes i18n, wraps the app in
+`AppProviders`, and renders `ReactApp` into `#tr-react-root` with
+`ReactDOM.render`.
+
+~~This means React is currently mounted by Angular templates, not by a React
+root.~~ React now has a root for selected URL groups, while Angular still wraps
+React components on Angular-owned pages.
 
 ### Angular Bootstrap
 
-The Angular app is bootstrapped in `modules/core/client/app/init.js`:
+The Angular app is still bootstrapped in `modules/core/client/app/init.js` for
+Angular-owned routes:
 
 - `angular.module(AppConfig.appModuleName, AppConfig.appModuleVendorDependencies)`
   creates the `trustroots` app.
@@ -87,8 +106,12 @@ The Angular app is bootstrapped in `modules/core/client/app/init.js`:
   starts Angular manually once the document is ready.
 - The same init file also registers the base service worker.
 
-The eventual React cutover point is here: replace Angular bootstrap with a
-React root render.
+The React-owned root does not use this bootstrap path. Direct requests for
+React-owned URLs render `react-index.server.view.html`, load `react-main.js`,
+and mount React directly.
+
+The eventual full cutover still finishes here: remove the remaining Angular
+bootstrap once no Angular-owned routes remain.
 
 ### Angular Vendor Dependencies
 
@@ -118,10 +141,10 @@ Important current Angular-era dependencies include:
 Many of these are not just rendering dependencies. Some imply behavior that must
 be replaced or deliberately removed.
 
-### Server Layout
+### Server Layouts
 
-The server renders `modules/core/server/views/index.server.view.html`, which
-extends `layout.server.view.html`.
+Angular-owned routes render `modules/core/server/views/index.server.view.html`,
+which extends `layout.server.view.html`.
 
 The current SPA outlet is:
 
@@ -134,7 +157,7 @@ The layout still has Angular attributes:
 - `<body ng-cloak ...>`
 - Header and footer use Angular expressions/directives.
 
-The layout injects backend data as globals:
+The Angular layout injects backend data as globals:
 
 - `title`
 - `settings`
@@ -142,7 +165,14 @@ The layout injects backend data as globals:
 - `isNativeMobileApp`
 - `user`
 
-A React shell can initially keep using these globals to avoid backend churn.
+The React-owned root now has parallel server templates:
+
+- `modules/core/server/views/react-index.server.view.html`
+- `modules/core/server/views/react-layout.server.view.html`
+
+The React layout keeps the same backend bootstrap globals (`title`, `settings`,
+`env`, `isNativeMobileApp`, `user`, etc.) but removes Angular shell markup and
+uses `<div id="tr-react-root"></div>` as the client mount point.
 
 ### Server Catch-All
 
@@ -152,8 +182,14 @@ The SPA catch-all lives in `modules/core/server/routes/core.server.routes.js`:
 - `/circles/:tribe` renders the app with circle metadata for social tags.
 - `/*` renders the app through `core.renderIndex`.
 
-This is good for a React client router. Backend route changes should be minimal
-as long as the React app continues using the same URL paths.
+`core.renderIndex` now uses `modules/core/shared/react-route-ownership.js` to
+choose the server template:
+
+- React-owned paths render `react-index.server.view.html`.
+- All other frontend paths render the existing Angular `index.server.view.html`.
+
+Backend route changes should remain minimal as long as React-owned routes keep
+using the same URL paths.
 
 ### Global App Controller
 
@@ -178,11 +214,14 @@ It currently owns:
 - `$stateChangeSuccess` header/footer state, scroll reset, and photo credits
 - signout flow, including push cleanup and native app bridge signaling
 
-The React replacement should probably be split into:
+The React root has started this replacement in
+`modules/core/client/react-app/AppProviders.js`, `ReactApp.js`, `routes.js`,
+`bootstrap.js`, and `ReactFooter.js`.
 
-- `AppProvider`
-- `AuthProvider`
-- `SettingsProvider`
+Remaining React shell work should probably be split into:
+
+- richer `AuthProvider`
+- richer `SettingsProvider`
 - `RouteMetaProvider`
 - `PhotoCreditsProvider`
 - `NativeAppBridgeProvider` or equivalent utility
@@ -195,7 +234,8 @@ Current frontend auth service is simple:
 - `modules/users/client/services/authentication.client.service.js`
 - It exposes `user: $window.user || null`.
 
-React can initially use the same `window.user` value.
+React-owned routes now read the same `window.user` value through
+`getBootstrapData()` and `AppProviders`.
 
 Longer term, auth state should be owned by an `AuthProvider` that can refresh
 or mutate current-user state after profile/account updates.
@@ -233,18 +273,49 @@ It still listens to Angular route changes through `angular-compat`:
 
 - `$on('$stateChangeSuccess', ...)`
 
-When React owns routing, that compatibility code can be replaced by route state.
+For React-owned routes, `ReactApp` renders `AppHeader` directly and passes the
+bootstrap user plus a React-side signout handler. The Angular compatibility code
+is still needed while Angular-owned routes render the header through `ngreact`;
+the React-owned root currently uses full page loads for path changes, so the
+compatibility listener is harmless there.
 
-The footer is still server-rendered/Angular-controlled:
+The footer is still server-rendered/Angular-controlled on Angular-owned routes:
 
 - `modules/core/server/views/partials/footer.server.view.html`
 - Uses `ng-if="!app.isFooterHidden"`
 - Uses `ui-sref`
 - Displays photo credits through `tr-board-credits`
 
-The footer should become a React component during the shell migration.
+React-owned routes now render `ReactFooter`, including footer links and
+`BoardCredits`. Angular-owned routes still use the server/Angular footer until
+those routes move.
 
 ## Current Route Surface
+
+React now owns the first low-risk public route group through
+`modules/core/shared/react-route-ownership.js` and
+`modules/core/client/react-app/routes.js`:
+
+- `/contact`
+- `/contribute`
+- `/faq`
+- `/faq/bugs-and-features`
+- `/faq/circles`
+- `/faq/foundation`
+- `/faq/technology`
+- `/foundation`
+- `/guide`
+- `/media`
+- `/privacy`
+- `/rules`
+- `/statistics`
+- `/support`
+- `/team`
+- `/volunteering`
+
+These routes boot through the React server template and `react-main` entry on
+direct page load. Links between Angular-owned and React-owned route groups use
+normal full-page navigation.
 
 Angular route files are under `modules/*/client/config/*.routes.js`.
 
@@ -276,7 +347,10 @@ Approximate state counts from route files:
 - Statistics: 1 state
 - Core: 1 not-found state
 
-Total: roughly 75 route states.
+Total before the first React-owned group: roughly 75 route states. The public
+pages/support/statistics group above has now moved to React ownership, but the
+Angular route files still represent the remaining route surface and some legacy
+definitions for migrated public pages.
 
 Important Angular route features to replace:
 
@@ -362,72 +436,93 @@ Current anti-pattern to clean up later:
   `QueryClientProvider`.
 - The React shell should centralize this.
 
-## Proposed React App Shell
+## Current React App Shell
 
-Create a new React-owned shell that can eventually replace Angular bootstrap.
+The first React-owned shell now exists.
 
-Candidate structure:
+Implemented structure:
 
-- `modules/core/client/app/ReactApp.js`
-- `modules/core/client/app/providers/AppProviders.js`
-- `modules/core/client/app/routing/routes.js`
-- `modules/core/client/app/routing/Router.js`
-- `modules/core/client/app/routing/useRoute.js`
-- `modules/core/client/app/routing/Redirect.js`
-- `modules/core/client/app/routing/RouteGuard.js`
-- `modules/core/client/app/state/auth.js`
-- `modules/core/client/app/state/settings.js`
-- `modules/core/client/app/state/route-meta.js`
-- `modules/core/client/app/state/photo-credits.js`
+- `config/webpack/entries/react-main.js`
+- `modules/core/server/views/react-layout.server.view.html`
+- `modules/core/server/views/react-index.server.view.html`
+- `modules/core/shared/react-route-ownership.js`
+- `modules/core/client/react-app/ReactApp.js`
+- `modules/core/client/react-app/AppProviders.js`
+- `modules/core/client/react-app/bootstrap.js`
+- `modules/core/client/react-app/routes.js`
+- `modules/core/client/react-app/ReactFooter.js`
 
-Root providers:
+Implemented root behavior:
 
-- `I18nextProvider` is already integrated through `initReactI18next`.
-- `QueryClientProvider`
-- `AuthProvider`
-- `SettingsProvider`
-- `RouteMetaProvider`
-- `PhotoCreditsProvider`
+- Read initial bootstrap globals through `getBootstrapData()`.
+- Provide app bootstrap data through `AppProviders`.
+- Centralize a root `QueryClientProvider` for the React-owned root.
+- Expose current user/settings/app config through React hooks.
+- Match the current path against the first React-owned route table.
+- Render `AppHeader`, `ReactFooter`, and the route component from React.
+- Set page title from React route metadata.
+- Scroll to top on route changes.
+- Preserve service worker registration from the React entry.
+- Preserve direct URL paths and server catch-all behavior.
+- Keep Angular bootstrap and `ui-router` unchanged for non-migrated routes.
+- Use full-page navigation across React-owned and Angular-owned route groups.
 
-Root behavior to preserve:
+Remaining shell behavior to add before moving protected or complex routes:
 
-- Read initial `window.user`.
-- Read initial `window.settings`.
-- Track current route.
-- Match route and params.
-- Enforce auth and role guards.
-- Redirect unauthenticated users consistently.
-- Preserve current special case for unauthenticated profile route going to
-  profile signup.
-- Set page title from route metadata.
-- Set header/footer hidden state from route metadata.
-- Scroll to top on route changes unless a route opts out.
-- Render 404 route for unknown client paths.
-- Keep signout behavior compatible with push/native app behavior.
+- Auth and role guards equivalent to Angular `requiresAuth` and `requiresRole`.
+- Redirect behavior, including the unauthenticated profile special case.
+- Route params and query param helpers beyond the current exact public paths.
+- Header/footer hidden metadata.
+- Route-level data loading conventions.
+- Better photo credits state.
+- Current-user mutation/refresh behavior after account/profile updates.
+- Full signout parity, including push cleanup if needed outside the current
+  `/api/auth/signout` redirect.
+- A React 404/fallback strategy that matches the desired server/client status
+  behavior.
 
 ## Migration Phases
 
-### Phase 1: Prepare React Shell While Angular Still Owns Routing
+### Phase 1: Incremental React Root For First Public Routes
 
-Goal: introduce reusable React providers and route/data primitives without
-changing production routing yet.
+Status: completed.
 
-Tasks:
+Goal: introduce a React-owned app root for a low-risk URL group while Angular
+continues serving the rest of the app.
 
-- Add root-level React providers that can be used by existing React components.
-- Centralize `QueryClient`.
-- Add `AuthProvider` reading `window.user`.
-- Add `SettingsProvider` reading `window.settings`.
-- Add shell-compatible helpers for signout, current user updates, page title,
-  and route metadata.
-- Keep Angular bootstrap and `ui-router` unchanged.
+Completed:
 
-This phase reduces risk by improving React infrastructure before the route
-cutover.
+- ~~Add root-level React providers that can be used by existing React
+  components.~~ Added `AppProviders` for the React-owned root.
+- ~~Centralize `QueryClient`.~~ Added one root `QueryClientProvider` in
+  `AppProviders`.
+- ~~Add `AuthProvider` reading `window.user`.~~ Added `useAuth()` backed by
+  bootstrap data.
+- ~~Add `SettingsProvider` reading `window.settings`.~~ Added `useSettings()`
+  backed by bootstrap data.
+- ~~Add shell-compatible helpers for signout, current user updates, page title,
+  and route metadata.~~ Added page-title updates, route metadata for the first
+  route group, and a React-side signout redirect. Current-user mutation remains
+  future work.
+- ~~Keep Angular bootstrap and `ui-router` unchanged.~~ Angular remains the
+  owner of non-migrated routes.
+- Added `react-main` as a separate Webpack entry while keeping `main` intact.
+- Added React server templates with `#tr-react-root`.
+- Added server template selection through `isReactOwnedPath()`.
+- Added a shared React-owned path list.
+- Moved `/contact`, `/contribute`, `/faq*`, `/foundation`, `/guide`, `/media`,
+  `/privacy`, `/rules`, `/statistics`, `/support`, `/team`, and
+  `/volunteering` to React ownership.
+- Added focused tests for route ownership and initial React shell behavior.
 
-### Phase 2: Define React Route Table
+This phase established the hybrid production shape: React owns selected direct
+page loads, Angular owns the rest, and route-group transitions use full page
+loads.
 
-Goal: encode the current Angular route surface in a React-friendly structure.
+### Phase 2: Harden React Route Table And Shell Metadata
+
+Goal: expand the minimal public-page route table into a route model that can
+support protected routes and more Angular route semantics.
 
 Route table fields should cover:
 
@@ -444,16 +539,27 @@ Route table fields should cover:
 - `noScrollingTop`
 - redirect behavior
 
-Initially, routes can point to existing React components where available and
-placeholder wrappers for still-Angular pages if a hybrid bridge is needed.
+Current state:
 
-### Phase 3: Migrate Low-Risk React-Ready Routes
+- Exact public paths and page titles are implemented.
+- Route ownership is shared by server and client.
+- Auth/admin guards, params, nested routes, redirects, and hidden-header/footer
+  metadata still need to be added before moving protected routes.
 
-Good early candidates:
+Avoid placeholder wrappers for Angular pages inside React for now. The current
+hybrid strategy keeps route groups separate and uses full page loads between
+React and Angular ownership.
+
+### Phase 3: Migrate Remaining Low-Risk React-Ready Routes
+
+Already moved:
 
 - Static pages in `modules/pages/client/components`
 - `support` and deprecated `contact`
 - `statistics`
+
+Remaining low-risk candidates:
+
 - Many `admin` pages
 - `messages` routes
 - `search-users`
@@ -509,17 +615,18 @@ Reasons these are harder:
 
 ### Phase 6: React Cutover
 
-Goal: React owns the app root and route lifecycle.
+Goal: React owns the remaining app root and route lifecycle.
 
 Tasks:
 
-- Replace `data-ui-view` with a React root element.
-- Replace `angular.bootstrap(...)` with `ReactDOM.render(...)`.
-- Render header, footer, message center, announcements, and main route outlet
-  from React.
+- Expand the existing React root until no Angular-owned routes remain.
+- Stop rendering `index.server.view.html` for frontend app routes.
+- Remove the remaining `data-ui-view` path.
+- Remove the remaining `angular.bootstrap(...)` path.
+- Render message center and announcements from React.
 - Keep server catch-all and initial globals.
 - Ensure production and development bundles still load the same assets.
-- Ensure service worker registration remains intact.
+- Ensure service worker registration remains intact in the React entry.
 
 ### Phase 7: Remove Angular
 
@@ -545,10 +652,10 @@ Do this after the migration is complete, not at the beginning.
 
 Likely easiest:
 
-- Static pages such as rules, privacy, FAQ, media, volunteering, foundation,
-  guide, team, contribute
-- Support/contact
-- Statistics
+- ~~Static pages such as rules, privacy, FAQ, media, volunteering, foundation,
+  guide, team, contribute~~ moved to the first React-owned root.
+- ~~Support/contact~~ moved to the first React-owned root.
+- ~~Statistics~~ moved to the first React-owned root.
 - Admin pages that already render React components
 - Not found page
 
@@ -591,6 +698,8 @@ Preserve these behaviors during migration:
 - Existing translation behavior.
 - RTL CSS loading.
 - Service worker registration.
+- Route ownership consistency between server and client while the app is hybrid.
+- Full-page navigation between React-owned and Angular-owned route groups.
 - Push notification initialization and cleanup.
 - Native mobile app wrapper behavior.
 - Signout path `/api/auth/signout`.
@@ -618,6 +727,7 @@ Recommended test focus:
 Useful existing test types:
 
 - Jest component tests with Testing Library.
+- Route ownership/server selection tests for the hybrid root.
 - Existing Angular route/controller tests while routes are still Angular-owned.
 - Playwright e2e tests under `tests/e2e`.
 
@@ -691,6 +801,18 @@ Mitigation:
 - Add a React `Link` only where client-side navigation is needed.
 - Do not require every link to change in one pass.
 
+### Route Ownership Drift
+
+The hybrid app depends on the server and React route table agreeing about which
+paths are React-owned.
+
+Mitigation:
+
+- Keep `modules/core/shared/react-route-ownership.js` as the shared ownership
+  source.
+- Test direct loads for React-owned and Angular-owned paths.
+- Update route ownership and React route definitions together.
+
 ### Maintenance Mode
 
 The project is in maintenance mode, so avoid broad cosmetic churn.
@@ -702,44 +824,49 @@ Mitigation:
 - Avoid changing quote style or unrelated files.
 - Preserve existing module boundaries where practical.
 
-## Recommended Initial Milestones
+## Recommended Milestones
 
-### Milestone 1: React Provider Foundation
+### Milestone 1: Incremental React Root
 
-Deliverables:
+Status: completed.
 
-- Root `QueryClientProvider`
-- `AuthProvider`
-- `SettingsProvider`
-- route metadata abstraction
-- signout helper
-- no route cutover yet
+Delivered:
 
-### Milestone 2: React Route Table Prototype
+- React `react-main` entry and server templates.
+- Root `QueryClientProvider`.
+- Bootstrap data wrapper and hooks for user/settings/app config.
+- Initial route metadata for the public route group.
+- React-owned static/support/statistics routes.
+- Server-side route ownership selection.
+- Tests for ownership and shell behavior.
 
-Deliverables:
-
-- React route matcher
-- route metadata
-- auth/admin guards
-- redirect support
-- tests for route matching and guards
-
-### Milestone 3: First Route Cutover
+### Milestone 2: Route Semantics Parity
 
 Deliverables:
 
-- React owns a small low-risk route group.
-- Candidate: static pages or admin pages already implemented in React.
+- Auth/admin guards.
+- Redirect support.
+- Params/query handling.
+- Header/footer visibility metadata.
+- Tests for route matching, guards, redirects, and server/client ownership.
+
+### Milestone 3: Next Route Groups
+
+Deliverables:
+
+- React owns the next low-risk route group.
+- Candidate: admin pages already implemented in React, messages, search users,
+  not found, or welcome.
 - Preserve current URLs.
-- Verify e2e navigation.
+- Verify direct loads and cross-app navigation.
 
 ### Milestone 4: App Shell Cutover
 
 Deliverables:
 
 - React root renders header, footer, route outlet, message center, and providers.
-- Angular still present only for unmigrated islands if needed.
+- Server no longer has to choose between React and Angular templates for normal
+  frontend app routes.
 
 ### Milestone 5: Remove Angular
 
@@ -757,12 +884,14 @@ already has enough React to support a hook-based route and data-provider layer.
 
 The important sequencing is:
 
-1. Build React providers and route metadata.
-2. Convert route data loading to API modules and React Query hooks.
-3. Move easy React-ready routes first.
-4. Move complex Angular-controller routes later.
-5. Cut over the app shell only when the route lifecycle is covered.
-6. Remove Angular last.
+1. ~~Build the first React root, providers, and route metadata.~~
+2. Harden route semantics for guards, redirects, params, and metadata.
+3. Convert route data loading to API modules and React Query hooks as routes
+   move.
+4. Move remaining easy React-ready routes first.
+5. Move complex Angular-controller routes later.
+6. Remove the Angular app-shell path only when the route lifecycle is covered.
+7. Remove Angular dependencies last.
 
 Trying to remove Angular before replacing `ui-router`, route guards, route
 resolves, shell behavior, and global services would be the risky approach.

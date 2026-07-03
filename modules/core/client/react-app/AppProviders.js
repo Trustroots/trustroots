@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
+import { AuthProvider } from './auth';
 import { getBootstrapData } from './bootstrap';
 
 const AppBootstrapContext = createContext(null);
@@ -11,7 +12,9 @@ export function AppProviders({ bootstrapData = getBootstrapData(), children }) {
 
   return (
     <AppBootstrapContext.Provider value={bootstrapData}>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider initialUser={bootstrapData.user}>{children}</AuthProvider>
+      </QueryClientProvider>
     </AppBootstrapContext.Provider>
   );
 }
@@ -24,12 +27,6 @@ export function useBootstrapData() {
   }
 
   return bootstrapData;
-}
-
-export function useAuth() {
-  return {
-    user: useBootstrapData().user,
-  };
 }
 
 export function useSettings() {
