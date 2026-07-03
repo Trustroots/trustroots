@@ -252,6 +252,57 @@ jobs:
           path: test-results
 
   pages:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://team.trustroots.org/
+    steps:
+      - uses: actions/checkout@v6
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+      - name: Build docs site
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+      - name: Preserve live coverage report
+        run: |
+          cp -r _site site
+          mkdir -p site/coverage
+          for path in index.html client.json server.json e2e.json; do
+            curl --fail --silent --show-error --location \
+              "https://team.trustroots.org/coverage/${path}" \
+              --output "site/coverage/${path}" || true
+          done
+          if [ ! -s site/coverage/index.html ]; then
+            cat > site/coverage/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en">
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Trustroots Coverage Report</title>
+            <p>Coverage is being refreshed by GitHub Actions.</p>
+            <p><a href="/">Team home</a></p>
+          </html>
+          HTML
+          fi
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: site
+      - name: Deploy site
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
+
+  pages-coverage:
     if: >
       always() &&
       github.event_name != 'pull_request' &&
