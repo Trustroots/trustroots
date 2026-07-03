@@ -1018,16 +1018,19 @@ function renderReportShell(metadata, initialLanes) {
         color: var(--muted);
       }
       .meta {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 14px;
-      }
-      .meta strong {
-        display: block;
-        margin-bottom: 3px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 15px;
+        font-weight: 700;
       }
       .meta a {
         overflow-wrap: anywhere;
+      }
+      .meta-separator {
+        color: rgba(95, 113, 105, 0.5);
       }
       .artifact-list {
         display: flex;
@@ -1143,22 +1146,13 @@ function renderReportShell(metadata, initialLanes) {
 
       <section>
         <div class="section-body meta">
-          <div>
-            <strong>Branch</strong>
-            ${branchLink}
-          </div>
-          <div>
-            <strong>Commit</strong>
-            ${commitLink}
-          </div>
-          <div>
-            <strong>Generated</strong>
-            ${escapeHtml(metadata.generatedAtDisplay)}
-          </div>
-          <div>
-            <strong>Workflow</strong>
-            ${runLink}
-          </div>
+          ${branchLink}
+          <span class="meta-separator" aria-hidden="true">&middot;</span>
+          ${commitLink}
+          <span class="meta-separator" aria-hidden="true">&middot;</span>
+          <span>${escapeHtml(metadata.generatedAtDisplay)}</span>
+          <span class="meta-separator" aria-hidden="true">&middot;</span>
+          ${runLink}
         </div>
       </section>
 

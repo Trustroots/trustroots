@@ -273,13 +273,14 @@ jobs:
       - name: Add pending coverage report placeholder
         run: |
           npm run coverage:report
-          mkdir -p _site/coverage
-          cp -r coverage-report/. _site/coverage/
+          cp -r _site site
+          mkdir -p site/coverage
+          cp -r coverage-report/. site/coverage/
       - name: Upload site
         uses: actions/upload-pages-artifact@v5
         with:
           name: github-pages-docs-${{ github.run_id }}-${{ github.run_attempt }}
-          path: _site
+          path: site
       - name: Deploy site
         id: deployment
         uses: actions/deploy-pages@v5
