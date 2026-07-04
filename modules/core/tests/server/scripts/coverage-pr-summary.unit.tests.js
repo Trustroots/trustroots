@@ -75,7 +75,9 @@ describe('Coverage PR summary unit tests', () => {
 
   describe('readLanes', () => {
     it('reads available lane JSON files in suite order', () => {
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'trustroots-pr-summary-'));
+      const dir = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'trustroots-pr-summary-'),
+      );
       try {
         fs.writeFileSync(
           path.join(dir, 'e2e.json'),
@@ -104,17 +106,19 @@ describe('Coverage PR summary unit tests', () => {
       table.should.containEql('<td>Client</td>');
       table.should.containEql('<td>✓</td>');
       table.should.containEql('2026-07-03 19:29<br>Duration 1m 23s');
-      table.should.containEql('<td>Statements</td>');
-      table.should.containEql('<td>Branches</td>');
-      table.should.containEql('<td align="right">99.95%</td>');
+      table.should.containEql('<strong>Statements</strong>');
+      table.should.containEql('<strong>Branches</strong>');
       table.should.containEql(
-        '<td align="right"><font color="#1a7f37"><strong>100.00%</strong></font></td>',
+        '<span><strong>Branches</strong>&nbsp;&nbsp;99.95%</span>',
       );
-      table.should.containEql('<td>Tests</td>');
       table.should.containEql(
-        '<td align="right"><font color="#1a7f37"><strong>136/136</strong></font></td>',
+        '<span><strong>Statements</strong>&nbsp;&nbsp;🟢 <strong>100.00%</strong></span>',
       );
-      table.should.containEql('<td>Scenarios</td>');
+      table.should.containEql('<strong>Tests</strong>');
+      table.should.containEql(
+        '<span><strong>Tests</strong>&nbsp;&nbsp;🟢 <strong>136/136</strong></span>',
+      );
+      table.should.containEql('<strong>Scenarios</strong>');
       table.should.containEql('2026-07-03 19:23<br>Duration 4m 12s');
       table.should.containEql('<code>coverage-client</code>');
     });
@@ -125,9 +129,7 @@ describe('Coverage PR summary unit tests', () => {
       const table = renderE2eAreaTable(e2eLane);
 
       table.should.containEql('| Messages | ✓ | 6 | 0 | 6 |');
-      table.should.containEql(
-        '| Other (unmapped specs) | ✓ | 1 | 0 | 1 |',
-      );
+      table.should.containEql('| Other (unmapped specs) | ✓ | 1 | 0 | 1 |');
       table.should.containEql('| **Total** |  | **7** | **0** | **7** |');
     });
   });

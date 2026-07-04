@@ -79,37 +79,29 @@ function isPerfectValue(value) {
 }
 
 function resultRowsTable(rows) {
-  const body = rows
+  return rows
     .map(([label, value]) => {
       const valueHtml = isPerfectValue(value)
-        ? `<font color="#1a7f37"><strong>${escapeHtml(value)}</strong></font>`
+        ? `🟢 <strong>${escapeHtml(value)}</strong>`
         : escapeHtml(value);
       return (
-        '<tr>' +
-        `<td>${escapeHtml(label)}</td>` +
-        `<td align="right">${valueHtml}</td>` +
-        '</tr>'
+        '<span>' +
+        `<strong>${escapeHtml(label)}</strong>` +
+        '&nbsp;&nbsp;' +
+        valueHtml +
+        '</span>'
       );
     })
-    .join('');
-
-  return (
-    '<table>' +
-    '<tbody>' +
-    body +
-    '</tbody>' +
-    '</table>'
-  );
+    .join('<br>');
 }
 
 function coverageResultRows(lane) {
   const metrics = lane.metrics || {};
-  return coverageMetrics
-    .map(metric => {
-      const value = metrics[metric] || {};
-      const label = metric.charAt(0).toUpperCase() + metric.slice(1);
-      return [label, formatPercent(value.current)];
-    });
+  return coverageMetrics.map(metric => {
+    const value = metrics[metric] || {};
+    const label = metric.charAt(0).toUpperCase() + metric.slice(1);
+    return [label, formatPercent(value.current)];
+  });
 }
 
 function metricCurrent(values, metric) {
@@ -125,14 +117,23 @@ function e2eResultRows(lane) {
   const total = metricCurrent(metrics.testValues, 'total');
   const passed = metricCurrent(metrics.testValues, 'passed');
   const passRate = metricCurrent(metrics.testValues, 'passRate');
-  const featureCoverage = metricCurrent(metrics.featureValues, 'featureCoverage');
-  const scenarioCoverage = metricCurrent(metrics.featureValues, 'scenarioCoverage');
+  const featureCoverage = metricCurrent(
+    metrics.featureValues,
+    'featureCoverage',
+  );
+  const scenarioCoverage = metricCurrent(
+    metrics.featureValues,
+    'scenarioCoverage',
+  );
 
   return [
     ['Tests', `${passed}/${total}`],
     ['Pass rate', formatPercent(passRate)],
     ['Areas', `${metrics.greenAreaCount}/${metrics.definedAreaCount}`],
-    ['Features', `${metrics.coveredFeatureCount}/${metrics.activeFeatureCount}`],
+    [
+      'Features',
+      `${metrics.coveredFeatureCount}/${metrics.activeFeatureCount}`,
+    ],
     [
       'Scenarios',
       `${metrics.coveredScenarioCount}/${metrics.requiredScenarioCount}`,
@@ -154,7 +155,9 @@ function laneResult(lane) {
 }
 
 function reportName(lane) {
-  return lane.artifactName ? `<code>${escapeHtml(lane.artifactName)}</code>` : 'n/a';
+  return lane.artifactName
+    ? `<code>${escapeHtml(lane.artifactName)}</code>`
+    : 'n/a';
 }
 
 function recordedValue(lane) {
@@ -267,7 +270,9 @@ function renderE2eAreaTable(lane) {
 }
 
 function overallStatus(lanes) {
-  if (lanes.some(lane => ['failed', 'blocked', 'unknown'].includes(lane.status))) {
+  if (
+    lanes.some(lane => ['failed', 'blocked', 'unknown'].includes(lane.status))
+  ) {
     return 'Needs attention';
   }
 
