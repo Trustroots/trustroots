@@ -14,6 +14,7 @@ const AREA_BY_SPEC = {
   'core-gaps.spec.js': 'Public pages',
   'nostr.spec.js': 'Nostr',
   'seeded-content.spec.js': 'Seeded content',
+  'messages-api.spec.js': 'Messages',
   'messages.spec.js': 'Messages',
   'message-actions.spec.js': 'Messages',
   'experiences.spec.js': 'Experiences',

@@ -901,7 +901,9 @@ describe('Profile controller unit tests', () => {
         toObject() {
           return {
             _id: userId,
+            created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
             member: [{ tribe: tribeId }],
+            roles: [],
           };
         },
       };

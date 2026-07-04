@@ -112,6 +112,7 @@ const specPaths = {
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
   'member.spec.js': 'features/profile-onboarding/member.spec.js',
   'message-actions.spec.js': 'features/messages/message-actions.spec.js',
+  'messages-api.spec.js': 'features/messages/messages-api.spec.js',
   'messages.spec.js': 'features/messages/messages.spec.js',
   'nostr.spec.js': 'features/public-core/nostr.spec.js',
   'offers-and-circles.spec.js':
@@ -1979,7 +1980,7 @@ const features = [
       ),
       spec('messages.spec.js', 'inbox does not list the shadowbanned sender'),
       spec(
-        'messages.spec.js',
+        'messages-api.spec.js',
         'member thread API hides shadow-hidden messages from the recipient',
       ),
       spec(
@@ -2011,6 +2012,10 @@ const features = [
       spec(
         'messages.spec.js',
         'inbox lists the seeded conversation with Portland Host',
+      ),
+      spec(
+        'messages-api.spec.js',
+        'inbox API returns sanitized thread excerpts',
       ),
       spec('messages.spec.js', 'inbox does not list the shadowbanned sender'),
     ],
@@ -2109,7 +2114,12 @@ const features = [
       'Sending a reply appends it to the thread.',
       'Validation prevents empty or forbidden replies.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'messages-api.spec.js',
+        'message send API rejects invalid recipients',
+      ),
+    ],
   },
   {
     id: 'messages.read-count-sync',
@@ -2142,7 +2152,16 @@ const features = [
       'Message sync endpoint returns deterministic updates.',
       'Sync handles no-new-message state.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'messages-api.spec.js',
+        'message status APIs expose unread and sync payloads',
+      ),
+      spec(
+        'messages-api.spec.js',
+        'message read and sync APIs validate request payloads',
+      ),
+    ],
   },
   {
     id: 'messages.unconfirmed-restrictions',

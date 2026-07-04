@@ -150,7 +150,7 @@ module.exports = defineConfig({
     },
     {
       name: 'messages',
-      testMatch: /features\/messages\/messages\.spec\.js/,
+      testMatch: /features\/messages\/messages(?:-api)?\.spec\.js/,
       dependencies: serializedDependencies(
         ['setup-authenticated'],
         ['authenticated'],

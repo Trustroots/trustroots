@@ -799,6 +799,26 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.username.should.equal('adalovelace');
     });
+
+    it('returns an empty object when signup completes without a user', async () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done(null);
+          },
+        },
+        '../../../stats/server/services/stats.server.service': {
+          stat: (statsObject, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+
+      controller.signup({ body: {}, login: (user, cb) => cb() }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual({});
+    });
   });
 
   describe('signupValidation', () => {
@@ -819,6 +839,32 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       await res.waitForResponse();
       res.body.valid.should.be.false();
       res.body.error.should.equal('username-not-available-reserved');
+    });
+
+    it('uses generic error metadata when validation fails without an error code', async () => {
+      let stats;
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done({ errors: {} });
+          },
+        },
+        '../../../stats/server/services/stats.server.service': {
+          stat: (statsObject, callback) => {
+            stats = statsObject;
+            callback();
+          },
+        },
+      });
+      const res = deferredResponse();
+
+      controller.signupValidation({ body: { username: 'anything' } }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.valid.should.be.false();
+      res.body.error.should.equal('other');
+      stats.tags.reason.should.equal('other');
     });
 
     it('accepts an available username', async () => {
