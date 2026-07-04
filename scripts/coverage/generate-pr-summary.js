@@ -14,7 +14,14 @@ function readJson(filePath) {
 }
 
 function formatStatus(status) {
-  return String(status || 'unknown').toUpperCase();
+  const labels = {
+    blocked: '✗ BLOCKED',
+    failed: '✗ FAILED',
+    passed: '✓ PASSED',
+    skipped: 'SKIPPED',
+    unknown: 'UNKNOWN',
+  };
+  return labels[status] || String(status || 'unknown').toUpperCase();
 }
 
 function formatPercent(value) {
@@ -118,6 +125,18 @@ function areaLabel(area) {
   return area === 'Other' ? 'Other (unmapped specs)' : area;
 }
 
+function areaStatus(result) {
+  if (result.failed > 0) {
+    return '✗ Failing';
+  }
+
+  if (result.passed > 0) {
+    return '✓ Passing';
+  }
+
+  return 'Skipped';
+}
+
 function renderOverviewTable(lanes) {
   const rows = lanes.map(lane =>
     [
@@ -153,9 +172,7 @@ function renderE2eAreaTable(lane) {
   const rows = areas
     .sort(([a], [b]) => areaLabel(a).localeCompare(areaLabel(b)))
     .map(([area, result]) => {
-      const status =
-        result.failed === 0 && result.passed > 0 ? 'Passing' : 'Needs attention';
-      return `| ${escapeMarkdown(areaLabel(area))} | ${status} | ${
+      return `| ${escapeMarkdown(areaLabel(area))} | ${areaStatus(result)} | ${
         result.passed
       } | ${result.failed} | ${result.total} |`;
     });

@@ -1372,9 +1372,9 @@ function renderReportShell(metadata, initialLanes) {
 
       function statusLabel(status) {
         var labels = {
-          blocked: 'Blocked',
-          failed: 'Failed',
-          passed: 'Passed',
+          blocked: '✗ Blocked',
+          failed: '✗ Failed',
+          passed: '✓ Passed',
           skipped: 'Skipped',
           unknown: 'Unknown',
         };
@@ -1631,6 +1631,7 @@ function renderReportShell(metadata, initialLanes) {
             var areaValues = lane.e2eMetrics.byArea[area];
             var areaStatus = 'Skipped';
             var areaClass = 'skip';
+            var areaIcon = '';
             areaTotals.passed += areaValues.passed || 0;
             areaTotals.failed += areaValues.failed || 0;
             areaTotals.total += areaValues.total || 0;
@@ -1639,16 +1640,18 @@ function renderReportShell(metadata, initialLanes) {
               if (areaValues.failed > 0) {
                 areaStatus = 'Failing';
                 areaClass = 'fail';
+                areaIcon = '✗ ';
               } else if (areaValues.passed > 0) {
                 areaStatus = 'Passing';
                 areaClass = 'pass';
+                areaIcon = '✓ ';
               }
             }
 
             return (
               '<tr>' +
                 '<td><strong>' + escapeHtml(formatAreaLabel(area)) + '</strong></td>' +
-                '<td class="' + areaClass + '">' + escapeHtml(areaStatus) + '</td>' +
+                '<td class="' + areaClass + '">' + escapeHtml(areaIcon + areaStatus) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.passed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.failed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.total)) + '</td>' +
