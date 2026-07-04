@@ -163,9 +163,7 @@ const avatarUpload = (req, res) => {
     function (err) {
       if (err) {
         return res.status(400).send({
-          message:
-            errorService.getErrorMessage(err) ||
-            'Failed to process image, please try again.',
+          message: errorService.getErrorMessage(err),
         });
       } else {
         // All Done!
@@ -256,7 +254,7 @@ function getAvatarUrl(profile, size, source) {
   );
 }
 
-function getDefaultAvatarUrl(size = 1024, local = true) {
+function getDefaultAvatarUrl(size, local = true) {
   const domain = local
     ? `${config.https ? 'https' : 'http'}://${config.domain}`
     : 'https://trustroots.org';
