@@ -156,6 +156,14 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('confirm', () => {
+    it('responds with 403 when no contact was loaded', async () => {
+      const { res } = await runHandler(res =>
+        contactsController.confirm({ user: user2 }, res),
+      );
+
+      res.statusCode.should.equal(403);
+    });
+
     it('responds with 403 when the user is not the receiver', async () => {
       const contact = await new Contact({
         userFrom: user1._id,
@@ -384,6 +392,35 @@ describe('Contacts controller unit tests', () => {
         contactsController.contactById({ user: user1 }, res, next, 'bad-id'),
       );
       res.statusCode.should.equal(400);
+    });
+
+    it('calls next without a public user', async () => {
+      const [privateUser] = await utils.saveUsers(
+        utils.generateUsers(1, { public: false }),
+      );
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.contactById(
+          { user: privateUser },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+
+      nextCalled.should.be.true();
+    });
+
+    it('responds with 404 when no contact matches the id', async () => {
+      const { res } = await runHandler((res, next) =>
+        contactsController.contactById(
+          { user: user1 },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+
+      res.statusCode.should.equal(404);
     });
 
     it('responds with 404 for a contact the user does not belong to', async () => {
