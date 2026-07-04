@@ -10,6 +10,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
 const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
+const Offer = mongoose.model('Offer');
 
 function mockResponse() {
   let resolveResponse;
@@ -186,6 +188,22 @@ describe('Admin users controller unit tests', () => {
       res.body.message.should.equal('Invalid role.');
     });
 
+    it('rejects roles when the model exposes no role enum values', async () => {
+      const rolesPath = User.schema.path('roles');
+      const previousEnumValues = rolesPath.caster.enumValues;
+      rolesPath.caster.enumValues = undefined;
+
+      try {
+        const res = mockResponse();
+        adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body.message.should.equal('Invalid role.');
+      } finally {
+        rolesPath.caster.enumValues = previousEnumValues;
+      }
+    });
+
     it('returns users with the requested role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
@@ -228,6 +246,22 @@ describe('Admin users controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
     });
+
+    it('returns users when the role query returns an empty array', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: cb => cb(null, []),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual([]);
+    });
   });
 
   describe('getUser', () => {
@@ -262,6 +296,26 @@ describe('Admin users controller unit tests', () => {
 
       res.body.profile.username.should.equal(users[0].username);
       res.body.messageFromCount.should.equal(0);
+    });
+
+    it('defaults nullable contact and offer lookups to empty arrays', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(Contact, 'find').returns({
+        populate() {
+          return this;
+        },
+        then(resolve) {
+          resolve(null);
+        },
+      });
+      sinon.stub(Offer, 'find').returns(Promise.resolve(null));
+      const res = mockResponse();
+
+      await adminUsers.getUser({ body: { id: users[0]._id.toString() } }, res);
+
+      res.statusCode.should.equal(200);
+      res.body.contacts.should.deepEqual([]);
+      res.body.offers.should.deepEqual([]);
     });
 
     it('returns 400 when loading a user fails', async () => {

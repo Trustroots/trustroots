@@ -25,6 +25,7 @@ const User = mongoose.model('User');
 const controllerPath =
   '../../server/controllers/users.profile.server.controller';
 const pushServicePath = '../../../core/server/services/push.server.service';
+const errorServicePath = '../../../core/server/services/error.server.service';
 
 /**
  * Load the profile controller with the push notification service stubbed.
@@ -34,6 +35,14 @@ const pushServicePath = '../../../core/server/services/push.server.service';
 function loadControllerWithPush(notifyPushDeviceAdded) {
   return proxyquire(controllerPath, {
     [pushServicePath]: { notifyPushDeviceAdded },
+  });
+}
+
+function loadControllerWithEmptyErrorMessage() {
+  return proxyquire(controllerPath, {
+    [errorServicePath]: {
+      getErrorMessage: () => false,
+    },
   });
 }
 
@@ -126,6 +135,25 @@ describe('Profile controller push/membership unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('uses the default message when removing a registration fails without details', async () => {
+      const controller = loadControllerWithEmptyErrorMessage();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(User, 'findByIdAndUpdate').returns({
+        exec: cb => cb({}),
+      });
+
+      const res = deferredResponse();
+      controller.removePushRegistration(
+        { user: { _id: saved._id }, params: { token: 'token-1' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Failed to remove registration, please try again.',
+      );
     });
 
     it('removes a registration by token', async () => {
@@ -275,6 +303,31 @@ describe('Profile controller push/membership unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('uses the default message when saving a registration fails without details', async () => {
+      const controller = loadControllerWithEmptyErrorMessage();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .onFirstCall()
+        .returns({ exec: cb => cb() })
+        .onSecondCall()
+        .returns({
+          exec: cb => cb({}),
+        });
+
+      const res = deferredResponse();
+      controller.addPushRegistration(
+        {
+          user: { _id: saved._id },
+          body: { token: 'token-fallback', platform: 'web' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed, please try again.');
+    });
+
     it('returns 400 when fetching the saved registration user fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       sinon
@@ -300,6 +353,34 @@ describe('Profile controller push/membership unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.startWith('Snap! Something went wrong.');
+    });
+
+    it('uses the default message when fetching a saved registration fails without details', async () => {
+      const controller = loadControllerWithEmptyErrorMessage();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .onFirstCall()
+        .returns({ exec: cb => cb() })
+        .onSecondCall()
+        .returns({
+          exec: cb => cb(null, { _id: saved._id }),
+        });
+      sinon.stub(User, 'findById').returns({
+        exec: cb => cb({}),
+      });
+
+      const res = deferredResponse();
+      controller.addPushRegistration(
+        {
+          user: { _id: saved._id },
+          body: { token: 'token-fetch-fallback', platform: 'web' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to fetch user, please try again.');
     });
 
     it('still succeeds when the notification fails', async () => {

@@ -122,6 +122,34 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       result.user.additionalProvidersData.github.id.should.equal('gh-1');
     });
 
+    it('adds provider data to an existing provider data object', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.additionalProvidersData = { facebook: { id: 'fb-1' } };
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+
+      const providerUserProfile = {
+        provider: 'github',
+        providerData: { id: 'gh-1', accessToken: 'token' },
+      };
+
+      const result = await new Promise((resolve, reject) => {
+        authController.saveOAuthUserProfile(
+          { user: userDoc },
+          providerUserProfile,
+          (err, user, redirectURL) => {
+            if (err) return reject(err);
+            resolve({ user, redirectURL });
+          },
+        );
+      });
+
+      result.redirectURL.should.equal('/profile/edit/networks');
+      result.user.additionalProvidersData.facebook.id.should.equal('fb-1');
+      result.user.additionalProvidersData.github.id.should.equal('gh-1');
+    });
+
     it('errors when the provider is already connected', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);

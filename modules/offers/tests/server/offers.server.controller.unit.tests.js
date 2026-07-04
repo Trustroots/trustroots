@@ -160,6 +160,27 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(200);
     });
 
+    it('accepts a valid meet offer expiry when max validity config is absent', async () => {
+      const controller = proxyquire(controllerPath, {
+        '../../../../config/config': {
+          ...config,
+          limits: {},
+        },
+      });
+      const validUntil = require('moment')().add(5, 'days').toISOString();
+
+      const { res } = await runHandler(res =>
+        controller.create(
+          {
+            user: owner,
+            body: { type: 'meet', location: [10, 20], validUntil },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+    });
+
     it('creates a meet offer defaulting validUntil', async () => {
       const { res } = await runHandler(res =>
         offersController.create(

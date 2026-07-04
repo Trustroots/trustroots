@@ -283,6 +283,58 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/uploads-profile/');
     });
 
+    it('includes an update timestamp in local avatar URLs', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarUploaded = true;
+      userDoc.avatarSource = 'local';
+      userDoc.updated = new Date('2026-01-02T03:04:05.000Z');
+      await userDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { source: 'local', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.redirectUrl.should.containEql('/uploads-profile/');
+      res.redirectUrl.should.endWith(`?${userDoc.updated.getTime()}`);
+    });
+
+    it('uses the https domain for local avatar URLs when configured', async () => {
+      const originalHttps = config.https;
+      config.https = true;
+
+      try {
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        userDoc.avatarUploaded = true;
+        userDoc.avatarSource = 'local';
+        await userDoc.save();
+
+        const res = deferredResponse();
+        avatarController.getAvatar(
+          {
+            user: userDoc,
+            profile: userDoc,
+            query: { source: 'local', size: '128' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+
+        res.redirectUrl.should.startWith('https://');
+        res.redirectUrl.should.containEql('/uploads-profile/');
+      } finally {
+        config.https = originalHttps;
+      }
+    });
+
     it('redirects to a local avatar url without a timestamp when updated is absent', async () => {
       const userId = new mongoose.Types.ObjectId();
       const res = deferredResponse();
