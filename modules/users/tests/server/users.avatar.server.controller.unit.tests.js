@@ -7,6 +7,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const proxyquire = require('proxyquire').noCallThru();
 
+const config = require('../../../../config/config');
 require('../../server/models/user.server.model');
 
 const avatarController = require('../../server/controllers/users.avatar.server.controller');
@@ -219,6 +220,47 @@ describe('Avatar controller unit tests', () => {
       );
       await res.waitForResponse();
       res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
+    it('redirects to a local avatar url without a timestamp when updated is absent', async () => {
+      const userId = new mongoose.Types.ObjectId();
+      const res = deferredResponse();
+
+      avatarController.getAvatar(
+        {
+          user: { _id: userId, roles: [] },
+          profile: {
+            _id: userId,
+            avatarUploaded: true,
+            avatarSource: 'local',
+            public: true,
+            roles: [],
+          },
+          query: { source: 'local', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.redirectUrl.should.containEql('/uploads-profile/');
+      res.redirectUrl.endsWith('?').should.be.true();
+    });
+
+    it('uses the https domain for default avatar redirects when configured', async () => {
+      const originalHttps = config.https;
+      config.https = true;
+
+      try {
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const res = deferredResponse();
+        avatarController.getAvatar({ user, query: { size: '128' } }, res);
+        await res.waitForResponse();
+
+        res.redirectUrl.should.startWith('https://');
+        res.redirectUrl.should.containEql('/img/avatar-128.png');
+      } finally {
+        config.https = originalHttps;
+      }
     });
 
     it('falls back to the default avatar when local source has no upload', async () => {

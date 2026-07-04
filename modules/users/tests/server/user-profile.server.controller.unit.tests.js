@@ -859,6 +859,22 @@ describe('Profile controller unit tests', () => {
       Array.from(res.body).should.deepEqual([]);
     });
 
+    it('returns an empty membership list when memberships are null', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(User, 'findById').returns({
+        populate: () => ({
+          exec: cb => cb(null, { member: null }),
+        }),
+      });
+
+      const { res } = await runHandler(res =>
+        profileController.getUserMemberships({ user: { _id: saved._id } }, res),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual([]);
+    });
+
     it('returns 400 when loading memberships fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       sinon.stub(User, 'findById').returns({
@@ -872,6 +888,29 @@ describe('Profile controller unit tests', () => {
       );
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Failed to get list of tribes.');
+    });
+  });
+
+  describe('sanitizeProfile', () => {
+    it('creates member ids from unpopulated tribe ids', () => {
+      const userId = new mongoose.Types.ObjectId();
+      const tribeId = new mongoose.Types.ObjectId();
+      const profile = {
+        _id: userId,
+        member: [{ tribe: tribeId }],
+        toObject() {
+          return {
+            _id: userId,
+            member: [{ tribe: tribeId }],
+          };
+        },
+      };
+
+      const sanitized = profileController.sanitizeProfile(profile, {
+        _id: userId,
+      });
+
+      sanitized.memberIds.should.deepEqual([tribeId.toString()]);
     });
   });
 
