@@ -1,3 +1,4 @@
+const { request: playwrightRequest } = require('@playwright/test');
 const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
@@ -16,7 +17,6 @@ test.describe('seeded message flows', () => {
 
   test('message APIs require an authenticated member', async ({
     baseURL,
-    browser,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.inbox', [
       'Inbox lists seeded conversation.',
@@ -29,29 +29,39 @@ test.describe('seeded message flows', () => {
       'Validation prevents empty or forbidden replies.',
     ]);
 
-    const context = await browser.newContext({ baseURL });
+    const unauthenticatedRequest = await playwrightRequest.newContext({
+      baseURL,
+      storageState: { cookies: [], origins: [] },
+    });
 
     try {
       const portlandId = SEEDED_MEMBERS[1].id;
       const checks = [
-        context.request.get('/api/messages'),
-        context.request.get(`/api/messages/${portlandId}`),
-        context.request.get('/api/messages-count'),
-        context.request.get('/api/messages-sync'),
-        context.request.post('/api/messages', {
-          data: {
-            userTo: portlandId,
-            content: 'Should require authentication',
-          },
-        }),
+        ['inbox', () => unauthenticatedRequest.get('/api/messages')],
+        [
+          'thread',
+          () => unauthenticatedRequest.get(`/api/messages/${portlandId}`),
+        ],
+        ['count', () => unauthenticatedRequest.get('/api/messages-count')],
+        ['sync', () => unauthenticatedRequest.get('/api/messages-sync')],
+        [
+          'send',
+          () =>
+            unauthenticatedRequest.post('/api/messages', {
+              data: {
+                userTo: portlandId,
+                content: 'Should require authentication',
+              },
+            }),
+        ],
       ];
 
-      for (const responsePromise of checks) {
-        const response = await responsePromise;
-        expect(response.status()).toBe(403);
+      for (const [label, requestApi] of checks) {
+        const response = await requestApi();
+        expect(response.status(), label).toBe(403);
       }
     } finally {
-      await context.close();
+      await unauthenticatedRequest.dispose();
     }
   });
 
