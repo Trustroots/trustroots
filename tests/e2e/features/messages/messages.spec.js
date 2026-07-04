@@ -114,6 +114,33 @@ test.describe('seeded message flows', () => {
     expect(response.headers().link).toContain('page=2');
   });
 
+  test('message send API rejects invalid recipients', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Validation prevents empty or forbidden replies.',
+    ]);
+    annotateFeature(testInfo, 'messages.new-conversation', [
+      'Sending an opening message creates the conversation.',
+    ]);
+
+    const invalidRecipient = await page.request.post('/api/messages', {
+      data: {
+        userTo: 'not-a-mongo-id',
+        content: 'This should not be sent',
+      },
+    });
+    expect(invalidRecipient.status()).toBe(400);
+
+    const selfMessage = await page.request.post('/api/messages', {
+      data: {
+        userTo: SEEDED_MEMBERS[0].id,
+        content: 'This should not be sent to myself',
+      },
+    });
+    expect(selfMessage.status()).toBe(403);
+  });
+
   test('thread view shows the seeded reply', async ({
     page,
     request,
@@ -183,6 +210,38 @@ test.describe('seeded message flows', () => {
     expect(await sync.json()).toMatchObject({
       messages: expect.any(Object),
       users: expect.any(Array),
+    });
+  });
+
+  test('message read and sync APIs validate request payloads', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.read-count-sync', [
+      'Unread count changes after opening or marking a thread read.',
+      'Sync handles no-new-message state.',
+    ]);
+
+    const portland = SEEDED_MEMBERS[1];
+    const portlandId = await fetchUserIdByUsername(request, portland.username);
+    const thread = await page.request.get(`/api/messages/${portlandId}`);
+    expect(thread.ok()).toBeTruthy();
+    const messages = await thread.json();
+    expect(messages.length).toBeGreaterThan(0);
+
+    const markRead = await page.request.post('/api/messages-read', {
+      data: {
+        messageIds: messages.map(message => message._id),
+      },
+    });
+    expect(markRead.ok()).toBeTruthy();
+
+    const invalidDate = await page.request.get('/api/messages-sync', {
+      params: { dateFrom: '2025-01-01', dateTo: '2024-01-01' },
+    });
+    expect(invalidDate.status()).toBe(400);
+    expect(await invalidDate.json()).toMatchObject({
+      message: expect.stringContaining('dateFrom'),
     });
   });
 
