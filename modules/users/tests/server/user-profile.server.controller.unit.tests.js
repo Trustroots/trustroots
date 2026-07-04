@@ -1266,7 +1266,7 @@ describe('Profile controller unit tests', () => {
         toObject: () => ({
           _id: profileId,
           created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
-          member: [{ tribe: tribeId }],
+          member: [{ tribe: tribeId }, {}],
           roles: [],
         }),
       };
