@@ -7,6 +7,7 @@
  * token-extension logic can be exercised without touching the network.
  */
 const proxyquire = require('proxyquire').noCallThru();
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 const should = require('should');
@@ -223,6 +224,27 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
         reloaded.additionalProvidersData &&
           reloaded.additionalProvidersData.github,
       ).should.be.false();
+    });
+
+    it('allows removing a provider that is not connected', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.additionalProvidersData = {};
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+
+      const req = {
+        user: userDoc,
+        params: { provider: 'github' },
+        login: (user, cb) => cb(),
+      };
+      const res = deferredResponse();
+
+      authController.removeOAuthProvider(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body._id.toString().should.equal(userDoc._id.toString());
     });
   });
 
@@ -574,6 +596,28 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       await res.waitForResponse();
       res.redirectUrl.should.equal('/custom-redirect');
     });
+
+    it('redirects to the default URL when OAuth returns no redirect', async () => {
+      const controller = loadControllerWithPassport((strategy, callback) => {
+        callback(null, { _id: 'user' }, null);
+      });
+      const res = deferredResponse();
+      let resolveResponse;
+      const promise = new Promise(resolve => {
+        resolveResponse = resolve;
+      });
+      res.redirect = url => {
+        res.redirectUrl = url;
+        resolveResponse(res);
+        return res;
+      };
+      res.waitForResponse = () => promise;
+
+      const req = { login: (user, cb) => cb() };
+      controller.oauthCallback('github')(req, res, () => {});
+      await res.waitForResponse();
+      res.redirectUrl.should.equal('/');
+    });
   });
 
   describe('resendConfirmation', () => {
@@ -623,6 +667,36 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
 
       const res = deferredResponse();
       controller.resendConfirmation({ user: userDoc }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when generating a new confirmation token fails', async () => {
+      sinon.stub(crypto, 'randomBytes').callsFake((size, cb) => {
+        cb(new Error('entropy unavailable'));
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.public = false;
+      userDoc.emailTemporary = userDoc.email;
+      await userDoc.save();
+
+      const res = deferredResponse();
+      authController.resendConfirmation({ user: userDoc }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when saving the new confirmation token fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.public = false;
+      userDoc.emailTemporary = userDoc.email;
+      await userDoc.save();
+      sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
+
+      const res = deferredResponse();
+      authController.resendConfirmation({ user: userDoc }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
     });

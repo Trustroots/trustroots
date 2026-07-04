@@ -46,8 +46,10 @@ test.describe('seeded message flows', () => {
     expect(Array.isArray(threads)).toBeTruthy();
     expect(threads.length).toBeGreaterThan(0);
 
-    const seededThread = threads.find(
-      thread => thread.userFrom?.username === SEEDED_MEMBERS[1].username,
+    const seededThread = threads.find(thread =>
+      [thread.userFrom?.username, thread.userTo?.username].includes(
+        SEEDED_MEMBERS[1].username,
+      ),
     );
     expect(seededThread).toBeTruthy();
     expect(seededThread.message.excerpt).toContain(

@@ -3,6 +3,7 @@
  * branches that the route tests do not exercise. Handlers are invoked directly
  * with mock req/res/next against the test database.
  */
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
@@ -214,6 +215,51 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('returns 400 when saving profile updates fails', async () => {
+      sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { tagline: 'Updated tagline' },
+            login: (user, cb) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
+    it('ignores a successful final waterfall callback', () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done();
+          },
+        },
+      });
+      const res = {
+        status: sinon.stub().returnsThis(),
+        send: sinon.stub(),
+        json: sinon.stub(),
+      };
+
+      controller.update(
+        {
+          user: userDoc,
+          body: { tagline: 'No response from final callback' },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+
+      res.status.called.should.be.false();
+      res.send.called.should.be.false();
+      res.json.called.should.be.false();
+    });
+
     it('changes the email and triggers a confirmation token', async () => {
       const { res } = await runHandler(res =>
         profileController.update(
@@ -294,6 +340,40 @@ describe('Profile controller unit tests', () => {
         controller.initializeRemoveProfile({ user: userDoc }, res),
       );
       res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when generating the removal token fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      sinon.stub(crypto, 'randomBytes').callsFake((size, cb) => {
+        cb(new Error('entropy unavailable'), Buffer.alloc(size));
+      });
+
+      const { res } = await runHandler(res =>
+        profileController.initializeRemoveProfile({ user: userDoc }, res),
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Removing your profile failed.');
+    });
+
+    it('ignores a successful final removal initialization callback', () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done();
+          },
+        },
+      });
+      const res = {
+        status: sinon.stub().returnsThis(),
+        send: sinon.stub(),
+      };
+
+      controller.initializeRemoveProfile({ user: { roles: [] } }, res);
+
+      res.status.called.should.be.false();
+      res.send.called.should.be.false();
     });
   });
 
@@ -407,6 +487,33 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
       const gone = await User.findById(saved._id);
       should.not.exist(gone);
+    });
+
+    it('ignores a successful final removal callback', () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done();
+          },
+        },
+      });
+      const res = {
+        status: sinon.stub().returnsThis(),
+        send: sinon.stub(),
+        json: sinon.stub(),
+      };
+
+      controller.removeProfile(
+        {
+          user: { _id: new mongoose.Types.ObjectId() },
+          params: { token: 'valid-token' },
+        },
+        res,
+      );
+
+      res.status.called.should.be.false();
+      res.send.called.should.be.false();
+      res.json.called.should.be.false();
     });
   });
 
@@ -647,6 +754,74 @@ describe('Profile controller unit tests', () => {
       );
       res.statusCode.should.equal(404);
     });
+
+    it('passes unexpected middleware errors to next', async () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done(new Error('unexpected profile middleware failure'));
+          },
+        },
+      });
+
+      const { nextCalled, nextArg } = await runHandler((res, next) =>
+        controller.userByUsername(
+          { user: { roles: ['user'] } },
+          res,
+          next,
+          'someusername',
+        ),
+      );
+
+      nextCalled.should.be.true();
+      nextArg.message.should.equal('unexpected profile middleware failure');
+    });
+
+    it('continues when reply statistics lookup fails', async () => {
+      const controller = proxyquire(controllerPath, {
+        '../../../messages/server/services/message-stat.server.service': {
+          readFormattedMessageStatsOfUser(userId, now, cb) {
+            cb(new Error('stats unavailable'));
+          },
+        },
+      });
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+
+      const { nextCalled } = await runHandler((res, next) =>
+        controller.userByUsername(
+          { user: { _id: viewer._id, roles: ['user'] } },
+          res,
+          next,
+          targetDoc.username,
+        ),
+      );
+
+      nextCalled.should.be.true();
+    });
+
+    it('ignores a successful final username middleware callback', () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done();
+          },
+        },
+      });
+      const next = sinon.stub();
+
+      controller.userByUsername(
+        { user: { roles: ['user'] } },
+        {},
+        next,
+        'someusername',
+      );
+
+      next.called.should.be.false();
+    });
   });
 
   describe('getUserMemberships', () => {
@@ -670,6 +845,18 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.length.should.equal(1);
       res.body[0].tribe.label.should.equal('Membership Tribe');
+    });
+
+    it('returns an empty membership list when the user has no memberships', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+
+      const { res } = await runHandler(res =>
+        profileController.getUserMemberships({ user: userDoc }, res),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual([]);
     });
 
     it('returns 400 when loading memberships fails', async () => {
@@ -1030,6 +1217,21 @@ describe('Profile controller unit tests', () => {
       const sanitized = profileController.sanitizeProfile(populated, populated);
       sanitized.memberIds.should.containEql(tribe._id.toString());
     });
+
+    it('skips memberships with missing tribe references', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.member = [
+        { tribe: new mongoose.Types.ObjectId(), since: new Date() },
+      ];
+      await userDoc.save();
+      const profile = await User.findById(saved._id).populate('member.tribe');
+
+      const sanitized = profileController.sanitizeProfile(profile, profile);
+
+      sanitized.memberIds.should.deepEqual([]);
+      sanitized.member.should.deepEqual([]);
+    });
   });
 
   describe('search middleware', () => {
@@ -1112,6 +1314,69 @@ describe('Profile controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.length.should.equal(1);
+    });
+
+    it('defaults blocked users to an empty list when searching', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const visibleDoc = await User.findById(viewer._id);
+      sinon.stub(User, 'find').callsFake(query => {
+        query.$and.should.containEql({ _id: { $nin: [] } });
+        return {
+          select: () => ({
+            sort: () => ({
+              limit: () => ({
+                skip: () => ({
+                  exec: cb => cb(null, [visibleDoc]),
+                }),
+              }),
+            }),
+          }),
+        };
+      });
+
+      const { res } = await runHandler((res, next) =>
+        profileController.search(
+          {
+            query: { search: 'Findme' },
+            user: { _id: viewer._id, id: viewer._id },
+            skip: 0,
+          },
+          res,
+          next,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.length.should.equal(1);
+    });
+
+    it('passes search lookup errors to next', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              skip: () => ({
+                exec: cb => cb(new Error('search failed')),
+              }),
+            }),
+          }),
+        }),
+      });
+
+      const { nextCalled, nextArg } = await runHandler((res, next) =>
+        profileController.search(
+          {
+            query: { search: 'Findme' },
+            user: { _id: new mongoose.Types.ObjectId(), blocked: [] },
+            skip: 0,
+          },
+          res,
+          next,
+        ),
+      );
+
+      nextCalled.should.be.true();
+      nextArg.message.should.equal('search failed');
     });
 
     it('filters out users who have blocked the viewer', async () => {

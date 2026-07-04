@@ -86,16 +86,36 @@ function apiRoute(method, path, routeSource, extra = {}) {
 }
 
 const specPaths = {
+  'account-email-tokens.spec.js':
+    'features/auth-account/account-email-tokens.spec.js',
+  'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
+  'admin-acquisition.spec.js':
+    'features/admin-moderation/admin-acquisition.spec.js',
   'admin-inspection.spec.js':
     'features/admin-moderation/admin-inspection.spec.js',
+  'admin-newsletter-api.spec.js':
+    'features/admin-moderation/admin-newsletter-api.spec.js',
+  'admin-notes.spec.js': 'features/admin-moderation/admin-notes.spec.js',
   'admin-pages.spec.js': 'features/admin-moderation/admin-pages.spec.js',
+  'admin-reference-errors.spec.js':
+    'features/admin-moderation/admin-reference-errors.spec.js',
+  'admin-role-audit.spec.js':
+    'features/admin-moderation/admin-role-audit.spec.js',
   'admin-search.spec.js': 'features/admin-moderation/admin-search.spec.js',
   'auth-smoke.spec.js': 'features/auth-account/auth-smoke.spec.js',
   'authenticated.spec.js': 'features/profile-onboarding/authenticated.spec.js',
+  'contacts-and-blocks.spec.js':
+    'features/relationships-safety/contacts-and-blocks.spec.js',
+  'core-gaps.spec.js': 'features/public-core/core-gaps.spec.js',
+  'experience-actions.spec.js':
+    'features/experiences-references/experience-actions.spec.js',
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
   'member.spec.js': 'features/profile-onboarding/member.spec.js',
+  'message-actions.spec.js': 'features/messages/message-actions.spec.js',
   'messages.spec.js': 'features/messages/messages.spec.js',
   'nostr.spec.js': 'features/public-core/nostr.spec.js',
+  'offers-and-circles.spec.js':
+    'features/search-offers-circles/offers-and-circles.spec.js',
   'public-pages.spec.js': 'features/public-core/public-pages.spec.js',
   'search-map-rendered.spec.js':
     'features/search-offers-circles/search-map-rendered.spec.js',
