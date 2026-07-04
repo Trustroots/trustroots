@@ -14,6 +14,40 @@ test.describe('seeded message flows', () => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
   });
 
+  test('message APIs require an authenticated member', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.inbox', [
+      'Inbox lists seeded conversation.',
+    ]);
+    annotateFeature(testInfo, 'messages.read-count-sync', [
+      'Unread count changes after opening or marking a thread read.',
+      'Message sync endpoint returns deterministic updates.',
+    ]);
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Validation prevents empty or forbidden replies.',
+    ]);
+
+    const portlandId = SEEDED_MEMBERS[1].id;
+    const checks = [
+      request.get('/api/messages'),
+      request.get(`/api/messages/${portlandId}`),
+      request.get('/api/messages-count'),
+      request.get('/api/messages-sync'),
+      request.post('/api/messages', {
+        data: {
+          userTo: portlandId,
+          content: 'Should require authentication',
+        },
+      }),
+    ];
+
+    for (const responsePromise of checks) {
+      const response = await responsePromise;
+      expect(response.status()).toBe(403);
+    }
+  });
+
   test('inbox lists the seeded conversation with Portland Host', async ({
     page,
   }, testInfo) => {
@@ -59,6 +93,27 @@ test.describe('seeded message flows', () => {
     expect(seededThread.message.spam).toBeUndefined();
   });
 
+  test('thread API paginates seeded replies', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.thread-open', [
+      'Thread view shows seeded replies.',
+      'Thread can be opened by username or userId route/query.',
+    ]);
+
+    const portland = SEEDED_MEMBERS[1];
+    const portlandId = await fetchUserIdByUsername(request, portland.username);
+    const response = await page.request.get(`/api/messages/${portlandId}`, {
+      params: { page: 1, limit: 1 },
+    });
+    expect(response.ok()).toBeTruthy();
+
+    const messages = await response.json();
+    expect(messages).toHaveLength(1);
+    expect(response.headers().link).toContain('page=2');
+  });
+
   test('thread view shows the seeded reply', async ({
     page,
     request,
@@ -101,6 +156,34 @@ test.describe('seeded message flows', () => {
 
     await expect(page.getByText(SEEDED_SHADOW.firstName)).toHaveCount(0);
     await expect(page.getByText(SEEDED_SHADOW_MESSAGE)).toHaveCount(0);
+  });
+
+  test('message status APIs expose unread and sync payloads', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.read-count-sync', [
+      'Unread count changes after opening or marking a thread read.',
+      'Message sync endpoint returns deterministic updates.',
+      'Sync handles no-new-message state.',
+    ]);
+
+    const unread = await page.request.get('/api/messages-count');
+    expect(unread.ok()).toBeTruthy();
+    expect(await unread.json()).toMatchObject({
+      unread: expect.any(Number),
+    });
+
+    const sync = await page.request.get('/api/messages-sync', {
+      params: {
+        dateFrom: '2020-01-01T00:00:00.000Z',
+        dateTo: new Date(Date.now() + 1000).toISOString(),
+      },
+    });
+    expect(sync.ok()).toBeTruthy();
+    expect(await sync.json()).toMatchObject({
+      messages: expect.any(Object),
+      users: expect.any(Array),
+    });
   });
 
   test('member thread API hides shadow-hidden messages from the recipient', async ({

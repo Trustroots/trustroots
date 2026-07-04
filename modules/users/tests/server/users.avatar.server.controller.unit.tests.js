@@ -300,7 +300,7 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('gravatar.com');
     });
 
-    it('falls back to default avatar when gravatar source has no email hash', async () => {
+    it('uses the default avatar as the Gravatar fallback image', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);
       userDoc.avatarSource = 'gravatar';
@@ -316,7 +316,10 @@ describe('Avatar controller unit tests', () => {
         res,
       );
       await res.waitForResponse();
-      res.redirectUrl.should.containEql('/img/avatar-128.png');
+      res.redirectUrl.should.containEql('gravatar.com/avatar/');
+      decodeURIComponent(res.redirectUrl).should.containEql(
+        'd=https://trustroots.org/img/avatar-128.png',
+      );
     });
   });
 

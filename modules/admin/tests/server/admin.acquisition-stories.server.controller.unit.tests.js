@@ -2,6 +2,7 @@
  * Unit tests for the admin acquisition stories controller.
  */
 const should = require('should');
+const proxyquire = require('proxyquire').noCallThru();
 
 const adminAcquisitionStories = require('../../server/controllers/admin.acquisition-stories.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -109,15 +110,24 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('ignores URL tokens that cannot be parsed', async () => {
+      const controller = proxyquire(
+        '../../server/controllers/admin.acquisition-stories.server.controller',
+        {
+          'wink-tokenizer': () => ({
+            tokenize: () => [{ tag: 'url', value: 'not a valid url' }],
+          }),
+        },
+      );
       const users = utils.generateUsers(1);
-      users[0].acquisitionStory = 'http://%';
+      users[0].acquisitionStory = 'malformed url token';
       await utils.saveUsers(users);
 
       const res = mockResponse();
-      await adminAcquisitionStories.getAnalysis({}, res);
+      await controller.getAnalysis({}, res);
 
       should.exist(res.body);
       res.body.table.should.be.an.Array();
+      res.body.table.should.have.length(0);
     });
   });
 });
