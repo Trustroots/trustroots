@@ -854,10 +854,8 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   profile.memberIds = [];
   if (profile.member && profile.member.length > 0) {
     profile.member.forEach(function (obj) {
-      if (obj.tribe) {
-        const tribeId = obj.tribe._id || obj.tribe;
-        profile.memberIds.push(tribeId.toString());
-      }
+      const tribeId = obj.tribe._id || obj.tribe;
+      profile.memberIds.push(tribeId.toString());
     });
   }
 
