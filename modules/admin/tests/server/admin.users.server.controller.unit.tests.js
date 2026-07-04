@@ -37,6 +37,16 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('searchUsers', () => {
+    it('rejects missing queries', () => {
+      const res = mockResponse();
+      adminUsers.searchUsers({ body: {} }, res);
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Query string at least 3 characters long required.',
+      );
+    });
+
     it('rejects queries shorter than three characters', () => {
       const res = mockResponse();
       adminUsers.searchUsers({ body: { search: 'ab' } }, res);
@@ -160,6 +170,14 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('listUsersByRole', () => {
+    it('rejects missing roles', async () => {
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
     it('rejects an invalid role', async () => {
       const res = mockResponse();
       adminUsers.listUsersByRole({ body: { role: 'not-a-role' } }, res);
@@ -345,6 +363,24 @@ describe('Admin users controller unit tests', () => {
 
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Invalid role.');
+    });
+
+    it('rejects missing user ids', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: { role: 'suspended' },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('invalid-id'),
+      );
     });
 
     it('rejects roles when the schema exposes no enum values', async () => {

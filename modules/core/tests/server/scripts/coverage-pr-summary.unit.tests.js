@@ -100,12 +100,13 @@ describe('Coverage PR summary unit tests', () => {
       const table = renderOverviewTable([clientLane, e2eLane]);
 
       table.should.containEql('| Suite | Status | Recorded | Result | Report |');
-      table.should.containEql('| Client | ✓ PASSED |');
+      table.should.containEql('| Client | ✓ |');
+      table.should.containEql('2026-07-03 19:29<br>Duration 1m 23s');
       table.should.containEql('Statements 100.00%');
       table.should.containEql('Branches 99.95%');
-      table.should.containEql('Duration 1m 23s');
       table.should.containEql('Tests 136/136');
       table.should.containEql('Scenarios 236/236');
+      table.should.containEql('2026-07-03 19:23<br>Duration 4m 12s');
       table.should.containEql('`coverage-client`');
     });
   });
@@ -114,9 +115,9 @@ describe('Coverage PR summary unit tests', () => {
     it('renders mapped areas and unmapped specs', () => {
       const table = renderE2eAreaTable(e2eLane);
 
-      table.should.containEql('| Messages | ✓ Passing | 6 | 0 | 6 |');
+      table.should.containEql('| Messages | ✓ | 6 | 0 | 6 |');
       table.should.containEql(
-        '| Other (unmapped specs) | ✓ Passing | 1 | 0 | 1 |',
+        '| Other (unmapped specs) | ✓ | 1 | 0 | 1 |',
       );
       table.should.containEql('| **Total** |  | **7** | **0** | **7** |');
     });

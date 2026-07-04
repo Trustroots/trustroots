@@ -896,34 +896,39 @@ function renderReportShell(metadata, initialLanes) {
         font-weight: 700;
       }
       .result-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
+        display: grid;
+        grid-template-columns: max-content max-content;
+        gap: 4px 12px;
+        align-items: baseline;
         white-space: normal;
       }
       .result-pill {
-        display: inline-flex;
-        align-items: baseline;
-        gap: 5px;
-        padding: 3px 8px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: var(--panel-strong);
+        display: contents;
+      }
+      .result-pill-label {
         color: var(--muted);
         font-size: 12px;
         font-weight: 700;
         line-height: 1.35;
       }
-      .result-pill strong {
+      .result-pill-value {
         color: var(--text);
         font-size: 13px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.35;
       }
-      .result-pill.pass strong {
+      .result-pill.perfect .result-pill-value {
         color: var(--pass);
       }
-      .result-pill.fail strong {
+      .result-pill.fail .result-pill-value {
         color: var(--fail);
+      }
+      .recorded-value {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: baseline;
+        gap: 2px;
       }
       .help-label {
         position: relative;
@@ -1374,23 +1379,57 @@ function renderReportShell(metadata, initialLanes) {
         var labels = {
           blocked: '✗ Blocked',
           failed: '✗ Failed',
-          passed: '✓ Passed',
+          passed: '✓',
           skipped: 'Skipped',
           unknown: 'Unknown',
         };
         return labels[status] || status;
       }
 
+      function isPerfectValue(value) {
+        if (value === '100.00%') {
+          return true;
+        }
+
+        var ratio = /^(\d+)\/(\d+)$/.exec(value);
+        return Boolean(ratio && ratio[1] === ratio[2]);
+      }
+
       function resultPill(label, value, passed) {
         return (
           '<span class="result-pill ' +
           (passed ? 'pass' : 'fail') +
+          (isPerfectValue(value) ? ' perfect' : '') +
           '">' +
-          escapeHtml(label) +
-          ' <strong>' +
-          escapeHtml(value) +
-          '</strong></span>'
+            '<span class="result-pill-label">' +
+              escapeHtml(label) +
+            '</span>' +
+            '<span class="result-pill-value">' +
+              escapeHtml(value) +
+            '</span>' +
+          '</span>'
         );
+      }
+
+      function renderRecordedCell(lane) {
+        var durationMs = lane.e2eMetrics
+          ? lane.e2eMetrics.durationMs || lane.durationMs
+          : lane.durationMs;
+        var html =
+          '<span class="recorded-value">' +
+            '<span class="metric-value">' +
+              escapeHtml(formatDatetime(lane.generatedAt)) +
+            '</span>';
+
+        if (typeof durationMs === 'number' && durationMs > 0) {
+          html +=
+            '<span class="suite-note">Duration ' +
+              escapeHtml(formatDuration(durationMs)) +
+            '</span>';
+        }
+
+        html += '</span>';
+        return html;
       }
 
       function renderCoverageResult(lane) {
@@ -1410,12 +1449,6 @@ function renderReportShell(metadata, initialLanes) {
             values.passed,
           );
         });
-
-        if (typeof lane.durationMs === 'number' && lane.durationMs > 0) {
-          parts.push(
-            resultPill('Duration', formatDuration(lane.durationMs), true),
-          );
-        }
 
         return '<span class="result-list">' + parts.join('') + '</span>';
       }
@@ -1510,8 +1543,6 @@ function renderReportShell(metadata, initialLanes) {
           });
         }
 
-        parts.push(resultPill('Duration', formatDuration(lane.e2eMetrics.durationMs), true));
-
         return '<span class="result-list">' + parts.join('') + '</span>';
       }
 
@@ -1530,9 +1561,7 @@ function renderReportShell(metadata, initialLanes) {
               '<tr>' +
                 '<td>' + renderSuiteNameCell(lane) + '</td>' +
                 '<td>' + renderStatusCell(lane) + '</td>' +
-                '<td class="metric-value">' +
-                  escapeHtml(formatDatetime(lane.generatedAt)) +
-                '</td>' +
+                '<td>' + renderRecordedCell(lane) + '</td>' +
                 '<td>' + renderResultCell(lane) + '</td>' +
                 '<td>' + renderReportCell(lane) + '</td>' +
               '</tr>'
@@ -1642,16 +1671,18 @@ function renderReportShell(metadata, initialLanes) {
                 areaClass = 'fail';
                 areaIcon = '✗ ';
               } else if (areaValues.passed > 0) {
-                areaStatus = 'Passing';
+                areaStatus = '';
                 areaClass = 'pass';
-                areaIcon = '✓ ';
+                areaIcon = '✓';
               }
             }
 
             return (
               '<tr>' +
                 '<td><strong>' + escapeHtml(formatAreaLabel(area)) + '</strong></td>' +
-                '<td class="' + areaClass + '">' + escapeHtml(areaIcon + areaStatus) + '</td>' +
+                '<td class="' + areaClass + '">' +
+                  escapeHtml(areaIcon + areaStatus) +
+                '</td>' +
                 '<td>' + escapeHtml(String(areaValues.passed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.failed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.total)) + '</td>' +

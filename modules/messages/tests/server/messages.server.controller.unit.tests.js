@@ -613,6 +613,75 @@ describe('Messages controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('lets admins message suspended members', async () => {
+      const { sender, receiver } = await prepareSender();
+      sender.roles = ['user', 'admin'];
+      await sender.save();
+      const receiverDoc = await User.findById(receiver._id);
+      receiverDoc.roles = ['user', 'suspended'];
+      await receiverDoc.save();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello suspended member from admin',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.content.should.containEql('Hello suspended member');
+    });
+
+    it('returns 404 when recipient lookup errors', async () => {
+      const { sender, receiver } = await prepareSender();
+      sinon.stub(User, 'findOne').returns({
+        exec: cb => cb(new Error('recipient lookup failed')),
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello unreachable member',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(404);
+    });
+
+    it('returns 400 when thread upsert fails', async () => {
+      const { sender, receiver } = await prepareSender();
+      sinon.stub(Thread, 'updateOne').callsFake((query, data, options, cb) => {
+        cb(new Error('thread upsert failed'));
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello without thread write',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('shadow-hides messages from restricted senders', async () => {
       const { sender, receiver } = await prepareSender();
       sender.roles = ['user', 'shadowban'];

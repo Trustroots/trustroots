@@ -48,6 +48,7 @@ function deferredResponse() {
   const res = {
     statusCode: 200,
     body: null,
+    redirectUrl: null,
   };
 
   res.status = function (code) {
@@ -61,6 +62,11 @@ function deferredResponse() {
   };
   res.json = function (body) {
     res.body = body;
+    resolveResponse(res);
+    return res;
+  };
+  res.redirect = function (url) {
+    res.redirectUrl = url;
     resolveResponse(res);
     return res;
   };
@@ -937,6 +943,30 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
   });
 
   describe('confirmEmail', () => {
+    it('redirects invalid email tokens to the invalid confirmation page', async () => {
+      const res = deferredResponse();
+      authController.validateEmailToken({ params: { token: 'missing' } }, res);
+      await res.waitForResponse();
+
+      res.redirectUrl.should.equal('/confirm-email-invalid');
+    });
+
+    it('redirects valid email tokens to the confirmation page', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.emailToken = 'valid-token';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      authController.validateEmailToken(
+        { params: { token: 'valid-token' } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.redirectUrl.should.equal('/confirm-email/valid-token');
+    });
+
     it('confirms a signup email token', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);

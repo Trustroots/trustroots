@@ -17,7 +17,7 @@ function formatStatus(status) {
   const labels = {
     blocked: '✗ BLOCKED',
     failed: '✗ FAILED',
-    passed: '✓ PASSED',
+    passed: '✓',
     skipped: 'SKIPPED',
     unknown: 'UNKNOWN',
   };
@@ -62,18 +62,13 @@ function escapeMarkdown(value) {
 
 function coverageResult(lane) {
   const metrics = lane.metrics || {};
-  const lines = coverageMetrics
+  return coverageMetrics
     .map(metric => {
       const value = metrics[metric] || {};
       const label = metric.charAt(0).toUpperCase() + metric.slice(1);
       return `${label} ${formatPercent(value.current)}`;
-    });
-
-  if (typeof lane.durationMs === 'number' && lane.durationMs > 0) {
-    lines.push(`Duration ${formatDuration(lane.durationMs)}`);
-  }
-
-  return lines.join('<br>');
+    })
+    .join('<br>');
 }
 
 function metricCurrent(values, metric) {
@@ -100,7 +95,6 @@ function e2eResult(lane) {
     `Scenarios ${metrics.coveredScenarioCount}/${metrics.requiredScenarioCount}`,
     `Feature coverage ${formatPercent(featureCoverage)}`,
     `Scenario coverage ${formatPercent(scenarioCoverage)}`,
-    `Duration ${formatDuration(metrics.durationMs)}`,
   ].join('<br>');
 }
 
@@ -110,6 +104,19 @@ function laneResult(lane) {
 
 function reportName(lane) {
   return lane.artifactName ? `\`${lane.artifactName}\`` : 'n/a';
+}
+
+function recordedValue(lane) {
+  const durationMs = lane.e2eMetrics
+    ? lane.e2eMetrics.durationMs || lane.durationMs
+    : lane.durationMs;
+  const lines = [formatDate(lane.generatedAt)];
+
+  if (typeof durationMs === 'number' && durationMs > 0) {
+    lines.push(`Duration ${formatDuration(durationMs)}`);
+  }
+
+  return lines.join('<br>');
 }
 
 function readLanes(inputDir = reportDir) {
@@ -131,7 +138,7 @@ function areaStatus(result) {
   }
 
   if (result.passed > 0) {
-    return '✓ Passing';
+    return '✓';
   }
 
   return 'Skipped';
@@ -142,7 +149,7 @@ function renderOverviewTable(lanes) {
     [
       lane.label || lane.name,
       formatStatus(lane.status),
-      formatDate(lane.generatedAt),
+      recordedValue(lane),
       laneResult(lane),
       reportName(lane),
     ]

@@ -186,6 +186,67 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/img/avatar-');
     });
 
+    it('redirects to the default avatar for a shadowbanned profile', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.roles = ['user', 'shadowban'];
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: {} },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-');
+    });
+
+    it('lets admins view a shadowbanned profile avatar', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      viewer.roles = ['user', 'admin'];
+      const targetDoc = await User.findById(target._id);
+      targetDoc.roles = ['user', 'shadowban'];
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
+    it('ignores custom avatar source requests from non-owners', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: viewer,
+          profile: targetDoc,
+          query: { source: 'not-a-source', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(302);
+      res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
     it('rejects an invalid avatar source for the owner', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);
