@@ -250,6 +250,14 @@ describe('Contacts controller unit tests', () => {
         done();
       });
     });
+
+    it('allows callers to omit the callback', () => {
+      sinon.stub(Contact, 'deleteMany').callsFake((query, cb) => cb());
+
+      contactsController.removeAllByUserId(user1._id);
+
+      Contact.deleteMany.calledOnce.should.be.true();
+    });
   });
 
   describe('list and get', () => {
@@ -260,11 +268,21 @@ describe('Contacts controller unit tests', () => {
       res.body.should.deepEqual([{ a: 1 }]);
     });
 
+    it('returns an empty object when no contacts list was loaded', async () => {
+      const { res } = await runHandler(res => contactsController.list({}, res));
+      res.body.should.deepEqual({});
+    });
+
     it('returns a single contact', async () => {
       const { res } = await runHandler(res =>
         contactsController.get({ contact: { _id: 'x' } }, res),
       );
       res.body._id.should.equal('x');
+    });
+
+    it('returns an empty object when no single contact was loaded', async () => {
+      const { res } = await runHandler(res => contactsController.get({}, res));
+      res.body.should.deepEqual({});
     });
   });
 
@@ -488,6 +506,24 @@ describe('Contacts controller unit tests', () => {
       );
       nextCalled.should.be.true();
       req.contacts.length.should.equal(2);
+    });
+
+    it('matches contacts when authenticated user is the receiving side', async () => {
+      await new Contact({
+        userFrom: user2._id,
+        userTo: user1._id,
+        confirmed: true,
+      }).save();
+
+      const req = {
+        user: user1,
+        contacts: [{ user: { _id: user2._id } }],
+      };
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.filterByCommon(req, res, next),
+      );
+      nextCalled.should.be.true();
+      req.contacts.length.should.equal(1);
     });
   });
 
