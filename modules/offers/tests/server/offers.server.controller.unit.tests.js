@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
+const config = require('../../../../config/config');
 const offersController = require('../../server/controllers/offers.server.controller');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -88,6 +89,24 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('rejects offer types when schema enum values are unavailable', async () => {
+      const typePath = Offer.schema.path('type');
+      const enumValues = typePath.enumValues;
+      typePath.enumValues = undefined;
+
+      try {
+        const { res } = await runHandler(res =>
+          offersController.create(
+            { user: owner, body: { type: 'host', location: [10, 20] } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(400);
+      } finally {
+        typePath.enumValues = enumValues;
+      }
+    });
+
     it('rejects a missing location', async () => {
       const { res } = await runHandler(res =>
         offersController.create({ user: owner, body: { type: 'host' } }, res),
@@ -114,6 +133,26 @@ describe('Offers controller unit tests', () => {
           {
             user: owner,
             body: { type: 'meet', location: [10, 20], validUntil },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+    });
+
+    it('defaults meet offer expiry when max validity config is absent', async () => {
+      const controller = proxyquire(controllerPath, {
+        '../../../../config/config': {
+          ...config,
+          limits: {},
+        },
+      });
+
+      const { res } = await runHandler(res =>
+        controller.create(
+          {
+            user: owner,
+            body: { type: 'meet', location: [10, 20], validUntil: 'invalid' },
           },
           res,
         ),
@@ -583,7 +622,10 @@ describe('Offers controller unit tests', () => {
     });
 
     it('returns a sanitized offer', async () => {
-      const offer = await createOffer(owner._id);
+      const offer = await createOffer(owner._id, {
+        description: '<p>Hosting <script>alert()</script></p>',
+        noOfferDescription: '<p>Unavailable <script>alert()</script></p>',
+      });
       const offerReq = await Offer.findById(offer._id).populate(
         'user',
         userProfile.userListingProfileFields,
@@ -593,6 +635,36 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.type.should.equal('host');
+      res.body.description.should.not.containEql('script');
+      res.body.noOfferDescription.should.not.containEql('script');
+    });
+
+    it('returns precise location when the offer user is an owner id', async () => {
+      const offer = {
+        _id: new mongoose.Types.ObjectId(),
+        type: 'host',
+        status: 'yes',
+        user: owner._id.toString(),
+        location: [12, 22],
+        locationFuzzy: [10, 20],
+        toObject() {
+          return {
+            _id: this._id,
+            type: this.type,
+            status: this.status,
+            user: this.user,
+            location: this.location,
+            locationFuzzy: this.locationFuzzy,
+          };
+        },
+      };
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer }, res),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.location.should.deepEqual([12, 22]);
     });
 
     it('returns fuzzy location to non-owners', async () => {

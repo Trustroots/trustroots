@@ -7,6 +7,7 @@ const sinon = require('sinon');
 
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
+const errorService = require('../../../core/server/services/error.server.service');
 const should = require('should');
 
 const User = mongoose.model('User');
@@ -449,6 +450,33 @@ describe('Password controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Current password is incorrect.');
+    });
+
+    it('uses error status and default message for password lookup failures', async () => {
+      const controller = loadPasswordController();
+      const lookupError = new Error('');
+      lookupError.status = 418;
+      sinon.stub(User, 'findById').callsFake((id, cb) => cb(lookupError));
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: new mongoose.Types.ObjectId().toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: () => {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(418);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('default'),
+      );
     });
 
     it('changes the password for a valid user', async () => {

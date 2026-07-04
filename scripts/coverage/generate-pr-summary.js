@@ -155,6 +155,14 @@ function renderE2eAreaTable(lane) {
         result.passed
       } | ${result.failed} | ${result.total} |`;
     });
+  const totals = areas.reduce(
+    (sum, [, result]) => ({
+      passed: sum.passed + (result.passed || 0),
+      failed: sum.failed + (result.failed || 0),
+      total: sum.total + (result.total || 0),
+    }),
+    { passed: 0, failed: 0, total: 0 },
+  );
 
   return [
     '### End-to-end areas',
@@ -162,6 +170,7 @@ function renderE2eAreaTable(lane) {
     '| Area | Status | Passed | Failed | Total |',
     '| --- | --- | ---: | ---: | ---: |',
     ...rows,
+    `| **Total** |  | **${totals.passed}** | **${totals.failed}** | **${totals.total}** |`,
   ].join('\n');
 }
 

@@ -105,7 +105,7 @@ test.describe('admin moderation inspection flows', () => {
     });
     expect(response.status()).toBe(400);
     expect(await response.json()).toMatchObject({
-      message: 'Invalid ID.',
+      message: 'Cannot interpret id.',
     });
   });
 

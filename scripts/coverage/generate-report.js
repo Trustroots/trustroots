@@ -1597,6 +1597,11 @@ function renderReportShell(metadata, initialLanes) {
           );
         }
 
+        var areaTotals = {
+          failed: 0,
+          passed: 0,
+          total: 0,
+        };
         var areaRows = Object.keys(lane.e2eMetrics.byArea || {})
           .filter(function (area) {
             return area !== 'Setup';
@@ -1606,6 +1611,9 @@ function renderReportShell(metadata, initialLanes) {
             var areaValues = lane.e2eMetrics.byArea[area];
             var areaStatus = 'Skipped';
             var areaClass = 'skip';
+            areaTotals.passed += areaValues.passed || 0;
+            areaTotals.failed += areaValues.failed || 0;
+            areaTotals.total += areaValues.total || 0;
 
             if (areaValues.total > 0) {
               if (areaValues.failed > 0) {
@@ -1681,6 +1689,13 @@ function renderReportShell(metadata, initialLanes) {
             '<table class="test-report-table">' +
               '<thead><tr><th>Area</th><th>Status</th><th>Passed</th><th>Failed</th><th>Total</th></tr></thead>' +
               '<tbody>' + areaRows + '</tbody>' +
+              '<tfoot><tr><th>Total</th><th></th><th>' +
+                escapeHtml(String(areaTotals.passed)) +
+                '</th><th>' +
+                escapeHtml(String(areaTotals.failed)) +
+                '</th><th>' +
+                escapeHtml(String(areaTotals.total)) +
+                '</th></tr></tfoot>' +
             '</table>' +
           '</div>' +
           '<strong>Manifest feature coverage</strong>' +

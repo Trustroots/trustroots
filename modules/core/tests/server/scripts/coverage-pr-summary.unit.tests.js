@@ -113,6 +113,7 @@ describe('Coverage PR summary unit tests', () => {
 
       table.should.containEql('| Messages | Passing | 6 | 0 | 6 |');
       table.should.containEql('| Other (unmapped specs) | Passing | 1 | 0 | 1 |');
+      table.should.containEql('| **Total** |  | **7** | **0** | **7** |');
     });
   });
 
