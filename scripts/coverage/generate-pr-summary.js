@@ -78,21 +78,27 @@ function isPerfectValue(value) {
   return Boolean(ratio && ratio[1] === ratio[2]);
 }
 
+function resultSymbol(value) {
+  if (isPerfectValue(value)) {
+    return '🟢';
+  }
+
+  return value === 'n/a' ? '⚪' : '🟡';
+}
+
 function resultRowsTable(rows) {
-  return rows
+  const labelWidth = rows.reduce(
+    (width, [label]) => Math.max(width, String(label).length),
+    0,
+  );
+  const body = rows
     .map(([label, value]) => {
-      const valueHtml = isPerfectValue(value)
-        ? `🟢 <strong>${escapeHtml(value)}</strong>`
-        : escapeHtml(value);
-      return (
-        '<span>' +
-        `<strong>${escapeHtml(label)}</strong>` +
-        '&nbsp;&nbsp;' +
-        valueHtml +
-        '</span>'
-      );
+      const paddedLabel = String(label).padEnd(labelWidth, ' ');
+      return `${paddedLabel}  ${resultSymbol(value)} ${value}`;
     })
-    .join('<br>');
+    .join('\n');
+
+  return `<pre>${escapeHtml(body)}</pre>`;
 }
 
 function coverageResultRows(lane) {

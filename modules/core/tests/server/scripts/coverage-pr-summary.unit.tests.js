@@ -106,19 +106,18 @@ describe('Coverage PR summary unit tests', () => {
       table.should.containEql('<td>Client</td>');
       table.should.containEql('<td>✓</td>');
       table.should.containEql('2026-07-03 19:29<br>Duration 1m 23s');
-      table.should.containEql('<strong>Statements</strong>');
-      table.should.containEql('<strong>Branches</strong>');
       table.should.containEql(
-        '<span><strong>Branches</strong>&nbsp;&nbsp;99.95%</span>',
+        '<pre>Statements  🟢 100.00%\nBranches    🟡 99.95%',
       );
       table.should.containEql(
-        '<span><strong>Statements</strong>&nbsp;&nbsp;🟢 <strong>100.00%</strong></span>',
+        'Functions   🟢 100.00%\nLines       🟢 100.00%</pre>',
       );
-      table.should.containEql('<strong>Tests</strong>');
       table.should.containEql(
-        '<span><strong>Tests</strong>&nbsp;&nbsp;🟢 <strong>136/136</strong></span>',
+        '<pre>Tests              🟢 136/136\nPass rate          🟢 100.00%',
       );
-      table.should.containEql('<strong>Scenarios</strong>');
+      table.should.containEql('Areas              🟡 7/8');
+      table.should.containEql('Features           🟢 97/97');
+      table.should.containEql('Scenario coverage  🟢 100.00%</pre>');
       table.should.containEql('2026-07-03 19:23<br>Duration 4m 12s');
       table.should.containEql('<code>coverage-client</code>');
     });
