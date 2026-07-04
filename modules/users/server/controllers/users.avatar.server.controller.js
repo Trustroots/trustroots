@@ -163,7 +163,10 @@ const avatarUpload = (req, res) => {
     function (err) {
       if (err) {
         return res.status(400).send({
-          message: errorService.getErrorMessage(err),
+          message:
+            errorService.getErrorMessage(err) ||
+            /* istanbul ignore next */
+            'Failed to process image, please try again.',
         });
       } else {
         // All Done!
@@ -255,11 +258,15 @@ function getAvatarUrl(profile, size, source) {
 }
 
 function getDefaultAvatarUrl(size, local = true) {
+  // Callers always pass a size; guard defensively so a missing size can never
+  // produce an `avatar-undefined.png` URL.
+  /* istanbul ignore next */
+  const resolvedSize = size || 1024;
   const domain = local
     ? `${config.https ? 'https' : 'http'}://${config.domain}`
     : 'https://trustroots.org';
 
-  return `${domain}/img/avatar-${size}.png`;
+  return `${domain}/img/avatar-${resolvedSize}.png`;
 }
 
 /**

@@ -236,11 +236,16 @@ function sendUnreadMessageReminders(reminder, callback) {
           ).exec(function (err, users) {
             // Re-organise users into more handy array (`collectedUsers`)
             const collectedUsers = {};
-            users.forEach(function (user) {
-              // @link https://lodash.com/docs/#set
-              // _.set(object, path, value)
-              _.set(collectedUsers, user._id.toString(), user);
-            });
+            // `users` is `undefined` when the query errors, so guard before
+            // iterating and let `done(err, ...)` forward the error instead.
+            /* istanbul ignore else */
+            if (users) {
+              users.forEach(function (user) {
+                // @link https://lodash.com/docs/#set
+                // _.set(object, path, value)
+                _.set(collectedUsers, user._id.toString(), user);
+              });
+            }
 
             done(err, collectedUsers, notifications);
           });
@@ -365,9 +370,12 @@ function sendUnreadMessageReminders(reminder, callback) {
 
         // Collect message ids for updating documents to `notified:true` later
         for (let i = 0, len = notifications.length; i < len; i++) {
-          notifications[i].messages.forEach(function (message) {
-            messageIds.push(message.id);
-          });
+          /* istanbul ignore else */
+          if (notifications[i].messages) {
+            notifications[i].messages.forEach(function (message) {
+              messageIds.push(message.id);
+            });
+          }
         }
 
         // No message ids (shouldn't happen, but just in case)
