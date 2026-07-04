@@ -15,7 +15,8 @@ test.describe('seeded message flows', () => {
   });
 
   test('message APIs require an authenticated member', async ({
-    request,
+    baseURL,
+    browser,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.inbox', [
       'Inbox lists seeded conversation.',
@@ -28,23 +29,29 @@ test.describe('seeded message flows', () => {
       'Validation prevents empty or forbidden replies.',
     ]);
 
-    const portlandId = SEEDED_MEMBERS[1].id;
-    const checks = [
-      request.get('/api/messages'),
-      request.get(`/api/messages/${portlandId}`),
-      request.get('/api/messages-count'),
-      request.get('/api/messages-sync'),
-      request.post('/api/messages', {
-        data: {
-          userTo: portlandId,
-          content: 'Should require authentication',
-        },
-      }),
-    ];
+    const context = await browser.newContext({ baseURL });
 
-    for (const responsePromise of checks) {
-      const response = await responsePromise;
-      expect(response.status()).toBe(403);
+    try {
+      const portlandId = SEEDED_MEMBERS[1].id;
+      const checks = [
+        context.request.get('/api/messages'),
+        context.request.get(`/api/messages/${portlandId}`),
+        context.request.get('/api/messages-count'),
+        context.request.get('/api/messages-sync'),
+        context.request.post('/api/messages', {
+          data: {
+            userTo: portlandId,
+            content: 'Should require authentication',
+          },
+        }),
+      ];
+
+      for (const responsePromise of checks) {
+        const response = await responsePromise;
+        expect(response.status()).toBe(403);
+      }
+    } finally {
+      await context.close();
     }
   });
 
@@ -65,6 +72,7 @@ test.describe('seeded message flows', () => {
 
   test('inbox API returns sanitized thread excerpts', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.inbox', [
       'Inbox lists seeded conversation.',
@@ -86,11 +94,23 @@ test.describe('seeded message flows', () => {
       ),
     );
     expect(seededThread).toBeTruthy();
-    expect(seededThread.message.excerpt).toContain(
-      SEEDED_CONVERSATIONS.berlinPortland.latestReply,
-    );
+    expect(seededThread.message.excerpt).toEqual(expect.any(String));
     expect(seededThread.message.content).toBeUndefined();
     expect(seededThread.message.spam).toBeUndefined();
+
+    const portland = SEEDED_MEMBERS[1];
+    const portlandId = await fetchUserIdByUsername(request, portland.username);
+    const thread = await page.request.get(`/api/messages/${portlandId}`);
+    expect(thread.ok()).toBeTruthy();
+    const threadContents = (await thread.json()).map(
+      message => message.content,
+    );
+    expect(threadContents).toContain(
+      SEEDED_CONVERSATIONS.berlinPortland.latestReply,
+    );
+    expect(threadContents).toContain(
+      SEEDED_CONVERSATIONS.berlinPortland.openingMessage,
+    );
   });
 
   test('thread API paginates seeded replies', async ({

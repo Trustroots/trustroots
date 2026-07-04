@@ -320,6 +320,25 @@ describe('Contacts controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('passes contact lookup errors to next', async () => {
+      sinon.stub(Contact, 'findOne').returns({
+        populate: () => ({
+          exec: cb => cb(new Error('contact lookup failed')),
+        }),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactByUserId(
+          { user: user1 },
+          res,
+          next,
+          user2._id.toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('contact lookup failed');
+    });
+
     it('attaches the contact and calls next', async () => {
       await new Contact({
         userFrom: user1._id,
@@ -368,6 +387,25 @@ describe('Contacts controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(404);
+    });
+
+    it('passes contact id lookup errors to next', async () => {
+      sinon.stub(Contact, 'findById').returns({
+        populate: () => ({
+          exec: cb => cb(new Error('contact id lookup failed')),
+        }),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactById(
+          { user: user1 },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('contact id lookup failed');
     });
 
     it('attaches the contact for a participant', async () => {
@@ -484,6 +522,40 @@ describe('Contacts controller unit tests', () => {
       );
       nextCalled.should.be.true();
       req.contacts.length.should.equal(1);
+    });
+
+    it('passes aggregate errors to next', async () => {
+      sinon.stub(Contact, 'aggregate').returns({
+        exec: cb => cb(new Error('aggregate failed')),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          { user: user1 },
+          res,
+          next,
+          user2._id.toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('aggregate failed');
+    });
+
+    it('passes missing aggregate results to next', async () => {
+      sinon.stub(Contact, 'aggregate').returns({
+        exec: cb => cb(null, null),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          { user: user1 },
+          res,
+          next,
+          user2._id.toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('Failed to load contacts.');
     });
   });
 });
