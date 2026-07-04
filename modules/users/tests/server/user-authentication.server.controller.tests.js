@@ -597,7 +597,7 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       res.redirectUrl.should.equal('/custom-redirect');
     });
 
-    it('redirects to the default URL when OAuth returns no redirect', async () => {
+    it('redirects to the networks page when OAuth returns no redirect', async () => {
       const controller = loadControllerWithPassport((strategy, callback) => {
         callback(null, { _id: 'user' }, null);
       });
@@ -616,7 +616,7 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
       const req = { login: (user, cb) => cb() };
       controller.oauthCallback('github')(req, res, () => {});
       await res.waitForResponse();
-      res.redirectUrl.should.equal('/');
+      res.redirectUrl.should.equal('/profile/edit/networks');
     });
   });
 
@@ -673,13 +673,22 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
 
     it('returns 400 when generating a new confirmation token fails', async () => {
       sinon.stub(crypto, 'randomBytes').callsFake((size, cb) => {
-        cb(new Error('entropy unavailable'));
+        if (typeof cb === 'function') {
+          cb(new Error('entropy unavailable'));
+          return;
+        }
+
+        return Buffer.alloc(size);
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
       userDoc.public = false;
       userDoc.emailTemporary = userDoc.email;
       await userDoc.save();
+      crypto.randomBytes.restore();
+      sinon.stub(crypto, 'randomBytes').callsFake((size, cb) => {
+        cb(new Error('entropy unavailable'));
+      });
 
       const res = deferredResponse();
       authController.resendConfirmation({ user: userDoc }, res);

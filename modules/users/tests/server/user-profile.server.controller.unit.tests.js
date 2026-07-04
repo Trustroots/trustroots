@@ -856,7 +856,7 @@ describe('Profile controller unit tests', () => {
       );
 
       res.statusCode.should.equal(200);
-      res.body.should.deepEqual([]);
+      Array.from(res.body).should.deepEqual([]);
     });
 
     it('returns 400 when loading memberships fails', async () => {

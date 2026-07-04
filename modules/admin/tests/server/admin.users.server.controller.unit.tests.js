@@ -132,6 +132,31 @@ describe('Admin users controller unit tests', () => {
       await res.waitForResponse();
       res.body.should.deepEqual([]);
     });
+
+    it('keeps null database rows unchanged while obfuscating results', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              exec: cb => cb(null, [null]),
+            }),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.searchUsers({ body: { search: 'abc' } }, res);
+      await res.waitForResponse();
+      res.body.should.deepEqual([undefined]);
+    });
+
+    it('throws when escaping a non-string search value', () => {
+      (() =>
+        adminUsers.searchUsers(
+          { body: { search: { length: 3 } } },
+          mockResponse(),
+        )).should.throw('Expected a string');
+    });
   });
 
   describe('listUsersByRole', () => {

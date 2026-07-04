@@ -107,5 +107,17 @@ describe('Admin acquisition stories controller unit tests', () => {
       categories.should.containEql('single');
       categories.should.containEql('something');
     });
+
+    it('ignores URL tokens that cannot be parsed', async () => {
+      const users = utils.generateUsers(1);
+      users[0].acquisitionStory = 'http://%';
+      await utils.saveUsers(users);
+
+      const res = mockResponse();
+      await adminAcquisitionStories.getAnalysis({}, res);
+
+      should.exist(res.body);
+      res.body.table.should.be.an.Array();
+    });
   });
 });

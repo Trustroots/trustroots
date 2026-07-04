@@ -336,6 +336,44 @@ describe('Avatar controller unit tests', () => {
       }
     });
 
+    it('continues when the upload directory already exists', async () => {
+      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
+
+      try {
+        const controller = loadAvatarWithStubs({
+          'mkdir-recursive': {
+            mkdir: (directory, cb) =>
+              cb(Object.assign(new Error('exists'), { code: 'EEXIST' })),
+          },
+          fs: {
+            copyFile: (source, destination, cb) => cb(),
+            unlink: (source, cb) => cb(),
+          },
+        });
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        const res = deferredResponse();
+
+        controller.avatarUpload(
+          {
+            user: userDoc,
+            file: { path: '/tmp/avatar-existing-dir.jpg' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        res.body.message.should.equal('Avatar image uploaded.');
+      } finally {
+        if (previousFallback === undefined) {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
+        }
+      }
+    });
+
     it('returns 400 when fallback upload cleanup fails', async () => {
       const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
       process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
@@ -360,6 +398,58 @@ describe('Avatar controller unit tests', () => {
         );
         await res.waitForResponse();
         res.statusCode.should.equal(400);
+      } finally {
+        if (previousFallback === undefined) {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = previousFallback;
+        }
+      }
+    });
+
+    it('logs cleanup failures after thumbnail processing errors', async () => {
+      const previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+
+      try {
+        const chainable = () => {
+          const chain = {
+            autoOrient: () => chain,
+            noProfile: () => chain,
+            colorspace: () => chain,
+            interlace: () => chain,
+            filter: () => chain,
+            resize: () => chain,
+            gravity: () => chain,
+            extent: () => chain,
+            unsharp: () => chain,
+            quality: () => chain,
+            write: (outputPath, cb) =>
+              setImmediate(() => cb(new Error('gm processing failed'))),
+          };
+          return chain;
+        };
+
+        const controller = loadAvatarWithStubs({
+          gm: () => chainable(),
+          fs: {
+            unlink: (source, cb) =>
+              setImmediate(() => cb(new Error('cleanup failed'))),
+          },
+        });
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await User.findById(user._id);
+        const res = deferredResponse();
+
+        controller.avatarUpload(
+          {
+            user: userDoc,
+            file: { path: '/tmp/avatar-cleanup-log-fails.jpg' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(422);
       } finally {
         if (previousFallback === undefined) {
           delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;

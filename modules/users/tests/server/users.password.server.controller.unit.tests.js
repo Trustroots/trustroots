@@ -317,6 +317,37 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.username.should.equal(userDoc.username);
     });
+
+    it('ignores a successful final reset callback', () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done();
+          },
+        },
+      });
+      const res = {
+        status: sinon.stub().returnsThis(),
+        send: sinon.stub(),
+        json: sinon.stub(),
+      };
+
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+
+      res.status.called.should.be.false();
+      res.send.called.should.be.false();
+      res.json.called.should.be.false();
+    });
   });
 
   describe('changePassword', () => {
