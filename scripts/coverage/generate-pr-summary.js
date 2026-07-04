@@ -60,25 +60,66 @@ function escapeMarkdown(value) {
   return String(value == null ? '' : value).replace(/\|/g, '\\|');
 }
 
-function coverageResult(lane) {
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function isPerfectValue(value) {
+  if (value === '100.00%') {
+    return true;
+  }
+
+  const ratio = /^(\d+)\/(\d+)$/.exec(value);
+  return Boolean(ratio && ratio[1] === ratio[2]);
+}
+
+function resultRowsTable(rows) {
+  const body = rows
+    .map(([label, value]) => {
+      const valueHtml = isPerfectValue(value)
+        ? `<font color="#1a7f37"><strong>${escapeHtml(value)}</strong></font>`
+        : escapeHtml(value);
+      return (
+        '<tr>' +
+        `<td>${escapeHtml(label)}</td>` +
+        `<td align="right">${valueHtml}</td>` +
+        '</tr>'
+      );
+    })
+    .join('');
+
+  return (
+    '<table>' +
+    '<tbody>' +
+    body +
+    '</tbody>' +
+    '</table>'
+  );
+}
+
+function coverageResultRows(lane) {
   const metrics = lane.metrics || {};
   return coverageMetrics
     .map(metric => {
       const value = metrics[metric] || {};
       const label = metric.charAt(0).toUpperCase() + metric.slice(1);
-      return `${label} ${formatPercent(value.current)}`;
-    })
-    .join('<br>');
+      return [label, formatPercent(value.current)];
+    });
 }
 
 function metricCurrent(values, metric) {
   return values && values[metric] ? values[metric].current : null;
 }
 
-function e2eResult(lane) {
+function e2eResultRows(lane) {
   const metrics = lane.e2eMetrics;
   if (!metrics) {
-    return lane.message || 'No end-to-end metrics recorded.';
+    return null;
   }
 
   const total = metricCurrent(metrics.testValues, 'total');
@@ -88,32 +129,42 @@ function e2eResult(lane) {
   const scenarioCoverage = metricCurrent(metrics.featureValues, 'scenarioCoverage');
 
   return [
-    `Tests ${passed}/${total}`,
-    `Pass rate ${formatPercent(passRate)}`,
-    `Areas ${metrics.greenAreaCount}/${metrics.definedAreaCount}`,
-    `Features ${metrics.coveredFeatureCount}/${metrics.activeFeatureCount}`,
-    `Scenarios ${metrics.coveredScenarioCount}/${metrics.requiredScenarioCount}`,
-    `Feature coverage ${formatPercent(featureCoverage)}`,
-    `Scenario coverage ${formatPercent(scenarioCoverage)}`,
-  ].join('<br>');
+    ['Tests', `${passed}/${total}`],
+    ['Pass rate', formatPercent(passRate)],
+    ['Areas', `${metrics.greenAreaCount}/${metrics.definedAreaCount}`],
+    ['Features', `${metrics.coveredFeatureCount}/${metrics.activeFeatureCount}`],
+    [
+      'Scenarios',
+      `${metrics.coveredScenarioCount}/${metrics.requiredScenarioCount}`,
+    ],
+    ['Feature coverage', formatPercent(featureCoverage)],
+    ['Scenario coverage', formatPercent(scenarioCoverage)],
+  ];
 }
 
 function laneResult(lane) {
-  return lane.kind === 'coverage' ? coverageResult(lane) : e2eResult(lane);
+  const rows =
+    lane.kind === 'coverage' ? coverageResultRows(lane) : e2eResultRows(lane);
+
+  if (!rows) {
+    return escapeHtml(lane.message || 'No end-to-end metrics recorded.');
+  }
+
+  return resultRowsTable(rows);
 }
 
 function reportName(lane) {
-  return lane.artifactName ? `\`${lane.artifactName}\`` : 'n/a';
+  return lane.artifactName ? `<code>${escapeHtml(lane.artifactName)}</code>` : 'n/a';
 }
 
 function recordedValue(lane) {
   const durationMs = lane.e2eMetrics
     ? lane.e2eMetrics.durationMs || lane.durationMs
     : lane.durationMs;
-  const lines = [formatDate(lane.generatedAt)];
+  const lines = [escapeHtml(formatDate(lane.generatedAt))];
 
   if (typeof durationMs === 'number' && durationMs > 0) {
-    lines.push(`Duration ${formatDuration(durationMs)}`);
+    lines.push(`Duration ${escapeHtml(formatDuration(durationMs))}`);
   }
 
   return lines.join('<br>');
@@ -145,22 +196,35 @@ function areaStatus(result) {
 }
 
 function renderOverviewTable(lanes) {
-  const rows = lanes.map(lane =>
-    [
-      lane.label || lane.name,
-      formatStatus(lane.status),
-      recordedValue(lane),
-      laneResult(lane),
-      reportName(lane),
-    ]
-      .map(escapeMarkdown)
-      .join(' | '),
-  );
+  const rows = lanes
+    .map(lane => {
+      return (
+        '<tr>' +
+        `<td>${escapeHtml(lane.label || lane.name)}</td>` +
+        `<td>${escapeHtml(formatStatus(lane.status))}</td>` +
+        `<td>${recordedValue(lane)}</td>` +
+        `<td>${laneResult(lane)}</td>` +
+        `<td>${reportName(lane)}</td>` +
+        '</tr>'
+      );
+    })
+    .join('\n');
 
   return [
-    '| Suite | Status | Recorded | Result | Report |',
-    '| --- | --- | --- | --- | --- |',
-    ...rows.map(row => `| ${row} |`),
+    '<table>',
+    '<thead>',
+    '<tr>',
+    '<th>Suite</th>',
+    '<th>Status</th>',
+    '<th>Recorded</th>',
+    '<th>Result</th>',
+    '<th>Report</th>',
+    '</tr>',
+    '</thead>',
+    '<tbody>',
+    rows,
+    '</tbody>',
+    '</table>',
   ].join('\n');
 }
 

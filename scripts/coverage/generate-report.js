@@ -897,9 +897,10 @@ function renderReportShell(metadata, initialLanes) {
       }
       .result-list {
         display: grid;
-        grid-template-columns: max-content max-content;
+        grid-template-columns: minmax(9rem, 1fr) max-content;
         gap: 4px 12px;
         align-items: baseline;
+        width: min(100%, 340px);
         white-space: normal;
       }
       .result-pill {
@@ -916,7 +917,9 @@ function renderReportShell(metadata, initialLanes) {
         font-size: 13px;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
+        justify-self: end;
         line-height: 1.35;
+        text-align: right;
       }
       .result-pill.perfect .result-pill-value {
         color: var(--pass);

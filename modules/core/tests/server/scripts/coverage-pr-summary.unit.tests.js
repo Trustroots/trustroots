@@ -99,15 +99,24 @@ describe('Coverage PR summary unit tests', () => {
     it('renders coverage and end-to-end lanes', () => {
       const table = renderOverviewTable([clientLane, e2eLane]);
 
-      table.should.containEql('| Suite | Status | Recorded | Result | Report |');
-      table.should.containEql('| Client | ✓ |');
+      table.should.containEql('<table>');
+      table.should.containEql('<th>Result</th>');
+      table.should.containEql('<td>Client</td>');
+      table.should.containEql('<td>✓</td>');
       table.should.containEql('2026-07-03 19:29<br>Duration 1m 23s');
-      table.should.containEql('Statements 100.00%');
-      table.should.containEql('Branches 99.95%');
-      table.should.containEql('Tests 136/136');
-      table.should.containEql('Scenarios 236/236');
+      table.should.containEql('<td>Statements</td>');
+      table.should.containEql('<td>Branches</td>');
+      table.should.containEql('<td align="right">99.95%</td>');
+      table.should.containEql(
+        '<td align="right"><font color="#1a7f37"><strong>100.00%</strong></font></td>',
+      );
+      table.should.containEql('<td>Tests</td>');
+      table.should.containEql(
+        '<td align="right"><font color="#1a7f37"><strong>136/136</strong></font></td>',
+      );
+      table.should.containEql('<td>Scenarios</td>');
       table.should.containEql('2026-07-03 19:23<br>Duration 4m 12s');
-      table.should.containEql('`coverage-client`');
+      table.should.containEql('<code>coverage-client</code>');
     });
   });
 
