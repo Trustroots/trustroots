@@ -22,6 +22,7 @@ describe('Coverage PR summary unit tests', () => {
     status: 'passed',
     generatedAt: '2026-07-03T19:29:00.000Z',
     artifactName: 'coverage-client',
+    durationMs: 83000,
     metrics: {
       statements: { current: 100 },
       branches: { current: 99.95 },
@@ -101,6 +102,7 @@ describe('Coverage PR summary unit tests', () => {
       table.should.containEql('| Suite | Status | Recorded | Result | Report |');
       table.should.containEql('Statements 100.00%');
       table.should.containEql('Branches 99.95%');
+      table.should.containEql('Duration 1m 23s');
       table.should.containEql('Tests 136/136');
       table.should.containEql('Scenarios 236/236');
       table.should.containEql('`coverage-client`');

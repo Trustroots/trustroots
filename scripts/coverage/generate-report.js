@@ -110,6 +110,12 @@ function readStatus(suite) {
   return readJson(suite.statusPath);
 }
 
+function statusDurationMs(status) {
+  return status && typeof status.durationMs === 'number'
+    ? status.durationMs
+    : 0;
+}
+
 function getRunUrl() {
   const serverUrl = process.env.GITHUB_SERVER_URL || 'https://github.com';
   const repository = process.env.GITHUB_REPOSITORY;
@@ -309,6 +315,7 @@ function coverageMissingLane(suiteName, metadata) {
       status: normalizeStatus(status.status),
       message: status.message || 'Coverage did not produce a summary.',
       command: status.command || suite.command,
+      durationMs: statusDurationMs(status),
     };
   }
 
@@ -347,7 +354,14 @@ function readCoverageLane(suiteName, baseline, metadata) {
     };
     return result;
   }, {});
-  const passed = metrics.every(metric => metricValues[metric].passed);
+  const metricsPassed = metrics.every(metric => metricValues[metric].passed);
+  const statusValue = status ? normalizeStatus(status.status) : null;
+  const laneStatus =
+    statusValue && statusValue !== 'passed'
+      ? statusValue
+      : metricsPassed
+        ? 'passed'
+        : 'failed';
   const generatedAt =
     (status && status.generatedAt) ||
     fileGeneratedAt(suite.summaryPath) ||
@@ -355,11 +369,15 @@ function readCoverageLane(suiteName, baseline, metadata) {
 
   return {
     ...baseLane(suite, metadata),
-    status: passed ? 'passed' : 'failed',
-    message: passed
-      ? `${suite.label} coverage meets the checked-in minimum.`
-      : `${suite.label} coverage is below the checked-in minimum.`,
+    status: laneStatus,
+    message:
+      statusValue && statusValue !== 'passed'
+        ? status.message || `${suite.label} coverage failed.`
+        : metricsPassed
+          ? `${suite.label} coverage meets the checked-in minimum.`
+          : `${suite.label} coverage is below the checked-in minimum.`,
     generatedAt,
+    durationMs: statusDurationMs(status),
     metrics: metricValues,
   };
 }
@@ -1384,20 +1402,22 @@ function renderReportShell(metadata, initialLanes) {
           );
         }
 
-        return (
-          '<span class="result-list">' +
-          metrics
-            .map(function (metric) {
-              var values = lane.metrics[metric] || {};
-              return resultPill(
-                metric.charAt(0).toUpperCase() + metric.slice(1),
-                formatPercent(values.current),
-                values.passed,
-              );
-            })
-            .join('') +
-          '</span>'
-        );
+        var parts = metrics.map(function (metric) {
+          var values = lane.metrics[metric] || {};
+          return resultPill(
+            metric.charAt(0).toUpperCase() + metric.slice(1),
+            formatPercent(values.current),
+            values.passed,
+          );
+        });
+
+        if (typeof lane.durationMs === 'number' && lane.durationMs > 0) {
+          parts.push(
+            resultPill('Duration', formatDuration(lane.durationMs), true),
+          );
+        }
+
+        return '<span class="result-list">' + parts.join('') + '</span>';
       }
 
       function renderE2eResult(lane) {

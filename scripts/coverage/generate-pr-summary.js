@@ -55,14 +55,18 @@ function escapeMarkdown(value) {
 
 function coverageResult(lane) {
   const metrics = lane.metrics || {};
-
-  return coverageMetrics
+  const lines = coverageMetrics
     .map(metric => {
       const value = metrics[metric] || {};
       const label = metric.charAt(0).toUpperCase() + metric.slice(1);
       return `${label} ${formatPercent(value.current)}`;
-    })
-    .join('<br>');
+    });
+
+  if (typeof lane.durationMs === 'number' && lane.durationMs > 0) {
+    lines.push(`Duration ${formatDuration(lane.durationMs)}`);
+  }
+
+  return lines.join('<br>');
 }
 
 function metricCurrent(values, metric) {
