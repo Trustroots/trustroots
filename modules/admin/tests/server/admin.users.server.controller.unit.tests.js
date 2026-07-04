@@ -181,6 +181,21 @@ describe('Admin users controller unit tests', () => {
       res.body[0]._id.toString().should.equal(userDoc._id.toString());
     });
 
+    it('returns an empty array when the role lookup returns no users', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: cb => cb(null, null),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+      await res.waitForResponse();
+      res.body.should.deepEqual([]);
+    });
+
     it('returns 400 when the database lookup fails', async () => {
       sinon.stub(User, 'find').returns({
         select: () => ({
@@ -332,6 +347,23 @@ describe('Admin users controller unit tests', () => {
       res.body.message.should.equal('Invalid role.');
     });
 
+    it('rejects roles when the schema exposes no enum values', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(User.schema, 'path').withArgs('roles').returns({ caster: {} });
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: { id: users[0]._id.toString(), role: 'suspended' },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
     it('shadowbans a user and removes suspended role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(2));
       const target = users[1];
@@ -406,6 +438,18 @@ describe('Admin users controller unit tests', () => {
 
     it('continues when the username is missing', async () => {
       const req = { body: {} };
+      let nextCalled = false;
+
+      await adminUsers.usernameToUserId(req, {}, () => {
+        nextCalled = true;
+      });
+
+      nextCalled.should.equal(true);
+      should.not.exist(req.userIdFromUsername);
+    });
+
+    it('continues when the username does not match a user', async () => {
+      const req = { body: { username: 'missing-user' } };
       let nextCalled = false;
 
       await adminUsers.usernameToUserId(req, {}, () => {

@@ -265,6 +265,40 @@ describe('Password controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('returns 400 when saving the reset password fails', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      sinon.stub(User, 'findOne').callsFake((query, cb) => {
+        cb(null, {
+          password: null,
+          resetPasswordToken: userDoc.resetPasswordToken,
+          resetPasswordExpires: userDoc.resetPasswordExpires,
+          save: saveCb => saveCb(new Error('save failed')),
+        });
+      });
+
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Password reset failed.');
+    });
+
     it('rejects mismatched passwords', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));

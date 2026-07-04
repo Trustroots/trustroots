@@ -1218,6 +1218,25 @@ describe('Profile controller unit tests', () => {
       sanitized.memberIds.should.containEql(tribe._id.toString());
     });
 
+    it('collects member tribe ids from plain unpopulated membership ids', () => {
+      const profileId = new mongoose.Types.ObjectId();
+      const tribeId = 'plain-tribe-id';
+      const profile = {
+        toObject: () => ({
+          _id: profileId,
+          created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+          member: [{ tribe: tribeId }],
+          roles: [],
+        }),
+      };
+
+      const sanitized = profileController.sanitizeProfile(profile, {
+        _id: profileId,
+      });
+
+      sanitized.memberIds.should.deepEqual([tribeId]);
+    });
+
     it('skips memberships with missing tribe references', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);

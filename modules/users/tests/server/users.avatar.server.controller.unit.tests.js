@@ -129,6 +129,27 @@ describe('Avatar controller unit tests', () => {
   });
 
   describe('getAvatar', () => {
+    it('loads the ImageMagick processor when configured', () => {
+      const config = require('../../../../config/config');
+      let subClassOptions;
+
+      const controller = loadAvatarWithStubs({
+        '../../../../config/config': {
+          ...config,
+          imageProcessor: 'imagemagic',
+        },
+        gm: Object.assign(() => ({}), {
+          subClass: options => {
+            subClassOptions = options;
+            return () => ({});
+          },
+        }),
+      });
+
+      controller.should.have.property('getAvatar');
+      subClassOptions.should.deepEqual({ imageMagick: true });
+    });
+
     it('rejects an invalid avatar size', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
@@ -200,6 +221,26 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/uploads-profile/');
     });
 
+    it('falls back to the default avatar when local source has no upload', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarUploaded = false;
+      userDoc.avatarSource = 'local';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { source: 'local', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
+    });
+
     it('redirects to a facebook avatar url when requested by the owner', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);
@@ -220,6 +261,27 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('graph.facebook.com');
     });
 
+    it('falls back to default avatar when facebook source has no id', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarSource = 'facebook';
+      userDoc.additionalProvidersData = { facebook: {} };
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { source: 'facebook', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
+    });
+
     it('redirects to a gravatar url when requested by the owner', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);
@@ -236,6 +298,25 @@ describe('Avatar controller unit tests', () => {
       );
       await res.waitForResponse();
       res.redirectUrl.should.containEql('gravatar.com');
+    });
+
+    it('falls back to default avatar when gravatar source has no email hash', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarSource = 'gravatar';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { source: 'gravatar', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
     });
   });
 
