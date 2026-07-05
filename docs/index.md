@@ -21,7 +21,7 @@ Federated models like Matrix or the Fediverse help, but they were not enough —
 
 ### Nostroots
 
-Trustroots is exploring how hospitality networks can rely less on individually run servers and administrative overhead. Nostr offers a promising path toward a more decentralized, gift-economy social web. One of the most helpful actions you can take is to try it out and provide [feedback](https://www.trustroots.org/support).
+Trustroots is exploring how hospitality networks can rely less on individually run servers and administrative overhead. Nostr offers a promising path toward a more decentralised, gift-economy social web. One of the most helpful actions you can take is to try it out and provide [feedback](https://www.trustroots.org/support).
 
 Try it out at [nos.trustroots.org](https://nos.trustroots.org).
 

@@ -90,6 +90,6 @@ code was deployed when in the past.
 
 ## License
 
-- [The AGPL License](LICENSE.md)
+- [The AGPL Licence](LICENSE.md)
 - Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/main/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons. Others are permitted to use only with Trustroots.
 - Logos of external communities are copyrighted work and may be subject to trademark laws.
