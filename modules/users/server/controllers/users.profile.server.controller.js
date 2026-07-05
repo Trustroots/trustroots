@@ -886,13 +886,8 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   profile.memberIds = [];
   if (profile.member && profile.member.length > 0) {
     profile.member.forEach(function (obj) {
-      // If profile's `member.tribe` path was populated
-      if (obj.tribe && obj.tribe._id) {
-        profile.memberIds.push(obj.tribe._id.toString());
-      } else if (obj.tribe) {
-        // If profile's `member.tribe` path wasn't populated, tribe is ObjectId
-        profile.memberIds.push(obj.tribe.toString());
-      }
+      const tribeId = obj.tribe._id || obj.tribe;
+      profile.memberIds.push(tribeId.toString());
     });
   }
 

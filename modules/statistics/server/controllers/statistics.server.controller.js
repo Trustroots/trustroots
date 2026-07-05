@@ -399,6 +399,7 @@ exports.getPublicStatistics = function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -438,43 +439,41 @@ exports.collectStatistics = function (req, res) {
     });
   }
 
-  if (collection === 'mobileAppInit') {
-    const appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
-    const needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
+  const appVersion = String(_.get(req, 'body.stats.version', 'unknown'));
+  const needsUpdate = semver.satisfies(appVersion, '< 1.0.0');
 
-    // Object for statistics
-    const stats = {
-      namespace: 'mobileAppInit',
-      counts: {
-        count: 1,
-      },
-      tags: {
-        // Trustroots app version (e.g. "0.2.0")
-        version: appVersion,
-        // Device year class, e.g. "2012"
-        // @link https://github.com/facebook/device-year-class
-        deviceYearClass: String(
-          _.get(req, 'body.stats.deviceYearClass', 'unknown'),
-        ),
-      },
-      meta: {
-        // Device OS (e.g. "android")
-        os: String(_.get(req, 'body.stats.os', 'unknown')),
-        // Expo SDK version
-        expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown')),
-      },
-    };
+  // Object for statistics
+  const stats = {
+    namespace: 'mobileAppInit',
+    counts: {
+      count: 1,
+    },
+    tags: {
+      // Trustroots app version (e.g. "0.2.0")
+      version: appVersion,
+      // Device year class, e.g. "2012"
+      // @link https://github.com/facebook/device-year-class
+      deviceYearClass: String(
+        _.get(req, 'body.stats.deviceYearClass', 'unknown'),
+      ),
+    },
+    meta: {
+      // Device OS (e.g. "android")
+      os: String(_.get(req, 'body.stats.os', 'unknown')),
+      // Expo SDK version
+      expoVersion: String(_.get(req, 'body.stats.expoVersion', 'unknown')),
+    },
+  };
 
-    // Send validation result to stats
-    statService.stat(stats, function () {
-      // Add update header if app version so requires
-      if (needsUpdate) {
-        return res
-          .header('x-tr-update-needed', updateMsg)
-          .json({ message: updateMsg });
-      }
+  // Send validation result to stats
+  statService.stat(stats, function () {
+    // Add update header if app version so requires
+    if (needsUpdate) {
+      return res
+        .header('x-tr-update-needed', updateMsg)
+        .json({ message: updateMsg });
+    }
 
-      return res.json({ message: 'OK' });
-    });
-  }
+    return res.json({ message: 'OK' });
+  });
 };

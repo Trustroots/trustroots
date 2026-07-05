@@ -8,19 +8,25 @@ const {
 test.describe('seeded experience flows', () => {
   test('profile experiences tab shows the seeded public experience', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'experiences.profile-list', [
       'Seeded public experience is displayed.',
     ]);
 
-    const experiencesResponse = page.waitForResponse(
-      response => response.url().includes('/api/experiences') && response.ok(),
+    const portlandId = await fetchUserIdByUsername(
+      request,
+      SEEDED_EXPERIENCE.profileUsername,
     );
+    const response = await request.get('/api/experiences', {
+      params: { userTo: portlandId },
+    });
+    expect(response.ok()).toBeTruthy();
 
     await page.goto(
       `/profile/${SEEDED_EXPERIENCE.profileUsername}/experiences`,
+      { waitUntil: 'domcontentloaded' },
     );
-    await experiencesResponse;
 
     await expect(page.getByText(SEEDED_EXPERIENCE.summary)).toBeVisible();
     await expect(

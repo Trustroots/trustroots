@@ -1,4 +1,4 @@
 ---
-redirect_to: https://nos.trustroots.org/
+redirect_to: https://notes.trustroots.org/
 title: Nostroots
 ---

@@ -323,6 +323,22 @@ describe('Statistics controller unit tests', () => {
         });
       });
     });
+
+    it('ignores unknown statuses and defaults invalid counts to zero', done => {
+      sinon.stub(Offer, 'aggregate').callsFake((pipeline, cb) => {
+        cb(null, [
+          { _id: 'yes', count: '2' },
+          { _id: 'maybe', count: 'not-a-number' },
+          { _id: 'other', count: '9' },
+        ]);
+      });
+
+      statistics.getHostOffersCount((err, counters) => {
+        if (err) return done(err);
+        counters.should.deepEqual({ yes: 2, maybe: 0, no: 0 });
+        done();
+      });
+    });
   });
 
   describe('getPublicStatistics', () => {
