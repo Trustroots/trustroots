@@ -77,6 +77,32 @@ describe('NostrootsActionModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the modal open when the dialog body is clicked', () => {
+    const { getByRole } = render(
+      <NostrootsActionModal isOpen={true} onClose={onClose} />,
+    );
+
+    fireEvent.click(getByRole('dialog'));
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('calls onClose when Escape is pressed', () => {
+    render(<NostrootsActionModal isOpen={true} onClose={onClose} />);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignores non-Escape key presses', () => {
+    render(<NostrootsActionModal isOpen={true} onClose={onClose} />);
+
+    fireEvent.keyDown(document, { key: 'Enter' });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('mentions that Trustroots account works on Nostroots', () => {
     const { getByText } = render(
       <NostrootsActionModal isOpen={true} onClose={onClose} />,

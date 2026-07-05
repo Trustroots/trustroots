@@ -49,6 +49,20 @@ describe('NostrService', () => {
         }),
       ).toBe('direct-author-pubkey');
     });
+
+    it('falls back to event pubkey for validated events without author tags', () => {
+      expect(
+        getNostrEventAuthorPubkey({
+          kind: 30398,
+          pubkey: 'validation-server-pubkey',
+          tags: [['p']],
+        }),
+      ).toBe('validation-server-pubkey');
+    });
+
+    it('returns undefined when event data is missing', () => {
+      expect(getNostrEventAuthorPubkey(null)).toBeUndefined();
+    });
   });
 
   describe('constructor', () => {
@@ -94,6 +108,28 @@ describe('NostrService', () => {
 
       expect(relay2).not.toBe(relay1);
       expect(Relay).toHaveBeenCalledTimes(2);
+    });
+
+    it('clears the relay and subscriptions when the active relay closes', async () => {
+      const relay = await service.connect();
+      service.subscriptions.set('mapNotes', { close: jest.fn() });
+
+      relay.onclose();
+
+      expect(service.relay).toBeNull();
+      expect(service.subscriptions.size).toBe(0);
+    });
+
+    it('leaves a newer relay in place when an older relay closes', async () => {
+      const relay1 = await service.connect();
+      relay1.connected = false;
+      const relay2 = await service.connect();
+      service.subscriptions.set('mapNotes', { close: jest.fn() });
+
+      relay1.onclose();
+
+      expect(service.relay).toBe(relay2);
+      expect(service.subscriptions.size).toBe(0);
     });
   });
 
@@ -175,6 +211,17 @@ describe('NostrService', () => {
       );
       expect(sub).toBe(mockSub);
       expect(service.subscriptions.get('mapNotes')).toBe(mockSub);
+    });
+
+    it('accepts the relay end-of-stored-events callback for map notes', async () => {
+      const mockSub = { close: jest.fn() };
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.oneose();
+        return mockSub;
+      });
+
+      await expect(service.subscribeMapNotes(jest.fn())).resolves.toBe(mockSub);
     });
 
     it('allows callers to override the historical map note limit', async () => {
@@ -332,6 +379,25 @@ describe('NostrService', () => {
 
       expect(result).toEqual([{ id: '1', created_at: 100 }]);
     });
+
+    it('deduplicates events, applies the limit, and ignores repeated finishes', async () => {
+      await service.connect();
+      const sub = { close: jest.fn() };
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent({ id: '1', created_at: 100, content: 'old' });
+        callbacks.onevent({ id: '1', created_at: 500, content: 'new' });
+        callbacks.onevent({ id: '2', created_at: 300 });
+        callbacks.oneose();
+        callbacks.onclose('already resolved');
+        return sub;
+      });
+
+      const result = await service.fetchUserNotes('aabbcc', 1);
+      await Promise.resolve();
+
+      expect(result).toEqual([{ id: '1', created_at: 500, content: 'new' }]);
+      expect(sub.close).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('resolveNpubToUsername()', () => {
@@ -434,6 +500,26 @@ describe('NostrService', () => {
       await expect(
         service.resolveNpubToUsername('pubkey123'),
       ).resolves.toBeNull();
+    });
+
+    it('ignores repeated username subscription finishes', async () => {
+      await service.connect();
+      const sub = { close: jest.fn() };
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent({
+          tags: [['l', 'carol', 'org.trustroots:username']],
+        });
+        callbacks.oneose();
+        callbacks.onclose('already resolved');
+        return sub;
+      });
+
+      await expect(service.resolveNpubToUsername('pubkey789')).resolves.toBe(
+        'carol',
+      );
+      await Promise.resolve();
+
+      expect(sub.close).toHaveBeenCalledTimes(1);
     });
   });
 });

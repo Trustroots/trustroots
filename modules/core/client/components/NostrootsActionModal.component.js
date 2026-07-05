@@ -17,6 +17,7 @@ export default function NostrootsActionModal({ isOpen, onClose, plusCode }) {
     if (!isOpen) return;
 
     // Focus the CTA when the modal opens
+    /* istanbul ignore else: the CTA ref is populated by React when rendered. */
     if (ctaRef.current) {
       ctaRef.current.focus();
     }

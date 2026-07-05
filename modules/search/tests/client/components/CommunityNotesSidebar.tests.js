@@ -120,11 +120,57 @@ describe('CommunityNotesSidebar', () => {
     expect(screen.getByTestId('nostroots-modal')).toBeInTheDocument();
   });
 
+  it('closes the Nostroots action modal', () => {
+    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reply' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Close modal' }));
+
+    expect(screen.queryByTestId('nostroots-modal')).not.toBeInTheDocument();
+  });
+
   it('renders nothing when notes are empty', () => {
     const { container } = render(
       <CommunityNotesSidebar notes={[]} plusCode="9F2X+3Q" />,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders nothing when notes are missing', () => {
+    const { container } = render(<CommunityNotesSidebar plusCode="9F2X+3Q" />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('does not resolve usernames when notes have no author pubkey', () => {
+    render(
+      <CommunityNotesSidebar
+        notes={[
+          {
+            id: 'note-without-author',
+            content: 'Anonymous-looking note',
+            pubkey: '',
+            created_at: Math.floor(Date.now() / 1000),
+            tags: [],
+          },
+        ]}
+        plusCode="9F2X+3Q"
+      />,
+    );
+
+    expect(nostrService.resolveNpubToUsername).not.toHaveBeenCalled();
+  });
+
+  it('keeps the pubkey fallback when username lookup fails', async () => {
+    nostrService.resolveNpubToUsername.mockRejectedValueOnce(
+      new Error('relay unavailable'),
+    );
+
+    render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
+
+    await waitFor(() =>
+      expect(nostrService.resolveNpubToUsername).toHaveBeenCalled(),
+    );
+    expect(screen.getByText('pubkey222222...')).toBeInTheDocument();
   });
 
   it('ignores username lookups that settle after unmount', async () => {
