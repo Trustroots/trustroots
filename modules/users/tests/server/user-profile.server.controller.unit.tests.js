@@ -914,6 +914,27 @@ describe('Profile controller unit tests', () => {
 
       sanitized.memberIds.should.deepEqual([tribeId.toString()]);
     });
+
+    it('treats matching string ids as the authenticated user', () => {
+      const userId = new mongoose.Types.ObjectId();
+      const profile = {
+        _id: userId,
+        toObject() {
+          return {
+            _id: userId,
+            created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+            member: [],
+            roles: [],
+          };
+        },
+      };
+
+      const sanitized = profileController.sanitizeProfile(profile, {
+        _id: userId.toString(),
+      });
+
+      sanitized.usernameUpdateAllowed.should.be.true();
+    });
   });
 
   describe('push registration', () => {
