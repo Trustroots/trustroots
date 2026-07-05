@@ -7,6 +7,8 @@ const root = path.resolve(__dirname, '../..');
 const outputDir = path.join(root, 'coverage-report');
 const outputPath = path.join(outputDir, 'index.html');
 const baselinePath = path.join(root, 'coverage-baseline.json');
+const analyticsConfigPath = path.join(root, 'docs/_data/analytics.json');
+const teamLinksConfigPath = path.join(root, 'docs/_data/team_links.json');
 const metrics = ['statements', 'branches', 'functions', 'lines'];
 const e2eTestMetrics = ['total', 'passed', 'failed', 'passRate'];
 const e2eTestMetricLabels = {
@@ -96,6 +98,38 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function renderAnalyticsScript() {
+  const analytics = readJson(analyticsConfigPath);
+
+  return `    <script
+      defer
+      src="${escapeHtml(analytics.scriptSrc)}"
+      data-website-id="${escapeHtml(analytics.websiteId)}"
+    ></script>`;
+}
+
+function renderTeamHeaderLinks(links) {
+  return links
+    .map(
+      link =>
+        `          <a href="${escapeHtml(link.href)}">${escapeHtml(
+          link.label,
+        )}</a>`,
+    )
+    .join('\n');
+}
+
+function renderTeamFooterLinks(links) {
+  return links
+    .map(
+      link =>
+        `            <li><a href="${escapeHtml(link.href)}">${escapeHtml(
+          link.label,
+        )}</a></li>`,
+    )
+    .join('\n');
 }
 
 function relativeHref(filePath) {
@@ -628,6 +662,8 @@ function formatMetadataTimestamp(isoString) {
 }
 
 function renderReportShell(metadata, initialLanes) {
+  const teamLinks = readJson(teamLinksConfigPath);
+  const repositoryHref = teamLinks.repository.href;
   const runLink = metadata.runUrl
     ? `<a href="${escapeHtml(metadata.runUrl)}">GitHub Actions run</a>`
     : 'local run';
@@ -648,17 +684,20 @@ function renderReportShell(metadata, initialLanes) {
     metadata.commit === 'local'
       ? 'local'
       : `${formatMetadataTimestamp(metadata.generatedAtDisplay)} UTC (${shortSha})`;
-  const buildHref =
-    metadata.commitUrl || 'https://github.com/Trustroots/trustroots';
+  const buildHref = metadata.commitUrl || repositoryHref;
+  const workflowHref = `${repositoryHref}/actions/workflows/test.yml`;
+  const generatorEditHref = `${repositoryHref}/edit/main/scripts/coverage/generate-report.js`;
   const githubIconLink = `
     <a
       class="github-icon-link"
-      href="https://github.com/Trustroots/trustroots"
-      aria-label="GitHub repository"
+      href="${escapeHtml(repositoryHref)}"
+      aria-label="${escapeHtml(teamLinks.repository.label)}"
     >
       <svg
         class="github-icon"
         viewBox="0 0 16 16"
+        width="16"
+        height="16"
         aria-hidden="true"
         focusable="false"
       >
@@ -695,6 +734,7 @@ function renderReportShell(metadata, initialLanes) {
       rel="stylesheet"
     >
     <link rel="stylesheet" href="/assets/css/style.css?v=0">
+${renderAnalyticsScript()}
     <style>
       :root {
         --pass: #128a78;
@@ -1059,9 +1099,7 @@ function renderReportShell(metadata, initialLanes) {
           <span class="brand-team">team</span>
         </a>
         <nav class="hub-nav" aria-label="Site links">
-          <a href="https://www.trustroots.org/">Trustroots.org</a>
-          <a href="https://nos.trustroots.org/">Nostroots</a>
-          <a href="https://www.trustroots.org/support">Support</a>
+${renderTeamHeaderLinks(teamLinks.header)}
           ${githubIconLink}
         </nav>
       </div>
@@ -1072,7 +1110,7 @@ function renderReportShell(metadata, initialLanes) {
           <h1>Trustroots Coverage Report</h1>
           <p>${escapeHtml(summaryText)}</p>
           <p class="coverage-report-ci">
-            <a href="https://github.com/Trustroots/trustroots/actions/workflows/test.yml"
+            <a href="${escapeHtml(workflowHref)}"
               >GitHub Actions tests</a
             >
           </p>
@@ -1114,9 +1152,7 @@ function renderReportShell(metadata, initialLanes) {
       <footer class="site-footer" role="contentinfo">
         <div class="site-footer-content">
           <ul class="site-footer-links">
-            <li><a href="https://www.trustroots.org/">Trustroots.org</a></li>
-            <li><a href="https://nos.trustroots.org/">Nostroots</a></li>
-            <li><a href="https://www.trustroots.org/support">Support</a></li>
+${renderTeamFooterLinks(teamLinks.header)}
           </ul>
           <div class="site-footer-meta">
             <a
@@ -1127,6 +1163,8 @@ function renderReportShell(metadata, initialLanes) {
               <svg
                 class="github-icon"
                 viewBox="0 0 16 16"
+                width="16"
+                height="16"
                 aria-hidden="true"
                 focusable="false"
               >
@@ -1140,7 +1178,7 @@ function renderReportShell(metadata, initialLanes) {
             <small>
               <a
                 class="footer-edit"
-                href="https://github.com/Trustroots/trustroots/edit/main/scripts/coverage/generate-report.js"
+                href="${escapeHtml(generatorEditHref)}"
                 >Edit this page</a
               >
             </small>
@@ -1859,4 +1897,11 @@ function writeReport() {
   console.log(`Wrote ${written.join(', ')}.`);
 }
 
-writeReport();
+module.exports = {
+  renderReportShell,
+  renderAnalyticsScript,
+};
+
+if (require.main === module) {
+  writeReport();
+}
