@@ -9,26 +9,27 @@
   <br>
 </p>
 
-## 2026 plans
+## Current development
+
+[![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://team.trustroots.org/coverage/)
 
 _Out of maintenance mode_
 
-As of June 2026 Trustroots some development will take place. (Trustroots was in maintenance mode from 2022 till June 2026.)
+As of June 2026, Trustroots is no longer in maintenance mode. The project was mostly in maintenance mode from 2022 until June 2026, and development work is welcome again.
 
 Priorities:
 
-- solid test coverage, frontend, backend
-- DRY, simplify, upgrade
-  - react vs angular? probably finish transition to react?
-  - docker dev setup state
-  - upgrade npm packages
-- nostr
-  - basics done: nip5, nip7
-  - interaction with nostroots
+- Simplify old code and reduce duplication.
+- Upgrade dependencies and improve the development setup, including Docker.
+- Continue the React transition where it makes sense.
+- Work on Nostr/Nostroots integration. The basics are in place for NIP-5 and NIP-7.
+- Make Trustroots easier to fork and run independently.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [docs/Volunteering.md](docs/Volunteering.md) for more ways to help.
 
 ## Medium term plans
 
-Our medium term plan is decentralisation thru the nostr protocol, see https://github.com/Trustroots/nostroots
+Our medium term plan is decentralisation through the Nostr protocol. See https://github.com/Trustroots/nostroots.
 
 We are also open to improvements that [make trustroots forkable](https://github.com/Trustroots/trustroots/issues/2669).
 
@@ -57,28 +58,21 @@ You might also need to run the linux equivalent of that if you see an error abou
 
 ## Running locally
 
-`nvm use && npm start` (host, hot reload at http://localhost:3000)
+Choose the setup that fits what you're doing:
 
-or
+- Host development: `nvm use && npm start`
+- Docker development: `cd deploy/docker && docker compose up`
+- Dev container: open the repository with **Dev Containers: Reopen in Container**
+  and run `npm start` inside the integrated terminal
 
-```bash
-cd deploy/docker && docker compose up
-```
+The host and Docker setups serve the app at http://localhost:3000. Docker also
+starts MailDev at http://localhost:1080.
 
-Docker dev (hot reload, maildev, shared mongo): see [`deploy/docker/README.md`](deploy/docker/README.md).
-
-If you experience docker issues you could try clearing up docker - even though it shouldn't be necessary, it can help:
-
-```
-docker image prune
-docker image prune -a
-docker container prune
-docker volume prune
-docker builder prune
-docker builder prune -a
-docker system prune
-docker system prune -a --volumes -f
-```
+Docker dev uses hot reload, MailDev, and a shared MongoDB service. See
+[`deploy/docker/README.md`](deploy/docker/README.md) for first-time setup,
+troubleshooting, dependency rebuilds, test workflows, and production-like image
+checks. See [`.devcontainer/README.md`](.devcontainer/README.md) for editor and
+test workflow details.
 
 ## Building for production
 

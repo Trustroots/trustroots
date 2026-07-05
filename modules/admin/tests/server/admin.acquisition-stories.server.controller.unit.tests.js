@@ -2,9 +2,13 @@
  * Unit tests for the admin acquisition stories controller.
  */
 const should = require('should');
+const mongoose = require('mongoose');
+const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
 
 const adminAcquisitionStories = require('../../server/controllers/admin.acquisition-stories.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
+const User = mongoose.model('User');
 
 function mockResponse() {
   const res = { statusCode: 200, body: null };
@@ -20,7 +24,10 @@ function mockResponse() {
 }
 
 describe('Admin acquisition stories controller unit tests', () => {
-  afterEach(utils.clearDatabase);
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
 
   describe('list', () => {
     it('returns acquisition stories for users who have one', async () => {
@@ -38,6 +45,21 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('returns an empty array when no stories exist', async () => {
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+
+      res.body.should.eql([]);
+    });
+
+    it('returns an empty array when story lookup returns null', async () => {
+      sinon.stub(User, 'find').returns({
+        sort: () => ({
+          limit: () => ({
+            exec: () => Promise.resolve(null),
+          }),
+        }),
+      });
+
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
@@ -106,6 +128,27 @@ describe('Admin acquisition stories controller unit tests', () => {
       categories.should.containEql('example');
       categories.should.containEql('single');
       categories.should.containEql('something');
+    });
+
+    it('ignores URL tokens that cannot be parsed', async () => {
+      const controller = proxyquire(
+        '../../server/controllers/admin.acquisition-stories.server.controller',
+        {
+          'wink-tokenizer': () => ({
+            tokenize: () => [{ tag: 'url', value: 'not a valid url' }],
+          }),
+        },
+      );
+      const users = utils.generateUsers(1);
+      users[0].acquisitionStory = 'malformed url token';
+      await utils.saveUsers(users);
+
+      const res = mockResponse();
+      await controller.getAnalysis({}, res);
+
+      should.exist(res.body);
+      res.body.table.should.be.an.Array();
+      res.body.table.should.have.length(0);
     });
   });
 });

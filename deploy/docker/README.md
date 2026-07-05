@@ -51,6 +51,10 @@ docker compose up
 - Runs `dev` + `mongodb` + `maildev`; the repo is bind-mounted.
 - Uses the `trustroots` database, so data imported via `importMongoData.sh` is
   visible.
+- MongoDB data lives in the `trustroots_mongodb_data` Docker volume. This keeps
+  WiredTiger on Docker's Linux filesystem instead of a host bind mount.
+- MongoDB runs with a small WiredTiger cache so large imports can complete while
+  the dev container is also running.
 
 The first run builds the dev image (installs dependencies); this is slow once.
 
@@ -85,6 +89,13 @@ With the stack running, import dumps into the `trustroots` database:
 ```bash
 ./fetchMongoDumps.sh      # fetch dumps (see script)
 ./importMongoData.sh      # restore into the mongodb service
+```
+
+If you previously ran this stack with `./data/mongodb` bind-mounted, recreate
+MongoDB once so it starts on the Docker volume:
+
+```bash
+docker compose up -d --force-recreate mongodb
 ```
 
 ## Running tests

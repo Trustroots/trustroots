@@ -50,9 +50,7 @@ export default function Contribute() {
               <Trans t={t} ns="pages">
                 Whether you’re a hardcore techie or know nothing of coding, we
                 can use your help! See{' '}
-                <a href="https://team.trustroots.org/Volunteering.html">
-                  volunteer page
-                </a>{' '}
+                <a href="https://team.trustroots.org/">volunteer page</a>{' '}
                 get an idea of what’s in the making and what you can do to help
                 out. You could help Trustroots out with as little effort as
                 donating your photo&apos;s to use for our website or create
