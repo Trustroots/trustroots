@@ -67,7 +67,9 @@ test.describe('admin moderation inspection flows', () => {
     await page.goto(`/admin/user?id=${shadowId}`);
 
     await expect(
-      page.getByRole('heading', { name: SEEDED_SHADOW.username }),
+      page.getByRole('heading', {
+        name: `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName} report card`,
+      }),
     ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
     await expect(page.getByText('1 sent').first()).toBeVisible();
