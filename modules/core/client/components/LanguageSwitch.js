@@ -135,7 +135,7 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
           </button>
           <small>
             <a
-              href="/volunteering"
+              href="https://team.trustroots.org/"
               onClick={onModalHide}
               className="text-muted"
             >

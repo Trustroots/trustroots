@@ -40,6 +40,31 @@ describe('Experiences controller unit tests', () => {
     return utils.clearDatabase();
   });
 
+  describe('create validation', () => {
+    it('rejects missing interactions without unexpected interaction fields', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const res = deferredResponse();
+
+      await experiencesController.create(
+        {
+          user: viewer,
+          body: {
+            userTo: target._id.toString(),
+            recommend: 'yes',
+          },
+        },
+        res,
+        () => {},
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.details.interactions.any.should.equal('missing');
+      res.body.details.should.not.have.property('fields');
+    });
+  });
+
   describe('getCount', () => {
     it('returns the experience count for another user', async () => {
       const [viewer, target] = await utils.saveUsers(

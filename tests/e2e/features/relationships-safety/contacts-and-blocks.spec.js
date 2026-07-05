@@ -13,6 +13,96 @@ const {
 } = require('../../support/db');
 
 test.describe.serial('contacts and safety feature coverage', () => {
+  test('members can add and confirm contacts through the UI', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'contacts.add', [
+      'Add contact page loads for an eligible member.',
+      'Adding a new contact creates a pending relationship.',
+    ]);
+    annotateFeature(testInfo, 'contacts.confirm', [
+      'Confirm contact page loads for a pending contact.',
+      'Confirming the contact makes the relationship mutual/confirmed.',
+    ]);
+
+    const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
+    const aliceId = await fetchUserIdByUsername(request, alice.username);
+    const member = createUser();
+    const memberContext = await browser.newContext({ baseURL });
+    const memberPage = await memberContext.newPage();
+
+    try {
+      await registerViaApi(memberContext.request, member);
+      await updateUserByUsername(member.username, {
+        $set: {
+          public: true,
+          description: 'E2E public contact UI member.',
+        },
+        $unset: {
+          emailTemporary: 1,
+          emailToken: 1,
+        },
+      });
+      await signInViaApi(memberPage, memberContext.request, member);
+
+      await memberPage.goto(`/contact-add/${aliceId}`);
+      await expect(
+        memberPage.getByRole('heading', { name: /add contact/i }),
+      ).toBeVisible();
+
+      const addContact = memberPage.waitForResponse(
+        response =>
+          response.url().includes('/api/contact') &&
+          response.request().method() === 'POST' &&
+          response.ok(),
+      );
+      await memberPage.getByRole('button', { name: /^add contact$/i }).click();
+      await addContact;
+      await expect(
+        memberPage.getByText(/done! we sent an email/i),
+      ).toBeVisible();
+    } finally {
+      await memberContext.close();
+    }
+
+    const memberId = await fetchUserIdByUsername(request, member.username);
+    const contact = await findContactByUsers(memberId, aliceId);
+    expect(contact).toBeTruthy();
+    expect(contact.confirmed).toBe(false);
+
+    const aliceContext = await browser.newContext({ baseURL });
+    const alicePage = await aliceContext.newPage();
+
+    try {
+      await signInViaApi(alicePage, aliceContext.request, alice);
+      await alicePage.goto(`/contact-confirm/${contact._id}`);
+      await expect(
+        alicePage.getByRole('heading', { name: /confirm contact/i }),
+      ).toBeVisible();
+
+      const confirmContact = alicePage.waitForResponse(
+        response =>
+          response.url().includes(`/api/contact/${contact._id}`) &&
+          response.request().method() === 'PUT' &&
+          response.ok(),
+      );
+      await alicePage
+        .getByRole('button', { name: /^confirm contact$/i })
+        .click();
+      await confirmContact;
+      await expect(
+        alicePage.getByText('You two are now connected!'),
+      ).toBeVisible();
+    } finally {
+      await aliceContext.close();
+    }
+
+    const confirmed = await findContactByUsers(memberId, aliceId);
+    expect(confirmed.confirmed).toBe(true);
+  });
+
   test('members can create pending contacts and see duplicate state', async ({
     browser,
     baseURL,

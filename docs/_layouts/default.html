@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     {% seo %}
-    <meta name="theme-color" content="#004b3f" />
+    <meta name="theme-color" content="#12b591" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,10 +15,11 @@
       rel="stylesheet"
       href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | default: '' | relative_url }}"
     />
+    {% assign analytics = site.data.analytics %}
     <script
       defer
-      src="https://1p.trustroots.org/script.js"
-      data-website-id="8c48b588-60a4-42d8-913a-462826c523fb"
+      src="{{ analytics.scriptSrc }}"
+      data-website-id="{{ analytics.websiteId }}"
     ></script>
   </head>
   <body>
@@ -31,20 +32,46 @@
           class="brand"
           aria-label="Team Trustroots home"
         >
-          <span class="brand-icon" aria-hidden="true">TR</span>
-          <span>
-            <span class="brand-name">Team Trustroots</span>
-            <span class="brand-url">team.trustroots.org</span>
-          </span>
+          <img
+            class="brand-logo brand-logo-full"
+            src="{{ '/assets/img/horizontal-white.svg' | relative_url }}"
+            alt="Trustroots"
+            width="177"
+            height="31"
+          />
+          <img
+            class="brand-logo brand-logo-tree"
+            src="{{ '/assets/img/tree-white.svg' | relative_url }}"
+            alt="Trustroots"
+            width="31"
+            height="31"
+          />
+          <span class="brand-team">team</span>
         </a>
+        {% assign team_links = site.data.team_links %}
         <nav class="hub-nav" aria-label="Site links">
-          <a href="https://www.trustroots.org/">Trustroots.org</a>
-          <span class="sep" aria-hidden="true">/</span>
-          <a href="https://nos.trustroots.org/">Nostroots</a>
-          <span class="sep" aria-hidden="true">/</span>
-          <a href="https://www.trustroots.org/support">Support</a>
-          <span class="sep" aria-hidden="true">/</span>
-          <a href="https://github.com/Trustroots/trustroots">GitHub</a>
+          {% for link in team_links.header %}
+          <a href="{{ link.href }}">{{ link.label }}</a>
+          {% endfor %}
+          <a
+            class="github-icon-link"
+            href="{{ team_links.repository.href }}"
+            aria-label="{{ team_links.repository.label }}"
+          >
+            <svg
+              class="github-icon"
+              viewBox="0 0 16 16"
+              width="16"
+              height="16"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path
+                fill="currentColor"
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.36c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+              />
+            </svg>
+          </a>
         </nav>
       </div>
     </header>
@@ -52,19 +79,75 @@
     <main id="content" class="main-content" role="main">
       {{ content }}
 
-      <footer class="site-footer">
-        <div class="footer-links">
-          <span class="footer-links-left">
-            <a href="https://www.trustroots.org/">Trustroots.org</a>
-            <a href="https://nos.trustroots.org/">Nostroots</a>
-            <a href="https://www.trustroots.org/support">Support</a>
-            <a href="https://github.com/Trustroots/trustroots">GitHub</a>
-          </span>
-          <a
-            class="footer-edit"
-            href="{{ site.github.repository_url }}/edit/main/docs{{ page.dir }}{{ page.name }}"
-            >Edit this page</a
-          >
+      <figure
+        class="photo-band"
+        role="img"
+        aria-label="A group of travellers sitting together outdoors"
+      >
+        <figcaption class="photo-credit">
+          Photo by
+          <a href="https://aaoutthere.wordpress.com/">Antonio Fulghieri</a>
+          (<a href="https://creativecommons.org/licenses/by-nc-nd/4.0/"
+            >CC BY-NC-ND 4.0</a
+          >)
+        </figcaption>
+      </figure>
+
+      <footer class="site-footer" role="contentinfo">
+        <div class="site-footer-content">
+          <ul class="site-footer-links">
+            {% for link in team_links.header %}
+            <li><a href="{{ link.href }}">{{ link.label }}</a></li>
+            {% endfor %}
+          </ul>
+          <div class="site-footer-meta">
+            <a
+              class="site-footer-build"
+              {%
+              if
+              site.github.build_revision
+              %}
+              href="{{ site.github.repository_url }}/commit/{{ site.github.build_revision }}"
+              aria-label="Currently deployed code: {{ site.time | date: '%Y-%m-%d %H:%M' }} UTC ({{ site.github.build_revision | slice: 0, 7 }})"
+              {%
+              else
+              %}
+              href="{{ team_links.repository.href }}"
+              aria-label="{{ team_links.repository.label }}"
+              {%
+              endif
+              %}
+            >
+              <svg
+                class="github-icon"
+                viewBox="0 0 16 16"
+                width="16"
+                height="16"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  fill="currentColor"
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.36c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+                />
+              </svg>
+              {% if site.github.build_revision %}
+              <span class="site-footer-build-commit"
+                >{{ site.time | date: '%Y-%m-%d %H:%M' }} UTC ({{
+                site.github.build_revision | slice: 0, 7 }})</span
+              >
+              {% else %}
+              <span class="site-footer-build-commit">GitHub</span>
+              {% endif %}
+            </a>
+            <small>
+              <a
+                class="footer-edit"
+                href="{{ site.github.repository_url }}/edit/main/docs{{ page.dir }}{{ page.name }}"
+                >Edit this page</a
+              >
+            </small>
+          </div>
         </div>
       </footer>
     </main>

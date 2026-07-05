@@ -67,6 +67,7 @@
     "test:coverage:server:codex": "nyc --nycrc-path .nycrc-server npm run test:server:codex",
     "test:coverage": "npm run test:coverage:client && npm run test:coverage:server",
     "coverage:check": "node ./scripts/coverage/check-coverage.js",
+    "coverage:pr-summary": "node ./scripts/coverage/generate-pr-summary.js",
     "coverage:report": "node ./scripts/coverage/generate-report.js",
     "coverage:update-baseline": "node ./scripts/coverage/check-coverage.js --update",
     "build:e2e": "./scripts/e2e/build-web.sh",

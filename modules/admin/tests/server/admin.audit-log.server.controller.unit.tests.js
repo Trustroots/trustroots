@@ -159,6 +159,24 @@ describe('Admin audit log controller unit tests', () => {
       res.body[0].user.username.should.equal(user.username);
     });
 
+    it('returns an empty array when audit log lookup returns null', async () => {
+      sinon.stub(AuditLog, 'find').returns({
+        sort: () => ({
+          limit: () => ({
+            populate: () => ({
+              exec: cb => cb(null, null),
+            }),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminAuditLog.list({}, res);
+      await res.waitForResponse();
+
+      res.body.should.eql([]);
+    });
+
     it('returns 400 when audit log lookup fails', async () => {
       sinon.stub(AuditLog, 'find').returns({
         sort: () => ({
