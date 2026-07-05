@@ -127,6 +127,7 @@ jest.mock('react-map-gl', () => {
   });
   Source.propTypes = {
     children: () => null,
+    id: () => null,
   };
 
   function Layer(props) {
