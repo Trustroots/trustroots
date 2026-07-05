@@ -245,7 +245,9 @@ export default function Statistics({ isAuthenticated }) {
 
             <p className="lead">
               {t('Wanna help understand Trustroots more in depth?')}{' '}
-              <a href="/volunteering">{t('Consider volunteering!')}</a>
+              <a href="https://team.trustroots.org/">
+                {t('Consider volunteering!')}
+              </a>
             </p>
           </div>
         </div>

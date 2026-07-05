@@ -7,6 +7,7 @@ const sinon = require('sinon');
 
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
+const errorService = require('../../../core/server/services/error.server.service');
 const should = require('should');
 
 const User = mongoose.model('User');
@@ -253,13 +254,50 @@ describe('Password controller unit tests', () => {
       controller.reset(
         {
           params: { token: 'reset-token' },
-          body: { newPassword: 'newpass', verifyPassword: 'newpass' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
           login: (user, cb) => cb(new Error('login failed')),
         },
         res,
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when saving the reset password fails', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.resetPasswordToken = 'reset-token';
+      userDoc.resetPasswordExpires = Date.now() + 3600000;
+      await userDoc.save();
+
+      sinon.stub(User, 'findOne').callsFake((query, cb) => {
+        cb(null, {
+          password: null,
+          resetPasswordToken: userDoc.resetPasswordToken,
+          resetPasswordExpires: userDoc.resetPasswordExpires,
+          save: saveCb => saveCb(new Error('save failed')),
+        });
+      });
+
+      const res = deferredResponse();
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Password reset failed.');
     });
 
     it('rejects mismatched passwords', async () => {
@@ -313,6 +351,37 @@ describe('Password controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.username.should.equal(userDoc.username);
+    });
+
+    it('ignores a successful final reset callback', () => {
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done();
+          },
+        },
+      });
+      const res = {
+        status: sinon.stub().returnsThis(),
+        send: sinon.stub(),
+        json: sinon.stub(),
+      };
+
+      controller.reset(
+        {
+          params: { token: 'reset-token' },
+          body: {
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+
+      res.status.called.should.be.false();
+      res.send.called.should.be.false();
+      res.json.called.should.be.false();
     });
   });
 
@@ -383,6 +452,33 @@ describe('Password controller unit tests', () => {
       res.body.message.should.equal('Current password is incorrect.');
     });
 
+    it('uses error status and default message for password lookup failures', async () => {
+      const controller = loadPasswordController();
+      const lookupError = new Error('');
+      lookupError.status = 418;
+      sinon.stub(User, 'findById').callsFake((id, cb) => cb(lookupError));
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: new mongoose.Types.ObjectId().toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: () => {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(418);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('default'),
+      );
+    });
+
     it('changes the password for a valid user', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -406,6 +502,62 @@ describe('Password controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Password changed successfully!');
+    });
+
+    it('returns 400 when login fails after changing the password', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.password = 'oldpassword1';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(new Error('login failed')),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('login failed');
+    });
+
+    it('returns 400 when the password change confirmation email fails', async () => {
+      const controller = proxyquire(controllerPath, {
+        [emailServicePath]: {
+          sendResetPassword: (user, cb) => cb(),
+          sendResetPasswordConfirm: (user, cb) =>
+            cb(new Error('confirm email failed')),
+        },
+      });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.password = 'oldpassword1';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: (user, cb) => cb(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('confirm email failed');
     });
   });
 });

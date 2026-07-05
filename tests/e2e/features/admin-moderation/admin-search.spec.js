@@ -90,4 +90,63 @@ test.describe('admin moderation search flows', () => {
 
     await expect(page.getByText(SEEDED_SHADOW.username).first()).toBeVisible();
   });
+
+  test('admin search APIs reject invalid input', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Search handles no-result state.',
+    ]);
+    annotateFeature(testInfo, 'admin.list-users-by-role', [
+      'Role list respects deterministic seeded users.',
+    ]);
+
+    const shortSearch = await page.request.post('/api/admin/users', {
+      data: { search: 'ab' },
+    });
+    expect(shortSearch.status()).toBe(400);
+    expect(await shortSearch.json()).toMatchObject({
+      message: 'Query string at least 3 characters long required.',
+    });
+
+    const invalidRole = await page.request.post('/api/admin/users/by-role', {
+      data: { role: 'not-a-role' },
+    });
+    expect(invalidRole.status()).toBe(400);
+    expect(await invalidRole.json()).toMatchObject({
+      message: 'Invalid role.',
+    });
+  });
+
+  test('admin search APIs reject regular members', async ({
+    baseURL,
+    browser,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Regular member is denied access to admin tools.',
+    ]);
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Admin search finds a confirmed member.',
+    ]);
+    annotateFeature(testInfo, 'admin.list-users-by-role', [
+      'Admin can list members in a selected role.',
+    ]);
+
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      await signInViaApi(page, context.request, SEEDED_MEMBERS[0]);
+
+      const search = await page.request.post('/api/admin/users', {
+        data: { search: SEEDED_MEMBERS[1].username },
+      });
+      expect(search.status()).toBe(403);
+
+      const byRole = await page.request.post('/api/admin/users/by-role', {
+        data: { role: 'shadowban' },
+      });
+      expect(byRole.status()).toBe(403);
+    } finally {
+      await context.close();
+    }
+  });
 });

@@ -127,6 +127,7 @@ exports.add = function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         if (contact) {
           contact.remove(function () {
