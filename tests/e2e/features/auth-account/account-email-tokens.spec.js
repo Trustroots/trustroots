@@ -34,6 +34,32 @@ test.describe.serial('auth email and token feature coverage', () => {
     expect(await duplicate.json()).toMatchObject({ valid: false });
   });
 
+  test('signup validation rejects missing and invalid usernames', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup-validation', [
+      'Duplicate or invalid username/email shows a validation error.',
+    ]);
+
+    const missing = await request.post('/api/auth/signup/validate', {
+      data: {},
+    });
+    expect(missing.ok()).toBeTruthy();
+    expect(await missing.json()).toMatchObject({
+      valid: false,
+      error: 'username-missing',
+    });
+
+    const invalid = await request.post('/api/auth/signup/validate', {
+      data: { username: 'bad username' },
+    });
+    expect(invalid.ok()).toBeTruthy();
+    expect(await invalid.json()).toMatchObject({
+      valid: false,
+      error: 'username-invalid',
+    });
+  });
+
   test('email confirmation validates and activates a fresh member', async ({
     request,
   }, testInfo) => {
@@ -155,5 +181,34 @@ test.describe.serial('auth email and token feature coverage', () => {
       },
     });
     expect(signin.ok()).toBeTruthy();
+  });
+
+  test('forgot password stores a reset token and rejects unknown accounts', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.password-forgot', [
+      'Forgot password form accepts username or email.',
+      'Unknown accounts show a recovery error.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+
+    const unknown = await request.post('/api/auth/forgot', {
+      data: { username: `missing-${user.username}` },
+    });
+    expect(unknown.status()).toBe(404);
+
+    const forgot = await request.post('/api/auth/forgot', {
+      data: { username: user.email },
+    });
+    expect(forgot.ok()).toBeTruthy();
+    expect(await forgot.json()).toMatchObject({
+      message: 'We sent you an email with further instructions.',
+    });
+
+    const storedUser = await findUserByUsername(user.username);
+    expect(storedUser.resetPasswordToken).toBeTruthy();
+    expect(storedUser.resetPasswordExpires).toBeTruthy();
   });
 });

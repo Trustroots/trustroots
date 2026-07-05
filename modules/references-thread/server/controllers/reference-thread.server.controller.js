@@ -231,6 +231,7 @@ exports.readReferenceThreadById = function (req, res, next, userToId) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         return next(err);
       }

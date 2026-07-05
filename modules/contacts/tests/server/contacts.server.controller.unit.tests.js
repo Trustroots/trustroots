@@ -156,6 +156,14 @@ describe('Contacts controller unit tests', () => {
   });
 
   describe('confirm', () => {
+    it('responds with 403 when no contact was loaded', async () => {
+      const { res } = await runHandler(res =>
+        contactsController.confirm({ user: user2 }, res),
+      );
+
+      res.statusCode.should.equal(403);
+    });
+
     it('responds with 403 when the user is not the receiver', async () => {
       const contact = await new Contact({
         userFrom: user1._id,
@@ -250,6 +258,14 @@ describe('Contacts controller unit tests', () => {
         done();
       });
     });
+
+    it('allows callers to omit the callback', () => {
+      sinon.stub(Contact, 'deleteMany').callsFake((query, cb) => cb());
+
+      contactsController.removeAllByUserId(user1._id);
+
+      Contact.deleteMany.calledOnce.should.be.true();
+    });
   });
 
   describe('list and get', () => {
@@ -260,11 +276,21 @@ describe('Contacts controller unit tests', () => {
       res.body.should.deepEqual([{ a: 1 }]);
     });
 
+    it('returns an empty object when no contacts list was loaded', async () => {
+      const { res } = await runHandler(res => contactsController.list({}, res));
+      res.body.should.deepEqual({});
+    });
+
     it('returns a single contact', async () => {
       const { res } = await runHandler(res =>
         contactsController.get({ contact: { _id: 'x' } }, res),
       );
       res.body._id.should.equal('x');
+    });
+
+    it('returns an empty object when no single contact was loaded', async () => {
+      const { res } = await runHandler(res => contactsController.get({}, res));
+      res.body.should.deepEqual({});
     });
   });
 
@@ -320,6 +346,25 @@ describe('Contacts controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('passes contact lookup errors to next', async () => {
+      sinon.stub(Contact, 'findOne').returns({
+        populate: () => ({
+          exec: cb => cb(new Error('contact lookup failed')),
+        }),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactByUserId(
+          { user: user1 },
+          res,
+          next,
+          user2._id.toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('contact lookup failed');
+    });
+
     it('attaches the contact and calls next', async () => {
       await new Contact({
         userFrom: user1._id,
@@ -349,6 +394,35 @@ describe('Contacts controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('calls next without a public user', async () => {
+      const [privateUser] = await utils.saveUsers(
+        utils.generateUsers(1, { public: false }),
+      );
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.contactById(
+          { user: privateUser },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+
+      nextCalled.should.be.true();
+    });
+
+    it('responds with 404 when no contact matches the id', async () => {
+      const { res } = await runHandler((res, next) =>
+        contactsController.contactById(
+          { user: user1 },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+
+      res.statusCode.should.equal(404);
+    });
+
     it('responds with 404 for a contact the user does not belong to', async () => {
       const [stranger] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),
@@ -368,6 +442,25 @@ describe('Contacts controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(404);
+    });
+
+    it('passes contact id lookup errors to next', async () => {
+      sinon.stub(Contact, 'findById').returns({
+        populate: () => ({
+          exec: cb => cb(new Error('contact id lookup failed')),
+        }),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactById(
+          { user: user1 },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('contact id lookup failed');
     });
 
     it('attaches the contact for a participant', async () => {
@@ -451,6 +544,24 @@ describe('Contacts controller unit tests', () => {
       nextCalled.should.be.true();
       req.contacts.length.should.equal(2);
     });
+
+    it('matches contacts when authenticated user is the receiving side', async () => {
+      await new Contact({
+        userFrom: user2._id,
+        userTo: user1._id,
+        confirmed: true,
+      }).save();
+
+      const req = {
+        user: user1,
+        contacts: [{ user: { _id: user2._id } }],
+      };
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.filterByCommon(req, res, next),
+      );
+      nextCalled.should.be.true();
+      req.contacts.length.should.equal(1);
+    });
   });
 
   describe('contactListByUser', () => {
@@ -484,6 +595,40 @@ describe('Contacts controller unit tests', () => {
       );
       nextCalled.should.be.true();
       req.contacts.length.should.equal(1);
+    });
+
+    it('passes aggregate errors to next', async () => {
+      sinon.stub(Contact, 'aggregate').returns({
+        exec: cb => cb(new Error('aggregate failed')),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          { user: user1 },
+          res,
+          next,
+          user2._id.toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('aggregate failed');
+    });
+
+    it('passes missing aggregate results to next', async () => {
+      sinon.stub(Contact, 'aggregate').returns({
+        exec: cb => cb(null, null),
+      });
+
+      const { nextArg } = await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          { user: user1 },
+          res,
+          next,
+          user2._id.toString(),
+        ),
+      );
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('Failed to load contacts.');
     });
   });
 });

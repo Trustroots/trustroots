@@ -63,14 +63,14 @@ if [ -f "$MONGODUMP_PATH/trust-roots-dump-no-agenda.bson.gz" ]; then
   echo "Found compressed BSON archive file, importing..."
   # The archive contains data for "trust-roots" database, we need to rename it to "trustroots"
   gunzip -c "$MONGODUMP_PATH/trust-roots-dump-no-agenda.bson.gz" | \
-    $DOCKER_COMPOSE_CMD exec -T mongodb mongorestore --archive --nsFrom="trust-roots.*" --nsTo="trustroots.*"
+    $DOCKER_COMPOSE_CMD exec -T mongodb mongorestore --archive --nsFrom="trust-roots.*" --nsTo="trustroots.*" --numParallelCollections=1 --numInsertionWorkersPerCollection=1
 else
   echo "No compressed BSON archive file found, trying standard mongorestore..."
   TMP_DUMP_PATH="/tmp/trustroots-mongodump-$TIMESTAMP"
   echo "Copying dump directory into mongodb container..."
   $DOCKER_COMPOSE_CMD cp "$MONGODUMP_PATH" "mongodb:$TMP_DUMP_PATH"
   echo "Importing dump from container path..."
-  $DOCKER_COMPOSE_CMD exec -T mongodb mongorestore --db "$DB_NAME" --excludeCollection=agendaJobs "$TMP_DUMP_PATH"
+  $DOCKER_COMPOSE_CMD exec -T mongodb mongorestore --db "$DB_NAME" --excludeCollection=agendaJobs --numParallelCollections=1 --numInsertionWorkersPerCollection=1 "$TMP_DUMP_PATH"
   echo "Cleaning up temporary dump files in container..."
   $DOCKER_COMPOSE_CMD exec -T mongodb rm -rf "$TMP_DUMP_PATH"
 fi
