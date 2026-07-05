@@ -111,7 +111,7 @@ describe('<ProfileViewBasics />', () => {
     );
   });
 
-  it('renders the nostr npub link when it is the only network', () => {
+  it('renders the nostr npub fallback link when it is the only network', () => {
     render(
       <ProfileViewBasics
         profile={{
@@ -119,17 +119,14 @@ describe('<ProfileViewBasics />', () => {
           languages: [],
           nostrNpub: 'npub1onlynetwork',
           seen: null,
-          username: 'onlynetwork',
         }}
       />,
     );
 
     expect(screen.getByText('Elsewhere')).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'onlynetwork@trustroots.org' }),
-    ).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
       'href',
-      'https://nos.trustroots.org/v0/#profile/onlynetwork%40trustroots.org',
+      'https://nos.trustroots.org/v0/#profile/npub1onlynetwork',
     );
   });
 

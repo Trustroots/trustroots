@@ -178,6 +178,53 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     await expect(page.locator('#nostrNpub')).toHaveValue(FORM_NPUB);
   });
 
+  test('canonicalizes uppercase npubs when saving networks', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
+    await page.goto('/profile/edit/networks');
+
+    const input = page.locator('#nostrNpub');
+    await expect(input).toBeVisible();
+
+    await input.fill(FORM_NPUB.toUpperCase());
+    await page.locator('.profile-editor-save').click();
+
+    await expect(page.getByText(/networks updated/i)).toBeVisible();
+
+    await page.goto('/profile/edit/networks');
+    await expect(page.locator('#nostrNpub')).toHaveValue(FORM_NPUB);
+  });
+
+  test('rejects an npub already saved by another member', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
+    await signInViaApi(page, request, SEEDED_MEMBERS[1]);
+    await page.goto('/profile/edit/networks');
+
+    const input = page.locator('#nostrNpub');
+    await expect(input).toBeVisible();
+
+    await input.fill(FORM_NPUB);
+    await page.locator('.profile-editor-save').click();
+
+    await expect(
+      page.getByText(
+        'This nostr npub is already in use. Please use another one.',
+      ),
+    ).toBeVisible();
+  });
+
   test('links the saved npub to nos.trustroots.org on the profile view', async ({
     page,
   }, testInfo) => {
