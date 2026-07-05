@@ -64,7 +64,7 @@ export default function Foundation({ user }) {
                   <a href="/support">{t('Contact us')}</a>
                 </li>
                 <li>
-                  <a href="/volunteering">{t('Volunteering')}</a>
+                  <a href="https://team.trustroots.org/">{t('Volunteering')}</a>
                 </li>
               </ul>
             </div>

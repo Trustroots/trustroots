@@ -8,6 +8,14 @@ const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
+require('../../server/models/user.server.model');
+require('../../../contacts/server/models/contacts.server.model');
+require('../../../messages/server/models/message.server.model');
+require('../../../messages/server/models/message-stat.server.model');
+require('../../../messages/server/models/thread.server.model');
+require('../../../offers/server/models/offer.server.model');
+require('../../../tribes/server/models/tribe.server.model');
+
 const profileController = require('../../server/controllers/users.profile.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
@@ -17,6 +25,7 @@ const User = mongoose.model('User');
 const controllerPath =
   '../../server/controllers/users.profile.server.controller';
 const pushServicePath = '../../../core/server/services/push.server.service';
+const errorServicePath = '../../../core/server/services/error.server.service';
 
 /**
  * Load the profile controller with the push notification service stubbed.
@@ -26,6 +35,14 @@ const pushServicePath = '../../../core/server/services/push.server.service';
 function loadControllerWithPush(notifyPushDeviceAdded) {
   return proxyquire(controllerPath, {
     [pushServicePath]: { notifyPushDeviceAdded },
+  });
+}
+
+function loadControllerWithEmptyErrorMessage() {
+  return proxyquire(controllerPath, {
+    [errorServicePath]: {
+      getErrorMessage: () => false,
+    },
   });
 }
 
@@ -57,7 +74,7 @@ function deferredResponse() {
 describe('Profile controller push/membership unit tests', () => {
   afterEach(() => {
     sinon.restore();
-    return utils.clearDatabase();
+    return mongoose.connection.readyState ? utils.clearDatabase() : undefined;
   });
 
   describe('getUserMemberships', () => {
@@ -120,6 +137,25 @@ describe('Profile controller push/membership unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('uses the default message when removing a registration fails without details', async () => {
+      const controller = loadControllerWithEmptyErrorMessage();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(User, 'findByIdAndUpdate').returns({
+        exec: cb => cb({}),
+      });
+
+      const res = deferredResponse();
+      controller.removePushRegistration(
+        { user: { _id: saved._id }, params: { token: 'token-1' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Failed to remove registration, please try again.',
+      );
+    });
+
     it('removes a registration by token', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -174,6 +210,31 @@ describe('Profile controller push/membership unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       res.body.message.should.equal('Platform is invalid or missing.');
+    });
+
+    it('responds with 400 when push registration platforms are not configured', async () => {
+      const platformPath = User.schema
+        .path('pushRegistration')
+        .schema.path('platform');
+      const previousEnumValues = platformPath.enumValues;
+      platformPath.enumValues = undefined;
+
+      try {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const res = deferredResponse();
+        profileController.addPushRegistration(
+          {
+            user: { _id: saved._id },
+            body: { token: 'token-1', platform: 'web' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body.message.should.equal('Platform is invalid or missing.');
+      } finally {
+        platformPath.enumValues = previousEnumValues;
+      }
     });
 
     it('saves a registration without notifying when doNotNotify is set', async () => {
@@ -240,6 +301,86 @@ describe('Profile controller push/membership unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('uses the default message when saving a registration fails without details', async () => {
+      const controller = loadControllerWithEmptyErrorMessage();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .onFirstCall()
+        .returns({ exec: cb => cb() })
+        .onSecondCall()
+        .returns({
+          exec: cb => cb({}),
+        });
+
+      const res = deferredResponse();
+      controller.addPushRegistration(
+        {
+          user: { _id: saved._id },
+          body: { token: 'token-fallback', platform: 'web' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed, please try again.');
+    });
+
+    it('returns 400 when fetching the saved registration user fails', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .onFirstCall()
+        .returns({ exec: cb => cb() })
+        .onSecondCall()
+        .returns({
+          exec: cb => cb(null, { _id: saved._id }),
+        });
+      sinon.stub(User, 'findById').returns({
+        exec: cb => cb(new Error('fetch failed')),
+      });
+
+      const res = deferredResponse();
+      profileController.addPushRegistration(
+        {
+          user: { _id: saved._id },
+          body: { token: 'token-fetch-fail', platform: 'web' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.startWith('Snap! Something went wrong.');
+    });
+
+    it('uses the default message when fetching a saved registration fails without details', async () => {
+      const controller = loadControllerWithEmptyErrorMessage();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      sinon
+        .stub(User, 'findByIdAndUpdate')
+        .onFirstCall()
+        .returns({ exec: cb => cb() })
+        .onSecondCall()
+        .returns({
+          exec: cb => cb(null, { _id: saved._id }),
+        });
+      sinon.stub(User, 'findById').returns({
+        exec: cb => cb({}),
+      });
+
+      const res = deferredResponse();
+      controller.addPushRegistration(
+        {
+          user: { _id: saved._id },
+          body: { token: 'token-fetch-fallback', platform: 'web' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to fetch user, please try again.');
     });
 
     it('still succeeds when the notification fails', async () => {
