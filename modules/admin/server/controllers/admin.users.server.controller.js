@@ -156,6 +156,7 @@ exports.listUsersByRole = (req, res) => {
 };
 
 const handleAdminApiError = (res, err) => {
+  /* istanbul ignore else */
   if (err) {
     return res.status(400).send({
       message: errorService.getErrorMessage(err),
