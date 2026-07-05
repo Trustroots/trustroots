@@ -206,6 +206,16 @@ describe('App Controller Tests', function () {
     expect($state.go).toHaveBeenCalledWith('volunteering');
   });
 
+  it('should redirect users without roles to volunteering page', function () {
+    Authentication.user = {};
+    const toState = { requiresRole: 'admin', name: 'admin' };
+
+    const event = $scope.$broadcast('$stateChangeStart', toState, {});
+
+    expect(event.defaultPrevented).toBe(true);
+    expect($state.go).toHaveBeenCalledWith('volunteering');
+  });
+
   it('should allow users with required role to continue navigation', function () {
     Authentication.user = { roles: ['admin'] };
     const toState = { requiresRole: 'admin', name: 'admin' };

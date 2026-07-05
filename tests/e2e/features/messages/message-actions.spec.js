@@ -50,6 +50,36 @@ test.describe.serial('message action feature coverage', () => {
     );
   });
 
+  test('members can send replies from the thread composer', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Reply composer is visible in an existing thread.',
+      'Sending a reply appends it to the thread.',
+    ]);
+
+    const portlandId = await fetchUserIdByUsername(request, portland.username);
+    const replyText = `E2E composer reply ${Date.now()}`;
+    await page.goto(`/messages/${portland.username}?userId=${portlandId}`);
+
+    const editor = page.locator('#message-reply-content');
+    await expect(editor).toBeVisible();
+    await editor.click();
+    await page.keyboard.insertText(replyText);
+
+    const sendReply = page.waitForResponse(
+      response =>
+        response.url().includes('/api/messages') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.locator('#messageReplySubmit').click();
+    await sendReply;
+
+    await expect(page.getByText(replyText)).toBeVisible();
+  });
+
   test('members can start conversations and read/sync unread messages', async ({
     browser,
     baseURL,

@@ -15,10 +15,11 @@
       rel="stylesheet"
       href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | default: '' | relative_url }}"
     />
+    {% assign analytics = site.data.analytics %}
     <script
       defer
-      src="https://1p.trustroots.org/script.js"
-      data-website-id="8c48b588-60a4-42d8-913a-462826c523fb"
+      src="{{ analytics.scriptSrc }}"
+      data-website-id="{{ analytics.websiteId }}"
     ></script>
   </head>
   <body>
@@ -47,18 +48,21 @@
           />
           <span class="brand-team">team</span>
         </a>
+        {% assign team_links = site.data.team_links %}
         <nav class="hub-nav" aria-label="Site links">
-          <a href="https://www.trustroots.org/">Trustroots.org</a>
-          <a href="https://nos.trustroots.org/">Nostroots</a>
-          <a href="https://www.trustroots.org/support">Support</a>
+          {% for link in team_links.header %}
+          <a href="{{ link.href }}">{{ link.label }}</a>
+          {% endfor %}
           <a
             class="github-icon-link"
-            href="https://github.com/Trustroots/trustroots"
-            aria-label="GitHub repository"
+            href="{{ team_links.repository.href }}"
+            aria-label="{{ team_links.repository.label }}"
           >
             <svg
               class="github-icon"
               viewBox="0 0 16 16"
+              width="16"
+              height="16"
               aria-hidden="true"
               focusable="false"
             >
@@ -92,9 +96,9 @@
       <footer class="site-footer" role="contentinfo">
         <div class="site-footer-content">
           <ul class="site-footer-links">
-            <li><a href="https://www.trustroots.org/">Trustroots.org</a></li>
-            <li><a href="https://nos.trustroots.org/">Nostroots</a></li>
-            <li><a href="https://www.trustroots.org/support">Support</a></li>
+            {% for link in team_links.header %}
+            <li><a href="{{ link.href }}">{{ link.label }}</a></li>
+            {% endfor %}
           </ul>
           <div class="site-footer-meta">
             <a
@@ -108,8 +112,8 @@
               {%
               else
               %}
-              href="https://github.com/Trustroots/trustroots"
-              aria-label="GitHub repository"
+              href="{{ team_links.repository.href }}"
+              aria-label="{{ team_links.repository.label }}"
               {%
               endif
               %}
@@ -117,6 +121,8 @@
               <svg
                 class="github-icon"
                 viewBox="0 0 16 16"
+                width="16"
+                height="16"
                 aria-hidden="true"
                 focusable="false"
               >

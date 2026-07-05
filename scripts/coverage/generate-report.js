@@ -7,6 +7,8 @@ const root = path.resolve(__dirname, '../..');
 const outputDir = path.join(root, 'coverage-report');
 const outputPath = path.join(outputDir, 'index.html');
 const baselinePath = path.join(root, 'coverage-baseline.json');
+const analyticsConfigPath = path.join(root, 'docs/_data/analytics.json');
+const teamLinksConfigPath = path.join(root, 'docs/_data/team_links.json');
 const metrics = ['statements', 'branches', 'functions', 'lines'];
 const e2eTestMetrics = ['total', 'passed', 'failed', 'passRate'];
 const e2eTestMetricLabels = {
@@ -98,6 +100,38 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function renderAnalyticsScript() {
+  const analytics = readJson(analyticsConfigPath);
+
+  return `    <script
+      defer
+      src="${escapeHtml(analytics.scriptSrc)}"
+      data-website-id="${escapeHtml(analytics.websiteId)}"
+    ></script>`;
+}
+
+function renderTeamHeaderLinks(links) {
+  return links
+    .map(
+      link =>
+        `          <a href="${escapeHtml(link.href)}">${escapeHtml(
+          link.label,
+        )}</a>`,
+    )
+    .join('\n');
+}
+
+function renderTeamFooterLinks(links) {
+  return links
+    .map(
+      link =>
+        `            <li><a href="${escapeHtml(link.href)}">${escapeHtml(
+          link.label,
+        )}</a></li>`,
+    )
+    .join('\n');
+}
+
 function relativeHref(filePath) {
   return path.relative(outputDir, filePath).replace(/\\/g, '/');
 }
@@ -108,6 +142,12 @@ function readStatus(suite) {
   }
 
   return readJson(suite.statusPath);
+}
+
+function statusDurationMs(status) {
+  return status && typeof status.durationMs === 'number'
+    ? status.durationMs
+    : 0;
 }
 
 function getRunUrl() {
@@ -309,6 +349,7 @@ function coverageMissingLane(suiteName, metadata) {
       status: normalizeStatus(status.status),
       message: status.message || 'Coverage did not produce a summary.',
       command: status.command || suite.command,
+      durationMs: statusDurationMs(status),
     };
   }
 
@@ -347,7 +388,14 @@ function readCoverageLane(suiteName, baseline, metadata) {
     };
     return result;
   }, {});
-  const passed = metrics.every(metric => metricValues[metric].passed);
+  const metricsPassed = metrics.every(metric => metricValues[metric].passed);
+  const statusValue = status ? normalizeStatus(status.status) : null;
+  const laneStatus =
+    statusValue && statusValue !== 'passed'
+      ? statusValue
+      : metricsPassed
+        ? 'passed'
+        : 'failed';
   const generatedAt =
     (status && status.generatedAt) ||
     fileGeneratedAt(suite.summaryPath) ||
@@ -355,11 +403,15 @@ function readCoverageLane(suiteName, baseline, metadata) {
 
   return {
     ...baseLane(suite, metadata),
-    status: passed ? 'passed' : 'failed',
-    message: passed
-      ? `${suite.label} coverage meets the checked-in minimum.`
-      : `${suite.label} coverage is below the checked-in minimum.`,
+    status: laneStatus,
+    message:
+      statusValue && statusValue !== 'passed'
+        ? status.message || `${suite.label} coverage failed.`
+        : metricsPassed
+          ? `${suite.label} coverage meets the checked-in minimum.`
+          : `${suite.label} coverage is below the checked-in minimum.`,
     generatedAt,
+    durationMs: statusDurationMs(status),
     metrics: metricValues,
   };
 }
@@ -628,6 +680,8 @@ function formatMetadataTimestamp(isoString) {
 }
 
 function renderReportShell(metadata, initialLanes) {
+  const teamLinks = readJson(teamLinksConfigPath);
+  const repositoryHref = teamLinks.repository.href;
   const runLink = metadata.runUrl
     ? `<a href="${escapeHtml(metadata.runUrl)}">GitHub Actions run</a>`
     : 'local run';
@@ -648,17 +702,20 @@ function renderReportShell(metadata, initialLanes) {
     metadata.commit === 'local'
       ? 'local'
       : `${formatMetadataTimestamp(metadata.generatedAtDisplay)} UTC (${shortSha})`;
-  const buildHref =
-    metadata.commitUrl || 'https://github.com/Trustroots/trustroots';
+  const buildHref = metadata.commitUrl || repositoryHref;
+  const workflowHref = `${repositoryHref}/actions/workflows/test.yml`;
+  const generatorEditHref = `${repositoryHref}/edit/main/scripts/coverage/generate-report.js`;
   const githubIconLink = `
     <a
       class="github-icon-link"
-      href="https://github.com/Trustroots/trustroots"
-      aria-label="GitHub repository"
+      href="${escapeHtml(repositoryHref)}"
+      aria-label="${escapeHtml(teamLinks.repository.label)}"
     >
       <svg
         class="github-icon"
         viewBox="0 0 16 16"
+        width="16"
+        height="16"
         aria-hidden="true"
         focusable="false"
       >
@@ -695,6 +752,7 @@ function renderReportShell(metadata, initialLanes) {
       rel="stylesheet"
     >
     <link rel="stylesheet" href="/assets/css/style.css?v=0">
+${renderAnalyticsScript()}
     <style>
       :root {
         --pass: #128a78;
@@ -878,34 +936,42 @@ function renderReportShell(metadata, initialLanes) {
         font-weight: 700;
       }
       .result-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        align-items: center;
+        display: grid;
+        grid-template-columns: minmax(9rem, 1fr) max-content;
+        gap: 4px 12px;
+        align-items: baseline;
+        width: min(100%, 340px);
         white-space: normal;
       }
       .result-pill {
-        display: inline-flex;
-        align-items: baseline;
-        gap: 5px;
-        padding: 3px 8px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: var(--panel-strong);
+        display: contents;
+      }
+      .result-pill-label {
         color: var(--muted);
         font-size: 12px;
         font-weight: 700;
         line-height: 1.35;
       }
-      .result-pill strong {
+      .result-pill-value {
         color: var(--text);
         font-size: 13px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        justify-self: end;
+        line-height: 1.35;
+        text-align: right;
       }
-      .result-pill.pass strong {
+      .result-pill.perfect .result-pill-value {
         color: var(--pass);
       }
-      .result-pill.fail strong {
+      .result-pill.fail .result-pill-value {
         color: var(--fail);
+      }
+      .recorded-value {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: baseline;
+        gap: 2px;
       }
       .help-label {
         position: relative;
@@ -1059,9 +1125,7 @@ function renderReportShell(metadata, initialLanes) {
           <span class="brand-team">team</span>
         </a>
         <nav class="hub-nav" aria-label="Site links">
-          <a href="https://www.trustroots.org/">Trustroots.org</a>
-          <a href="https://nos.trustroots.org/">Nostroots</a>
-          <a href="https://www.trustroots.org/support">Support</a>
+${renderTeamHeaderLinks(teamLinks.header)}
           ${githubIconLink}
         </nav>
       </div>
@@ -1072,7 +1136,7 @@ function renderReportShell(metadata, initialLanes) {
           <h1>Trustroots Coverage Report</h1>
           <p>${escapeHtml(summaryText)}</p>
           <p class="coverage-report-ci">
-            <a href="https://github.com/Trustroots/trustroots/actions/workflows/test.yml"
+            <a href="${escapeHtml(workflowHref)}"
               >GitHub Actions tests</a
             >
           </p>
@@ -1114,9 +1178,7 @@ function renderReportShell(metadata, initialLanes) {
       <footer class="site-footer" role="contentinfo">
         <div class="site-footer-content">
           <ul class="site-footer-links">
-            <li><a href="https://www.trustroots.org/">Trustroots.org</a></li>
-            <li><a href="https://nos.trustroots.org/">Nostroots</a></li>
-            <li><a href="https://www.trustroots.org/support">Support</a></li>
+${renderTeamFooterLinks(teamLinks.header)}
           </ul>
           <div class="site-footer-meta">
             <a
@@ -1127,6 +1189,8 @@ function renderReportShell(metadata, initialLanes) {
               <svg
                 class="github-icon"
                 viewBox="0 0 16 16"
+                width="16"
+                height="16"
                 aria-hidden="true"
                 focusable="false"
               >
@@ -1140,7 +1204,7 @@ function renderReportShell(metadata, initialLanes) {
             <small>
               <a
                 class="footer-edit"
-                href="https://github.com/Trustroots/trustroots/edit/main/scripts/coverage/generate-report.js"
+                href="${escapeHtml(generatorEditHref)}"
                 >Edit this page</a
               >
             </small>
@@ -1354,25 +1418,59 @@ function renderReportShell(metadata, initialLanes) {
 
       function statusLabel(status) {
         var labels = {
-          blocked: 'Blocked',
-          failed: 'Failed',
-          passed: 'Passed',
+          blocked: '✗ Blocked',
+          failed: '✗ Failed',
+          passed: '✓',
           skipped: 'Skipped',
           unknown: 'Unknown',
         };
         return labels[status] || status;
       }
 
+      function isPerfectValue(value) {
+        if (value === '100.00%') {
+          return true;
+        }
+
+        var ratio = /^(\d+)\/(\d+)$/.exec(value);
+        return Boolean(ratio && ratio[1] === ratio[2]);
+      }
+
       function resultPill(label, value, passed) {
         return (
           '<span class="result-pill ' +
           (passed ? 'pass' : 'fail') +
+          (isPerfectValue(value) ? ' perfect' : '') +
           '">' +
-          escapeHtml(label) +
-          ' <strong>' +
-          escapeHtml(value) +
-          '</strong></span>'
+            '<span class="result-pill-label">' +
+              escapeHtml(label) +
+            '</span>' +
+            '<span class="result-pill-value">' +
+              escapeHtml(value) +
+            '</span>' +
+          '</span>'
         );
+      }
+
+      function renderRecordedCell(lane) {
+        var durationMs = lane.e2eMetrics
+          ? lane.e2eMetrics.durationMs || lane.durationMs
+          : lane.durationMs;
+        var html =
+          '<span class="recorded-value">' +
+            '<span class="metric-value">' +
+              escapeHtml(formatDatetime(lane.generatedAt)) +
+            '</span>';
+
+        if (typeof durationMs === 'number' && durationMs > 0) {
+          html +=
+            '<span class="suite-note">Duration ' +
+              escapeHtml(formatDuration(durationMs)) +
+            '</span>';
+        }
+
+        html += '</span>';
+        return html;
       }
 
       function renderCoverageResult(lane) {
@@ -1384,20 +1482,16 @@ function renderReportShell(metadata, initialLanes) {
           );
         }
 
-        return (
-          '<span class="result-list">' +
-          metrics
-            .map(function (metric) {
-              var values = lane.metrics[metric] || {};
-              return resultPill(
-                metric.charAt(0).toUpperCase() + metric.slice(1),
-                formatPercent(values.current),
-                values.passed,
-              );
-            })
-            .join('') +
-          '</span>'
-        );
+        var parts = metrics.map(function (metric) {
+          var values = lane.metrics[metric] || {};
+          return resultPill(
+            metric.charAt(0).toUpperCase() + metric.slice(1),
+            formatPercent(values.current),
+            values.passed,
+          );
+        });
+
+        return '<span class="result-list">' + parts.join('') + '</span>';
       }
 
       function renderE2eResult(lane) {
@@ -1490,8 +1584,6 @@ function renderReportShell(metadata, initialLanes) {
           });
         }
 
-        parts.push(resultPill('Duration', formatDuration(lane.e2eMetrics.durationMs), true));
-
         return '<span class="result-list">' + parts.join('') + '</span>';
       }
 
@@ -1510,9 +1602,7 @@ function renderReportShell(metadata, initialLanes) {
               '<tr>' +
                 '<td>' + renderSuiteNameCell(lane) + '</td>' +
                 '<td>' + renderStatusCell(lane) + '</td>' +
-                '<td class="metric-value">' +
-                  escapeHtml(formatDatetime(lane.generatedAt)) +
-                '</td>' +
+                '<td>' + renderRecordedCell(lane) + '</td>' +
                 '<td>' + renderResultCell(lane) + '</td>' +
                 '<td>' + renderReportCell(lane) + '</td>' +
               '</tr>'
@@ -1597,6 +1687,11 @@ function renderReportShell(metadata, initialLanes) {
           );
         }
 
+        var areaTotals = {
+          failed: 0,
+          passed: 0,
+          total: 0,
+        };
         var areaRows = Object.keys(lane.e2eMetrics.byArea || {})
           .filter(function (area) {
             return area !== 'Setup';
@@ -1606,21 +1701,29 @@ function renderReportShell(metadata, initialLanes) {
             var areaValues = lane.e2eMetrics.byArea[area];
             var areaStatus = 'Skipped';
             var areaClass = 'skip';
+            var areaIcon = '';
+            areaTotals.passed += areaValues.passed || 0;
+            areaTotals.failed += areaValues.failed || 0;
+            areaTotals.total += areaValues.total || 0;
 
             if (areaValues.total > 0) {
               if (areaValues.failed > 0) {
                 areaStatus = 'Failing';
                 areaClass = 'fail';
+                areaIcon = '✗ ';
               } else if (areaValues.passed > 0) {
-                areaStatus = 'Passing';
+                areaStatus = '';
                 areaClass = 'pass';
+                areaIcon = '✓';
               }
             }
 
             return (
               '<tr>' +
                 '<td><strong>' + escapeHtml(formatAreaLabel(area)) + '</strong></td>' +
-                '<td class="' + areaClass + '">' + escapeHtml(areaStatus) + '</td>' +
+                '<td class="' + areaClass + '">' +
+                  escapeHtml(areaIcon + areaStatus) +
+                '</td>' +
                 '<td>' + escapeHtml(String(areaValues.passed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.failed)) + '</td>' +
                 '<td>' + escapeHtml(String(areaValues.total)) + '</td>' +
@@ -1681,6 +1784,13 @@ function renderReportShell(metadata, initialLanes) {
             '<table class="test-report-table">' +
               '<thead><tr><th>Area</th><th>Status</th><th>Passed</th><th>Failed</th><th>Total</th></tr></thead>' +
               '<tbody>' + areaRows + '</tbody>' +
+              '<tfoot><tr><th>Total</th><th></th><th>' +
+                escapeHtml(String(areaTotals.passed)) +
+                '</th><th>' +
+                escapeHtml(String(areaTotals.failed)) +
+                '</th><th>' +
+                escapeHtml(String(areaTotals.total)) +
+                '</th></tr></tfoot>' +
             '</table>' +
           '</div>' +
           '<strong>Manifest feature coverage</strong>' +
@@ -1859,4 +1969,11 @@ function writeReport() {
   console.log(`Wrote ${written.join(', ')}.`);
 }
 
-writeReport();
+module.exports = {
+  renderReportShell,
+  renderAnalyticsScript,
+};
+
+if (require.main === module) {
+  writeReport();
+}
