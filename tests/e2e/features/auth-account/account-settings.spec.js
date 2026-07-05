@@ -6,6 +6,7 @@ const {
   registerViaApi,
   signIn,
   signInViaApi,
+  signOut,
 } = require('../../support/helpers');
 const {
   findUserByUsername,
@@ -44,6 +45,44 @@ test.describe.serial('account settings feature coverage', () => {
       },
     });
     expect(changed.ok()).toBeTruthy();
+  });
+
+  test('members can change their password through account settings', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.password-change', [
+      'Current password is required.',
+      'Password change succeeds with valid current and new password.',
+      'Validation errors are visible for invalid data.',
+    ]);
+
+    const user = createUser();
+    const newPassword = `${DEFAULT_PASSWORD}Changed`;
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+
+    await page.goto('/profile/edit/account#password');
+    await expect(page.locator('#password')).toBeVisible();
+
+    await page.locator('#currentPassword').fill(user.password);
+    await page.locator('#newPassword').fill(newPassword);
+    await page.locator('#verifyPassword').fill(newPassword);
+
+    const changePassword = page.waitForResponse(
+      response =>
+        response.url().includes('/api/users/password') &&
+        response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: /change password/i }).click();
+    expect((await changePassword).ok()).toBeTruthy();
+
+    await expect(
+      page.getByText('Your password is now changed. Have a nice day!'),
+    ).toBeVisible();
+
+    await signOut(page);
+    await signIn(page, { ...user, password: newPassword });
   });
 
   test('members can update account details and see validation errors', async ({

@@ -11,21 +11,23 @@ redirect_from:
 
 ## Volunteer
 
-### Nostr — decentralized social networking
+There are plenty of things to do. In June 2026 we went out of maintenance mode. Further down on this page you can see a bunch of actual tasks that people are working on. If you have tech skills it should be fairly easy to jump in and help out. If you don't have tech skills and you want to help there's still ways to do that, especially around testing.
 
-Trustroots is exploring how hospitality networks can rely less on individually run servers and administrative overhead. Nostr offers a promising path toward a more decentralized, gift-economy social web. One of the most helpful actions you can take is to try it out and provide feedback, negative or positive.
+### Decentralized social networking
 
-Learn more at [nos.trustroots.org](https://nos.trustroots.org).
+The history of hospitality exchange is riddled with people and organisations messing up. In 2022 we were pretty close to this ourselves when only one person who cared had access to the server. The first step was increasing the [bus factor](https://en.wikipedia.org/wiki/Bus_factor) to 3, the second step was figuring out how we to make sure that the spirit of Trustroots will be able to keep going without relying on a specific group of people. Federation like Matrix or the Fediverse wasn't a real solution for this. We insisted on more decentralisation. We first toyed with [Secure Scuttlebutt](https://en.wikipedia.org/wiki/Secure_Scuttlebutt) and moved to Nostr when it was clear that SSB was kind unusable. Read more about this [here](https://nos.trustroots.org/background/).
 
-### Technical help
+### Nostroots
 
-Trustroots was in maintenance mode from 2022 till June 2026, development work is happening again and technical help is very welcome.
+Trustroots is exploring how hospitality networks can rely less on individually run servers and administrative overhead. Nostr offers a promising path toward a more decentralized, gift-economy social web. One of the most helpful actions you can take is to try it out and provide [feedback](https://www.trustroots.org/support).
 
-Useful areas include simplifying old code, upgrading dependencies, helping with the React transition, and connecting Trustroots with Nostr/Nostroots.
+Try it out at [nos.trustroots.org](https://nos.trustroots.org).
 
-Check what's been going on recently, your help is very welcome.
+## Technical help
 
-## Recent activity
+Useful areas include testing, simplifying old code, upgrading dependencies, helping with finishing the transition to React, and connecting Trustroots with Nostroots.
+
+Check what's been going on recently, your help is very welcome:
 
 <section class="activity-panel" data-activity-panel>
   <div id="activity-list" class="activity-list" aria-live="polite">

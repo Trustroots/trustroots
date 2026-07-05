@@ -588,6 +588,93 @@ td.coverage-result {
   }
 }
 
+@media (max-width: 720px) {
+  .activity-panel {
+    padding: 14px;
+  }
+
+  .activity-list {
+    border-top: 0;
+  }
+
+  .activity-table {
+    table-layout: auto;
+
+    thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    tbody,
+    tr,
+    td {
+      display: block;
+    }
+
+    tr {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-areas:
+        'type title time'
+        '. repo repo'
+        '. author author';
+      gap: 3px 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    tr:last-child {
+      border-bottom: 0;
+    }
+
+    th,
+    td {
+      width: auto;
+      padding: 0;
+      border-bottom: 0;
+    }
+
+    td.activity-type {
+      grid-area: type;
+      width: auto;
+    }
+
+    td.activity-title-cell {
+      grid-area: title;
+      min-width: 0;
+    }
+
+    td.activity-repo {
+      grid-area: repo;
+      width: auto;
+      white-space: normal;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    td.activity-author {
+      grid-area: author;
+      width: auto;
+    }
+
+    td.activity-time {
+      grid-area: time;
+      width: auto;
+      text-align: right;
+    }
+
+    tbody tr:hover {
+      td {
+        background: transparent;
+      }
+    }
+  }
+}
+
 .activity-badge {
   display: inline-block;
   min-width: 0;

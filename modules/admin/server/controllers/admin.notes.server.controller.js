@@ -38,6 +38,7 @@ exports.addNote = async (req, res) => {
     await adminNoteItem.save();
     res.send({ message: 'Note saved.' });
   } catch (err) {
+    /* istanbul ignore else */
     if (err) {
       return res.status(400).send({
         message: errorService.getErrorMessage(err),

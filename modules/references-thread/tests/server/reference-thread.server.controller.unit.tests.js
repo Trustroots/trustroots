@@ -12,6 +12,7 @@ require('should');
 const ReferenceThread = mongoose.model('ReferenceThread');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
+const Message = mongoose.model('Message');
 
 function deferredResponse() {
   let resolveResponse;
@@ -157,6 +158,36 @@ describe('Reference thread controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(404);
       res.body.allowCreatingReference.should.be.true();
+    });
+
+    it('passes message lookup errors to next when no reference exists', async () => {
+      const [author, other] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      sinon.stub(ReferenceThread, 'findOne').returns({
+        sort: () => ({
+          exec: cb => cb(null, null),
+        }),
+      });
+      sinon.stub(Message, 'findOne').callsFake((query, cb) => {
+        cb(new Error('message lookup failed'));
+      });
+
+      let nextArg;
+      await new Promise(resolve => {
+        referenceController.readReferenceThreadById(
+          { user: author },
+          deferredResponse(),
+          err => {
+            nextArg = err;
+            resolve();
+          },
+          other._id.toString(),
+        );
+      });
+
+      nextArg.should.be.Error();
+      nextArg.message.should.equal('message lookup failed');
     });
 
     it('passes database errors to next', async () => {

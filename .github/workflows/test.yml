@@ -3,7 +3,7 @@ name: Tests
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, labeled]
+    types: [opened, synchronize, reopened]
   push:
     branches: [main]
   workflow_dispatch:
@@ -19,7 +19,7 @@ on:
       run_e2e:
         description: Run e2e tests
         type: boolean
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -95,20 +95,54 @@ jobs:
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
+          started_at="$(date +%s%3N)"
+          exit_code=0
+          set +e
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             -e CI=true \
             -e NODE_ENV=test \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             dev npm run test:coverage:client
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
-            -e CI=true \
-            -e NODE_ENV=test \
-            dev npm run coverage:check -- --scope=client
+          exit_code="$?"
+          if [ "$exit_code" -eq 0 ]; then
+            docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+              -e CI=true \
+              -e NODE_ENV=test \
+              dev npm run coverage:check -- --scope=client
+            exit_code="$?"
+          fi
+          set -e
+          finished_at="$(date +%s%3N)"
+          duration_ms="$((finished_at - started_at))"
+          status="passed"
+          message="Client coverage completed successfully."
+          if [ "$exit_code" -ne 0 ]; then
+            status="failed"
+            message="Client coverage failed."
+          fi
+          mkdir -p ../../coverage/client
+          STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
+          COMMAND="npm run test:coverage:client && npm run coverage:check -- --scope=client" \
+          node - <<'NODE'
+          const fs = require('fs');
+          const status = {
+            status: process.env.STATUS,
+            exitCode: Number(process.env.EXIT_CODE),
+            message: process.env.MESSAGE,
+            generatedAt: new Date().toISOString(),
+            command: process.env.COMMAND,
+            durationMs: Number(process.env.DURATION_MS),
+          };
+          fs.writeFileSync('../../coverage/client/coverage-status.json', `${JSON.stringify(status, null, 2)}\n`);
+          NODE
+          exit "$exit_code"
       - name: Upload client coverage report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-client
           path: coverage/client
+          if-no-files-found: ignore
 
   server:
     needs: build-dev-image
@@ -152,6 +186,9 @@ jobs:
       - name: Test server with coverage
         working-directory: deploy/docker
         run: |
+          started_at="$(date +%s%3N)"
+          exit_code=0
+          set +e
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
@@ -160,15 +197,46 @@ jobs:
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             dev npm run test:coverage:server
-          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
-            -e CI=true \
-            -e NODE_ENV=test \
-            dev npm run coverage:check -- --scope=server
+          exit_code="$?"
+          if [ "$exit_code" -eq 0 ]; then
+            docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
+              -e CI=true \
+              -e NODE_ENV=test \
+              dev npm run coverage:check -- --scope=server
+            exit_code="$?"
+          fi
+          set -e
+          finished_at="$(date +%s%3N)"
+          duration_ms="$((finished_at - started_at))"
+          status="passed"
+          message="Server coverage completed successfully."
+          if [ "$exit_code" -ne 0 ]; then
+            status="failed"
+            message="Server coverage failed."
+          fi
+          mkdir -p ../../coverage/server
+          STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
+          COMMAND="npm run test:coverage:server && npm run coverage:check -- --scope=server" \
+          node - <<'NODE'
+          const fs = require('fs');
+          const status = {
+            status: process.env.STATUS,
+            exitCode: Number(process.env.EXIT_CODE),
+            message: process.env.MESSAGE,
+            generatedAt: new Date().toISOString(),
+            command: process.env.COMMAND,
+            durationMs: Number(process.env.DURATION_MS),
+          };
+          fs.writeFileSync('../../coverage/server/coverage-status.json', `${JSON.stringify(status, null, 2)}\n`);
+          NODE
+          exit "$exit_code"
       - name: Upload server coverage report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: coverage-server
           path: coverage/server
+          if-no-files-found: ignore
 
   e2e:
     needs: build-dev-image
@@ -177,9 +245,7 @@ jobs:
       (
         (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
         (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-        (github.event_name == 'pull_request' &&
-          (github.event.action == 'opened' ||
-            contains(github.event.pull_request.labels.*.name, 'run-e2e')))
+        github.event_name == 'pull_request'
       ) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
@@ -245,11 +311,99 @@ jobs:
           path: coverage/e2e
           if-no-files-found: ignore
       - name: Upload Playwright test results
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: playwright-test-results
           path: test-results
+          if-no-files-found: ignore
+
+  coverage-summary:
+    if: always() && github.event_name == 'pull_request'
+    needs: [client, server, e2e]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download client coverage
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-client
+          path: coverage/client
+      - name: Download server coverage
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-server
+          path: coverage/server
+      - name: Download end-to-end status
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-e2e
+          path: coverage/e2e
+      - name: Download Playwright report
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: playwright-report
+          path: playwright-report
+      - name: Record skipped end-to-end status
+        if: needs.e2e.result == 'skipped'
+        run: |
+          mkdir -p coverage/e2e
+          node -e "const fs = require('fs'); const status = { status: 'skipped', exitCode: 0, message: 'End-to-end tests were not requested for this pull request run.', generatedAt: new Date().toISOString(), command: 'npm run test:e2e', reportPath: 'playwright-report/index.html', metrics: null }; fs.writeFileSync('coverage/e2e/status.json', JSON.stringify(status, null, 2) + '\n');"
+      - name: Generate coverage overview
+        run: npm run coverage:report
+      - name: Generate pull request summary
+        run: |
+          npm run coverage:pr-summary > coverage-report/pr-summary.md
+          cat coverage-report/pr-summary.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload coverage overview
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-report
+          path: coverage-report
+      - name: Update pull request coverage comment
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- trustroots-coverage-report -->';
+            const body = fs.readFileSync('coverage-report/pr-summary.md', 'utf8');
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
 
   pages:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

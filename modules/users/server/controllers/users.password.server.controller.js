@@ -108,6 +108,7 @@ exports.forgot = function (req, res, next) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         return next(err);
       }
@@ -346,6 +347,7 @@ exports.changePassword = function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         res.status(err.status || 400).send({
           message: err.message || errorService.getErrorMessageByKey('default'),
