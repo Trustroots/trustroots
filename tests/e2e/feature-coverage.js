@@ -110,6 +110,7 @@ const specPaths = {
   'experience-actions.spec.js':
     'features/experiences-references/experience-actions.spec.js',
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
+  'footer.spec.js': 'features/public-core/footer.spec.js',
   'member.spec.js': 'features/profile-onboarding/member.spec.js',
   'message-actions.spec.js': 'features/messages/message-actions.spec.js',
   'messages-api.spec.js': 'features/messages/messages-api.spec.js',

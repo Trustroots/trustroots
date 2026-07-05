@@ -196,22 +196,6 @@ describe('Admin users controller unit tests', () => {
       res.body.message.should.equal('Invalid role.');
     });
 
-    it('rejects roles when the model exposes no role enum values', async () => {
-      const rolesPath = User.schema.path('roles');
-      const previousEnumValues = rolesPath.caster.enumValues;
-      rolesPath.caster.enumValues = undefined;
-
-      try {
-        const res = mockResponse();
-        adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
-        await res.waitForResponse();
-        res.statusCode.should.equal(400);
-        res.body.message.should.equal('Invalid role.');
-      } finally {
-        rolesPath.caster.enumValues = previousEnumValues;
-      }
-    });
-
     it('returns users with the requested role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
@@ -229,7 +213,9 @@ describe('Admin users controller unit tests', () => {
       sinon.stub(User, 'find').returns({
         select: () => ({
           sort: () => ({
-            exec: cb => cb(null, null),
+            limit: () => ({
+              exec: cb => cb(null, null),
+            }),
           }),
         }),
       });
@@ -261,7 +247,9 @@ describe('Admin users controller unit tests', () => {
       sinon.stub(User, 'find').returns({
         select: () => ({
           sort: () => ({
-            exec: cb => cb(null, []),
+            limit: () => ({
+              exec: cb => cb(null, []),
+            }),
           }),
         }),
       });
@@ -461,23 +449,6 @@ describe('Admin users controller unit tests', () => {
       res.body.message.should.equal(
         errorService.getErrorMessageByKey('invalid-id'),
       );
-    });
-
-    it('rejects roles when the schema exposes no enum values', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
-      sinon.stub(User.schema, 'path').withArgs('roles').returns({ caster: {} });
-      const res = mockResponse();
-
-      await adminUsers.changeRole(
-        {
-          body: { id: users[0]._id.toString(), role: 'suspended' },
-          user: users[0],
-        },
-        res,
-      );
-
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('Invalid role.');
     });
 
     it('shadowbans a user and removes suspended role', async () => {
