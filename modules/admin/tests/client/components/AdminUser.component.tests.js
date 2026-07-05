@@ -169,7 +169,9 @@ describe('<AdminUser />', () => {
       userId,
     );
     expect(
-      await screen.findByRole('heading', { name: 'alice' }),
+      await screen.findByRole('heading', {
+        name: 'Alice Example report card',
+      }),
     ).toBeInTheDocument();
     expect(usersApi.getUser).toHaveBeenCalledWith(userId);
     expect(screen.getByText('State for alice')).toBeInTheDocument();
@@ -247,7 +249,7 @@ describe('<AdminUser />', () => {
     render(<AdminUser />);
 
     expect(
-      await screen.findByRole('heading', { name: 'alice' }),
+      await screen.findByRole('heading', { name: 'alice report card' }),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: 'Public profile' }),
@@ -311,7 +313,9 @@ describe('<AdminUser />', () => {
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
-      await screen.findByRole('heading', { name: 'alice' }),
+      await screen.findByRole('heading', {
+        name: 'Alice Example report card',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -335,7 +339,9 @@ describe('<AdminUser />', () => {
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
-      await screen.findByRole('heading', { name: 'alice' }),
+      await screen.findByRole('heading', {
+        name: 'Alice Example report card',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -456,7 +462,9 @@ describe('<AdminUser />', () => {
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
-      await screen.findByRole('heading', { name: '24721768s' }),
+      await screen.findByRole('heading', {
+        name: 'Hot Daria Wants To Date report card',
+      }),
     ).toBeInTheDocument();
   });
 
@@ -502,7 +510,7 @@ describe('<AdminUser />', () => {
     submitMemberSearch(userId);
 
     expect(
-      await screen.findByRole('heading', { name: 'alice' }),
+      await screen.findByRole('heading', { name: 'alice report card' }),
     ).toBeInTheDocument();
     expect(screen.getByText('0 sent')).toBeInTheDocument();
     expect(screen.getByText('0 received')).toBeInTheDocument();
@@ -516,7 +524,7 @@ describe('<AdminUser />', () => {
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
     expect(
       await screen.findByRole('heading', {
-        name: 'Unknown member',
+        name: 'Unknown member report card',
       }),
     ).toBeInTheDocument();
   });
@@ -540,7 +548,7 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'alice' });
+    await screen.findByRole('heading', { name: 'Alice Example report card' });
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     expect(window.confirm).toHaveBeenCalledWith('Set alice role to suspended?');
@@ -568,7 +576,7 @@ describe('<AdminUser />', () => {
 
     submitMemberSearch(userId);
 
-    await screen.findByRole('heading', { name: 'alice' });
+    await screen.findByRole('heading', { name: 'Alice Example report card' });
     fireEvent.click(screen.getByRole('button', { name: 'Suspend' }));
 
     expect(usersApi.setUserRole).not.toHaveBeenCalled();

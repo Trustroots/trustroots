@@ -241,7 +241,7 @@ export default class AdminUser extends Component {
       hasSearched && !isSearching && visibleMatchingUsers.length === 0;
     const userId = get(user, ['profile', '_id']);
     const profileLabel = isProfile
-      ? user.profile.username || user.profile.displayName || 'Unknown member'
+      ? user.profile.displayName || user.profile.username || 'Unknown member'
       : '';
     const profileRows = isProfile
       ? [
@@ -388,7 +388,7 @@ export default class AdminUser extends Component {
             <>
               <div className="admin-user-report-header">
                 <h3>
-                  <strong>{profileLabel}</strong>
+                  <strong>{profileLabel}</strong> report card
                 </h3>
 
                 <div className="admin-user-actions">
