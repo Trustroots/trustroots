@@ -10,6 +10,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
 const User = mongoose.model('User');
+const Contact = mongoose.model('Contact');
+const Offer = mongoose.model('Offer');
 
 function mockResponse() {
   let resolveResponse;
@@ -37,6 +39,16 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('searchUsers', () => {
+    it('rejects missing queries', () => {
+      const res = mockResponse();
+      adminUsers.searchUsers({ body: {} }, res);
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Query string at least 3 characters long required.',
+      );
+    });
+
     it('rejects queries shorter than three characters', () => {
       const res = mockResponse();
       adminUsers.searchUsers({ body: { search: 'ab' } }, res);
@@ -132,9 +144,42 @@ describe('Admin users controller unit tests', () => {
       await res.waitForResponse();
       res.body.should.deepEqual([]);
     });
+
+    it('keeps null database rows unchanged while obfuscating results', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              exec: cb => cb(null, [null]),
+            }),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.searchUsers({ body: { search: 'abc' } }, res);
+      await res.waitForResponse();
+      res.body.should.deepEqual([undefined]);
+    });
+
+    it('throws when escaping a non-string search value', () => {
+      (() =>
+        adminUsers.searchUsers(
+          { body: { search: { length: 3 } } },
+          mockResponse(),
+        )).should.throw('Expected a string');
+    });
   });
 
   describe('listUsersByRole', () => {
+    it('rejects missing roles', async () => {
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
     it('rejects an invalid role', async () => {
       const res = mockResponse();
       adminUsers.listUsersByRole({ body: { role: 'not-a-role' } }, res);
@@ -151,6 +196,22 @@ describe('Admin users controller unit tests', () => {
       res.body.message.should.equal('Invalid role.');
     });
 
+    it('rejects roles when the model exposes no role enum values', async () => {
+      const rolesPath = User.schema.path('roles');
+      const previousEnumValues = rolesPath.caster.enumValues;
+      rolesPath.caster.enumValues = undefined;
+
+      try {
+        const res = mockResponse();
+        adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body.message.should.equal('Invalid role.');
+      } finally {
+        rolesPath.caster.enumValues = previousEnumValues;
+      }
+    });
+
     it('returns users with the requested role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(users[0]._id);
@@ -162,6 +223,21 @@ describe('Admin users controller unit tests', () => {
       await res.waitForResponse();
       res.body.length.should.equal(1);
       res.body[0]._id.toString().should.equal(userDoc._id.toString());
+    });
+
+    it('returns an empty array when the role lookup returns no users', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: cb => cb(null, null),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+      await res.waitForResponse();
+      res.body.should.deepEqual([]);
     });
 
     it('returns 400 when the database lookup fails', async () => {
@@ -179,6 +255,22 @@ describe('Admin users controller unit tests', () => {
       adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('returns users when the role query returns an empty array', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: cb => cb(null, []),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.deepEqual([]);
     });
   });
 
@@ -214,6 +306,26 @@ describe('Admin users controller unit tests', () => {
 
       res.body.profile.username.should.equal(users[0].username);
       res.body.messageFromCount.should.equal(0);
+    });
+
+    it('defaults nullable contact and offer lookups to empty arrays', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(Contact, 'find').returns({
+        populate() {
+          return this;
+        },
+        then(resolve) {
+          resolve(null);
+        },
+      });
+      sinon.stub(Offer, 'find').returns(Promise.resolve(null));
+      const res = mockResponse();
+
+      await adminUsers.getUser({ body: { id: users[0]._id.toString() } }, res);
+
+      res.statusCode.should.equal(200);
+      res.body.contacts.should.deepEqual([]);
+      res.body.offers.should.deepEqual([]);
     });
 
     it('returns 400 when loading a user fails', async () => {
@@ -333,6 +445,41 @@ describe('Admin users controller unit tests', () => {
       res.body.message.should.equal('Invalid role.');
     });
 
+    it('rejects missing user ids', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: { role: 'suspended' },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('invalid-id'),
+      );
+    });
+
+    it('rejects roles when the schema exposes no enum values', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      sinon.stub(User.schema, 'path').withArgs('roles').returns({ caster: {} });
+      const res = mockResponse();
+
+      await adminUsers.changeRole(
+        {
+          body: { id: users[0]._id.toString(), role: 'suspended' },
+          user: users[0],
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Invalid role.');
+    });
+
     it('shadowbans a user and removes suspended role', async () => {
       const users = await utils.saveUsers(utils.generateUsers(2));
       const target = users[1];
@@ -407,6 +554,18 @@ describe('Admin users controller unit tests', () => {
 
     it('continues when the username is missing', async () => {
       const req = { body: {} };
+      let nextCalled = false;
+
+      await adminUsers.usernameToUserId(req, {}, () => {
+        nextCalled = true;
+      });
+
+      nextCalled.should.equal(true);
+      should.not.exist(req.userIdFromUsername);
+    });
+
+    it('continues when the username does not match a user', async () => {
+      const req = { body: { username: 'missing-user' } };
       let nextCalled = false;
 
       await adminUsers.usernameToUserId(req, {}, () => {

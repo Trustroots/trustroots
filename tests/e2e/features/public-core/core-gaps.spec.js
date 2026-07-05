@@ -49,6 +49,40 @@ test.describe('public core manifest gap coverage', () => {
     ).toBeVisible();
   });
 
+  test('support form submits guest reports through the UI', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.support-submit', [
+      'Support request submission succeeds with valid data.',
+    ]);
+    annotateFeature(testInfo, 'public.support-page', [
+      'Support page accepts the report query parameter.',
+      'Support contact form is visible.',
+    ]);
+
+    await page.goto('/support?report=e2e-seeded-shadow');
+    await expect(page.getByText('Reporting member')).toBeVisible();
+    await expect(page.getByText('e2e-seeded-shadow')).toBeVisible();
+
+    await page.locator('#message').fill('E2E support report from UI coverage.');
+    await page.locator('#username').fill('guest-support-ui');
+    await page.locator('#email').fill('guest-support-ui@example.test');
+
+    const supportRequest = page.waitForResponse(
+      response =>
+        response.url().includes('/api/support') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.getByRole('button', { name: /^send$/i }).click();
+    await supportRequest;
+
+    await expect(page.getByText('Thank you!')).toBeVisible();
+    await expect(
+      page.getByText(/sent your message to our support people/i),
+    ).toBeVisible();
+  });
+
   test('service worker config renders JavaScript for visitors', async ({
     request,
   }, testInfo) => {
@@ -135,10 +169,15 @@ test.describe('public core manifest gap coverage', () => {
     await expect(
       page.getByRole('heading', { name: /join trustroots/i }),
     ).toBeVisible();
+    await expect(page.locator('.signup-tribe')).toBeVisible();
+    await expect(page.locator('.signup-tribe')).toContainText(
+      'Circle Hitchhikers',
+    );
 
     await page.goto('/signup?tribe=not-a-real-circle');
     await expect(
       page.getByRole('heading', { name: /join trustroots/i }),
     ).toBeVisible();
+    await expect(page.locator('.signup-tribe')).toBeHidden();
   });
 });

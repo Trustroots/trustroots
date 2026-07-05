@@ -1,0 +1,20 @@
+{
+  "repository": {
+    "href": "https://github.com/Trustroots/trustroots",
+    "label": "GitHub repository"
+  },
+  "header": [
+    {
+      "href": "https://www.trustroots.org/",
+      "label": "Trustroots.org"
+    },
+    {
+      "href": "https://nos.trustroots.org/",
+      "label": "Nostroots"
+    },
+    {
+      "href": "https://www.trustroots.org/support",
+      "label": "Support"
+    }
+  ]
+}

@@ -613,6 +613,75 @@ describe('Messages controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('lets admins message suspended members', async () => {
+      const { sender, receiver } = await prepareSender();
+      sender.roles = ['user', 'admin'];
+      await sender.save();
+      const receiverDoc = await User.findById(receiver._id);
+      receiverDoc.roles = ['user', 'suspended'];
+      await receiverDoc.save();
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello suspended member from admin',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.content.should.containEql('Hello suspended member');
+    });
+
+    it('returns 404 when recipient lookup errors', async () => {
+      const { sender, receiver } = await prepareSender();
+      sinon.stub(User, 'findOne').returns({
+        exec: cb => cb(new Error('recipient lookup failed')),
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello unreachable member',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(404);
+    });
+
+    it('returns 400 when thread upsert fails', async () => {
+      const { sender, receiver } = await prepareSender();
+      sinon.stub(Thread, 'updateOne').callsFake((query, data, options, cb) => {
+        cb(new Error('thread upsert failed'));
+      });
+
+      const res = deferredResponse();
+      messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: receiver._id.toString(),
+            content: 'Hello without thread write',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
     it('shadow-hides messages from restricted senders', async () => {
       const { sender, receiver } = await prepareSender();
       sender.roles = ['user', 'shadowban'];
@@ -840,6 +909,168 @@ describe('Messages controller unit tests', () => {
       res.body[0].userFrom._id.toString().should.equal(sender._id.toString());
     });
 
+    it('backfills deleted recipient ids in inbox threads', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const message = await new Message({
+        content: 'Hello deleted recipient',
+        userFrom: sender._id,
+        userTo: receiver._id,
+      }).save();
+      await new Thread({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: Date.now(),
+      }).save();
+      await User.deleteOne({ _id: receiver._id });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: sender._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.should.be.an.Array().with.lengthOf(1);
+      res.body[0].userTo._id.toString().should.equal(receiver._id.toString());
+    });
+
+    it('adds a next page link and excerpt fallback for empty thread messages', async () => {
+      const originalHttps = config.https;
+      config.https = true;
+      const viewerId = new mongoose.Types.ObjectId();
+      const otherId = new mongoose.Types.ObjectId();
+      const threadId = new mongoose.Types.ObjectId();
+      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(null, {
+          docs: [
+            {
+              _id: threadId,
+              message: {},
+              read: false,
+              userFrom: { _id: viewerId },
+              userTo: { _id: otherId },
+              toObject() {
+                return {
+                  _id: threadId,
+                  message: {},
+                  read: false,
+                  userFrom: { _id: viewerId },
+                  userTo: { _id: otherId },
+                };
+              },
+            },
+          ],
+          pages: 2,
+        });
+      });
+
+      try {
+        const res = deferredResponse();
+        res.locals = {
+          paginate: {
+            href: ({ page }) => `/api/messages?page=${page}`,
+          },
+        };
+        res.links = links => {
+          res.linkHeader = links;
+          return res;
+        };
+
+        messagesController.inbox(
+          { user: { _id: viewerId }, query: { page: 1, limit: 1 } },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        res.linkHeader.next.should.containEql('https://');
+        res.linkHeader.next.should.containEql('page=2');
+        res.body[0].message.excerpt.should.equal('…');
+      } finally {
+        config.https = originalHttps;
+      }
+    });
+
+    it('keeps deleted profile fields empty when backfill lookup errors', async () => {
+      const viewerId = new mongoose.Types.ObjectId();
+      const threadId = new mongoose.Types.ObjectId();
+      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(null, {
+          docs: [
+            {
+              _id: threadId,
+              message: { content: 'Deleted profile' },
+              read: false,
+              userFrom: { _id: viewerId },
+              userTo: null,
+              toObject() {
+                return {
+                  _id: threadId,
+                  message: { content: 'Deleted profile' },
+                  read: false,
+                  userFrom: { _id: viewerId },
+                  userTo: null,
+                };
+              },
+            },
+          ],
+          pages: 1,
+        });
+      });
+      sinon.stub(Thread, 'findById').callsFake((id, field, cb) => {
+        cb(new Error('backfill failed'));
+      });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      (
+        res.body[0].userTo === null || res.body[0].userTo === undefined
+      ).should.be.true();
+    });
+
+    it('keeps deleted profile fields empty when backfill finds no thread', async () => {
+      const viewerId = new mongoose.Types.ObjectId();
+      const threadId = new mongoose.Types.ObjectId();
+      sinon.stub(Thread, 'paginate').callsFake((query, options, cb) => {
+        cb(null, {
+          docs: [
+            {
+              _id: threadId,
+              message: { content: 'Deleted profile' },
+              read: false,
+              userFrom: null,
+              userTo: { _id: viewerId },
+              toObject() {
+                return {
+                  _id: threadId,
+                  message: { content: 'Deleted profile' },
+                  read: false,
+                  userFrom: null,
+                  userTo: { _id: viewerId },
+                };
+              },
+            },
+          ],
+          pages: 1,
+        });
+      });
+      sinon.stub(Thread, 'findById').callsFake((id, field, cb) => {
+        cb(null, null);
+      });
+
+      const res = deferredResponse();
+      messagesController.inbox({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      (
+        res.body[0].userFrom === null || res.body[0].userFrom === undefined
+      ).should.be.true();
+    });
+
     it('marks messages as spam when akismet reports spam', async () => {
       const originalEnv = process.env.NODE_ENV;
       const originalAkismetEnabled = config.akismet.enabled;
@@ -934,6 +1165,104 @@ describe('Messages controller unit tests', () => {
         await res.waitForResponse();
         res.statusCode.should.equal(200);
         res.body.content.should.containEql('Hello despite akismet failure');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('uses the passenger client address for spam checks when present', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      const check = sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello with passenger header',
+            },
+            headers: {
+              '!~passenger-client-address': '198.51.100.10',
+              'x-forwarded-for': '203.0.113.20',
+              'user-agent': 'Trustroots e2e',
+            },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        check.firstCall.args[0].ip.should.equal('198.51.100.10');
+        check.firstCall.args[0].useragent.should.equal('Trustroots e2e');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('uses req.ip for spam checks when proxy headers are absent', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      const check = sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello with request ip',
+            },
+            headers: { 'user-agent': 'Trustroots tests' },
+            ip: '192.0.2.55',
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        check.firstCall.args[0].ip.should.equal('192.0.2.55');
+        check.firstCall.args[0].useragent.should.equal('Trustroots tests');
+      } finally {
+        process.env.NODE_ENV = originalEnv;
+        config.akismet.enabled = originalAkismetEnabled;
+      }
+    });
+
+    it('uses empty spam metadata defaults when request details are absent', async () => {
+      const originalEnv = process.env.NODE_ENV;
+      const originalAkismetEnabled = config.akismet.enabled;
+      process.env.NODE_ENV = 'development';
+      config.akismet.enabled = true;
+      const check = sinon.stub(spamService, 'check').resolves('not-spam');
+
+      try {
+        const { sender, receiver } = await prepareSender();
+        const res = deferredResponse();
+        messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: receiver._id.toString(),
+              content: 'Hello with no request metadata',
+            },
+            headers: {},
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(200);
+        check.firstCall.args[0].ip.should.equal('');
+        check.firstCall.args[0].useragent.should.equal('');
       } finally {
         process.env.NODE_ENV = originalEnv;
         config.akismet.enabled = originalAkismetEnabled;
@@ -1064,6 +1393,91 @@ describe('Messages controller unit tests', () => {
       res.body.messages[senderKey][0].content.should.containEql(
         'Incoming sync message',
       );
+    });
+
+    it('groups outgoing sync messages by recipient id', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const viewerId = sender._id;
+      const outgoing = {
+        content: 'Outgoing sync message',
+        userFrom: viewerId,
+        userTo: receiver._id,
+        created: new Date(),
+      };
+      sinon.stub(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: cb => cb(null, [outgoing]),
+          }),
+        }),
+      });
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const receiverKey = receiver._id.toString();
+      res.body.messages.should.have.property(receiverKey);
+      res.body.messages[receiverKey].should.be.an.Array().with.lengthOf(1);
+      res.body.messages[receiverKey][0].content.should.containEql(
+        'Outgoing sync message',
+      );
+    });
+
+    it('returns 400 when sync user lookup fails', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const viewerId = receiver._id;
+      sinon.stub(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: cb =>
+              cb(null, [
+                {
+                  content: 'Sync test message',
+                  userFrom: sender._id,
+                  userTo: viewerId,
+                  created: new Date(),
+                },
+              ]),
+          }),
+        }),
+      });
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          exec: cb => cb(new Error('user lookup failed')),
+        }),
+      });
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: viewerId }, query: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when sync user lookup fails', async () => {
+      sinon.stub(Message, 'find').returns({
+        sort: () => ({
+          select: () => ({
+            exec: cb => cb(null, []),
+          }),
+        }),
+      });
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          exec: cb => cb(new Error('user lookup failed')),
+        }),
+      });
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+
+      const res = deferredResponse();
+      messagesController.sync({ user: { _id: user._id }, query: {} }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
   });
 });

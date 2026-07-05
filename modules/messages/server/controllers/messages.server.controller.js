@@ -225,7 +225,7 @@ exports.inbox = function (req, res) {
           // will backfill the IDs. Cumbersome and not optimal, but there are not that
           // many deleted profiles that this would be a significant issue.
           fillDeletedProfiles(threads, function (err, threads) {
-            res.json(threads || []);
+            res.json(threads);
           });
         });
       }
@@ -567,6 +567,7 @@ exports.send = async function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         log('error', 'Message failed to send. #sa239', err);
         return res.status(400).send({
@@ -938,6 +939,7 @@ exports.sync = function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
