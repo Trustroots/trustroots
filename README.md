@@ -25,7 +25,7 @@ Priorities:
 - Work on Nostr/Nostroots integration. The basics are in place for NIP-5 and NIP-7.
 - Make Trustroots easier to fork and run independently.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [docs/Volunteering.md](docs/Volunteering.md) for more ways to help.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [team.trustroots.org](https://team.trustroots.org/) for more ways to help.
 
 ## Medium term plans
 
