@@ -11,12 +11,13 @@ redirect_from:
 
 ## Volunteer
 
-There are plenty of things to do. In June 2026 we went out of maintenance mode. Further down on this page you can see a bunch of actual tasks that people are working on. If you have tech skills it should be fairly easy to jump in and help out.  If you don't have tech skills and you want to help there's still ways to do that, especially around testing.
-
+There are plenty of things to do. In June 2026 we went out of maintenance mode. Further down on this page you can see a bunch of actual tasks that people are working on. If you have tech skills it should be fairly easy to jump in and help out. If you don't have tech skills and you want to help there's still ways to do that, especially around testing.
 
 ### Decentralized social networking
 
-The history of hospitality exchange is riddled with people and organisations messing up. In 2022 we were pretty close to this ourselves when only one person who cared had access to the server.  The first step was increasing the [bus factor](https://en.wikipedia.org/wiki/Bus_factor) to 3, the second step was figuring out how we to make sure that the spirit of Trustroots will be able to keep going without relying on a specific group of people. Federation like Matrix or the Fediverse wasn't a real solution for this. We insisted on more decentralisation. We first toyed with [Secure Scuttlebutt](https://en.wikipedia.org/wiki/Secure_Scuttlebutt) and moved to Nostr when it was clear that SSB was kind unusable. Read more about this [here](https://nos.trustroots.org/background/).
+The history of hospitality exchange is full of networks that failed their communities — sold to investors, abandoned, or dependent on a single person. In 2022, Trustroots nearly joined that list: only one volunteer had server access. We responded in two steps: first, we raised our [bus factor](https://en.wikipedia.org/wiki/Bus_factor) to 3 so at least three people can maintain the infrastructure; second, we asked how Trustroots could outlast any particular team of volunteers.
+
+Federated models like Matrix or the Fediverse help, but they were not enough — they still tie your identity and data to specific servers and admins. We wanted deeper decentralisation, with users owning their own identity and data. We experimented with [Secure Scuttlebutt](https://en.wikipedia.org/wiki/Secure_Scuttlebutt), but it proved too impractical for everyday use; when Nostr looked viable, we started moving there instead. Read more in the [Nostroots background](https://nos.trustroots.org/background/).
 
 ### Nostroots
 
