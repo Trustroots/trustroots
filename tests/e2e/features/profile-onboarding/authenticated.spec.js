@@ -322,7 +322,7 @@ test.describe('authenticated member flows', () => {
 
       await page.goto('/profile/edit/photo');
       const fileInput = page.locator('#profile-edit-avatar-file');
-      await expect(fileInput).toBeAttached();
+      await fileInput.waitFor({ state: 'attached' });
 
       const uploadResponse = page.waitForResponse(
         response =>
@@ -361,7 +361,7 @@ test.describe('authenticated member flows', () => {
 
       await page.goto('/profile/edit/photo');
       const fileInput = page.locator('#profile-edit-avatar-file');
-      await expect(fileInput).toBeAttached();
+      await fileInput.waitFor({ state: 'attached' });
 
       const uploadResponse = page.waitForResponse(
         response =>
@@ -408,7 +408,7 @@ test.describe('authenticated member flows', () => {
 
       await page.goto('/profile/edit/photo');
       const fileInput = page.locator('#profile-edit-avatar-file');
-      await expect(fileInput).toBeAttached();
+      await fileInput.waitFor({ state: 'attached' });
 
       const uploadResponse = page.waitForResponse(
         response =>
