@@ -132,12 +132,10 @@ function AvatarEditorController(
     const type = (file.type || '').toLowerCase();
     const name = (file.name || '').toLowerCase();
 
-    return (
-      type.indexOf('jpeg') !== -1 ||
-      type.indexOf('jpg') !== -1 ||
-      type.indexOf('gif') !== -1 ||
-      type.indexOf('png') !== -1 ||
-      (!type && /\.(jpe?g|gif|png)$/.test(name))
-    );
+    if (type) {
+      return /^image\/(?:jpe?g|gif|png)$/.test(type);
+    }
+
+    return /\.(jpe?g|gif|png)$/.test(name);
   }
 }

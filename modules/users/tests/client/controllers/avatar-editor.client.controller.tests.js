@@ -148,6 +148,19 @@ describe('AvatarEditorController', function () {
     );
   });
 
+  it('rejects files with missing metadata', function () {
+    const controller = createController();
+    controller.fileSelected([
+      validImageFile({ name: undefined, type: undefined }),
+    ]);
+
+    expect(Upload.upload).not.toHaveBeenCalled();
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Please give a jpg, gif, or png image.',
+    );
+  });
+
   it('accepts image files when the browser omits the MIME type', function () {
     const controller = createController();
     const file = validImageFile({ name: 'avatar.jpg', type: '' });

@@ -176,6 +176,18 @@ describe('ProfileEditPhotoController', function () {
     );
   });
 
+  it('shows a validation message when file metadata is missing', function () {
+    ProfileEditPhotoController.fileSelected([
+      imageFile({ name: undefined, type: undefined }),
+    ]);
+
+    expect(Upload.upload).not.toHaveBeenCalled();
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Please give a jpg, gif, or png image.',
+    );
+  });
+
   it('accepts image files when the browser omits the MIME type', function () {
     const file = selectValidImage({ name: 'avatar.jpg', type: '' });
 
