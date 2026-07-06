@@ -110,7 +110,7 @@ function ProfileEditPhotoController(
    */
   function fileSelected($files) {
     // Too early
-    if ($files && $files.length === 0) {
+    if (!$files || $files.length === 0 || !$files[0]) {
       return;
     }
 
@@ -121,11 +121,7 @@ function ProfileEditPhotoController(
     vm.user.avatarUploaded = true;
 
     // Validate filetype
-    if (
-      file.type.indexOf('jpeg') === -1 &&
-      file.type.indexOf('gif') === -1 &&
-      file.type.indexOf('png') === -1
-    ) {
+    if (!isSupportedImage(file)) {
       messageCenterService.add(
         'danger',
         'Please give a jpg, gif, or png image.',
@@ -190,5 +186,18 @@ function ProfileEditPhotoController(
     if (bytes === 0) return '0 Byte';
     const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)), 10);
     return Math.round(bytes / Math.pow(1024, i), 2) + ' ' + sizes[i];
+  }
+
+  function isSupportedImage(file) {
+    const type = (file.type || '').toLowerCase();
+    const name = (file.name || '').toLowerCase();
+
+    return (
+      type.indexOf('jpeg') !== -1 ||
+      type.indexOf('jpg') !== -1 ||
+      type.indexOf('gif') !== -1 ||
+      type.indexOf('png') !== -1 ||
+      (!type && /\.(jpe?g|gif|png)$/.test(name))
+    );
   }
 }

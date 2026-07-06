@@ -128,6 +128,15 @@ describe('AvatarEditorController', function () {
     expect(messageCenterService.add).not.toHaveBeenCalled();
   });
 
+  it('ignores missing file selections', function () {
+    const controller = createController();
+    controller.fileSelected();
+
+    expect(Upload.upload).not.toHaveBeenCalled();
+    expect(controller.avatarPreview).toBe(false);
+    expect(messageCenterService.add).not.toHaveBeenCalled();
+  });
+
   it('rejects unsupported file types', function () {
     const controller = createController();
     controller.fileSelected([validImageFile({ type: 'text/plain' })]);
@@ -137,6 +146,17 @@ describe('AvatarEditorController', function () {
       'danger',
       'Please give a jpg, gif, or png image.',
     );
+  });
+
+  it('accepts image files when the browser omits the MIME type', function () {
+    const controller = createController();
+    const file = validImageFile({ name: 'avatar.jpg', type: '' });
+
+    controller.fileSelected([file]);
+    MockFileReader.instances[0].onloadend();
+
+    expect(controller.avatarPreview).toBe(true);
+    expect(controller.user.avatarSource).toBe('local');
   });
 
   it('rejects files that exceed upload limits', function () {
