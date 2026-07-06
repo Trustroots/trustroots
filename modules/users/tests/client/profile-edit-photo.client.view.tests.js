@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom/extend-expect';
 import fs from 'fs';
 import path from 'path';
 
@@ -22,14 +23,20 @@ describe('profile edit photo template', function () {
     const cameraInput = root.querySelector('#profile-edit-avatar-camera');
 
     expect(fileInput.tagName).toBe('INPUT');
-    expect(fileInput.getAttribute('type')).toBe('file');
-    expect(fileInput.getAttribute('ngf-select')).toContain('fileSelected');
+    expect(fileInput).toHaveAttribute('type', 'file');
+    expect(fileInput).toHaveAttribute(
+      'ngf-select',
+      expect.stringContaining('fileSelected'),
+    );
     expect(root.querySelector('button#profile-edit-avatar-file')).toBeNull();
 
     expect(cameraInput.tagName).toBe('INPUT');
-    expect(cameraInput.getAttribute('type')).toBe('file');
-    expect(cameraInput.getAttribute('ngf-capture')).toBe("'camera'");
-    expect(cameraInput.getAttribute('ngf-select')).toContain('fileSelected');
+    expect(cameraInput).toHaveAttribute('type', 'file');
+    expect(cameraInput).toHaveAttribute('ngf-capture', "'camera'");
+    expect(cameraInput).toHaveAttribute(
+      'ngf-select',
+      expect.stringContaining('fileSelected'),
+    );
     expect(root.querySelector('button#profile-edit-avatar-camera')).toBeNull();
   });
 });
