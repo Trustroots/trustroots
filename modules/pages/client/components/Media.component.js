@@ -309,9 +309,7 @@ export default function Media() {
                 </a>
               </li>
               <li>
-                <a href={`${mediaPathUrl}/screenshots`}>
-                  {t('Screenshots')}
-                </a>
+                <a href={`${mediaPathUrl}/screenshots`}>{t('Screenshots')}</a>
               </li>
               <li>
                 <Trans t={t} ns="pages">
@@ -387,9 +385,7 @@ export default function Media() {
                     </a>
                   </li>
                   <li>
-                    <a href={`${mediaPathUrl}/logo`}>
-                      {t('More…')}
-                    </a>
+                    <a href={`${mediaPathUrl}/logo`}>{t('More…')}</a>
                   </li>
                 </ul>
               </div>
