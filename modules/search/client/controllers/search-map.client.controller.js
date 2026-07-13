@@ -18,6 +18,7 @@ function SearchMapController(
   vm.notFound = false;
   vm.closeOffer = closeOffer;
   vm.previewOffer = previewOffer;
+  vm.previewCommunityNote = previewCommunityNote;
 
   // Init
   activate();
@@ -82,6 +83,13 @@ function SearchMapController(
         label: 'Preview offer',
       });
     }
+  }
+
+  /**
+   * Open community note thread in sidebar
+   */
+  function previewCommunityNote(data) {
+    $scope.$emit('search.previewCommunityNote', data);
   }
 
   /**
