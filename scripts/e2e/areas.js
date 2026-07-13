@@ -11,6 +11,7 @@ const AREA_BY_SPEC = {
   'offers-and-circles.spec.js': 'Member flows',
   'search-map-rendered.spec.js': 'Member flows',
   'public-pages.spec.js': 'Public pages',
+  'footer.spec.js': 'Public pages',
   'core-gaps.spec.js': 'Public pages',
   'footer.spec.js': 'Public pages',
   'nostr.spec.js': 'Nostr',

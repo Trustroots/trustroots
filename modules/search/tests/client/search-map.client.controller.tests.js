@@ -195,6 +195,21 @@ describe('SearchMapController', function () {
     );
   });
 
+  it('previews community note threads through the parent search controller', function () {
+    const data = {
+      notes: [{ id: 'note-1' }],
+      plusCode: '9F2X+3Q',
+    };
+    const { $scope, controller } = createController();
+
+    controller.previewCommunityNote(data);
+
+    expect($scope.$emit).toHaveBeenCalledWith(
+      'search.previewCommunityNote',
+      data,
+    );
+  });
+
   it('previews an offer resolved from the URL', function () {
     const offer = {
       _id: 'offer-2',

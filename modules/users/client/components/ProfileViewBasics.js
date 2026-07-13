@@ -2,6 +2,7 @@
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
+import { nip19 } from 'nostr-tools';
 
 // Internal dependencies
 import {
@@ -12,6 +13,16 @@ import {
 } from '../utils/networks';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import LanguageList from './LanguageList';
+import ProfileNostrBadge from './ProfileNostrBadge.component';
+
+function npubToHex(npub) {
+  try {
+    const { type, data } = nip19.decode(npub);
+    return type === 'npub' ? data : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ProfileViewBasics({ profile }) {
   const { t } = useTranslation('users');
@@ -232,6 +243,11 @@ export default function ProfileViewBasics({ profile }) {
       {renderMemberSince(profile.created)}
       {/* seen online */}
       {renderSeenOnline(profile.seen)}
+
+      {/* nostroots badge */}
+      {profile.nostrNpub && (
+        <ProfileNostrBadge npubHex={npubToHex(profile.nostrNpub)} />
+      )}
 
       {/* location living */}
       {profile.locationLiving && renderLocationLiving(profile.locationLiving)}

@@ -322,6 +322,7 @@ module.exports.initHelmetHeaders = function (app) {
           'https://events.mapbox.com',
           'https://fonts.openmaptiles.org',
           'https://tile.openstreetmap.org',
+          'wss://relay.trustroots.org',
           'https://www.google-analytics.com',
           'https://stats.g.doubleclick.net',
           'fcm.googleapis.com',

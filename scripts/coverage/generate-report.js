@@ -1432,7 +1432,7 @@ ${renderTeamFooterLinks(teamLinks.header)}
           return true;
         }
 
-        var ratio = /^(\d+)\/(\d+)$/.exec(value);
+        var ratio = /^(\\d+)\\/(\\d+)$/.exec(value);
         return Boolean(ratio && ratio[1] === ratio[2]);
       }
 
