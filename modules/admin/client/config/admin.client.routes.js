@@ -8,7 +8,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin></admin>', // This should be lowercase
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin',
       },
@@ -21,7 +21,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-audit-log></admin-audit-log>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Audit log',
       },
@@ -34,7 +34,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-acquisition-stories></admin-acquisition-stories>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Acquisition stories',
       },
@@ -48,7 +48,7 @@ function AdminRoutes($stateProvider) {
         '<admin-acquisition-stories-analysis></admin-acquisition-stories-analysis>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Acquisition stories analysis',
       },
@@ -61,7 +61,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-messages></admin-messages>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Messages',
       },
@@ -74,7 +74,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-threads></admin-threads>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Threads',
       },
@@ -87,7 +87,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-search-users></admin-search-users>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Search users',
       },
@@ -100,7 +100,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-user></admin-user>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - User',
       },
@@ -113,7 +113,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-reference-threads></admin-reference-threads>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Reference threads',
       },
@@ -126,7 +126,7 @@ function AdminRoutes($stateProvider) {
       template: '<admin-newsletter></admin-newsletter>',
       requiresRole: 'admin',
       requiresAuth: true,
-      footerHidden: true,
+      footerVariant: 'admin',
       data: {
         pageTitle: 'Admin - Newsletter',
       },

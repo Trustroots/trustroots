@@ -26,6 +26,25 @@ jest.mock('@/modules/users/client/components/LanguageList', () => {
   return MockLanguageList;
 });
 
+jest.mock(
+  '@/modules/users/client/components/ProfileNostrBadge.component',
+  () => {
+    const React = require('react');
+
+    function MockProfileNostrBadge({ npubHex }) {
+      return (
+        <div data-testid="profile-nostr-badge">{npubHex || 'no-npub-hex'}</div>
+      );
+    }
+
+    MockProfileNostrBadge.propTypes = {
+      npubHex: () => null,
+    };
+
+    return MockProfileNostrBadge;
+  },
+);
+
 describe('<ProfileViewBasics />', () => {
   it('renders member profile basics, locations, languages, and networks', () => {
     render(
@@ -127,6 +146,42 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
       'href',
       'https://nos.trustroots.org/v0/#profile/npub1onlynetwork',
+    );
+  });
+
+  it('passes valid npub identifiers to the Nostroots badge as hex', () => {
+    render(
+      <ProfileViewBasics
+        profile={{
+          created: '2020-01-01T00:00:00.000Z',
+          languages: [],
+          nostrNpub:
+            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
+          seen: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('profile-nostr-badge')).toHaveTextContent(
+      '0000000000000000000000000000000000000000000000000000000000000000',
+    );
+  });
+
+  it('passes null badge data for non-npub Nostr identifiers', () => {
+    render(
+      <ProfileViewBasics
+        profile={{
+          created: '2020-01-01T00:00:00.000Z',
+          languages: [],
+          nostrNpub:
+            'note1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqn2l0z3',
+          seen: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('profile-nostr-badge')).toHaveTextContent(
+      'no-npub-hex',
     );
   });
 

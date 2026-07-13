@@ -25,7 +25,7 @@ Priorities:
 - Work on Nostr/Nostroots integration. The basics are in place for NIP-5 and NIP-7.
 - Make Trustroots easier to fork and run independently.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [docs/Volunteering.md](docs/Volunteering.md) for more ways to help.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [team.trustroots.org](https://team.trustroots.org/) for more ways to help.
 
 ## Medium term plans
 
@@ -90,6 +90,6 @@ code was deployed when in the past.
 
 ## License
 
-- [The AGPL License](LICENSE.md)
+- [The AGPL Licence](LICENSE.md)
 - Photos copyright [photographers](https://github.com/Trustroots/trustroots/blob/main/modules/core/client/directives/tr-boards.client.directive.js#L30) - several of them are under Creative Commons. Others are permitted to use only with Trustroots.
 - Logos of external communities are copyrighted work and may be subject to trademark laws.

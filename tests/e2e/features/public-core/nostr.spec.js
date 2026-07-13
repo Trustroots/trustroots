@@ -1,3 +1,10 @@
+const {
+  finalizeEvent,
+  generateSecretKey,
+  getPublicKey,
+  nip19,
+} = require('nostr-tools');
+
 const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
@@ -7,6 +14,7 @@ const {
   SEEDED_MEMBERS,
   signInViaApi,
 } = require('../../support/helpers');
+const { installNostrRelayStub } = require('../../support/nostr');
 
 // `npub1qqq…zqujme` decodes to an all-zero 32-byte public key, which is the
 // canonical "valid but empty" key the server-side tests reuse.
@@ -245,5 +253,69 @@ test.describe.serial('nostr npub on the profile networks form', () => {
         nostrAddress,
       )}`,
     );
+  });
+});
+
+test.describe('nostr community notes badge on the profile view', () => {
+  test('shows the Nostroots badge and recent notes for a member with map notes', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Profile view surfaces the Nostroots badge for members with map notes.',
+      'Recent community notes are listed on the profile from the relay.',
+    ]);
+
+    // Generate a keypair so we can return validly-signed events the client will
+    // accept (nostr-tools verifies signatures before delivering events).
+    const secretKey = generateSecretKey();
+    const pubkey = getPublicKey(secretKey);
+    const npub = nip19.npubEncode(pubkey);
+    const now = Math.floor(Date.now() / 1000);
+
+    const notes = [
+      finalizeEvent(
+        {
+          kind: 30397,
+          created_at: now - 3600,
+          tags: [['d', 'e2e-note-1']],
+          content: 'E2E profile note: sunny rooftop with great coffee.',
+        },
+        secretKey,
+      ),
+      finalizeEvent(
+        {
+          kind: 30397,
+          created_at: now - 7200,
+          tags: [['d', 'e2e-note-2']],
+          content: 'E2E profile note: quiet park, perfect for reading.',
+        },
+        secretKey,
+      ),
+    ];
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signIn(page, user);
+
+    const update = await page.request.put('/api/users', {
+      data: { nostrNpub: npub },
+    });
+    expect(update.ok()).toBeTruthy();
+
+    await installNostrRelayStub(page, { events: notes });
+
+    await page.goto(`/profile/${user.username}`);
+
+    await expect(page.locator('.profile-nostr-badge')).toHaveText('Nostroots');
+    await expect(
+      page.getByRole('heading', { name: 'Recent community notes' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('E2E profile note: sunny rooftop with great coffee.'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('E2E profile note: quiet park, perfect for reading.'),
+    ).toBeVisible();
   });
 });
