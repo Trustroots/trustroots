@@ -18,6 +18,17 @@ function expectLink(name, href) {
   ).toBe(true);
 }
 
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
+}
+
 afterEach(() => {
   jest.clearAllMocks();
   window.history.pushState({}, '', '/');
@@ -133,5 +144,99 @@ describe('<Admin />', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('No messages last week.')).toBeInTheDocument();
     expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
+  });
+
+  it('renders dashboard rows with missing optional data', async () => {
+    dashboardApi.getAdminDashboard.mockResolvedValueOnce({
+      negativeReviews: [
+        {
+          _id: 'review-with-thread',
+          thread: 'thread-without-users',
+        },
+        {
+          _id: 'review-with-invalid-date',
+          created: 'not-a-date',
+          thread: 'thread-with-invalid-date',
+          userFrom: {
+            displayName: 'Missing ID sender',
+          },
+          userTo: {
+            _id: 'user-to-2',
+            username: 'receiver-two',
+          },
+        },
+        {
+          _id: 'review-link-with-thread',
+          created: 'not-a-date',
+          thread: 'linked-thread-with-invalid-date',
+          userFrom: {
+            _id: 'user-from-2',
+            username: 'sender-two',
+          },
+          userTo: {
+            _id: 'user-to-3',
+            username: 'receiver-three',
+          },
+        },
+      ],
+      topMessengers: [
+        {
+          messageCount: 1,
+          user: null,
+        },
+      ],
+    });
+
+    render(<Admin />);
+
+    expect(await screen.findByText('1 messages')).toBeInTheDocument();
+    expect(await screen.findByText('thread-without-users')).toBeInTheDocument();
+    expect(
+      screen.getByText('thread-with-invalid-date'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'linked-thread-with-invalid-date' }),
+    ).toHaveAttribute(
+      'href',
+      '/admin/messages?userId1=user-from-2&userId2=user-to-3',
+    );
+    expect(
+      screen.queryByRole('link', { name: 'thread-without-users' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses empty dashboard lists when the API omits them', async () => {
+    dashboardApi.getAdminDashboard.mockResolvedValueOnce({});
+
+    render(<Admin />);
+
+    expect(await screen.findByText('No messages last week.')).toBeInTheDocument();
+    expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
+  });
+
+  it('does not update dashboard state after an unmount', async () => {
+    const pending = deferred();
+    dashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
+
+    const { unmount } = render(<Admin />);
+
+    unmount();
+    pending.resolve({ negativeReviews: [], topMessengers: [] });
+    await pending.promise;
+
+    expect(dashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not update dashboard error after an unmount', async () => {
+    const pending = deferred();
+    dashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
+
+    const { unmount } = render(<Admin />);
+
+    unmount();
+    pending.reject(new Error('failed'));
+    await expect(pending.promise).rejects.toThrow('failed');
+
+    expect(dashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
   });
 });

@@ -232,4 +232,20 @@ describe('<AdminMessages />', () => {
 
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
   });
+
+  it('treats object responses without messages as empty results', async () => {
+    messagesApi.getMessages.mockResolvedValueOnce({});
+
+    render(<AdminMessages />);
+
+    fireEvent.change(screen.getByLabelText('Member 1 username or ID'), {
+      target: { value: user1 },
+    });
+    fireEvent.change(screen.getByLabelText('Member 2 username or ID'), {
+      target: { value: user2 },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Read' }));
+
+    expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
+  });
 });

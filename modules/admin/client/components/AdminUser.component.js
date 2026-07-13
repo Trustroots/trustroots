@@ -567,42 +567,47 @@ export default class AdminUser extends Component {
               <div className="panel panel-default">
                 <div className="panel-body">
                   {user.offers.length ? (
-                    user.offers.map(offer => (
-                      <div className="admin-readable-item" key={offer._id}>
-                        <InfoTable
-                          rows={[
-                            ['Type', offer.type],
-                            ['Status', offer.status],
-                            ['Description', offer.description],
-                            ['Location', formatLocation(offer.location)],
-                            ['Created', formatDate(offer.created)],
-                            ['Updated', formatDate(offer.updated)],
-                          ]}
-                        />
-                        <p>
-                          <a
-                            href={`/search?offer=${offer._id}`}
-                            className="btn btn-sm btn-default"
-                          >
-                            Show offer on map
-                          </a>
-                          {formatLocation(offer.location) && (
+                    user.offers.map(offer => {
+                      const formattedLocation = formatLocation(offer.location);
+                      const searchLocation = formatLocationForSearch(
+                        offer.location,
+                      );
+
+                      return (
+                        <div className="admin-readable-item" key={offer._id}>
+                          <InfoTable
+                            rows={[
+                              ['Type', offer.type],
+                              ['Status', offer.status],
+                              ['Description', offer.description],
+                              ['Location', formattedLocation],
+                              ['Created', formatDate(offer.created)],
+                              ['Updated', formatDate(offer.updated)],
+                            ]}
+                          />
+                          <p>
                             <a
-                              href={`/search?location=${formatLocationForSearch(
-                                offer.location,
-                              )}`}
+                              href={`/search?offer=${offer._id}`}
                               className="btn btn-sm btn-default"
                             >
-                              Show location on map
+                              Show offer on map
                             </a>
-                          )}
-                        </p>
-                        <details>
-                          <summary>Raw offer data</summary>
-                          <Json content={offer} />
-                        </details>
-                      </div>
-                    ))
+                            {formattedLocation && (
+                              <a
+                                href={`/search?location=${searchLocation}`}
+                                className="btn btn-sm btn-default"
+                              >
+                                Show location on map
+                              </a>
+                            )}
+                          </p>
+                          <details>
+                            <summary>Raw offer data</summary>
+                            <Json content={offer} />
+                          </details>
+                        </div>
+                      );
+                    })
                   ) : (
                     <p>
                       <em>{"Member doesn't have any saved offers."}</em>

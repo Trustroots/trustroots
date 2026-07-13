@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
@@ -277,8 +277,45 @@ describe('<AdminUser />', () => {
     expect(window.location.search).toBe('?q=short-id');
     expect(usersApi.getUser).not.toHaveBeenCalled();
 
+    fireEvent.change(input, { target: { value: '' } });
+
+    expect(window.location.search).toBe('');
+
     submitMemberSearch(userId);
 
+    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
+  });
+
+  it('ignores invalid ids passed directly to the loader', async () => {
+    const ref = React.createRef();
+
+    render(<AdminUser ref={ref} />);
+
+    await act(async () => {
+      ref.current.getUserById('not-a-mongo-id');
+    });
+
+    expect(usersApi.getUser).not.toHaveBeenCalled();
+  });
+
+  it('loads a query from the URL', async () => {
+    window.history.pushState({}, '', '/admin/user?q=alice');
+    usersApi.searchUsers.mockResolvedValueOnce([
+      {
+        _id: userId,
+        username: 'alice',
+      },
+    ]);
+    usersApi.getUser.mockResolvedValueOnce(makeReportCard());
+
+    render(<AdminUser />);
+
+    expect(screen.getByLabelText('Member username, email or ID')).toHaveValue(
+      'alice',
+    );
+    await waitFor(() =>
+      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice'),
+    );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
   });
 
@@ -478,6 +515,99 @@ describe('<AdminUser />', () => {
     expect(
       await screen.findByText('No matching members found.'),
     ).toBeInTheDocument();
+  });
+
+  it('renders report fallback data for dates, offers and contacts', async () => {
+    usersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        contacts: [
+          {
+            _id: 'contact-older',
+            created: '2024-01-01T00:00:00.000Z',
+            userFrom: { _id: userId, username: 'alice' },
+            userTo: { _id: otherUserId, username: 'bob' },
+          },
+          {
+            _id: 'contact-newer',
+            created: '2024-03-01T00:00:00.000Z',
+            userFrom: { _id: '333333333333333333333333' },
+            userTo: { _id: userId, username: 'alice' },
+          },
+          {
+            _id: 'contact-fallback',
+            created: '2024-02-01T00:00:00.000Z',
+            user: { displayName: 'Fallback Contact' },
+          },
+          {
+            _id: 'contact-from-only',
+            created: '2024-04-01T00:00:00.000Z',
+            userFrom: { _id: '444444444444444444444444' },
+          },
+          {
+            _id: 'contact-to-only',
+            created: '2024-05-01T00:00:00.000Z',
+            userTo: { _id: '555555555555555555555555' },
+          },
+        ],
+        offers: [
+          {
+            _id: 'offer-without-location',
+            created: 'not-a-date',
+            updated: null,
+            type: 'meet',
+          },
+          {
+            _id: 'offer-without-readable-data',
+          },
+        ],
+        profile: {
+          _id: userId,
+          created: 'not-a-date',
+          email: 'alice@example.org',
+          location: {
+            city: 'Helsinki',
+            country: 'Finland',
+          },
+          public: true,
+          roles: ['user'],
+          seen: null,
+          username: 'alice',
+        },
+        threadReferences: [],
+      }),
+    );
+
+    render(<AdminUser />);
+
+    submitMemberSearch(userId);
+
+    await screen.findByRole('heading', { name: 'alice report card' });
+    expect(
+      screen.queryByRole('link', { name: 'Show location on map' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('row', { name: 'Type meet' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('row', { name: 'Location Helsinki, Finland' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('row', { name: 'Profile visible Yes' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Thread votes')).not.toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('link', { name: 'Unknown member' })
+        .map(link => link.getAttribute('href')),
+    ).toEqual(
+      [
+        '555555555555555555555555',
+        '444444444444444444444444',
+        '333333333333333333333333',
+      ].map(id => `/admin/user?id=${id}`),
+    );
+    expect(screen.getByText('Fallback Contact')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'bob' }),
+    ).toHaveAttribute('href', `/admin/user?id=${otherUserId}`);
   });
 
   it('uses profile username and a non-id fallback for report headings and counts', async () => {

@@ -77,7 +77,10 @@ describe('<AdminReferenceThreads />', () => {
           userTo,
         },
       ],
-      topNegativeRecipients: [{ count: 7, user: userTo }],
+      topNegativeRecipients: [
+        { count: 7, user: userTo },
+        { count: 3, user: userFrom._id },
+      ],
     });
 
     render(<AdminReferenceThreads />);
@@ -88,6 +91,8 @@ describe('<AdminReferenceThreads />', () => {
       'href',
       `/admin/user?id=${userTo._id}`,
     );
+    expect(screen.getByText('3')).toHaveClass('label-danger');
+    expect(screen.getAllByText('Unknown member')[0]).toBeInTheDocument();
   });
 
   it('builds message-thread links when reference users are raw ids', async () => {
@@ -109,6 +114,21 @@ describe('<AdminReferenceThreads />', () => {
       `/admin/messages?userId1=${userTo._id}&userId2=${userFrom._id}`,
     );
     expect(screen.getAllByText('Unknown member')).toHaveLength(2);
+  });
+
+  it('defaults missing top negative recipients to an empty list', async () => {
+    referenceThreadsApi.getReferenceThreads.mockResolvedValueOnce({
+      items: [],
+    });
+
+    render(<AdminReferenceThreads />);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Loading reference threads...'),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText('Top score')).not.toBeInTheDocument();
   });
 
   it('logs and clears loading state when loading fails', async () => {

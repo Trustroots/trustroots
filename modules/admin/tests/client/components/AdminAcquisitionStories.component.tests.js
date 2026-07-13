@@ -56,4 +56,26 @@ describe('<AdminAcquisitionStories />', () => {
       1,
     );
   });
+
+  it('renders stories with missing or invalid dates', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '111111111111111111111111',
+        acquisitionStory: 'No date story.',
+        username: 'alice',
+      },
+      {
+        _id: '222222222222222222222222',
+        acquisitionStory: 'Invalid date story.',
+        created: 'not-a-date',
+        username: 'bob',
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+
+    expect(await screen.findByText('No date story.')).toBeInTheDocument();
+    expect(screen.getByText('Invalid date story.')).toBeInTheDocument();
+    expect(screen.getAllByText('', { selector: 'time' })).toHaveLength(2);
+  });
 });
