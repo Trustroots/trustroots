@@ -79,6 +79,68 @@ describe('Admin dashboard controller unit tests', () => {
     });
   });
 
+  it('uses empty dashboard lists when dashboard queries return null', async () => {
+    sinon.stub(Message, 'aggregate').returns({
+      exec: () => Promise.resolve(null),
+    });
+    sinon.stub(ReferenceThread, 'find').returns({
+      sort: () => ({
+        limit: () => ({
+          populate: () => ({
+            populate: () => ({
+              exec: () => Promise.resolve(null),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const res = mockResponse();
+    adminDashboard.getDashboard({}, res);
+    const response = await res.waitForResponse();
+
+    response.body.should.deepEqual({
+      negativeReviews: [],
+      topMessengers: [],
+    });
+  });
+
+  it('keeps fallback messenger identities when their profiles are unavailable', async () => {
+    const missingMessengerId = new mongoose.Types.ObjectId();
+    sinon.stub(Message, 'aggregate').returns({
+      exec: () =>
+        Promise.resolve([
+          { _id: null, messageCount: 1 },
+          { _id: missingMessengerId, messageCount: 2 },
+        ]),
+    });
+    sinon.stub(User, 'find').returns({
+      select: () => ({
+        exec: () => Promise.resolve([]),
+      }),
+    });
+    sinon.stub(ReferenceThread, 'find').returns({
+      sort: () => ({
+        limit: () => ({
+          populate: () => ({
+            populate: () => ({
+              exec: () => Promise.resolve([]),
+            }),
+          }),
+        }),
+      }),
+    });
+
+    const res = mockResponse();
+    adminDashboard.getDashboard({}, res);
+    const response = await res.waitForResponse();
+
+    response.body.topMessengers.should.deepEqual([
+      { messageCount: 1, user: null },
+      { messageCount: 2, user: { _id: missingMessengerId } },
+    ]);
+  });
+
   it('returns an error response when dashboard queries fail', async () => {
     sinon.stub(Message, 'aggregate').returns({
       exec: () => Promise.reject(new Error('db failed')),

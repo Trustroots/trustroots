@@ -12,6 +12,7 @@ const should = require('should');
 const User = mongoose.model('User');
 const Contact = mongoose.model('Contact');
 const Offer = mongoose.model('Offer');
+const ReferenceThread = mongoose.model('ReferenceThread');
 
 function mockResponse() {
   let resolveResponse;
@@ -314,6 +315,33 @@ describe('Admin users controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.contacts.should.deepEqual([]);
       res.body.offers.should.deepEqual([]);
+    });
+
+    it('defaults nullable thread references to an empty array', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(1));
+      const referenceThreadFind = sinon.stub(ReferenceThread, 'find');
+      for (let index = 0; index < 4; index += 1) {
+        referenceThreadFind.onCall(index).returns({
+          count: () => Promise.resolve(0),
+        });
+      }
+      referenceThreadFind.onCall(4).returns({
+        sort: () => ({
+          limit: () => ({
+            populate: () => ({
+              populate: () => ({
+                then: resolve => resolve(null),
+              }),
+            }),
+          }),
+        }),
+      });
+      const res = mockResponse();
+
+      await adminUsers.getUser({ body: { id: users[0]._id.toString() } }, res);
+
+      res.statusCode.should.equal(200);
+      res.body.threadReferences.should.deepEqual([]);
     });
 
     it('returns 400 when loading a user fails', async () => {
