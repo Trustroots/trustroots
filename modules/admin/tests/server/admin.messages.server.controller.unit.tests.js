@@ -5,6 +5,17 @@ const adminMessages = require('../../server/controllers/admin.messages.server.co
 require('should');
 
 const Message = mongoose.model('Message');
+const ReferenceThread = mongoose.model('ReferenceThread');
+
+function messageQuery(exec) {
+  return {
+    sort: () => ({
+      populate: () => ({
+        populate: () => ({ exec }),
+      }),
+    }),
+  };
+}
 
 function mockResponse() {
   let resolveResponse;
@@ -47,15 +58,9 @@ describe('Admin messages controller unit tests', () => {
   });
 
   it('returns 400 when message lookup fails', async () => {
-    sinon.stub(Message, 'find').returns({
-      sort: () => ({
-        populate: () => ({
-          populate: () => ({
-            exec: cb => cb(new Error('lookup failed')),
-          }),
-        }),
-      }),
-    });
+    sinon
+      .stub(Message, 'find')
+      .returns(messageQuery(cb => cb(new Error('lookup failed'))));
 
     const res = mockResponse();
     adminMessages.getMessages(
@@ -69,5 +74,45 @@ describe('Admin messages controller unit tests', () => {
     );
     const response = await res.waitForResponse();
     response.statusCode.should.equal(400);
+  });
+
+  it('returns 400 when reference thread lookup fails', async () => {
+    sinon.stub(Message, 'find').returns(messageQuery(cb => cb(null, [])));
+    sinon
+      .stub(ReferenceThread, 'find')
+      .returns(messageQuery(cb => cb(new Error('reference lookup failed'))));
+
+    const res = mockResponse();
+    adminMessages.getMessages(
+      {
+        body: {
+          user1: new mongoose.Types.ObjectId().toString(),
+          user2: new mongoose.Types.ObjectId().toString(),
+        },
+      },
+      res,
+    );
+    const response = await res.waitForResponse();
+    response.statusCode.should.equal(400);
+  });
+
+  it('uses an empty reference thread list when the lookup returns null', async () => {
+    sinon.stub(Message, 'find').returns(messageQuery(cb => cb(null, [])));
+    sinon
+      .stub(ReferenceThread, 'find')
+      .returns(messageQuery(cb => cb(null, null)));
+
+    const res = mockResponse();
+    adminMessages.getMessages(
+      {
+        body: {
+          user1: new mongoose.Types.ObjectId().toString(),
+          user2: new mongoose.Types.ObjectId().toString(),
+        },
+      },
+      res,
+    );
+    const response = await res.waitForResponse();
+    response.body.referenceThreads.should.deepEqual([]);
   });
 });

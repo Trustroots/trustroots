@@ -34,8 +34,6 @@ test.describe('admin moderation inspection flows', () => {
     const berlin = await findUserByUsername('e2e-seeded-berlin');
     const berlinId = String(berlin._id);
 
-    const shadowDisplayName = `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`;
-
     await page.goto(`/admin/messages?userId1=${shadowId}&userId2=${berlinId}`);
     const messagesResponse = page.waitForResponse(
       response =>
@@ -43,14 +41,14 @@ test.describe('admin moderation inspection flows', () => {
         response.request().method() === 'POST' &&
         response.ok(),
     );
-    await page.locator('input[name="userId1"]').fill(shadowId);
-    await page.locator('input[name="userId2"]').fill(berlinId);
+    await page.locator('input[name="member1"]').fill(shadowId);
+    await page.locator('input[name="member2"]').fill(berlinId);
     await page.getByRole('button', { name: /^read$/i }).click();
     await messagesResponse;
 
     await expect(page.getByText(SEEDED_SHADOW_MESSAGE).first()).toBeVisible();
     await expect(
-      page.getByText(shadowDisplayName, { exact: false }).first(),
+      page.getByText(SEEDED_SHADOW.username, { exact: false }).first(),
     ).toBeVisible();
   });
 

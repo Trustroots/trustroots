@@ -34,7 +34,6 @@ export default function UserState({ user }) {
               'label-danger': ['suspended', 'shadowban'].includes(role),
               'label-success': [
                 'admin',
-                'moderator',
                 'volunteer',
                 'volunteer-alumni',
               ].includes(role),

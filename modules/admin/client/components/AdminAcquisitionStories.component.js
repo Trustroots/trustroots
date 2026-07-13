@@ -5,7 +5,21 @@ import React, { useState, useEffect } from 'react';
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
 import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
+import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+
+function formatDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toISOString().slice(0, 10);
+}
 
 export default function AdminAcquisitionStories() {
   const [stories, setStories] = useState([]);
@@ -24,7 +38,7 @@ export default function AdminAcquisitionStories() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
         <p>Based on latest 3000 stories</p>
 
@@ -32,25 +46,40 @@ export default function AdminAcquisitionStories() {
 
         {isLoading && <LoadingIndicator />}
 
-        {!isLoading &&
-          stories.length > 0 &&
-          stories.map(({ _id: userId, acquisitionStory, created }) => (
-            <div key={userId} className="panel" id={userId}>
-              <div className="panel-body">
-                <p className="lead">{acquisitionStory}</p>
-                <ul className="list-inline">
-                  <li>
-                    <a href={`#${userId}`}>
-                      <time className="text-muted">{created}</time>
+        {!isLoading && stories.length > 0 && (
+          <table className="table table-condensed table-striped admin-acquisition-stories-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Username</th>
+                <th>Story</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stories.map((story, index) => (
+                <tr key={story._id} id={`acquisition-story-${index + 1}`}>
+                  <td>
+                    <a href={`#acquisition-story-${index + 1}`}>
+                      <time className="text-muted">
+                        {formatDate(story.created)}
+                      </time>
                     </a>
-                  </li>
-                  <li>
-                    <a href={`/admin/user?id=${userId}`}>Member report card</a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          ))}
+                  </td>
+                  <td>
+                    <UserLink
+                      user={{
+                        _id: story._id,
+                        displayName: story.displayName,
+                        username: story.username,
+                      }}
+                    />
+                  </td>
+                  <td>{story.acquisitionStory}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
         {!isLoading && stories.length === 0 && (
           <p>No acquisition stories found.</p>

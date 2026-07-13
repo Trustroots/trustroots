@@ -311,14 +311,9 @@ const getAvatar = (req, res) => {
     req.profile.roles.includes('suspended') ||
     req.profile.roles.includes('shadowban');
   const isPublicProfile = req.profile.public;
-  const isAdminOrModerator =
-    req.user.roles.includes('moderator') || req.user.roles.includes('admin');
+  const isAdmin = req.user.roles.includes('admin');
 
-  if (
-    !isAdminOrModerator &&
-    !isOwnProfile &&
-    (!isPublicProfile || isBannedProfile)
-  ) {
+  if (!isAdmin && !isOwnProfile && (!isPublicProfile || isBannedProfile)) {
     return serveAvatarUrl(res, defaultAvatarUrl);
   }
 

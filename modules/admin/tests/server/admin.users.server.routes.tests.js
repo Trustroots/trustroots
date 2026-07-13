@@ -287,7 +287,7 @@ describe('Admin User CRUD tests', () => {
       });
 
       // Allowed roles
-      ['moderator', 'shadowban', 'suspended'].map(role => {
+      ['shadowban', 'suspended'].map(role => {
         it(`admin users should be allowed change user role to ${role}`, async () => {
           await utils.signIn(credentialsAdmin, agent);
 
@@ -296,6 +296,17 @@ describe('Admin User CRUD tests', () => {
             .send({ id: userRegularId, role })
             .expect(200);
         });
+      });
+
+      it('cannot change user role to legacy moderator', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user/change-role')
+          .send({ id: userRegularId, role: 'moderator' })
+          .expect(400);
+
+        should(body.message).equal('Invalid role.');
       });
 
       it('missing id should not change user role', async () => {

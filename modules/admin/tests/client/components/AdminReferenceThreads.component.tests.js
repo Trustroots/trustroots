@@ -53,20 +53,46 @@ describe('<AdminReferenceThreads />', () => {
     expect(
       screen.getByText('Loading reference threads...'),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Alice Sender')).toHaveAttribute(
+    expect(await screen.findByText('alice (Alice Sender)')).toHaveAttribute(
       'href',
       `/admin/user?id=${userFrom._id}`,
     );
-    expect(screen.getByText('Bob Receiver')).toHaveAttribute(
+    expect(screen.getByText('bob (Bob Receiver)')).toHaveAttribute(
       'href',
       `/admin/user?id=${userTo._id}`,
     );
-    expect(
-      screen.getByRole('link', { name: 'See message thread' }),
-    ).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'See messages' })).toHaveAttribute(
       'href',
       `/admin/messages?userId1=${userTo._id}&userId2=${userFrom._id}`,
     );
+  });
+
+  it('renders top negative recipients', async () => {
+    referenceThreadsApi.getReferenceThreads.mockResolvedValueOnce({
+      items: [
+        {
+          _id: 'reference-thread-1',
+          created: '2025-06-07T08:09:10.000Z',
+          userFrom,
+          userTo,
+        },
+      ],
+      topNegativeRecipients: [
+        { count: 7, user: userTo },
+        { count: 3, user: userFrom._id },
+      ],
+    });
+
+    render(<AdminReferenceThreads />);
+
+    expect(await screen.findByText('Top score')).toBeInTheDocument();
+    expect(screen.getByText('7')).toHaveClass('label-danger');
+    expect(screen.getAllByText('bob (Bob Receiver)')[0]).toHaveAttribute(
+      'href',
+      `/admin/user?id=${userTo._id}`,
+    );
+    expect(screen.getByText('3')).toHaveClass('label-danger');
+    expect(screen.getAllByText('Unknown member')[0]).toBeInTheDocument();
   });
 
   it('builds message-thread links when reference users are raw ids', async () => {
@@ -82,11 +108,27 @@ describe('<AdminReferenceThreads />', () => {
     render(<AdminReferenceThreads />);
 
     expect(
-      await screen.findByRole('link', { name: 'See message thread' }),
+      await screen.findByRole('link', { name: 'See messages' }),
     ).toHaveAttribute(
       'href',
       `/admin/messages?userId1=${userTo._id}&userId2=${userFrom._id}`,
     );
+    expect(screen.getAllByText('Unknown member')).toHaveLength(2);
+  });
+
+  it('defaults missing top negative recipients to an empty list', async () => {
+    referenceThreadsApi.getReferenceThreads.mockResolvedValueOnce({
+      items: [],
+    });
+
+    render(<AdminReferenceThreads />);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Loading reference threads...'),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText('Top score')).not.toBeInTheDocument();
   });
 
   it('logs and clears loading state when loading fails', async () => {
