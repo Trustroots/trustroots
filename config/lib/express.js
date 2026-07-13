@@ -272,6 +272,7 @@ module.exports.initHelmetHeaders = function (app) {
           '*.twitter.com',
           '*.google-analytics.com',
           '*.gstatic.com', // Google analytics related
+          'https://1p.trustroots.org', // Umami analytics
           // Use `nonce` for `<script>` tags
           // Nonce is generated above at `initLocalVariables()` middleware
           // @link https://github.com/helmetjs/helmet/wiki/Conditionally-using-middleware
@@ -325,6 +326,7 @@ module.exports.initHelmetHeaders = function (app) {
           'wss://relay.trustroots.org',
           'https://www.google-analytics.com',
           'https://stats.g.doubleclick.net',
+          'https://1p.trustroots.org', // Umami analytics
           'fcm.googleapis.com',
           'www.facebook.com',
           'https://sentry.io',
