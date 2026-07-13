@@ -42,6 +42,12 @@ fi
 echo
 echo "Docker images built."
 echo
-echo "Please push these images now like so:"
+echo "The following images will be pushed automatically:"
 echo
 echo "docker push ghcr.io/trustrootsops/trustroots:git-${COMMIT} && docker push ghcr.io/trustrootsops/trustroots:latest"
+echo
+echo "Pushing images in 10 seconds. Press Ctrl-C to cancel."
+sleep 10
+
+"${DOCKER[@]}" push "ghcr.io/trustrootsops/trustroots:git-${COMMIT}"
+"${DOCKER[@]}" push ghcr.io/trustrootsops/trustroots:latest
