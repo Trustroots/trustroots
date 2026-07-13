@@ -75,7 +75,7 @@ describe('Core CRUD tests', function () {
         .get('/')
         .expect('Content-Type', /html/)
         .expect(/https:\/\/1p\.trustroots\.org\/script\.js/)
-        .expect(/data-website-id="23ec0c85-2ebc-4d85-9063-c23d90b8ded1"/)
+        .expect(new RegExp(`data-website-id="${config.umami.websiteId}"`))
         .end(function (err) {
           return done(err);
         });

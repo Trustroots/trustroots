@@ -217,6 +217,10 @@ module.exports = {
     enabled: false,
     code: '',
   },
+  umami: {
+    scriptSrc: 'https://1p.trustroots.org/script.js',
+    websiteId: '',
+  },
   log: {
     papertrail: {
       // If host & port are false, papertrail is disabled
