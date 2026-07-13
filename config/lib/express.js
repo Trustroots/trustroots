@@ -17,7 +17,7 @@ const helmet = require('helmet');
 const expectCt = require('expect-ct');
 const flash = require('connect-flash');
 const nunjucks = require('nunjucks');
-const git = require('git-rev');
+const buildMetadata = require('./build-metadata');
 const path = require('path');
 const paginate = require('express-paginate');
 const uuid = require('uuid');
@@ -77,10 +77,14 @@ module.exports.initLocalVariables = function (app) {
     app.locals.cssFiles = []; // style is bundled with javascript
   }
 
-  // Get 'git rev-parse --short HEAD' (the latest git commit hash) to use as a cache buster
-  // @link https://www.npmjs.com/package/git-rev
-  git.short(function (str) {
-    app.locals.appSettings.commit = str;
+  // Get latest git commit metadata for asset cache busting and support/debug UI.
+  buildMetadata.getBuildMetadata(function (metadata) {
+    if (!metadata) {
+      return;
+    }
+
+    app.locals.appSettings.commit = metadata.shortCommit;
+    app.locals.appSettings.build = metadata;
   });
 
   // Passing the request url to environment locals
