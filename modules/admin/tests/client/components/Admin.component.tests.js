@@ -191,9 +191,7 @@ describe('<Admin />', () => {
 
     expect(await screen.findByText('1 messages')).toBeInTheDocument();
     expect(await screen.findByText('thread-without-users')).toBeInTheDocument();
-    expect(
-      screen.getByText('thread-with-invalid-date'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('thread-with-invalid-date')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'linked-thread-with-invalid-date' }),
     ).toHaveAttribute(
@@ -210,7 +208,9 @@ describe('<Admin />', () => {
 
     render(<Admin />);
 
-    expect(await screen.findByText('No messages last week.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('No messages last week.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
   });
 

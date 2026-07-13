@@ -1,5 +1,11 @@
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
@@ -605,9 +611,10 @@ describe('<AdminUser />', () => {
       ].map(id => `/admin/user?id=${id}`),
     );
     expect(screen.getByText('Fallback Contact')).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'bob' }),
-    ).toHaveAttribute('href', `/admin/user?id=${otherUserId}`);
+    expect(screen.getByRole('link', { name: 'bob' })).toHaveAttribute(
+      'href',
+      `/admin/user?id=${otherUserId}`,
+    );
   });
 
   it('uses profile username and a non-id fallback for report headings and counts', async () => {
