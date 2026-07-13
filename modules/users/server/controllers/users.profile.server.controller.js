@@ -111,7 +111,7 @@ exports.update = function (req, res) {
       });
     }
 
-    const trimmedNpub = req.body.nostrNpub.trim();
+    const trimmedNpub = req.body.nostrNpub.trim().toLowerCase();
     req.body.nostrNpub = trimmedNpub;
 
     try {
@@ -121,6 +121,9 @@ exports.update = function (req, res) {
         (result.type !== 'npub' || !/^[0-9a-f]{64}$/i.test(result.data))
       ) {
         throw new Error('Invalid nostr npub.');
+      }
+      if (trimmedNpub) {
+        req.body.nostrNpub = nip19.npubEncode(result.data.toLowerCase());
       }
     } catch (err) {
       _.noop(err);
@@ -166,6 +169,35 @@ exports.update = function (req, res) {
               // Email available, proceed generating the token
               done();
             }
+          },
+        );
+      },
+
+      // Check if nostr npub is already claimed by another user
+      function (done) {
+        if (!req.body.nostrNpub) {
+          return done();
+        }
+
+        User.findOne(
+          {
+            _id: { $ne: req.user._id },
+            nostrNpub: req.body.nostrNpub,
+          },
+          '_id',
+          function (err, existingNostrUser) {
+            if (err) {
+              return done(err);
+            }
+
+            if (existingNostrUser) {
+              return res.status(403).send({
+                message:
+                  'This nostr npub is already in use. Please use another one.',
+              });
+            }
+
+            done();
           },
         );
       },

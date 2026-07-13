@@ -41,17 +41,13 @@ function formatUtcDateTime(date) {
   );
 }
 
-function buildMetadataFromGitLog(output, branch) {
-  const [commit, committedAtIso, outputBranch] = String(output || '')
-    .trim()
-    .split('\n');
-  const normalizedBranch = normalizeBranch(branch || outputBranch);
-
+function buildMetadataFromValues(commit, committedAtIso, branch) {
   if (!commit || !committedAtIso) {
     return false;
   }
 
   const committedAt = new Date(committedAtIso);
+  const normalizedBranch = normalizeBranch(branch);
 
   if (Number.isNaN(committedAt.getTime())) {
     return false;
@@ -66,7 +62,34 @@ function buildMetadataFromGitLog(output, branch) {
   };
 }
 
+function buildMetadataFromEnvironment() {
+  return buildMetadataFromValues(
+    process.env.TRUSTROOTS_BUILD_COMMIT,
+    process.env.TRUSTROOTS_BUILD_COMMITTED_AT,
+    getEnvironmentBranch(),
+  );
+}
+
+function buildMetadataFromGitLog(output, branch) {
+  const [commit, committedAtIso, outputBranch] = String(output || '')
+    .trim()
+    .split('\n');
+
+  return buildMetadataFromValues(
+    commit,
+    committedAtIso,
+    branch || outputBranch,
+  );
+}
+
 function getBuildMetadata(callback) {
+  const environmentMetadata = buildMetadataFromEnvironment();
+
+  if (environmentMetadata) {
+    callback(environmentMetadata);
+    return;
+  }
+
   execFile(
     'git',
     ['log', '-1', '--pretty=format:%H%n%cI'],
@@ -99,5 +122,6 @@ function getBuildMetadata(callback) {
 }
 
 exports.buildMetadataFromGitLog = buildMetadataFromGitLog;
+exports.buildMetadataFromEnvironment = buildMetadataFromEnvironment;
 exports.formatUtcDateTime = formatUtcDateTime;
 exports.getBuildMetadata = getBuildMetadata;
