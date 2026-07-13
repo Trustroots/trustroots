@@ -144,6 +144,7 @@ function PagesRoutes($stateProvider) {
           user="app.user"
           isNativeMobileApp="app.isNativeMobileApp"
           photoCredits="app.photoCredits"
+          build="app.appSettings.build"
         />`,
       footerHidden: true,
     });

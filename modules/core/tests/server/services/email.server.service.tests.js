@@ -348,6 +348,13 @@ describe('Service: email', function () {
       profilePublic: 'yes',
       signupDate: new Date().toString(),
       reportMember: 'baduser',
+      build: {
+        branch: 'codex/footer-polish',
+        committedAt: '2026-06-21 18:06',
+        commitUrl:
+          'https://github.com/Trustroots/trustroots/commit/7a1d63965692fdb3361d3fd9ad1a6a17fb391b92',
+        shortCommit: '7a1d639',
+      },
     };
     const replyTo = {
       email: 'replyto@test.com',
@@ -385,6 +392,19 @@ describe('Service: email', function () {
       );
       jobs[0].data.text.should.containEql(
         'Browser: ' + supportRequest.userAgent,
+      );
+      jobs[0].data.text.should.containEql(
+        'Code version: ' +
+          supportRequest.build.committedAt +
+          ' UTC (' +
+          supportRequest.build.shortCommit +
+          ')',
+      );
+      jobs[0].data.text.should.containEql(
+        'Branch: ' + supportRequest.build.branch,
+      );
+      jobs[0].data.text.should.containEql(
+        'Commit: <' + supportRequest.build.commitUrl + '>',
       );
       jobs[0].data.text.should.containEql('ID: ' + supportRequest.userId);
       jobs[0].data.text.should.containEql(

@@ -111,6 +111,9 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/',
     );
+    expect(
+      screen.queryByRole('link', { name: 'Contribute' }),
+    ).not.toBeInTheDocument();
   });
 
   it('forwards signout click to callback', () => {
