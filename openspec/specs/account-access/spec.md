@@ -67,3 +67,49 @@ The system SHALL end an account holder's session when they sign out.
 - **WHEN** an account holder signs out
 - **THEN** the system clears their session
 - **AND** member-only routes require them to sign in again
+
+### Requirement: Account settings
+
+The system SHALL let an authenticated account holder update valid account
+details and change their password after providing their current password.
+
+#### Scenario: Account holder updates account details
+
+- **WHEN** an authenticated account holder submits valid account details
+- **THEN** the system saves the updated details
+
+#### Scenario: Account holder changes their password
+
+- **WHEN** an authenticated account holder provides their current password and matching valid new passwords
+- **THEN** the system updates their password
+- **AND** the account holder can sign in with the new password
+
+### Requirement: Account removal
+
+The system SHALL require a valid confirmation token before permanently
+removing an account.
+
+#### Scenario: Account holder confirms removal
+
+- **WHEN** an authenticated account holder requests removal and confirms it with a valid token
+- **THEN** the system removes the account
+
+#### Scenario: Account holder submits an invalid removal token
+
+- **WHEN** an account holder submits an invalid removal token
+- **THEN** the system rejects the removal
+
+### Requirement: Connected accounts and push registrations
+
+The system SHALL let authenticated account holders remove connected OAuth
+provider data and manage their push-notification registrations.
+
+#### Scenario: Account holder disconnects an OAuth provider
+
+- **WHEN** an authenticated account holder disconnects a supported OAuth provider
+- **THEN** the system removes the provider data from their account
+
+#### Scenario: Account holder manages a push registration
+
+- **WHEN** an authenticated account holder adds or removes a push registration
+- **THEN** the system persists the requested registration state

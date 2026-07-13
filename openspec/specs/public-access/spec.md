@@ -42,3 +42,38 @@ unknown browser route.
 
 - **WHEN** a visitor opens a route that is not provided by the application
 - **THEN** the visitor is shown the not-found page
+
+### Requirement: Public support requests
+
+The system SHALL let a visitor submit a valid support request and explain when
+the request cannot be accepted or sent.
+
+#### Scenario: Visitor submits a valid support request
+
+- **WHEN** a visitor submits a valid support request
+- **THEN** the system accepts the request for delivery
+
+#### Scenario: Support request cannot be delivered
+
+- **WHEN** a support request has invalid data or cannot be sent
+- **THEN** the system displays validation or delivery feedback
+
+### Requirement: Public service information
+
+The system SHALL make public language data, site statistics, and service-worker
+configuration available to visitors.
+
+#### Scenario: Visitor requests public service data
+
+- **WHEN** a visitor requests supported public language, statistics, or service-worker data
+- **THEN** the system returns the corresponding public response
+
+### Requirement: Legacy public routes
+
+The system SHALL redirect supported legacy invitation, tribe, and about routes
+to their current public destinations.
+
+#### Scenario: Visitor opens a supported legacy public route
+
+- **WHEN** a visitor opens a supported legacy invitation, tribe, or about route
+- **THEN** the system redirects the visitor to the current destination
