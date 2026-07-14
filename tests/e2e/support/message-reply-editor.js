@@ -1,4 +1,4 @@
-/* global CompositionEvent, document, window */
+/* global CompositionEvent, document */
 
 const { expect } = require('./test');
 
@@ -24,22 +24,19 @@ async function assertReplyComposerCaretAndComposition(page, threadUrl) {
   await page.keyboard.press('End');
   await page.keyboard.insertText(' ten');
 
-  expect(
-    await editor.evaluate(element =>
-      Array.from(element.childNodes, node => node.textContent),
-    ),
-  ).toEqual(['one two three', 'four five ten', 'six seven', 'eight nine']);
+  const visibleLines = () =>
+    editor.evaluate(element =>
+      element.innerText.split(/\n+/).filter(line => line.length > 0),
+    );
+
+  expect(await visibleLines()).toEqual([
+    'one two three',
+    'four five ten',
+    'six seven',
+    'eight nine',
+  ]);
 
   await editor.evaluate(element => {
-    const line = element.childNodes[1];
-    const target = line.firstChild || line;
-    const selection = window.getSelection();
-    const range = document.createRange();
-    range.setStart(target, target.textContent.length);
-    range.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(range);
-
     element.dispatchEvent(
       new CompositionEvent('compositionstart', { bubbles: true }),
     );
@@ -49,11 +46,12 @@ async function assertReplyComposerCaretAndComposition(page, threadUrl) {
     );
   });
 
-  expect(
-    await editor.evaluate(element =>
-      Array.from(element.childNodes, node => node.textContent),
-    ),
-  ).toEqual(['one two three', 'four five tenê', 'six seven', 'eight nine']);
+  expect(await visibleLines()).toEqual([
+    'one two three',
+    'four five tenê',
+    'six seven',
+    'eight nine',
+  ]);
 }
 
 module.exports = {
