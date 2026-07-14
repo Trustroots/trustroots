@@ -1,4 +1,10 @@
 const config = require('../../../../config/config');
+// Emoji sequences can combine pictographs, modifiers, joiners and selectors.
+// eslint-disable-next-line no-misleading-character-class
+const nameRegex = new RegExp(
+  '^(?=.*\\p{L})[\\p{L}\\p{M} ._’\\-\\p{Extended_Pictographic}\\p{Emoji_Modifier}\\u200D\\uFE0F]*$',
+  'u',
+);
 const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
 const legacyUsernameLookupRegex = /^[A-Za-z0-9._-]{3,34}$/;
 
@@ -35,6 +41,25 @@ exports.validateUsername = function (username) {
 
 exports.isUsernameFormatValid = function (username) {
   return usernameRegex.test(String(username));
+};
+
+/**
+ * Name fields shown on profiles and in administration tools.
+ *
+ * Keep this deliberately permissive for international names while excluding
+ * digits and code-like punctuation. Names may contain letters, combining
+ * marks, spaces, full stops, underscores, apostrophes, hyphens, and emoji. At
+ * least one letter is still required, so emoji can decorate a name but cannot
+ * replace it.
+ */
+exports.isNameFormatValid = function (name) {
+  return (
+    typeof name === 'string' &&
+    name.length <= 34 &&
+    !name.toLowerCase().includes('www') &&
+    !name.toLowerCase().includes('bit.ly') &&
+    nameRegex.test(name)
+  );
 };
 
 /**

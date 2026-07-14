@@ -98,6 +98,17 @@ exports.update = function (req, res) {
     });
   }
 
+  for (const nameField of ['firstName', 'lastName']) {
+    if (
+      Object.prototype.hasOwnProperty.call(req.body, nameField) &&
+      !authenticationService.isNameFormatValid(req.body[nameField])
+    ) {
+      return res.status(400).send({
+        message: errorService.getErrorMessageByKey('bad-request'),
+      });
+    }
+  }
+
   // validate locale
   // @TODO validation framework
   const localeCodes = locales.map(function (locale) {

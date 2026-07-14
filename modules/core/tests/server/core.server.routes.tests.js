@@ -444,7 +444,7 @@ describe('Core CRUD tests', function () {
           return done();
         }
 
-        createNostrUser({ username }, function (saveErr) {
+        createNostrUser({ username }, function (saveErr, user) {
           if (saveErr) {
             return done(saveErr);
           }
@@ -458,9 +458,14 @@ describe('Core CRUD tests', function () {
               }
 
               res.body.names.should.have.property(username, validNpubHex);
-              index += 1;
+              return User.deleteOne({ _id: user._id }, function (deleteErr) {
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
 
-              return next();
+                index += 1;
+                return next();
+              });
             });
         });
       }

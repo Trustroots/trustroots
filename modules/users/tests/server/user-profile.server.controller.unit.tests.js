@@ -103,6 +103,62 @@ describe('Profile controller unit tests', () => {
       res.body.message.should.equal('Please enter a valid email address.');
     });
 
+    it('rejects a non-string email change', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { email: { invalid: true } } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Please enter a valid email address.');
+    });
+
+    it('rejects a code-like name change', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { firstName: "e SaLbI2GC') OR 874=(SELECT" },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
+    it('rejects a code-like last-name change', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { lastName: "e SaLbI2GC') OR 874=(SELECT" },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
+    it('accepts a valid name change with emoji decoration', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { firstName: '🌻 Ada' },
+            login: (user, cb) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.firstName.should.equal('🌻 Ada');
+    });
+
     it('rejects a non-string nostrNpub', async () => {
       const { res } = await runHandler(res =>
         profileController.update(

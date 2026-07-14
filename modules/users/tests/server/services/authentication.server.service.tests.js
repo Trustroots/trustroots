@@ -93,6 +93,33 @@ describe('Service: authentication', function () {
     });
   });
 
+  describe('isNameFormatValid', function () {
+    it('accepts international names with common name punctuation', function () {
+      authenticationService
+        .isNameFormatValid('🌻 Jean-Luc O’Connor')
+        .should.be.true();
+      authenticationService.isNameFormatValid('👩🏽‍💻 Ada').should.be.true();
+      authenticationService.isNameFormatValid('Dr. Ágnes').should.be.true();
+      authenticationService
+        .isNameFormatValid('user_update_first')
+        .should.be.true();
+    });
+
+    it('rejects malformed and code-like names', function () {
+      authenticationService.isNameFormatValid('').should.be.false();
+      authenticationService.isNameFormatValid('A'.repeat(35)).should.be.false();
+      authenticationService
+        .isNameFormatValid("e SaLbI2GC') OR 874=(SELECT")
+        .should.be.false();
+      authenticationService.isNameFormatValid('www.example').should.be.false();
+      authenticationService.isNameFormatValid('bit.ly').should.be.false();
+      authenticationService.isNameFormatValid('🎉').should.be.false();
+      authenticationService
+        .isNameFormatValid({ name: 'Ada' })
+        .should.be.false();
+    });
+  });
+
   describe('isLegacyUsernameLookupValid', function () {
     it('accepts legacy username formats for read-only lookups', function () {
       authenticationService

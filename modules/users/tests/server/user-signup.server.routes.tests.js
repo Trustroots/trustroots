@@ -123,6 +123,38 @@ describe('User signup and authentication CRUD tests', function () {
     });
   });
 
+  it('should reject signup with a code-like name', function (done) {
+    agent
+      .post('/api/auth/signup')
+      .send({
+        firstName: "e SaLbI2GC') OR 874=(SELECT",
+        lastName: 'User',
+        email: 'invalid-name@example.org',
+        username: 'invalidname',
+        password: 'TR-I$Aw3$0m4',
+        provider: 'local',
+        acquisitionStory: 'Unit test',
+      })
+      .expect(400)
+      .end(done);
+  });
+
+  it('should reject signup with a code-like last name', function (done) {
+    agent
+      .post('/api/auth/signup')
+      .send({
+        firstName: 'Test',
+        lastName: "e SaLbI2GC') OR 874=(SELECT",
+        email: 'invalid-last-name@example.org',
+        username: 'invalidlastname',
+        password: 'TR-I$Aw3$0m4',
+        provider: 'local',
+        acquisitionStory: 'Unit test',
+      })
+      .expect(400)
+      .end(done);
+  });
+
   it('should reject signup with reserved username and return availability message', function (done) {
     agent
       .post('/api/auth/signup')
