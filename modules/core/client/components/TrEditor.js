@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -170,6 +171,9 @@ const baseOptions = {
 // editor out of React's update path while the member is typing prevents that
 // restoration from moving a caret in multi-line text or interrupting a native
 // input composition (for example, a dead key or compose key sequence).
+// ref forwarding through React.memo only works here because MediumEditor is a
+// class component; it would silently break if the library switched to a
+// function component without forwardRef.
 const StableMediumEditor = React.memo(MediumEditor);
 
 // medium-editor can give us a <br> at the end that we don't want
@@ -191,8 +195,10 @@ export default function TrEditor({
   const [editorText, setEditorText] = useState(text);
   const { t } = useTranslation('core');
 
-  onChangeRef.current = onChange;
-  onCtrlEnterRef.current = onCtrlEnter;
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+    onCtrlEnterRef.current = onCtrlEnter;
+  });
 
   useEffect(() => {
     // Input emitted by MediumEditor has already changed its own DOM. Passing

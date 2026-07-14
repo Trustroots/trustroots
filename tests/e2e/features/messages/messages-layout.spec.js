@@ -19,6 +19,7 @@ test.describe('message thread layout', () => {
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
 
+    // Short desktop viewport that reproduces the Firefox overflow from #2722.
     await page.setViewportSize({ width: 1158, height: 407 });
     await page.goto(`/messages/${portland.username}?userId=${portlandId}`);
 
