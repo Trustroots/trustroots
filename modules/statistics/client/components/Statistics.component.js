@@ -47,6 +47,16 @@ export default function Statistics({ isAuthenticated }) {
 
   const numberFormat = number =>
     number ? new Intl.NumberFormat().format(number) : 0;
+  const experienceStatistics = statistics?.experiences ?? {};
+  const recentExperienceStatistics = experienceStatistics.recent ?? {};
+  const recommendationCount =
+    (experienceStatistics.recommended ?? 0) +
+    (experienceStatistics.notRecommended ?? 0);
+  const recommendationPercentage = recommendationCount
+    ? Math.round(
+        ((experienceStatistics.recommended ?? 0) / recommendationCount) * 100,
+      )
+    : 0;
 
   useEffect(async () => {
     const { data } = await get();
@@ -213,21 +223,89 @@ export default function Statistics({ isAuthenticated }) {
                 )}
               </Stat>
 
-              <Stat title={t('Most messages get replies')} className="is-graph">
+              <Stat title={t('Experiences')}>
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <Count>
+                      {numberFormat(experienceStatistics.total ?? 0)}
+                    </Count>
+                    <p className="text-muted">
+                      {t('{{count}} in the last 90 days', {
+                        count: numberFormat(
+                          recentExperienceStatistics.total ?? 0,
+                        ),
+                      })}
+                    </p>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Recommended by members')}>
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <Count>
+                      {numberFormat(experienceStatistics.recommended ?? 0)}
+                    </Count>
+                    <p className="text-muted">
+                      {t('{{percentage}}% of answered recommendations', {
+                        percentage: recommendationPercentage,
+                      })}
+                    </p>
+                    <p className="text-muted">
+                      {t('{{count}} in the last 90 days', {
+                        count: numberFormat(
+                          recentExperienceStatistics.recommended ?? 0,
+                        ),
+                      })}
+                    </p>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Real-life connections')}>
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <Count>
+                      {numberFormat(
+                        experienceStatistics.realLifeConnections?.total ?? 0,
+                      )}
+                    </Count>
+                    <p className="text-muted">
+                      {t('Members who said they met in person')}
+                    </p>
+                    <p className="text-muted">
+                      {t('{{count}} in the last 90 days', {
+                        count: numberFormat(
+                          experienceStatistics.realLifeConnections?.recent ?? 0,
+                        ),
+                      })}
+                    </p>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Message replies')} className="is-graph">
+                <p className="text-muted">{t('Weekly messages and replies')}</p>
                 <a href="https://grafana.trustroots.org/d/000000004/messages-detailed">
                   <img
                     className="img-responsive"
                     src="https://grafana.trustroots.org/render/d-solo/000000004/messages-detailed?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
                     width="100%"
-                    alt={t('Weekly messages')}
+                    alt={t('Weekly messages and replies')}
                   />
                 </a>
               </Stat>
 
-              <Stat title={t('Translations status')} className="is-graph">
+              <Stat title={t('Translation status')} className="is-graph">
                 <a href="https://hosted.weblate.org/engage/trustroots/">
                   <img
-                    alt={t('Translations status')}
+                    alt={t('Translation status')}
                     src="https://hosted.weblate.org/widgets/trustroots/-/horizontal-auto.svg"
                   />
                 </a>

@@ -6,6 +6,7 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const Offer = mongoose.model('Offer');
+const Experience = mongoose.model('Experience');
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 const differentNpub =
@@ -29,6 +30,14 @@ function assertStats(stats) {
 
   stats.newsletter.count.should.equal(2);
   stats.newsletter.percentage.should.equal(50);
+
+  stats.experiences.should.deepEqual({
+    total: 5,
+    recommended: 2,
+    notRecommended: 2,
+    recent: { total: 4, recommended: 2, notRecommended: 1 },
+    realLifeConnections: { total: 3, recent: 2 },
+  });
 }
 
 /**
@@ -123,6 +132,45 @@ describe('Statistics CRUD tests', () => {
         status: 'no',
         user: users[2]._id,
       }).save();
+
+      await Experience.create([
+        {
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          public: true,
+          recommend: 'yes',
+          interactions: { met: true, guest: false, host: false },
+        },
+        {
+          userFrom: users[1]._id,
+          userTo: users[0]._id,
+          public: true,
+          recommend: 'no',
+          interactions: { met: true, guest: false, host: false },
+        },
+        {
+          userFrom: users[1]._id,
+          userTo: users[2]._id,
+          public: true,
+          recommend: 'unknown',
+          interactions: { met: false, guest: false, host: true },
+        },
+        {
+          userFrom: users[2]._id,
+          userTo: users[3]._id,
+          public: true,
+          created: new Date(Date.now() - 91 * 24 * 60 * 60 * 1000),
+          recommend: 'no',
+          interactions: { met: true, guest: false, host: false },
+        },
+        {
+          userFrom: users[3]._id,
+          userTo: users[0]._id,
+          public: false,
+          recommend: 'yes',
+          interactions: { met: true, guest: false, host: false },
+        },
+      ]);
     });
 
     after(utils.clearDatabase);

@@ -39,6 +39,13 @@ describe('<Statistics />', () => {
           { network: 'nostr', count: 12, percentage: 1 },
         ],
         newsletter: { percentage: 30, count: 3000 },
+        experiences: {
+          total: 100,
+          recommended: 80,
+          notRecommended: 10,
+          recent: { total: 20, recommended: 15, notRecommended: 3 },
+          realLifeConnections: { total: 50, recent: 10 },
+        },
       },
     });
 
@@ -51,6 +58,12 @@ describe('<Statistics />', () => {
       screen.getByRole('link', { name: 'Subscribe to newsletter' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Nostroots 1%')).toBeInTheDocument();
+    expect(screen.getByText('Experiences')).toBeInTheDocument();
+    expect(screen.getByText('Recommended by members')).toBeInTheDocument();
+    expect(
+      screen.getByText('89% of answered recommendations'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Real-life connections')).toBeInTheDocument();
   });
 
   it('hides the newsletter subscribe link for unauthenticated visitors', async () => {

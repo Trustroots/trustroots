@@ -6,6 +6,7 @@ const sinon = require('sinon');
 
 require('../../../offers/server/models/offer.server.model');
 require('../../../users/server/models/user.server.model');
+require('../../../experiences/server/models/experiences.server.model');
 const statistics = require('../../server/controllers/statistics.server.controller');
 const statService = require('../../../stats/server/services/stats.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -13,6 +14,7 @@ require('should');
 
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');
+const Experience = mongoose.model('Experience');
 
 function deferredResponse() {
   let resolveResponse;
@@ -115,6 +117,16 @@ describe('Statistics controller unit tests', () => {
     it('getUserLanguagesCount propagates database errors', done => {
       sinon.stub(User, 'aggregate').callsFake((pipeline, cb) => cb(dbError));
       statistics.getUserLanguagesCount(5, err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getExperienceStatistics propagates database errors', done => {
+      sinon
+        .stub(Experience, 'aggregate')
+        .callsFake((pipeline, cb) => cb(dbError));
+      statistics.getExperienceStatistics(new Date(), err => {
         err.should.be.Error();
         done();
       });
@@ -288,6 +300,66 @@ describe('Statistics controller unit tests', () => {
         });
       });
     });
+
+    it('aggregates all experiences and unique real-life connections', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(4));
+      const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
+      const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
+      await Experience.create([
+        {
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          public: true,
+          recommend: 'yes',
+          interactions: { met: true, guest: false, host: false },
+        },
+        {
+          userFrom: users[1]._id,
+          userTo: users[0]._id,
+          public: true,
+          recommend: 'no',
+          interactions: { met: true, guest: false, host: false },
+        },
+        {
+          userFrom: users[1]._id,
+          userTo: users[2]._id,
+          public: true,
+          recommend: 'unknown',
+          interactions: { met: false, guest: false, host: true },
+        },
+        {
+          userFrom: users[2]._id,
+          userTo: users[3]._id,
+          public: true,
+          created: oldDate,
+          recommend: 'no',
+          interactions: { met: true, guest: false, host: false },
+        },
+        {
+          userFrom: users[3]._id,
+          userTo: users[0]._id,
+          public: false,
+          recommend: 'yes',
+          interactions: { met: true, guest: false, host: false },
+        },
+      ]);
+
+      const experienceStatistics = await new Promise((resolve, reject) => {
+        statistics.getExperienceStatistics(since, (err, result) => {
+          if (err) return reject(err);
+          resolve(result);
+        });
+      });
+
+      experienceStatistics.should.deepEqual({
+        total: 5,
+        recommended: 2,
+        notRecommended: 2,
+        recent: { total: 4, recommended: 2, notRecommended: 1 },
+        realLifeConnections: { total: 3, recent: 2 },
+      });
+    });
   });
 
   describe('getHostOffersCount', () => {
@@ -355,6 +427,7 @@ describe('Statistics controller unit tests', () => {
         .map(connection => connection.network)
         .should.containEql('nostr');
       res.body.should.have.property('newsletter');
+      res.body.should.have.property('experiences');
     });
 
     it('returns 400 when collecting public statistics fails', async () => {
@@ -421,6 +494,19 @@ describe('Statistics controller unit tests', () => {
       sinon.stub(statistics, 'getHostOffersCount').callsFake(cb => {
         cb(new Error('hosting count failed'));
       });
+
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when experience statistics fail', async () => {
+      sinon
+        .stub(statistics, 'getExperienceStatistics')
+        .callsFake((since, cb) => {
+          cb(new Error('experience statistics failed'));
+        });
 
       const res = deferredResponse();
       statistics.getPublicStatistics({}, res);
