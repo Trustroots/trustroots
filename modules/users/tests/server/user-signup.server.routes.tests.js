@@ -116,7 +116,7 @@ describe('User signup and authentication CRUD tests', function () {
       expectSignupUsernameRejected('has-hyphen', function () {
         expectSignupUsernameRejected('has.dot', function () {
           expectSignupUsernameRejected('HasUppercase', function () {
-            expectSignupUsernameRejected('123', done);
+            expectSignupUsernameRejected('43912831', done);
           });
         });
       });

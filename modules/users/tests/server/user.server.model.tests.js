@@ -137,6 +137,20 @@ describe('User Model Unit Tests:', function () {
       });
     });
 
+    it('should reject an invalid temporary email address', function (done) {
+      const _user = new User(user);
+
+      _user.emailTemporary =
+        "sample@email.tst'||dbms_pipe.receive_message(chr(98)||chr(98)||chr(98),15)||'";
+      _user.save(function (err) {
+        should.exist(err);
+        err.errors.emailTemporary.message.should.equal(
+          'Please enter a valid email address.',
+        );
+        done();
+      });
+    });
+
     it('should confirm that saving user model doesnt change the password', function (done) {
       const _user = new User(user);
 

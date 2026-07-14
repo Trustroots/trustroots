@@ -28,6 +28,10 @@ const validateLocalStrategyEmail = function (email) {
   );
 };
 
+const validateTemporaryEmail = function (email) {
+  return !email || validator.isEmail(email);
+};
+
 /**
  * A Validation function for password
  */
@@ -146,7 +150,7 @@ const UserSchema = new Schema({
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+@.+\..+/, 'Please enter a valid email address.'],
+    validate: [validateTemporaryEmail, 'Please enter a valid email address.'],
   },
   tagline: {
     type: String,

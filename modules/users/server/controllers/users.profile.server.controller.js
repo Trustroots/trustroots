@@ -24,6 +24,7 @@ const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const nip19 = require('nostr-tools/nip19');
+const validator = require('validator');
 const User = mongoose.model('User');
 
 // Fields to send publicly about any user profile
@@ -85,6 +86,15 @@ exports.update = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+
+  if (
+    req.body.email &&
+    (typeof req.body.email !== 'string' || !validator.isEmail(req.body.email))
+  ) {
+    return res.status(400).send({
+      message: 'Please enter a valid email address.',
     });
   }
 

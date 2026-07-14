@@ -85,6 +85,24 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('rejects an invalid email change', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: {
+              email:
+                "sample@email.tst'||dbms_pipe.receive_message(chr(98)||chr(98)||chr(98),15)||'",
+            },
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Please enter a valid email address.');
+    });
+
     it('rejects a non-string nostrNpub', async () => {
       const { res } = await runHandler(res =>
         profileController.update(
