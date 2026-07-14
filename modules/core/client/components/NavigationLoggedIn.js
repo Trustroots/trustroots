@@ -108,7 +108,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
-          path="https://notes.trustroots.org/"
+          path="https://nos.trustroots.org/"
           target="_blank"
           className="hidden-xs"
         >
@@ -163,10 +163,6 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('About'),
               },
               {
-                href: '/contribute',
-                label: t('Contribute'),
-              },
-              {
                 href: '/foundation',
                 label: t('Foundation'),
               },
@@ -193,7 +189,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('Team'),
               },
               {
-                href: '/volunteering',
+                href: 'https://team.trustroots.org/',
                 label: t('Volunteering'),
               },
             ]}

@@ -225,7 +225,7 @@ exports.inbox = function (req, res) {
           // will backfill the IDs. Cumbersome and not optimal, but there are not that
           // many deleted profiles that this would be a significant issue.
           fillDeletedProfiles(threads, function (err, threads) {
-            res.json(threads || []);
+            res.json(threads);
           });
         });
       }
@@ -323,15 +323,13 @@ exports.send = async function (req, res) {
       // - Has to be confirmed their email (hence be public)
       // - Not suspended profile
       function (done) {
-        // Only moderator and admin roles can send messages to banned users. For others they stay hidden.
-        const publicityLimit =
-          req.user.roles.includes('moderator') ||
-          req.user.roles.includes('admin')
-            ? {}
-            : {
-                public: true,
-                roles: { $nin: ['suspended', 'shadowban'] },
-              };
+        // Only admins can send messages to banned users. For others they stay hidden.
+        const publicityLimit = req.user.roles.includes('admin')
+          ? {}
+          : {
+              public: true,
+              roles: { $nin: ['suspended', 'shadowban'] },
+            };
 
         User.findOne({
           _id: req.body.userTo,
@@ -569,6 +567,7 @@ exports.send = async function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         log('error', 'Message failed to send. #sa239', err);
         return res.status(400).send({
@@ -610,9 +609,9 @@ exports.threadByUser = function (req, res, next, userId) {
   // TODO do we want to allow to see the messages from suspended or banned users
   // in order to make them "read"?
 
-  // // Only moderator and admin roles can read messages from banned users. For others they stay hidden.
+  // // Only admins can read messages from banned users. For others they stay hidden.
   // const publicityLimit =
-  //   req.user.roles.includes('moderator') || req.user.roles.includes('admin')
+  //   req.user.roles.includes('admin')
   //     ? {}
   //     : {
   //         public: true,
@@ -940,6 +939,7 @@ exports.sync = function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),

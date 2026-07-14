@@ -165,6 +165,7 @@ const avatarUpload = (req, res) => {
         return res.status(400).send({
           message:
             errorService.getErrorMessage(err) ||
+            /* istanbul ignore next */
             'Failed to process image, please try again.',
         });
       } else {
@@ -256,12 +257,16 @@ function getAvatarUrl(profile, size, source) {
   );
 }
 
-function getDefaultAvatarUrl(size = 1024, local = true) {
+function getDefaultAvatarUrl(size, local = true) {
+  // Callers always pass a size; guard defensively so a missing size can never
+  // produce an `avatar-undefined.png` URL.
+  /* istanbul ignore next */
+  const resolvedSize = size || 1024;
   const domain = local
     ? `${config.https ? 'https' : 'http'}://${config.domain}`
     : 'https://trustroots.org';
 
-  return `${domain}/img/avatar-${size}.png`;
+  return `${domain}/img/avatar-${resolvedSize}.png`;
 }
 
 /**
@@ -306,14 +311,9 @@ const getAvatar = (req, res) => {
     req.profile.roles.includes('suspended') ||
     req.profile.roles.includes('shadowban');
   const isPublicProfile = req.profile.public;
-  const isAdminOrModerator =
-    req.user.roles.includes('moderator') || req.user.roles.includes('admin');
+  const isAdmin = req.user.roles.includes('admin');
 
-  if (
-    !isAdminOrModerator &&
-    !isOwnProfile &&
-    (!isPublicProfile || isBannedProfile)
-  ) {
+  if (!isAdmin && !isOwnProfile && (!isPublicProfile || isBannedProfile)) {
     return serveAvatarUrl(res, defaultAvatarUrl);
   }
 

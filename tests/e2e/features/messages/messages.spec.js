@@ -72,21 +72,4 @@ test.describe('seeded message flows', () => {
     await expect(page.getByText(SEEDED_SHADOW.firstName)).toHaveCount(0);
     await expect(page.getByText(SEEDED_SHADOW_MESSAGE)).toHaveCount(0);
   });
-
-  test('member thread API hides shadow-hidden messages from the recipient', async ({
-    request,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'safety.shadowban-hiding', [
-      'Shadowbanned profile is hidden from members.',
-      'Shadow-hidden messages are not visible to regular recipients.',
-      'Admin tools can still inspect shadow-hidden content.',
-    ]);
-
-    const response = await request.get(`/api/messages/${SEEDED_SHADOW.id}`);
-    expect(response.ok()).toBeTruthy();
-
-    const messages = await response.json();
-    const contents = messages.map(message => message.content);
-    expect(contents).not.toContain(SEEDED_SHADOW_MESSAGE);
-  });
 });

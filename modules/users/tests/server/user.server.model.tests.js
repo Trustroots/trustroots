@@ -287,7 +287,7 @@ describe('User Model Unit Tests:', function () {
       });
     });
 
-    it('should save with "moderator" role', function (done) {
+    it('should tolerate legacy "moderator" role', function (done) {
       const _user = new User(user);
 
       _user.roles = ['moderator'];

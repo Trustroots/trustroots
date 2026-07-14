@@ -700,7 +700,7 @@ exports.getOffer = function (req, res) {
       // Populate `tribe` fields from objects at `offer.user.member` array
       function (offer, done) {
         // Nothing to populate
-        if (!offer.user.member && offer.user.member.length === 0) {
+        if (!offer.user.member || offer.user.member.length === 0) {
           return done(null, offer);
         }
 

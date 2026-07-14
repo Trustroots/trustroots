@@ -36,6 +36,7 @@ function AppController(
   vm.photoCreditsCount = 0;
   vm.isFooterHidden = false;
   vm.isHeaderHidden = false;
+  vm.footerVariant = 'standard';
   vm.isAboutPage = false;
   vm.isNativeMobileApp = trNativeAppBridge.isNativeMobileApp();
 
@@ -280,6 +281,7 @@ function AppController(
       vm.isFooterHidden =
         angular.isDefined(toState.footerHidden) &&
         toState.footerHidden === true;
+      vm.footerVariant = toState.footerVariant || 'standard';
 
       // Header is hidden on these pages
       vm.isHeaderHidden =

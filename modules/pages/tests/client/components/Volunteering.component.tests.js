@@ -28,7 +28,7 @@ describe('<Volunteering />', () => {
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Team Guide' })).toHaveAttribute(
       'href',
-      'https://team.trustroots.org/Volunteering.html',
+      'https://team.trustroots.org/',
     );
   });
 });

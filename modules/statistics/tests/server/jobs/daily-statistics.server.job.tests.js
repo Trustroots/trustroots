@@ -5,6 +5,8 @@ const influx = require('influx');
 const sinon = require('sinon');
 
 const config = require('../../../../../config/config');
+require('../../../../offers/server/models/offer.server.model');
+require('../../../../users/server/models/user.server.model');
 const statsService = require('../../../../stats/server/services/stats.server.service');
 const statsJob = require('../../../server/jobs/daily-statistics.server.job');
 
@@ -156,6 +158,19 @@ describe('Daily Statistics Job - Unit Test', function () {
         cb({
           message: 'Writing to Influx service failed.',
           errors: { influx: new Error('influx write failed') },
+        }),
+      );
+
+      statsJob(null, function (e) {
+        if (e) return done(e);
+        done();
+      });
+    });
+
+    it('continues when an influx-specific error lacks nested details', function (done) {
+      sinon.stub(statsService, 'stat').callsFake((statObject, cb) =>
+        cb({
+          message: 'Writing to Influx service failed.',
         }),
       );
 

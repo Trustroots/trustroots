@@ -2,6 +2,7 @@ const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_ADMIN,
+  SEEDED_MEMBERS,
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
   signInViaApi,
@@ -33,8 +34,6 @@ test.describe('admin moderation inspection flows', () => {
     const berlin = await findUserByUsername('e2e-seeded-berlin');
     const berlinId = String(berlin._id);
 
-    const shadowDisplayName = `${SEEDED_SHADOW.firstName} ${SEEDED_SHADOW.lastName}`;
-
     await page.goto(`/admin/messages?userId1=${shadowId}&userId2=${berlinId}`);
     const messagesResponse = page.waitForResponse(
       response =>
@@ -42,14 +41,14 @@ test.describe('admin moderation inspection flows', () => {
         response.request().method() === 'POST' &&
         response.ok(),
     );
-    await page.locator('input[name="userId1"]').fill(shadowId);
-    await page.locator('input[name="userId2"]').fill(berlinId);
+    await page.locator('input[name="member1"]').fill(shadowId);
+    await page.locator('input[name="member2"]').fill(berlinId);
     await page.getByRole('button', { name: /^read$/i }).click();
     await messagesResponse;
 
     await expect(page.getByText(SEEDED_SHADOW_MESSAGE).first()).toBeVisible();
     await expect(
-      page.getByText(shadowDisplayName, { exact: false }).first(),
+      page.getByText(SEEDED_SHADOW.username, { exact: false }).first(),
     ).toBeVisible();
   });
 
@@ -74,5 +73,62 @@ test.describe('admin moderation inspection flows', () => {
     ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
     await expect(page.getByText('1 sent').first()).toBeVisible();
+  });
+
+  test('admin user report API rejects malformed ids', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.user-report', [
+      'Missing user id shows a usable error state.',
+    ]);
+
+    const malformed = await page.request.post('/api/admin/user', {
+      data: { id: 'not-a-mongo-id' },
+    });
+    expect(malformed.status()).toBe(400);
+  });
+
+  test('admin messages API rejects malformed member ids', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.messages', [
+      'Admin can query messages between two users.',
+    ]);
+
+    const response = await page.request.post('/api/admin/messages', {
+      data: {
+        user1: 'not-a-mongo-id',
+        user2: SEEDED_SHADOW.id,
+      },
+    });
+    expect(response.status()).toBe(400);
+    expect(await response.json()).toMatchObject({
+      message: 'Cannot interpret id.',
+    });
+  });
+
+  test('admin threads API accepts explicit member ids', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.threads', [
+      'Admin can query threads by username/user id.',
+    ]);
+
+    const response = await page.request.post('/api/admin/threads', {
+      data: { userId: SEEDED_MEMBERS[0].id },
+    });
+    expect(response.ok()).toBeTruthy();
+
+    const threads = await response.json();
+    expect(Array.isArray(threads)).toBeTruthy();
+    expect(
+      threads.some(thread =>
+        [thread.userFromProfile, thread.userToProfile].some(profiles =>
+          profiles.some(
+            profile => profile.username === SEEDED_MEMBERS[0].username,
+          ),
+        ),
+      ),
+    ).toBeTruthy();
   });
 });

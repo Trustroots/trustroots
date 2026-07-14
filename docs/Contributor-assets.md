@@ -48,7 +48,7 @@ To test images locally:
 
 ### Are you a photographer?
 
-Trustroots needs fresh photos every now and then. Would be great if you could **donate your travel photos** to us! Would be good to have them under some license such as [Creative Commons SA](http://creativecommons.org/licenses/by-sa/4.0/) (recommended), but this is not required. Just add them under "Photo donations" title. Add also info how to contact you.
+Trustroots needs fresh photos every now and then. Would be great if you could **donate your travel photos** to us! Would be good to have them under some licence such as [Creative Commons SA](http://creativecommons.org/licenses/by-sa/4.0/) (recommended), but this is not required. Just add them under "Photo donations" title. Add also info how to contact you.
 
 ### Photos to use
 

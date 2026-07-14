@@ -148,6 +148,25 @@ describe('Admin notes controller unit tests', () => {
       res.body.should.eql([]);
     });
 
+    it('returns an empty array when note lookup returns null', async () => {
+      sinon.stub(AdminNote, 'find').returns({
+        sort: () => ({
+          populate: () => ({
+            exec: cb => cb(null, null),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminNotes.getNotes(
+        { query: { userId: new mongoose.Types.ObjectId().toString() } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.body.should.eql([]);
+    });
+
     it('returns 400 when note lookup fails', async () => {
       sinon.stub(AdminNote, 'find').returns({
         sort: () => ({

@@ -9,3 +9,154 @@
   padding-top: 10px;
   padding-bottom: 10px;
 }
+
+// Nostroots Action-Gate Modal
+@keyframes nostroots-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes nostroots-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nostroots-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: @zindex-modal;
+  animation: nostroots-backdrop-in 0.2s ease-out;
+}
+
+.nostroots-modal {
+  position: relative;
+  background: #fff;
+  border-radius: 8px;
+  padding: 28px 24px 20px;
+  max-width: 340px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+  animation: nostroots-modal-in 0.25s ease-out;
+  overflow: hidden;
+
+  // Green accent bar at top
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: @brand-primary;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+.nostroots-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: @gray-light;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: @border-radius-base;
+  transition: color 0.15s ease-out, background-color 0.15s ease-out;
+
+  &:hover {
+    color: @gray-dark;
+    background: @gray-lighter;
+  }
+
+  &:focus {
+    outline: 2px solid @brand-primary;
+    outline-offset: 2px;
+  }
+}
+
+.nostroots-modal-title {
+  margin: 0 0 6px;
+  font-size: @font-size-large;
+  font-weight: 600;
+}
+
+.nostroots-modal-body {
+  font-size: @font-size-base;
+  color: @gray;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.nostroots-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nostroots-modal-btn {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease-out, box-shadow 0.15s ease-out;
+
+  &:hover {
+    box-shadow: 0 2px 8px
+      rgba(
+        red(@brand-primary),
+        green(@brand-primary),
+        blue(@brand-primary),
+        0.25
+      );
+  }
+
+  &:focus {
+    outline: 2px solid @brand-primary;
+    outline-offset: 2px;
+  }
+}
+
+.nostroots-modal-dismiss {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: @gray-light;
+  font-size: @font-size-small;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: @border-radius-base;
+  transition: color 0.15s ease-out;
+
+  &:hover {
+    color: @gray;
+  }
+
+  &:focus {
+    outline: 2px solid @brand-primary;
+    outline-offset: 2px;
+  }
+}

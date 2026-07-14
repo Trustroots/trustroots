@@ -30,7 +30,7 @@ export default function Navigation({ user, onSignout }) {
         </a>
 
         <a
-          href="https://notes.trustroots.org/"
+          href="https://nos.trustroots.org/"
           target="_blank"
           rel="noreferrer"
           className="list-group-item"
