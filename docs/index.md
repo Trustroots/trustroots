@@ -22,6 +22,7 @@ Here are some vague open ideas:
   * there is no functionality for this now but we can make this
 * improve the [Trustroots Wiki](https://wiki.trustroots.org/) and connect it to the main site
   * for example, it would be cool to have circle descriptions directly on the wiki, so that all trustroots users will add information
+  * develop ideas that are hidden in there, such as [Rural Hospitality](https://wiki.trustroots.org/en/Rural_hospitality)
 
 ### Decentralized social networking
 
