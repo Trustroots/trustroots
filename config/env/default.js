@@ -197,9 +197,6 @@ module.exports = {
   },
   twitter: {
     username: '',
-    clientID: '',
-    clientSecret: '',
-    callbackURL: '/api/auth/twitter/callback',
   },
   google: {
     page: '',
