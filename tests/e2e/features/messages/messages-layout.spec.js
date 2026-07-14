@@ -6,6 +6,9 @@ const {
   SEEDED_MEMBERS,
   fetchUserIdByUsername,
 } = require('../../support/helpers');
+const {
+  assertReplyComposerCaretAndComposition,
+} = require('../../support/message-reply-editor');
 
 test.describe('message thread layout', () => {
   test('reply editor remains usable when long text overflows', async ({
@@ -56,5 +59,22 @@ test.describe('message thread layout', () => {
     expect(layout.editorBottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.formBottom).toBeLessThanOrEqual(layout.viewportHeight);
     expect(layout.sendButtonBottom).toBeLessThanOrEqual(layout.viewportHeight);
+  });
+
+  test('reply composer preserves a multiline caret and composed characters', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Editing an earlier line does not move or reorder the reply text.',
+      'Reply text retains characters entered through an input composition.',
+    ]);
+
+    const portland = SEEDED_MEMBERS[1];
+    const portlandId = await fetchUserIdByUsername(request, portland.username);
+    await assertReplyComposerCaretAndComposition(
+      page,
+      `/messages/${portland.username}?userId=${portlandId}`,
+    );
   });
 });

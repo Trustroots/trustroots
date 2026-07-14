@@ -1,5 +1,3 @@
-/* global CompositionEvent, document, window */
-
 const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
@@ -8,6 +6,9 @@ const {
   fetchUserIdByUsername,
   signInViaApi,
 } = require('../../support/helpers');
+const {
+  assertReplyComposerCaretAndComposition,
+} = require('../../support/message-reply-editor');
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -92,57 +93,10 @@ test.describe.serial('message action feature coverage', () => {
     ]);
 
     const portlandId = await fetchUserIdByUsername(request, portland.username);
-    await page.goto(`/messages/${portland.username}?userId=${portlandId}`);
-
-    const editor = page.locator('#message-reply-content');
-    await editor.click();
-    for (const [index, line] of [
-      'one two three',
-      'four five',
-      'six seven',
-      'eight nine',
-    ].entries()) {
-      await page.keyboard.insertText(line);
-      if (index < 3) {
-        await page.keyboard.press('Enter');
-      }
-    }
-
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('ArrowUp');
-    await page.keyboard.press('End');
-    await page.keyboard.insertText(' ten');
-
-    expect(
-      await editor.evaluate(element =>
-        Array.from(element.childNodes, node => node.textContent),
-      ),
-    ).toEqual(['one two three', 'four five ten', 'six seven', 'eight nine']);
-
-    await editor.evaluate(element => {
-      const line = element.childNodes[1];
-      const target = line.firstChild || line;
-      const selection = window.getSelection();
-      const range = document.createRange();
-      range.setStart(target, target.textContent.length);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-
-      element.dispatchEvent(
-        new CompositionEvent('compositionstart', { bubbles: true }),
-      );
-      document.execCommand('insertText', false, 'ê');
-      element.dispatchEvent(
-        new CompositionEvent('compositionend', { bubbles: true, data: 'ê' }),
-      );
-    });
-
-    expect(
-      await editor.evaluate(element =>
-        Array.from(element.childNodes, node => node.textContent),
-      ),
-    ).toEqual(['one two three', 'four five tenê', 'six seven', 'eight nine']);
+    await assertReplyComposerCaretAndComposition(
+      page,
+      `/messages/${portland.username}?userId=${portlandId}`,
+    );
   });
 
   test('members can start conversations and read/sync unread messages', async ({
