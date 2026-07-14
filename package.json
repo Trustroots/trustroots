@@ -210,6 +210,7 @@
     "speakingurl": "14.0.1",
     "stopword": "1.0.11",
     "styled-components": "5.3.6",
+    "supercluster": "7.1.5",
     "ui-leaflet": "2.0.0",
     "use-debounce": "3.4.3",
     "use-persisted-state": "0.3.3",
