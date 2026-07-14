@@ -233,6 +233,13 @@
     </script>
     <!-- https://www.trustroots.org/privacy -->
     {% endif %}
+    {# Umami Analytics #}
+    <script
+      defer
+      src="{{ umami.scriptSrc }}"
+      data-website-id="{{ umami.websiteId }}"
+      nonce="{{ nonce }}"
+    ></script>
   </head>
   <body
     ng-cloak

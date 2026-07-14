@@ -1,0 +1,18 @@
+schema: spec-driven
+
+context: |
+  Trustroots is a community networking web application.
+  Tech stack: Node.js 16, Express, MongoDB/Mongoose, AngularJS 1.x, and npm.
+  The repository is an active long-lived codebase; make focused, compatible
+  changes and follow the existing module structure and coding conventions.
+  User-facing text uses British spelling. Do not change established code
+  identifiers, CSS properties, URLs, or third-party names merely to alter spelling.
+
+rules:
+  proposal:
+    - Identify the affected modules and any user-facing behaviour change.
+    - State compatibility, data migration, and deployment implications when relevant.
+  tasks:
+    - Include appropriate server and client test coverage.
+    - Include an end-to-end test for new functionality unless it is clearly unsuitable.
+    - Do not reduce test coverage thresholds or remove end-to-end coverage without an equivalent replacement.

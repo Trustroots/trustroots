@@ -17,6 +17,19 @@ const User = mongoose.model('User');
 
 const SEARCH_USERS_LIMIT = 50;
 const SEARCH_STRING_LIMIT = 3;
+const ADMIN_LISTABLE_ROLES = [
+  'admin',
+  'shadowban',
+  'suspended',
+  'volunteer-alumni',
+  'volunteer',
+];
+const ADMIN_CHANGEABLE_ROLES = [
+  'shadowban',
+  'suspended',
+  'volunteer-alumni',
+  'volunteer',
+];
 
 // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
 const USER_LIST_FIELDS = [
@@ -128,10 +141,8 @@ exports.searchUsers = (req, res) => {
 exports.listUsersByRole = (req, res) => {
   const role = _.get(req, ['body', 'role']);
 
-  const validRoles = User.schema.path('roles').caster.enumValues || [];
-
   // Allowed roles to query
-  if (!role || !validRoles.includes(role)) {
+  if (!role || !ADMIN_LISTABLE_ROLES.includes(role)) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
@@ -142,6 +153,7 @@ exports.listUsersByRole = (req, res) => {
   })
     .select(USER_LIST_FIELDS)
     .sort('username displayName')
+    .limit(SEARCH_USERS_LIMIT)
     .exec((err, users) => {
       if (err) {
         return res.status(400).send({
@@ -222,6 +234,22 @@ exports.getUser = async (req, res) => {
       reference: 'yes',
     }).count();
 
+    const threadReferences = await ReferenceThread.find({
+      $or: [{ userFrom: userId }, { userTo: userId }],
+    })
+      .sort('-created')
+      .limit(100)
+      .populate({
+        path: 'userFrom',
+        select: 'username displayName _id',
+        model: 'User',
+      })
+      .populate({
+        path: 'userTo',
+        select: 'username displayName _id',
+        model: 'User',
+      });
+
     const contacts = await Contact.find({
       $or: [{ userFrom: userId }, { userTo: userId }],
     })
@@ -248,6 +276,7 @@ exports.getUser = async (req, res) => {
       threadReferencesSentNo,
       threadReferencesReceivedNo,
       threadReferencesReceivedYes,
+      threadReferences: threadReferences || [],
       threadReferencesSentYes,
     });
   } catch (err) {
@@ -266,10 +295,7 @@ exports.changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
 
-  const validRoles = User.schema.path('roles').caster.enumValues || [];
-
-  // Allowed new roles — for security reasons never allow `admin` role to be changed programmatically.
-  if (!role || role === 'admin' || !validRoles.includes(role)) {
+  if (!role || !ADMIN_CHANGEABLE_ROLES.includes(role)) {
     return res.status(400).send({
       message: 'Invalid role.',
     });

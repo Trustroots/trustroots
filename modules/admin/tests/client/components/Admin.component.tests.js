@@ -3,37 +3,240 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import Admin from '@/modules/admin/client/components/Admin.component';
+import * as dashboardApi from '@/modules/admin/client/api/admin-dashboard.api';
+import * as usersApi from '@/modules/admin/client/api/users.api';
+
+jest.mock('@/modules/admin/client/api/admin-dashboard.api');
+jest.mock('@/modules/admin/client/api/users.api');
+
+function expectLink(name, href) {
+  expect(
+    screen
+      .getAllByRole('link')
+      .filter(link => (link.textContent || '').trim().startsWith(name))
+      .some(link => link.getAttribute('href') === href),
+  ).toBe(true);
+}
+
+function deferred() {
+  let resolve;
+  let reject;
+  const promise = new Promise((promiseResolve, promiseReject) => {
+    resolve = promiseResolve;
+    reject = promiseReject;
+  });
+
+  return { promise, resolve, reject };
+}
 
 afterEach(() => {
+  jest.clearAllMocks();
   window.history.pushState({}, '', '/');
 });
 
 describe('<Admin />', () => {
-  it('renders main links and logout reminder', () => {
+  beforeEach(() => {
+    dashboardApi.getAdminDashboard.mockResolvedValue({
+      negativeReviews: [
+        {
+          _id: 'review-1',
+          created: '2026-06-20T12:00:00.000Z',
+          userFrom: {
+            _id: 'user-from-1',
+            displayName: 'Sender',
+            username: 'sender',
+          },
+          userTo: {
+            _id: 'user-to-1',
+            displayName: 'Receiver',
+            username: 'receiver',
+          },
+        },
+      ],
+      topMessengers: [
+        {
+          messageCount: 12,
+          user: {
+            _id: 'user-1',
+            displayName: 'Alice',
+            username: 'alice',
+          },
+        },
+      ],
+    });
+  });
+
+  it('renders grouped admin workflow links', async () => {
     window.history.pushState({}, '', '/admin');
     render(<Admin />);
 
-    expect(screen.getByText(/Welcome, friend!/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Team Guide' })).toHaveAttribute(
-      'href',
-      'https://team.trustroots.org/',
-    );
-    expect(screen.getByRole('link', { name: 'Support queue' })).toHaveAttribute(
-      'href',
-      'https://trustroots.zendesk.com/inbox/',
-    );
+    expect(screen.queryByText(/Welcome, friend!/)).not.toBeInTheDocument();
     expect(
-      screen.getByText('Remember to logout on public computers!'),
+      screen.queryByRole('link', { name: 'Team Guide' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Search members' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Name, username or email'),
     ).toBeInTheDocument();
+
+    [
+      'Members',
+      'Moderation',
+      'Community/admin tools',
+      'External tools',
+    ].forEach(heading => {
+      expect(
+        screen.getByRole('heading', { name: heading }),
+      ).toBeInTheDocument();
+    });
+
+    expect(
+      screen.queryByRole('link', { name: 'Search members' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Member report card' }),
+    ).not.toBeInTheDocument();
+    expectLink('Member threads', '/admin/threads');
+    expectLink('Messages', '/admin/messages');
+    expectLink('Reference threads', '/admin/reference-threads');
+    expectLink('Audit log', '/admin/audit-log');
+    expectLink('Acquisition stories', '/admin/acquisition-stories');
+    expectLink(
+      'Acquisition story analysis',
+      '/admin/acquisition-stories/analysis',
+    );
+    expectLink('Newsletter', '/admin/newsletter');
+    expectLink('Support queue', 'https://trustroots.zendesk.com/inbox/');
+    expectLink('Blog admin', 'https://ideas.trustroots.org/wp-admin/');
+    expectLink(
+      'Newsletter admin',
+      'https://ideas.trustroots.org/wp-admin/admin.php?page=mailpoet-newsletters',
+    );
+    expectLink('Statistics', 'https://grafana.trustroots.org/');
+
+    expect(
+      screen.queryByText('Remember to logout on public computers!'),
+    ).not.toBeInTheDocument();
+    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Top 10 Messengers Last Week',
+      }),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('12 messages')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Last 5 Negative Reviews' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'sender (Sender)' }),
+    ).toHaveAttribute('href', '/admin/user?id=user-from-1');
   });
 
-  it('renders every known admin destination', () => {
+  it('shows an error when dashboard activity cannot be loaded', async () => {
+    dashboardApi.getAdminDashboard.mockRejectedValueOnce(new Error('failed'));
+
     render(<Admin />);
 
-    ['Member report card', 'Search members', 'Messages', 'Threads'].forEach(
-      label => {
-        expect(screen.getByRole('link', { name: label })).toBeInTheDocument();
-      },
+    expect(
+      await screen.findByText('Could not load dashboard activity.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('No messages last week.')).toBeInTheDocument();
+    expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
+  });
+
+  it('renders dashboard rows with missing optional data', async () => {
+    dashboardApi.getAdminDashboard.mockResolvedValueOnce({
+      negativeReviews: [
+        {
+          _id: 'review-with-thread',
+          thread: 'thread-without-users',
+        },
+        {
+          _id: 'review-with-invalid-date',
+          created: 'not-a-date',
+          thread: 'thread-with-invalid-date',
+          userFrom: {
+            displayName: 'Missing ID sender',
+          },
+          userTo: {
+            _id: 'user-to-2',
+            username: 'receiver-two',
+          },
+        },
+        {
+          _id: 'review-link-with-thread',
+          created: 'not-a-date',
+          thread: 'linked-thread-with-invalid-date',
+          userFrom: {
+            _id: 'user-from-2',
+            username: 'sender-two',
+          },
+          userTo: {
+            _id: 'user-to-3',
+            username: 'receiver-three',
+          },
+        },
+      ],
+      topMessengers: [
+        {
+          messageCount: 1,
+          user: null,
+        },
+      ],
+    });
+
+    render(<Admin />);
+
+    expect(await screen.findByText('1 messages')).toBeInTheDocument();
+    expect(await screen.findByText('thread-without-users')).toBeInTheDocument();
+    expect(screen.getByText('thread-with-invalid-date')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'linked-thread-with-invalid-date' }),
+    ).toHaveAttribute(
+      'href',
+      '/admin/messages?userId1=user-from-2&userId2=user-to-3',
     );
+    expect(
+      screen.queryByRole('link', { name: 'thread-without-users' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses empty dashboard lists when the API omits them', async () => {
+    dashboardApi.getAdminDashboard.mockResolvedValueOnce({});
+
+    render(<Admin />);
+
+    expect(
+      await screen.findByText('No messages last week.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
+  });
+
+  it('does not update dashboard state after an unmount', async () => {
+    const pending = deferred();
+    dashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
+
+    const { unmount } = render(<Admin />);
+
+    unmount();
+    pending.resolve({ negativeReviews: [], topMessengers: [] });
+    await pending.promise;
+
+    expect(dashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not update dashboard error after an unmount', async () => {
+    const pending = deferred();
+    dashboardApi.getAdminDashboard.mockReturnValueOnce(pending.promise);
+
+    const { unmount } = render(<Admin />);
+
+    unmount();
+    pending.reject(new Error('failed'));
+    await expect(pending.promise).rejects.toThrow('failed');
+
+    expect(dashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
   });
 });

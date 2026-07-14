@@ -33,10 +33,9 @@ describe('<AdminAuditLog />', () => {
     render(<AdminAuditLog />);
 
     expect(await screen.findByText('/api/admin/users')).toBeInTheDocument();
-    expect(screen.getByText('Admin Alice')).toHaveAttribute(
-      'href',
-      '/admin/user?id=111111111111111111111111',
-    );
+    expect(
+      screen.getByRole('link', { name: 'admin-alice (Admin Alice)' }),
+    ).toHaveAttribute('href', '/admin/user?id=111111111111111111111111');
     expect(screen.getByText(/127.0.0.1/)).toBeInTheDocument();
     expect(screen.getByText(/"reason": "support"/)).toBeInTheDocument();
     expect(screen.getByText(/"id": "member-1"/)).toBeInTheDocument();

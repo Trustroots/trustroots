@@ -2,6 +2,11 @@ import React from 'react';
 import Board from '@/modules/core/client/components/Board.js';
 import { Trans, useTranslation } from 'react-i18next';
 
+const mediaRepositoryUrl = 'https://github.com/Trustroots/community';
+const mediaPathUrl = `${mediaRepositoryUrl}/tree/master/media`;
+const mediaRawUrl =
+  'https://raw.githubusercontent.com/Trustroots/community/master/media';
+
 export default function Media() {
   const { t } = useTranslation('pages');
 
@@ -30,7 +35,7 @@ export default function Media() {
               <br />
               <p className="lead">
                 {t(
-                  'Trustroots is a new non-profit hospitality exchange community.',
+                  'Trustroots is a non-profit hospitality exchange community.',
                 )}
               </p>
             </div>
@@ -297,19 +302,19 @@ export default function Media() {
             <h3 id="files">{t('Files')}</h3>
             <ul className="list-unstyled">
               <li>
-                <a href="https://github.com/Trustroots/media/blob/master/style-guide/Trustroots-Styleguide.pdf">
+                <a
+                  href={`${mediaRepositoryUrl}/blob/master/media/style-guide/Trustroots-Styleguide.pdf`}
+                >
                   {t('Style guide')}
                 </a>
               </li>
               <li>
-                <a href="https://github.com/Trustroots/media/tree/master/screenshots">
-                  {t('Screenshots')}
-                </a>
+                <a href={`${mediaPathUrl}/screenshots`}>{t('Screenshots')}</a>
               </li>
               <li>
                 <Trans t={t} ns="pages">
                   Download all media files as a{' '}
-                  <a href="https://github.com/Trustroots/media/archive/master.zip">
+                  <a href={`${mediaRepositoryUrl}/archive/master.zip`}>
                     zip archive
                   </a>
                 </Trans>
@@ -341,7 +346,7 @@ export default function Media() {
                       target="_top"
                       type="image/png"
                       download="trustroots-logo.png"
-                      href="https://raw.githubusercontent.com/Trustroots/media/master/logo/logo.png"
+                      href={`${mediaRawUrl}/logo/logo.png`}
                     >
                       PNG
                     </a>{' '}
@@ -354,7 +359,7 @@ export default function Media() {
                       target="_top"
                       type="application/postscript"
                       download="trustroots-logo.ai"
-                      href="https://raw.githubusercontent.com/Trustroots/media/master/logo/Vector/Colors/logo.ai"
+                      href={`${mediaRawUrl}/logo/Vector/Colors/logo.ai`}
                     >
                       AI
                     </a>
@@ -364,7 +369,7 @@ export default function Media() {
                       target="_top"
                       type="application/eps"
                       download="trustroots-logo.eps"
-                      href="https://raw.githubusercontent.com/Trustroots/media/master/logo/Vector/Colors/logo.eps"
+                      href={`${mediaRawUrl}/logo/Vector/Colors/logo.eps`}
                     >
                       EPS
                     </a>
@@ -374,15 +379,13 @@ export default function Media() {
                       target="_top"
                       type="image/svg+xml"
                       download="trustroots-logo.svg"
-                      href="https://raw.githubusercontent.com/Trustroots/media/master/logo/Vector/Colors/logo.svg"
+                      href={`${mediaRawUrl}/logo/Vector/Colors/logo.svg`}
                     >
                       SVG
                     </a>
                   </li>
                   <li>
-                    <a href="https://github.com/Trustroots/media/tree/master/logo">
-                      {t('More…')}
-                    </a>
+                    <a href={`${mediaPathUrl}/logo`}>{t('More…')}</a>
                   </li>
                 </ul>
               </div>

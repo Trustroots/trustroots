@@ -40,6 +40,10 @@ module.exports = {
     title: 'Trustroots Development version',
     description: 'Trustroots development version.',
   },
+  umami: {
+    scriptSrc: 'https://1p.trustroots.org/script.js',
+    websiteId: '6c518160-cd10-4233-a3e4-4491ee387a01',
+  },
   // Configuration to work with default MailDev dev setup
   // https://github.com/djfarrelly/MailDev
   mailer: {

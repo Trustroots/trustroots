@@ -8,6 +8,8 @@ const {
 const {
   captureEndOfTestScreenshot,
   sanitizeFileName,
+  useElementScreenshot,
+  useViewportScreenshot,
 } = require('./screenshot-capture');
 
 const coverageDir = path.join(__dirname, '../../../coverage/e2e/js-raw');
@@ -48,4 +50,6 @@ module.exports = {
   expect,
   annotateFeature,
   featureAnnotation,
+  useElementScreenshot,
+  useViewportScreenshot,
 };

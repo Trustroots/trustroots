@@ -3,43 +3,52 @@ import React, { useState } from 'react';
 
 // Internal dependencies
 import { getMessages } from '../api/messages.api';
+import { searchUsers } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
+import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
 import Json from './Json.component';
 import UserLink from './UserLink.component';
+import {
+  MONGO_OBJECT_ID_LENGTH,
+  resolveExactMemberId,
+} from './userSearch.helpers';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
-
-// Mongo ObjectId is always 24 chars long
-const MONGO_OBJECT_ID_LENGTH = 24;
 
 export default function AdminMessages() {
   // @TODO: replace with useLocation of react-router or similar.
   const urlParams = new URLSearchParams(window.location.search);
   const urlUserId1 = urlParams.get('userId1');
   const urlUserId2 = urlParams.get('userId2');
-  const initialUserId1 =
-    urlUserId1 && urlUserId1.length === MONGO_OBJECT_ID_LENGTH
-      ? urlUserId1
-      : '';
-  const initialUserId2 =
-    urlUserId2 && urlUserId2.length === MONGO_OBJECT_ID_LENGTH
-      ? urlUserId2
-      : '';
+  const initialMember1 = urlUserId1 || '';
+  const initialMember2 = urlUserId2 || '';
 
   const [queried, setQueried] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [userId1, setUserId1] = useState(initialUserId1);
-  const [userId2, setUserId2] = useState(initialUserId2);
+  const [referenceThreads, setReferenceThreads] = useState([]);
+  const [member1, setMember1] = useState(initialMember1);
+  const [member2, setMember2] = useState(initialMember2);
 
   async function onSubmit(event) {
     event.preventDefault();
-    if (
-      userId1 &&
-      userId2 &&
-      userId1.length === MONGO_OBJECT_ID_LENGTH &&
-      userId2.length === MONGO_OBJECT_ID_LENGTH
-    ) {
-      const messages = await getMessages(userId1, userId2);
-      setMessages(messages);
+    if (member1 && member2) {
+      const userId1 = await resolveExactMemberId(member1, searchUsers, [
+        'username',
+      ]);
+      const userId2 = await resolveExactMemberId(member2, searchUsers, [
+        'username',
+      ]);
+      if (!userId1 || !userId2) {
+        setMessages([]);
+        setReferenceThreads([]);
+        setQueried(true);
+        return;
+      }
+
+      const result = await getMessages(userId1, userId2);
+      setMessages(Array.isArray(result) ? result : result.messages || []);
+      setReferenceThreads(
+        Array.isArray(result) ? [] : result.referenceThreads || [],
+      );
       setQueried(true);
     }
   }
@@ -52,33 +61,28 @@ export default function AdminMessages() {
 
         <form className="form-inline" onSubmit={event => onSubmit(event)}>
           <input
-            aria-label="Member 1 ID"
+            aria-label="Member 1 username or ID"
             className="form-control input-lg"
-            maxLength={MONGO_OBJECT_ID_LENGTH}
-            name="userId1"
-            onChange={({ target: { value } }) => setUserId1(value)}
-            placeholder="Member 1 ID"
+            name="member1"
+            onChange={({ target: { value } }) => setMember1(value)}
+            placeholder="Member 1 username or ID"
             size={MONGO_OBJECT_ID_LENGTH + 2}
             type="text"
-            value={userId1}
+            value={member1}
           />
           <input
-            aria-label="Member 2 ID"
+            aria-label="Member 2 username or ID"
             className="form-control input-lg"
-            maxLength={MONGO_OBJECT_ID_LENGTH}
-            name="userId2"
-            onChange={({ target: { value } }) => setUserId2(value)}
-            placeholder="Member 2 ID"
+            name="member2"
+            onChange={({ target: { value } }) => setMember2(value)}
+            placeholder="Member 2 username or ID"
             size={MONGO_OBJECT_ID_LENGTH + 2}
             type="text"
-            value={userId2}
+            value={member2}
           />
           <button
             className="btn btn-lg btn-default"
-            disabled={
-              userId1.length !== MONGO_OBJECT_ID_LENGTH ||
-              userId2.length !== MONGO_OBJECT_ID_LENGTH
-            }
+            disabled={!member1.trim() || !member2.trim()}
             type="submit"
           >
             Read
@@ -88,7 +92,7 @@ export default function AdminMessages() {
         {!queried && messages.length === 0 && (
           <p>
             <em className="text-muted">
-              {userId1 && userId2 ? 'Press "Read"' : 'Choose two members…'}
+              {member1 && member2 ? 'Press "Read"' : 'Choose two members…'}
             </em>
           </p>
         )}
@@ -100,6 +104,19 @@ export default function AdminMessages() {
               {' & '}
               <UserLink user={messages[0].userTo} />
             </h3>
+            {referenceThreads.length > 0 && (
+              <div className="alert alert-warning">
+                <strong>Thread votes</strong>
+                <ul>
+                  {referenceThreads.map(referenceThread => (
+                    <AdminReferenceVoteItem
+                      key={referenceThread._id}
+                      referenceThread={referenceThread}
+                    />
+                  ))}
+                </ul>
+              </div>
+            )}
             {messages.map(message => {
               const { _id } = message;
               return (

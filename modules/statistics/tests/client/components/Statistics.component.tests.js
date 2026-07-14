@@ -34,7 +34,10 @@ describe('<Statistics />', () => {
           maybe: 500,
           maybePercentage: 20,
         },
-        connections: [{ network: 'facebook', count: 100, percentage: 10 }],
+        connections: [
+          { network: 'facebook', count: 100, percentage: 10 },
+          { network: 'nostr', count: 12, percentage: 1 },
+        ],
         newsletter: { percentage: 30, count: 3000 },
       },
     });
@@ -47,6 +50,7 @@ describe('<Statistics />', () => {
     expect(
       screen.getByRole('link', { name: 'Subscribe to newsletter' }),
     ).toBeInTheDocument();
+    expect(screen.getByText('Nostroots 1%')).toBeInTheDocument();
   });
 
   it('hides the newsletter subscribe link for unauthenticated visitors', async () => {

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
+import { nip19 } from 'nostr-tools';
 
 // Internal dependencies
 import {
@@ -12,9 +13,26 @@ import {
 } from '../utils/networks';
 import { getGender } from '@/modules/core/client/utils/user_info';
 import LanguageList from './LanguageList';
+import ProfileNostrBadge from './ProfileNostrBadge.component';
+
+function npubToHex(npub) {
+  try {
+    const { type, data } = nip19.decode(npub);
+    return type === 'npub' ? data : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ProfileViewBasics({ profile }) {
   const { t } = useTranslation('users');
+  const nostrIdentifier =
+    profile.username && profile.nostrNpub
+      ? `${profile.username}@trustroots.org`
+      : profile.nostrNpub;
+  const nostrDescriptionId = profile.username
+    ? `nostr-address-note-${profile.username}`
+    : undefined;
 
   const getBirthdate = birthdate =>
     t('{{birthdate, age}} years.', { birthdate: new Date(birthdate) });
@@ -109,13 +127,22 @@ export default function ProfileViewBasics({ profile }) {
         {profile.nostrNpub && (
           <li className="social-profile">
             <i className="social-profile-icon icon-fw icon-lg"></i>
+            <span className="text-muted">{getNetworkName('nostr')}</span>{' '}
             <a
               rel="noopener"
               className="social-profile-handle"
-              href={`https://njump.me/${profile.nostrNpub}`}
+              href={`https://nos.trustroots.org/v0/#profile/${encodeURIComponent(
+                nostrIdentifier,
+              )}`}
+              aria-describedby={nostrDescriptionId}
             >
-              nostr npub
+              {profile.username ? nostrIdentifier : 'nostr npub'}
             </a>
+            {profile.username && (
+              <span id={nostrDescriptionId} className="sr-only">
+                {t('Nostr address, not an email address')}
+              </span>
+            )}
           </li>
         )}
         {/*
@@ -232,6 +259,11 @@ export default function ProfileViewBasics({ profile }) {
       {renderMemberSince(profile.created)}
       {/* seen online */}
       {renderSeenOnline(profile.seen)}
+
+      {/* nostroots badge */}
+      {profile.nostrNpub && (
+        <ProfileNostrBadge npubHex={npubToHex(profile.nostrNpub)} />
+      )}
 
       {/* location living */}
       {profile.locationLiving && renderLocationLiving(profile.locationLiving)}

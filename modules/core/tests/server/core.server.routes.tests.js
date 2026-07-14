@@ -61,6 +61,26 @@ describe('Core CRUD tests', function () {
         });
     });
 
+    it('Responses should allow the Umami analytics origin', function (done) {
+      agent
+        .get('/')
+        .expect('content-security-policy', /https:\/\/1p\.trustroots\.org/)
+        .end(function (err) {
+          return done(err);
+        });
+    });
+
+    it('Responses should load Umami analytics', function (done) {
+      agent
+        .get('/')
+        .expect('Content-Type', /html/)
+        .expect(/https:\/\/1p\.trustroots\.org\/script\.js/)
+        .expect(new RegExp(`data-website-id="${config.umami.websiteId}"`))
+        .end(function (err) {
+          return done(err);
+        });
+    });
+
     it('should be able to receive CSP report with "application/json" accept header', function (done) {
       agent
         .post('/api/report-csp-violation')

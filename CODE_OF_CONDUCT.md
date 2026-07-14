@@ -20,7 +20,7 @@ Unacceptable behaviors include:
 - Trolling, insulting remarks, personal or political attacks
 - Harassment in any form
 - Sharing private information without consent
-- Any other unprofessional behavior
+- Any other unprofessional behaviour
 
 ## Our Duties
 
@@ -32,8 +32,6 @@ They can remove or edit content, or ban contributors if necessary, to maintain a
 
 This code applies to all project-related spaces and when representing the project or community elsewhere. This includes online and offline interactions and official channels of communication.
 
-
 ## Credits
 
 This code is based on the Contributor Covenant (version 1.4) from [contributor-covenant.org](https://www.contributor-covenant.org/version/1/4/code-of-conduct/).
-

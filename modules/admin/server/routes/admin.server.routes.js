@@ -7,6 +7,7 @@ const adminMessages = require('../controllers/admin.messages.server.controller')
 const adminPolicy = require('../policies/admin.server.policy');
 const adminThreads = require('../controllers/admin.threads.server.controller');
 const adminUsers = require('../controllers/admin.users.server.controller');
+const adminDashboard = require('../controllers/admin.dashboard.server.controller');
 const adminNotes = require('../controllers/admin.notes.server.controller');
 const adminReferenceThreads = require('../controllers/admin.reference-threads.server.controller');
 
@@ -25,6 +26,11 @@ module.exports = app => {
     .route('/api/admin/audit-log')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.list);
+
+  app
+    .route('/api/admin/dashboard')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminDashboard.getDashboard);
 
   app
     .route('/api/admin/messages')

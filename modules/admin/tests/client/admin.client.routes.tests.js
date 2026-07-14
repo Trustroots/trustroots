@@ -17,7 +17,7 @@ describe('Admin Route Tests', function () {
       template: '<admin></admin>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin',
     },
     {
@@ -26,7 +26,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-audit-log></admin-audit-log>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Audit log',
     },
     {
@@ -35,7 +35,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-acquisition-stories></admin-acquisition-stories>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Acquisition stories',
     },
     {
@@ -45,7 +45,7 @@ describe('Admin Route Tests', function () {
         '<admin-acquisition-stories-analysis></admin-acquisition-stories-analysis>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Acquisition stories analysis',
     },
     {
@@ -54,7 +54,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-messages></admin-messages>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Messages',
     },
     {
@@ -63,7 +63,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-threads></admin-threads>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Threads',
     },
     {
@@ -72,7 +72,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-search-users></admin-search-users>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Search users',
     },
     {
@@ -81,7 +81,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-user></admin-user>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - User',
     },
     {
@@ -90,7 +90,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-reference-threads></admin-reference-threads>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Reference threads',
     },
     {
@@ -99,7 +99,7 @@ describe('Admin Route Tests', function () {
       template: '<admin-newsletter></admin-newsletter>',
       requiresAuth: true,
       requiresRole: 'admin',
-      footerHidden: true,
+      footerVariant: 'admin',
       pageTitle: 'Admin - Newsletter',
     },
   ];
@@ -111,7 +111,7 @@ describe('Admin Route Tests', function () {
       template,
       requiresAuth,
       requiresRole,
-      footerHidden,
+      footerVariant,
       pageTitle,
     }) => {
       it(`configures ${name}`, function () {
@@ -121,7 +121,8 @@ describe('Admin Route Tests', function () {
         expect(state.template).toBe(template);
         expect(state.requiresAuth).toBe(requiresAuth);
         expect(state.requiresRole).toBe(requiresRole);
-        expect(state.footerHidden).toBe(footerHidden);
+        expect(state.footerHidden).toBeUndefined();
+        expect(state.footerVariant).toBe(footerVariant);
         expect(state.data).toMatchObject({ pageTitle });
       });
     },
