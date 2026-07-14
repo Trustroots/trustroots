@@ -1,7 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import MediumEditor from 'react-medium-editor';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
 
 const baseOptions = {
@@ -160,6 +166,12 @@ const baseOptions = {
   },
 };
 
+// react-medium-editor restores its selection every time it renders. Keeping the
+// editor out of React's update path while the member is typing prevents that
+// restoration from moving a caret in multi-line text or interrupting a native
+// input composition (for example, a dead key or compose key sequence).
+const StableMediumEditor = React.memo(MediumEditor);
+
 // medium-editor can give us a <br> at the end that we don't want
 function removeTrailingBr(value) {
   return value.replace(/<br><\/p>$/, '</p>');
@@ -172,37 +184,61 @@ export default function TrEditor({
   placeholder,
   text,
 }) {
-  const ref = React.createRef();
+  const ref = useRef(null);
+  const onChangeRef = useRef(onChange);
+  const onCtrlEnterRef = useRef(onCtrlEnter);
+  const latestEditorText = useRef(text);
+  const [editorText, setEditorText] = useState(text);
   const { t } = useTranslation('core');
+
+  onChangeRef.current = onChange;
+  onCtrlEnterRef.current = onCtrlEnter;
+
+  useEffect(() => {
+    // Input emitted by MediumEditor has already changed its own DOM. Passing
+    // that same text back into react-medium-editor makes it save and restore
+    // the selection, which corrupts multi-line cursor positions and IME input.
+    if (text !== latestEditorText.current) {
+      latestEditorText.current = text;
+      setEditorText(text);
+    }
+  }, [text]);
 
   useEffect(() => {
     const { medium } = ref.current;
-    const onEnter = event => event.ctrlKey && onCtrlEnter(event);
+    const onEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
     medium.subscribe('editableKeydownEnter', onEnter);
     return () => {
-      // the onCtrlEnter that gets passed through will change quite a lot as it
-      // probably gets redefined over and over with different bound state
-      // this means it'll actually subscribe/unsubscribe per keypress...
-      // seems a bit much, but that's how these react hooks work!
       medium.unsubscribe('editableKeydownEnter', onEnter);
     };
-  }, [onCtrlEnter]);
+  }, []);
 
-  const options = {
-    // https://github.com/yabwe/medium-editor#placeholder-options
-    placeholder: {
-      hideOnClick: true,
-      text: placeholder ? placeholder : t('Type your text'),
-    },
-    ...baseOptions,
-  };
+  const options = useMemo(
+    () => ({
+      // https://github.com/yabwe/medium-editor#placeholder-options
+      placeholder: {
+        hideOnClick: true,
+        text: placeholder ? placeholder : t('Type your text'),
+      },
+      ...baseOptions,
+    }),
+    [placeholder, t],
+  );
 
-  const editorProps = { id, text, options, className: 'tr-editor' };
+  const handleChange = useCallback(value => {
+    const normalisedValue = removeTrailingBr(value);
+    latestEditorText.current = normalisedValue;
+    onChangeRef.current(normalisedValue);
+  }, []);
+
   return (
-    <MediumEditor
+    <StableMediumEditor
       ref={ref}
-      onChange={value => onChange(removeTrailingBr(value))}
-      {...editorProps}
+      id={id}
+      text={editorText}
+      options={options}
+      className="tr-editor"
+      onChange={handleChange}
     />
   );
 }
