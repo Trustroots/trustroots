@@ -111,6 +111,10 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/',
     );
+    expect(screen.getByRole('link', { name: 'Wiki' })).toHaveAttribute(
+      'href',
+      'https://wiki.trustroots.org/',
+    );
     expect(
       screen.queryByRole('link', { name: 'Contribute' }),
     ).not.toBeInTheDocument();

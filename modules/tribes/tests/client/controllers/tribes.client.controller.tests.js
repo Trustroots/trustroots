@@ -36,6 +36,10 @@ describe('TribeController', function () {
     vm.goBack();
     expect($state.go).toHaveBeenCalledWith('circles.list');
     expect(vm.facebookIsActibe).toBe(true);
+    expect(vm.circleWikiUrl({ slug: 'punks' })).toBe(
+      'https://wiki.trustroots.org/en/Punks',
+    );
+    expect(vm.circleWikiUrl()).toBe('');
 
     $rootScope.$broadcast('tribeUpdated', { slug: 'updated-circle' });
     expect(vm.tribe).toEqual({ slug: 'updated-circle' });

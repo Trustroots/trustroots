@@ -171,6 +171,10 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('Media'),
               },
               {
+                href: 'https://wiki.trustroots.org/',
+                label: t('Wiki'),
+              },
+              {
                 href: '/privacy',
                 label: t('Privacy'),
               },

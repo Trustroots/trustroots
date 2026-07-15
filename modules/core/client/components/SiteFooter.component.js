@@ -59,6 +59,9 @@ function FooterLinks() {
         <a href="/faq">FAQ</a>
       </li>
       <li>
+        <a href="https://wiki.trustroots.org/">Wiki</a>
+      </li>
+      <li>
         <a href="/privacy">Privacy</a>
       </li>
       <li>

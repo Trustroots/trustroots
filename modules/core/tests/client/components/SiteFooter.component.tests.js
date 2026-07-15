@@ -23,6 +23,7 @@ describe('<SiteFooter />', () => {
       ['Volunteering', '/volunteering'],
       ['Rules', '/rules'],
       ['FAQ', '/faq'],
+      ['Wiki', 'https://wiki.trustroots.org/'],
       ['Privacy', '/privacy'],
       ['Contact', '/contact'],
     ].forEach(([name, href]) => {
