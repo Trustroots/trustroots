@@ -41,6 +41,9 @@ services:
 
   mongodb:
     image: mongo:4.4
+    # Keep the database within Docker Desktop's available memory when using a
+    # realistic local data dump.
+    command: ['mongod', '--bind_ip_all', '--wiredTigerCacheSizeGB', '0.5']
     container_name: trustroots-devcontainer-db
     volumes:
       - mongodb:/data/db
