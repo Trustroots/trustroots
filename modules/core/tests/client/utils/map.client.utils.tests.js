@@ -1,4 +1,7 @@
-import { isWebGLSupported } from '@/modules/core/client/utils/map';
+import {
+  getRasterMapTiles,
+  isWebGLSupported,
+} from '@/modules/core/client/utils/map';
 
 describe('map utilities', () => {
   let createElement;
@@ -35,6 +38,23 @@ describe('map utilities', () => {
     createElement.mockReturnValue({ getContext: () => null });
 
     expect(isWebGLSupported()).toBe(false);
+  });
+
+  it('uses Mapbox Streets raster tiles when a public token is configured', () => {
+    expect(getRasterMapTiles('mapbox-public-token')).toEqual({
+      options: expect.objectContaining({
+        accessToken: 'mapbox-public-token',
+        maxZoom: 19,
+      }),
+      url: 'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}?access_token={accessToken}',
+    });
+  });
+
+  it('falls back to OpenStreetMap raster tiles without a Mapbox token', () => {
+    expect(getRasterMapTiles(null)).toEqual({
+      options: expect.objectContaining({ maxZoom: 19 }),
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    });
   });
 
   it('returns false outside a browser', () => {

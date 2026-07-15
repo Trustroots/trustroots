@@ -71,6 +71,11 @@ describe('<Statistics />', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Nostroots 1%')).toBeInTheDocument();
     expect(screen.getByText('Real-life connections')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'A lower bound: most people do not share an experience, and only experiences shared since 2016 are counted.',
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText('89% recommended overall')).toBeInTheDocument();
     expect(
       screen.getByText('83% recommended in the last 90 days'),
