@@ -575,6 +575,13 @@ describe('Service: email', function () {
       jobs[0].data.subject.should.equal(
         'Confirm removing your Trustroots profile',
       );
+      jobs[0].data.html.should.containEql('Review account deletion');
+      jobs[0].data.html.should.containEql(
+        'Your account will not be deleted unless you confirm there.',
+      );
+      jobs[0].data.text.should.containEql(
+        'Your account will not be deleted unless you confirm there.',
+      );
       jobs[0].data.text.should.containEql('/remove/remove-token');
       done();
     });

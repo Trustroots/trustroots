@@ -117,7 +117,8 @@ test.describe.serial('account settings feature coverage', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'account.profile-removal', [
       'Removal request sends a deterministic confirmation email/stub.',
-      'Valid removal token removes the profile.',
+      'Opening a valid removal link preserves the profile.',
+      'Explicit confirmation with a valid removal token removes the profile.',
       'Invalid removal token is rejected.',
     ]);
 
@@ -135,10 +136,24 @@ test.describe.serial('account settings feature coverage', () => {
     const removeProfileToken = storedUser.removeProfileToken;
     expect(removeProfileToken).toBeTruthy();
 
-    const removed = await page.request.delete(
-      `/api/users/remove/${removeProfileToken}`,
+    await page.goto(`/remove/${removeProfileToken}`);
+    const removeButton = page.getByRole('button', {
+      name: 'Permanently delete my account',
+    });
+    await expect(removeButton).toBeVisible();
+
+    const userBeforeConfirmation = await findUserByUsername(user.username);
+    expect(userBeforeConfirmation).not.toBeNull();
+
+    const removed = page.waitForResponse(
+      response =>
+        response.url().includes(`/api/users/remove/${removeProfileToken}`) &&
+        response.request().method() === 'DELETE',
     );
-    expect(removed.ok()).toBeTruthy();
+    await removeButton.click();
+    expect((await removed).ok()).toBeTruthy();
+
+    await expect(page.getByText('Your profile was removed.')).toBeVisible();
 
     const deletedUser = await findUserByUsername(user.username);
     expect(deletedUser).toBeNull();

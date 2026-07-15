@@ -25,9 +25,11 @@ describe('RemoveProfileController', function () {
       };
     };
 
-    Users.deleteWithToken = function () {
-      return removeProfilePromise();
-    };
+    Users.deleteWithToken = jasmine
+      .createSpy('deleteWithToken')
+      .and.callFake(function () {
+        return removeProfilePromise();
+      });
 
     angular.mock.module(AppConfig.appModuleName, function ($provide) {
       $provide.value('Users', Users);
@@ -65,9 +67,25 @@ describe('RemoveProfileController', function () {
     });
   }
 
-  it('marks profile removal as success when deleteWithToken resolves', function () {
+  it('shows the review page without deleting the profile', function () {
     removeProfilePromise = () => $q.resolve();
     const vm = createController();
+
+    $rootScope.$apply();
+
+    expect(vm.state).toBe('review');
+    expect(Users.deleteWithToken).not.toHaveBeenCalled();
+    expect(messageCenterService.add).not.toHaveBeenCalled();
+  });
+
+  it('removes the profile after explicit confirmation', function () {
+    removeProfilePromise = () => $q.resolve();
+    const vm = createController();
+
+    vm.removeProfile();
+    expect(vm.state).toBe('loading');
+    expect(Users.deleteWithToken).toHaveBeenCalledTimes(1);
+    expect(Users.deleteWithToken).toHaveBeenCalledWith('remove-token');
 
     $rootScope.$apply();
 
@@ -75,13 +93,16 @@ describe('RemoveProfileController', function () {
     expect(messageCenterService.add).not.toHaveBeenCalled();
   });
 
-  it('marks profile removal as failure when deleteWithToken rejects', function () {
+  it('marks profile removal as failure when explicit confirmation rejects', function () {
     removeProfilePromise = () => $q.reject();
     const vm = createController();
 
+    vm.removeProfile();
     $rootScope.$apply();
 
     expect(vm.state).toBe('failure');
+    expect(Users.deleteWithToken).toHaveBeenCalledTimes(1);
+    expect(Users.deleteWithToken).toHaveBeenCalledWith('remove-token');
   });
 
   it('stores confirmation message when resend confirmation succeeds', function () {
