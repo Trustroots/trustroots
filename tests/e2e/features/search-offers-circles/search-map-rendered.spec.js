@@ -291,14 +291,18 @@ test.describe('rendered search map feature coverage', () => {
         return getContext.call(this, type, ...args);
       };
     });
-    await context.route('**://*.tile.openstreetmap.org/**', route =>
+    const fulfilRasterTile = route =>
       route.fulfill({
         body: Buffer.from(
           'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
           'base64',
         ),
         contentType: 'image/png',
-      }),
+      });
+    await context.route('**://*.tile.openstreetmap.org/**', fulfilRasterTile);
+    await context.route(
+      '**://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/**',
+      fulfilRasterTile,
     );
 
     await page.goto('/search');
@@ -317,12 +321,17 @@ test.describe('rendered search map feature coverage', () => {
       { timeout: 30000 },
     );
 
-    await page.locator('.leaflet-interactive').last().click();
-    await expect(
-      page
-        .locator('.search-sidebar-results .search-result')
-        .filter({ hasText: /E2E offline map host offer/i }),
-    ).toBeVisible();
+    // The two seeded offers overlap at this zoom. Dispatch to the host marker
+    // directly and verify that the fallback requests its offer details.
+    const offerRequest = page.waitForRequest(
+      '**/api/offers/665100000000000000000001**',
+    );
+    await page
+      .locator('.leaflet-interactive[fill="#58ba58"]')
+      .dispatchEvent('click');
+    expect((await offerRequest).url()).toContain(
+      '/api/offers/665100000000000000000001',
+    );
   });
 
   test('clicking a pin cluster zooms the map in to expand it', async ({
@@ -408,22 +417,30 @@ test.describe('rendered search map feature coverage', () => {
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'Mobile maps expose a Community Notes toggle.',
-      'The toggle reflects the default-enabled Community Notes setting.',
+      'Mobile maps expose Community Notes in the Filters panel.',
+      'The filter reflects the default-enabled Community Notes setting.',
     ]);
 
     await page.setViewportSize({ width: 375, height: 667 });
     await installNostrRelayStub(page);
     await page.goto('/search');
 
-    const notesToggle = page.getByRole('button', {
-      name: 'Toggle Community Notes',
-    });
-    await expect(notesToggle).toBeVisible();
-    await expect(notesToggle).toHaveAttribute('aria-pressed', 'true');
+    const filterLabel = page
+      .locator('.search-sidebar-filters label')
+      .filter({ hasText: 'Community Notes' });
+    const checkbox = filterLabel.locator('input[type="checkbox"]');
 
-    await notesToggle.click();
-    await expect(notesToggle).toHaveAttribute('aria-pressed', 'false');
+    await expect(filterLabel).toHaveCount(1);
+    await page
+      .locator('.search-map-meta button')
+      .filter({ hasText: 'Filters' })
+      .click();
+
+    await expect(filterLabel).toBeVisible();
+    await expect(checkbox).toBeChecked();
+
+    await filterLabel.click();
+    await expect(checkbox).not.toBeChecked();
   });
 
   test('Community Notes sidebar opens the Nostroots action modal', async ({
