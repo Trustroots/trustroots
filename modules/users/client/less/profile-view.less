@@ -164,6 +164,13 @@
     filter: grayscale(100%);
     -webkit-filter: grayscale(100%);
   }
+  .nostroots-logo {
+    width: 22px;
+    height: 22px;
+    margin-top: -3px;
+    margin-bottom: -3px;
+    object-fit: contain;
+  }
   .social-profile {
     padding: 4px 4px 4px 34px;
     margin: 0;
@@ -198,5 +205,76 @@
         }
       }
     }
+  }
+}
+
+// Profile Nostroots Badge
+.profile-nostr-badge {
+  display: inline-block;
+  background: @brand-primary;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+// Profile Nostroots Notes
+.profile-nostr-notes {
+  margin-top: @padding-large-horizontal;
+}
+
+.profile-nostr-notes-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: @gray;
+  margin-bottom: @padding-base-horizontal;
+}
+
+.profile-nostr-note {
+  background: @gray-lighter;
+  border-left: 3px solid @brand-primary;
+  padding: @padding-small-horizontal @padding-base-horizontal;
+  border-radius: 0 @border-radius-base @border-radius-base 0;
+  margin-bottom: 8px;
+  transition: background-color 0.15s ease-out;
+
+  &:hover {
+    background: darken(@gray-lighter, 3%);
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.profile-nostr-note-content {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  word-wrap: break-word;
+}
+
+.profile-nostr-note-meta {
+  font-size: 11px;
+  margin-top: 4px;
+  display: block;
+}
+
+.profile-nostr-notes-more {
+  font-size: 13px;
+  display: inline-block;
+  margin-top: 8px;
+  color: @brand-secondary;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.15s ease-out;
+
+  &:hover {
+    color: darken(@brand-secondary, 15%);
   }
 }

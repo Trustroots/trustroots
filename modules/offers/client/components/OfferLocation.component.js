@@ -5,6 +5,7 @@ import React from 'react';
 // Internal dependencies
 import Map from '@/modules/core/client/components/Map/index';
 import OfferLocationOverlay from './OfferLocationOverlay';
+import { getOfferHexColor } from '../utils/markers.js';
 
 export default function OfferLocation({ location, offerStatus, offerType }) {
   if (!location || location.length !== 2) {
@@ -15,6 +16,10 @@ export default function OfferLocation({ location, offerStatus, offerType }) {
     <Map
       aria-hidden
       className="offer-location"
+      fallbackMarker={{
+        color: getOfferHexColor({ offerType, offerStatus }),
+        location,
+      }}
       height={320}
       location={location}
       scrollZoom={false}

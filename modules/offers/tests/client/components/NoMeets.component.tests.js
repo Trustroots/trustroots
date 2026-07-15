@@ -14,7 +14,7 @@ describe('<NoMeets />', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Add it to map!' }),
-    ).toHaveAttribute('href', 'https://notes.trustroots.org/');
+    ).toHaveAttribute('href', 'https://nos.trustroots.org/');
     expect(
       screen.getByText('Meetups stay visible on map at most one month.'),
     ).toBeInTheDocument();

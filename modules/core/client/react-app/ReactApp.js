@@ -73,7 +73,9 @@ export default function ReactApp({ navigate = defaultNavigate }) {
           {route && !accessRedirect ? route.render({ user }) : <NotFoundPage />}
         </article>
       </div>
-      {!route?.footerHidden && <ReactFooter />}
+      {!route?.footerHidden && (
+        <ReactFooter variant={route?.footerVariant || 'standard'} />
+      )}
     </>
   );
 }

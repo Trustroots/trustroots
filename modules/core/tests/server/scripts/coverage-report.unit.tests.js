@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 require('should');
 
 const {
@@ -24,7 +25,8 @@ describe('Coverage report HTML', () => {
     branch: 'main',
     branchUrl: 'https://github.com/Trustroots/trustroots/tree/main',
     commit: '1234567890abcdef',
-    commitUrl: 'https://github.com/Trustroots/trustroots/commit/1234567890abcdef',
+    commitUrl:
+      'https://github.com/Trustroots/trustroots/commit/1234567890abcdef',
     generatedAtDisplay: '2026-07-05 12:00',
     isGitHubActions: true,
     runUrl: 'https://github.com/Trustroots/trustroots/actions/runs/1',
@@ -52,5 +54,16 @@ describe('Coverage report HTML', () => {
     html.should.match(
       /class="github-icon"[\s\S]*?viewBox="0 0 16 16"[\s\S]*?width="16"[\s\S]*?height="16"/,
     );
+  });
+
+  it('emits parseable inline JavaScript', () => {
+    const html = renderReportShell(metadata, {});
+    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+
+    scripts.should.not.be.empty();
+    scripts.forEach(scriptMatch => {
+      const script = new vm.Script(scriptMatch[1]);
+      script.should.be.ok();
+    });
   });
 });

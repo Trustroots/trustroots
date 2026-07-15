@@ -29,7 +29,7 @@ describe('React route ownership', function () {
 
   it('defines protected admin route policy', function () {
     getReactRoutePolicy('/admin/').should.containDeep({
-      footerHidden: true,
+      footerVariant: 'admin',
       path: '/admin',
       requiresAuth: true,
       requiresRole: 'admin',

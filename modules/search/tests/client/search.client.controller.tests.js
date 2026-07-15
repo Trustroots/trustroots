@@ -37,7 +37,9 @@ describe('SearchController', function () {
       eventTrack: jasmine.createSpy('$analytics.eventTrack'),
     };
     const FiltersService = {
-      get: jasmine.createSpy('FiltersService.get').and.returnValue(filters),
+      get: jasmine
+        .createSpy('FiltersService.get')
+        .and.callFake(key => (key ? filters[key] : filters)),
       set: jasmine.createSpy('FiltersService.set'),
     };
     const LocationService = {
@@ -89,6 +91,7 @@ describe('SearchController', function () {
 
   it('opens the sidebar for public desktop users and hydrates cached filters', function () {
     const filters = {
+      communityNotes: true,
       languages: ['en'],
       seen: {
         months: 6,
@@ -109,6 +112,7 @@ describe('SearchController', function () {
     expect(controller.screenWidth).toBe(1024);
     expect(controller.filters).toEqual(filters);
     expect(controller.onlineInPast6Months).toBe(true);
+    expect(controller.communityNotesEnabled).toBe(true);
     expect(controller.sidebarTab).toBe('filters');
   });
 
@@ -243,6 +247,34 @@ describe('SearchController', function () {
     });
   });
 
+  it('persists community notes toggle changes while closing open community notes', function () {
+    const { $scope, controller, FiltersService } = createController();
+    controller.communityNote = {
+      plusCode: '9F2X+3Q',
+    };
+    controller.communityNotesEnabled = true;
+
+    controller.onCommunityNotesToggle();
+
+    expect(controller.communityNote).toBe(false);
+    expect(FiltersService.set).toHaveBeenCalledWith('communityNotes', true);
+    expect($scope.$broadcast).toHaveBeenCalledWith('search.closeOffer');
+    expect($scope.$broadcast).toHaveBeenCalledWith(
+      'search.filtersUpdated',
+      controller.filters,
+    );
+  });
+
+  it('toggles community notes from the mobile map controls', function () {
+    const { controller, FiltersService } = createController();
+    controller.communityNotesEnabled = true;
+
+    controller.toggleCommunityNotes();
+
+    expect(controller.communityNotesEnabled).toBe(false);
+    expect(FiltersService.set).toHaveBeenCalledWith('communityNotes', false);
+  });
+
   it('broadcasts map center when place search returns center coordinates', function () {
     const { $scope, controller } = createController();
     const center = { lat: 52.5, lng: 13.4 };
@@ -326,12 +358,27 @@ describe('SearchController', function () {
 
     $scope.$broadcast('search.previewOffer', offer);
     expect(controller.offer).toBe(offer);
+    expect(controller.communityNote).toBe(false);
+    expect(controller.loadingOffer).toBe(false);
+    expect(controller.isSidebarOpen).toBe(true);
+    expect(controller.sidebarTab).toBe('results');
+
+    $scope.$broadcast('search.previewCommunityNote', {
+      notes: [{ id: 'note-1' }],
+      plusCode: '9F2X+3Q',
+    });
+    expect(controller.offer).toBe(false);
+    expect(controller.communityNote).toEqual({
+      notes: [{ id: 'note-1' }],
+      plusCode: '9F2X+3Q',
+    });
     expect(controller.loadingOffer).toBe(false);
     expect(controller.isSidebarOpen).toBe(true);
     expect(controller.sidebarTab).toBe('results');
 
     $scope.$broadcast('search.closeOffer');
     expect(controller.offer).toBe(false);
+    expect(controller.communityNote).toBe(false);
     expect(controller.loadingOffer).toBe(false);
   });
 

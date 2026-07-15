@@ -120,6 +120,25 @@ describe('Profile controller unit tests', () => {
       res.body.nostrNpub.should.equal(validNpub);
     });
 
+    it('returns 400 when checking nostr npub availability fails', async () => {
+      sinon.stub(User, 'findOne').callsFake((query, fields, cb) => {
+        cb(new Error('lookup failed'));
+      });
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { nostrNpub: validNpub },
+            login: (user, cb) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
     it('blocks username changes before the cooldown expires', async () => {
       userDoc.created = new Date();
       await userDoc.save();
@@ -1291,6 +1310,27 @@ describe('Profile controller unit tests', () => {
 
       sanitized.memberIds.should.deepEqual([]);
       sanitized.member.should.deepEqual([]);
+    });
+
+    it('treats matching string ids as the authenticated user', () => {
+      const userId = new mongoose.Types.ObjectId();
+      const profile = {
+        _id: userId,
+        toObject() {
+          return {
+            _id: userId,
+            created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+            member: [],
+            roles: [],
+          };
+        },
+      };
+
+      const sanitized = profileController.sanitizeProfile(profile, {
+        _id: userId.toString(),
+      });
+
+      sanitized.usernameUpdateAllowed.should.be.true();
     });
   });
 

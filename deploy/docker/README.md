@@ -139,5 +139,10 @@ permissions on the registry.
 Alternatively, to build the production image directly from the repo root:
 
 ```bash
-docker build -f ./production.Dockerfile . -t ghcr.io/trustrootsops/trustroots:latest
+docker build \
+  --build-arg "TRUSTROOTS_BUILD_COMMIT=$(git rev-parse HEAD)" \
+  --build-arg "TRUSTROOTS_BUILD_COMMITTED_AT=$(git log -1 --format=%cI)" \
+  --build-arg "TRUSTROOTS_BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)" \
+  -f ./production.Dockerfile . \
+  -t ghcr.io/trustrootsops/trustroots:latest
 ```

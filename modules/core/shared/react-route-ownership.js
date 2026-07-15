@@ -1,5 +1,5 @@
 const ADMIN_ROUTE_DEFAULTS = {
-  footerHidden: true,
+  footerVariant: 'admin',
   requiresAuth: true,
   requiresRole: 'admin',
 };

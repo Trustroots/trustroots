@@ -35,7 +35,11 @@ test.describe('admin reference and error feature coverage', () => {
       '/api/admin/reference-threads',
     );
     expect(referenceThreads.ok()).toBeTruthy();
-    expect((await referenceThreads.json()).length).toBeGreaterThan(0);
+    const referenceThreadsBody = await referenceThreads.json();
+    const referenceThreadItems = Array.isArray(referenceThreadsBody)
+      ? referenceThreadsBody
+      : referenceThreadsBody.items;
+    expect(referenceThreadItems.length).toBeGreaterThan(0);
 
     const noResults = await page.request.post('/api/admin/users', {
       data: { search: 'definitely-no-e2e-user' },

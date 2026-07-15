@@ -41,12 +41,43 @@ const Count = styled.p`
   font-weight: 300;
 `;
 
+const PeriodGroup = styled.div`
+  & + & {
+    margin-top: 20px;
+  }
+`;
+
 export default function Statistics({ isAuthenticated }) {
   const { t } = useTranslation('statistics');
   const [statistics, setStatistics] = useState(false);
 
   const numberFormat = number =>
     number ? new Intl.NumberFormat().format(number) : 0;
+  const percentage = (positive, negative) => {
+    const answered = (positive ?? 0) + (negative ?? 0);
+    return answered ? Math.round(((positive ?? 0) / answered) * 100) : 0;
+  };
+  const experienceStatistics = statistics?.experiences ?? {};
+  const recentExperienceStatistics = experienceStatistics.recent ?? {};
+  const messageInteractionStatistics = statistics?.messageInteractions ?? {};
+  const recentMessageInteractionStatistics =
+    messageInteractionStatistics.recent ?? {};
+  const recommendationPercentage = percentage(
+    experienceStatistics.recommended,
+    experienceStatistics.notRecommended,
+  );
+  const recentRecommendationPercentage = percentage(
+    recentExperienceStatistics.recommended,
+    recentExperienceStatistics.notRecommended,
+  );
+  const positiveFeedbackPercentage = percentage(
+    messageInteractionStatistics.positive,
+    messageInteractionStatistics.negative,
+  );
+  const recentPositiveFeedbackPercentage = percentage(
+    recentMessageInteractionStatistics.positive,
+    recentMessageInteractionStatistics.negative,
+  );
 
   useEffect(async () => {
     const { data } = await get();
@@ -79,6 +110,81 @@ export default function Statistics({ isAuthenticated }) {
         <div className="row">
           <div className="col-xs-12">
             <Grid>
+              <Stat title={t('Real-life connections')} className="is-graph">
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <PeriodGroup>
+                      <Count>
+                        {numberFormat(
+                          experienceStatistics.realLifeConnections?.total ?? 0,
+                        )}
+                      </Count>
+                      <p className="text-muted">
+                        {t('{{percentage}}% recommended overall', {
+                          percentage: recommendationPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                    <PeriodGroup>
+                      <p className="text-muted">
+                        {t('{{count}} in the last 90 days', {
+                          count: numberFormat(
+                            experienceStatistics.realLifeConnections?.recent ??
+                              0,
+                          ),
+                        })}
+                      </p>
+                      <p className="text-muted">
+                        {t('{{percentage}}% recommended in the last 90 days', {
+                          percentage: recentRecommendationPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Message interactions')} className="is-graph">
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <PeriodGroup>
+                      <Count>
+                        {numberFormat(messageInteractionStatistics.total)}
+                      </Count>
+                      <p className="text-muted">
+                        {t(
+                          'Interactions where both members exchanged messages',
+                        )}
+                      </p>
+                      <p className="text-muted">
+                        {t('{{percentage}}% positive feedback overall', {
+                          percentage: positiveFeedbackPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                    <PeriodGroup>
+                      <p className="text-muted">
+                        {t('{{count}} in the last 90 days', {
+                          count: numberFormat(
+                            recentMessageInteractionStatistics.total,
+                          ),
+                        })}
+                      </p>
+                      <p className="text-muted">
+                        {t(
+                          '{{percentage}}% positive feedback in the last 90 days',
+                          { percentage: recentPositiveFeedbackPercentage },
+                        )}
+                      </p>
+                    </PeriodGroup>
+                  </>
+                )}
+              </Stat>
+
               <Stat title={t('Members')}>
                 {!statistics ? (
                   <CountPlaceholder />
@@ -213,21 +319,22 @@ export default function Statistics({ isAuthenticated }) {
                 )}
               </Stat>
 
-              <Stat title={t('Most messages get replies')} className="is-graph">
+              <Stat title={t('Message replies')} className="is-graph">
+                <p className="text-muted">{t('Weekly messages and replies')}</p>
                 <a href="https://grafana.trustroots.org/d/000000004/messages-detailed">
                   <img
                     className="img-responsive"
                     src="https://grafana.trustroots.org/render/d-solo/000000004/messages-detailed?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
                     width="100%"
-                    alt={t('Weekly messages')}
+                    alt={t('Weekly messages and replies')}
                   />
                 </a>
               </Stat>
 
-              <Stat title={t('Translations status')} className="is-graph">
+              <Stat title={t('Translation status')} className="is-graph">
                 <a href="https://hosted.weblate.org/engage/trustroots/">
                   <img
-                    alt={t('Translations status')}
+                    alt={t('Translation status')}
                     src="https://hosted.weblate.org/widgets/trustroots/-/horizontal-auto.svg"
                   />
                 </a>

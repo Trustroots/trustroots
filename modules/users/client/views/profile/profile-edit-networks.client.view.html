@@ -8,14 +8,13 @@
     <div class="panel-body">
       <div
         ng-if="!profileEditNetworks.isConnectedSocialAccount('facebook') ||
-                !profileEditNetworks.isConnectedSocialAccount('twitter') ||
                 !profileEditNetworks.isConnectedSocialAccount('github')"
       >
         <h4>Connect to</h4>
         <ul class="list-unstyled elsewhere-profiles">
           <li
             class="social-profile social-profile-connect"
-            ng-repeat="providerName in ['facebook', 'twitter', 'github'] track by providerName"
+            ng-repeat="providerName in ['facebook', 'github'] track by providerName"
             ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)"
           >
             <i class="icon-lg icon-{{::providerName}} social-profile-icon"></i>
@@ -320,7 +319,7 @@
                 </div>
               </script>
             </div>
-            <label class="input-group-addon" for="extSitesCouchers">
+            <label class="input-group-addon" for="nostrNpub">
               <span class="hidden-xs"></span>
               <span class="visible-xs-inline">npub:</span>
             </label>
@@ -335,27 +334,6 @@
               placeholder="npub"
               aria-label="nostr npub"
             />
-            <p
-              class="help-block text-danger"
-              ng-if="userForm.nostrNpub.$dirty && userForm.nostrNpub.$error.pattern"
-            >
-              Invalid nostr key. Please provide your npub (public key) starting
-              with "npub". Never use your nsec (secret key).
-            </p>
-            <p
-              class="help-block"
-              ng-if="profileEditNetworks.hasNostrNip07Suggestion()"
-            >
-              Your browser Nostr extension suggests
-              <code>{{ profileEditNetworks.nostrNip07SuggestedNpub }}</code>.
-              <button
-                type="button"
-                class="btn btn-default btn-xs"
-                ng-click="profileEditNetworks.applyNostrNip07Suggestion()"
-              >
-                {{ profileEditNetworks.nostrNip07SuggestionButtonText() }}
-              </button>
-            </p>
             <!--
             <span
               class="input-group-btn"
@@ -373,6 +351,27 @@
             </span>
 	    -->
           </div>
+          <p
+            class="help-block text-danger"
+            ng-if="userForm.nostrNpub.$dirty && userForm.nostrNpub.$error.pattern"
+          >
+            Invalid nostr key. Please provide your npub (public key) starting
+            with "npub". Never use your nsec (secret key).
+          </p>
+          <p
+            class="help-block nostr-nip07-suggestion"
+            ng-if="profileEditNetworks.hasNostrNip07Suggestion()"
+          >
+            Your browser Nostr extension suggests
+            <code>{{ profileEditNetworks.nostrNip07SuggestedNpub }}</code>
+            <button
+              type="button"
+              class="btn btn-default btn-xs"
+              ng-click="profileEditNetworks.applyNostrNip07Suggestion()"
+            >
+              {{ profileEditNetworks.nostrNip07SuggestionButtonText() }}
+            </button>
+          </p>
         </div>
       </div>
 

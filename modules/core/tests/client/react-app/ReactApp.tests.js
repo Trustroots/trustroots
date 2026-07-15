@@ -219,7 +219,7 @@ describe('<ReactApp />', () => {
     expect(screen.getByText('Header bob')).toBeInTheDocument();
   });
 
-  it('renders admin routes for admin users and hides the footer', () => {
+  it('renders admin routes for admin users and shows the admin footer', () => {
     renderApp('/admin/audit-log', {
       user: {
         roles: ['user', 'admin'],
@@ -229,7 +229,7 @@ describe('<ReactApp />', () => {
 
     expect(screen.getByText('Admin audit route')).toBeInTheDocument();
     expect(screen.getByText('Header admin')).toBeInTheDocument();
-    expect(screen.queryByText('Footer')).not.toBeInTheDocument();
+    expect(screen.getByText('Footer')).toBeInTheDocument();
     expect(document.title).toBe('Admin - Audit log - Trustroots');
   });
 

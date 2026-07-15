@@ -35,7 +35,7 @@ describe('React route ownership', () => {
       [...REACT_OWNED_PATHS].sort(),
     );
     expect(getReactRoutePolicy('/admin/')).toMatchObject({
-      footerHidden: true,
+      footerVariant: 'admin',
       path: '/admin',
       requiresAuth: true,
       requiresRole: 'admin',
@@ -47,7 +47,7 @@ describe('React route ownership', () => {
     const adminRoute = findRoute('/admin/audit-log');
 
     expect(adminRoute).toMatchObject({
-      footerHidden: true,
+      footerVariant: 'admin',
       path: '/admin/audit-log',
       requiresAuth: true,
       requiresRole: 'admin',

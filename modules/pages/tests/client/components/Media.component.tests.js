@@ -23,7 +23,15 @@ describe('<Media />', () => {
     expect(screen.getByText('Fact sheet')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'PNG' })).toHaveAttribute(
       'href',
-      'https://raw.githubusercontent.com/Trustroots/media/master/logo/logo.png',
+      'https://raw.githubusercontent.com/Trustroots/community/master/media/logo/logo.png',
+    );
+    expect(screen.getByRole('link', { name: 'Style guide' })).toHaveAttribute(
+      'href',
+      'https://github.com/Trustroots/community/blob/master/media/style-guide/Trustroots-Styleguide.pdf',
+    );
+    expect(screen.getByRole('link', { name: 'Screenshots' })).toHaveAttribute(
+      'href',
+      'https://github.com/Trustroots/community/tree/master/media/screenshots',
     );
   });
 });

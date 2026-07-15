@@ -22,7 +22,7 @@ export default function NoMeets() {
       <p>
         <a
           className="btn btn-action btn-inverse-primary"
-          href="https://notes.trustroots.org/"
+          href="https://nos.trustroots.org/"
           target="_blank"
           rel="noreferrer"
         >
