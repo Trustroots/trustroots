@@ -50,7 +50,7 @@ function FooterLinks() {
   return (
     <ul className="site-footer-links list-inline">
       <li>
-        <a href="/volunteering">Volunteering</a>
+        <a href="https://team.trustroots.org/">Volunteering</a>
       </li>
       <li>
         <a href="/rules">Rules</a>
