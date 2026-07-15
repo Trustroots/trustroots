@@ -10,7 +10,10 @@ import ReactMapGL, {
 } from 'react-map-gl';
 
 // Internal dependencies
-import { getMapBoxToken } from '@/modules/core/client/utils/map';
+import {
+  getMapBoxToken,
+  isWebGLSupported,
+} from '@/modules/core/client/utils/map';
 import {
   MAP_STYLE_DEFAULT,
   MAP_STYLE_OSM,
@@ -21,6 +24,7 @@ import MapNavigationControl from '@/modules/core/client/components/Map/MapNaviga
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
 import SearchMapNoContent from './SearchMapNoContent';
+import LeafletSearchMap from './LeafletSearchMap';
 import { ensureValidLat, ensureValidLng } from '../utils';
 import {
   clusterCountLayerMapbox,
@@ -149,6 +153,7 @@ export default function SearchMap({
   );
 
   const [viewport, setViewport] = useState(persistentMapLocation);
+  const [webGLSupported] = useState(isWebGLSupported);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
   const [hoveredOffer, setHoveredOffer] = useState(false);
@@ -161,6 +166,7 @@ export default function SearchMap({
     type: 'FeatureCollection',
     features: [],
   });
+  const [leafletMapState, setLeafletMapState] = useState();
   const communityNotesTimerRef = useRef(null);
   const communityNotesEventsRef = useRef([]);
 
@@ -175,7 +181,8 @@ export default function SearchMap({
   const effectiveMapStyle =
     !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
   // If no mapbox token, and we're in production, don't show the style switcher
-  const showMapStyles = !!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production';
+  const showMapStyles =
+    webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
   const sourceRef = createRef();
   const mapRef = createRef();
 
@@ -216,23 +223,27 @@ export default function SearchMap({
   /**
    * Hook on map interactions to update features
    */
-  const updateOffers = () => {
+  const updateOffers = leafletState => {
     // Don't fetch if viewing the whole world
-    if (viewport.zoom <= MIN_ZOOM) {
+    const zoom = leafletState?.zoom || viewport.zoom;
+    if (zoom <= MIN_ZOOM) {
       return;
     }
 
     const map = getMapRef();
 
-    if (!map) {
+    const mapBounds = leafletState?.bounds || map?.getBounds();
+    if (!mapBounds) {
       return;
     }
 
     // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
-    const bounds = map.getBounds();
-    const northEast = bounds.getNorthEast();
-    const southWest = bounds.getSouthWest();
-    const zoom = map.getZoom();
+    const northEast = mapBounds.getNorthEast
+      ? mapBounds.getNorthEast()
+      : mapBounds.northEast;
+    const southWest = mapBounds.getSouthWest
+      ? mapBounds.getSouthWest()
+      : mapBounds.southWest;
 
     // Expand bounding box depending on the zoom level slightly to load more offers over the edge of the viewport
     const boundsBuffer = 10 / zoom;
@@ -272,6 +283,12 @@ export default function SearchMap({
     // The maximum time func is allowed to be delayed before it's invoked:
     { maxWait: 3500 },
   );
+
+  const onLeafletMapChange = mapState => {
+    setLeafletMapState(mapState);
+    onViewPortChange(mapState);
+    debouncedUpdateOffers(mapState);
+  };
 
   /**
    * Update state for a feature on the map
@@ -406,6 +423,26 @@ export default function SearchMap({
   /**
    * React on any clicks on map or layers defined on `interactiveLayerIds` prop
    */
+  function openCommunityNote(feature) {
+    const clickedPlusCode = getPlusCodeFromEvent(feature.properties);
+
+    // Find all notes sharing the same plus code (the "thread")
+    const threadNotes = communityNotesEventsRef.current.filter(event => {
+      const eventPlusCode = getPlusCodeFromRawEvent(event);
+      return eventPlusCode && eventPlusCode === clickedPlusCode;
+    });
+
+    if (onCommunityNoteOpen) {
+      onCommunityNoteOpen({
+        notes:
+          threadNotes.length > 0
+            ? threadNotes
+            : [reconstructEvent(feature.properties)],
+        plusCode: clickedPlusCode,
+      });
+    }
+  }
+
   const onClickMap = event => {
     const { features } = event;
     clearPreviouslySelectedState();
@@ -421,24 +458,7 @@ export default function SearchMap({
 
     // Community notes click — open thread in sidebar
     if (layerId === communityNotesLayer.id) {
-      const feature = features[0];
-      const clickedPlusCode = getPlusCodeFromEvent(feature.properties);
-
-      // Find all notes sharing the same plus code (the "thread")
-      const threadNotes = communityNotesEventsRef.current.filter(event => {
-        const eventPlusCode = getPlusCodeFromRawEvent(event);
-        return eventPlusCode && eventPlusCode === clickedPlusCode;
-      });
-
-      if (onCommunityNoteOpen) {
-        onCommunityNoteOpen({
-          notes:
-            threadNotes.length > 0
-              ? threadNotes
-              : [reconstructEvent(feature.properties)],
-          plusCode: clickedPlusCode,
-        });
-      }
+      openCommunityNote(features[0]);
       return;
     }
 
@@ -511,7 +531,9 @@ export default function SearchMap({
 
   // Load and store Mapbox object for quick reference on render
   useEffect(() => {
-    setMap(getMapRef());
+    if (webGLSupported) {
+      setMap(getMapRef());
+    }
   }, []);
 
   // Apply externally changed bounds object
@@ -531,7 +553,7 @@ export default function SearchMap({
     clearPreviouslyHoveredState();
 
     // Update map offers
-    updateOffers();
+    updateOffers(webGLSupported ? undefined : leafletMapState);
   }, [filters]);
 
   // Subscribe/unsubscribe to community notes based on toggle
@@ -577,6 +599,20 @@ export default function SearchMap({
       });
     }
   }, [location]);
+
+  if (!webGLSupported) {
+    return (
+      <LeafletSearchMap
+        communityNotes={communityNotes}
+        offers={offers}
+        onCommunityNoteClick={openCommunityNote}
+        onMapChange={onLeafletMapChange}
+        onMapClick={onOfferClose}
+        onOfferClick={openOfferById}
+        viewport={viewport}
+      />
+    );
+  }
 
   return (
     <>

@@ -19,6 +19,8 @@ replace names, usernames, email addresses, locations, IDs, message content,
 and other identifying data with fictional values.
 
 Prefer git worktrees for parallel, exploratory, or potentially disruptive work.
+Create them under `.worktrees/` inside this repository so they remain within
+the workspace boundary.
 
 Both server and client test coverage are currently at 100%; keep them at this
 level. Do not lower coverage thresholds or baselines without a clear reason.
