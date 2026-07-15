@@ -93,6 +93,23 @@ describe('RemoveProfileController', function () {
     expect(messageCenterService.add).not.toHaveBeenCalled();
   });
 
+  it('ignores repeated confirmation while removal is pending', function () {
+    const deferred = $q.defer();
+    removeProfilePromise = () => deferred.promise;
+    const vm = createController();
+
+    vm.removeProfile();
+    vm.removeProfile();
+
+    expect(vm.state).toBe('loading');
+    expect(Users.deleteWithToken).toHaveBeenCalledTimes(1);
+
+    deferred.resolve();
+    $rootScope.$apply();
+
+    expect(vm.state).toBe('success');
+  });
+
   it('marks profile removal as failure when explicit confirmation rejects', function () {
     removeProfilePromise = () => $q.reject();
     const vm = createController();

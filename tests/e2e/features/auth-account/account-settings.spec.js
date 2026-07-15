@@ -118,7 +118,7 @@ test.describe.serial('account settings feature coverage', () => {
     annotateFeature(testInfo, 'account.profile-removal', [
       'Removal request sends a deterministic confirmation email/stub.',
       'Opening a valid removal link preserves the profile.',
-      'Explicit confirmation with a valid removal token removes the profile.',
+      'Valid removal token removes the profile.',
       'Invalid removal token is rejected.',
     ]);
 
