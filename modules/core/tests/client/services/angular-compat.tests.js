@@ -105,6 +105,65 @@ describe('angular-compat service', () => {
 
     expect(listener).toHaveBeenCalledWith(null, { id: 'fallback' });
 
+    listener.mockReset();
+    window.dispatchEvent(new CustomEvent('tr:fallback-event'));
+    expect(listener).toHaveBeenCalledWith(null);
+
     unsubscribe();
+  });
+
+  it('returns null helpers when Angular has no injector', () => {
+    window.angular = {
+      element: jest.fn(() => ({
+        injector: jest.fn(() => null),
+      })),
+    };
+
+    expect($broadcast('ignored')).toBeUndefined();
+    expect(eventTrack('ignored')).toBeUndefined();
+    expect(go('ignored')).toBeUndefined();
+    expect(getRouteParams()).toEqual({});
+  });
+
+  it('returns empty route params when Angular state params are unavailable', () => {
+    window.angular = {
+      element: jest.fn(() => ({
+        injector: jest.fn(() => ({
+          get: jest.fn(() => undefined),
+        })),
+      })),
+    };
+
+    expect(getRouteParams()).toEqual({});
+  });
+
+  it('falls back to window.user when authentication is unavailable', () => {
+    window.user = { _id: 'window-user' };
+    window.angular = undefined;
+
+    expect(getUser()).toEqual({ _id: 'window-user' });
+
+    delete window.user;
+  });
+
+  it('falls back to window.user when authentication has no user', () => {
+    window.user = { _id: 'window-user' };
+    mockAngularGet.mockImplementation(name => {
+      if (name === 'Authentication') {
+        return {};
+      }
+      return undefined;
+    });
+
+    expect(getUser()).toEqual({ _id: 'window-user' });
+
+    delete window.user;
+  });
+
+  it('returns null when no authenticated user is available', () => {
+    window.angular = undefined;
+    window.user = null;
+
+    expect(getUser()).toBeNull();
   });
 });

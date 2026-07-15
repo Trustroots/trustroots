@@ -7,13 +7,17 @@ import { getBootstrapData } from './bootstrap';
 
 const AppBootstrapContext = createContext(null);
 
-export function AppProviders({ bootstrapData = getBootstrapData(), children }) {
+export function AppProviders({ bootstrapData, children }) {
+  const resolvedBootstrapData =
+    bootstrapData === undefined ? getBootstrapData() : bootstrapData;
   const queryClient = useMemo(() => new QueryClient(), []);
 
   return (
-    <AppBootstrapContext.Provider value={bootstrapData}>
+    <AppBootstrapContext.Provider value={resolvedBootstrapData}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider initialUser={bootstrapData.user}>{children}</AuthProvider>
+        <AuthProvider initialUser={resolvedBootstrapData.user}>
+          {children}
+        </AuthProvider>
       </QueryClientProvider>
     </AppBootstrapContext.Provider>
   );

@@ -8,29 +8,9 @@ import { useAuth } from './auth';
 import ReactFooter from './ReactFooter';
 import { findRoute } from './routes';
 import { useAppConfig, useSettings } from './AppProviders';
+import { defaultNavigate, signout } from './shell-helpers';
 
-function signout(event) {
-  if (event) {
-    event.preventDefault();
-  }
-
-  if (window.postMessage) {
-    window.postMessage(
-      'unAuthenticated',
-      `${window.location.protocol}//${window.location.host}`,
-    );
-  }
-
-  if (window.isNativeMobileApp && window.postMessage) {
-    window.postMessage(JSON.stringify({ action: 'unAuthenticated' }));
-  }
-
-  window.top.location.href = '/api/auth/signout';
-}
-
-function defaultNavigate(url) {
-  window.location.assign(url);
-}
+export { defaultNavigate, signout } from './shell-helpers';
 
 export default function ReactApp({ navigate = defaultNavigate }) {
   const { title } = useAppConfig();
