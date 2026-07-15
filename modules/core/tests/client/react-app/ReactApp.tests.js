@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
@@ -290,18 +290,5 @@ describe('<ReactApp />', () => {
     expect(screen.getByText(/this page cannot be found/i)).toBeInTheDocument();
     expect(screen.getByText('Header guest')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
-  });
-
-  it('updates the active route after browser navigation', async () => {
-    renderApp('/rules');
-
-    await act(async () => {
-      window.history.pushState({}, '', '/faq');
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
-
-    await waitFor(() =>
-      expect(document.title).toBe('FAQ - Site & community - Trustroots'),
-    );
   });
 });

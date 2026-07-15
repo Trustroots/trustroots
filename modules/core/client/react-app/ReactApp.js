@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 import AppHeader from '@/modules/core/client/components/AppHeader.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
@@ -9,6 +9,7 @@ import ReactFooter from './ReactFooter';
 import { findRoute } from './routes';
 import { useAppConfig, useSettings } from './AppProviders';
 import { defaultNavigate, signout } from './shell-helpers';
+import { useCurrentPath } from './useCurrentPath';
 
 export { defaultNavigate, signout } from './shell-helpers';
 
@@ -16,17 +17,9 @@ export default function ReactApp({ navigate = defaultNavigate }) {
   const { title } = useAppConfig();
   const { build } = useSettings();
   const { user } = useAuth();
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const currentPath = useCurrentPath();
   const route = findRoute(currentPath);
   const accessRedirect = getReactRouteAccessRedirect(route, user);
-
-  useEffect(() => {
-    const onPopState = () => setCurrentPath(window.location.pathname);
-
-    window.addEventListener('popstate', onPopState);
-
-    return () => window.removeEventListener('popstate', onPopState);
-  }, []);
 
   useEffect(() => {
     if (route?.title) {
