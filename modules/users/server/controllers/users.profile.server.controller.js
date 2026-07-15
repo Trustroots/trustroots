@@ -883,7 +883,7 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   }
 
   const isOwnProfile =
-    authenticatedUser && authenticatedUser._id.equals(profile._id);
+    authenticatedUser && String(authenticatedUser._id) === String(profile._id);
 
   if (isOwnProfile) {
     // Is user allowed to update their username?

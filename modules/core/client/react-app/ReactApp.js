@@ -7,7 +7,7 @@ import { getReactRouteAccessRedirect } from '@/modules/core/shared/react-route-o
 import { useAuth } from './auth';
 import ReactFooter from './ReactFooter';
 import { findRoute } from './routes';
-import { useAppConfig } from './AppProviders';
+import { useAppConfig, useSettings } from './AppProviders';
 
 function signout(event) {
   if (event) {
@@ -34,6 +34,7 @@ function defaultNavigate(url) {
 
 export default function ReactApp({ navigate = defaultNavigate }) {
   const { title } = useAppConfig();
+  const { build } = useSettings();
   const { user } = useAuth();
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const route = findRoute(currentPath);
@@ -74,7 +75,10 @@ export default function ReactApp({ navigate = defaultNavigate }) {
         </article>
       </div>
       {!route?.footerHidden && (
-        <ReactFooter variant={route?.footerVariant || 'standard'} />
+        <ReactFooter
+          build={build}
+          variant={route?.footerVariant || 'standard'}
+        />
       )}
     </>
   );
