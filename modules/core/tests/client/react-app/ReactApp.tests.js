@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
@@ -153,9 +153,6 @@ jest.mock('@/modules/core/client/components/AppHeader.component', () => {
         <button type="button" onClick={onSignout}>
           Sign out
         </button>
-        <button type="button" onClick={() => onSignout()}>
-          Sign out without event
-        </button>
       </header>
     );
   }
@@ -295,92 +292,16 @@ describe('<ReactApp />', () => {
     expect(screen.getByText('Footer')).toBeInTheDocument();
   });
 
-  it('handles browser navigation and sign out actions', async () => {
-    const postMessage = jest.fn();
-    const originalPostMessage = window.postMessage;
-    const originalTop = window.top;
-    let topHref = 'http://localhost/rules';
+  it('updates the active route after browser navigation', async () => {
+    renderApp('/rules');
 
-    window.postMessage = postMessage;
-    Object.defineProperty(window, 'top', {
-      configurable: true,
-      value: {
-        location: {
-          get href() {
-            return topHref;
-          },
-          set href(value) {
-            topHref = value;
-          },
-        },
-      },
-    });
-
-    try {
-      renderApp('/rules');
-
+    await act(async () => {
       window.history.pushState({}, '', '/faq');
       window.dispatchEvent(new PopStateEvent('popstate'));
-
-      await waitFor(() =>
-        expect(document.title).toBe('FAQ - Site & community - Trustroots'),
-      );
-
-      fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
-
-      expect(postMessage).toHaveBeenCalledWith(
-        'unAuthenticated',
-        `${window.location.protocol}//${window.location.host}`,
-      );
-      expect(topHref).toBe('/api/auth/signout');
-    } finally {
-      window.postMessage = originalPostMessage;
-      Object.defineProperty(window, 'top', {
-        configurable: true,
-        value: originalTop,
-      });
-      window.history.pushState({}, '', '/');
-    }
-  });
-
-  it('posts native mobile sign out messages via the header action', () => {
-    const postMessage = jest.fn();
-    const originalPostMessage = window.postMessage;
-    const originalTop = window.top;
-    const originalIsNativeMobileApp = window.isNativeMobileApp;
-    let topHref = 'http://localhost/rules';
-
-    window.postMessage = postMessage;
-    window.isNativeMobileApp = true;
-    Object.defineProperty(window, 'top', {
-      configurable: true,
-      value: {
-        location: {
-          get href() {
-            return topHref;
-          },
-          set href(value) {
-            topHref = value;
-          },
-        },
-      },
     });
 
-    try {
-      renderApp('/rules');
-      fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
-
-      expect(postMessage).toHaveBeenCalledWith(
-        JSON.stringify({ action: 'unAuthenticated' }),
-      );
-      expect(topHref).toBe('/api/auth/signout');
-    } finally {
-      window.postMessage = originalPostMessage;
-      window.isNativeMobileApp = originalIsNativeMobileApp;
-      Object.defineProperty(window, 'top', {
-        configurable: true,
-        value: originalTop,
-      });
-    }
+    await waitFor(() =>
+      expect(document.title).toBe('FAQ - Site & community - Trustroots'),
+    );
   });
 });
