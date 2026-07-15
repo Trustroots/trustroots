@@ -26,6 +26,19 @@
           Filters
         </button>
       </div>
+      <div class="btn-group btn-group-lg" role="group">
+        <button
+          type="button"
+          class="btn"
+          ng-class="search.communityNotesEnabled ? 'btn-primary' : 'btn-default'"
+          ng-click="search.toggleCommunityNotes()"
+          aria-pressed="{{ search.communityNotesEnabled }}"
+          aria-label="Toggle Community Notes"
+        >
+          <i class="icon-map"></i>
+          Notes
+        </button>
+      </div>
     </div>
   </div>
   <!-- /Search settings -->

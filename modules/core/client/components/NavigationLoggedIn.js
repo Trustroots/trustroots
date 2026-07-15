@@ -171,6 +171,12 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('Media'),
               },
               {
+                href: 'https://wiki.trustroots.org/',
+                label: t('Wiki'),
+                target: '_blank',
+                rel: 'noopener noreferrer',
+              },
+              {
                 href: '/privacy',
                 label: t('Privacy'),
               },
@@ -191,6 +197,8 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
               {
                 href: 'https://team.trustroots.org/',
                 label: t('Volunteering'),
+                target: '_blank',
+                rel: 'noopener noreferrer',
               },
             ]}
           />

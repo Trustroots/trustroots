@@ -246,7 +246,9 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 
     const nostrAddress = `${user.username}@trustroots.org`;
     await expect(
-      page.getByRole('link', { name: nostrAddress }),
+      page
+        .locator('.elsewhere-profiles')
+        .getByRole('link', { name: 'Nostroots' }),
     ).toHaveAttribute(
       'href',
       `https://nos.trustroots.org/v0/#profile/${encodeURIComponent(
