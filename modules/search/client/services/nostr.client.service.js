@@ -23,6 +23,10 @@ export function getNostrEventAuthorPubkey(event) {
   return event?.pubkey;
 }
 
+function getReferencedEventIds(event) {
+  return event.tags.filter(tag => tag[0] === 'e' && tag[1]).map(tag => tag[1]);
+}
+
 /**
  * NostrService — manages WebSocket relay connection and Nostr subscriptions.
  * Framework-agnostic; consumed by React components.
@@ -138,7 +142,27 @@ export default class NostrService {
           return;
         }
         resolved = true;
-        const dedupedEvents = [...new Map(events.map(e => [e.id, e])).values()]
+        const validatedOriginalEventIds = new Set();
+        events.forEach(event => {
+          if (event.kind === 30398) {
+            getReferencedEventIds(event).forEach(eventId => {
+              validatedOriginalEventIds.add(eventId);
+            });
+          }
+        });
+        const dedupedEvents = [
+          ...new Map(
+            events
+              .filter(
+                event =>
+                  !(
+                    event.kind === 30397 &&
+                    validatedOriginalEventIds.has(event.id)
+                  ),
+              )
+              .map(event => [event.id, event]),
+          ).values(),
+        ]
           .sort((a, b) => b.created_at - a.created_at)
           .slice(0, limit);
         resolve(dedupedEvents);

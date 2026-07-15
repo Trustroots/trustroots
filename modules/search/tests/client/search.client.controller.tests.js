@@ -265,6 +265,16 @@ describe('SearchController', function () {
     );
   });
 
+  it('toggles community notes from the mobile map controls', function () {
+    const { controller, FiltersService } = createController();
+    controller.communityNotesEnabled = true;
+
+    controller.toggleCommunityNotes();
+
+    expect(controller.communityNotesEnabled).toBe(false);
+    expect(FiltersService.set).toHaveBeenCalledWith('communityNotes', false);
+  });
+
   it('broadcasts map center when place search returns center coordinates', function () {
     const { $scope, controller } = createController();
     const center = { lat: 52.5, lng: 13.4 };

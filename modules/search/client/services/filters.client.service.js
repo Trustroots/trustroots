@@ -13,7 +13,7 @@ function FiltersService($log, Authentication, locker) {
     seen: {
       months: 6,
     },
-    communityNotes: false,
+    communityNotes: true,
   };
 
   // Make cache id unique for this user

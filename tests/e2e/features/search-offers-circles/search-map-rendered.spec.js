@@ -321,11 +321,11 @@ test.describe('rendered search map feature coverage', () => {
     expect(await readZoom()).toBeGreaterThan(initialZoom);
   });
 
-  test('Community Notes search filter toggles and persists', async ({
+  test('Community Notes search filter is enabled by default and persists changes', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'Community Notes filter can be enabled and persisted.',
+      'Community Notes filter is enabled by default and persists changes.',
       'Nostroots community note relay requests are isolated from external network.',
     ]);
 
@@ -338,20 +338,39 @@ test.describe('rendered search map feature coverage', () => {
     const checkbox = filterLabel.locator('input[type="checkbox"]');
 
     await expect(filterLabel).toBeVisible();
-    if (await checkbox.isChecked()) {
-      await filterLabel.click();
-      await expect(checkbox).not.toBeChecked();
-    }
-
-    await filterLabel.click();
-    await expect(checkbox).toBeChecked();
-
-    await page.reload();
-    await expect(filterLabel).toBeVisible();
     await expect(checkbox).toBeChecked();
 
     await filterLabel.click();
     await expect(checkbox).not.toBeChecked();
+
+    await page.reload();
+    await expect(filterLabel).toBeVisible();
+    await expect(checkbox).not.toBeChecked();
+
+    await filterLabel.click();
+    await expect(checkbox).toBeChecked();
+  });
+
+  test('Community Notes are visible and controllable on mobile maps', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Mobile maps expose a Community Notes toggle.',
+      'The toggle reflects the default-enabled Community Notes setting.',
+    ]);
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await installNostrRelayStub(page);
+    await page.goto('/search');
+
+    const notesToggle = page.getByRole('button', {
+      name: 'Toggle Community Notes',
+    });
+    await expect(notesToggle).toBeVisible();
+    await expect(notesToggle).toHaveAttribute('aria-pressed', 'true');
+
+    await notesToggle.click();
+    await expect(notesToggle).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('Community Notes sidebar opens the Nostroots action modal', async ({
