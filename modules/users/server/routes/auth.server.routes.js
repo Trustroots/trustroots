@@ -52,16 +52,6 @@ module.exports = function (app) {
     .all(usersPolicy.isAllowed)
     .get(userAuthentication.oauthCallback('facebook'));
 
-  // Setting the twitter oauth routes
-  app
-    .route('/api/auth/twitter')
-    .all(usersPolicy.isAllowed)
-    .get(passport.authenticate('twitter'));
-  app
-    .route('/api/auth/twitter/callback')
-    .all(usersPolicy.isAllowed)
-    .get(userAuthentication.oauthCallback('twitter'));
-
   // Setting the github oauth routes
   app
     .route('/api/auth/github')
