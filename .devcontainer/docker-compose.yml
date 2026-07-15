@@ -19,7 +19,10 @@ services:
       - mongodb
       - maildev
     ports:
-      - '127.0.0.1:${TRUSTROOTS_DEV_WEBPACK_HOST_PORT:-13000}:3000'
+      # Keep the dev server private by default. Set
+      # TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS=0.0.0.0 before rebuilding the
+      # devcontainer to test it from another device on the local network.
+      - '${TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS:-127.0.0.1}:${TRUSTROOTS_DEV_WEBPACK_HOST_PORT:-13000}:3000'
       - '127.0.0.1:${TRUSTROOTS_DEV_SERVER_HOST_PORT:-13001}:3001'
       - '127.0.0.1:${TRUSTROOTS_DEV_LIVERELOAD_HOST_PORT:-45729}:35729'
       - '127.0.0.1:${TRUSTROOTS_DEV_SERVER_INSPECTOR_HOST_PORT:-15858}:5858'
