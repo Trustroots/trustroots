@@ -41,6 +41,12 @@ const Count = styled.p`
   font-weight: 300;
 `;
 
+const PeriodGroup = styled.div`
+  & + & {
+    margin-top: 20px;
+  }
+`;
+
 export default function Statistics({ isAuthenticated }) {
   const { t } = useTranslation('statistics');
   const [statistics, setStatistics] = useState(false);
@@ -104,6 +110,81 @@ export default function Statistics({ isAuthenticated }) {
         <div className="row">
           <div className="col-xs-12">
             <Grid>
+              <Stat title={t('Real-life connections')} className="is-graph">
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <PeriodGroup>
+                      <Count>
+                        {numberFormat(
+                          experienceStatistics.realLifeConnections?.total ?? 0,
+                        )}
+                      </Count>
+                      <p className="text-muted">
+                        {t('{{percentage}}% recommended overall', {
+                          percentage: recommendationPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                    <PeriodGroup>
+                      <p className="text-muted">
+                        {t('{{count}} in the last 90 days', {
+                          count: numberFormat(
+                            experienceStatistics.realLifeConnections?.recent ??
+                              0,
+                          ),
+                        })}
+                      </p>
+                      <p className="text-muted">
+                        {t('{{percentage}}% recommended in the last 90 days', {
+                          percentage: recentRecommendationPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Message interactions')} className="is-graph">
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <PeriodGroup>
+                      <Count>
+                        {numberFormat(messageInteractionStatistics.total)}
+                      </Count>
+                      <p className="text-muted">
+                        {t(
+                          'Interactions where both members exchanged messages',
+                        )}
+                      </p>
+                      <p className="text-muted">
+                        {t('{{percentage}}% positive feedback overall', {
+                          percentage: positiveFeedbackPercentage,
+                        })}
+                      </p>
+                    </PeriodGroup>
+                    <PeriodGroup>
+                      <p className="text-muted">
+                        {t('{{count}} in the last 90 days', {
+                          count: numberFormat(
+                            recentMessageInteractionStatistics.total,
+                          ),
+                        })}
+                      </p>
+                      <p className="text-muted">
+                        {t(
+                          '{{percentage}}% positive feedback in the last 90 days',
+                          { percentage: recentPositiveFeedbackPercentage },
+                        )}
+                      </p>
+                    </PeriodGroup>
+                  </>
+                )}
+              </Stat>
+
               <Stat title={t('Members')}>
                 {!statistics ? (
                   <CountPlaceholder />
@@ -234,70 +315,6 @@ export default function Statistics({ isAuthenticated }) {
                         </a>
                       </p>
                     )}
-                  </>
-                )}
-              </Stat>
-
-              <Stat title={t('Real-life connections')} className="is-graph">
-                {!statistics ? (
-                  <CountPlaceholder />
-                ) : (
-                  <>
-                    <Count>
-                      {numberFormat(
-                        experienceStatistics.realLifeConnections?.total ?? 0,
-                      )}
-                    </Count>
-                    <p className="text-muted">
-                      {t('{{count}} in the last 90 days', {
-                        count: numberFormat(
-                          experienceStatistics.realLifeConnections?.recent ?? 0,
-                        ),
-                      })}
-                    </p>
-                    <p className="text-muted">
-                      {t('{{percentage}}% recommended overall', {
-                        percentage: recommendationPercentage,
-                      })}
-                    </p>
-                    <p className="text-muted">
-                      {t('{{percentage}}% recommended in the last 90 days', {
-                        percentage: recentRecommendationPercentage,
-                      })}
-                    </p>
-                  </>
-                )}
-              </Stat>
-
-              <Stat title={t('Message interactions')} className="is-graph">
-                {!statistics ? (
-                  <CountPlaceholder />
-                ) : (
-                  <>
-                    <Count>
-                      {numberFormat(messageInteractionStatistics.total)}
-                    </Count>
-                    <p className="text-muted">
-                      {t('Threads where the first message received a reply')}
-                    </p>
-                    <p className="text-muted">
-                      {t('{{count}} in the last 90 days', {
-                        count: numberFormat(
-                          recentMessageInteractionStatistics.total,
-                        ),
-                      })}
-                    </p>
-                    <p className="text-muted">
-                      {t('{{percentage}}% positive feedback overall', {
-                        percentage: positiveFeedbackPercentage,
-                      })}
-                    </p>
-                    <p className="text-muted">
-                      {t(
-                        '{{percentage}}% positive feedback in the last 90 days',
-                        { percentage: recentPositiveFeedbackPercentage },
-                      )}
-                    </p>
                   </>
                 )}
               </Stat>

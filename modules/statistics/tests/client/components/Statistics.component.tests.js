@@ -58,6 +58,12 @@ describe('<Statistics />', () => {
     render(<Statistics isAuthenticated={true} />);
 
     expect(await screen.findByText('40%')).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .slice(0, 2)
+        .map(heading => heading.textContent),
+    ).toEqual(['Real-life connections', 'Message interactions']);
     expect(screen.getByText('Trustroots Statistics')).toBeInTheDocument();
     expect(screen.getByText('Members')).toBeInTheDocument();
     expect(
@@ -71,7 +77,7 @@ describe('<Statistics />', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Message interactions')).toBeInTheDocument();
     expect(
-      screen.getByText('Threads where the first message received a reply'),
+      screen.getByText('Interactions where both members exchanged messages'),
     ).toBeInTheDocument();
     expect(
       screen.getByText('70% positive feedback overall'),
