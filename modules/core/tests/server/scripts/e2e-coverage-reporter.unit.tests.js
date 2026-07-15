@@ -18,6 +18,9 @@ const {
   summarizeFeatureCoverage,
   validateFeatureManifest,
 } = require('../../../../../scripts/e2e/feature-coverage-summary');
+const {
+  summarizeReport,
+} = require('../../../../../scripts/e2e/summarize-results');
 
 function reportWithSpecs(specs) {
   return {
@@ -117,6 +120,30 @@ describe('E2E coverage reporter unit tests', () => {
       summary.areaPassCoverage.should.equal(
         Number(((1 / DEFINED_AREAS.length) * 100).toFixed(2)),
       );
+    });
+  });
+
+  describe('summarizeReport', () => {
+    it('counts setup checks without assigning them to a product area', () => {
+      const summary = summarizeReport(
+        reportWithSpecs([
+          spec('tests/e2e/setup/auth.setup.js', 'authentication setup', [
+            testCase('passed'),
+            testCase('passed'),
+            testCase('passed'),
+          ]),
+          spec('tests/e2e/features/messages/messages.spec.js', 'inbox', [
+            testCase('passed'),
+          ]),
+        ]),
+      );
+
+      summary.total.should.equal(4);
+      summary.passed.should.equal(4);
+      summary.byArea.should.deepEqual({
+        Messages: { total: 1, passed: 1, failed: 0, skipped: 0 },
+      });
+      summary.areas.should.deepEqual(['Messages']);
     });
   });
 
