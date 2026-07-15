@@ -1,4 +1,9 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const {
+  annotateFeature,
+  expect,
+  test,
+  useElementScreenshot,
+} = require('../../support/test');
 
 const { SEEDED_MEMBERS, waitForTribesList } = require('../../support/helpers');
 
@@ -73,8 +78,10 @@ test.describe('seeded content and public API flows', () => {
   test('circle detail page loads for a seeded tribe', async ({
     page,
   }, testInfo) => {
+    useElementScreenshot(testInfo, 'section.tribe-header');
     annotateFeature(testInfo, 'circles.detail', [
       'Seeded circle detail page loads.',
+      'Circle detail page links to its Wiki page.',
       'Unknown circle shows a user-facing error or not found state.',
     ]);
 
@@ -90,6 +97,14 @@ test.describe('seeded content and public API flows', () => {
     await expect(
       page.locator('h2.tribe-title', { hasText: 'Hitchhikers' }).first(),
     ).toBeVisible();
+
+    const wikiLink = page.getByRole('link', { name: 'Circle Wiki' });
+    await expect(wikiLink).toHaveAttribute(
+      'href',
+      'https://wiki.trustroots.org/en/Hitchhikers',
+    );
+    await expect(wikiLink).toHaveAttribute('target', '_blank');
+    await expect(wikiLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   test('tribes API returns seeded circles', async ({ request }, testInfo) => {
