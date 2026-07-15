@@ -216,7 +216,7 @@ describe('User signup and authentication CRUD tests', function () {
   it('should be able to register a new user but not inject additional roles', function (done) {
     _unConfirmedUser.username = 'registernewuser';
     _unConfirmedUser.email = 'register-new-user@example.org';
-    _unConfirmedUser.roles = ['user', 'admin'];
+    _unConfirmedUser.roles = ['user', 'untrusted-role'];
 
     agent
       .post('/api/auth/signup')
