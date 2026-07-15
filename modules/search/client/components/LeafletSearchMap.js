@@ -7,11 +7,9 @@ import Supercluster from 'supercluster';
 import './leaflet-search-map.less';
 
 // Internal dependencies
+import { getRasterMapTiles } from '@/modules/core/client/utils/map';
 import { CLUSTER_MAX_ZOOM, MIN_ZOOM } from './constants';
 
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const offerColours = {
   'host-maybe': '#f2ae43',
   'host-yes': '#58ba58',
@@ -154,10 +152,8 @@ export default function LeafletSearchMap({
     const offerGroup = L.layerGroup().addTo(map);
     const communityNoteGroup = L.layerGroup().addTo(map);
 
-    L.tileLayer(OSM_TILE_URL, {
-      attribution: OSM_ATTRIBUTION,
-      maxZoom: 19,
-    }).addTo(map);
+    const tiles = getRasterMapTiles();
+    L.tileLayer(tiles.url, tiles.options).addTo(map);
 
     const onMoveEnd = () => callbacksRef.current.onMapChange(getMapState(map));
     map.on('click', () => callbacksRef.current.onMapClick());
@@ -166,7 +162,18 @@ export default function LeafletSearchMap({
     groupsRef.current = { communityNoteGroup, offerGroup };
     onMoveEnd();
 
+    // The search pane changes size after the mobile controls are laid out.
+    // Leaflet otherwise keeps the narrow initial viewport and leaves unfilled
+    // space beside the requested tiles on iOS.
+    const invalidateSize = () => map.invalidateSize({ pan: false });
+    const initialResize = window.setTimeout(invalidateSize);
+    const settledResize = window.setTimeout(invalidateSize, 250);
+    window.addEventListener('resize', invalidateSize);
+
     return () => {
+      window.clearTimeout(initialResize);
+      window.clearTimeout(settledResize);
+      window.removeEventListener('resize', invalidateSize);
       map.remove();
       groupsRef.current = null;
       mapRef.current = null;

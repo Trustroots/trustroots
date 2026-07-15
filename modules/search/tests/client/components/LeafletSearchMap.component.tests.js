@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import L from 'leaflet';
 
 import LeafletSearchMap from '@/modules/search/client/components/LeafletSearchMap';
@@ -9,6 +9,7 @@ const mockMap = {
   getBounds: jest.fn(),
   getCenter: jest.fn(),
   getZoom: jest.fn(),
+  invalidateSize: jest.fn(),
   on: jest.fn((name, handler) => {
     mockMapHandlers[name] = handler;
   }),
@@ -135,6 +136,7 @@ beforeEach(() => {
   mockMap.getBounds.mockReturnValue(bounds);
   mockMap.getCenter.mockReturnValue({ lat: 52, lng: 13 });
   mockMap.getZoom.mockReturnValue(6);
+  mockMap.invalidateSize.mockClear();
   mockMap.setView.mockClear();
   mockMap.remove.mockClear();
   mockMap.on.mockClear();
@@ -202,7 +204,7 @@ describe('<LeafletSearchMap />', () => {
     expect(L.DomEvent.stopPropagation).toHaveBeenCalledTimes(3);
   });
 
-  it('updates the map from an externally changed viewport and removes it', () => {
+  it('updates the map from an externally changed viewport and removes it', async () => {
     const { rerender, unmount } = renderMap();
     mockMap.getCenter.mockReturnValue({ lat: 52, lng: 13 });
     mockMap.getZoom.mockReturnValue(6);
@@ -220,6 +222,10 @@ describe('<LeafletSearchMap />', () => {
     );
 
     expect(mockMap.setView).toHaveBeenCalledWith([53, 14], 7);
+
+    await waitFor(() =>
+      expect(mockMap.invalidateSize).toHaveBeenCalledWith({ pan: false }),
+    );
 
     unmount();
     expect(mockMap.remove).toHaveBeenCalledTimes(1);
