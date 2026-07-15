@@ -538,7 +538,7 @@ const features = [
     requiredScenarios: [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
-      'Public statistics API returns deterministic data.',
+      'Public statistics API returns deterministic connection and message-interaction data.',
     ],
     relatedSpecs: [
       spec('seeded-content.spec.js', 'statistics page loads for visitors'),
@@ -1060,7 +1060,7 @@ const features = [
     area: AREA.authAccount,
     status: STATUS.active,
     description:
-      'Members can connect and disconnect Facebook, Twitter, and GitHub OAuth accounts via local stubs.',
+      'Members can connect and disconnect Facebook and GitHub OAuth accounts via local stubs.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1077,8 +1077,6 @@ const features = [
         apiRoute('GET', '/api/auth/facebook', source.usersAuthServer),
         apiRoute('PUT', '/api/auth/facebook', source.usersAuthServer),
         apiRoute('GET', '/api/auth/facebook/callback', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/twitter', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/twitter/callback', source.usersAuthServer),
         apiRoute('GET', '/api/auth/github', source.usersAuthServer),
         apiRoute('GET', '/api/auth/github/callback', source.usersAuthServer),
         apiRoute('DELETE', '/api/users/accounts/:provider', source.usersServer),

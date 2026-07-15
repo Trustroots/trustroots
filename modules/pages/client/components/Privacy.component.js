@@ -164,7 +164,7 @@ export default function Privacy() {
               </a>
               .<h3>{t('Social networks')}</h3>
               {t(
-                "Some of the features on Trustroots use other social networks such as Twitter, Facebook, GitHub or Gravatar. You don't have to connect your profile to these and we don't share any data with these networks. We only crawl information you give us access to and show it on your profile if you want to. Some of the data from these sites is then stored on our server.",
+                "Some of the features on Trustroots use other social networks such as Facebook, GitHub or Gravatar. You don't have to connect your profile to these and we don't share any data with these networks. We only crawl information you give us access to and show it on your profile if you want to. Some of the data from these sites is then stored on our server.",
               )}
               <br />
               <br />

@@ -392,7 +392,7 @@ exports.oauthCallback = function (strategy) {
  * Helper function to update a OAuth user profile
  * Doesn't let users sign up using providers;
  * - They'll first sign up using local.js strategy
- * - Then they can connect their profiles to other networks using other strategies (eg. Twitter)
+ * - Then they can connect their profiles to other networks using other strategies (eg. GitHub)
  */
 exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
   if (!req.user) {

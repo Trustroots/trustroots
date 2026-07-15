@@ -85,14 +85,6 @@ exports.invokeRolesPolicies = function () {
           permissions: ['get', 'post', 'delete'],
         },
         {
-          resources: '/api/auth/twitter',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/auth/twitter/callback',
-          permissions: ['get'],
-        },
-        {
           resources: '/api/auth/facebook',
           permissions: ['get', 'put'],
         },
