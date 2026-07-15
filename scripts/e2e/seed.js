@@ -292,8 +292,15 @@ async function updateTribeCounts(Tribe, tribesByLabel, tribeCounts) {
   }
 }
 
-async function seedConversation(Message, Thread, usersByUsername, conversation) {
+async function seedConversation(
+  Message,
+  MessageStat,
+  Thread,
+  usersByUsername,
+  conversation,
+) {
   let latestMessage;
+  const messages = [];
 
   for (const entry of conversation.messages) {
     const message = new Message({
@@ -305,6 +312,7 @@ async function seedConversation(Message, Thread, usersByUsername, conversation) 
       notificationCount: 0,
     });
     await message.save();
+    messages.push(message);
     latestMessage = message;
   }
 
@@ -316,6 +324,27 @@ async function seedConversation(Message, Thread, usersByUsername, conversation) 
     read: latestMessage.read,
   });
   await thread.save();
+
+  const firstMessage = messages[0];
+  const firstReply = messages
+    .slice(1)
+    .find(
+      message =>
+        message.userFrom.equals(firstMessage.userTo) &&
+        message.userTo.equals(firstMessage.userFrom),
+    );
+  const messageStat = new MessageStat({
+    firstMessageUserFrom: firstMessage.userFrom,
+    firstMessageUserTo: firstMessage.userTo,
+    firstMessageCreated: firstMessage.created,
+    firstMessageLength: firstMessage.content.length,
+    firstReplyCreated: firstReply?.created ?? null,
+    firstReplyLength: firstReply?.content.length ?? null,
+    timeToFirstReply: firstReply
+      ? firstReply.created.getTime() - firstMessage.created.getTime()
+      : null,
+  });
+  await messageStat.save();
 }
 
 async function seedShadowMessages(Message, usersByUsername, shadowMessages) {
@@ -434,6 +463,7 @@ async function seedDatabase() {
   const User = mongoose.model('User');
   const Offer = mongoose.model('Offer');
   const Message = mongoose.model('Message');
+  const MessageStat = mongoose.model('MessageStat');
   const Thread = mongoose.model('Thread');
   const Experience = mongoose.model('Experience');
   const Contact = mongoose.model('Contact');
@@ -452,7 +482,13 @@ async function seedDatabase() {
   await updateTribeCounts(Tribe, tribesByLabel, tribeCounts);
 
   for (const conversation of CONVERSATIONS) {
-    await seedConversation(Message, Thread, usersByUsername, conversation);
+    await seedConversation(
+      Message,
+      MessageStat,
+      Thread,
+      usersByUsername,
+      conversation,
+    );
   }
 
   await seedShadowMessages(Message, usersByUsername, SHADOW_MESSAGES);

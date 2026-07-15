@@ -26,25 +26,31 @@ test.describe('seeded content and public API flows', () => {
     annotateFeature(testInfo, 'public.statistics', [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
-      'Public statistics API returns deterministic experience data.',
+      'Public statistics API returns deterministic connection and message-interaction data.',
     ]);
 
     await page.goto('/statistics');
 
     await expect(page).toHaveURL(/\/statistics/);
     await expect(page).toHaveTitle(/Statistics - Trustroots/);
-    await expect(page.getByText('Experiences')).toBeVisible();
-    await expect(page.getByText('Recommended by members')).toBeVisible();
     await expect(page.getByText('Real-life connections')).toBeVisible();
+    await expect(page.getByText('Message interactions')).toBeVisible();
 
     const response = await request.get('/api/statistics');
     expect(response.ok()).toBeTruthy();
-    expect((await response.json()).experiences).toEqual({
+    const publicStatistics = await response.json();
+    expect(publicStatistics.experiences).toEqual({
       total: 2,
       recommended: 1,
       notRecommended: 0,
       recent: { total: 2, recommended: 1, notRecommended: 0 },
       realLifeConnections: { total: 2, recent: 2 },
+    });
+    expect(publicStatistics.messageInteractions).toEqual({
+      total: 1,
+      positive: 0,
+      negative: 1,
+      recent: { total: 1, positive: 0, negative: 1 },
     });
   });
 

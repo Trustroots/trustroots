@@ -2,11 +2,14 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
+const statistics = require('../../server/controllers/statistics.server.controller');
 
 require('should');
 
 const Offer = mongoose.model('Offer');
 const Experience = mongoose.model('Experience');
+const MessageStat = mongoose.model('MessageStat');
+const ReferenceThread = mongoose.model('ReferenceThread');
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 const differentNpub =
@@ -37,6 +40,13 @@ function assertStats(stats) {
     notRecommended: 2,
     recent: { total: 4, recommended: 2, notRecommended: 1 },
     realLifeConnections: { total: 3, recent: 2 },
+  });
+
+  stats.messageInteractions.should.deepEqual({
+    total: 2,
+    positive: 2,
+    negative: 1,
+    recent: { total: 1, positive: 1, negative: 1 },
   });
 }
 
@@ -102,6 +112,7 @@ describe('Statistics CRUD tests', () => {
 
     // Save database contents just once because we're not modifying anything between tests
     before(async () => {
+      statistics.clearPublicStatisticsCache();
       users = await utils.saveUsers(_users);
 
       // @TODO: add via test utils
@@ -171,9 +182,74 @@ describe('Statistics CRUD tests', () => {
           interactions: { met: true, guest: false, host: false },
         },
       ]);
+
+      const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
+      const recentDate = new Date();
+
+      await MessageStat.create([
+        {
+          firstMessageUserFrom: users[0]._id,
+          firstMessageUserTo: users[1]._id,
+          firstMessageCreated: recentDate,
+          firstReplyCreated: recentDate,
+        },
+        {
+          firstMessageUserFrom: users[1]._id,
+          firstMessageUserTo: users[2]._id,
+          firstMessageCreated: oldDate,
+          firstReplyCreated: oldDate,
+        },
+        {
+          firstMessageUserFrom: users[2]._id,
+          firstMessageUserTo: users[3]._id,
+          firstMessageCreated: recentDate,
+          firstReplyCreated: null,
+        },
+      ]);
+
+      await ReferenceThread.create([
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          reference: 'yes',
+          created: oldDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          reference: 'no',
+          created: recentDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[1]._id,
+          userTo: users[0]._id,
+          reference: 'yes',
+          created: recentDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[1]._id,
+          userTo: users[2]._id,
+          reference: 'yes',
+          created: oldDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[2]._id,
+          userTo: users[3]._id,
+          reference: 'yes',
+          created: recentDate,
+        },
+      ]);
     });
 
-    after(utils.clearDatabase);
+    after(() => {
+      statistics.clearPublicStatisticsCache();
+      return utils.clearDatabase();
+    });
 
     it('should be able to read statistics when not logged in', async () => {
       const { body } = await agent.get('/api/statistics').expect(200);

@@ -47,16 +47,31 @@ export default function Statistics({ isAuthenticated }) {
 
   const numberFormat = number =>
     number ? new Intl.NumberFormat().format(number) : 0;
+  const percentage = (positive, negative) => {
+    const answered = (positive ?? 0) + (negative ?? 0);
+    return answered ? Math.round(((positive ?? 0) / answered) * 100) : 0;
+  };
   const experienceStatistics = statistics?.experiences ?? {};
   const recentExperienceStatistics = experienceStatistics.recent ?? {};
-  const recommendationCount =
-    (experienceStatistics.recommended ?? 0) +
-    (experienceStatistics.notRecommended ?? 0);
-  const recommendationPercentage = recommendationCount
-    ? Math.round(
-        ((experienceStatistics.recommended ?? 0) / recommendationCount) * 100,
-      )
-    : 0;
+  const messageInteractionStatistics = statistics?.messageInteractions ?? {};
+  const recentMessageInteractionStatistics =
+    messageInteractionStatistics.recent ?? {};
+  const recommendationPercentage = percentage(
+    experienceStatistics.recommended,
+    experienceStatistics.notRecommended,
+  );
+  const recentRecommendationPercentage = percentage(
+    recentExperienceStatistics.recommended,
+    recentExperienceStatistics.notRecommended,
+  );
+  const positiveFeedbackPercentage = percentage(
+    messageInteractionStatistics.positive,
+    messageInteractionStatistics.negative,
+  );
+  const recentPositiveFeedbackPercentage = percentage(
+    recentMessageInteractionStatistics.positive,
+    recentMessageInteractionStatistics.negative,
+  );
 
   useEffect(async () => {
     const { data } = await get();
@@ -223,50 +238,7 @@ export default function Statistics({ isAuthenticated }) {
                 )}
               </Stat>
 
-              <Stat title={t('Experiences')}>
-                {!statistics ? (
-                  <CountPlaceholder />
-                ) : (
-                  <>
-                    <Count>
-                      {numberFormat(experienceStatistics.total ?? 0)}
-                    </Count>
-                    <p className="text-muted">
-                      {t('{{count}} in the last 90 days', {
-                        count: numberFormat(
-                          recentExperienceStatistics.total ?? 0,
-                        ),
-                      })}
-                    </p>
-                  </>
-                )}
-              </Stat>
-
-              <Stat title={t('Recommended by members')}>
-                {!statistics ? (
-                  <CountPlaceholder />
-                ) : (
-                  <>
-                    <Count>
-                      {numberFormat(experienceStatistics.recommended ?? 0)}
-                    </Count>
-                    <p className="text-muted">
-                      {t('{{percentage}}% of answered recommendations', {
-                        percentage: recommendationPercentage,
-                      })}
-                    </p>
-                    <p className="text-muted">
-                      {t('{{count}} in the last 90 days', {
-                        count: numberFormat(
-                          recentExperienceStatistics.recommended ?? 0,
-                        ),
-                      })}
-                    </p>
-                  </>
-                )}
-              </Stat>
-
-              <Stat title={t('Real-life connections')}>
+              <Stat title={t('Real-life connections')} className="is-graph">
                 {!statistics ? (
                   <CountPlaceholder />
                 ) : (
@@ -277,14 +249,54 @@ export default function Statistics({ isAuthenticated }) {
                       )}
                     </Count>
                     <p className="text-muted">
-                      {t('Members who said they met in person')}
-                    </p>
-                    <p className="text-muted">
                       {t('{{count}} in the last 90 days', {
                         count: numberFormat(
                           experienceStatistics.realLifeConnections?.recent ?? 0,
                         ),
                       })}
+                    </p>
+                    <p className="text-muted">
+                      {t('{{percentage}}% recommended overall', {
+                        percentage: recommendationPercentage,
+                      })}
+                    </p>
+                    <p className="text-muted">
+                      {t('{{percentage}}% recommended in the last 90 days', {
+                        percentage: recentRecommendationPercentage,
+                      })}
+                    </p>
+                  </>
+                )}
+              </Stat>
+
+              <Stat title={t('Message interactions')} className="is-graph">
+                {!statistics ? (
+                  <CountPlaceholder />
+                ) : (
+                  <>
+                    <Count>
+                      {numberFormat(messageInteractionStatistics.total)}
+                    </Count>
+                    <p className="text-muted">
+                      {t('Threads where the first message received a reply')}
+                    </p>
+                    <p className="text-muted">
+                      {t('{{count}} in the last 90 days', {
+                        count: numberFormat(
+                          recentMessageInteractionStatistics.total,
+                        ),
+                      })}
+                    </p>
+                    <p className="text-muted">
+                      {t('{{percentage}}% positive feedback overall', {
+                        percentage: positiveFeedbackPercentage,
+                      })}
+                    </p>
+                    <p className="text-muted">
+                      {t(
+                        '{{percentage}}% positive feedback in the last 90 days',
+                        { percentage: recentPositiveFeedbackPercentage },
+                      )}
                     </p>
                   </>
                 )}

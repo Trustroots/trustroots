@@ -7,6 +7,8 @@ const sinon = require('sinon');
 require('../../../offers/server/models/offer.server.model');
 require('../../../users/server/models/user.server.model');
 require('../../../experiences/server/models/experiences.server.model');
+require('../../../messages/server/models/message-stat.server.model');
+require('../../../references-thread/server/models/reference-thread.server.model');
 const statistics = require('../../server/controllers/statistics.server.controller');
 const statService = require('../../../stats/server/services/stats.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -15,6 +17,8 @@ require('should');
 const User = mongoose.model('User');
 const Offer = mongoose.model('Offer');
 const Experience = mongoose.model('Experience');
+const MessageStat = mongoose.model('MessageStat');
+const ReferenceThread = mongoose.model('ReferenceThread');
 
 function deferredResponse() {
   let resolveResponse;
@@ -49,6 +53,7 @@ function deferredResponse() {
 describe('Statistics controller unit tests', () => {
   afterEach(() => {
     sinon.restore();
+    statistics.clearPublicStatisticsCache();
     if (mongoose.connection.readyState !== 1) {
       return undefined;
     }
@@ -128,6 +133,111 @@ describe('Statistics controller unit tests', () => {
         .callsFake((pipeline, cb) => cb(dbError));
       statistics.getExperienceStatistics(new Date(), err => {
         err.should.be.Error();
+        done();
+      });
+    });
+
+    it('getMessageInteractionStatistics propagates database errors', done => {
+      sinon
+        .stub(MessageStat, 'aggregate')
+        .callsFake((pipeline, cb) => cb(dbError));
+      statistics.getMessageInteractionStatistics(new Date(), err => {
+        err.should.be.Error();
+        done();
+      });
+    });
+  });
+
+  describe('getMessageInteractionStatistics', () => {
+    it('counts only replied threads and the latest eligible feedback', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(4));
+      const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
+      const recentDate = new Date();
+      const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+
+      await MessageStat.create([
+        {
+          firstMessageUserFrom: users[0]._id,
+          firstMessageUserTo: users[1]._id,
+          firstMessageCreated: recentDate,
+          firstReplyCreated: recentDate,
+        },
+        {
+          firstMessageUserFrom: users[1]._id,
+          firstMessageUserTo: users[2]._id,
+          firstMessageCreated: oldDate,
+          firstReplyCreated: oldDate,
+        },
+        {
+          firstMessageUserFrom: users[2]._id,
+          firstMessageUserTo: users[3]._id,
+          firstMessageCreated: recentDate,
+          firstReplyCreated: null,
+        },
+      ]);
+
+      await ReferenceThread.create([
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          reference: 'yes',
+          created: oldDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          reference: 'no',
+          created: recentDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[1]._id,
+          userTo: users[0]._id,
+          reference: 'yes',
+          created: recentDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[1]._id,
+          userTo: users[2]._id,
+          reference: 'yes',
+          created: oldDate,
+        },
+        {
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[2]._id,
+          userTo: users[3]._id,
+          reference: 'yes',
+          created: recentDate,
+        },
+      ]);
+
+      const result = await new Promise((resolve, reject) => {
+        statistics.getMessageInteractionStatistics(since, (err, counts) => {
+          if (err) return reject(err);
+          resolve(counts);
+        });
+      });
+
+      result.should.deepEqual({
+        total: 2,
+        positive: 2,
+        negative: 1,
+        recent: { total: 1, positive: 1, negative: 1 },
+      });
+    });
+
+    it('returns zeroed counts when there are no message interactions', done => {
+      statistics.getMessageInteractionStatistics(new Date(), (err, counts) => {
+        if (err) return done(err);
+        counts.should.deepEqual({
+          total: 0,
+          positive: 0,
+          negative: 0,
+          recent: { total: 0, positive: 0, negative: 0 },
+        });
         done();
       });
     });
@@ -428,6 +538,8 @@ describe('Statistics controller unit tests', () => {
         .should.containEql('nostr');
       res.body.should.have.property('newsletter');
       res.body.should.have.property('experiences');
+      res.body.should.have.property('messageInteractions');
+      res.headers['cache-control'].should.equal('public, max-age=3600');
     });
 
     it('returns 400 when collecting public statistics fails', async () => {
@@ -512,6 +624,53 @@ describe('Statistics controller unit tests', () => {
       statistics.getPublicStatistics({}, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 when message interaction statistics fail', async () => {
+      sinon
+        .stub(statistics, 'getMessageInteractionStatistics')
+        .callsFake((since, cb) => {
+          cb(new Error('message interaction statistics failed'));
+        });
+
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.headers['cache-control'].should.equal('no-store');
+    });
+
+    it('reuses a successful response for one hour', async () => {
+      const firstResponse = deferredResponse();
+      statistics.getPublicStatistics({}, firstResponse);
+      await firstResponse.waitForResponse();
+
+      const getUsersCount = sinon.spy(statistics, 'getUsersCount');
+      const cachedResponse = deferredResponse();
+      statistics.getPublicStatistics({}, cachedResponse);
+      await cachedResponse.waitForResponse();
+
+      getUsersCount.called.should.be.false();
+      cachedResponse.body.should.deepEqual(firstResponse.body);
+      cachedResponse.headers['cache-control'].should.equal(
+        'public, max-age=3600',
+      );
+    });
+
+    it('refreshes an expired cached response', async () => {
+      const firstResponse = deferredResponse();
+      statistics.getPublicStatistics({}, firstResponse);
+      await firstResponse.waitForResponse();
+
+      const afterCacheExpiry = Date.now() + 60 * 60 * 1000 + 1;
+      sinon.stub(Date, 'now').returns(afterCacheExpiry);
+      const getUsersCount = sinon.spy(statistics, 'getUsersCount');
+      const refreshedResponse = deferredResponse();
+      statistics.getPublicStatistics({}, refreshedResponse);
+      await refreshedResponse.waitForResponse();
+
+      getUsersCount.calledOnce.should.be.true();
+      refreshedResponse.statusCode.should.equal(200);
     });
 
     it('returns zeroed hosting stats when there are no host offers', async () => {

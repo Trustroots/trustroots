@@ -538,7 +538,7 @@ const features = [
     requiredScenarios: [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
-      'Public statistics API returns deterministic experience data.',
+      'Public statistics API returns deterministic connection and message-interaction data.',
     ],
     relatedSpecs: [
       spec('seeded-content.spec.js', 'statistics page loads for visitors'),
