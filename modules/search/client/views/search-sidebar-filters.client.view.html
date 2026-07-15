@@ -48,6 +48,19 @@
 
   <hr class="hr-gray hr-tight" />
 
+  <p>
+    <label tr-switch>
+      <input
+        type="checkbox"
+        ng-model="search.communityNotesEnabled"
+        ng-change="search.onCommunityNotesToggle()"
+      />
+      Community Notes <small class="text-muted">via Nostroots</small>
+    </label>
+  </p>
+
+  <hr class="hr-gray hr-tight" />
+
   <search-filter-language
     onChangeLanguages="search.onLanguageFiltersChange"
     preSelectedLanguages="search.filters.languages"

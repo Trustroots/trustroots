@@ -1,3 +1,10 @@
+const {
+  finalizeEvent,
+  generateSecretKey,
+  getPublicKey,
+  nip19,
+} = require('nostr-tools');
+
 const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
@@ -7,11 +14,16 @@ const {
   SEEDED_MEMBERS,
   signInViaApi,
 } = require('../../support/helpers');
+const { installNostrRelayStub } = require('../../support/nostr');
 
 // `npub1qqq…zqujme` decodes to an all-zero 32-byte public key, which is the
 // canonical "valid but empty" key the server-side tests reuse.
 const VALID_NPUB =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+const PUBLIC_MEMBER_NPUB =
+  'npub1yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3q2pw2gm';
+const FORM_NPUB =
+  'npub1zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zygse4sl3h';
 // A secret key (nsec) must never be accepted in place of a public key.
 const NSEC = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 
@@ -101,9 +113,10 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     await signInViaApi(page, request, host);
 
     const update = await page.request.put('/api/users', {
-      data: { nostrNpub: VALID_NPUB },
+      data: { nostrNpub: PUBLIC_MEMBER_NPUB },
     });
     expect(update.ok()).toBeTruthy();
+    expect((await update.json()).nostrNpub).toBe(PUBLIC_MEMBER_NPUB);
 
     const response = await request.get(
       `/.well-known/nostr.json?name=${host.username}`,
@@ -113,7 +126,7 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     expect(await response.json()).toEqual({
       names: {
         [host.username]:
-          '0000000000000000000000000000000000000000000000000000000000000000',
+          '2222222222222222222222222222222222222222222222222222222222222222',
       },
     });
   });
@@ -164,16 +177,63 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     const input = page.locator('#nostrNpub');
     await expect(input).toBeVisible();
 
-    await input.fill(VALID_NPUB);
+    await input.fill(FORM_NPUB);
     await page.locator('.profile-editor-save').click();
 
     await expect(page.getByText(/networks updated/i)).toBeVisible();
 
     await page.goto('/profile/edit/networks');
-    await expect(page.locator('#nostrNpub')).toHaveValue(VALID_NPUB);
+    await expect(page.locator('#nostrNpub')).toHaveValue(FORM_NPUB);
   });
 
-  test('links the saved npub to njump.me on the profile view', async ({
+  test('canonicalizes uppercase npubs when saving networks', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
+    await page.goto('/profile/edit/networks');
+
+    const input = page.locator('#nostrNpub');
+    await expect(input).toBeVisible();
+
+    await input.fill(FORM_NPUB.toUpperCase());
+    await page.locator('.profile-editor-save').click();
+
+    await expect(page.getByText(/networks updated/i)).toBeVisible();
+
+    await page.goto('/profile/edit/networks');
+    await expect(page.locator('#nostrNpub')).toHaveValue(FORM_NPUB);
+  });
+
+  test('rejects an npub already saved by another member', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+      'Valid npub is saved and shown on profile view.',
+    ]);
+
+    await signInViaApi(page, request, SEEDED_MEMBERS[1]);
+    await page.goto('/profile/edit/networks');
+
+    const input = page.locator('#nostrNpub');
+    await expect(input).toBeVisible();
+
+    await input.fill(FORM_NPUB);
+    await page.locator('.profile-editor-save').click();
+
+    await expect(
+      page.getByText(
+        'This nostr npub is already in use. Please use another one.',
+      ),
+    ).toBeVisible();
+  });
+
+  test('links the saved npub to nos.trustroots.org on the profile view', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-networks', [
@@ -184,8 +244,80 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 
     await page.goto(`/profile/${user.username}`);
 
+    const nostrAddress = `${user.username}@trustroots.org`;
     await expect(
-      page.getByRole('link', { name: 'nostr npub' }),
-    ).toHaveAttribute('href', `https://njump.me/${VALID_NPUB}`);
+      page
+        .locator('.elsewhere-profiles')
+        .getByRole('link', { name: 'Nostroots' }),
+    ).toHaveAttribute(
+      'href',
+      `https://nos.trustroots.org/v0/#profile/${encodeURIComponent(
+        nostrAddress,
+      )}`,
+    );
+  });
+});
+
+test.describe('nostr community notes badge on the profile view', () => {
+  test('shows the Nostroots badge and recent notes for a member with map notes', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Profile view surfaces the Nostroots badge for members with map notes.',
+      'Recent community notes are listed on the profile from the relay.',
+    ]);
+
+    // Generate a keypair so we can return validly-signed events the client will
+    // accept (nostr-tools verifies signatures before delivering events).
+    const secretKey = generateSecretKey();
+    const pubkey = getPublicKey(secretKey);
+    const npub = nip19.npubEncode(pubkey);
+    const now = Math.floor(Date.now() / 1000);
+
+    const notes = [
+      finalizeEvent(
+        {
+          kind: 30397,
+          created_at: now - 3600,
+          tags: [['d', 'e2e-note-1']],
+          content: 'E2E profile note: sunny rooftop with great coffee.',
+        },
+        secretKey,
+      ),
+      finalizeEvent(
+        {
+          kind: 30397,
+          created_at: now - 7200,
+          tags: [['d', 'e2e-note-2']],
+          content: 'E2E profile note: quiet park, perfect for reading.',
+        },
+        secretKey,
+      ),
+    ];
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signIn(page, user);
+
+    const update = await page.request.put('/api/users', {
+      data: { nostrNpub: npub },
+    });
+    expect(update.ok()).toBeTruthy();
+
+    await installNostrRelayStub(page, { events: notes });
+
+    await page.goto(`/profile/${user.username}`);
+
+    await expect(page.locator('.profile-nostr-badge')).toHaveText('Nostroots');
+    await expect(
+      page.getByRole('heading', { name: 'Recent community notes' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('E2E profile note: sunny rooftop with great coffee.'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('E2E profile note: quiet park, perfect for reading.'),
+    ).toBeVisible();
   });
 });

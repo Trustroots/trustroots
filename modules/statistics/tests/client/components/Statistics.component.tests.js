@@ -34,19 +34,61 @@ describe('<Statistics />', () => {
           maybe: 500,
           maybePercentage: 20,
         },
-        connections: [{ network: 'facebook', count: 100, percentage: 10 }],
+        connections: [
+          { network: 'facebook', count: 100, percentage: 10 },
+          { network: 'nostr', count: 12, percentage: 1 },
+        ],
         newsletter: { percentage: 30, count: 3000 },
+        experiences: {
+          total: 100,
+          recommended: 80,
+          notRecommended: 10,
+          recent: { total: 20, recommended: 15, notRecommended: 3 },
+          realLifeConnections: { total: 50, recent: 10 },
+        },
+        messageInteractions: {
+          total: 40,
+          positive: 7,
+          negative: 3,
+          recent: { total: 8, positive: 2, negative: 2 },
+        },
       },
     });
 
     render(<Statistics isAuthenticated={true} />);
 
     expect(await screen.findByText('40%')).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByRole('heading', { level: 3 })
+        .slice(0, 2)
+        .map(heading => heading.textContent),
+    ).toEqual(['Real-life connections', 'Message interactions']);
     expect(screen.getByText('Trustroots Statistics')).toBeInTheDocument();
     expect(screen.getByText('Members')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Subscribe to newsletter' }),
     ).toBeInTheDocument();
+    expect(screen.getByText('Nostroots 1%')).toBeInTheDocument();
+    expect(screen.getByText('Real-life connections')).toBeInTheDocument();
+    expect(screen.getByText('89% recommended overall')).toBeInTheDocument();
+    expect(
+      screen.getByText('83% recommended in the last 90 days'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Message interactions')).toBeInTheDocument();
+    expect(
+      screen.getByText('Interactions where both members exchanged messages'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('70% positive feedback overall'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('50% positive feedback in the last 90 days'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Experiences')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Recommended by members'),
+    ).not.toBeInTheDocument();
   });
 
   it('hides the newsletter subscribe link for unauthenticated visitors', async () => {
@@ -80,6 +122,7 @@ describe('<Statistics />', () => {
       data: {
         total: 0,
         connections: [{ network: 'warmshowers', count: 0, percentage: 0 }],
+        messageInteractions: { negative: 1, recent: { negative: 1 } },
       },
     });
 

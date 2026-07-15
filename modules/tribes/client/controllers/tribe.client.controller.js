@@ -11,6 +11,7 @@ function TribeController($scope, $state, tribe, Facebook) {
   vm.tribe = tribe;
   vm.windowHeight = angular.element('html').height() - headerHeight;
   vm.goBack = goBack;
+  vm.circleWikiUrl = circleWikiUrl;
   vm.facebookIsActibe = Facebook.isActive;
 
   // Ensure tribe in view updates when directives modify it
@@ -23,5 +24,16 @@ function TribeController($scope, $state, tribe, Facebook) {
    */
   function goBack() {
     $state.go('circles.list');
+  }
+
+  function circleWikiUrl(tribe) {
+    const slug = tribe && tribe.slug;
+    if (!slug) {
+      return '';
+    }
+
+    return `https://wiki.trustroots.org/en/${encodeURIComponent(
+      slug.charAt(0).toUpperCase() + slug.slice(1),
+    )}`;
   }
 }

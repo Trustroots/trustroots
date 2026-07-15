@@ -29,9 +29,28 @@ describe('<Privacy />', () => {
     expect(
       screen.getByRole('heading', { name: 'Trustroots Privacy Policy' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'First-party analytics' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Nostroots and Nostr' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'External services' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Nostroots privacy policy' }),
+    ).toHaveAttribute('href', 'https://nos.trustroots.org/privacy/');
+    expect(
+      screen.getByRole('link', { name: 'Zendesk privacy policy' }),
+    ).toHaveAttribute(
+      'href',
+      'https://www.zendesk.com/company/customers-partners/privacy-policy/',
+    );
     expect(screen.getByRole('link', { name: 'SparkPost' })).toHaveAttribute(
       'href',
       'https://www.sparkpost.com/',
     );
+    expect(screen.queryByText(/Google Firebase/)).not.toBeInTheDocument();
   });
 });

@@ -82,8 +82,10 @@ describe('Admin Reference thread CRUD tests', () => {
           .expect(200);
 
         // Should contain only "no" references
-        body.length.should.equal(1);
-        body[0].reference.should.equal('no');
+        body.items.length.should.equal(1);
+        body.items[0].reference.should.equal('no');
+        body.topNegativeRecipients.length.should.equal(1);
+        body.topNegativeRecipients[0].count.should.equal(1);
       });
     });
   });

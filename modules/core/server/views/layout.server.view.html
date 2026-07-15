@@ -232,7 +232,14 @@
       ga('create', '{{ googleAnalytics.code }}', 'auto');
     </script>
     <!-- https://www.trustroots.org/privacy -->
-    {% endif %}
+    {% endif %} {# Umami Analytics #}
+    <script
+      defer
+      src="{{ umami.scriptSrc }}"
+      data-website-id="{{ umami.websiteId }}"
+      data-do-not-track="true"
+      nonce="{{ nonce }}"
+    ></script>
   </head>
   <body
     ng-cloak

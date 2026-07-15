@@ -31,6 +31,41 @@ apps. Set `TRUSTROOTS_DEV_*_HOST_PORT` before rebuilding to customize.
 
 MongoDB is available inside the app container at `mongodb:27017`.
 
+## Testing on a phone
+
+The development server is deliberately available only on the host by default.
+To make it available to devices on your local network, start VS Code from a
+host terminal with this environment variable, then use **Dev Containers:
+Rebuild and Reopen in Container**:
+
+```sh
+TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS=0.0.0.0 code .
+```
+
+Start the app in the devcontainer as usual:
+
+```sh
+npm start
+```
+
+From a host terminal, print the available phone URLs:
+
+```sh
+node scripts/devcontainer/phone-url.js
+```
+
+Open one of those URLs on a phone connected to the same Wi-Fi network. The
+webpack development server proxies requests to the API inside the devcontainer,
+so port `13000` is the only port that needs to be reachable.
+
+Keep the default binding for ordinary development. When phone testing is
+finished, close VS Code and reopen it normally (without the environment
+variable), then rebuild the devcontainer to return the port to host-only
+access.
+
+If the phone cannot connect, check that it is on the same Wi-Fi network and
+that the host firewall allows incoming connections to port `13000`.
+
 ## Running tests
 
 Run tests directly in the devcontainer terminal (no nested Docker):

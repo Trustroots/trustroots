@@ -110,6 +110,7 @@ const specPaths = {
   'experience-actions.spec.js':
     'features/experiences-references/experience-actions.spec.js',
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
+  'footer.spec.js': 'features/public-core/footer.spec.js',
   'member.spec.js': 'features/profile-onboarding/member.spec.js',
   'message-actions.spec.js': 'features/messages/message-actions.spec.js',
   'messages-api.spec.js': 'features/messages/messages-api.spec.js',
@@ -458,6 +459,31 @@ const features = [
     ],
   },
   {
+    id: 'public.footer',
+    area: AREA.publicCore,
+    status: STATUS.active,
+    description:
+      'Public pages render a compact footer with stable links and deployed build metadata.',
+    roles: ['visitor'],
+    references: {
+      clientRoutes: [clientRoute('faq.general', '/faq', source.pagesClient)],
+      apiRoutes: [],
+    },
+    requiredScenarios: [
+      'Standard footer shows compact public links on desktop.',
+      'Standard footer omits the Contribute navigation link.',
+      'Standard footer links to the deployed GitHub commit.',
+      'Standard footer remains hidden on mobile.',
+    ],
+    relatedSpecs: [
+      spec(
+        'footer.spec.js',
+        'standard footer shows compact links and build metadata on desktop',
+      ),
+      spec('footer.spec.js', 'standard footer stays hidden on mobile'),
+    ],
+  },
+  {
     id: 'public.support-page',
     area: AREA.publicCore,
     status: STATUS.active,
@@ -512,7 +538,7 @@ const features = [
     requiredScenarios: [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
-      'Public statistics API returns deterministic data.',
+      'Public statistics API returns deterministic connection and message-interaction data.',
     ],
     relatedSpecs: [
       spec('seeded-content.spec.js', 'statistics page loads for visitors'),
@@ -1034,7 +1060,7 @@ const features = [
     area: AREA.authAccount,
     status: STATUS.active,
     description:
-      'Members can connect and disconnect Facebook, Twitter, and GitHub OAuth accounts via local stubs.',
+      'Members can connect and disconnect Facebook and GitHub OAuth accounts via local stubs.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1051,8 +1077,6 @@ const features = [
         apiRoute('GET', '/api/auth/facebook', source.usersAuthServer),
         apiRoute('PUT', '/api/auth/facebook', source.usersAuthServer),
         apiRoute('GET', '/api/auth/facebook/callback', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/twitter', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/twitter/callback', source.usersAuthServer),
         apiRoute('GET', '/api/auth/github', source.usersAuthServer),
         apiRoute('GET', '/api/auth/github/callback', source.usersAuthServer),
         apiRoute('DELETE', '/api/users/accounts/:provider', source.usersServer),
@@ -1279,7 +1303,7 @@ const features = [
       ),
       spec(
         'nostr.spec.js',
-        'links the saved npub to njump.me on the profile view',
+        'links the saved npub to nos.trustroots.org on the profile view',
       ),
     ],
   },

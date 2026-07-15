@@ -28,7 +28,7 @@ export default function AdminAcquisitionStoriesAnalysis() {
   return (
     <>
       <AdminHeader />
-      <div className="container">
+      <div className="container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
         <p>Based on latest 3000 stories</p>
 

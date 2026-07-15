@@ -9,11 +9,13 @@ import { MAP_STYLE_DEFAULT } from './constants';
 import MapNavigationControl from './MapNavigationControl';
 import MapScaleControl from './MapScaleControl';
 import MapStyleControl from './MapStyleControl';
-import { getMapBoxToken } from '../../utils/map';
+import LeafletMap from './LeafletMap';
+import { getMapBoxToken, isWebGLSupported } from '../../utils/map';
 
 export default function Map(props) {
   const {
     children,
+    fallbackMarker,
     location = [48.6908333333, 9.14055555556], // Default location to Europe when not set
     zoom = 6,
     ...overrideProps // anything else will be passed down to <ReactMapGL> as props
@@ -29,6 +31,21 @@ export default function Map(props) {
   const showMapStyles =
     props.showMapStyles &&
     (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
+
+  if (!isWebGLSupported()) {
+    return (
+      <LeafletMap
+        ariaHidden={props['aria-hidden']}
+        className={props.className}
+        height={props.height || 320}
+        location={location}
+        marker={fallbackMarker}
+        scrollZoom={props.scrollZoom}
+        width={props.width || '100%'}
+        zoom={zoom}
+      />
+    );
+  }
 
   return (
     <ReactMapGL
@@ -56,8 +73,17 @@ export default function Map(props) {
 }
 
 Map.propTypes = {
+  'aria-hidden': PropTypes.bool,
   children: PropTypes.node,
+  className: PropTypes.string,
+  fallbackMarker: PropTypes.shape({
+    color: PropTypes.string.isRequired,
+    location: PropTypes.arrayOf(PropTypes.number).isRequired,
+  }),
   location: PropTypes.arrayOf(PropTypes.number),
+  height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  scrollZoom: PropTypes.bool,
   showMapStyles: PropTypes.bool,
+  width: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   zoom: PropTypes.number,
 };

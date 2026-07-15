@@ -9,6 +9,10 @@
  */
 
 module.exports = {
+  umami: {
+    scriptSrc: 'https://1p.trustroots.org/script.js',
+    websiteId: '23ec0c85-2ebc-4d85-9063-c23d90b8ded1',
+  },
   db: {
     uri:
       'mongodb://' +

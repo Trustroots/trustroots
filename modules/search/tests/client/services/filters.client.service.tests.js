@@ -62,6 +62,7 @@ describe('FiltersService', function () {
       seen: {
         months: 6,
       },
+      communityNotes: true,
       tribes: ['cyclists'],
       types: ['host'],
     });
@@ -97,6 +98,7 @@ describe('FiltersService', function () {
       seen: {
         months: 6,
       },
+      communityNotes: true,
       tribes: [],
       types: ['meet'],
     });
