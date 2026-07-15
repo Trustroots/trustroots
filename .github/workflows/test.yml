@@ -404,6 +404,8 @@ jobs:
                 body,
               });
             }
+      - name: Require full client and server coverage
+        run: npm run coverage:check -- --require-full
 
   pages:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

@@ -36,6 +36,7 @@ function SearchController(
   vm.onLanguageFiltersChange = onLanguageFiltersChange;
   vm.onSeenFilterChange = onSeenFilterChange;
   vm.onCommunityNotesToggle = onCommunityNotesToggle;
+  vm.toggleCommunityNotes = toggleCommunityNotes;
   vm.onlineInPast6Months = vm.filters.seen && vm.filters.seen.months === 6;
   vm.communityNotesEnabled = FiltersService.get('communityNotes') || false;
   vm.sidebarTab = 'filters';
@@ -171,6 +172,11 @@ function SearchController(
   function onCommunityNotesToggle() {
     FiltersService.set('communityNotes', vm.communityNotesEnabled);
     onFiltersUpdated();
+  }
+
+  function toggleCommunityNotes() {
+    vm.communityNotesEnabled = !vm.communityNotesEnabled;
+    onCommunityNotesToggle();
   }
 
   /**

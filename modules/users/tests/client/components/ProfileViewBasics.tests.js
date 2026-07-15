@@ -97,9 +97,7 @@ describe('<ProfileViewBasics />', () => {
     expect(
       screen.queryByRole('link', { name: 'Facebook' }),
     ).not.toBeInTheDocument();
-    const nostrLink = screen.getByRole('link', {
-      name: 'trustroots@trustroots.org',
-    });
+    const nostrLink = screen.getByRole('link', { name: 'Nostroots' });
     expect(nostrLink).toHaveAttribute(
       'href',
       'https://nos.trustroots.org/v0/#profile/trustroots%40trustroots.org',
@@ -108,7 +106,9 @@ describe('<ProfileViewBasics />', () => {
       'aria-describedby',
       'nostr-address-note-trustroots',
     );
-    expect(screen.getByText('Nostroots')).toBeInTheDocument();
+    expect(
+      nostrLink.closest('li').querySelector('.nostroots-logo'),
+    ).toHaveAttribute('src', '/img/external/nostroots-logo.png');
     expect(screen.getByText('Nostr address, not an email address')).toHaveClass(
       'sr-only',
     );
@@ -143,7 +143,7 @@ describe('<ProfileViewBasics />', () => {
     );
 
     expect(screen.getByText('Elsewhere')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
       'href',
       'https://nos.trustroots.org/v0/#profile/npub1onlynetwork',
     );
@@ -221,7 +221,7 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.queryByText('Languages')).not.toBeInTheDocument();
     expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: 'nostr npub' }),
+      screen.queryByRole('link', { name: 'Nostroots' }),
     ).not.toBeInTheDocument();
   });
 });

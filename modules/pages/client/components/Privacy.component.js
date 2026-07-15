@@ -34,9 +34,9 @@ export default function Privacy() {
               itemProp="datePublished"
               dateTime="2014-12-23"
             >
-              <time itemProp="dateModified" dateTime="2018-12-04">
+              <time itemProp="dateModified" dateTime="2026-07-15">
                 {t('Last updated on {{date, LL}}', {
-                  date: new Date(2024, 11, 21),
+                  date: new Date(2026, 6, 15),
                 })}
               </time>
             </p>
@@ -76,7 +76,7 @@ export default function Privacy() {
               <ul>
                 <li>
                   {t(
-                    'Basic profile information such as name, email, language, name, picture, gender, age, living location, usernames in other networks.',
+                    'Basic profile information such as name, email, language, picture, gender, age, living location and usernames in other networks.',
                   )}
                 </li>
                 <li>{t('Messages from and to other members')}</li>
@@ -94,88 +94,60 @@ export default function Privacy() {
                   "Via mobile devices you may also share content to Trustroots via your device's camera, location sensor or address book. This data is never published or used without your consent and it is always clarified when you are about to give this information to us.",
                 )}
               </p>
-              <p>
-                <Trans t={t} ns="pages">
-                  Communication with our support team (via e-mail or contact
-                  form) is managed via Zendesk and stored on Zendesk servers.
-                  You can{' '}
-                  <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">
-                    see their privacy policy
-                  </a>
-                  .
-                </Trans>{' '}
-                {t(
-                  'In the future, we would like to host a support ticket system on our own servers.',
-                )}
-              </p>
-              <h3>{t('Analytics & opting out')}</h3>
+              <h3>{t('First-party analytics')}</h3>
               <p>
                 {t(
-                  'We use third-party services that probably track usage, this includes',
+                  'We use a self-hosted instance of Umami, served from 1p.trustroots.org, to understand aggregate use of Trustroots and improve the service. We do not use third-party analytics services.',
                 )}
               </p>
-              <ul>
-                <li>{t('Gravatar, for profile images')}</li>
-                <li>{t('Facebook, for profile images')}</li>
-                <li>
-                  <Trans t={t} ns="pages">
-                    Google Firebase, for mobile and browser push notifications.
-                    Unfortunately there&apos;s no &quot;open source way&quot; of
-                    doing push notifications to mobile platforms, they always go
-                    through platform&apos;s own servers (basically Apple for
-                    iPhone or Google for Android, and each browser vendor for
-                    browsers). That&apos;s why if you download the mobile app{' '}
-                    <a href="http://apk.trustroots.org/">
-                      directly from us as an APK file
-                    </a>
-                    , you won&apos;t get push notifications.
-                  </Trans>
-                </li>
-              </ul>
+              <p>
+                {t(
+                  'Umami does not use analytics cookies or track people across websites. It records limited information such as pages visited, referrer, browser, operating system, device type and approximate country. We do not use this information to build personal profiles or for advertising, and we do not sell it. Analytics data is stored on infrastructure operated for Trustroots.',
+                )}
+              </p>
+              <h3>{t('Nostroots and Nostr')}</h3>
               <p>
                 <Trans t={t} ns="pages">
-                  We would like to reduce our reliance on these services in the
-                  future.
+                  Trustroots offers an optional Nostr integration through
+                  Nostroots. Information you publish to Nostr may be stored and
+                  redistributed by relays outside Trustroots&apos; control. Your
+                  private signing key remains on your device. See the{' '}
+                  <a href="https://nos.trustroots.org/privacy/">
+                    Nostroots privacy policy
+                  </a>{' '}
+                  for details.
                 </Trans>
               </p>
-              <br />
-              {t('To opt out of analytics tracking, you can:')}
+              <h3>{t('External services')}</h3>
+              <p>
+                {t(
+                  'Some Trustroots features rely on external services. We would like to reduce our reliance on these services in the future.',
+                )}
+              </p>
               <ul>
                 <li>
                   <Trans t={t} ns="pages">
-                    Install <a href="https://www.ghostery.com/">Ghostery</a>,{' '}
-                    <a href="https://addons.mozilla.org/en-US/firefox/addon/noscript/">
-                      Noscript
+                    Communication with our support team by email or contact form
+                    is managed through Zendesk and stored on Zendesk servers.
+                    See the{' '}
+                    <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">
+                      Zendesk privacy policy
                     </a>
-                    , <a href="https://disconnect.me/">Disconnect</a> or{' '}
-                    <a href="https://github.com/gorhill/uBlock">uBlock</a>.
-                    These browser extensions will disable all known JavaScript
-                    trackers and ensure that your browser does not send a
-                    request to external tracking servers.
+                    .
+                  </Trans>
+                </li>
+                <li>
+                  {t(
+                    'Gravatar and Facebook may be used for profile images or information you choose to connect to your Trustroots profile.',
+                  )}
+                </li>
+                <li>
+                  <Trans t={t} ns="pages">
+                    We route our emails through{' '}
+                    <a href="https://www.sparkpost.com/">SparkPost</a> servers.
                   </Trans>
                 </li>
               </ul>
-              {t(
-                'If you wish to stay more anonymous online, please check this guide by Matomo:',
-              )}
-              <br />
-              <a href="https://matomo.org/wp-content/uploads/2012/01/How-to-remain-anonymous-online.pdf">
-                How to remain anonymous online? (PDF)
-              </a>
-              .<h3>{t('Social networks')}</h3>
-              {t(
-                "Some of the features on Trustroots use other social networks such as Facebook, GitHub or Gravatar. You don't have to connect your profile to these and we don't share any data with these networks. We only crawl information you give us access to and show it on your profile if you want to. Some of the data from these sites is then stored on our server.",
-              )}
-              <br />
-              <br />
-              {t(
-                "Some of our users want to use these networks and they have a right to do so. Others prefer to steer away from these networks and we'll also accommodate these users.",
-              )}
-              <h3>{t('Your emails')}</h3>
-              <Trans t={t} ns="pages">
-                We route all our emails using{' '}
-                <a href="https://www.sparkpost.com/">SparkPost</a> servers.
-              </Trans>
               <h3>{t('Our server')}</h3>
               <Trans t={t} ns="pages">
                 Our server (and thus your data) is securely hosted at Hetzner in

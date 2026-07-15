@@ -272,6 +272,59 @@ test.describe('rendered search map feature coverage', () => {
     });
   });
 
+  test('search map uses the raster fallback when WebGL is unavailable', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'A browser without WebGL receives a visible Leaflet raster map.',
+      'Fallback-map offer markers continue to open the results sidebar.',
+    ]);
+
+    await page.addInitScript(() => {
+      const Canvas = window.HTMLCanvasElement;
+      const getContext = Canvas.prototype.getContext;
+      Canvas.prototype.getContext = function getWebGLContext(type, ...args) {
+        if (type === 'webgl' || type === 'experimental-webgl') {
+          return null;
+        }
+        return getContext.call(this, type, ...args);
+      };
+    });
+    await context.route('**://*.tile.openstreetmap.org/**', route =>
+      route.fulfill({
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+        contentType: 'image/png',
+      }),
+    );
+
+    await page.goto('/search');
+
+    await expect(
+      page.locator('[data-testid="leaflet-search-map"]'),
+    ).toBeVisible();
+    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+    await expect(page.locator('.leaflet-tile').first()).toHaveJSProperty(
+      'naturalWidth',
+      1,
+    );
+    await page.waitForFunction(
+      () => document.querySelectorAll('.leaflet-interactive').length > 0,
+      null,
+      { timeout: 30000 },
+    );
+
+    await page.locator('.leaflet-interactive').last().click();
+    await expect(
+      page
+        .locator('.search-sidebar-results .search-result')
+        .filter({ hasText: /E2E offline map host offer/i }),
+    ).toBeVisible();
+  });
+
   test('clicking a pin cluster zooms the map in to expand it', async ({
     context,
     page,
@@ -321,11 +374,11 @@ test.describe('rendered search map feature coverage', () => {
     expect(await readZoom()).toBeGreaterThan(initialZoom);
   });
 
-  test('Community Notes search filter toggles and persists', async ({
+  test('Community Notes search filter is enabled by default and persists changes', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'Community Notes filter can be enabled and persisted.',
+      'Community Notes filter is enabled by default and persists changes.',
       'Nostroots community note relay requests are isolated from external network.',
     ]);
 
@@ -338,20 +391,39 @@ test.describe('rendered search map feature coverage', () => {
     const checkbox = filterLabel.locator('input[type="checkbox"]');
 
     await expect(filterLabel).toBeVisible();
-    if (await checkbox.isChecked()) {
-      await filterLabel.click();
-      await expect(checkbox).not.toBeChecked();
-    }
-
-    await filterLabel.click();
-    await expect(checkbox).toBeChecked();
-
-    await page.reload();
-    await expect(filterLabel).toBeVisible();
     await expect(checkbox).toBeChecked();
 
     await filterLabel.click();
     await expect(checkbox).not.toBeChecked();
+
+    await page.reload();
+    await expect(filterLabel).toBeVisible();
+    await expect(checkbox).not.toBeChecked();
+
+    await filterLabel.click();
+    await expect(checkbox).toBeChecked();
+  });
+
+  test('Community Notes are visible and controllable on mobile maps', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Mobile maps expose a Community Notes toggle.',
+      'The toggle reflects the default-enabled Community Notes setting.',
+    ]);
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await installNostrRelayStub(page);
+    await page.goto('/search');
+
+    const notesToggle = page.getByRole('button', {
+      name: 'Toggle Community Notes',
+    });
+    await expect(notesToggle).toBeVisible();
+    await expect(notesToggle).toHaveAttribute('aria-pressed', 'true');
+
+    await notesToggle.click();
+    await expect(notesToggle).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('Community Notes sidebar opens the Nostroots action modal', async ({
