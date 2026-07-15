@@ -50,7 +50,13 @@ function FooterLinks() {
   return (
     <ul className="site-footer-links list-inline">
       <li>
-        <a href="https://team.trustroots.org/">Volunteering</a>
+        <a
+          href="https://team.trustroots.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Volunteering
+        </a>
       </li>
       <li>
         <a href="/rules">Rules</a>
@@ -59,7 +65,13 @@ function FooterLinks() {
         <a href="/faq">FAQ</a>
       </li>
       <li>
-        <a href="https://wiki.trustroots.org/">Wiki</a>
+        <a
+          href="https://wiki.trustroots.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Wiki
+        </a>
       </li>
       <li>
         <a href="/privacy">Privacy</a>

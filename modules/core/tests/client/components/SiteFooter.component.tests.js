@@ -29,6 +29,16 @@ describe('<SiteFooter />', () => {
     ].forEach(([name, href]) => {
       expect(screen.getByRole('link', { name })).toHaveAttribute('href', href);
     });
+    ['Volunteering', 'Wiki'].forEach(name => {
+      expect(screen.getByRole('link', { name })).toHaveAttribute(
+        'target',
+        '_blank',
+      );
+      expect(screen.getByRole('link', { name })).toHaveAttribute(
+        'rel',
+        'noopener noreferrer',
+      );
+    });
     expect(
       screen.queryByRole('link', { name: 'Contribute' }),
     ).not.toBeInTheDocument();

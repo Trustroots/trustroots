@@ -48,10 +48,10 @@ describe('<Navigation />', () => {
       '/profile/alice',
     );
     expect(screen.getByTestId('avatar')).toHaveTextContent('alice');
-    expect(screen.getByRole('link', { name: 'Wiki' })).toHaveAttribute(
-      'href',
-      'https://wiki.trustroots.org/',
-    );
+    const wikiLink = screen.getByRole('link', { name: 'Wiki' });
+    expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
+    expect(wikiLink).toHaveAttribute('target', '_blank');
+    expect(wikiLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   it('invokes onSignout when sign out link is clicked', () => {

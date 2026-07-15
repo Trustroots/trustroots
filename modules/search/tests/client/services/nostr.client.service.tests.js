@@ -281,6 +281,26 @@ describe('NostrService', () => {
   });
 
   describe('fetchUserNotes()', () => {
+    it('handles validated events without tags', async () => {
+      await service.connect();
+      const relay = Relay._lastInstance;
+      const validatedNote = {
+        id: 'validated-note',
+        kind: 30398,
+        created_at: 101,
+      };
+
+      relay.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent(validatedNote);
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      await expect(service.fetchUserNotes('aabbcc')).resolves.toEqual([
+        validatedNote,
+      ]);
+    });
+
     it('keeps the validated copy when it references an original note', async () => {
       await service.connect();
       const relay = Relay._lastInstance;

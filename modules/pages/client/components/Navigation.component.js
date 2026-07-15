@@ -90,7 +90,12 @@ export default function Navigation({ user, onSignout }) {
         <a className="list-group-item" href="/media">
           {t('Media')}
         </a>
-        <a className="list-group-item" href="https://wiki.trustroots.org/">
+        <a
+          className="list-group-item"
+          href="https://wiki.trustroots.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           {t('Wiki')}
         </a>
         <a className="list-group-item" href="/privacy">

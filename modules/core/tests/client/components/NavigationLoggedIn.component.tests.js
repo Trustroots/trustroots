@@ -111,10 +111,15 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/',
     );
-    expect(screen.getByRole('link', { name: 'Wiki' })).toHaveAttribute(
-      'href',
-      'https://wiki.trustroots.org/',
-    );
+    const wikiLink = screen.getByRole('link', { name: 'Wiki' });
+    expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
+    expect(wikiLink).toHaveAttribute('target', '_blank');
+    expect(wikiLink).toHaveAttribute('rel', 'noopener noreferrer');
+    const volunteeringLink = screen.getByRole('link', {
+      name: 'Volunteering',
+    });
+    expect(volunteeringLink).toHaveAttribute('target', '_blank');
+    expect(volunteeringLink).toHaveAttribute('rel', 'noopener noreferrer');
     expect(
       screen.queryByRole('link', { name: 'Contribute' }),
     ).not.toBeInTheDocument();

@@ -24,7 +24,9 @@ export function getNostrEventAuthorPubkey(event) {
 }
 
 function getReferencedEventIds(event) {
-  return event.tags.filter(tag => tag[0] === 'e' && tag[1]).map(tag => tag[1]);
+  return (event.tags ?? [])
+    .filter(tag => tag[0] === 'e' && tag[1])
+    .map(tag => tag[1]);
 }
 
 /**
