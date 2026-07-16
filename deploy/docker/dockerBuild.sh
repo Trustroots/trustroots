@@ -1,34 +1,45 @@
 #!/bin/bash
 
-STATUS=$(git status --porcelain | grep -c '^')
-
-if [[ "$STATUS" != "0" ]]
-then
-  echo "Cowardly refusing to build with a dirty git"
-fi
-
-cd $(dirname $0)
-
 # Stop executing if metadata collection or the image build fails.
 set -e
+
+# Switch to the repository root directory.
+cd "$(dirname "$0")/../.."
+
+BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BUILD_BRANCH" != "main" ]; then
+  echo "Docker builds may only be made from the main branch (currently: ${BUILD_BRANCH})." >&2
+  exit 1
+fi
+
+STATUS=$(git status --short)
+if [ -n "$STATUS" ]; then
+  echo "Warning: building with uncommitted changes:"
+  echo
+  echo "$STATUS"
+  echo
+  echo "Continuing the Docker build in 10 seconds. Press Ctrl-C to cancel."
+  sleep 10
+fi
 
 # Get metadata for the code baked into the image. The production Docker context
 # excludes .git, so the running app cannot discover these values itself.
 COMMIT=$(git rev-parse --short HEAD)
 BUILD_COMMIT=$(git rev-parse HEAD)
 BUILD_COMMITTED_AT=$(git log -1 --format=%cI)
-BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 OS=$(uname -s)
-
-# Switch to the repository root directory
-cd ../..
 
 # Production runs on linux/amd64. Without --platform, builds on Apple Silicon
 # produce arm64-only images that production cannot pull.
 DOCKER=(docker)
 if [ "$OS" != "Darwin" ]; then
   DOCKER=(sudo docker)
+fi
+
+if ! "${DOCKER[@]}" info >/dev/null 2>&1; then
+  echo "Docker is not available. Start the Docker daemon and try again." >&2
+  exit 1
 fi
 
 "${DOCKER[@]}" build --platform linux/amd64 \
