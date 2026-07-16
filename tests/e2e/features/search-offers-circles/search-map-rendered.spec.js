@@ -333,10 +333,21 @@ test.describe('rendered search map feature coverage', () => {
 
     // The two seeded offers overlap at this zoom. Click the host marker and
     // verify that the fallback requests its offer details.
+    const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
+    await expect(hostMarker).toBeVisible();
+    const markerBox = await hostMarker.boundingBox();
+    expect(markerBox).not.toBeNull();
+
     const offerRequest = page.waitForRequest(
       '**/api/offers/665100000000000000000001**',
     );
-    await page.locator('.leaflet-interactive[fill="#58ba58"]').click();
+    // Clicking the SVG locator directly makes Playwright scroll Leaflet's
+    // pannable map element, so the marker continually moves away from the
+    // pointer. Use the marker's visible screen coordinates for a real click.
+    await page.mouse.click(
+      markerBox.x + markerBox.width / 2,
+      markerBox.y + markerBox.height / 2,
+    );
     expect((await offerRequest).url()).toContain(
       '/api/offers/665100000000000000000001',
     );
@@ -378,6 +389,7 @@ test.describe('rendered search map feature coverage', () => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/search');
 
+    await page.getByRole('button', { name: 'Search places' }).click();
     const searchInput = page.getByRole('textbox', { name: 'Search places' });
     await searchInput.fill('Berlin');
     await page.locator('.search-place .dropdown-menu a').click();
