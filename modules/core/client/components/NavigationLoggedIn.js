@@ -171,18 +171,16 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 label: t('Media'),
               },
               {
-                href: 'https://wiki.trustroots.org/',
-                label: t('Wiki'),
-                target: '_blank',
-                rel: 'noopener noreferrer',
-              },
-              {
                 href: '/privacy',
                 label: t('Privacy'),
               },
               {
                 href: '/rules',
                 label: t('Rules'),
+              },
+              {
+                href: '/statistics',
+                label: t('Statistics'),
               },
               /* Disable shop and navigation links - issue #2672
               {
@@ -193,12 +191,6 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
               {
                 href: '/team',
                 label: t('Team'),
-              },
-              {
-                href: 'https://team.trustroots.org/',
-                label: t('Volunteering'),
-                target: '_blank',
-                rel: 'noopener noreferrer',
               },
             ]}
           />
@@ -225,6 +217,18 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
               {
                 href: 'https://ideas.trustroots.org/',
                 label: t('Blog'),
+              },
+              {
+                href: 'https://wiki.trustroots.org/',
+                label: t('Wiki'),
+                target: '_blank',
+                rel: 'noopener noreferrer',
+              },
+              {
+                href: 'https://team.trustroots.org/',
+                label: t('Volunteering'),
+                target: '_blank',
+                rel: 'noopener noreferrer',
               },
             ]}
           />

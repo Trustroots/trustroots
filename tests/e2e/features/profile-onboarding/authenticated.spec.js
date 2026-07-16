@@ -509,6 +509,7 @@ test.describe('authenticated member flows', () => {
     annotateFeature(testInfo, 'public.navigation', [
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
       'Sign out action clears the session.',
     ]);
 
@@ -533,6 +534,9 @@ test.describe('authenticated member flows', () => {
         hasText: /find people/i,
       }),
     ).toBeVisible();
+    await expect(page.locator('.list-group a[href="/statistics"]')).toHaveText(
+      'Statistics',
+    );
   });
 
   test('member can sign out', async ({ browser, baseURL }, testInfo) => {

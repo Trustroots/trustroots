@@ -28,6 +28,7 @@ test.describe.serial('authentication smoke', () => {
     annotateFeature(testInfo, 'public.home', [
       'Homepage loads for visitors.',
       'Sign in and sign up entry points are visible.',
+      'Homepage footer links to public statistics.',
       'Optional circle/tribe query parameters do not break the page.',
     ]);
 
@@ -36,6 +37,9 @@ test.describe.serial('authentication smoke', () => {
     await expect(page).toHaveTitle(/Trustroots/);
     await expect(page.locator('a[href="/signup"]').first()).toBeVisible();
     await expect(page.locator('a[href="/signin"]').first()).toBeVisible();
+    await expect(
+      page.locator('.home-footer-pages a[href="/statistics"]'),
+    ).toHaveText('Statistics');
   });
 
   test('signup submits a unique user through the UI', async ({

@@ -66,6 +66,10 @@ describe('<Home />', () => {
     expect(
       await screen.findByRole('link', { name: 'Join Trustroots now' }),
     ).toHaveAttribute('href', '/signup');
+    expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
+      'href',
+      '/statistics',
+    );
   });
 
   it('uses compact board height on small screens', async () => {
