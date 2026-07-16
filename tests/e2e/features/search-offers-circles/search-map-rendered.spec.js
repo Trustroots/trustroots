@@ -386,6 +386,7 @@ test.describe('rendered search map feature coverage', () => {
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
+      'Later camera commands recenter the raster map after a place search.',
       'Selecting a place keeps the WebGL fallback map visible.',
       'The raster renderer fits the selected city after mobile layout changes.',
     ]);
