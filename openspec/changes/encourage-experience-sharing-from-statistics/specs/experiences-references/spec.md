@@ -4,7 +4,7 @@
 
 The system SHALL let a signed-in public member request one random confirmed,
 public contact for whom that member has not shared an experience. The system
-SHALL exclude pending, private, shadow-hidden, blocked, and already-reviewed
+SHALL exclude pending, private, shadow-hidden, suspended, blocked, and already-reviewed
 contacts, and SHALL return no contact when none is eligible.
 
 #### Scenario: Member has an eligible contact

@@ -36,10 +36,6 @@ exports.invokeRolesPolicies = function () {
           permissions: [],
         },
         {
-          resources: '/api/auth/accounts',
-          permissions: [],
-        },
-        {
           resources: '/api/users/memberships',
           permissions: [],
         },
@@ -79,10 +75,6 @@ exports.invokeRolesPolicies = function () {
         {
           resources: '/api/users/password',
           permissions: ['post'],
-        },
-        {
-          resources: '/api/auth/accounts',
-          permissions: ['get', 'post', 'delete'],
         },
         {
           resources: '/api/users/memberships',

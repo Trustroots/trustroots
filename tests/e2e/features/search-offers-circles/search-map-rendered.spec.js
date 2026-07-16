@@ -331,14 +331,12 @@ test.describe('rendered search map feature coverage', () => {
       { timeout: 30000 },
     );
 
-    // The two seeded offers overlap at this zoom. Dispatch to the host marker
-    // directly and verify that the fallback requests its offer details.
+    // The two seeded offers overlap at this zoom. Click the host marker and
+    // verify that the fallback requests its offer details.
     const offerRequest = page.waitForRequest(
       '**/api/offers/665100000000000000000001**',
     );
-    await page
-      .locator('.leaflet-interactive[fill="#58ba58"]')
-      .dispatchEvent('click');
+    await page.locator('.leaflet-interactive[fill="#58ba58"]').click();
     expect((await offerRequest).url()).toContain(
       '/api/offers/665100000000000000000001',
     );
@@ -377,6 +375,7 @@ test.describe('rendered search map feature coverage', () => {
       fulfilRasterTile,
     );
 
+    await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/search');
 
     const searchInput = page.getByRole('textbox', { name: 'Search places' });
@@ -396,6 +395,39 @@ test.describe('rendered search map feature coverage', () => {
           )
         );
       },
+      null,
+      { timeout: 30000 },
+    );
+
+    // A visible tile alone would also pass when Leaflet stayed at its broad
+    // initial view. Require a city-level tile whose centre is around Berlin.
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('.leaflet-tile')].some(tile => {
+          const path = new URL(tile.src).pathname;
+          const match = path.match(
+            /\/(?:tiles\/256\/)?(\d+)\/(\d+)\/(\d+)(?:\.png)?$/,
+          );
+          if (!match) return false;
+
+          const [, rawZoom, rawX, rawY] = match;
+          const zoom = Number(rawZoom);
+          const x = Number(rawX) + 0.5;
+          const y = Number(rawY) + 0.5;
+          const scale = 2 ** zoom;
+          const longitude = (x / scale) * 360 - 180;
+          const latitude =
+            (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) /
+            Math.PI;
+
+          return (
+            zoom >= 8 &&
+            latitude > 50 &&
+            latitude < 55 &&
+            longitude > 10 &&
+            longitude < 16
+          );
+        }),
       null,
       { timeout: 30000 },
     );
@@ -484,6 +516,37 @@ test.describe('rendered search map feature coverage', () => {
     await expect(checkbox).toBeChecked();
   });
 
+  test('turning Hosts off keeps meetup offers in the map request', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Hosts can be hidden while meetup offers remain included.',
+    ]);
+
+    await page.goto('/search');
+
+    const mapContent = page.getByRole('group', { name: 'Map content' });
+    const hostsLabel = mapContent.locator('label').filter({ hasText: 'Hosts' });
+    const hostsCheckbox = hostsLabel.locator('input[type="checkbox"]');
+    await expect(hostsCheckbox).toBeChecked();
+
+    const meetupOnlyRequest = page.waitForRequest(request => {
+      if (!request.url().includes('/api/offers?')) return false;
+      const rawFilters = new URL(request.url()).searchParams.get('filters');
+      if (!rawFilters) return false;
+      try {
+        const { types } = JSON.parse(rawFilters);
+        return Array.isArray(types) && types.join(',') === 'meet';
+      } catch {
+        return false;
+      }
+    });
+
+    await hostsLabel.click();
+    await expect(hostsCheckbox).not.toBeChecked();
+    await meetupOnlyRequest;
+  });
+
   test('clicking a Community Note marker opens its thread', async ({
     context,
     page,
@@ -562,9 +625,7 @@ test.describe('rendered search map feature coverage', () => {
       null,
       { timeout: 30000 },
     );
-    await page.locator('.leaflet-interactive[fill="#1565C0"]').click({
-      force: true,
-    });
+    await page.locator('.leaflet-interactive[fill="#1565C0"]').click();
 
     const sidebar = page.locator('.community-notes-sidebar');
     await expect(sidebar).toBeVisible();

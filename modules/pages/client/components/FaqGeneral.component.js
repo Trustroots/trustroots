@@ -106,6 +106,7 @@ export default function FaqGeneral() {
       </div>
 
       <div className="faq-question" id="what-happened-to-facebook-connections">
+        <span id="why-is-there-facebook-connection" aria-hidden="true" />
         <h3>{t('What happened to Facebook connections?')}</h3>
         {t(
           'New Facebook connections are no longer supported. Members who connected Facebook in the past can continue using their stored Facebook profile image or disconnect the legacy connection from their account settings.',

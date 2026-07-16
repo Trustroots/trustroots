@@ -11,6 +11,7 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const Experience = mongoose.model('Experience');
+const Contact = mongoose.model('Contact');
 
 function deferredResponse() {
   let resolveResponse;
@@ -141,6 +142,28 @@ describe('Experiences controller unit tests', () => {
   });
 
   describe('getSuggestion', () => {
+    it('treats a missing blocked list as empty', async () => {
+      const selfId = new mongoose.Types.ObjectId();
+      sinon.stub(Experience, 'distinct').returns({
+        exec: () => Promise.resolve([]),
+      });
+      const aggregate = sinon.stub(Contact, 'aggregate').returns({
+        exec: () => Promise.resolve([]),
+      });
+      const res = deferredResponse();
+
+      await experiencesController.getSuggestion(
+        { user: { _id: selfId } },
+        res,
+        () => {},
+      );
+
+      (res.body === null).should.be.true();
+      aggregate.firstCall.args[0][2].$match.userId.$nin.should.deepEqual([
+        selfId,
+      ]);
+    });
+
     it('passes database errors to next', async () => {
       const [user] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),

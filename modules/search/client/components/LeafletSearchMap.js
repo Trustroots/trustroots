@@ -209,14 +209,27 @@ export default function LeafletSearchMap({
       return;
     }
 
-    map.invalidateSize({ pan: false });
-    map.fitBounds(
-      [
-        [bounds.southWest.lat, bounds.southWest.lng],
-        [bounds.northEast.lat, bounds.northEast.lng],
-      ],
-      { padding: [40, 40] },
-    );
+    const fitSelectedBounds = () => {
+      map.invalidateSize({ pan: false });
+      map.fitBounds(
+        [
+          [bounds.southWest.lat, bounds.southWest.lng],
+          [bounds.northEast.lat, bounds.northEast.lng],
+        ],
+        { padding: [40, 40] },
+      );
+    };
+
+    // Fit immediately, then again after Angular has hidden the mobile place
+    // panel and the map container has completed its layout transition.
+    fitSelectedBounds();
+    const nextLayoutFit = window.setTimeout(fitSelectedBounds);
+    const settledLayoutFit = window.setTimeout(fitSelectedBounds, 250);
+
+    return () => {
+      window.clearTimeout(nextLayoutFit);
+      window.clearTimeout(settledLayoutFit);
+    };
   }, [bounds]);
 
   useEffect(() => {

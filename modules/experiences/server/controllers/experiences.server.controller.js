@@ -23,7 +23,7 @@ exports.getSuggestion = async function getSuggestion(req, res, next) {
     }).exec();
     const excludedUserIds = [selfId, ...experiencedUserIds];
 
-    excludedUserIds.push(...req.user.blocked);
+    excludedUserIds.push(...(req.user.blocked || []));
 
     const [suggestion] = await Contact.aggregate([
       {

@@ -88,6 +88,16 @@ describe('Search filter toggle directives', function () {
     expect(scope.types).toEqual(['host', 'meet']);
   });
 
+  it('normalizes a missing offer filter to meetups', function () {
+    const { controller, scope } = compileDirective(
+      '<div tr-types-toggle="types"></div>',
+      {},
+    );
+
+    expect(controller.toggles).toEqual({ host: false });
+    expect(scope.types).toEqual(['meet']);
+  });
+
   it('keeps meetups published when Hosts is turned off', function () {
     const { controller, scope } = compileDirective(
       '<div tr-types-toggle="types"></div>',

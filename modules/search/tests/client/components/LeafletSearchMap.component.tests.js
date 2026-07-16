@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import L from 'leaflet';
 
 import LeafletSearchMap from '@/modules/search/client/components/LeafletSearchMap';
@@ -239,13 +239,14 @@ describe('<LeafletSearchMap />', () => {
     expect(mockMap.remove).toHaveBeenCalledTimes(1);
   });
 
-  it('fits externally selected location bounds after refreshing map size', () => {
+  it('refits selected bounds after mobile layout settles', () => {
+    jest.useFakeTimers();
     const selectedBounds = {
       northEast: { lat: 52.6755, lng: 13.7611 },
       southWest: { lat: 52.3383, lng: 13.0884 },
     };
 
-    renderMap({ bounds: selectedBounds });
+    const { unmount } = renderMap({ bounds: selectedBounds });
 
     expect(mockMap.invalidateSize).toHaveBeenCalledWith({ pan: false });
     expect(mockMap.fitBounds).toHaveBeenCalledWith(
@@ -255,6 +256,13 @@ describe('<LeafletSearchMap />', () => {
       ],
       { padding: [40, 40] },
     );
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
+
+    act(() => jest.runOnlyPendingTimers());
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(3);
+
+    unmount();
+    jest.useRealTimers();
   });
 
   it('does not render markers while the map is zoomed out', () => {

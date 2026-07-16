@@ -182,6 +182,8 @@ test.describe.serial('search offers and circles feature coverage', () => {
       '/offer redirects to /offer/host.',
     ]);
     annotateFeature(testInfo, 'circles.join-leave', [
+      'Circle overview remains vertically scrollable on a mobile viewport.',
+      'Member can join a circle from its overview page.',
       'Member can leave a joined circle.',
       'Membership updates are reflected on profile and circle list.',
     ]);
@@ -199,17 +201,51 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expect(hitchhikers).toBeTruthy();
 
     const throwaway = createUser();
-    const context = await browser.newContext({ baseURL });
+    const context = await browser.newContext({
+      baseURL,
+      viewport: { width: 375, height: 500 },
+    });
     const memberPage = await context.newPage();
 
     try {
       await registerViaApi(context.request, throwaway);
       await signInViaApi(memberPage, context.request, throwaway);
 
-      const join = await memberPage.request.post(
-        `/api/users/memberships/${hitchhikers._id}`,
+      await memberPage.goto('/circles/hitchhikers');
+      const overview = memberPage.locator('.tribe-header-info');
+      await expect(overview).toBeVisible();
+      await expect(overview).toHaveCSS('overflow-y', 'auto');
+      await expect(overview).toHaveCSS('touch-action', 'pan-y');
+      await expect
+        .poll(() =>
+          overview.evaluate(
+            element => element.scrollHeight > element.clientHeight,
+          ),
+        )
+        .toBe(true);
+      await overview.evaluate(element => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect
+        .poll(() => overview.evaluate(element => element.scrollTop))
+        .toBeGreaterThan(0);
+
+      const joinResponse = memberPage.waitForResponse(
+        response =>
+          response
+            .url()
+            .includes(`/api/users/memberships/${hitchhikers._id}`) &&
+          response.request().method() === 'POST',
       );
-      expect(join.ok()).toBeTruthy();
+      await memberPage
+        .getByRole('button', { name: /Join this circle \(Hitchhikers\)/ })
+        .click();
+      expect((await joinResponse).ok()).toBeTruthy();
+      await expect(
+        memberPage.getByRole('button', {
+          name: /Leave circle \(Hitchhikers\)/,
+        }),
+      ).toContainText("You're a member");
 
       const leave = await memberPage.request.delete(
         `/api/users/memberships/${hitchhikers._id}`,

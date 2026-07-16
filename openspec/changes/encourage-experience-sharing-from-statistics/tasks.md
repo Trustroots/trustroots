@@ -3,7 +3,7 @@
 ## 1. Experience suggestion
 
 - [x] 1.1 Add an authenticated endpoint that selects one eligible contact
-- [x] 1.2 Exclude pending, private, shadow-hidden, blocked, and already-reviewed contacts
+- [x] 1.2 Exclude pending, private, shadow-hidden, suspended, blocked, and already-reviewed contacts
 - [x] 1.3 Return only the public fields needed to render the suggestion
 
 ## 2. Statistics page

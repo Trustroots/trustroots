@@ -17,12 +17,16 @@ const seededMemberStoragePath = path.join(
 );
 
 test.describe('authenticated member flows', () => {
+  let authenticatedMember;
+
   test.beforeEach(async ({ page, request }) => {
     // Authenticate in the test's own browser context. A storage state created
     // by an earlier project can outlive its server-side session in CI.
-    const member = createUser();
-    await registerViaApi(request, member);
-    await signInViaApi(page, request, member);
+    if (!authenticatedMember) {
+      authenticatedMember = createUser();
+      await registerViaApi(request, authenticatedMember);
+    }
+    await signInViaApi(page, request, authenticatedMember);
   });
 
   test('search page loads for a signed in member', async ({

@@ -148,6 +148,32 @@ describe('Authentication controller OAuth unit tests', () => {
       ).should.be.false();
     });
 
+    it('falls back to Gravatar when removing the active Facebook avatar', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.additionalProvidersData = {
+        facebook: { id: 'fictional-facebook-id' },
+      };
+      userDoc.avatarSource = 'facebook';
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+
+      const req = {
+        user: userDoc,
+        params: { provider: 'facebook' },
+        login: (user, cb) => cb(),
+      };
+      const res = deferredResponse();
+
+      authController.removeOAuthProvider(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.avatarSource.should.equal('gravatar');
+      const reloaded = await User.findById(saved._id);
+      reloaded.avatarSource.should.equal('gravatar');
+    });
+
     it('allows removing a provider that is not connected', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -157,7 +183,7 @@ describe('Authentication controller OAuth unit tests', () => {
 
       const req = {
         user: userDoc,
-        params: { provider: 'github' },
+        params: { provider: 'facebook' },
         login: (user, cb) => cb(),
       };
       const res = deferredResponse();

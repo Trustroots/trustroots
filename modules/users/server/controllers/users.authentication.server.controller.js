@@ -396,6 +396,10 @@ exports.removeOAuthProvider = function (req, res) {
     user.markModified('additionalProvidersData');
   }
 
+  if (provider === 'facebook' && user.avatarSource === 'facebook') {
+    user.avatarSource = 'gravatar';
+  }
+
   user.save(function (err) {
     if (err) {
       return res.status(400).send({

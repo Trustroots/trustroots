@@ -23,7 +23,7 @@ page currently offers no direct way to contribute.
 
 - The suggestion endpoint is authenticated and returns only the selected
   contact's public identifier, display name, and username.
-- Pending, private, shadow-hidden, and blocked contacts are excluded.
+- Pending, private, shadow-hidden, suspended, and blocked contacts are excluded.
 - A contact is excluded once the signed-in member has written an experience
   about them. A contact who has written an experience about the signed-in
   member remains eligible so the member can write the matching response.

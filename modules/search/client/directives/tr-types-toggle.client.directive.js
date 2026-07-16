@@ -13,8 +13,6 @@ angular.module('search').directive('trTypesToggle', trTypesToggleDirective);
 
 /* @ngInject */
 function trTypesToggleDirective() {
-  let ignoreToggles = false;
-
   const directive = {
     restrict: 'A',
     replace: true,
@@ -30,6 +28,7 @@ function trTypesToggleDirective() {
 
   /* @ngInject */
   function trTypesToggleDirectiveController($scope) {
+    let ignoreToggles = false;
     // View Model
     const vm = this;
 
