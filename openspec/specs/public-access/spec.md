@@ -17,6 +17,7 @@ and present entry points for signing in and creating an account.
 - **WHEN** a visitor opens the homepage
 - **THEN** the Trustroots homepage is displayed
 - **AND** sign-in and sign-up entry points are available
+- **AND** the homepage provides a link to public statistics
 
 ### Requirement: Public information and circles
 

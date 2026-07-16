@@ -43,6 +43,9 @@ describe('Experiences policy unit tests', () => {
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/my-experience');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/experiences/suggestion');
   });
 
   it('calls next when ACL allows a public user', async () => {

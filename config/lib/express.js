@@ -42,7 +42,6 @@ module.exports.initLocalVariables = function (app) {
   // Setting application local variables
   app.locals.title = config.app.title;
   app.locals.description = config.app.description;
-  app.locals.facebookAppId = config.facebook.clientID;
   app.locals.twitterUsername = config.twitter.username;
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;
@@ -267,9 +266,6 @@ module.exports.initHelmetHeaders = function (app) {
           // Using sha instead could work.
           "'unsafe-inline'",
           "'self'",
-          '*.facebook.com',
-          '*.facebook.net',
-          '*.fbcdn.net', // Facebook releated
           '*.twitter.com',
           '*.google-analytics.com',
           '*.gstatic.com', // Google analytics related
@@ -329,7 +325,6 @@ module.exports.initHelmetHeaders = function (app) {
           'https://stats.g.doubleclick.net',
           'https://1p.trustroots.org', // Umami analytics
           'fcm.googleapis.com',
-          'www.facebook.com',
           'https://sentry.io',
         ],
 
@@ -349,7 +344,7 @@ module.exports.initHelmetHeaders = function (app) {
 
         // Defines valid sources for web workers and nested browsing contexts
         // loaded using elements such as `<frame>` and `<iframe>`
-        childSrc: ["'self'", 'blob:', '*.twitter.com', '*.facebook.com'],
+        childSrc: ["'self'", 'blob:', '*.twitter.com'],
 
         workerSrc: ["'self'", 'blob:'],
 

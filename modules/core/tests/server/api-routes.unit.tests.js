@@ -409,43 +409,29 @@ describe('API route registrations', () => {
     );
   });
 
-  it('registers authentication routes and OAuth passport middleware', () => {
-    const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+  it('registers local authentication routes without social OAuth', () => {
     const authentication = controller(
       [
         'confirmEmail',
-        'oauthCallback',
         'resendConfirmation',
         'signin',
         'signout',
         'signup',
         'signupValidation',
-        'updateFacebookOAuthToken',
         'validateEmailToken',
       ],
       'userAuthentication',
     );
-    authentication.oauthCallback = provider =>
-      handler(`userAuthentication.oauthCallback.${provider}`);
     const password = controller(
       ['forgot', 'reset', 'validateResetToken'],
       'userPassword',
     );
-    const passportAuthenticateCalls = [];
-    const passport = {
-      authenticate(provider, options) {
-        passportAuthenticateCalls.push({ provider, options });
-        return handler(`passport.authenticate.${provider}`);
-      },
-    };
 
     const { routes } = register(
       '../../../../modules/users/server/routes/auth.server.routes',
       {
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
-        '../policies/users.server.policy': policy,
-        passport,
       },
     );
 
@@ -479,31 +465,10 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/auth/signout').get, [
       authentication.signout,
     ]);
-    assertHandlers(routeByPath(routes, '/api/auth/facebook').get, [
-      passportAuthenticateCalls[0] &&
-        handler(
-          `passport.authenticate.${passportAuthenticateCalls[0].provider}`,
-        ),
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/facebook').put, [
-      authentication.updateFacebookOAuthToken,
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/facebook/callback').get, [
-      handler('userAuthentication.oauthCallback.facebook'),
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/github').get, [
-      handler('passport.authenticate.github'),
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/github/callback').get, [
-      handler('userAuthentication.oauthCallback.github'),
-    ]);
-    routes
-      .filter(route => /facebook|github/.test(route.path))
-      .forEach(route => assertPolicy(route, policy));
-    assert.deepStrictEqual(passportAuthenticateCalls, [
-      { provider: 'facebook', options: { scope: ['public_profile', 'email'] } },
-      { provider: 'github', options: { scope: ['user:email'] } },
-    ]);
+    assert.equal(
+      routes.some(route => /\/api\/auth\/(facebook|github)/.test(route.path)),
+      false,
+    );
   });
 
   it('registers blocked-user routes', () => {

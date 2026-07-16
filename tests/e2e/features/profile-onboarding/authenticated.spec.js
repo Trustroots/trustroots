@@ -3,6 +3,7 @@ const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_MEMBERS,
+  SEEDED_RELATIONSHIP_MEMBERS,
   createUser,
   registerViaApi,
   signInViaApi,
@@ -16,6 +17,18 @@ const seededMemberStoragePath = path.join(
 );
 
 test.describe('authenticated member flows', () => {
+  let authenticatedMember;
+
+  test.beforeEach(async ({ page, request }) => {
+    // Authenticate in the test's own browser context. A storage state created
+    // by an earlier project can outlive its server-side session in CI.
+    if (!authenticatedMember) {
+      authenticatedMember = createUser();
+      await registerViaApi(request, authenticatedMember);
+    }
+    await signInViaApi(page, request, authenticatedMember);
+  });
+
   test('search page loads for a signed in member', async ({
     page,
   }, testInfo) => {
@@ -230,18 +243,70 @@ test.describe('authenticated member flows', () => {
   });
 
   test('statistics page loads for a signed in member', async ({
-    page,
+    browser,
+    baseURL,
   }, testInfo) => {
     annotateFeature(testInfo, 'public.statistics', [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
       'Public statistics API returns deterministic data.',
+      'Signed-in members without an eligible contact see a general experience-writing encouragement.',
     ]);
 
-    await page.goto('/statistics');
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
 
-    await expect(page).toHaveURL(/\/statistics/);
-    await expect(page).toHaveTitle(/Statistics - Trustroots/);
+    try {
+      await signInViaApi(page, context.request, SEEDED_MEMBERS[2]);
+      await page.goto('/statistics');
+
+      await expect(page).toHaveURL(/\/statistics/);
+      await expect(page).toHaveTitle(/Statistics - Trustroots/);
+      await expect(
+        page.getByText(
+          "Help make this picture more complete by sharing an experience from a member's profile.",
+        ),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('statistics suggests an eligible contact and opens their experience form', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'public.statistics', [
+      'Signed-in members can be encouraged to write an experience for an eligible confirmed contact.',
+      'The personalised encouragement opens the suggested contact experience form.',
+    ]);
+
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      await signInViaApi(page, context.request, SEEDED_MEMBERS[1]);
+      await page.goto('/statistics');
+
+      const contact = SEEDED_RELATIONSHIP_MEMBERS.alice;
+      const suggestion = page.getByRole('link', {
+        name: `Why not write some nice words about ${contact.firstName} ${contact.lastName}?`,
+      });
+      await expect(suggestion).toHaveAttribute(
+        'href',
+        `/profile/${contact.username}/experiences/new`,
+      );
+
+      await suggestion.click();
+      await expect(page).toHaveURL(
+        new RegExp(`/profile/${contact.username}/experiences/new`),
+      );
+      await expect(
+        page.getByRole('heading', { name: 'How do you know them?' }),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
   });
 
   test('profile edit networks page is reachable', async ({
@@ -444,6 +509,7 @@ test.describe('authenticated member flows', () => {
     annotateFeature(testInfo, 'public.navigation', [
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
       'Sign out action clears the session.',
     ]);
 
@@ -468,6 +534,9 @@ test.describe('authenticated member flows', () => {
         hasText: /find people/i,
       }),
     ).toBeVisible();
+    await expect(page.locator('.list-group a[href="/statistics"]')).toHaveText(
+      'Statistics',
+    );
   });
 
   test('member can sign out', async ({ browser, baseURL }, testInfo) => {

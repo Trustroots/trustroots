@@ -17,6 +17,8 @@ describe('Experiences routes unit tests', () => {
         create: (req, res) => res.status(200).send({ action: 'create' }),
         readMany: (req, res) => res.status(200).send({ action: 'readMany' }),
         getCount: (req, res) => res.status(200).send({ action: 'getCount' }),
+        getSuggestion: (req, res) =>
+          res.status(200).send({ action: 'getSuggestion' }),
         readMine: (req, res) => res.status(200).send({ action: 'readMine' }),
         readOne: (req, res) => res.status(200).send({ action: 'readOne' }),
         experienceById: (req, res, next) => next(),
@@ -36,5 +38,9 @@ describe('Experiences routes unit tests', () => {
     const res = await request(app).get('/api/experiences');
     res.status.should.equal(200);
     res.body.action.should.equal('readMany');
+
+    const suggestion = await request(app).get('/api/experiences/suggestion');
+    suggestion.status.should.equal(200);
+    suggestion.body.action.should.equal('getSuggestion');
   });
 });

@@ -16,7 +16,6 @@ const baseURL =
     ? `http://localhost:${webPort}`
     : `http://localhost:${apiPort}`);
 const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
-const authStorageState = path.join(__dirname, 'tests/e2e/.auth/member.json');
 const seededMemberStorageState = path.join(
   __dirname,
   'tests/e2e/.auth/seeded-member.json',
@@ -122,7 +121,6 @@ module.exports = defineConfig({
       fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],
-        storageState: authStorageState,
         ...(chromiumExecutablePath
           ? {
               launchOptions: {

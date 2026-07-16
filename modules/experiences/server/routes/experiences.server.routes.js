@@ -16,6 +16,11 @@ module.exports = function (app) {
       .get(experiences.getCount);
 
     app
+      .route('/api/experiences/suggestion')
+      .all(experiencesPolicy.isAllowed)
+      .get(experiences.getSuggestion);
+
+    app
       .route('/api/my-experience')
       .all(experiencesPolicy.isAllowed)
       .get(experiences.readMine);

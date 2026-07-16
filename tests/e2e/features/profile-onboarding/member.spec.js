@@ -238,6 +238,45 @@ test.describe('confirmed member flows', () => {
     await expect(joinButton).toContainText(/joined/i);
   });
 
+  test('member can join and leave a circle from its detail page', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.join-leave', [
+      'Member can join a circle from its detail page.',
+      'Member can leave that circle again from the same page.',
+    ]);
+
+    await page.goto('/circles/hikers');
+
+    const joinButton = page.locator('button.tribe-join');
+    await expect(joinButton).toBeVisible();
+    await expect(joinButton).toHaveAttribute('aria-label', /join this circle/i);
+
+    const joinResponse = page.waitForResponse(
+      response =>
+        response.url().match(/\/api\/users\/memberships\//) &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await joinButton.click();
+    await joinResponse;
+    await expect(joinButton).toContainText(/you'?re a member/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /leave circle/i);
+
+    const leaveResponse = page.waitForResponse(
+      response =>
+        response.url().match(/\/api\/users\/memberships\//) &&
+        response.request().method() === 'DELETE' &&
+        response.ok(),
+    );
+    await joinButton.click();
+    await page
+      .getByRole('button', { name: 'Leave circle', exact: true })
+      .click();
+    await leaveResponse;
+    await expect(joinButton).toContainText(/join this circle/i);
+  });
+
   test('shadowbanned member profiles are hidden from other members', async ({
     page,
   }, testInfo) => {

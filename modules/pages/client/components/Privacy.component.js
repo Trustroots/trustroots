@@ -138,7 +138,7 @@ export default function Privacy() {
                 </li>
                 <li>
                   {t(
-                    'Gravatar and Facebook may be used for profile images or information you choose to connect to your Trustroots profile.',
+                    'Gravatar may be used for profile images. Members who connected Facebook in the past can continue using their stored Facebook profile image.',
                   )}
                 </li>
                 <li>

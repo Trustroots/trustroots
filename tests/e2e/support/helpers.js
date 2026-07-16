@@ -203,8 +203,11 @@ async function signUp(page, user) {
  * picks up the session cookie. Used by Playwright setup projects.
  */
 async function signInViaApi(page, request, user) {
-  const browserRequest = page.context().request || request;
-  const response = await browserRequest.post('/api/auth/signin', {
+  // Authenticate the supplied request fixture as well as the browser. Several
+  // specs use it for API setup after signing in, while browser-context requests
+  // alone do not refresh that fixture's cookie jar.
+  const signInRequest = request || page.context().request;
+  const response = await signInRequest.post('/api/auth/signin', {
     data: {
       username: user.username,
       password: user.password,

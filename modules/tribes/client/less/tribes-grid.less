@@ -4,7 +4,19 @@
  * Big "Discover Tribes" grid
  */
 .tribes-grid {
-  overflow: hidden;
+  overflow: visible;
+  touch-action: pan-y;
+
+  // Circle cards are mostly links and buttons. The global tap optimisation
+  // gives those elements `touch-action: manipulation`, which can leave iOS
+  // Safari slow or inconsistent about handing a drag back to page scrolling.
+  // Keep taps working while making vertical gestures unambiguous.
+  .tribe-link,
+  .tribe-actions,
+  .tribe-join {
+    touch-action: pan-y;
+  }
+
   .tribe {
     background-color: @brand-primary;
     background-size: cover;

@@ -1,6 +1,7 @@
 const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
+  SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
   createUser,
   fetchUserIdByUsername,
@@ -13,6 +14,10 @@ const {
 } = require('../../support/db');
 
 test.describe.serial('contacts and safety feature coverage', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  });
+
   test('members can add and confirm contacts through the UI', async ({
     browser,
     baseURL,

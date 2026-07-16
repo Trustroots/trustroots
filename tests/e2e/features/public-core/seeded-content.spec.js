@@ -32,6 +32,7 @@ test.describe('seeded content and public API flows', () => {
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
       'Public statistics API returns deterministic connection and message-interaction data.',
+      'Visitors do not see an experience-writing encouragement.',
     ]);
 
     await page.goto('/statistics');
@@ -40,6 +41,19 @@ test.describe('seeded content and public API flows', () => {
     await expect(page).toHaveTitle(/Statistics - Trustroots/);
     await expect(page.getByText('Real-life connections')).toBeVisible();
     await expect(page.getByText('Message interactions')).toBeVisible();
+    await expect(
+      page.getByText(
+        'This is a lower bound: most people do not share an experience, and Trustroots did not have this experience feature until 2021.',
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Help make this picture more complete/),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole('link', {
+        name: /Why not write some nice words about/i,
+      }),
+    ).toHaveCount(0);
 
     const response = await request.get('/api/statistics');
     expect(response.ok()).toBeTruthy();
@@ -105,6 +119,37 @@ test.describe('seeded content and public API flows', () => {
     );
     await expect(wikiLink).toHaveAttribute('target', '_blank');
     await expect(wikiLink).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  test('circle detail remains touch-scrollable on a phone-sized viewport', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.detail', [
+      'Circle detail content remains vertically scrollable on touch devices.',
+    ]);
+
+    await page.setViewportSize({ width: 375, height: 480 });
+    await page.goto('/circles/hitchhikers');
+
+    const content = page.locator('.tribe-header-info');
+    await expect(content).toBeVisible();
+    const state = await content.evaluate(element => {
+      const styles =
+        element.ownerDocument.defaultView.getComputedStyle(element);
+      element.scrollTop = element.scrollHeight;
+      return {
+        overflowY: styles.overflowY,
+        touchAction: styles.touchAction,
+        clientHeight: element.clientHeight,
+        scrollHeight: element.scrollHeight,
+        scrollTop: element.scrollTop,
+      };
+    });
+
+    expect(state.overflowY).toBe('auto');
+    expect(state.touchAction).toBe('pan-y');
+    expect(state.scrollHeight).toBeGreaterThan(state.clientHeight);
+    expect(state.scrollTop).toBeGreaterThan(0);
   });
 
   test('tribes API returns seeded circles', async ({ request }, testInfo) => {

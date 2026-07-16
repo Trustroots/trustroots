@@ -12,6 +12,10 @@ const portland = SEEDED_MEMBERS[1];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
 
 test.describe.serial('message action feature coverage', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, berlin);
+  });
+
   test('members can send replies and validation blocks empty messages', async ({
     page,
     request,
