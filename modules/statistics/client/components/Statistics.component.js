@@ -122,6 +122,11 @@ export default function Statistics({ isAuthenticated }) {
                         )}
                       </Count>
                       <p className="text-muted">
+                        {t(
+                          'A lower bound: most people do not share an experience, and only experiences shared since 2016 are counted.',
+                        )}
+                      </p>
+                      <p className="text-muted">
                         {t('{{percentage}}% recommended overall', {
                           percentage: recommendationPercentage,
                         })}
