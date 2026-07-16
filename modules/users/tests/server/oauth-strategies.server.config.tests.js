@@ -133,56 +133,6 @@ describe('OAuth strategy configuration unit tests', () => {
     });
   });
 
-  describe('Twitter strategy', () => {
-    const strategyPath = '../../server/config/strategies/twitter';
-
-    it('does not register the strategy when configuration is missing', () => {
-      const { strategy, passportUse } = loadStrategy(
-        strategyPath,
-        'passport-twitter',
-      );
-      strategy({});
-      passportUse.called.should.be.false();
-    });
-
-    it('registers the strategy and maps the profile', () => {
-      const harness = loadStrategy(strategyPath, 'passport-twitter');
-      harness.strategy(fullConfig('twitter'));
-      harness.passportUse.calledOnce.should.be.true();
-
-      const profile = {
-        _json: { id_str: '123' },
-        displayName: 'Jack',
-        username: 'jack',
-      };
-
-      harness.getVerify()({}, 'token', 'token-secret', profile, () => {});
-
-      const providerUserProfile =
-        harness.saveOAuthUserProfile.firstCall.args[1];
-      providerUserProfile.provider.should.equal('twitter');
-      providerUserProfile.providerIdentifierField.should.equal('id_str');
-      providerUserProfile.displayName.should.equal('Jack');
-      providerUserProfile.username.should.equal('jack');
-      providerUserProfile.providerData.token.should.equal('token');
-      providerUserProfile.providerData.tokenSecret.should.equal('token-secret');
-    });
-
-    it('tolerates a sparse Twitter profile', () => {
-      const harness = loadStrategy(strategyPath, 'passport-twitter');
-      harness.strategy(fullConfig('twitter'));
-
-      harness.getVerify()({}, 'token', 'token-secret', {}, () => {});
-
-      const providerUserProfile =
-        harness.saveOAuthUserProfile.firstCall.args[1];
-      (providerUserProfile.displayName === undefined).should.be.true();
-      (providerUserProfile.username === undefined).should.be.true();
-      providerUserProfile.providerData.token.should.equal('token');
-      providerUserProfile.providerData.tokenSecret.should.equal('token-secret');
-    });
-  });
-
   describe('Facebook strategy', () => {
     const strategyPath = '../../server/config/strategies/facebook';
     const loggerPath = '../../../../../config/lib/logger';

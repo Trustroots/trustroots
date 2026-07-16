@@ -13,6 +13,17 @@ redirect_from:
 
 There are plenty of things to do. In June 2026 we went out of maintenance mode. Further down on this page you can see a bunch of actual tasks that people are working on. If you have tech skills it should be fairly easy to jump in and help out. If you don't have tech skills and you want to help there's still ways to do that, especially around testing.
 
+If you don't have tech skills, let us know what you have in mind on how you think you can do to improve Trustroots?
+
+Here are some vague open ideas:
+* communication
+* help trustroots users to organize locally
+* welcoming new members
+  * there is no functionality for this now but we can make this
+* improve the [Trustroots Wiki](https://wiki.trustroots.org/) and connect it to the main site
+  * for example, it would be cool to have circle descriptions directly on the wiki, so that all trustroots users will add information
+  * develop ideas that are hidden in there, such as [Rural Hospitality](https://wiki.trustroots.org/en/Rural_hospitality)
+
 ### Decentralized social networking
 
 The history of hospitality exchange is full of networks that failed their communities — sold to investors, abandoned, or dependent on a single person. In 2022, Trustroots nearly joined that list: only one volunteer had server access. We responded in two steps: first, we raised our [bus factor](https://en.wikipedia.org/wiki/Bus_factor) to 3 so at least three people can maintain the infrastructure; second, we asked how Trustroots could outlast any particular team of volunteers.

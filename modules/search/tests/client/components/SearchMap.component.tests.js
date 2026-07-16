@@ -1,11 +1,17 @@
 import React from 'react';
-import { act, render, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
 import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import SearchMap from '@/modules/search/client/components/SearchMap.component';
+
+const mockIsWebGLSupported = jest.fn();
+jest.mock('@/modules/core/client/utils/map', () => ({
+  ...jest.requireActual('@/modules/core/client/utils/map'),
+  isWebGLSupported: () => mockIsWebGLSupported(),
+}));
 
 const mockGetNostrEventAuthorPubkey = jest.fn(
   event => event.authorPubkey || event.pubkey,
@@ -72,6 +78,14 @@ jest.mock('@/modules/search/client/components/SearchMapNoContent', () => {
     return <div>Zoom closer to find members.</div>;
   };
 });
+
+const mockLeafletSearchMap = jest.fn();
+jest.mock('@/modules/search/client/components/LeafletSearchMap', () =>
+  jest.fn(props => {
+    mockLeafletSearchMap(props);
+    return <div data-testid="leaflet-search-map" />;
+  }),
+);
 
 const mockFitBounds = jest.fn();
 const mockMap = {
@@ -168,6 +182,8 @@ function renderSearchMap(props = {}) {
 }
 
 beforeEach(() => {
+  mockIsWebGLSupported.mockReturnValue(true);
+  mockLeafletSearchMap.mockClear();
   mockSourcePropsById = {};
   mockPersistentMapLocation = {
     latitude: 48.6908333333,
@@ -213,6 +229,53 @@ describe('Search', () => {
         onOfferClose={() => {}}
         onOfferOpen={() => {}}
       />,
+    );
+  });
+
+  it('uses the Leaflet renderer when WebGL is unavailable', async () => {
+    mockIsWebGLSupported.mockReturnValue(false);
+
+    renderSearchMap();
+
+    expect(screen.getByTestId('leaflet-search-map')).toBeInTheDocument();
+    expect(screen.queryByTestId('react-map-gl')).not.toBeInTheDocument();
+    expect(mockLeafletSearchMap).toHaveBeenCalledWith(
+      expect.objectContaining({
+        communityNotes: expect.objectContaining({ features: [] }),
+        offers: expect.objectContaining({ features: [] }),
+        onCommunityNoteClick: expect.any(Function),
+        onMapChange: expect.any(Function),
+        onOfferClick: expect.any(Function),
+      }),
+    );
+
+    const mapState = {
+      bounds: {
+        northEast: { lat: 53, lng: 14 },
+        southWest: { lat: 51, lng: 12 },
+      },
+      latitude: 52,
+      longitude: 13,
+      zoom: 6,
+    };
+
+    act(() => {
+      mockLeafletSearchMap.mock.calls[0][0].onMapChange(mapState);
+    });
+
+    expect(mockSetPersistentMapLocation).toHaveBeenCalledWith({
+      latitude: 52,
+      longitude: 13,
+      zoom: 6,
+    });
+    await waitFor(() =>
+      expect(mockQueryOffers).toHaveBeenCalledWith({
+        filters: '{}',
+        northEastLat: 54.666666666666664,
+        northEastLng: 15.666666666666666,
+        southWestLat: 49.333333333333336,
+        southWestLng: 10.333333333333334,
+      }),
     );
   });
 

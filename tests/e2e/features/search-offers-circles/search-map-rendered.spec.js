@@ -272,6 +272,68 @@ test.describe('rendered search map feature coverage', () => {
     });
   });
 
+  test('search map uses the raster fallback when WebGL is unavailable', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'A browser without WebGL receives a visible Leaflet raster map.',
+      'Fallback-map offer markers continue to open the results sidebar.',
+    ]);
+
+    await page.addInitScript(() => {
+      const Canvas = window.HTMLCanvasElement;
+      const getContext = Canvas.prototype.getContext;
+      Canvas.prototype.getContext = function getWebGLContext(type, ...args) {
+        if (type === 'webgl' || type === 'experimental-webgl') {
+          return null;
+        }
+        return getContext.call(this, type, ...args);
+      };
+    });
+    const fulfilRasterTile = route =>
+      route.fulfill({
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+        contentType: 'image/png',
+      });
+    await context.route('**://*.tile.openstreetmap.org/**', fulfilRasterTile);
+    await context.route(
+      '**://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/**',
+      fulfilRasterTile,
+    );
+
+    await page.goto('/search');
+
+    await expect(
+      page.locator('[data-testid="leaflet-search-map"]'),
+    ).toBeVisible();
+    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+    await expect(page.locator('.leaflet-tile').first()).toHaveJSProperty(
+      'naturalWidth',
+      1,
+    );
+    await page.waitForFunction(
+      () => document.querySelectorAll('.leaflet-interactive').length > 0,
+      null,
+      { timeout: 30000 },
+    );
+
+    // The two seeded offers overlap at this zoom. Dispatch to the host marker
+    // directly and verify that the fallback requests its offer details.
+    const offerRequest = page.waitForRequest(
+      '**/api/offers/665100000000000000000001**',
+    );
+    await page
+      .locator('.leaflet-interactive[fill="#58ba58"]')
+      .dispatchEvent('click');
+    expect((await offerRequest).url()).toContain(
+      '/api/offers/665100000000000000000001',
+    );
+  });
+
   test('clicking a pin cluster zooms the map in to expand it', async ({
     context,
     page,
@@ -321,11 +383,11 @@ test.describe('rendered search map feature coverage', () => {
     expect(await readZoom()).toBeGreaterThan(initialZoom);
   });
 
-  test('Community Notes search filter toggles and persists', async ({
+  test('Community Notes search filter is enabled by default and persists changes', async ({
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
-      'Community Notes filter can be enabled and persisted.',
+      'Community Notes filter is enabled by default and persists changes.',
       'Nostroots community note relay requests are isolated from external network.',
     ]);
 
@@ -338,15 +400,42 @@ test.describe('rendered search map feature coverage', () => {
     const checkbox = filterLabel.locator('input[type="checkbox"]');
 
     await expect(filterLabel).toBeVisible();
-    if (await checkbox.isChecked()) {
-      await filterLabel.click();
-      await expect(checkbox).not.toBeChecked();
-    }
+    await expect(checkbox).toBeChecked();
+
+    await filterLabel.click();
+    await expect(checkbox).not.toBeChecked();
+
+    await page.reload();
+    await expect(filterLabel).toBeVisible();
+    await expect(checkbox).not.toBeChecked();
 
     await filterLabel.click();
     await expect(checkbox).toBeChecked();
+  });
 
-    await page.reload();
+  test('Community Notes are visible and controllable on mobile maps', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Mobile maps expose Community Notes in the Filters panel.',
+      'The filter reflects the default-enabled Community Notes setting.',
+    ]);
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await installNostrRelayStub(page);
+    await page.goto('/search');
+
+    const filterLabel = page
+      .locator('.search-sidebar-filters label')
+      .filter({ hasText: 'Community Notes' });
+    const checkbox = filterLabel.locator('input[type="checkbox"]');
+
+    await expect(filterLabel).toHaveCount(1);
+    await page
+      .locator('.search-map-meta button')
+      .filter({ hasText: 'Filters' })
+      .click();
+
     await expect(filterLabel).toBeVisible();
     await expect(checkbox).toBeChecked();
 

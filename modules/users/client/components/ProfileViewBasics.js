@@ -126,8 +126,11 @@ export default function ProfileViewBasics({ profile }) {
       >
         {profile.nostrNpub && (
           <li className="social-profile">
-            <i className="social-profile-icon icon-fw icon-lg"></i>
-            <span className="text-muted">{getNetworkName('nostr')}</span>{' '}
+            <img
+              className="social-profile-icon nostroots-logo"
+              src="/img/external/nostroots-logo.png"
+              alt=""
+            />
             <a
               rel="noopener"
               className="social-profile-handle"
@@ -136,7 +139,7 @@ export default function ProfileViewBasics({ profile }) {
               )}`}
               aria-describedby={nostrDescriptionId}
             >
-              {profile.username ? nostrIdentifier : 'nostr npub'}
+              {getNetworkName('nostr')}
             </a>
             {profile.username && (
               <span id={nostrDescriptionId} className="sr-only">

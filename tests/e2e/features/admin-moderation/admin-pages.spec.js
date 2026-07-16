@@ -53,7 +53,7 @@ test.describe('admin moderation page flows', () => {
     await expect(footer.locator('.site-footer-meta')).toBeVisible();
 
     for (const [name, href] of [
-      ['Volunteering', '/volunteering'],
+      ['Volunteering', 'https://team.trustroots.org/'],
       ['Rules', '/rules'],
       ['FAQ', '/faq'],
       ['Privacy', '/privacy'],

@@ -24,7 +24,7 @@ test.describe('public footer', () => {
     await footer.scrollIntoViewIfNeeded();
 
     for (const [name, href] of [
-      ['Volunteering', '/volunteering'],
+      ['Volunteering', 'https://team.trustroots.org/'],
       ['Rules', '/rules'],
       ['FAQ', '/faq'],
       ['Privacy', '/privacy'],

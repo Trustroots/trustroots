@@ -491,12 +491,6 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/auth/facebook/callback').get, [
       handler('userAuthentication.oauthCallback.facebook'),
     ]);
-    assertHandlers(routeByPath(routes, '/api/auth/twitter').get, [
-      handler('passport.authenticate.twitter'),
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/twitter/callback').get, [
-      handler('userAuthentication.oauthCallback.twitter'),
-    ]);
     assertHandlers(routeByPath(routes, '/api/auth/github').get, [
       handler('passport.authenticate.github'),
     ]);
@@ -504,11 +498,10 @@ describe('API route registrations', () => {
       handler('userAuthentication.oauthCallback.github'),
     ]);
     routes
-      .filter(route => /facebook|twitter|github/.test(route.path))
+      .filter(route => /facebook|github/.test(route.path))
       .forEach(route => assertPolicy(route, policy));
     assert.deepStrictEqual(passportAuthenticateCalls, [
       { provider: 'facebook', options: { scope: ['public_profile', 'email'] } },
-      { provider: 'twitter', options: undefined },
       { provider: 'github', options: { scope: ['user:email'] } },
     ]);
   });
