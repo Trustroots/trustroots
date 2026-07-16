@@ -48,8 +48,8 @@ export default function SupportPage({ user }) {
               )}
               <li>
                 <Trans t={t} ns="support">
-                  <a href="/volunteering">Become a volunteer</a> and make a
-                  difference!
+                  <a href="https://team.trustroots.org/">Become a volunteer</a>{' '}
+                  and make a difference!
                 </Trans>
               </li>
             </ul>

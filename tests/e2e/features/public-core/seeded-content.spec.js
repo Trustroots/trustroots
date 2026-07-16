@@ -1,4 +1,9 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const {
+  annotateFeature,
+  expect,
+  test,
+  useElementScreenshot,
+} = require('../../support/test');
 
 const { SEEDED_MEMBERS, waitForTribesList } = require('../../support/helpers');
 
@@ -19,17 +24,39 @@ test.describe('seeded content and public API flows', () => {
     expect(languages.length).toBeGreaterThan(0);
   });
 
-  test('statistics page loads for visitors', async ({ page }, testInfo) => {
+  test('statistics page loads for visitors', async ({
+    page,
+    request,
+  }, testInfo) => {
     annotateFeature(testInfo, 'public.statistics', [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
-      'Public statistics API returns deterministic data.',
+      'Public statistics API returns deterministic connection and message-interaction data.',
     ]);
 
     await page.goto('/statistics');
 
     await expect(page).toHaveURL(/\/statistics/);
     await expect(page).toHaveTitle(/Statistics - Trustroots/);
+    await expect(page.getByText('Real-life connections')).toBeVisible();
+    await expect(page.getByText('Message interactions')).toBeVisible();
+
+    const response = await request.get('/api/statistics');
+    expect(response.ok()).toBeTruthy();
+    const publicStatistics = await response.json();
+    expect(publicStatistics.experiences).toEqual({
+      total: 2,
+      recommended: 1,
+      notRecommended: 0,
+      recent: { total: 2, recommended: 1, notRecommended: 0 },
+      realLifeConnections: { total: 2, recent: 2 },
+    });
+    expect(publicStatistics.messageInteractions).toEqual({
+      total: 1,
+      positive: 0,
+      negative: 1,
+      recent: { total: 1, positive: 0, negative: 1 },
+    });
   });
 
   test('viewing a host profile while signed out redirects to sign in', async ({
@@ -51,8 +78,10 @@ test.describe('seeded content and public API flows', () => {
   test('circle detail page loads for a seeded tribe', async ({
     page,
   }, testInfo) => {
+    useElementScreenshot(testInfo, 'section.tribe-header');
     annotateFeature(testInfo, 'circles.detail', [
       'Seeded circle detail page loads.',
+      'Circle detail page links to its Wiki page.',
       'Unknown circle shows a user-facing error or not found state.',
     ]);
 
@@ -68,6 +97,14 @@ test.describe('seeded content and public API flows', () => {
     await expect(
       page.locator('h2.tribe-title', { hasText: 'Hitchhikers' }).first(),
     ).toBeVisible();
+
+    const wikiLink = page.getByRole('link', { name: 'Circle Wiki' });
+    await expect(wikiLink).toHaveAttribute(
+      'href',
+      'https://wiki.trustroots.org/en/Hitchhikers',
+    );
+    await expect(wikiLink).toHaveAttribute('target', '_blank');
+    await expect(wikiLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
   test('tribes API returns seeded circles', async ({ request }, testInfo) => {

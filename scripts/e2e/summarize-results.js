@@ -8,7 +8,9 @@ const { mergeRawCoverage } = require('./merge-js-coverage');
 
 const root = path.resolve(__dirname, '../..');
 const resultsPath = path.join(root, 'coverage/e2e/playwright-results.json');
-const statusPath = path.join(root, 'coverage/e2e/status.json');
+const statusPath = process.env.TRUSTROOTS_E2E_STATUS_PATH
+  ? path.resolve(process.env.TRUSTROOTS_E2E_STATUS_PATH)
+  : path.join(root, 'coverage/e2e/status.json');
 const enforceFeatureCoverage =
   process.env.TRUSTROOTS_E2E_ENFORCE_FEATURE_COVERAGE === 'true';
 
@@ -51,13 +53,11 @@ function summarizeReport(report) {
   function walkSuites(suiteList) {
     for (const suite of suiteList || []) {
       for (const spec of suite.specs || []) {
-        const fileName = path.basename(spec.file || '');
-        if (fileName === 'auth.setup.js') {
-          continue;
-        }
-
         const area = areaForSpec(spec.file);
-        areas.add(area);
+        const isSetup = area === 'Setup';
+        if (!isSetup) {
+          areas.add(area);
+        }
 
         for (const testCase of spec.tests || []) {
           total += 1;
@@ -79,7 +79,11 @@ function summarizeReport(report) {
             skipped += 1;
           }
 
-          record(area, status);
+          // Setup checks are part of the Playwright run, but are not product
+          // coverage and therefore do not belong in an end-to-end area.
+          if (!isSetup) {
+            record(area, status);
+          }
         }
       }
 
@@ -242,8 +246,14 @@ async function run() {
   }
 }
 
-run().catch(error => {
-  const message = error && error.message ? error.message : String(error);
-  process.stderr.write(`Failed to summarize end-to-end results: ${message}\n`);
-  process.exit(1);
-});
+if (require.main === module) {
+  run().catch(error => {
+    const message = error && error.message ? error.message : String(error);
+    process.stderr.write(
+      `Failed to summarize end-to-end results: ${message}\n`,
+    );
+    process.exitCode = 1;
+  });
+}
+
+module.exports = { summarizeReport };

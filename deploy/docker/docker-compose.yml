@@ -1,8 +1,9 @@
 services:
   mongodb:
     image: mongo:4.4
+    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.5"]
     volumes:
-      - ./data/mongodb:/data/db
+      - mongodb_data:/data/db
     restart: unless-stopped
 
   # Optional localhost port forward for imports/debugging.
@@ -121,6 +122,9 @@ services:
       - '1080:1080'
 
 volumes:
+  # Keep WiredTiger data on Docker's Linux filesystem. Host bind mounts on
+  # Docker Desktop can reject MongoDB's collection file creation.
+  mongodb_data:
   # Holds the dev service's node_modules, seeded from the dev image build so it
   # stays independent of the host's (possibly non-linux) node_modules.
   node_modules:

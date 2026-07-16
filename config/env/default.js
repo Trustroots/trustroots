@@ -197,9 +197,6 @@ module.exports = {
   },
   twitter: {
     username: '',
-    clientID: '',
-    clientSecret: '',
-    callbackURL: '/api/auth/twitter/callback',
   },
   google: {
     page: '',
@@ -216,6 +213,10 @@ module.exports = {
   googleAnalytics: {
     enabled: false,
     code: '',
+  },
+  umami: {
+    scriptSrc: 'https://1p.trustroots.org/script.js',
+    websiteId: '',
   },
   log: {
     papertrail: {

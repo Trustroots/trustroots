@@ -7,32 +7,28 @@ import { getThreads } from '../api/threads.api';
 import AdminHeader from './AdminHeader.component';
 import Json from './Json.component';
 import UserLink from './UserLink.component';
+import {
+  MONGO_OBJECT_ID_LENGTH,
+  isMongoObjectId,
+  normalizeAdminQuery,
+} from './userSearch.helpers';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
-
-// Mongo ObjectId is always 24 chars long
-const MONGO_OBJECT_ID_LENGTH = 24;
 
 export default function AdminThreads() {
   // @TODO: replace with useLocation of react-router or similar.
   const urlParams = new URLSearchParams(window.location.search);
   const urlUserId = urlParams.get('userId');
-  const initialUsername = urlParams.get('username') || '';
-  const initialUserId =
-    urlUserId && urlUserId.length === MONGO_OBJECT_ID_LENGTH ? urlUserId : '';
+  const initialQuery = urlUserId || urlParams.get('username') || '';
 
   const [queried, setQueried] = useState(false);
+  const [query, setQuery] = useState(initialQuery);
   const [threads, setThreads] = useState([]);
-  const [userId, setUserId] = useState(initialUserId);
-  const [username, setUsername] = useState(initialUsername);
 
   async function onSubmit(event) {
     event.preventDefault();
-
-    // Mongo ObjectId is always 24 chars long
-    if (!username && userId && userId.length !== MONGO_OBJECT_ID_LENGTH) {
-      alert('User ID is wrong length');
-      return;
-    }
+    const trimmedQuery = normalizeAdminQuery(query);
+    const userId = isMongoObjectId(trimmedQuery) ? trimmedQuery : '';
+    const username = userId ? '' : trimmedQuery;
 
     const threads = await getThreads({ userId, username });
     setQueried(true);
@@ -43,13 +39,7 @@ export default function AdminThreads() {
 
   function renderResults() {
     if (!queried && threads.length === 0) {
-      return (
-        <p>
-          <em className="text-muted">
-            {userId ? 'Press "Query"' : 'Enter member ID or username…'}
-          </em>
-        </p>
-      );
+      return null;
     }
 
     if (queried && threads.length === 0) {
@@ -109,33 +99,19 @@ export default function AdminThreads() {
         <h2>Threads</h2>
         <form className="form-inline" onSubmit={event => onSubmit(event)}>
           <input
-            aria-label="Member ID"
+            aria-label="Member username or ID"
             className="form-control input-lg"
-            maxLength={MONGO_OBJECT_ID_LENGTH}
-            name="userId"
-            onChange={({ target: { value } }) => setUserId(value)}
-            placeholder="Member ID"
+            name="query"
+            onChange={({ target: { value } }) => setQuery(value)}
+            placeholder="Member username or ID"
             size={MONGO_OBJECT_ID_LENGTH + 2}
             type="text"
-            value={userId}
-            disabled={username.length > 0}
-          />
-          <em> or </em>
-          <input
-            aria-label="Username"
-            className="form-control input-lg"
-            name="userId"
-            onChange={({ target: { value } }) => setUsername(value)}
-            placeholder="Username"
-            size={20}
-            type="text"
-            value={username}
-            disabled={userId.length > 0}
+            value={query}
           />
           <button
             className="btn btn-lg btn-default"
             type="submit"
-            disabled={!username.length && !userId.length}
+            disabled={!query.trim()}
           >
             Query
           </button>

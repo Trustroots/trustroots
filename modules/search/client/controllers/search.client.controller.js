@@ -35,7 +35,9 @@ function SearchController(
   vm.openSearchPlaceInput = openSearchPlaceInput;
   vm.onLanguageFiltersChange = onLanguageFiltersChange;
   vm.onSeenFilterChange = onSeenFilterChange;
+  vm.onCommunityNotesToggle = onCommunityNotesToggle;
   vm.onlineInPast6Months = vm.filters.seen && vm.filters.seen.months === 6;
+  vm.communityNotesEnabled = FiltersService.get('communityNotes') || false;
   vm.sidebarTab = 'filters';
 
   // Visibility toggle for search place input on small screens
@@ -108,11 +110,19 @@ function SearchController(
     });
     $scope.$on('search.previewOffer', function (event, offer) {
       vm.offer = offer;
+      vm.communityNote = false;
+      vm.loadingOffer = false;
+      openSidebar('results');
+    });
+    $scope.$on('search.previewCommunityNote', function (event, data) {
+      vm.offer = false;
+      vm.communityNote = data;
       vm.loadingOffer = false;
       openSidebar('results');
     });
     $scope.$on('search.closeOffer', function () {
       vm.offer = false;
+      vm.communityNote = false;
       vm.loadingOffer = false;
     });
 
@@ -156,12 +166,21 @@ function SearchController(
   }
 
   /**
+   * Fired for changes at community notes toggle
+   */
+  function onCommunityNotesToggle() {
+    FiltersService.set('communityNotes', vm.communityNotesEnabled);
+    onFiltersUpdated();
+  }
+
+  /**
    * Closes offer when filters are changed and updates the map
    */
   function onFiltersUpdated() {
-    // Close possible open offers
-    if (vm.offer) {
+    // Close possible open offers or community notes
+    if (vm.offer || vm.communityNote) {
       vm.offer = false;
+      vm.communityNote = false;
       // Tells `SearchMapController` and `SearchSidebarController`
       // to close anything offer related
       $scope.$broadcast('search.closeOffer');

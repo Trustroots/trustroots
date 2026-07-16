@@ -86,16 +86,38 @@ function apiRoute(method, path, routeSource, extra = {}) {
 }
 
 const specPaths = {
+  'account-email-tokens.spec.js':
+    'features/auth-account/account-email-tokens.spec.js',
+  'account-settings.spec.js': 'features/auth-account/account-settings.spec.js',
+  'admin-acquisition.spec.js':
+    'features/admin-moderation/admin-acquisition.spec.js',
   'admin-inspection.spec.js':
     'features/admin-moderation/admin-inspection.spec.js',
+  'admin-newsletter-api.spec.js':
+    'features/admin-moderation/admin-newsletter-api.spec.js',
+  'admin-notes.spec.js': 'features/admin-moderation/admin-notes.spec.js',
   'admin-pages.spec.js': 'features/admin-moderation/admin-pages.spec.js',
+  'admin-reference-errors.spec.js':
+    'features/admin-moderation/admin-reference-errors.spec.js',
+  'admin-role-audit.spec.js':
+    'features/admin-moderation/admin-role-audit.spec.js',
   'admin-search.spec.js': 'features/admin-moderation/admin-search.spec.js',
   'auth-smoke.spec.js': 'features/auth-account/auth-smoke.spec.js',
   'authenticated.spec.js': 'features/profile-onboarding/authenticated.spec.js',
+  'contacts-and-blocks.spec.js':
+    'features/relationships-safety/contacts-and-blocks.spec.js',
+  'core-gaps.spec.js': 'features/public-core/core-gaps.spec.js',
+  'experience-actions.spec.js':
+    'features/experiences-references/experience-actions.spec.js',
   'experiences.spec.js': 'features/experiences-references/experiences.spec.js',
+  'footer.spec.js': 'features/public-core/footer.spec.js',
   'member.spec.js': 'features/profile-onboarding/member.spec.js',
+  'message-actions.spec.js': 'features/messages/message-actions.spec.js',
+  'messages-api.spec.js': 'features/messages/messages-api.spec.js',
   'messages.spec.js': 'features/messages/messages.spec.js',
   'nostr.spec.js': 'features/public-core/nostr.spec.js',
+  'offers-and-circles.spec.js':
+    'features/search-offers-circles/offers-and-circles.spec.js',
   'public-pages.spec.js': 'features/public-core/public-pages.spec.js',
   'search-map-rendered.spec.js':
     'features/search-offers-circles/search-map-rendered.spec.js',
@@ -437,6 +459,31 @@ const features = [
     ],
   },
   {
+    id: 'public.footer',
+    area: AREA.publicCore,
+    status: STATUS.active,
+    description:
+      'Public pages render a compact footer with stable links and deployed build metadata.',
+    roles: ['visitor'],
+    references: {
+      clientRoutes: [clientRoute('faq.general', '/faq', source.pagesClient)],
+      apiRoutes: [],
+    },
+    requiredScenarios: [
+      'Standard footer shows compact public links on desktop.',
+      'Standard footer omits the Contribute navigation link.',
+      'Standard footer links to the deployed GitHub commit.',
+      'Standard footer remains hidden on mobile.',
+    ],
+    relatedSpecs: [
+      spec(
+        'footer.spec.js',
+        'standard footer shows compact links and build metadata on desktop',
+      ),
+      spec('footer.spec.js', 'standard footer stays hidden on mobile'),
+    ],
+  },
+  {
     id: 'public.support-page',
     area: AREA.publicCore,
     status: STATUS.active,
@@ -491,7 +538,7 @@ const features = [
     requiredScenarios: [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
-      'Public statistics API returns deterministic data.',
+      'Public statistics API returns deterministic connection and message-interaction data.',
     ],
     relatedSpecs: [
       spec('seeded-content.spec.js', 'statistics page loads for visitors'),
@@ -1013,7 +1060,7 @@ const features = [
     area: AREA.authAccount,
     status: STATUS.active,
     description:
-      'Members can connect and disconnect Facebook, Twitter, and GitHub OAuth accounts via local stubs.',
+      'Members can connect and disconnect Facebook and GitHub OAuth accounts via local stubs.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1030,8 +1077,6 @@ const features = [
         apiRoute('GET', '/api/auth/facebook', source.usersAuthServer),
         apiRoute('PUT', '/api/auth/facebook', source.usersAuthServer),
         apiRoute('GET', '/api/auth/facebook/callback', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/twitter', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/twitter/callback', source.usersAuthServer),
         apiRoute('GET', '/api/auth/github', source.usersAuthServer),
         apiRoute('GET', '/api/auth/github/callback', source.usersAuthServer),
         apiRoute('DELETE', '/api/users/accounts/:provider', source.usersServer),
@@ -1258,7 +1303,7 @@ const features = [
       ),
       spec(
         'nostr.spec.js',
-        'links the saved npub to njump.me on the profile view',
+        'links the saved npub to nos.trustroots.org on the profile view',
       ),
     ],
   },
@@ -1959,7 +2004,7 @@ const features = [
       ),
       spec('messages.spec.js', 'inbox does not list the shadowbanned sender'),
       spec(
-        'messages.spec.js',
+        'messages-api.spec.js',
         'member thread API hides shadow-hidden messages from the recipient',
       ),
       spec(
@@ -1991,6 +2036,10 @@ const features = [
       spec(
         'messages.spec.js',
         'inbox lists the seeded conversation with Portland Host',
+      ),
+      spec(
+        'messages-api.spec.js',
+        'inbox API returns sanitized thread excerpts',
       ),
       spec('messages.spec.js', 'inbox does not list the shadowbanned sender'),
     ],
@@ -2089,7 +2138,12 @@ const features = [
       'Sending a reply appends it to the thread.',
       'Validation prevents empty or forbidden replies.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'messages-api.spec.js',
+        'message send API rejects invalid recipients',
+      ),
+    ],
   },
   {
     id: 'messages.read-count-sync',
@@ -2122,7 +2176,16 @@ const features = [
       'Message sync endpoint returns deterministic updates.',
       'Sync handles no-new-message state.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'messages-api.spec.js',
+        'message status APIs expose unread and sync payloads',
+      ),
+      spec(
+        'messages-api.spec.js',
+        'message read and sync APIs validate request payloads',
+      ),
+    ],
   },
   {
     id: 'messages.unconfirmed-restrictions',

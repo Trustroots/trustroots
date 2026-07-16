@@ -1,4 +1,9 @@
-const { annotateFeature, test, expect } = require('../../support/test');
+const {
+  annotateFeature,
+  test,
+  expect,
+  useElementScreenshot,
+} = require('../../support/test');
 
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
@@ -27,14 +32,51 @@ test.describe('admin moderation page flows', () => {
   test('admin dashboard welcomes the signed in admin', async ({
     page,
   }, testInfo) => {
+    useElementScreenshot(testInfo, '#tr-footer');
     annotateFeature(testInfo, 'admin.dashboard', [
       'Admin dashboard loads for admin.',
+      'Admin footer uses the shared footer layout.',
     ]);
 
     await gotoAdminPage(page, '/admin', /\/admin$/);
 
     await expect(page).toHaveTitle(/Admin - Trustroots/);
-    await expect(page.getByText(/welcome, friend!/i)).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Admin Dashboard' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Name, username or email')).toBeVisible();
+
+    const footer = page.locator('#tr-footer');
+    await expect(footer).toBeVisible();
+    await footer.scrollIntoViewIfNeeded();
+    await expect(footer.locator('.site-footer-content')).toBeVisible();
+    await expect(footer.locator('.site-footer-meta')).toBeVisible();
+
+    for (const [name, href] of [
+      ['Volunteering', 'https://team.trustroots.org/'],
+      ['Rules', '/rules'],
+      ['FAQ', '/faq'],
+      ['Privacy', '/privacy'],
+      ['Contact', '/contact'],
+    ]) {
+      await expect(footer.getByRole('link', { name })).toHaveAttribute(
+        'href',
+        href,
+      );
+    }
+    await expect(
+      footer.getByRole('link', { name: 'Trustroots Foundation' }),
+    ).toHaveCount(0);
+
+    const contentBox = await footer
+      .locator('.site-footer-content')
+      .boundingBox();
+    const metaBox = await footer.locator('.site-footer-meta').boundingBox();
+    expect(contentBox).not.toBeNull();
+    expect(metaBox).not.toBeNull();
+    expect(metaBox.x + metaBox.width).toBeGreaterThan(
+      contentBox.x + contentBox.width - 1,
+    );
   });
 
   test('admin audit log page loads', async ({ page }, testInfo) => {

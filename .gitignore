@@ -29,6 +29,7 @@ Icon
 .eslintcache
 .nodemonignore
 node_modules/
+/.worktrees/
 .vagrant
 *.pyc
 passenger.*
@@ -93,3 +94,5 @@ trustroots.tar.gz*
 /playwright-report/
 /test-results/
 /tests/e2e/.auth/
+
+/.worktrees/

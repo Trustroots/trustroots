@@ -26,6 +26,25 @@ jest.mock('@/modules/users/client/components/LanguageList', () => {
   return MockLanguageList;
 });
 
+jest.mock(
+  '@/modules/users/client/components/ProfileNostrBadge.component',
+  () => {
+    const React = require('react');
+
+    function MockProfileNostrBadge({ npubHex }) {
+      return (
+        <div data-testid="profile-nostr-badge">{npubHex || 'no-npub-hex'}</div>
+      );
+    }
+
+    MockProfileNostrBadge.propTypes = {
+      npubHex: () => null,
+    };
+
+    return MockProfileNostrBadge;
+  },
+);
+
 describe('<ProfileViewBasics />', () => {
   it('renders member profile basics, locations, languages, and networks', () => {
     render(
@@ -50,6 +69,7 @@ describe('<ProfileViewBasics />', () => {
           replyRate: '80%',
           replyTime: '3 hours',
           seen: '2020-01-03T00:00:00.000Z',
+          username: 'trustroots',
         }}
       />,
     );
@@ -78,9 +98,20 @@ describe('<ProfileViewBasics />', () => {
     expect(
       screen.queryByRole('link', { name: 'Facebook' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
+    const nostrLink = screen.getByRole('link', { name: 'Nostroots' });
+    expect(nostrLink).toHaveAttribute(
       'href',
-      'https://njump.me/npub1trustroots',
+      'https://nos.trustroots.org/v0/#profile/trustroots%40trustroots.org',
+    );
+    expect(nostrLink).toHaveAttribute(
+      'aria-describedby',
+      'nostr-address-note-trustroots',
+    );
+    expect(
+      nostrLink.closest('li').querySelector('.nostroots-logo'),
+    ).toHaveAttribute('src', '/img/external/nostroots-logo.png');
+    expect(screen.getByText('Nostr address, not an email address')).toHaveClass(
+      'sr-only',
     );
     expect(screen.getByRole('link', { name: 'Couchers.org' })).toHaveAttribute(
       'href',
@@ -100,7 +131,7 @@ describe('<ProfileViewBasics />', () => {
     );
   });
 
-  it('renders the nostr npub link when it is the only network', () => {
+  it('renders the nostr npub fallback link when it is the only network', () => {
     render(
       <ProfileViewBasics
         profile={{
@@ -113,9 +144,45 @@ describe('<ProfileViewBasics />', () => {
     );
 
     expect(screen.getByText('Elsewhere')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'nostr npub' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
       'href',
-      'https://njump.me/npub1onlynetwork',
+      'https://nos.trustroots.org/v0/#profile/npub1onlynetwork',
+    );
+  });
+
+  it('passes valid npub identifiers to the Nostroots badge as hex', () => {
+    render(
+      <ProfileViewBasics
+        profile={{
+          created: '2020-01-01T00:00:00.000Z',
+          languages: [],
+          nostrNpub:
+            'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme',
+          seen: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('profile-nostr-badge')).toHaveTextContent(
+      '0000000000000000000000000000000000000000000000000000000000000000',
+    );
+  });
+
+  it('passes null badge data for non-npub Nostr identifiers', () => {
+    render(
+      <ProfileViewBasics
+        profile={{
+          created: '2020-01-01T00:00:00.000Z',
+          languages: [],
+          nostrNpub:
+            'note1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqn2l0z3',
+          seen: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('profile-nostr-badge')).toHaveTextContent(
+      'no-npub-hex',
     );
   });
 
@@ -174,7 +241,7 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.queryByText('Languages')).not.toBeInTheDocument();
     expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('link', { name: 'nostr npub' }),
+      screen.queryByRole('link', { name: 'Nostroots' }),
     ).not.toBeInTheDocument();
   });
 });

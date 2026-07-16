@@ -111,7 +111,7 @@ exports.update = function (req, res) {
       });
     }
 
-    const trimmedNpub = req.body.nostrNpub.trim();
+    const trimmedNpub = req.body.nostrNpub.trim().toLowerCase();
     req.body.nostrNpub = trimmedNpub;
 
     try {
@@ -121,6 +121,9 @@ exports.update = function (req, res) {
         (result.type !== 'npub' || !/^[0-9a-f]{64}$/i.test(result.data))
       ) {
         throw new Error('Invalid nostr npub.');
+      }
+      if (trimmedNpub) {
+        req.body.nostrNpub = nip19.npubEncode(result.data.toLowerCase());
       }
     } catch (err) {
       _.noop(err);
@@ -166,6 +169,35 @@ exports.update = function (req, res) {
               // Email available, proceed generating the token
               done();
             }
+          },
+        );
+      },
+
+      // Check if nostr npub is already claimed by another user
+      function (done) {
+        if (!req.body.nostrNpub) {
+          return done();
+        }
+
+        User.findOne(
+          {
+            _id: { $ne: req.user._id },
+            nostrNpub: req.body.nostrNpub,
+          },
+          '_id',
+          function (err, existingNostrUser) {
+            if (err) {
+              return done(err);
+            }
+
+            if (existingNostrUser) {
+              return res.status(403).send({
+                message:
+                  'This nostr npub is already in use. Please use another one.',
+              });
+            }
+
+            done();
           },
         );
       },
@@ -618,14 +650,14 @@ function classifyPermission(user, profile) {
   const isOwnProfile = user._id.equals(profile._id);
   const isBannedProfile =
     profile.roles.includes('suspended') || profile.roles.includes('shadowban');
-  const isAdminOrModerator =
-    user.roles.includes('moderator') || user.roles.includes('admin');
+  // Only full admins may view banned profiles; moderators no longer have this access.
+  const isAdmin = user.roles.includes('admin');
   const isBlocked = !!profile.blocked && profile.blocked.indexOf(user._id) >= 0;
   const hasBlocked = !!user.blocked && user.blocked.indexOf(profile._id) >= 0;
   return {
     isOwnProfile,
     isBannedProfile,
-    isAdminOrModerator,
+    isAdmin,
     isBlocked,
     hasBlocked,
   };
@@ -672,16 +704,11 @@ exports.userMiniByID = function (req, res, next, userId) {
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
-    const {
-      isAdminOrModerator,
-      isOwnProfile,
-      isBannedProfile,
-      isBlocked,
-      hasBlocked,
-    } = classifyPermission(req.user, profile);
+    const { isAdmin, isOwnProfile, isBannedProfile, isBlocked, hasBlocked } =
+      classifyPermission(req.user, profile);
     // Not own profile, and not public, or suspended, or shadowbanned user
     if (
-      !isAdminOrModerator &&
+      !isAdmin &&
       !isOwnProfile &&
       (!profile.public || isBannedProfile || isBlocked || hasBlocked)
     ) {
@@ -744,16 +771,12 @@ exports.userByUsername = function (req, res, next, username) {
               });
             }
 
-            const {
-              isAdminOrModerator,
-              isOwnProfile,
-              isBannedProfile,
-              isBlocked,
-            } = classifyPermission(req.user, profile);
+            const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
+              classifyPermission(req.user, profile);
 
             // Not own profile, and not public, or suspended, or shadowbanned user
             if (
-              !isAdminOrModerator &&
+              !isAdmin &&
               !isOwnProfile &&
               (!profile.public || isBannedProfile || isBlocked)
             ) {
@@ -854,13 +877,8 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   profile.memberIds = [];
   if (profile.member && profile.member.length > 0) {
     profile.member.forEach(function (obj) {
-      // If profile's `member.tribe` path was populated
-      if (obj.tribe && obj.tribe._id) {
-        profile.memberIds.push(obj.tribe._id.toString());
-      } else if (obj.tribe) {
-        // If profile's `member.tribe` path wasn't populated, tribe is ObjectId
-        profile.memberIds.push(obj.tribe.toString());
-      }
+      const tribeId = obj.tribe._id || obj.tribe;
+      profile.memberIds.push(tribeId.toString());
     });
   }
 

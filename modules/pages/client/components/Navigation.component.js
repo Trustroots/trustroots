@@ -30,7 +30,7 @@ export default function Navigation({ user, onSignout }) {
         </a>
 
         <a
-          href="https://notes.trustroots.org/"
+          href="https://nos.trustroots.org/"
           target="_blank"
           rel="noreferrer"
           className="list-group-item"
@@ -89,6 +89,14 @@ export default function Navigation({ user, onSignout }) {
         </a>
         <a className="list-group-item" href="/media">
           {t('Media')}
+        </a>
+        <a
+          className="list-group-item"
+          href="https://wiki.trustroots.org/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t('Wiki')}
         </a>
         <a className="list-group-item" href="/privacy">
           {t('Privacy')}

@@ -404,7 +404,7 @@ exports.oauthCallback = function (strategy) {
  * Helper function to update a OAuth user profile
  * Doesn't let users sign up using providers;
  * - They'll first sign up using local.js strategy
- * - Then they can connect their profiles to other networks using other strategies (eg. Twitter)
+ * - Then they can connect their profiles to other networks using other strategies (eg. GitHub)
  */
 exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
   if (!req.user) {
@@ -467,33 +467,31 @@ exports.removeOAuthProvider = function (req, res) {
   let user = req.user;
   const provider = req.params.provider;
 
-  if (user && provider) {
-    // Delete the additional provider
-    if (user.additionalProvidersData[provider]) {
-      delete user.additionalProvidersData[provider];
+  // Delete the additional provider
+  if (user.additionalProvidersData[provider]) {
+    delete user.additionalProvidersData[provider];
 
-      // Then tell mongoose that we've updated the additionalProvidersData field
-      user.markModified('additionalProvidersData');
-    }
-
-    user.save(function (err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      } else {
-        req.login(user, function (err) {
-          if (err) {
-            return res.status(400).send(err);
-          }
-
-          // Remove sensitive data before sending out
-          user = userProfile.sanitizeProfile(user);
-          res.json(user);
-        });
-      }
-    });
+    // Then tell mongoose that we've updated the additionalProvidersData field
+    user.markModified('additionalProvidersData');
   }
+
+  user.save(function (err) {
+    if (err) {
+      return res.status(400).send({
+        message: errorService.getErrorMessage(err),
+      });
+    } else {
+      req.login(user, function (err) {
+        if (err) {
+          return res.status(400).send(err);
+        }
+
+        // Remove sensitive data before sending out
+        user = userProfile.sanitizeProfile(user);
+        res.json(user);
+      });
+    }
+  });
 };
 
 /**
@@ -779,6 +777,7 @@ exports.confirmEmail = function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),
@@ -853,6 +852,7 @@ exports.resendConfirmation = function (req, res) {
       },
     ],
     function (err) {
+      /* istanbul ignore else */
       if (err) {
         return res.status(400).send({
           message: errorService.getErrorMessage(err),

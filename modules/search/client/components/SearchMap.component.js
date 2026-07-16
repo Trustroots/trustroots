@@ -1,7 +1,7 @@
 // External dependencies
 import { useDebouncedCallback } from 'use-debounce';
 import PropTypes from 'prop-types';
-import React, { createRef, useEffect, useState } from 'react';
+import React, { createRef, useEffect, useRef, useState } from 'react';
 import ReactMapGL, {
   FlyToInterpolator,
   Layer,
@@ -10,7 +10,10 @@ import ReactMapGL, {
 } from 'react-map-gl';
 
 // Internal dependencies
-import { getMapBoxToken } from '@/modules/core/client/utils/map';
+import {
+  getMapBoxToken,
+  isWebGLSupported,
+} from '@/modules/core/client/utils/map';
 import {
   MAP_STYLE_DEFAULT,
   MAP_STYLE_OSM,
@@ -21,6 +24,7 @@ import MapNavigationControl from '@/modules/core/client/components/Map/MapNaviga
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
 import SearchMapNoContent from './SearchMapNoContent';
+import LeafletSearchMap from './LeafletSearchMap';
 import { ensureValidLat, ensureValidLng } from '../utils';
 import {
   clusterCountLayerMapbox,
@@ -31,7 +35,92 @@ import {
 import { getOffer, queryOffers } from '@/modules/offers/client/api/offers.api';
 import usePersistentMapStyle from '../hooks/use-persistent-map-style';
 import usePersistentMapLocation from '../hooks/use-persistent-map-location';
+import {
+  getNostrEventAuthorPubkey,
+  nostrService,
+} from '../services/nostr.client.service';
+import {
+  SOURCE_COMMUNITY_NOTES,
+  communityNotesLayer,
+  communityNotesClusterLayer,
+  communityNotesClusterCountLayer,
+} from './community-notes-layers';
+import { OpenLocationCode } from 'open-location-code';
 import 'mapbox-gl/dist/mapbox-gl.css';
+
+const olc = new OpenLocationCode();
+
+function getPlusCodeFromRawEvent(event) {
+  const tag = event.tags.find(
+    t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+  );
+  return tag ? tag[1] : null;
+}
+
+function getPlusCodeFromEvent(properties) {
+  const tags =
+    typeof properties.tags === 'string'
+      ? JSON.parse(properties.tags)
+      : properties.tags;
+  const tag = tags.find(
+    t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+  );
+  return tag ? tag[1] : null;
+}
+
+function reconstructEvent(properties) {
+  return {
+    id: properties.id,
+    content: properties.content,
+    pubkey: properties.pubkey,
+    authorPubkey: properties.authorPubkey,
+    created_at: properties.created_at,
+    kind: properties.kind,
+    tags:
+      typeof properties.tags === 'string'
+        ? JSON.parse(properties.tags)
+        : properties.tags,
+  };
+}
+
+function nostrEventsToGeoJSON(events) {
+  const features = events
+    .map(event => {
+      const plusCodeTag = event.tags.find(
+        t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+      );
+      if (!plusCodeTag) {
+        return null;
+      }
+      const code = plusCodeTag[1];
+      let area;
+      try {
+        area = olc.decode(code);
+      } catch (e) {
+        return null;
+      }
+      return {
+        type: 'Feature',
+        id: event.id,
+        geometry: {
+          type: 'Point',
+          coordinates: [area.longitudeCenter, area.latitudeCenter],
+        },
+        properties: {
+          id: event.id,
+          content: event.content,
+          pubkey: event.pubkey,
+          authorPubkey: getNostrEventAuthorPubkey(event),
+          created_at: event.created_at,
+          verified: event.kind === 30398,
+          kind: event.kind,
+          tags: JSON.stringify(event.tags),
+        },
+      };
+    })
+    .filter(Boolean);
+  return { type: 'FeatureCollection', features };
+}
 
 export default function SearchMap({
   filters,
@@ -40,6 +129,7 @@ export default function SearchMap({
   locationBounds: bounds,
   onOfferClose,
   onOfferOpen,
+  onCommunityNoteOpen,
 }) {
   /**
    * Store map location in browser cache
@@ -63,6 +153,7 @@ export default function SearchMap({
   );
 
   const [viewport, setViewport] = useState(persistentMapLocation);
+  const [webGLSupported] = useState(isWebGLSupported);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
   const [hoveredOffer, setHoveredOffer] = useState(false);
@@ -71,9 +162,27 @@ export default function SearchMap({
     features: [],
     type: 'FeatureCollection',
   });
+  const [communityNotes, setCommunityNotes] = useState({
+    type: 'FeatureCollection',
+    features: [],
+  });
+  const [leafletMapState, setLeafletMapState] = useState();
+  const communityNotesTimerRef = useRef(null);
+  const communityNotesEventsRef = useRef([]);
+
+  const parsedFilters = filters ? JSON.parse(filters) : {};
+  const communityNotesEnabled = parsedFilters.communityNotes || false;
   const MAPBOX_TOKEN = getMapBoxToken();
+  // A Mapbox style can be persisted in localStorage from a session that had a
+  // token configured. Without a token, mapbox-gl can't load it and the map
+  // renders blank, so fall back to the tokenless OSM style.
+  const isMapboxStyle =
+    typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
+  const effectiveMapStyle =
+    !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
   // If no mapbox token, and we're in production, don't show the style switcher
-  const showMapStyles = !!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production';
+  const showMapStyles =
+    webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
   const sourceRef = createRef();
   const mapRef = createRef();
 
@@ -114,23 +223,27 @@ export default function SearchMap({
   /**
    * Hook on map interactions to update features
    */
-  const updateOffers = () => {
+  const updateOffers = leafletState => {
     // Don't fetch if viewing the whole world
-    if (viewport.zoom <= MIN_ZOOM) {
+    const zoom = leafletState?.zoom || viewport.zoom;
+    if (zoom <= MIN_ZOOM) {
       return;
     }
 
     const map = getMapRef();
 
-    if (!map) {
+    const mapBounds = leafletState?.bounds || map?.getBounds();
+    if (!mapBounds) {
       return;
     }
 
     // https://docs.mapbox.com/mapbox-gl-js/api/geography/#lnglatbounds
-    const bounds = map.getBounds();
-    const northEast = bounds.getNorthEast();
-    const southWest = bounds.getSouthWest();
-    const zoom = map.getZoom();
+    const northEast = mapBounds.getNorthEast
+      ? mapBounds.getNorthEast()
+      : mapBounds.northEast;
+    const southWest = mapBounds.getSouthWest
+      ? mapBounds.getSouthWest()
+      : mapBounds.southWest;
 
     // Expand bounding box depending on the zoom level slightly to load more offers over the edge of the viewport
     const boundsBuffer = 10 / zoom;
@@ -170,6 +283,12 @@ export default function SearchMap({
     // The maximum time func is allowed to be delayed before it's invoked:
     { maxWait: 3500 },
   );
+
+  const onLeafletMapChange = mapState => {
+    setLeafletMapState(mapState);
+    onViewPortChange(mapState);
+    debouncedUpdateOffers(mapState);
+  };
 
   /**
    * Update state for a feature on the map
@@ -241,7 +360,8 @@ export default function SearchMap({
     // - feature doesn't have ID for some reason, or
     // - we're just hovering previously hovered feature
     if (
-      feature.layer.id !== unclusteredPointLayer.id ||
+      (feature.layer.id !== unclusteredPointLayer.id &&
+        feature.layer.id !== communityNotesLayer.id) ||
       !feature.id ||
       feature.id === hoveredOffer?.id
     ) {
@@ -271,10 +391,13 @@ export default function SearchMap({
       transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
     };
 
-    const source = sourceRef?.current?.getSource();
+    // react-map-gl v5's <Source> is a plain function component and does not
+    // forward refs, so `sourceRef.current` is always null. Read the clustered
+    // source straight from the live map instead.
+    const source = getMapRef()?.getSource(SOURCE_OFFERS);
 
     if (!source) {
-      // @TODO: sometimes source doesn't return map. At least center the group if no zooming — not ideal, should just re-attempt.
+      // At least center the group if the source isn't ready yet.
       setViewport({
         ...viewport,
         ...newLocation,
@@ -300,6 +423,26 @@ export default function SearchMap({
   /**
    * React on any clicks on map or layers defined on `interactiveLayerIds` prop
    */
+  function openCommunityNote(feature) {
+    const clickedPlusCode = getPlusCodeFromEvent(feature.properties);
+
+    // Find all notes sharing the same plus code (the "thread")
+    const threadNotes = communityNotesEventsRef.current.filter(event => {
+      const eventPlusCode = getPlusCodeFromRawEvent(event);
+      return eventPlusCode && eventPlusCode === clickedPlusCode;
+    });
+
+    if (onCommunityNoteOpen) {
+      onCommunityNoteOpen({
+        notes:
+          threadNotes.length > 0
+            ? threadNotes
+            : [reconstructEvent(feature.properties)],
+        plusCode: clickedPlusCode,
+      });
+    }
+  }
+
   const onClickMap = event => {
     const { features } = event;
     clearPreviouslySelectedState();
@@ -312,6 +455,28 @@ export default function SearchMap({
     }
 
     const layerId = features[0]?.layer?.id;
+
+    // Community notes click — open thread in sidebar
+    if (layerId === communityNotesLayer.id) {
+      openCommunityNote(features[0]);
+      return;
+    }
+
+    // Community notes cluster click — zoom in
+    if (layerId === communityNotesClusterLayer.id) {
+      const feature = features[0];
+      if (feature?.geometry?.coordinates) {
+        setViewport({
+          ...viewport,
+          latitude: feature.geometry.coordinates[1],
+          longitude: feature.geometry.coordinates[0],
+          zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
+          transitionDuration: 'auto',
+          transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
+        });
+      }
+      return;
+    }
 
     switch (layerId) {
       // Hosting or meeting offer
@@ -366,7 +531,9 @@ export default function SearchMap({
 
   // Load and store Mapbox object for quick reference on render
   useEffect(() => {
-    setMap(getMapRef());
+    if (webGLSupported) {
+      setMap(getMapRef());
+    }
   }, []);
 
   // Apply externally changed bounds object
@@ -386,8 +553,39 @@ export default function SearchMap({
     clearPreviouslyHoveredState();
 
     // Update map offers
-    updateOffers();
+    updateOffers(webGLSupported ? undefined : leafletMapState);
   }, [filters]);
+
+  // Subscribe/unsubscribe to community notes based on toggle
+  useEffect(() => {
+    if (!communityNotesEnabled) {
+      setCommunityNotes({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    communityNotesEventsRef.current = [];
+    nostrService
+      .subscribeMapNotes(event => {
+        communityNotesEventsRef.current.push({
+          ...event,
+          authorPubkey: getNostrEventAuthorPubkey(event),
+        });
+        clearTimeout(communityNotesTimerRef.current);
+        communityNotesTimerRef.current = setTimeout(() => {
+          setCommunityNotes(
+            nostrEventsToGeoJSON([...communityNotesEventsRef.current]),
+          );
+        }, 200);
+      })
+      .catch(() => {
+        setCommunityNotes({ type: 'FeatureCollection', features: [] });
+      });
+
+    return () => {
+      nostrService.unsubscribeMapNotes();
+      clearTimeout(communityNotesTimerRef.current);
+    };
+  }, [communityNotesEnabled]);
 
   // Apply externally changed location object
   // Changed by Angular controller when loading offer via URL
@@ -402,66 +600,106 @@ export default function SearchMap({
     }
   }, [location]);
 
+  if (!webGLSupported) {
+    return (
+      <LeafletSearchMap
+        communityNotes={communityNotes}
+        offers={offers}
+        onCommunityNoteClick={openCommunityNote}
+        onMapChange={onLeafletMapChange}
+        onMapClick={onOfferClose}
+        onOfferClick={openOfferById}
+        viewport={viewport}
+      />
+    );
+  }
+
   return (
-    <ReactMapGL
-      reuseMaps
-      className="search-map"
-      dragRotate={false}
-      height="100%"
-      /*
-       * Pointer event callbacks will only query the features under the pointer
-       * of `interactiveLayerIds` layers. The getCursor callback will receive
-       * `isHovering:true` when hover over features of these layers.
-       *
-       * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
-       */
-      interactiveLayerIds={[clusterLayer.id, unclusteredPointLayer.id]}
-      location={[
-        persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
-        persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
-      ]}
-      mapboxApiAccessToken={MAPBOX_TOKEN}
-      mapStyle={mapStyle}
-      onClick={onClickMap}
-      onHover={onHover}
-      onInteractionStateChange={debouncedUpdateOffers}
-      onMouseLeave={clearPreviouslyHoveredState}
-      onViewportChange={onViewPortChange}
-      ref={mapRef}
-      touchRotate={false}
-      {...viewport}
-      width={
-        '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
-      }
-    >
-      {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
-      <MapScaleControl />
-      <MapNavigationControl />
-      {showMapStyles && (
-        <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
-      )}
-      <Source
-        buffer={512}
-        cluster
-        clusterMaxZoom={CLUSTER_MAX_ZOOM}
-        clusterMinPoints={3}
-        clusterRadius={50}
-        data={offers}
-        id={SOURCE_OFFERS}
-        promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
-        ref={sourceRef}
-        type="geojson"
+    <>
+      <ReactMapGL
+        reuseMaps
+        className="search-map"
+        dragRotate={false}
+        height="100%"
+        /*
+         * Pointer event callbacks will only query the features under the pointer
+         * of `interactiveLayerIds` layers. The getCursor callback will receive
+         * `isHovering:true` when hover over features of these layers.
+         *
+         * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
+         */
+        interactiveLayerIds={[
+          clusterLayer.id,
+          unclusteredPointLayer.id,
+          ...(communityNotesEnabled
+            ? [communityNotesLayer.id, communityNotesClusterLayer.id]
+            : []),
+        ]}
+        location={[
+          persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
+          persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
+        ]}
+        mapboxApiAccessToken={MAPBOX_TOKEN}
+        mapStyle={effectiveMapStyle}
+        onClick={onClickMap}
+        onHover={onHover}
+        onInteractionStateChange={debouncedUpdateOffers}
+        onMouseLeave={clearPreviouslyHoveredState}
+        onViewportChange={onViewPortChange}
+        ref={mapRef}
+        touchRotate={false}
+        {...viewport}
+        width={
+          '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
+        }
       >
-        <Layer {...clusterLayer} />
-        {/* OSM and Mapbox use different fonts for cluster numbers */}
-        {mapStyle === MAP_STYLE_OSM ? (
-          <Layer {...clusterCountLayerOSM} />
-        ) : (
-          <Layer {...clusterCountLayerMapbox} />
+        {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
+        <MapScaleControl />
+        <MapNavigationControl />
+        {showMapStyles && (
+          <MapStyleControl
+            mapStyle={effectiveMapStyle}
+            setMapstyle={setMapstyle}
+          />
         )}
-        <Layer {...unclusteredPointLayer} />
-      </Source>
-    </ReactMapGL>
+        <Source
+          buffer={512}
+          cluster
+          clusterMaxZoom={CLUSTER_MAX_ZOOM}
+          clusterMinPoints={3}
+          clusterRadius={50}
+          data={offers}
+          id={SOURCE_OFFERS}
+          promoteId="id" // Use feature.properties.id as feature ID; used e.g. for hover effect with `setFeatureState()`
+          ref={sourceRef}
+          type="geojson"
+        >
+          <Layer {...clusterLayer} />
+          {/* OSM and Mapbox use different fonts for cluster numbers */}
+          {effectiveMapStyle === MAP_STYLE_OSM ? (
+            <Layer {...clusterCountLayerOSM} />
+          ) : (
+            <Layer {...clusterCountLayerMapbox} />
+          )}
+          <Layer {...unclusteredPointLayer} />
+        </Source>
+        {communityNotesEnabled && (
+          <Source
+            id={SOURCE_COMMUNITY_NOTES}
+            type="geojson"
+            data={communityNotes}
+            cluster
+            clusterMaxZoom={14}
+            clusterRadius={50}
+            promoteId="id"
+          >
+            <Layer {...communityNotesClusterLayer} />
+            <Layer {...communityNotesClusterCountLayer} />
+            <Layer {...communityNotesLayer} />
+          </Source>
+        )}
+      </ReactMapGL>
+    </>
   );
 }
 
@@ -472,4 +710,5 @@ SearchMap.propTypes = {
   locationBounds: PropTypes.object,
   onOfferClose: PropTypes.func,
   onOfferOpen: PropTypes.func,
+  onCommunityNoteOpen: PropTypes.func,
 };

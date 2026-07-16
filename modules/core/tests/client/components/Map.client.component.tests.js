@@ -4,6 +4,12 @@ import '@testing-library/jest-dom/extend-expect';
 
 import Map from '@/modules/core/client/components/Map';
 
+const mockIsWebGLSupported = jest.fn();
+jest.mock('@/modules/core/client/utils/map', () => ({
+  ...jest.requireActual('@/modules/core/client/utils/map'),
+  isWebGLSupported: () => mockIsWebGLSupported(),
+}));
+
 const mockMapStyleControl = jest.fn();
 jest.mock('react-map-gl', () => {
   const React = require('react');
@@ -21,6 +27,13 @@ jest.mock('@/modules/core/client/components/Map/MapNavigationControl', () =>
 jest.mock('@/modules/core/client/components/Map/MapScaleControl', () =>
   jest.fn(() => <div data-testid="map-scale-control" />),
 );
+const mockLeafletMap = jest.fn();
+jest.mock('@/modules/core/client/components/Map/LeafletMap', () =>
+  jest.fn(props => {
+    mockLeafletMap(props);
+    return <div data-testid="leaflet-map" />;
+  }),
+);
 jest.mock('@/modules/core/client/components/Map/MapStyleControl', () => ({
   __esModule: true,
   default: props => {
@@ -32,6 +45,8 @@ jest.mock('@/modules/core/client/components/Map/MapStyleControl', () => ({
 describe('<Map />', () => {
   beforeEach(() => {
     mockMapStyleControl.mockClear();
+    mockLeafletMap.mockClear();
+    mockIsWebGLSupported.mockReturnValue(true);
   });
 
   it('passes default viewport and renders map chrome', () => {
@@ -54,6 +69,30 @@ describe('<Map />', () => {
     expect(mockMapStyleControl).toHaveBeenCalledWith(
       expect.objectContaining({
         setMapstyle: expect.any(Function),
+      }),
+    );
+  });
+
+  it('uses the raster map when WebGL is unavailable', () => {
+    mockIsWebGLSupported.mockReturnValue(false);
+
+    render(
+      <Map
+        fallbackMarker={{ color: '#11b4da', location: [50.12, 19.89] }}
+        location={[50.12, 19.89]}
+        scrollZoom={false}
+        zoom={11}
+      />,
+    );
+
+    expect(screen.getByTestId('leaflet-map')).toBeInTheDocument();
+    expect(screen.queryByTestId('react-map')).not.toBeInTheDocument();
+    expect(mockLeafletMap).toHaveBeenCalledWith(
+      expect.objectContaining({
+        location: [50.12, 19.89],
+        marker: { color: '#11b4da', location: [50.12, 19.89] },
+        scrollZoom: false,
+        zoom: 11,
       }),
     );
   });

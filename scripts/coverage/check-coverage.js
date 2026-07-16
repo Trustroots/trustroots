@@ -13,6 +13,7 @@ const metrics = ['statements', 'branches', 'functions', 'lines'];
 
 const args = process.argv.slice(2);
 const update = args.includes('--update');
+const requireFull = args.includes('--require-full');
 const scopeArg = args.find(arg => arg.startsWith('--scope='));
 const scope = scopeArg ? scopeArg.split('=')[1] : null;
 const suiteNames = scope ? [scope] : Object.keys(suites);
@@ -74,9 +75,7 @@ if (missing.length > 0) {
 }
 
 if (update) {
-  const baseline = fs.existsSync(baselinePath)
-    ? readJson(baselinePath)
-    : {};
+  const baseline = fs.existsSync(baselinePath) ? readJson(baselinePath) : {};
   for (const suite of suiteNames) {
     baseline[suite] = current[suite];
   }
@@ -90,21 +89,25 @@ const failures = [];
 
 for (const suite of suiteNames) {
   for (const metric of metrics) {
-    const expected = baseline[suite][metric];
+    const expected = requireFull ? 100 : baseline[suite][metric];
     const actual = current[suite][metric];
     if (actual < expected) {
       const delta = actual - expected;
+      const expectation = requireFull
+        ? 'required 100.00%'
+        : `baseline ${formatValue(expected)}%`;
       failures.push(
-        `${suite} ${metric}: ${formatValue(actual)}% is below baseline ${formatValue(
-          expected,
-        )}% by ${formatValue(Math.abs(delta))} points`,
+        `${suite} ${metric}: ${formatValue(
+          actual,
+        )}% is below ${expectation} by ${formatValue(Math.abs(delta))} points`,
       );
     }
   }
 }
 
 if (failures.length > 0) {
-  console.error('Coverage ratchet failed:');
+  const check = requireFull ? 'requirement' : 'ratchet';
+  console.error(`Coverage ${check} failed:`);
   for (const failure of failures) {
     console.error(`- ${failure}`);
   }
@@ -115,5 +118,6 @@ for (const suite of suiteNames) {
   const summary = metrics
     .map(metric => `${metric} ${formatValue(current[suite][metric])}%`)
     .join(', ');
-  console.log(`${suite} coverage passed ratchet: ${summary}`);
+  const check = requireFull ? '100% requirement' : 'ratchet';
+  console.log(`${suite} coverage passed ${check}: ${summary}`);
 }
