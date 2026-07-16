@@ -301,7 +301,7 @@ function getStories() {
     {
       acquisitionStory: { $exists: true, $ne: '' },
     },
-    '_id acquisitionStory created',
+    '_id acquisitionStory created displayName username',
   )
     .sort('-created')
     .limit(3000)

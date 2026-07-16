@@ -8,6 +8,11 @@ Username: {{request.username}}
 Email: {{request.email}}
 Authenticated: {{request.authenticated}}
 Browser: {{request.userAgent}}
+{% if request.build %}Code version: {{request.build.committedAt}} UTC ({{request.build.shortCommit}})
+{% if request.build.branch and request.build.branch != 'main' %}Branch: {{request.build.branch}}
+{% endif %}
+Commit: {{request.build.commitUrl}}
+{% endif %}
 ID: {{request.userId}}
 Signup confirmed: {{request.profilePublic}}
 Signup date: {{request.signupDate}}

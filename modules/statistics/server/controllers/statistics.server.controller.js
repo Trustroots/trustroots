@@ -10,6 +10,16 @@ const semver = require('semver');
 const mongoose = require('mongoose');
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
+const Experience = mongoose.model('Experience');
+const MessageStat = mongoose.model('MessageStat');
+const ReferenceThread = mongoose.model('ReferenceThread');
+
+const PUBLIC_STATISTICS_CACHE_SECONDS = 60 * 60;
+let publicStatisticsCache;
+
+exports.clearPublicStatisticsCache = function () {
+  publicStatisticsCache = undefined;
+};
 
 /**
  * Get count of all public users
@@ -35,6 +45,7 @@ exports.getExternalSiteCount = function (site, callback) {
     'facebook',
     'twitter',
     'github',
+    'nostr',
   ];
 
   // Validate site
@@ -66,6 +77,9 @@ exports.getExternalSiteCount = function (site, callback) {
       break;
     case 'github':
       query['additionalProvidersData.github'] = { $exists: true };
+      break;
+    case 'nostr':
+      query.nostrNpub = { $exists: true, $ne: '' };
       break;
   }
 
@@ -241,12 +255,324 @@ exports.getUserLanguagesCount = function (limit, callback) {
 };
 
 /**
+ * Get aggregate statistics for public experiences.
+ *
+ * @param {Date} since Beginning of the recent-statistics period
+ * @param {Function} callback Callback receiving aggregate statistics
+ */
+exports.getExperienceStatistics = function (since, callback) {
+  async.parallel(
+    {
+      experiences: done => {
+        Experience.aggregate(
+          [
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                recommended: {
+                  $sum: {
+                    $cond: [{ $eq: ['$recommend', 'yes'] }, 1, 0],
+                  },
+                },
+                notRecommended: {
+                  $sum: {
+                    $cond: [{ $eq: ['$recommend', 'no'] }, 1, 0],
+                  },
+                },
+                recentTotal: {
+                  $sum: {
+                    $cond: [{ $gte: ['$created', since] }, 1, 0],
+                  },
+                },
+                recentRecommended: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $gte: ['$created', since] },
+                          { $eq: ['$recommend', 'yes'] },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                recentNotRecommended: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $gte: ['$created', since] },
+                          { $eq: ['$recommend', 'no'] },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+          done,
+        );
+      },
+      realLifeConnections: done => {
+        Experience.aggregate(
+          [
+            { $match: { 'interactions.met': true } },
+            {
+              $project: {
+                created: 1,
+                memberOne: {
+                  $cond: [
+                    { $lt: ['$userFrom', '$userTo'] },
+                    '$userFrom',
+                    '$userTo',
+                  ],
+                },
+                memberTwo: {
+                  $cond: [
+                    { $lt: ['$userFrom', '$userTo'] },
+                    '$userTo',
+                    '$userFrom',
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: { memberOne: '$memberOne', memberTwo: '$memberTwo' },
+                latestCreated: { $max: '$created' },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                recent: {
+                  $sum: {
+                    $cond: [{ $gte: ['$latestCreated', since] }, 1, 0],
+                  },
+                },
+              },
+            },
+          ],
+          done,
+        );
+      },
+    },
+    (err, results) => {
+      if (err) {
+        return callback(err);
+      }
+
+      const experienceCounts = results.experiences[0] || {};
+      const connectionCounts = results.realLifeConnections[0] || {};
+
+      return callback(null, {
+        total: parseInt(experienceCounts.total, 10) || 0,
+        recommended: parseInt(experienceCounts.recommended, 10) || 0,
+        notRecommended: parseInt(experienceCounts.notRecommended, 10) || 0,
+        recent: {
+          total: parseInt(experienceCounts.recentTotal, 10) || 0,
+          recommended: parseInt(experienceCounts.recentRecommended, 10) || 0,
+          notRecommended:
+            parseInt(experienceCounts.recentNotRecommended, 10) || 0,
+        },
+        realLifeConnections: {
+          total: parseInt(connectionCounts.total, 10) || 0,
+          recent: parseInt(connectionCounts.recent, 10) || 0,
+        },
+      });
+    },
+  );
+};
+
+/**
+ * Get aggregate statistics for message conversations that received a reply.
+ *
+ * @param {Date} since Beginning of the recent-statistics period
+ * @param {Function} callback Callback receiving aggregate statistics
+ */
+exports.getMessageInteractionStatistics = function (since, callback) {
+  async.parallel(
+    {
+      repliedThreads: done => {
+        MessageStat.aggregate(
+          [
+            { $match: { firstReplyCreated: { $exists: true, $ne: null } } },
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+                recentTotal: {
+                  $sum: {
+                    $cond: [{ $gte: ['$firstReplyCreated', since] }, 1, 0],
+                  },
+                },
+              },
+            },
+          ],
+          done,
+        );
+      },
+      feedback: done => {
+        ReferenceThread.aggregate(
+          [
+            { $sort: { created: -1, _id: -1 } },
+            {
+              $group: {
+                _id: { userFrom: '$userFrom', userTo: '$userTo' },
+                reference: { $first: '$reference' },
+                created: { $first: '$created' },
+              },
+            },
+            {
+              $lookup: {
+                from: MessageStat.collection.name,
+                let: {
+                  feedbackUserFrom: '$_id.userFrom',
+                  feedbackUserTo: '$_id.userTo',
+                },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $ne: ['$firstReplyCreated', null] },
+                          {
+                            $or: [
+                              {
+                                $and: [
+                                  {
+                                    $eq: [
+                                      '$firstMessageUserFrom',
+                                      '$$feedbackUserFrom',
+                                    ],
+                                  },
+                                  {
+                                    $eq: [
+                                      '$firstMessageUserTo',
+                                      '$$feedbackUserTo',
+                                    ],
+                                  },
+                                ],
+                              },
+                              {
+                                $and: [
+                                  {
+                                    $eq: [
+                                      '$firstMessageUserFrom',
+                                      '$$feedbackUserTo',
+                                    ],
+                                  },
+                                  {
+                                    $eq: [
+                                      '$firstMessageUserTo',
+                                      '$$feedbackUserFrom',
+                                    ],
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    },
+                  },
+                  { $limit: 1 },
+                ],
+                as: 'repliedThreads',
+              },
+            },
+            { $match: { 'repliedThreads.0': { $exists: true } } },
+            {
+              $group: {
+                _id: null,
+                positive: {
+                  $sum: { $cond: [{ $eq: ['$reference', 'yes'] }, 1, 0] },
+                },
+                negative: {
+                  $sum: { $cond: [{ $eq: ['$reference', 'no'] }, 1, 0] },
+                },
+                recentPositive: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $gte: ['$created', since] },
+                          { $eq: ['$reference', 'yes'] },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+                recentNegative: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [
+                          { $gte: ['$created', since] },
+                          { $eq: ['$reference', 'no'] },
+                        ],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ],
+          done,
+        );
+      },
+    },
+    (err, results) => {
+      if (err) {
+        return callback(err);
+      }
+
+      const threadCounts = results.repliedThreads[0] || {};
+      const feedbackCounts = results.feedback[0] || {};
+
+      return callback(null, {
+        total: parseInt(threadCounts.total, 10) || 0,
+        positive: parseInt(feedbackCounts.positive, 10) || 0,
+        negative: parseInt(feedbackCounts.negative, 10) || 0,
+        recent: {
+          total: parseInt(threadCounts.recentTotal, 10) || 0,
+          positive: parseInt(feedbackCounts.recentPositive, 10) || 0,
+          negative: parseInt(feedbackCounts.recentNegative, 10) || 0,
+        },
+      });
+    },
+  );
+};
+
+/**
  * Get all statistics
  */
 exports.getPublicStatistics = function (req, res) {
+  if (publicStatisticsCache && publicStatisticsCache.expiresAt > Date.now()) {
+    return res
+      .header(
+        'Cache-Control',
+        `public, max-age=${PUBLIC_STATISTICS_CACHE_SECONDS}`,
+      )
+      .json(publicStatisticsCache.statistics);
+  }
+
   req.statistics = {
     connections: [],
+    experiences: {},
     hosting: {},
+    messageInteractions: {},
   };
 
   async.waterfall(
@@ -323,21 +649,6 @@ exports.getPublicStatistics = function (req, res) {
         });
       },
 
-      // External sites - Twitter
-      function (done) {
-        exports.getExternalSiteCount('twitter', function (err, count) {
-          if (err) {
-            return done(err);
-          }
-          req.statistics.connections.push({
-            network: 'twitter',
-            count,
-            percentage: Math.round((count / req.statistics.total) * 100),
-          });
-          done();
-        });
-      },
-
       // External sites - GitHub
       function (done) {
         exports.getExternalSiteCount('github', function (err, count) {
@@ -346,6 +657,21 @@ exports.getPublicStatistics = function (req, res) {
           }
           req.statistics.connections.push({
             network: 'github',
+            count,
+            percentage: Math.round((count / req.statistics.total) * 100),
+          });
+          done();
+        });
+      },
+
+      // External sites - Nostr
+      function (done) {
+        exports.getExternalSiteCount('nostr', function (err, count) {
+          if (err) {
+            return done(err);
+          }
+          req.statistics.connections.push({
+            network: 'nostr',
             count,
             percentage: Math.round((count / req.statistics.total) * 100),
           });
@@ -365,6 +691,34 @@ exports.getPublicStatistics = function (req, res) {
           };
           done();
         });
+      },
+
+      // Experience statistics
+      function (done) {
+        exports.getExperienceStatistics(
+          moment().subtract(90, 'days').toDate(),
+          function (err, statistics) {
+            if (err) {
+              return done(err);
+            }
+            req.statistics.experiences = statistics;
+            done();
+          },
+        );
+      },
+
+      // Replied message threads and their feedback
+      function (done) {
+        exports.getMessageInteractionStatistics(
+          moment().subtract(90, 'days').toDate(),
+          function (err, statistics) {
+            if (err) {
+              return done(err);
+            }
+            req.statistics.messageInteractions = statistics;
+            done();
+          },
+        );
       },
 
       // Hosting stats
@@ -391,15 +745,27 @@ exports.getPublicStatistics = function (req, res) {
 
       // Done!
       function () {
-        return res.json(req.statistics);
+        publicStatisticsCache = {
+          expiresAt: Date.now() + PUBLIC_STATISTICS_CACHE_SECONDS * 1000,
+          statistics: req.statistics,
+        };
+        return res
+          .header(
+            'Cache-Control',
+            `public, max-age=${PUBLIC_STATISTICS_CACHE_SECONDS}`,
+          )
+          .json(req.statistics);
       },
     ],
     function (err) {
       /* istanbul ignore else */
       if (err) {
-        res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        res
+          .header('Cache-Control', 'no-store')
+          .status(400)
+          .send({
+            message: errorService.getErrorMessage(err),
+          });
       }
     },
   );

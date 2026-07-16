@@ -7,6 +7,7 @@ FROM node:16-bullseye-slim
 
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
+  git \
   graphicsmagick \
   openssl \
   unzip \

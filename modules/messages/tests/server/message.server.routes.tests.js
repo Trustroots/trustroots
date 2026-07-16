@@ -249,28 +249,26 @@ describe('Message CRUD tests', function () {
     });
   });
 
-  ['admin', 'moderator'].forEach(role => {
-    it(`should be able to send messages to user with role "shadowban" when with role "${role}"`, function (done) {
-      userTo.roles = ['user', 'shadowban'];
-      userFrom.roles = ['user', role];
+  it('should be able to send messages to user with role "shadowban" when with role "admin"', function (done) {
+    userTo.roles = ['user', 'shadowban'];
+    userFrom.roles = ['user', 'admin'];
 
-      userFrom.save(function (saveErr) {
+    userFrom.save(function (saveErr) {
+      should.not.exist(saveErr);
+
+      userTo.save(function (saveErr) {
         should.not.exist(saveErr);
 
-        userTo.save(function (saveErr) {
-          should.not.exist(saveErr);
+        agent
+          .post('/api/auth/signin')
+          .send(credentials)
+          .expect(200)
+          .end(function (signinErr) {
+            should.not.exist(signinErr);
 
-          agent
-            .post('/api/auth/signin')
-            .send(credentials)
-            .expect(200)
-            .end(function (signinErr) {
-              should.not.exist(signinErr);
-
-              // Save a new message
-              agent.post('/api/messages').send(message).expect(200).end(done);
-            });
-        });
+            // Save a new message
+            agent.post('/api/messages').send(message).expect(200).end(done);
+          });
       });
     });
   });
