@@ -246,7 +246,7 @@ describe('<LeafletSearchMap />', () => {
       southWest: { lat: 52.3383, lng: 13.0884 },
     };
 
-    const { unmount } = renderMap({ bounds: selectedBounds });
+    const { rerender, unmount } = renderMap({ bounds: selectedBounds });
 
     expect(mockMap.invalidateSize).toHaveBeenCalledWith({ pan: false });
     expect(mockMap.fitBounds).toHaveBeenCalledWith(
@@ -257,6 +257,20 @@ describe('<LeafletSearchMap />', () => {
       { padding: [40, 40] },
     );
     expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <LeafletSearchMap
+        bounds={selectedBounds}
+        communityNotes={{ features: [] }}
+        offers={{ features: [] }}
+        onCommunityNoteClick={jest.fn()}
+        onMapChange={jest.fn()}
+        onMapClick={jest.fn()}
+        onOfferClick={jest.fn()}
+        viewport={{ latitude: 40, longitude: -74, zoom: 4 }}
+      />,
+    );
+    expect(mockMap.setView).not.toHaveBeenCalledWith([40, -74], 4);
 
     act(() => jest.runOnlyPendingTimers());
     expect(mockMap.fitBounds).toHaveBeenCalledTimes(3);

@@ -190,6 +190,13 @@ export default function LeafletSearchMap({
       return;
     }
 
+    // A selected place owns the camera until its bounds are cleared. Without
+    // this guard, a render carrying the old persisted viewport can undo
+    // fitBounds before Leaflet's moveend publishes the fitted viewport.
+    if (bounds?.northEast && bounds?.southWest) {
+      return;
+    }
+
     const centre = map.getCenter();
     if (
       centre.lat !== viewport.latitude ||
@@ -198,7 +205,7 @@ export default function LeafletSearchMap({
     ) {
       map.setView([viewport.latitude, viewport.longitude], viewport.zoom);
     }
-  }, [viewport]);
+  }, [bounds, viewport]);
 
   // Leaflet needs to fit external search bounds itself. Deriving a viewport
   // through the WebGL map utility leaves the raster map with stale dimensions
