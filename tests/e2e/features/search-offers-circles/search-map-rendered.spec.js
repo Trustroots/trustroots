@@ -13,9 +13,6 @@ const {
 const berlin = SEEDED_MEMBERS[0];
 const communityNotePlusCode = '9F4MG82G+7Q';
 const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
-const nostrootsValidationPubkey =
-  'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b';
-
 async function installNostrRelayStub(page, events = []) {
   await page.addInitScript(relayEvents => {
     const NativeWebSocket = window.WebSocket;
@@ -245,6 +242,44 @@ async function showCommunityNotesSidebar(page) {
   );
 }
 
+async function waitForRasterTileNear(
+  page,
+  { latitude, longitude, tolerance = 4 },
+) {
+  await page.waitForFunction(
+    ({ expectedLatitude, expectedLongitude, coordinateTolerance }) =>
+      [...document.querySelectorAll('.leaflet-tile')].some(tile => {
+        const path = new URL(tile.src).pathname;
+        const match = path.match(
+          /\/(?:tiles\/256\/)?(\d+)\/(\d+)\/(\d+)(?:\.png)?$/,
+        );
+        if (!match) return false;
+
+        const [, rawZoom, rawX, rawY] = match;
+        const zoom = Number(rawZoom);
+        const x = Number(rawX) + 0.5;
+        const y = Number(rawY) + 0.5;
+        const scale = 2 ** zoom;
+        const tileLongitude = (x / scale) * 360 - 180;
+        const tileLatitude =
+          (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) /
+          Math.PI;
+
+        return (
+          zoom >= 8 &&
+          Math.abs(tileLatitude - expectedLatitude) < coordinateTolerance &&
+          Math.abs(tileLongitude - expectedLongitude) < coordinateTolerance
+        );
+      }),
+    {
+      coordinateTolerance: tolerance,
+      expectedLatitude: latitude,
+      expectedLongitude: longitude,
+    },
+    { timeout: 30000 },
+  );
+}
+
 test.describe('rendered search map feature coverage', () => {
   test.beforeEach(async ({ context, page, request }) => {
     await seedMapState(page);
@@ -335,19 +370,12 @@ test.describe('rendered search map feature coverage', () => {
     // verify that the fallback requests its offer details.
     const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
     await expect(hostMarker).toBeVisible();
-    const markerBox = await hostMarker.boundingBox();
-    expect(markerBox).not.toBeNull();
-
     const offerRequest = page.waitForRequest(
       '**/api/offers/665100000000000000000001**',
     );
-    // Clicking the SVG locator directly makes Playwright scroll Leaflet's
-    // pannable map element, so the marker continually moves away from the
-    // pointer. Use the marker's visible screen coordinates for a real click.
-    await page.mouse.click(
-      markerBox.x + markerBox.width / 2,
-      markerBox.y + markerBox.height / 2,
-    );
+    // Dispatch in the page so Leaflet cannot move the SVG marker between
+    // Playwright measuring its coordinates and sending the click.
+    await hostMarker.dispatchEvent('click');
     expect((await offerRequest).url()).toContain(
       '/api/offers/665100000000000000000001',
     );
@@ -360,6 +388,7 @@ test.describe('rendered search map feature coverage', () => {
     annotateFeature(testInfo, 'search.map', [
       'Selecting a place keeps the WebGL fallback map visible.',
       'The raster renderer fits the selected city after mobile layout changes.',
+      'Later camera commands recenter the raster map after a place search.',
     ]);
 
     await page.addInitScript(() => {
@@ -413,36 +442,33 @@ test.describe('rendered search map feature coverage', () => {
 
     // A visible tile alone would also pass when Leaflet stayed at its broad
     // initial view. Require a city-level tile whose centre is around Berlin.
-    await page.waitForFunction(
-      () =>
-        [...document.querySelectorAll('.leaflet-tile')].some(tile => {
-          const path = new URL(tile.src).pathname;
-          const match = path.match(
-            /\/(?:tiles\/256\/)?(\d+)\/(\d+)\/(\d+)(?:\.png)?$/,
-          );
-          if (!match) return false;
+    await waitForRasterTileNear(page, {
+      latitude: 52.52,
+      longitude: 13.405,
+    });
 
-          const [, rawZoom, rawX, rawY] = match;
-          const zoom = Number(rawZoom);
-          const x = Number(rawX) + 0.5;
-          const y = Number(rawY) + 0.5;
-          const scale = 2 ** zoom;
-          const longitude = (x / scale) * 360 - 180;
-          const latitude =
-            (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / scale))) * 180) /
-            Math.PI;
+    // A later explicit camera command must take ownership back from the place
+    // bounds. This is the path used by URL offer previews and recentring.
+    await page.evaluate(() => {
+      const element = document.querySelector('search-map');
+      let scope = window.angular.element(element).scope();
+      while (scope && !scope.searchMap) scope = scope.$parent;
+      if (!scope?.searchMap) throw new Error('Search map scope unavailable');
 
-          return (
-            zoom >= 8 &&
-            latitude > 50 &&
-            latitude < 55 &&
-            longitude > 10 &&
-            longitude < 16
-          );
-        }),
-      null,
-      { timeout: 30000 },
-    );
+      scope.$apply(() => {
+        scope.searchMap.previewOffer(
+          {
+            _id: '665100000000000000000099',
+            location: [40.7128, -74.006],
+          },
+          true,
+        );
+      });
+    });
+    await waitForRasterTileNear(page, {
+      latitude: 40.7128,
+      longitude: -74.006,
+    });
   });
 
   test('clicking a pin cluster zooms the map in to expand it', async ({
@@ -456,9 +482,34 @@ test.describe('rendered search map feature coverage', () => {
 
     // Several offers sit on top of the seeded map centre so they render as one
     // cluster in the middle of the map canvas.
+    await page.addInitScript(() => {
+      const Canvas = window.HTMLCanvasElement;
+      const getContext = Canvas.prototype.getContext;
+      Canvas.prototype.getContext = function getWebGLContext(type, ...args) {
+        if (type === 'webgl' || type === 'experimental-webgl') {
+          return null;
+        }
+        return getContext.call(this, type, ...args);
+      };
+    });
+    const fulfilRasterTile = route =>
+      route.fulfill({
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+        contentType: 'image/png',
+      });
+    await context.route('**://*.tile.openstreetmap.org/**', fulfilRasterTile);
+    await context.route(
+      '**://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/**',
+      fulfilRasterTile,
+    );
     await useMapRouteFixtures(context, { offers: 'clustered-offers.json' });
     await page.reload();
-    await waitForSearchMap(page);
+    await expect(
+      page.locator('[data-testid="leaflet-search-map"]'),
+    ).toBeVisible();
 
     const readZoom = () =>
       page.evaluate(() => {
@@ -469,16 +520,11 @@ test.describe('rendered search map feature coverage', () => {
     const initialZoom = await readZoom();
     expect(initialZoom).toBeLessThanOrEqual(7);
 
-    // The cluster renders at the centre of the map. react-map-gl layers an
-    // event-handling overlay on top of the canvas, so click by coordinates with
-    // the mouse rather than targeting the canvas locator (whose actionability
-    // hit-test gets intercepted by that overlay).
-    const canvasBox = await page.locator('.mapboxgl-canvas').boundingBox();
-    expect(canvasBox).not.toBeNull();
-    await page.mouse.click(
-      canvasBox.x + canvasBox.width / 2,
-      canvasBox.y + canvasBox.height / 2,
-    );
+    const clusterMarker = page.locator('.leaflet-search-cluster', {
+      hasText: '5',
+    });
+    await expect(clusterMarker).toBeVisible();
+    await clusterMarker.dispatchEvent('click');
 
     await page.waitForFunction(
       previousZoom => {
@@ -602,31 +648,11 @@ test.describe('rendered search map feature coverage', () => {
       new Uint8Array(32).fill(1),
     );
 
-    // The production subscription accepts only the Nostroots validation key.
-    // Keep the fixture anonymously signed, while narrowly treating its author
-    // as the configured validator during this browser test.
-    await page.addInitScript(
-      ({ fixturePubkey, validationPubkey }) => {
-        const indexOf = Array.prototype.indexOf;
-        Array.prototype.indexOf = function patchedIndexOf(
-          searchElement,
-          fromIndex,
-        ) {
-          if (
-            this.length === 1 &&
-            this[0] === validationPubkey &&
-            searchElement === fixturePubkey
-          ) {
-            return 0;
-          }
-          return indexOf.call(this, searchElement, fromIndex);
-        };
-      },
-      {
-        fixturePubkey: signedNote.pubkey,
-        validationPubkey: nostrootsValidationPubkey,
-      },
-    );
+    // The E2E bundle accepts an explicit fixture validator override. Production
+    // builds always retain the configured Nostroots validation key.
+    await page.addInitScript(fixturePubkey => {
+      window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__ = fixturePubkey;
+    }, signedNote.pubkey);
     await installNostrRelayStub(page, [signedNote]);
 
     await page.goto('/search');
@@ -637,7 +663,9 @@ test.describe('rendered search map feature coverage', () => {
       null,
       { timeout: 30000 },
     );
-    await page.locator('.leaflet-interactive[fill="#1565C0"]').click();
+    await page
+      .locator('.leaflet-interactive[fill="#1565C0"]')
+      .dispatchEvent('click');
 
     const sidebar = page.locator('.community-notes-sidebar');
     await expect(sidebar).toBeVisible();

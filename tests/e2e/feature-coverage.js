@@ -146,6 +146,7 @@ const features = [
     requiredScenarios: [
       'Homepage loads for visitors.',
       'Sign in and sign up entry points are visible.',
+      'Homepage footer links to public statistics.',
       'Optional circle/tribe query parameters do not break the page.',
     ],
     relatedSpecs: [
@@ -451,6 +452,7 @@ const features = [
     requiredScenarios: [
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
       'Sign out action clears the session.',
     ],
     relatedSpecs: [
@@ -1522,6 +1524,7 @@ const features = [
       'Circle filter query resolves the selected circle.',
       'Search map renders with deterministic offline style.',
       'Route fixture offers populate the rendered map source.',
+      'Later camera commands recenter the raster map after a place search.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
     ],
@@ -1531,6 +1534,10 @@ const features = [
       spec(
         'search-map-rendered.spec.js',
         'search map renders with offline style and fixture offers',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'raster fallback stays visible after selecting a city',
       ),
       spec(
         'search-map-rendered.spec.js',

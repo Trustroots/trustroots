@@ -227,15 +227,30 @@ export default function LeafletSearchMap({
       );
     };
 
+    const container = containerRef.current;
+
     // Fit immediately, then again after Angular has hidden the mobile place
     // panel and the map container has completed its layout transition.
     fitSelectedBounds();
     const nextLayoutFit = window.setTimeout(fitSelectedBounds);
     const settledLayoutFit = window.setTimeout(fitSelectedBounds, 250);
 
-    return () => {
+    const cancelDeferredFits = () => {
       window.clearTimeout(nextLayoutFit);
       window.clearTimeout(settledLayoutFit);
+    };
+
+    // Once someone starts moving or zooming the map, their camera choice wins
+    // over the delayed mobile-layout correction below.
+    container.addEventListener('pointerdown', cancelDeferredFits);
+    container.addEventListener('touchstart', cancelDeferredFits);
+    container.addEventListener('wheel', cancelDeferredFits);
+
+    return () => {
+      cancelDeferredFits();
+      container.removeEventListener('pointerdown', cancelDeferredFits);
+      container.removeEventListener('touchstart', cancelDeferredFits);
+      container.removeEventListener('wheel', cancelDeferredFits);
     };
   }, [bounds]);
 

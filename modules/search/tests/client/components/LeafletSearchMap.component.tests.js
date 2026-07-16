@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, render, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import L from 'leaflet';
 
 import LeafletSearchMap from '@/modules/search/client/components/LeafletSearchMap';
@@ -275,6 +275,24 @@ describe('<LeafletSearchMap />', () => {
     act(() => jest.runOnlyPendingTimers());
     expect(mockMap.fitBounds).toHaveBeenCalledTimes(3);
 
+    unmount();
+    jest.useRealTimers();
+  });
+
+  it('does not refit selected bounds after map interaction starts', () => {
+    jest.useFakeTimers();
+    const selectedBounds = {
+      northEast: { lat: 52.6755, lng: 13.7611 },
+      southWest: { lat: 52.3383, lng: 13.0884 },
+    };
+
+    const { getByTestId, unmount } = renderMap({ bounds: selectedBounds });
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(getByTestId('leaflet-search-map'));
+    act(() => jest.runOnlyPendingTimers());
+
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
     unmount();
     jest.useRealTimers();
   });
