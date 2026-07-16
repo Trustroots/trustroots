@@ -529,6 +529,34 @@ function buildE2eMetrics(statusMetrics, baseline = {}) {
   };
 }
 
+function resolveE2eLaneStatus(statusValue, e2eMetrics) {
+  if (statusValue && statusValue !== 'passed') {
+    return statusValue;
+  }
+
+  if (e2eMetrics && e2eMetrics.passed === false) {
+    return 'failed';
+  }
+
+  return statusValue || 'unknown';
+}
+
+function resolveE2eLaneMessage(statusValue, e2eMetrics, fallbackMessage) {
+  if (
+    statusValue === 'passed' &&
+    e2eMetrics &&
+    e2eMetrics.passed === false
+  ) {
+    if (e2eMetrics.missingScenarioCount > 0) {
+      return `End-to-end feature coverage is below 100%: ${e2eMetrics.coveredScenarioCount}/${e2eMetrics.requiredScenarioCount} scenarios covered.`;
+    }
+
+    return 'End-to-end coverage metrics are below the checked-in baseline.';
+  }
+
+  return fallbackMessage || 'No status message was recorded.';
+}
+
 function readTestLane(suiteName, metadata, baseline) {
   const suite = testSuites[suiteName];
   const lane = baseLane(suite, metadata);
@@ -551,11 +579,16 @@ function readTestLane(suiteName, metadata, baseline) {
   }
 
   const e2eMetricValues = buildE2eMetrics(status.metrics, baseline.e2e);
+  const statusValue = normalizeStatus(status.status);
 
   return {
     ...lane,
-    status: normalizeStatus(status.status),
-    message: status.message || 'No status message was recorded.',
+    status: resolveE2eLaneStatus(statusValue, e2eMetricValues),
+    message: resolveE2eLaneMessage(
+      statusValue,
+      e2eMetricValues,
+      status.message,
+    ),
     command: status.command || suite.command,
     generatedAt: status.generatedAt || metadata.generatedAt,
     e2eMetrics: e2eMetricValues,
@@ -1970,8 +2003,11 @@ function writeReport() {
 }
 
 module.exports = {
+  buildE2eMetrics,
   renderReportShell,
   renderAnalyticsScript,
+  resolveE2eLaneMessage,
+  resolveE2eLaneStatus,
 };
 
 if (require.main === module) {
