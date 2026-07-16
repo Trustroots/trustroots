@@ -85,6 +85,12 @@ describe('Search filter toggle directives', function () {
     expect(controller.toggles).toEqual({
       host: true,
     });
+    expect(controller.types).toEqual([
+      jasmine.objectContaining({
+        id: 'host',
+        label: 'Hosts',
+      }),
+    ]);
 
     controller.toggles = {
       host: false,

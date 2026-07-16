@@ -42,7 +42,6 @@ module.exports.initLocalVariables = function (app) {
   // Setting application local variables
   app.locals.title = config.app.title;
   app.locals.description = config.app.description;
-  app.locals.facebookAppId = config.facebook.clientID;
   app.locals.twitterUsername = config.twitter.username;
   app.locals.facebookPage = config.facebook.page;
   app.locals.googlePage = config.google.page;

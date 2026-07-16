@@ -1,4 +1,5 @@
 const { annotateFeature, expect, test } = require('../../support/test');
+const { finalizeEvent } = require('nostr-tools');
 
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const {
@@ -12,9 +13,11 @@ const {
 const berlin = SEEDED_MEMBERS[0];
 const communityNotePlusCode = '9F4MG82G+7Q';
 const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
+const nostrootsValidationPubkey =
+  'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b';
 
-async function installNostrRelayStub(page) {
-  await page.addInitScript(() => {
+async function installNostrRelayStub(page, events = []) {
+  await page.addInitScript(relayEvents => {
     const NativeWebSocket = window.WebSocket;
 
     function createEvent(type, target, extra = {}) {
@@ -98,6 +101,13 @@ async function installNostrRelayStub(page) {
         const subscriptionId = message[1];
         window.setTimeout(() => {
           if (this.readyState !== MockRelayWebSocket.OPEN) return;
+          relayEvents.forEach(event => {
+            this.dispatchEvent(
+              createEvent('message', this, {
+                data: JSON.stringify(['EVENT', subscriptionId, event]),
+              }),
+            );
+          });
           this.dispatchEvent(
             createEvent('message', this, {
               data: JSON.stringify(['EOSE', subscriptionId]),
@@ -130,7 +140,7 @@ async function installNostrRelayStub(page) {
     window.WebSocket.OPEN = MockRelayWebSocket.OPEN;
     window.WebSocket.CLOSING = MockRelayWebSocket.CLOSING;
     window.WebSocket.CLOSED = MockRelayWebSocket.CLOSED;
-  });
+  }, events);
 }
 
 async function showCommunityNotesSidebar(page) {
@@ -334,6 +344,63 @@ test.describe('rendered search map feature coverage', () => {
     );
   });
 
+  test('raster fallback stays visible after selecting a city', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Selecting a place keeps the WebGL fallback map visible.',
+      'The raster renderer fits the selected city after mobile layout changes.',
+    ]);
+
+    await page.addInitScript(() => {
+      const Canvas = window.HTMLCanvasElement;
+      const getContext = Canvas.prototype.getContext;
+      Canvas.prototype.getContext = function getWebGLContext(type, ...args) {
+        if (type === 'webgl' || type === 'experimental-webgl') {
+          return null;
+        }
+        return getContext.call(this, type, ...args);
+      };
+    });
+    const fulfilRasterTile = route =>
+      route.fulfill({
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+        contentType: 'image/png',
+      });
+    await context.route('**://*.tile.openstreetmap.org/**', fulfilRasterTile);
+    await context.route(
+      '**://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/**',
+      fulfilRasterTile,
+    );
+
+    await page.goto('/search');
+
+    const searchInput = page.getByRole('textbox', { name: 'Search places' });
+    await searchInput.fill('Berlin');
+    await page.locator('.search-place .dropdown-menu a').click();
+
+    const map = page.locator('[data-testid="leaflet-search-map"]');
+    await expect(map).toBeVisible();
+    await page.waitForFunction(
+      () => {
+        const mapElement = document.querySelector('.leaflet-search-map');
+        return (
+          mapElement?.clientWidth > 0 &&
+          mapElement?.clientHeight > 0 &&
+          [...mapElement.querySelectorAll('.leaflet-tile')].some(
+            tile => tile.complete && tile.naturalWidth > 0,
+          )
+        );
+      },
+      null,
+      { timeout: 30000 },
+    );
+  });
+
   test('clicking a pin cluster zooms the map in to expand it', async ({
     context,
     page,
@@ -394,11 +461,15 @@ test.describe('rendered search map feature coverage', () => {
     await installNostrRelayStub(page);
     await page.goto('/search');
 
-    const filterLabel = page
-      .locator('.search-sidebar-filters label')
+    const mapContent = page.getByRole('group', { name: 'Map content' });
+    const filterLabel = mapContent
+      .locator('label')
       .filter({ hasText: 'Community Notes' });
     const checkbox = filterLabel.locator('input[type="checkbox"]');
 
+    await expect(mapContent.getByText('Meetups', { exact: true })).toHaveCount(
+      0,
+    );
     await expect(filterLabel).toBeVisible();
     await expect(checkbox).toBeChecked();
 
@@ -411,6 +482,93 @@ test.describe('rendered search map feature coverage', () => {
 
     await filterLabel.click();
     await expect(checkbox).toBeChecked();
+  });
+
+  test('clicking a Community Note marker opens its thread', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'A Community Note marker opens its thread in the results sidebar.',
+    ]);
+
+    await page.addInitScript(() => {
+      const Canvas = window.HTMLCanvasElement;
+      const getContext = Canvas.prototype.getContext;
+      Canvas.prototype.getContext = function getWebGLContext(type, ...args) {
+        if (type === 'webgl' || type === 'experimental-webgl') {
+          return null;
+        }
+        return getContext.call(this, type, ...args);
+      };
+    });
+    const fulfilRasterTile = route =>
+      route.fulfill({
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+        contentType: 'image/png',
+      });
+    await context.route('**://*.tile.openstreetmap.org/**', fulfilRasterTile);
+    const signedNote = finalizeEvent(
+      {
+        content: communityNoteText,
+        created_at: 1700000000,
+        kind: 30398,
+        tags: [
+          ['l', '9F4MGCC4+22', 'open-location-code'],
+          [
+            'p',
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+          ],
+        ],
+      },
+      new Uint8Array(32).fill(1),
+    );
+
+    // The production subscription accepts only the Nostroots validation key.
+    // Keep the fixture anonymously signed, while narrowly treating its author
+    // as the configured validator during this browser test.
+    await page.addInitScript(
+      ({ fixturePubkey, validationPubkey }) => {
+        const indexOf = Array.prototype.indexOf;
+        Array.prototype.indexOf = function patchedIndexOf(
+          searchElement,
+          fromIndex,
+        ) {
+          if (
+            this.length === 1 &&
+            this[0] === validationPubkey &&
+            searchElement === fixturePubkey
+          ) {
+            return 0;
+          }
+          return indexOf.call(this, searchElement, fromIndex);
+        };
+      },
+      {
+        fixturePubkey: signedNote.pubkey,
+        validationPubkey: nostrootsValidationPubkey,
+      },
+    );
+    await installNostrRelayStub(page, [signedNote]);
+
+    await page.goto('/search');
+    await page.waitForFunction(
+      () =>
+        document.querySelectorAll('.leaflet-interactive[fill="#1565C0"]')
+          .length > 0,
+      null,
+      { timeout: 30000 },
+    );
+    await page.locator('.leaflet-interactive[fill="#1565C0"]').click({
+      force: true,
+    });
+
+    const sidebar = page.locator('.community-notes-sidebar');
+    await expect(sidebar).toBeVisible();
+    await expect(sidebar.getByText(communityNoteText)).toBeVisible();
   });
 
   test('Community Notes are visible and controllable on mobile maps', async ({

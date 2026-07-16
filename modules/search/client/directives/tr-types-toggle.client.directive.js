@@ -33,15 +33,12 @@ function trTypesToggleDirective() {
     // View Model
     const vm = this;
 
-    // Offer types and their labels
+    // Selectable offer types. Meetups remain visible, but no longer need their
+    // own map control.
     vm.types = [
       {
         id: 'host',
         label: 'Hosts',
-      },
-      {
-        id: 'meet',
-        label: 'Meetups',
       },
     ];
 

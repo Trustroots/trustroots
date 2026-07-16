@@ -80,6 +80,7 @@ function addClusteredMarkers({
 
     if (point.properties.cluster) {
       const marker = L.marker([latitude, longitude], {
+        bubblingMouseEvents: false,
         icon: clusterIcon(point.properties.point_count_abbreviated, colour),
         keyboard: true,
         title: `${point.properties.point_count} results`,
@@ -100,6 +101,7 @@ function addClusteredMarkers({
     }
 
     const marker = L.circleMarker([latitude, longitude], {
+      bubblingMouseEvents: false,
       color: '#fff',
       fillColor: pointColour(point),
       fillOpacity: 1,
@@ -118,6 +120,7 @@ function addClusteredMarkers({
  * Search-map renderer used where a WebGL map cannot be created.
  */
 export default function LeafletSearchMap({
+  bounds,
   communityNotes,
   offers,
   onCommunityNoteClick,
@@ -197,6 +200,25 @@ export default function LeafletSearchMap({
     }
   }, [viewport]);
 
+  // Leaflet needs to fit external search bounds itself. Deriving a viewport
+  // through the WebGL map utility leaves the raster map with stale dimensions
+  // after the mobile place-search panel has closed.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !bounds?.northEast || !bounds?.southWest) {
+      return;
+    }
+
+    map.invalidateSize({ pan: false });
+    map.fitBounds(
+      [
+        [bounds.southWest.lat, bounds.southWest.lng],
+        [bounds.northEast.lat, bounds.northEast.lng],
+      ],
+      { padding: [40, 40] },
+    );
+  }, [bounds]);
+
   useEffect(() => {
     const map = mapRef.current;
     const groups = groupsRef.current;
@@ -239,6 +261,16 @@ export default function LeafletSearchMap({
 }
 
 LeafletSearchMap.propTypes = {
+  bounds: PropTypes.shape({
+    northEast: PropTypes.shape({
+      lat: PropTypes.number.isRequired,
+      lng: PropTypes.number.isRequired,
+    }).isRequired,
+    southWest: PropTypes.shape({
+      lat: PropTypes.number.isRequired,
+      lng: PropTypes.number.isRequired,
+    }).isRequired,
+  }),
   communityNotes: PropTypes.shape({
     features: PropTypes.array.isRequired,
   }).isRequired,

@@ -85,22 +85,6 @@ exports.invokeRolesPolicies = function () {
           permissions: ['get', 'post', 'delete'],
         },
         {
-          resources: '/api/auth/facebook',
-          permissions: ['get', 'put'],
-        },
-        {
-          resources: '/api/auth/facebook/callback',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/auth/github',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/auth/github/callback',
-          permissions: ['get'],
-        },
-        {
           resources: '/api/users/memberships',
           permissions: ['get'],
         },

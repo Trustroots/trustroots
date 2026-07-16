@@ -149,9 +149,9 @@ test.describe.serial('account settings feature coverage', () => {
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'account.oauth-providers', [
-      'Each OAuth provider can start and complete a stubbed callback flow.',
-      'Connected OAuth provider can be disconnected.',
-      'OAuth callback errors show user-facing error state.',
+      'Stored OAuth provider data can be disconnected.',
+      'Social OAuth providers are not offered as new connections.',
+      'Legacy social connections are shown below Save with delete controls.',
     ]);
 
     const user = createUser();
@@ -159,25 +159,97 @@ test.describe.serial('account settings feature coverage', () => {
     await updateUserByUsername(user.username, {
       $set: {
         additionalProvidersData: {
+          facebook: {
+            id: 'fictional-facebook-id',
+          },
           github: {
-            id: 'e2e-github-id',
-            login: 'e2e-github-login',
+            id: 'fictional-github-id',
+            login: 'fictional-github-login',
+          },
+          twitter: {
+            id: 'fictional-twitter-id',
+            screen_name: 'fictional-twitter-name',
           },
         },
       },
     });
     await signInViaApi(page, request, user);
 
+    await page.goto('/profile/edit/networks');
+    await expect(page.getByRole('heading', { name: 'Connect to' })).toHaveCount(
+      0,
+    );
+
+    const nostrootsLink = page
+      .getByRole('heading', { name: 'Nostroots' })
+      .getByRole('link', { name: 'Nostroots' });
+    const hospitalityHeading = page.getByRole('heading', {
+      name: 'Other hospitality networks',
+    });
+    await expect(nostrootsLink).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org',
+    );
+    await expect(nostrootsLink).toHaveAttribute('target', '_blank');
+    expect(
+      await nostrootsLink.evaluate(
+        (nostroots, hospitality) =>
+          Boolean(
+            nostroots.compareDocumentPosition(hospitality) &
+              nostroots.ownerDocument.defaultView.Node
+                .DOCUMENT_POSITION_FOLLOWING,
+          ),
+        await hospitalityHeading.elementHandle(),
+      ),
+    ).toBeTruthy();
+
+    const saveButton = page.getByRole('button', { name: 'Save' });
+    const legacyConnections = page.locator('.legacy-social-connections');
+    await expect(legacyConnections).toBeVisible();
+    expect(
+      await saveButton.evaluate(
+        (save, legacy) =>
+          Boolean(
+            save.compareDocumentPosition(legacy) &
+              save.ownerDocument.defaultView.Node.DOCUMENT_POSITION_FOLLOWING,
+          ),
+        await legacyConnections.elementHandle(),
+      ),
+    ).toBeTruthy();
+
+    for (const provider of ['facebook', 'github', 'twitter']) {
+      await expect(
+        page.getByRole('button', {
+          name: new RegExp(`delete ${provider} connection`, 'i'),
+        }),
+      ).toBeVisible();
+      const removedRoute = await page.request.get(`/api/auth/${provider}`);
+      expect(removedRoute.status()).toBe(404);
+    }
+
     const invalidProvider = await page.request.delete(
       '/api/users/accounts/not-a-provider',
     );
     expect(invalidProvider.status()).toBe(400);
 
-    const disconnect = await page.request.delete('/api/users/accounts/github');
-    expect(disconnect.ok()).toBeTruthy();
+    for (const provider of ['facebook', 'github', 'twitter']) {
+      const disconnect = page.waitForResponse(
+        response =>
+          response.request().method() === 'DELETE' &&
+          response.url().endsWith(`/api/users/accounts/${provider}`),
+      );
+      await page
+        .getByRole('button', {
+          name: new RegExp(`delete ${provider} connection`, 'i'),
+        })
+        .click();
+      expect((await disconnect).ok()).toBeTruthy();
+    }
+
+    await expect(legacyConnections).toHaveCount(0);
 
     const storedUser = await findUserByUsername(user.username);
-    expect((storedUser.additionalProvidersData || {}).github).toBeUndefined();
+    expect(storedUser.additionalProvidersData || {}).toEqual({});
   });
 
   test('members can add and remove push registrations', async ({

@@ -4,6 +4,8 @@
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
+require('../../../contacts/server/models/contacts.server.model');
+require('../../server/models/experiences.server.model');
 const experiencesController = require('../../server/controllers/experiences.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
@@ -135,6 +137,26 @@ describe('Experiences controller unit tests', () => {
 
       nextArg.should.be.Error();
       nextArg.message.should.equal('count failed');
+    });
+  });
+
+  describe('getSuggestion', () => {
+    it('passes database errors to next', async () => {
+      const [user] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const error = new Error('suggestion failed');
+      sinon.stub(Experience, 'distinct').returns({
+        exec: () => Promise.reject(error),
+      });
+
+      const nextArg = await new Promise(resolve => {
+        experiencesController.getSuggestion({ user }, deferredResponse(), err =>
+          resolve(err),
+        );
+      });
+
+      nextArg.should.equal(error);
     });
   });
 });

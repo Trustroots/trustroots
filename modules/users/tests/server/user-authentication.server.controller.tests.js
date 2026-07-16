@@ -1,18 +1,10 @@
-/**
- * Unit tests for the OAuth / Facebook helpers of the authentication
- * controller.
- *
- * These functions are not reached by the HTTP route tests, so they are called
- * directly here. The Facebook graph client is stubbed via proxyquire so the
- * token-extension logic can be exercised without touching the network.
- */
+/** Unit tests for the OAuth helpers of the authentication controller. */
 const proxyquire = require('proxyquire').noCallThru();
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 const should = require('should');
 
-const config = require('../../../../config/config');
 const testutils = require('../../../../testutils/server/server.testutil');
 const authController = require('../../server/controllers/users.authentication.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -22,19 +14,6 @@ const User = mongoose.model('User');
 
 const controllerPath =
   '../../server/controllers/users.authentication.server.controller';
-const facebookApiPath = '../../../../config/lib/facebook-api.js';
-
-/**
- * Load the controller with the Facebook graph client stubbed.
- *
- * @param {Function} extendAccessToken - stub for `facebook.extendAccessToken`
- */
-function loadControllerWithFacebook(extendAccessToken) {
-  return proxyquire(controllerPath, {
-    [facebookApiPath]: { extendAccessToken },
-  });
-}
-
 /**
  * Express-like response mock that resolves a promise as soon as the controller
  * sends a response, so callback-based controllers can be awaited.
@@ -75,104 +54,13 @@ function deferredResponse() {
   return res;
 }
 
-describe('Authentication controller OAuth/Facebook unit tests', () => {
+describe('Authentication controller OAuth unit tests', () => {
   const jobs = testutils.catchJobs();
 
   afterEach(async () => {
     sinon.restore();
     jobs.length = 0;
     await utils.clearDatabase();
-  });
-
-  describe('saveOAuthUserProfile', () => {
-    it('errors when the user is not logged in', done => {
-      authController.saveOAuthUserProfile(
-        {},
-        { provider: 'github', providerData: {} },
-        (err, user) => {
-          err.should.be.an.Error();
-          err.message.should.match(/logged in/);
-          (user === null).should.be.true();
-          done();
-        },
-      );
-    });
-
-    it('attaches the provider data to the logged in user', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
-
-      const providerUserProfile = {
-        provider: 'github',
-        providerData: { id: 'gh-1', accessToken: 'token' },
-      };
-
-      const result = await new Promise((resolve, reject) => {
-        authController.saveOAuthUserProfile(
-          { user: userDoc },
-          providerUserProfile,
-          (err, user, redirectURL) => {
-            if (err) return reject(err);
-            resolve({ user, redirectURL });
-          },
-        );
-      });
-
-      result.redirectURL.should.equal('/profile/edit/networks');
-      result.user.additionalProvidersData.github.id.should.equal('gh-1');
-    });
-
-    it('adds provider data to an existing provider data object', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
-      userDoc.additionalProvidersData = { facebook: { id: 'fb-1' } };
-      userDoc.markModified('additionalProvidersData');
-      await userDoc.save();
-
-      const providerUserProfile = {
-        provider: 'github',
-        providerData: { id: 'gh-1', accessToken: 'token' },
-      };
-
-      const result = await new Promise((resolve, reject) => {
-        authController.saveOAuthUserProfile(
-          { user: userDoc },
-          providerUserProfile,
-          (err, user, redirectURL) => {
-            if (err) return reject(err);
-            resolve({ user, redirectURL });
-          },
-        );
-      });
-
-      result.redirectURL.should.equal('/profile/edit/networks');
-      result.user.additionalProvidersData.facebook.id.should.equal('fb-1');
-      result.user.additionalProvidersData.github.id.should.equal('gh-1');
-    });
-
-    it('errors when the provider is already connected', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
-      userDoc.markModified('additionalProvidersData');
-      await userDoc.save();
-
-      await new Promise((resolve, reject) => {
-        authController.saveOAuthUserProfile(
-          { user: userDoc },
-          { provider: 'github', providerData: { id: 'gh-2' } },
-          err => {
-            try {
-              err.should.be.an.Error();
-              err.message.should.match(/already connected/);
-              resolve();
-            } catch (e) {
-              reject(e);
-            }
-          },
-        );
-      });
-    });
   });
 
   describe('removeOAuthProvider', () => {
@@ -282,375 +170,23 @@ describe('Authentication controller OAuth/Facebook unit tests', () => {
     });
   });
 
-  describe('updateFacebookOAuthToken', () => {
-    it('responds with 400 when accessToken or userID is missing', async () => {
+  describe('signout', () => {
+    it('redirects after Passport logs the user out', async () => {
       const res = deferredResponse();
-      authController.updateFacebookOAuthToken({ body: {} }, res);
+
+      authController.signout({ logout: callback => callback() }, res, () => {});
       await res.waitForResponse();
-      res.statusCode.should.equal(400);
+
+      res.redirectUrl.should.equal('/');
     });
 
-    it('responds with 403 when there is no authenticated user', async () => {
-      const res = deferredResponse();
-      authController.updateFacebookOAuthToken(
-        { body: { accessToken: 'a', userID: '1' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(403);
-    });
+    it('forwards Passport logout errors', () => {
+      const error = new Error('logout failed');
+      const next = sinon.spy();
 
-    it('responds with 403 when the user is not connected to Facebook', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
+      authController.signout({ logout: callback => callback(error) }, {}, next);
 
-      const res = deferredResponse();
-      authController.updateFacebookOAuthToken(
-        { body: { accessToken: 'a', userID: '1' }, user: userDoc },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(403);
-    });
-
-    it('responds with 403 when the Facebook ids do not match', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
-      userDoc.additionalProvidersData = { facebook: { id: 'real-fb-id' } };
-      userDoc.markModified('additionalProvidersData');
-      await userDoc.save();
-
-      const res = deferredResponse();
-      authController.updateFacebookOAuthToken(
-        { body: { accessToken: 'a', userID: 'different-id' }, user: userDoc },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(403);
-    });
-
-    it('stores a token without an expiry date', async () => {
-      const originalClientID = config.facebook.clientID;
-      const originalClientSecret = config.facebook.clientSecret;
-      config.facebook.clientID = 'fb-client-id';
-      config.facebook.clientSecret = 'fb-client-secret';
-
-      try {
-        const controller = loadControllerWithFacebook((options, cb) =>
-          cb(null, { access_token: 'long-lived-token' }),
-        );
-
-        const [saved] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(saved._id);
-        userDoc.additionalProvidersData = {
-          facebook: {
-            id: 'fb-id',
-            accessTokenExpires: new Date(),
-          },
-        };
-        userDoc.markModified('additionalProvidersData');
-        await userDoc.save();
-
-        const res = deferredResponse();
-        controller.updateFacebookOAuthToken(
-          {
-            body: { accessToken: 'short-token', userID: 'fb-id' },
-            user: userDoc,
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(200);
-
-        const reloaded = await User.findById(saved._id);
-        reloaded.additionalProvidersData.facebook.accessToken.should.equal(
-          'long-lived-token',
-        );
-        should.not.exist(
-          reloaded.additionalProvidersData.facebook.accessTokenExpires,
-        );
-      } finally {
-        config.facebook.clientID = originalClientID;
-        config.facebook.clientSecret = originalClientSecret;
-      }
-    });
-
-    it('returns 400 when saving the extended token fails', async () => {
-      const originalClientID = config.facebook.clientID;
-      const originalClientSecret = config.facebook.clientSecret;
-      config.facebook.clientID = 'fb-client-id';
-      config.facebook.clientSecret = 'fb-client-secret';
-
-      try {
-        const controller = loadControllerWithFacebook((options, cb) =>
-          cb(null, { access_token: 'long-lived-token', expires_in: 3600 }),
-        );
-
-        const [saved] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(saved._id);
-        userDoc.additionalProvidersData = { facebook: { id: 'fb-id' } };
-        userDoc.markModified('additionalProvidersData');
-        await userDoc.save();
-        sinon
-          .stub(userDoc, 'save')
-          .callsFake(cb => cb(new Error('save failed')));
-
-        const res = deferredResponse();
-        controller.updateFacebookOAuthToken(
-          {
-            body: { accessToken: 'short-token', userID: 'fb-id' },
-            user: userDoc,
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(400);
-      } finally {
-        config.facebook.clientID = originalClientID;
-        config.facebook.clientSecret = originalClientSecret;
-      }
-    });
-
-    it('stores the extended token for a matching Facebook user', async () => {
-      const originalClientID = config.facebook.clientID;
-      const originalClientSecret = config.facebook.clientSecret;
-      config.facebook.clientID = 'fb-client-id';
-      config.facebook.clientSecret = 'fb-client-secret';
-
-      try {
-        const controller = loadControllerWithFacebook((options, cb) =>
-          cb(null, { access_token: 'long-lived-token', expires_in: 3600 }),
-        );
-
-        const [saved] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await User.findById(saved._id);
-        userDoc.additionalProvidersData = { facebook: { id: 'fb-id' } };
-        userDoc.markModified('additionalProvidersData');
-        await userDoc.save();
-
-        const res = deferredResponse();
-        controller.updateFacebookOAuthToken(
-          {
-            body: { accessToken: 'short-token', userID: 'fb-id' },
-            user: userDoc,
-          },
-          res,
-        );
-        await res.waitForResponse();
-
-        res.statusCode.should.equal(200);
-        res.body.message.should.equal('Token updated.');
-
-        const reloaded = await User.findById(saved._id);
-        reloaded.additionalProvidersData.facebook.accessToken.should.equal(
-          'long-lived-token',
-        );
-      } finally {
-        config.facebook.clientID = originalClientID;
-        config.facebook.clientSecret = originalClientSecret;
-      }
-    });
-  });
-
-  describe('extendFBAccessToken', () => {
-    const originalClientID = config.facebook.clientID;
-    const originalClientSecret = config.facebook.clientSecret;
-
-    afterEach(() => {
-      config.facebook.clientID = originalClientID;
-      config.facebook.clientSecret = originalClientSecret;
-    });
-
-    it('errors when no access token is given', done => {
-      authController.extendFBAccessToken(undefined, (err, result) => {
-        err.should.be.an.Error();
-        err.message.should.equal('Missing access token.');
-        result.should.deepEqual({});
-        done();
-      });
-    });
-
-    it('errors when Facebook is not configured', done => {
-      config.facebook.clientID = false;
-      config.facebook.clientSecret = false;
-      authController.extendFBAccessToken('short-token', (err, result) => {
-        err.should.be.an.Error();
-        result.should.deepEqual({});
-        done();
-      });
-    });
-
-    it('passes through errors from the Facebook client', done => {
-      config.facebook.clientID = 'id';
-      config.facebook.clientSecret = 'secret';
-      const controller = loadControllerWithFacebook((options, cb) =>
-        cb(new Error('FB down')),
-      );
-      controller.extendFBAccessToken('short-token', err => {
-        err.should.be.an.Error();
-        err.message.should.equal('FB down');
-        done();
-      });
-    });
-
-    it('errors when the response has no access token', done => {
-      config.facebook.clientID = 'id';
-      config.facebook.clientSecret = 'secret';
-      const controller = loadControllerWithFacebook((options, cb) =>
-        cb(null, {}),
-      );
-      controller.extendFBAccessToken('short-token', (err, result) => {
-        err.should.be.an.Error();
-        result.should.deepEqual({});
-        done();
-      });
-    });
-
-    it('returns the token and an expiry date when expires_in is present', done => {
-      config.facebook.clientID = 'id';
-      config.facebook.clientSecret = 'secret';
-      const controller = loadControllerWithFacebook((options, cb) =>
-        cb(null, { access_token: 'long-token', expires_in: 5184000 }),
-      );
-      controller.extendFBAccessToken('short-token', (err, result) => {
-        if (err) return done(err);
-        result.token.should.equal('long-token');
-        result.expires.should.be.a.Date();
-        done();
-      });
-    });
-
-    it('returns just the token when no expiry is present', done => {
-      config.facebook.clientID = 'id';
-      config.facebook.clientSecret = 'secret';
-      const controller = loadControllerWithFacebook((options, cb) =>
-        cb(null, { access_token: 'long-token' }),
-      );
-      controller.extendFBAccessToken('short-token', (err, result) => {
-        if (err) return done(err);
-        result.token.should.equal('long-token');
-        (result.expires === undefined).should.be.true();
-        done();
-      });
-    });
-  });
-
-  describe('oauthCallback', () => {
-    function loadControllerWithPassport(handler) {
-      return proxyquire(controllerPath, {
-        passport: {
-          authenticate: (strategy, callback) => (req, res, next) =>
-            handler(strategy, callback, req, res, next),
-        },
-      });
-    }
-
-    it('redirects to the networks page on strategy error', async () => {
-      const controller = loadControllerWithPassport((strategy, callback) => {
-        callback(new Error('oauth failed'), null, null);
-      });
-      let resolveResponse;
-      const promise = new Promise(resolve => {
-        resolveResponse = resolve;
-      });
-      const res = deferredResponse();
-      res.waitForResponse = () => promise;
-      res.redirect = url => {
-        res.redirectUrl = url;
-        resolveResponse(res);
-        return res;
-      };
-
-      controller.oauthCallback('github')({}, res, () => {});
-      await res.waitForResponse();
-      res.redirectUrl.should.equal('/profile/edit/networks');
-    });
-
-    it('redirects to signin when no user is returned', async () => {
-      const controller = loadControllerWithPassport((strategy, callback) => {
-        callback(null, null, null);
-      });
-      const res = deferredResponse();
-      let resolveResponse;
-      const promise = new Promise(resolve => {
-        resolveResponse = resolve;
-      });
-      res.redirect = url => {
-        res.redirectUrl = url;
-        resolveResponse(res);
-        return res;
-      };
-      res.waitForResponse = () => promise;
-
-      controller.oauthCallback('github')({}, res, () => {});
-      await res.waitForResponse();
-      res.redirectUrl.should.equal('/signin');
-    });
-
-    it('redirects to signin when login fails', async () => {
-      const controller = loadControllerWithPassport((strategy, callback) => {
-        callback(null, { _id: 'user' }, '/custom-redirect');
-      });
-      const res = deferredResponse();
-      let resolveResponse;
-      const promise = new Promise(resolve => {
-        resolveResponse = resolve;
-      });
-      res.redirect = url => {
-        res.redirectUrl = url;
-        resolveResponse(res);
-        return res;
-      };
-      res.waitForResponse = () => promise;
-
-      const req = { login: (user, cb) => cb(new Error('login failed')) };
-      controller.oauthCallback('github')(req, res, () => {});
-      await res.waitForResponse();
-      res.redirectUrl.should.equal('/signin');
-    });
-
-    it('redirects to the provided URL after login', async () => {
-      const controller = loadControllerWithPassport((strategy, callback) => {
-        callback(null, { _id: 'user' }, '/custom-redirect');
-      });
-      const res = deferredResponse();
-      let resolveResponse;
-      const promise = new Promise(resolve => {
-        resolveResponse = resolve;
-      });
-      res.redirect = url => {
-        res.redirectUrl = url;
-        resolveResponse(res);
-        return res;
-      };
-      res.waitForResponse = () => promise;
-
-      const req = { login: (user, cb) => cb() };
-      controller.oauthCallback('github')(req, res, () => {});
-      await res.waitForResponse();
-      res.redirectUrl.should.equal('/custom-redirect');
-    });
-
-    it('redirects to the networks page when OAuth returns no redirect', async () => {
-      const controller = loadControllerWithPassport((strategy, callback) => {
-        callback(null, { _id: 'user' }, null);
-      });
-      const res = deferredResponse();
-      let resolveResponse;
-      const promise = new Promise(resolve => {
-        resolveResponse = resolve;
-      });
-      res.redirect = url => {
-        res.redirectUrl = url;
-        resolveResponse(res);
-        return res;
-      };
-      res.waitForResponse = () => promise;
-
-      const req = { login: (user, cb) => cb() };
-      controller.oauthCallback('github')(req, res, () => {});
-      await res.waitForResponse();
-      res.redirectUrl.should.equal('/profile/edit/networks');
+      next.calledOnceWithExactly(error).should.be.true();
     });
   });
 

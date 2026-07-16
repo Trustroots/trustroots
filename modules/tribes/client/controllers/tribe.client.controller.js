@@ -1,7 +1,7 @@
 angular.module('tribes').controller('TribeController', TribeController);
 
 /* @ngInject */
-function TribeController($scope, $state, tribe, Facebook) {
+function TribeController($scope, $state, tribe) {
   const headerHeight = angular.element('#tr-header').height() || 0;
 
   // ViewModel
@@ -12,7 +12,6 @@ function TribeController($scope, $state, tribe, Facebook) {
   vm.windowHeight = angular.element('html').height() - headerHeight;
   vm.goBack = goBack;
   vm.circleWikiUrl = circleWikiUrl;
-  vm.facebookIsActibe = Facebook.isActive;
 
   // Ensure tribe in view updates when directives modify it
   $scope.$on('tribeUpdated', function (event, tribe) {

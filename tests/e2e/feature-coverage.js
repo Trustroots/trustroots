@@ -533,18 +533,33 @@ const features = [
       clientRoutes: [
         clientRoute('statistics', '/statistics', source.statisticsClient),
       ],
-      apiRoutes: [apiRoute('GET', '/api/statistics', source.statisticsServer)],
+      apiRoutes: [
+        apiRoute('GET', '/api/statistics', source.statisticsServer),
+        apiRoute(
+          'GET',
+          '/api/experiences/suggestion',
+          source.experiencesServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
       'Public statistics API returns deterministic connection and message-interaction data.',
+      'Visitors do not see an experience-writing encouragement.',
+      'Signed-in members without an eligible contact see a general experience-writing encouragement.',
+      'Signed-in members can be encouraged to write an experience for an eligible confirmed contact.',
+      'The personalised encouragement opens the suggested contact experience form.',
     ],
     relatedSpecs: [
       spec('seeded-content.spec.js', 'statistics page loads for visitors'),
       spec(
         'authenticated.spec.js',
         'statistics page loads for a signed in member',
+      ),
+      spec(
+        'authenticated.spec.js',
+        'statistics suggests an eligible contact and opens their experience form',
       ),
     ],
   },
@@ -1060,7 +1075,7 @@ const features = [
     area: AREA.authAccount,
     status: STATUS.active,
     description:
-      'Members can connect and disconnect Facebook and GitHub OAuth accounts via local stubs.',
+      'Members can disconnect legacy Facebook, GitHub, and Twitter provider data; new social OAuth connections are unavailable.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1074,18 +1089,13 @@ const features = [
         ),
       ],
       apiRoutes: [
-        apiRoute('GET', '/api/auth/facebook', source.usersAuthServer),
-        apiRoute('PUT', '/api/auth/facebook', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/facebook/callback', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/github', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/github/callback', source.usersAuthServer),
         apiRoute('DELETE', '/api/users/accounts/:provider', source.usersServer),
       ],
     },
     requiredScenarios: [
-      'Each OAuth provider can start and complete a stubbed callback flow.',
-      'Connected OAuth provider can be disconnected.',
-      'OAuth callback errors show user-facing error state.',
+      'Stored OAuth provider data can be disconnected.',
+      'Social OAuth providers are not offered as new connections.',
+      'Legacy social connections are shown below Save with delete controls.',
     ],
     relatedSpecs: [],
   },

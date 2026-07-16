@@ -9,6 +9,7 @@ const mockMap = {
   getBounds: jest.fn(),
   getCenter: jest.fn(),
   getZoom: jest.fn(),
+  fitBounds: jest.fn(),
   invalidateSize: jest.fn(),
   on: jest.fn((name, handler) => {
     mockMapHandlers[name] = handler;
@@ -136,6 +137,7 @@ beforeEach(() => {
   mockMap.getBounds.mockReturnValue(bounds);
   mockMap.getCenter.mockReturnValue({ lat: 52, lng: 13 });
   mockMap.getZoom.mockReturnValue(6);
+  mockMap.fitBounds.mockClear();
   mockMap.invalidateSize.mockClear();
   mockMap.setView.mockClear();
   mockMap.remove.mockClear();
@@ -185,6 +187,12 @@ describe('<LeafletSearchMap />', () => {
     });
     expect(mockMarkers).toHaveLength(1);
     expect(mockCircleMarkers).toHaveLength(2);
+    expect(mockMarkers[0].options.bubblingMouseEvents).toBe(false);
+    expect(
+      mockCircleMarkers.every(
+        marker => marker.options.bubblingMouseEvents === false,
+      ),
+    ).toBe(true);
 
     mockMapHandlers.click();
     expect(onMapClick).toHaveBeenCalledTimes(1);
@@ -229,6 +237,24 @@ describe('<LeafletSearchMap />', () => {
 
     unmount();
     expect(mockMap.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('fits externally selected location bounds after refreshing map size', () => {
+    const selectedBounds = {
+      northEast: { lat: 52.6755, lng: 13.7611 },
+      southWest: { lat: 52.3383, lng: 13.0884 },
+    };
+
+    renderMap({ bounds: selectedBounds });
+
+    expect(mockMap.invalidateSize).toHaveBeenCalledWith({ pan: false });
+    expect(mockMap.fitBounds).toHaveBeenCalledWith(
+      [
+        [52.3383, 13.0884],
+        [52.6755, 13.7611],
+      ],
+      { padding: [40, 40] },
+    );
   });
 
   it('does not render markers while the map is zoomed out', () => {

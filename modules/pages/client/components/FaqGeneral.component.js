@@ -105,10 +105,10 @@ export default function FaqGeneral() {
         )}
       </div>
 
-      <div className="faq-question" id="why-is-there-facebook-connection">
-        <h3>{t('Why is there Facebook connection?')}</h3>
+      <div className="faq-question" id="what-happened-to-facebook-connections">
+        <h3>{t('What happened to Facebook connections?')}</h3>
         {t(
-          'So that people who have their data, photos and connections on Facebook can release their information to Trustroots. Using Facebook from Trustroots is optional.',
+          'New Facebook connections are no longer supported. Members who connected Facebook in the past can continue using their stored Facebook profile image or disconnect the legacy connection from their account settings.',
         )}{' '}
         <Trans t={t} ns="pages">
           <a href="https://ideas.trustroots.org/2014/12/29/life-outside-big-blue-box/">

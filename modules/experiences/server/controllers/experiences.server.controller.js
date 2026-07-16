@@ -7,8 +7,70 @@ const errorService = require('../../../core/server/services/error.server.service
 const emailService = require('../../../core/server/services/email.server.service');
 const pushService = require('../../../core/server/services/push.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const Contact = mongoose.model('Contact');
 const Experience = mongoose.model('Experience');
 const User = mongoose.model('User');
+
+/**
+ * Return one confirmed, public contact for whom the authenticated member has
+ * not yet shared an experience.
+ */
+exports.getSuggestion = async function getSuggestion(req, res, next) {
+  try {
+    const selfId = req.user._id;
+    const experiencedUserIds = await Experience.distinct('userTo', {
+      userFrom: selfId,
+    }).exec();
+    const excludedUserIds = [selfId, ...experiencedUserIds];
+
+    excludedUserIds.push(...req.user.blocked);
+
+    const [suggestion] = await Contact.aggregate([
+      {
+        $match: {
+          confirmed: true,
+          $or: [{ userFrom: selfId }, { userTo: selfId }],
+        },
+      },
+      {
+        $project: {
+          userId: {
+            $cond: [{ $eq: ['$userFrom', selfId] }, '$userTo', '$userFrom'],
+          },
+        },
+      },
+      { $match: { userId: { $nin: excludedUserIds } } },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'userId',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $match: {
+          'user.public': true,
+          'user.roles': { $nin: ['shadowban'] },
+          'user.blocked': { $nin: [selfId] },
+        },
+      },
+      { $sample: { size: 1 } },
+      {
+        $project: {
+          _id: '$user._id',
+          displayName: '$user.displayName',
+          username: '$user.username',
+        },
+      },
+    ]).exec();
+
+    return res.json(suggestion || null);
+  } catch (err) {
+    return next(err);
+  }
+};
 
 /**
  * Validate the request body and data consistency

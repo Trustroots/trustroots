@@ -76,7 +76,7 @@
     ng-if="app.user.public"
     ng-show="search.isSidebarOpen"
     ng-class="{
-         'is-offer-open': search.offer || search.loadingOffer
+         'is-offer-open': search.offer || search.loadingOffer || search.communityNote
        }"
   ></aside>
   <div ui-view="map" class="search-map-container"></div>

@@ -25,11 +25,10 @@ function ProfileEditNetworksController(
 
   // Exposed
   vm.updateUserProfile = updateUserProfile;
-  vm.removingSocialAccount = false;
   vm.removeUserSocialAccount = removeUserSocialAccount;
   vm.isConnectedSocialAccount = isConnectedSocialAccount;
-  vm.hasConnectedAdditionalSocialAccounts =
-    hasConnectedAdditionalSocialAccounts;
+  vm.legacySocialProviders = ['facebook', 'github', 'twitter'];
+  vm.hasLegacySocialAccounts = hasLegacySocialAccounts;
   vm.isWarmshowersId = isWarmshowersId;
   vm.nostrNip07Loading = false;
   vm.nostrNip07SuggestedNpub = '';
@@ -113,11 +112,8 @@ function ProfileEditNetworksController(
   /**
    * Check if there are additional accounts
    */
-  function hasConnectedAdditionalSocialAccounts() {
-    return (
-      vm.user.additionalProvidersData &&
-      Object.keys(vm.user.additionalProvidersData).length
-    );
+  function hasLegacySocialAccounts() {
+    return vm.legacySocialProviders.some(isConnectedSocialAccount);
   }
 
   /**
@@ -139,7 +135,7 @@ function ProfileEditNetworksController(
         // On success function
         messageCenterService.add(
           'success',
-          'Succesfully disconnected from ' + provider,
+          'Successfully deleted the ' + provider + ' connection.',
         );
         vm.user = Authentication.user = response.data;
         $scope.$emit('userUpdated');
@@ -149,7 +145,7 @@ function ProfileEditNetworksController(
         messageCenterService.add(
           'danger',
           response.data.message ||
-            'Something went wrong. Try again or contact us to disconnect your profile.',
+            'Something went wrong. Try again or contact us to delete this connection.',
           { timeout: 10000 },
         );
       },
