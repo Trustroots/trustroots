@@ -1,5 +1,7 @@
 const { annotateFeature, expect, test } = require('../../support/test');
 
+/* global window */
+
 const {
   EUROPE_OFFERS_QUERY,
   SEEDED_MEMBERS,
@@ -13,6 +15,41 @@ const { findOffersByUser } = require('../../support/db');
 
 const berlin = SEEDED_MEMBERS[0];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
+
+async function swipeUpFrom(page, element) {
+  const box = await element.boundingBox();
+  expect(box).toBeTruthy();
+
+  const x = Math.round(box.x + box.width / 2);
+  const startY = Math.round(Math.min(box.y + box.height / 2, 450));
+  const endY = Math.max(80, startY - 250);
+  const session = await page.context().newCDPSession(page);
+
+  try {
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x, y: startY }],
+    });
+    for (let step = 1; step <= 5; step += 1) {
+      await session.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [
+          {
+            x,
+            y: Math.round(startY + ((endY - startY) * step) / 5),
+          },
+        ],
+      });
+      await page.waitForTimeout(16);
+    }
+    await session.send('Input.dispatchTouchEvent', {
+      type: 'touchEnd',
+      touchPoints: [],
+    });
+  } finally {
+    await session.detach();
+  }
+}
 
 test.describe.serial('search offers and circles feature coverage', () => {
   test.beforeEach(async ({ page, request }) => {
@@ -203,6 +240,8 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const throwaway = createUser();
     const context = await browser.newContext({
       baseURL,
+      hasTouch: true,
+      isMobile: true,
       viewport: { width: 375, height: 500 },
     });
     const memberPage = await context.newPage();
@@ -210,6 +249,39 @@ test.describe.serial('search offers and circles feature coverage', () => {
     try {
       await registerViaApi(context.request, throwaway);
       await signInViaApi(memberPage, context.request, throwaway);
+
+      await memberPage.goto('/circles');
+      const circleGrid = memberPage.locator('.tribes-grid');
+      const hitchhikersCard = circleGrid
+        .locator('.tribe')
+        .filter({ hasText: 'Hitchhikers' });
+      const hitchhikersLink = hitchhikersCard.getByRole('link', {
+        name: /Hitchhikers/,
+      });
+
+      await expect(hitchhikersLink).toBeVisible();
+      await expect(circleGrid).toHaveCSS('overflow', 'visible');
+      await expect(hitchhikersLink).toHaveCSS('touch-action', 'pan-y');
+      const scrollBeforeSwipe = await memberPage.evaluate(() => window.scrollY);
+      await swipeUpFrom(memberPage, hitchhikersLink);
+      await expect
+        .poll(() => memberPage.evaluate(() => window.scrollY))
+        .toBeGreaterThan(scrollBeforeSwipe);
+
+      const joinResponse = memberPage.waitForResponse(
+        response =>
+          response
+            .url()
+            .includes(`/api/users/memberships/${hitchhikers._id}`) &&
+          response.request().method() === 'POST',
+      );
+      await hitchhikersCard
+        .getByRole('button', { name: 'Join (Hitchhikers)' })
+        .click();
+      expect((await joinResponse).ok()).toBeTruthy();
+      await expect(
+        hitchhikersCard.getByRole('button', { name: 'Leave circle' }),
+      ).toContainText('Joined');
 
       await memberPage.goto('/circles/hitchhikers');
       const overview = memberPage.locator('.tribe-header-info');
@@ -230,17 +302,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
         .poll(() => overview.evaluate(element => element.scrollTop))
         .toBeGreaterThan(0);
 
-      const joinResponse = memberPage.waitForResponse(
-        response =>
-          response
-            .url()
-            .includes(`/api/users/memberships/${hitchhikers._id}`) &&
-          response.request().method() === 'POST',
-      );
-      await memberPage
-        .getByRole('button', { name: /Join this circle \(Hitchhikers\)/ })
-        .click();
-      expect((await joinResponse).ok()).toBeTruthy();
       await expect(
         memberPage.getByRole('button', {
           name: /Leave circle \(Hitchhikers\)/,
