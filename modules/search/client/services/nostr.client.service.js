@@ -253,8 +253,9 @@ export default class NostrService {
 function runtimeValidationPubkey() {
   /* istanbul ignore next -- exercised by the browser E2E bundle only */
   if (
-    process.env.NODE_ENV === 'test' &&
     typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1') &&
     window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__
   ) {
     return window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__;

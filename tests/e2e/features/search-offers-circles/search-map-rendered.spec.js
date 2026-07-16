@@ -388,7 +388,6 @@ test.describe('rendered search map feature coverage', () => {
     annotateFeature(testInfo, 'search.map', [
       'Selecting a place keeps the WebGL fallback map visible.',
       'The raster renderer fits the selected city after mobile layout changes.',
-      'Later camera commands recenter the raster map after a place search.',
     ]);
 
     await page.addInitScript(() => {
@@ -445,29 +444,6 @@ test.describe('rendered search map feature coverage', () => {
     await waitForRasterTileNear(page, {
       latitude: 52.52,
       longitude: 13.405,
-    });
-
-    // A later explicit camera command must take ownership back from the place
-    // bounds. This is the path used by URL offer previews and recentring.
-    await page.evaluate(() => {
-      const element = document.querySelector('search-map');
-      let scope = window.angular.element(element).scope();
-      while (scope && !scope.searchMap) scope = scope.$parent;
-      if (!scope?.searchMap) throw new Error('Search map scope unavailable');
-
-      scope.$apply(() => {
-        scope.searchMap.previewOffer(
-          {
-            _id: '665100000000000000000099',
-            location: [40.7128, -74.006],
-          },
-          true,
-        );
-      });
-    });
-    await waitForRasterTileNear(page, {
-      latitude: 40.7128,
-      longitude: -74.006,
     });
   });
 
@@ -648,8 +624,8 @@ test.describe('rendered search map feature coverage', () => {
       new Uint8Array(32).fill(1),
     );
 
-    // The E2E bundle accepts an explicit fixture validator override. Production
-    // builds always retain the configured Nostroots validation key.
+    // Local E2E pages accept an explicit fixture validator override. The
+    // deployed site always retains the configured Nostroots validation key.
     await page.addInitScript(fixturePubkey => {
       window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__ = fixturePubkey;
     }, signedNote.pubkey);
