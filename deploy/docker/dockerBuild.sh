@@ -3,12 +3,28 @@
 # Stop executing if metadata collection or the image build fails.
 set -e
 
+echo "Container image repository: https://github.com/trustrootsops/trustroots/pkgs/container/trustroots"
+echo
+
 # Switch to the repository root directory.
 cd "$(dirname "$0")/../.."
 
 BUILD_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [ "$BUILD_BRANCH" != "main" ]; then
   echo "Docker builds may only be made from the main branch (currently: ${BUILD_BRANCH})." >&2
+  exit 1
+fi
+
+BUILD_COMMIT=$(git rev-parse HEAD)
+if ! REMOTE_MAIN=$(git ls-remote --exit-code origin refs/heads/main); then
+  echo "Unable to verify the main branch on GitHub." >&2
+  exit 1
+fi
+
+REMOTE_MAIN_COMMIT=${REMOTE_MAIN%%$'\t'*}
+if [ "$BUILD_COMMIT" != "$REMOTE_MAIN_COMMIT" ]; then
+  echo "Docker builds may only be made from the current main branch on GitHub." >&2
+  echo "Push or pull changes, then try again." >&2
   exit 1
 fi
 
@@ -25,7 +41,6 @@ fi
 # Get metadata for the code baked into the image. The production Docker context
 # excludes .git, so the running app cannot discover these values itself.
 COMMIT=$(git rev-parse --short HEAD)
-BUILD_COMMIT=$(git rev-parse HEAD)
 BUILD_COMMITTED_AT=$(git log -1 --format=%cI)
 
 OS=$(uname -s)
