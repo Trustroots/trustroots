@@ -227,6 +227,14 @@ test.describe.serial('account settings feature coverage', () => {
       expect(removedRoute.status()).toBe(404);
     }
 
+    expect((await page.request.put('/api/auth/facebook')).status()).toBe(404);
+    for (const provider of ['facebook', 'github']) {
+      const removedCallback = await page.request.get(
+        `/api/auth/${provider}/callback`,
+      );
+      expect(removedCallback.status()).toBe(404);
+    }
+
     const invalidProvider = await page.request.delete(
       '/api/users/accounts/not-a-provider',
     );

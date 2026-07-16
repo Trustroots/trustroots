@@ -52,7 +52,7 @@ exports.getSuggestion = async function getSuggestion(req, res, next) {
       {
         $match: {
           'user.public': true,
-          'user.roles': { $nin: ['shadowban'] },
+          'user.roles': { $nin: ['shadowban', 'suspended'] },
           'user.blocked': { $nin: [selfId] },
         },
       },

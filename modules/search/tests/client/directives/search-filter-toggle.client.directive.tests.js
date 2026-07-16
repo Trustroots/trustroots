@@ -74,7 +74,7 @@ describe('Search filter toggle directives', function () {
     };
   }
 
-  it('keeps offer type filters synchronized with toggles', function () {
+  it('normalizes a cached host-only filter to include meetups', function () {
     const { controller, scope } = compileDirective(
       '<div tr-types-toggle="types"></div>',
       {
@@ -85,6 +85,32 @@ describe('Search filter toggle directives', function () {
     expect(controller.toggles).toEqual({
       host: true,
     });
+    expect(scope.types).toEqual(['host', 'meet']);
+  });
+
+  it('keeps meetups published when Hosts is turned off', function () {
+    const { controller, scope } = compileDirective(
+      '<div tr-types-toggle="types"></div>',
+      {
+        types: ['host', 'meet'],
+      },
+    );
+
+    controller.toggles.host = false;
+    controller.onToggleChange();
+    scope.$digest();
+
+    expect(scope.types).toEqual(['meet']);
+  });
+
+  it('keeps offer type filters synchronized with toggles', function () {
+    const { controller, scope } = compileDirective(
+      '<div tr-types-toggle="types"></div>',
+      {
+        types: ['host', 'meet'],
+      },
+    );
+
     expect(controller.types).toEqual([
       jasmine.objectContaining({
         id: 'host',
@@ -92,27 +118,13 @@ describe('Search filter toggle directives', function () {
       }),
     ]);
 
-    controller.toggles = {
-      host: false,
-      meet: true,
-    };
-    controller.onToggleChange();
-    scope.$digest();
-
-    expect(scope.types).toEqual(['meet']);
-
-    scope.types = ['host', 'meet'];
-    scope.$digest();
-
-    expect(controller.toggles).toEqual({
-      host: true,
-      meet: true,
-    });
-
     scope.types = [];
     scope.$digest();
 
-    expect(controller.toggles).toEqual({});
+    expect(controller.toggles).toEqual({
+      host: false,
+    });
+    expect(scope.types).toEqual(['meet']);
   });
 
   it('accepts object-backed offer type filters from outside the directive', function () {
@@ -123,15 +135,18 @@ describe('Search filter toggle directives', function () {
       },
     );
 
-    expect(controller.toggles).toEqual({});
+    expect(controller.toggles).toEqual({
+      host: false,
+    });
+    expect(scope.types).toEqual(['meet']);
 
     scope.types = [{ id: 'host' }, { id: 'meet' }];
     scope.$digest();
 
     expect(controller.toggles).toEqual({
       host: true,
-      meet: true,
     });
+    expect(scope.types).toEqual(['host', 'meet']);
   });
 
   it('keeps tribe filters synchronized with toggles', function () {

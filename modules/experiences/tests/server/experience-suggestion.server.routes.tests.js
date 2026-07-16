@@ -12,7 +12,7 @@ const Experience = mongoose.model('Experience');
 describe('Experience suggestion', () => {
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
-  const userData = utils.generateUsers(7, { public: true });
+  const userData = utils.generateUsers(8, { public: true });
   let users;
 
   beforeEach(async () => {
@@ -20,6 +20,7 @@ describe('Experience suggestion', () => {
 
     users[4].public = false;
     users[5].roles = ['user', 'shadowban'];
+    users[7].roles = ['user', 'suspended'];
     users[0].blocked = [users[6]._id];
     users[6].blocked = [users[0]._id];
     await Promise.all([
@@ -27,6 +28,7 @@ describe('Experience suggestion', () => {
       users[5].save(),
       users[0].save(),
       users[6].save(),
+      users[7].save(),
     ]);
 
     await Contact.create([
@@ -36,6 +38,7 @@ describe('Experience suggestion', () => {
       { userFrom: users[0]._id, userTo: users[4]._id, confirmed: true },
       { userFrom: users[0]._id, userTo: users[5]._id, confirmed: true },
       { userFrom: users[0]._id, userTo: users[6]._id, confirmed: true },
+      { userFrom: users[0]._id, userTo: users[7]._id, confirmed: true },
     ]);
 
     await Experience.create([

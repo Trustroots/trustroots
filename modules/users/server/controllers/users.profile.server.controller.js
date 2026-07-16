@@ -918,6 +918,16 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.salt;
   delete profile.roles;
 
+  // Legacy social connections are still shown so members can remove them,
+  // but provider credentials must never be embedded in the client session.
+  _.forEach(profile.additionalProvidersData, function (providerData) {
+    if (_.isObject(providerData)) {
+      delete providerData.accessToken;
+      delete providerData.refreshToken;
+      delete providerData.accessTokenExpires;
+    }
+  });
+
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;
   delete profile.publicReminderSent;
