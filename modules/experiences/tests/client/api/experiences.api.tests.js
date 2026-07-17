@@ -6,6 +6,7 @@ import {
   readMine,
   report,
   getCount,
+  getSuggestion,
 } from '@/modules/experiences/client/api/experiences.api';
 
 jest.mock('axios');
@@ -82,5 +83,17 @@ describe('experiences api', () => {
     axios.get.mockRejectedValueOnce(new Error('boom'));
 
     await expect(getCount('user-1')).resolves.toEqual({ count: 0 });
+  });
+
+  it('returns an experience suggestion', async () => {
+    const suggestion = {
+      _id: 'user-1',
+      displayName: 'Casey Contact',
+      username: 'casey-contact',
+    };
+    axios.get.mockResolvedValueOnce({ data: suggestion });
+
+    await expect(getSuggestion()).resolves.toBe(suggestion);
+    expect(axios.get).toHaveBeenCalledWith('/api/experiences/suggestion');
   });
 });

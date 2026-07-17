@@ -1,4 +1,4 @@
-/* eslint-disable angular/log */
+/* eslint-disable angular/log, angular/window-service */
 
 // nostr-tools v2 exposes subpaths via the package.json `exports` map, which
 // webpack 4 can't resolve, so import the CJS build file directly.
@@ -37,8 +37,9 @@ export default class NostrService {
   /**
    * @param {string} relayUrl — WebSocket URL of the Nostr relay
    */
-  constructor(relayUrl) {
+  constructor(relayUrl, validationPubkey = NOSTROOTS_VALIDATION_PUBKEY) {
     this.relayUrl = relayUrl;
+    this.validationPubkey = validationPubkey;
     this.relay = null;
     this.subscriptions = new Map();
     this.usernameCache = new Map();
@@ -109,7 +110,7 @@ export default class NostrService {
       [
         {
           kinds: [30398],
-          authors: [NOSTROOTS_VALIDATION_PUBKEY],
+          authors: [this.validationPubkey],
           limit,
         },
       ],
@@ -176,7 +177,7 @@ export default class NostrService {
           { kinds: [30397], authors: [pubkeyHex], limit },
           {
             kinds: [30398],
-            authors: [NOSTROOTS_VALIDATION_PUBKEY],
+            authors: [this.validationPubkey],
             '#p': [pubkeyHex],
             limit,
           },
@@ -249,4 +250,21 @@ export default class NostrService {
   }
 }
 
-export const nostrService = new NostrService(NOSTR_RELAY_URL);
+function runtimeValidationPubkey() {
+  /* istanbul ignore next -- exercised by the browser E2E bundle only */
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1') &&
+    window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__
+  ) {
+    return window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__;
+  }
+
+  return NOSTROOTS_VALIDATION_PUBKEY;
+}
+
+export const nostrService = new NostrService(
+  NOSTR_RELAY_URL,
+  runtimeValidationPubkey(),
+);

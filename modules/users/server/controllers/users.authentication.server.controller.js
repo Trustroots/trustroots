@@ -7,10 +7,7 @@ const emailService = require('../../../core/server/services/email.server.service
 const userProfile = require('./users.profile.server.controller');
 const authenticationService = require('../services/authentication.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');
-const facebook = require('../../../../config/lib/facebook-api.js');
-const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
-const moment = require('moment');
 const passport = require('passport');
 const async = require('async');
 const crypto = require('crypto');
@@ -358,89 +355,13 @@ exports.signin = function (req, res, next) {
 /**
  * Signout
  */
-exports.signout = function (req, res) {
-  req.logout();
-  res.redirect('/');
-};
-
-/**
- * OAuth callback
- */
-exports.oauthCallback = function (strategy) {
-  return function (req, res, next) {
-    const defaultRedirectUrl = '/profile/edit/networks';
-
-    passport.authenticate(strategy, function (err, user, redirectURL) {
-      if (err) {
-        log('error', 'oAuth callback error #h3hg82', {
-          strategy,
-          err,
-        });
-        return res.redirect(defaultRedirectUrl);
-      }
-
-      if (!user) {
-        log('error', 'oAuth callback requires authenticated user #g82bff', {
-          strategy,
-        });
-        return res.redirect('/signin');
-      }
-
-      req.login(user, function (err) {
-        if (err) {
-          log('error', 'oAuth callback failed to login user #h2bgff', {
-            strategy,
-          });
-          return res.redirect('/signin');
-        }
-
-        return res.redirect(redirectURL || defaultRedirectUrl);
-      });
-    })(req, res, next);
-  };
-};
-
-/**
- * Helper function to update a OAuth user profile
- * Doesn't let users sign up using providers;
- * - They'll first sign up using local.js strategy
- * - Then they can connect their profiles to other networks using other strategies (eg. GitHub)
- */
-exports.saveOAuthUserProfile = function (req, providerUserProfile, done) {
-  if (!req.user) {
-    return done(
-      new Error('You must be logged in to connect to other networks.'),
-      null,
-    );
-  } else {
-    // User is already logged in, join the provider data to the existing user
-    const user = req.user;
-
-    // Check if user exists, is not signed in using this provider, and doesn't have that provider data already configured
-    if (
-      user.provider !== providerUserProfile.provider &&
-      (!user.additionalProvidersData ||
-        !user.additionalProvidersData[providerUserProfile.provider])
-    ) {
-      // Add the provider data to the additional provider data field
-      if (!user.additionalProvidersData) user.additionalProvidersData = {};
-      user.additionalProvidersData[providerUserProfile.provider] =
-        providerUserProfile.providerData;
-
-      // Then tell mongoose that we've updated the additionalProvidersData field
-      user.markModified('additionalProvidersData');
-
-      // And save the user
-      user.save(function (err) {
-        return done(err, user, '/profile/edit/networks');
-      });
-    } else {
-      return done(
-        new Error('You are already connected using this network.'),
-        user,
-      );
+exports.signout = function (req, res, next) {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
     }
-  }
+    return res.redirect('/');
+  });
 };
 
 /**
@@ -475,6 +396,10 @@ exports.removeOAuthProvider = function (req, res) {
     user.markModified('additionalProvidersData');
   }
 
+  if (provider === 'facebook' && user.avatarSource === 'facebook') {
+    user.avatarSource = 'gravatar';
+  }
+
   user.save(function (err) {
     if (err) {
       return res.status(400).send({
@@ -492,187 +417,6 @@ exports.removeOAuthProvider = function (req, res) {
       });
     }
   });
-};
-
-/**
- * Update Facebook oAuth token
- */
-exports.updateFacebookOAuthToken = function (req, res) {
-  // Return error if no accessToken or userID
-  if (!req.body.accessToken || !req.body.userID) {
-    return res.status(400).send({
-      message: 'Missing `accessToken` or `userID`.',
-    });
-  }
-
-  // No authenticated user
-  if (!req.user) {
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
-  }
-
-  // Shorthand for user and avoid need to access `req.user._doc`:
-  // http://stackoverflow.com/a/34780800/1984644
-  const userObject = req.user.toObject();
-
-  // Currently authenticated user isn't connected to Facebook
-  if (!_.has(userObject, 'additionalProvidersData.facebook')) {
-    log(
-      'error',
-      'Currently authenticated user is not connected to Facebook #k2lJRK',
-      {
-        userId: userObject._id.toString(),
-        requestedFbUserId: req.body.userID,
-      },
-    );
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
-  }
-
-  // Currently authenticated user has different FB ID
-  if (userObject.additionalProvidersData.facebook.id !== req.body.userID) {
-    log(
-      'error',
-      'Facebook user ids not matching when updating the token #jFiHjf',
-      {
-        userId: userObject._id.toString(),
-        requestedFbUserId: req.body.userID,
-      },
-    );
-    return res.status(403).send({
-      message: errorService.getErrorMessageByKey('forbidden'),
-    });
-  }
-
-  async.waterfall(
-    [
-      // Generate long lived token (60 days) out from short lived token (~hours)
-      function (done) {
-        exports.extendFBAccessToken(req.body.accessToken, done);
-      },
-
-      // Save new token to user's profile
-      function (accessTokenResponse, done) {
-        // We can't use above `userObject` to perform Mongoose's `markModified` or `save` methods
-        const user = req.user;
-
-        if (accessTokenResponse.expires) {
-          // Update token's expiration date if available
-          user.additionalProvidersData.facebook.accessTokenExpires =
-            accessTokenResponse.expires;
-        } else {
-          // Otherwise, delete previously stored date
-          delete user.additionalProvidersData.facebook.accessTokenExpires;
-        }
-
-        // Update oAuth token
-        user.additionalProvidersData.facebook.accessToken =
-          accessTokenResponse.token;
-
-        // Then tell mongoose that we've updated the additionalProvidersData field
-        user.markModified('additionalProvidersData');
-
-        // Save modified user
-        user.save(done);
-      },
-    ],
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-
-      // All done & good
-      return res.json({
-        message: 'Token updated.',
-      });
-    },
-  );
-};
-
-/**
- * Generate a long-lived token (60 days) from a short-lived token (~hours)
- * https://developers.facebook.com/docs/facebook-login/access-tokens/expiration-and-extension
- *
- * An important note: Apps are unable to exchange an expired short-lived token
- * for a long-lived token. The flow here only works with short-lived tokens
- * that are still valid. Once they expire, your app must send the user through
- * the login flow again to generate a new short-lived token.
- *
- * @param {String} shortAccessToken - short lived FB access token
- * @param {Function} callback - `function (err, result)`
- */
-exports.extendFBAccessToken = function (shortAccessToken, callback) {
-  const fbClientID = _.get(config, 'facebook.clientID');
-  const fbClientSecret = _.get(config, 'facebook.clientSecret');
-
-  // Return error if no short-lived access token provided
-  if (!shortAccessToken || !_.isString(shortAccessToken)) {
-    log('error', 'Missing short-lived access token #tkj0GJ');
-    return callback(new Error('Missing access token.'), {});
-  }
-
-  // Return error if Facebook connection isn't configured
-  if (!fbClientID || !fbClientSecret) {
-    log(
-      'error',
-      'No Facebook client configured when attemping to extend FB access token #FKeo2k',
-    );
-    return callback(
-      new Error(errorService.getErrorMessageByKey('default')),
-      {},
-    );
-  }
-
-  facebook.extendAccessToken(
-    {
-      access_token: shortAccessToken,
-      client_id: fbClientID,
-      client_secret: fbClientSecret,
-    },
-    function (err, accessTokenResponse) {
-      if (err) {
-        log('error', 'Failed to extend Facebook access token. #JG3jk3', {
-          error: err,
-        });
-        return callback(err);
-      }
-
-      const accessToken = _.get(accessTokenResponse, 'access_token');
-      const accessTokenExpires = _.get(accessTokenResponse, 'expires_in');
-
-      // Response from FB doesn't include access token
-      if (!accessToken) {
-        log(
-          'error',
-          'Missing extended Facebook access token from response. #jlkFLl',
-          {
-            response: accessTokenResponse,
-          },
-        );
-        return callback(
-          new Error(errorService.getErrorMessageByKey('default')),
-          {},
-        );
-      }
-
-      // Callback's response object
-      const response = {
-        token: accessToken,
-      };
-
-      // Response from FB contains `expires_in` in seconds
-      // Turn that into a date in future
-      if (_.isNumber(accessTokenExpires)) {
-        response.expires = moment().add(accessTokenExpires, 'seconds').toDate();
-      }
-
-      return callback(err, response);
-    },
-  );
 };
 
 /**

@@ -1254,6 +1254,42 @@ describe('Profile controller unit tests', () => {
       (sanitized.roles === undefined).should.be.true();
     });
 
+    it('retains only the minimal public identity for legacy providers', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.additionalProvidersData = {
+        facebook: {
+          id: 'fictional-facebook-id',
+          accessToken: 'fictional-access-token',
+          refreshToken: 'fictional-refresh-token',
+          accessTokenExpires: new Date(),
+          email: 'legacy-facebook@example.test',
+          _json: { name: 'Fictional Facebook Member' },
+        },
+        github: {
+          login: 'fictional-github-login',
+          accessToken: 'fictional-github-token',
+          id: 123,
+          email: 'legacy-github@example.test',
+        },
+        twitter: {
+          screen_name: 'fictional-twitter-member',
+          token: 'fictional-twitter-token',
+          tokenSecret: 'fictional-twitter-secret',
+          _json: { name: 'Fictional Twitter Member' },
+        },
+        unknown: { id: 'unknown-id', accessToken: 'unknown-token' },
+      };
+
+      const sanitized = profileController.sanitizeProfile(userDoc, userDoc);
+
+      sanitized.additionalProvidersData.should.deepEqual({
+        facebook: { id: 'fictional-facebook-id' },
+        github: { login: 'fictional-github-login' },
+        twitter: { screen_name: 'fictional-twitter-member' },
+      });
+    });
+
     it('collects member tribe ids from unpopulated memberships', async () => {
       const tribe = await new Tribe({ label: 'ObjectId Tribe' }).save();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));

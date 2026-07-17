@@ -539,10 +539,10 @@ export default function SearchMap({
   // Apply externally changed bounds object
   // Changed by Angular search sidebar
   useEffect(() => {
-    if (bounds?.northEast && bounds?.southWest) {
+    if (webGLSupported && bounds?.northEast && bounds?.southWest) {
       zoomToBounds(bounds);
     }
-  }, [bounds]);
+  }, [bounds, webGLSupported]);
 
   // Apply externally changed filters object
   // Changed by Angular search sidebar
@@ -603,6 +603,7 @@ export default function SearchMap({
   if (!webGLSupported) {
     return (
       <LeafletSearchMap
+        bounds={bounds}
         communityNotes={communityNotes}
         offers={offers}
         onCommunityNoteClick={openCommunityNote}

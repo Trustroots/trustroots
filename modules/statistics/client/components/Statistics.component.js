@@ -6,6 +6,7 @@ import styled from 'styled-components';
 
 // Internal dependencies
 import { get } from '../api/statistics.api';
+import { getSuggestion } from '@/modules/experiences/client/api/experiences.api';
 import { getNetworkName } from '@/modules/users/client/utils/networks';
 import Board from '@/modules/core/client/components/Board';
 import Stat from './Stat';
@@ -47,9 +48,64 @@ const PeriodGroup = styled.div`
   }
 `;
 
+const NetworkList = styled.ul`
+  font-size: 18px;
+  margin: 0;
+  max-width: 300px;
+  width: 100%;
+`;
+
+const NetworkRow = styled.li`
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 7px 2px;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+`;
+
+const NetworkLabel = styled.span`
+  align-items: center;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+`;
+
+const LegacyLabel = styled.span`
+  background: #eee;
+  border-radius: 10px;
+  color: #666;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 16px;
+  padding: 0 6px;
+  text-transform: uppercase;
+`;
+
+const NetworkPercentage = styled.span`
+  color: #555;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+`;
+
+const LegacyNote = styled.p`
+  font-size: 12px;
+  line-height: 1.4;
+  margin: 14px auto 0;
+  max-width: 300px;
+`;
+
+const legacyNetworks = new Set(['facebook', 'github']);
+
 export default function Statistics({ isAuthenticated }) {
   const { t } = useTranslation('statistics');
   const [statistics, setStatistics] = useState(false);
+  const [experienceSuggestion, setExperienceSuggestion] = useState(null);
 
   const numberFormat = number =>
     number ? new Intl.NumberFormat().format(number) : 0;
@@ -80,9 +136,13 @@ export default function Statistics({ isAuthenticated }) {
   );
 
   useEffect(async () => {
-    const { data } = await get();
+    const [{ data }, suggestion] = await Promise.all([
+      get(),
+      isAuthenticated ? getSuggestion().catch(() => null) : null,
+    ]);
     setStatistics(data);
-  }, []);
+    setExperienceSuggestion(suggestion);
+  }, [isAuthenticated]);
 
   return (
     <>
@@ -123,9 +183,33 @@ export default function Statistics({ isAuthenticated }) {
                       </Count>
                       <p className="text-muted">
                         {t(
-                          'A lower bound: most people do not share an experience, and only experiences shared since 2016 are counted.',
+                          'This is a lower bound: most people do not share an experience, and Trustroots did not have this experience feature until 2021.',
                         )}
                       </p>
+                      {isAuthenticated && (
+                        <p className="text-muted">
+                          {experienceSuggestion ? (
+                            <>
+                              {t('Help make this picture more complete:')}{' '}
+                              <a
+                                href={`/profile/${experienceSuggestion.username}/experiences/new`}
+                              >
+                                {t(
+                                  'Why not write some nice words about {{contactName}}?',
+                                  {
+                                    contactName:
+                                      experienceSuggestion.displayName,
+                                  },
+                                )}
+                              </a>
+                            </>
+                          ) : (
+                            t(
+                              "Help make this picture more complete by sharing an experience from a member's profile.",
+                            )
+                          )}
+                        </p>
+                      )}
                       <p className="text-muted">
                         {t('{{percentage}}% recommended overall', {
                           percentage: recommendationPercentage,
@@ -270,7 +354,7 @@ export default function Statistics({ isAuthenticated }) {
               </Stat>
 
               <Stat title={t('Connected to networks')}>
-                <ul className="list-unstyled text-right">
+                <NetworkList className="list-unstyled">
                   {!statistics
                     ? Array.from({ length: 6 }, (_, index) => (
                         <li key={index}>
@@ -287,13 +371,28 @@ export default function Statistics({ isAuthenticated }) {
                               count: numberFormat(count),
                             })}
                           >
-                            <li>
-                              {`${getNetworkName(network)} ${percentage}%`}
-                            </li>
+                            <NetworkRow>
+                              <NetworkLabel>
+                                <span>{getNetworkName(network)}</span>
+                                {legacyNetworks.has(network) && (
+                                  <LegacyLabel>{t('Legacy')}</LegacyLabel>
+                                )}
+                              </NetworkLabel>
+                              <NetworkPercentage>
+                                {Number(percentage).toFixed(1)}%
+                              </NetworkPercentage>
+                            </NetworkRow>
                           </Tooltip>
                         ),
                       )}
-                </ul>
+                </NetworkList>
+                {statistics && (
+                  <LegacyNote className="text-muted">
+                    {t(
+                      'Facebook and GitHub percentages represent legacy connections made before social account linking was retired.',
+                    )}
+                  </LegacyNote>
+                )}
               </Stat>
 
               <Stat title={t('Newsletter')}>

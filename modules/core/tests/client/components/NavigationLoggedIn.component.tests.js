@@ -111,6 +111,10 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/',
     );
+    expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
+      'href',
+      '/statistics',
+    );
     const wikiLink = screen.getByRole('link', { name: 'Wiki' });
     expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
     expect(wikiLink).toHaveAttribute('target', '_blank');

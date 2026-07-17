@@ -918,6 +918,29 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.salt;
   delete profile.roles;
 
+  // Legacy social connections are still shown so members can remove them.
+  // Only the identifiers needed for those rows and existing public links may
+  // reach the client; provider payloads can also contain credentials and PII.
+  if (_.isObject(profile.additionalProvidersData)) {
+    const providerIdentityFields = {
+      facebook: ['id'],
+      github: ['login'],
+      twitter: ['screen_name'],
+    };
+    const sanitizedProviders = {};
+
+    _.forEach(providerIdentityFields, function (fields, provider) {
+      if (_.has(profile.additionalProvidersData, provider)) {
+        sanitizedProviders[provider] = _.pick(
+          profile.additionalProvidersData[provider],
+          fields,
+        );
+      }
+    });
+
+    profile.additionalProvidersData = sanitizedProviders;
+  }
+
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;
   delete profile.publicReminderSent;

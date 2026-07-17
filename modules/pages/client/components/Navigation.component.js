@@ -104,6 +104,9 @@ export default function Navigation({ user, onSignout }) {
         <a className="list-group-item" href="/rules">
           {t('Rules')}
         </a>
+        <a className="list-group-item" href="/statistics">
+          {t('Statistics')}
+        </a>
         {/* Disable shop and navigation links - issue #2672
         <a className="list-group-item" href="https://trustroots.teemill.com">
           {t('Shop')}

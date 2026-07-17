@@ -87,10 +87,10 @@ export default function Faq({ category, children }) {
                         {t('Why the name Trustroots?')}
                       </a>
                       <a
-                        href="/faq#why-is-there-facebook-connection"
+                        href="/faq#what-happened-to-facebook-connections"
                         className="list-group-item"
                       >
-                        {t('Why is there Facebook connection?')}
+                        {t('What happened to Facebook connections?')}
                       </a>
                       <a
                         href="/faq#why-is-there-no-forum"

@@ -83,6 +83,12 @@ describe('NostrService', () => {
       expect(service.usernameCache).toBeInstanceOf(Map);
       expect(service.usernameCache.size).toBe(0);
     });
+
+    it('accepts an explicit validation pubkey', () => {
+      const configured = new NostrService(RELAY_URL, 'fixture-validator');
+
+      expect(configured.validationPubkey).toBe('fixture-validator');
+    });
   });
 
   describe('connect()', () => {
@@ -185,6 +191,26 @@ describe('NostrService', () => {
   });
 
   describe('subscribeMapNotes()', () => {
+    it('uses an explicitly configured validation pubkey', async () => {
+      service = new NostrService(RELAY_URL, 'fixture-validator');
+      const mockSub = { close: jest.fn() };
+      await service.connect();
+      Relay._lastInstance.subscribe.mockReturnValue(mockSub);
+
+      await service.subscribeMapNotes(jest.fn());
+
+      expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
+        [
+          {
+            kinds: [30398],
+            authors: ['fixture-validator'],
+            limit: 500,
+          },
+        ],
+        expect.any(Object),
+      );
+    });
+
     it('subscribes with correct filters for verified notes', async () => {
       const mockSub = { close: jest.fn() };
       await service.connect();

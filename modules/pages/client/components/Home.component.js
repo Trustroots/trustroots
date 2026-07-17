@@ -419,6 +419,9 @@ export default function Home({ user, photoCredits, build }) {
                   <a href="/media">{t('Media')}</a>
                 </li>
                 <li>
+                  <a href="/statistics">{t('Statistics')}</a>
+                </li>
+                <li>
                   <a href="/support">{t('Contact & support')}</a>
                 </li>
               </ul>

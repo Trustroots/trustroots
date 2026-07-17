@@ -279,6 +279,21 @@ describe('Search', () => {
     );
   });
 
+  it('passes selected location bounds directly to the Leaflet renderer', () => {
+    const locationBounds = {
+      northEast: { lat: 52.6755, lng: 13.7611 },
+      southWest: { lat: 52.3383, lng: 13.0884 },
+    };
+    mockIsWebGLSupported.mockReturnValue(false);
+
+    renderSearchMap({ locationBounds });
+
+    expect(mockLeafletSearchMap).toHaveBeenCalledWith(
+      expect.objectContaining({ bounds: locationBounds }),
+    );
+    expect(mockFitBounds).not.toHaveBeenCalled();
+  });
+
   it('stores viewport changes without persisting map dimensions', () => {
     renderSearchMap();
 

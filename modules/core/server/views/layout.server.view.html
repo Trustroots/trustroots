@@ -142,10 +142,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-    {# Facebook #} {% if facebookAppId !== '' %}
-    <meta property="fb:app_id" content="{{facebookAppId}}" />
-    {% endif %} {% if tribe %} <meta property="og:title" content="Join
-    {{tribe.label | striptags | replace('"', '\'') }} on Trustroots"> <meta
+    {% if tribe %} <meta property="og:title" content="Join {{tribe.label |
+    striptags | replace('"', '\'') }} on Trustroots"> <meta
     property="og:description" content="Join to meet, host and get hosted by
     Trustroots circle {{tribe.label | striptags | replace('"', '\'')}}.
     Trustroots is a travellers' community for sharing, hosting and getting
@@ -288,7 +286,6 @@
     <script nonce="{{ nonce }}">
       var title = "{{title}}",
           settings = {{ appSettings | dump | safe }},
-          {% if facebookAppId !== '' %}facebookAppId = "{{facebookAppId}}",{% endif %}
           {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
           env = "{{ env }}",
           isNativeMobileApp = {{ isNativeMobileApp }},

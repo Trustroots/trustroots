@@ -250,40 +250,6 @@
         </div>
       </div>
       <!-- /Facebook photo -->
-      <!-- Facebook photo - when NOT connected to FB-->
-      <div
-        class="row profile-edit-avatar-choise"
-        ng-if="!profileEditPhoto.user.additionalProvidersData.facebook"
-      >
-        <div class="col-xs-12 col-md-3">
-          <div
-            tr-avatar
-            data-size="128"
-            data-link="false"
-            data-source="none"
-          ></div>
-        </div>
-        <div class="col-xs-12 col-md-3 profile-edit-avatar-label">
-          <div class="flex-centered radio disabled">
-            <label
-              uib-tooltip="Connect first to Facebook"
-              tooltip-placement="bottom"
-            >
-              <input type="radio" disabled />
-              Facebook
-            </label>
-          </div>
-        </div>
-        <div class="col-xs-12 col-md-6 text-center">
-          <div class="flex-centered">
-            <a href="/api/auth/facebook" target="_top" class="btn btn-primary">
-              <i class="icon-facebook"></i> Connect first to Facebook
-            </a>
-          </div>
-        </div>
-      </div>
-      <!-- /Facebook photo - when NOT connected to FB-->
-
       <br />
 
       <!-- No photo -->

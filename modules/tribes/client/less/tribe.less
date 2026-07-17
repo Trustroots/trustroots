@@ -27,9 +27,12 @@
 }
 .tribe-header-info {
   width: 100%;
-  min-height: 680px;
-  height: 100vh;
-  overflow: auto;
+  min-height: 0;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
   background: linear-gradient(
     to right,
     rgba(0, 0, 0, 0.65) 0%,

@@ -82,3 +82,14 @@ export async function getCount(userTo) {
     return { count: 0 };
   }
 }
+
+/**
+ * API request: get one contact for whom the logged-in member can share an
+ * experience.
+ *
+ * @returns {object|null} a minimal public member profile or null
+ */
+export async function getSuggestion() {
+  const { data } = await axios.get('/api/experiences/suggestion');
+  return data;
+}

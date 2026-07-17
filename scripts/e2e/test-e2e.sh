@@ -350,11 +350,21 @@ npx playwright test "$@"
 playwright_status="$?"
 set -e
 
+set +e
 if [ "$playwright_status" -eq 0 ]; then
   write_status "passed" 0 "End-to-end Playwright tests passed."
 else
   write_status "failed" "$playwright_status" "End-to-end Playwright tests failed."
 fi
+summarize_status="$?"
+set -e
 
 generate_coverage_report
-exit "$playwright_status"
+
+# Prefer the Playwright exit code when tests failed. Otherwise honour the
+# summariser, which fails the run when required feature scenarios are missing.
+if [ "$playwright_status" -ne 0 ]; then
+  exit "$playwright_status"
+fi
+
+exit "$summarize_status"
