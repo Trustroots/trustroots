@@ -219,13 +219,6 @@ module.exports = {
       inlineMeta: true,
     },
   },
-  sentry: {
-    enabled: false,
-    options: {
-      dsn: '',
-      // Note: integrations are defined directly at `Sentry.init()`, don't add them here.
-    },
-  },
   // Spam detection
   // https://akismet.com/
   akismet: {

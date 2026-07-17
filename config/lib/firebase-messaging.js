@@ -1,12 +1,13 @@
-const firebase = require('firebase-admin');
+const { cert, initializeApp } = require('firebase-admin/app');
+const { getMessaging } = require('firebase-admin/messaging');
 const config = require('../config');
 const serviceAccount = config.fcm.serviceAccount;
 
 if (serviceAccount) {
-  firebase.initializeApp({
-    credential: firebase.credential.cert(serviceAccount),
+  const app = initializeApp({
+    credential: cert(serviceAccount),
   });
-  module.exports = firebase.messaging();
+  module.exports = getMessaging(app);
 } else {
   console.info('fcm.serviceAccount not set');
 }

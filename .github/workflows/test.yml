@@ -95,6 +95,7 @@ jobs:
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
+          mkdir -p ../../coverage/client
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
@@ -120,7 +121,6 @@ jobs:
             status="failed"
             message="Client coverage failed."
           fi
-          mkdir -p ../../coverage/client
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
           COMMAND="npm run test:coverage:client && npm run coverage:check -- --scope=client" \
           node - <<'NODE'
@@ -186,6 +186,7 @@ jobs:
       - name: Test server with coverage
         working-directory: deploy/docker
         run: |
+          mkdir -p ../../coverage/server
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
@@ -214,7 +215,6 @@ jobs:
             status="failed"
             message="Server coverage failed."
           fi
-          mkdir -p ../../coverage/server
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
           COMMAND="npm run test:coverage:server && npm run coverage:check -- --scope=server" \
           node - <<'NODE'
@@ -284,6 +284,9 @@ jobs:
       - name: Test end-to-end smoke suite
         working-directory: deploy/docker
         run: |
+          export TRUSTROOTS_BUILD_COMMIT="$(git rev-parse HEAD)"
+          export TRUSTROOTS_BUILD_COMMITTED_AT="$(git show -s --format=%cI HEAD)"
+          export TRUSTROOTS_BUILD_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
@@ -295,6 +298,9 @@ jobs:
             -e TRUSTROOTS_E2E_WORKERS=2 \
             -e TRUSTROOTS_E2E_SERIAL_PROJECTS=true \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
+            -e TRUSTROOTS_BUILD_COMMIT \
+            -e TRUSTROOTS_BUILD_COMMITTED_AT \
+            -e TRUSTROOTS_BUILD_BRANCH \
             dev npm run test:e2e
       - name: Upload Playwright report
         if: always()

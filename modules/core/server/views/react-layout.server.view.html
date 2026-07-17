@@ -1,7 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-controller="AppController as app" ng-csp>
-  {# Read more about `ng-csp`: https://docs.angularjs.org/api/ng/directive/ngCsp
-  #}
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
@@ -9,36 +7,30 @@
       name="viewport"
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
-    <title tr-page-title>
+    <title>
       {% if tribe %}{{ tribe.label | striptags }} - Trustroots circle{% else
       %}{{ title }}{% endif %}
     </title>
     <base href="/" />
     <meta name="fragment" content="!" />
-    {% for cssFile in cssFiles %}
+    {% for cssFile in reactCssFiles %}
     <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
-    {% endfor %} {# Sentry DSN - make sure this is above scripts #} {% if
-    sentry.enabled === true %}
+    {% endfor %} {% if sentry.enabled === true %}
     <script nonce="{{ nonce }}">
       window.SENTRY_DSN = '{{ sentry.options.dsn }}';
     </script>
-    {% endif %} {% if env === 'development' or env === 'test' %} {# in dev/test
-    load js in head, as it also contains CSS, so we prevent flash of unstyled
-    page #} {% for jsFile in jsFiles %}
+    {% endif %} {% if env === 'development' or env === 'test' %} {% for jsFile
+    in reactJsFiles %}
     <script
       src="/{{jsFile}}?c={{appSettings.commit}}"
       nonce="{{ nonce }}"
     ></script>
-    {% endfor %} {% endif %} {# Prefech some domains that are used for user
-    avatars and circle images #} {#
-    https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-DNS-Prefetch-Control
-    #}
+    {% endfor %} {% endif %}
     <link rel="dns-prefetch" href="//api.tiles.mapbox.com" />
     <link rel="dns-prefetch" href="//graph.facebook.com" />
     <link rel="dns-prefetch" href="//gravatar.com" />
     <link rel="dns-prefetch" href="//ucarecdn.com" />
 
-    {# Generic / Android / Firefox #}
     <meta name="description" content="{{description}}" />
     {% if googlePage !== '' %}
     <link rel="publisher" href="{{googlePage}}" />
@@ -52,36 +44,6 @@
       type="image/png"
       href="{{hostPort}}/img/icons/android/512.png"
       sizes="512x512"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{hostPort}}/img/icons/android/192.png"
-      sizes="192x192"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{hostPort}}/img/icons/android/144.png"
-      sizes="144x144"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{hostPort}}/img/icons/android/96.png"
-      sizes="96x96"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{hostPort}}/img/icons/android/72.png"
-      sizes="72x72"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{hostPort}}/img/icons/android/48.png"
-      sizes="48x48"
     />
     <link
       rel="icon shortcut"
@@ -98,59 +60,19 @@
       id="favicon"
     />
 
-    {# Apple #}
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="152x152"
-      href="{{hostPort}}/img/icons/ios/Icon-76@2x.png"
-    />
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="120x120"
-      href="{{hostPort}}/img/icons/ios/Icon-60@2x.png"
-    />
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="76x76"
-      href="{{hostPort}}/img/icons/ios/Icon-76.png"
-    />
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="60x60"
-      href="{{hostPort}}/img/icons/ios/Icon-60.png"
-    />
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="144x144"
-      href="{{hostPort}}/img/icons/ios/Icon-72@2x.png"
-    />
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="114x114"
-      href="{{hostPort}}/img/icons/ios/Icon@2x.png"
-    />
-    <link
-      rel="apple-touch-icon-precomposed"
-      sizes="72x72"
-      href="{{hostPort}}/img/icons/ios/Icon-72.png"
-    />
-    <link
-      rel="apple-touch-icon"
-      sizes="57x57"
-      href="{{hostPort}}/img/icons/ios/Icon.png"
-    />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-    {% if tribe %} <meta property="og:title" content="Join {{tribe.label |
-    striptags | replace('"', '\'') }} on Trustroots"> <meta
-    property="og:description" content="Join to meet, host and get hosted by
-    Trustroots circle {{tribe.label | striptags | replace('"', '\'')}}.
+    {% if facebookAppId !== '' %}
+    <meta property="fb:app_id" content="{{facebookAppId}}" />
+    {% endif %} {% if tribe %} <meta property="og:title" content="Join
+    {{tribe.label | striptags | replace('"', '\'') }} on Trustroots circle">
+    <meta property="og:description" content="Join to meet, host and get hosted
+    by Trustroots circle {{tribe.label | striptags | replace('"', '\'')}}.
     Trustroots is a travellers' community for sharing, hosting and getting
     people together.">
     <meta property="og:url" content="{{hostPort}}/circles/{{tribe.slug}}" />
-    {% if tribe.image %} {#
-    https://developers.facebook.com/docs/sharing/best-practices#images #}
+    {% if tribe.image %}
     <meta
       property="og:image"
       content="{{hostPort}}/uploads-circle/{{tribe.slug}}/1400x900.jpg"
@@ -176,7 +98,7 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_GB" />
 
-    {# Twitter #} {% if twitterUsername %}
+    {% if twitterUsername %}
     <meta name="twitter:site" content="{{twitterUsername}}" />
     {% endif %} {% if tribe %}
     <meta name="twitter:card" content="summary_large_image" />
@@ -198,7 +120,7 @@
     <meta name="twitter:description" content="{{description}}" />
     <meta name="twitter:url" content="{{hostPort}}/" />
     <meta name="twitter:image" content="{{hostPort}}/img/og_image.jpg" />
-    {% endif %} {# MS #}
+    {% endif %}
     <meta name="msapplication-tap-highlight" content="no" />
     <meta name="msapplication-TileColor" content="#FFFFFF" />
     <meta
@@ -206,7 +128,7 @@
       content="{{hostPort}}/img/icons/apple-touch-icon-144x144-precomposed.png"
     />
 
-    {# Google Analytics #} {% if googleAnalytics.enabled === true %}
+    {% if googleAnalytics.enabled === true %}
     <script nonce="{{ nonce }}">
       (function (i, s, o, g, r, a, m) {
         i['GoogleAnalyticsObject'] = r;
@@ -229,7 +151,6 @@
       );
       ga('create', '{{ googleAnalytics.code }}', 'auto');
     </script>
-    <!-- https://www.trustroots.org/privacy -->
     {% endif %} {# Umami Analytics #}
     <script
       defer
@@ -239,60 +160,20 @@
       nonce="{{ nonce }}"
     ></script>
   </head>
-  <body
-    ng-cloak
-    {%
-    if
-    siteAnnouncement.enabled
-    %}
-    ng-class="{ 'is-site-announcement-visible': app.user && !app.isSiteAnnouncementClosed }"
-    {%
-    endif
-    %}
-  >
-    <div id="tr-wrap">
-      {% block header %} {% include './partials/header.server.view.html' %} {%
-      endblock header %} {# Flash messages #}
-      <mc-messages aria-live="polite" role="status"></mc-messages>
+  <body>
+    {% block content %}{% endblock content %}
 
-      {# Site wide notifications #} {# Enabled from `local.js` config #} {% if
-      siteAnnouncement.enabled %}
-      <div
-        class="alert alert-success site-announcement"
-        ng-if="app.user && !app.isSiteAnnouncementClosed"
-        aria-label="Site announcement"
-        role="dialog"
-      >
-        <div aria-role="document" tabindex="0">
-          {{siteAnnouncement.message}}
-        </div>
-        <a
-          class="close"
-          ng-click="app.isSiteAnnouncementClosed = true;"
-          data-dismiss="alert"
-          aria-label="Hide site announcement"
-          >×</a
-        >
-      </div>
-      {% endif %}
-
-      <article class="content" id="tr-main" role="main" tabindex="-1">
-        {% block content %}{% endblock content %}
-      </article>
-    </div>
-
-    {% block footer %} {% include './partials/footer.server.view.html' %} {%
-    endblock footer %} {# Embedding constants coming from the backend #}
     <script nonce="{{ nonce }}">
       var title = "{{title}}",
           settings = {{ appSettings | dump | safe }},
+          {% if facebookAppId !== '' %}facebookAppId = "{{facebookAppId}}",{% endif %}
           {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
           env = "{{ env }}",
           isNativeMobileApp = {{ isNativeMobileApp }},
           user = {{ user | dump | safe }};
     </script>
 
-    {% if env === 'production' %} {% for jsFile in jsFiles %}
+    {% if env === 'production' %} {% for jsFile in reactJsFiles %}
     <script
       src="/{{jsFile}}?c={{appSettings.commit}}"
       nonce="{{ nonce }}"

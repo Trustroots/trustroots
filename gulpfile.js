@@ -7,14 +7,11 @@ const _ = require('lodash');
 const defaultAssets = require('./config/assets/default');
 const glob = require('glob');
 const gulp = require('gulp');
-const gulpLoadPlugins = require('gulp-load-plugins');
 const Mocha = require('mocha');
 const minimatch = require('minimatch');
 const path = require('path');
 const del = require('del');
 const nodemon = require('nodemon');
-const print = require('gulp-print').default;
-const plugins = gulpLoadPlugins();
 
 // Local settings
 let changedTestFiles = [];
@@ -128,22 +125,7 @@ gulp.task('clean', function clean() {
   return del(['public/dist/*.js']);
 });
 
-// Generate font icon files from Fontello.com
-function fontello() {
-  return gulp
-    .src(defaultAssets.server.fontelloConfig)
-    .pipe(
-      plugins.fontello({
-        font: 'font', // Destination dir for Fonts and Glyphs
-        css: 'css', // Destination dir for CSS Styles,
-        assetsOnly: false,
-      }),
-    )
-    .pipe(print())
-    .pipe(gulp.dest('modules/core/client/fonts/fontello'));
-}
-
-function mocha(done) {
+function runMocha(done) {
   // Open mongoose connections
   const mongooseService = require('./config/lib/mongoose');
   const agenda = require('./config/lib/agenda');
@@ -184,7 +166,9 @@ function mocha(done) {
               if (failures) {
                 error = new Error(`${failures} server test(s) failed.`);
               }
-              mochaRunner.unloadFiles();
+              if (typeof mochaRunner.unloadFiles === 'function') {
+                mochaRunner.unloadFiles();
+              }
 
               // When the tests are done, disconnect agenda/mongoose
               // and pass the error state back to gulp
@@ -206,10 +190,7 @@ function mocha(done) {
   });
 }
 
-// Run fontello update
-gulp.task('fontello', fontello);
-
-gulp.task('test:server', gulp.series(mocha));
+gulp.task('test:server', gulp.series(runMocha));
 
 // Watch all server files for changes & run server tests (test:server) task on changes
 gulp.task(

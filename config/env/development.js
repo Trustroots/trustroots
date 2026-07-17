@@ -44,8 +44,8 @@ module.exports = {
     scriptSrc: 'https://1p.trustroots.org/script.js',
     websiteId: '6c518160-cd10-4233-a3e4-4491ee387a01',
   },
-  // Configuration to work with default MailDev dev setup
-  // https://github.com/djfarrelly/MailDev
+  // Configuration to work with Docker MailDev (SMTP :1025, UI :1080).
+  // See deploy/docker/docker-compose.yml and .devcontainer/docker-compose.yml.
   mailer: {
     from: 'trustroots@localhost',
     options: {

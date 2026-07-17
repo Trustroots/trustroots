@@ -65,7 +65,7 @@ recreate it when `package.json` / `package-lock.json` change:
 
 ```bash
 docker compose build dev
-docker volume rm trustroots_node_modules   # if native modules (sharp, canvas) misbehave after a rebuild
+docker volume rm trustroots_node_modules   # if native modules misbehave after a rebuild
 docker compose up -d -V --force-recreate dev
 ```
 

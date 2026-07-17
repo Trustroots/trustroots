@@ -39,38 +39,32 @@ if (isReverse) {
 }
 
 function countTotals(done) {
-  sourceCollection
-    .find()
-    .count()
-    .then(
-      function (sourceCount) {
-        console.log('\nSource count: ' + sourceCount);
-        targetCollection
-          .find()
-          .count()
-          .then(
-            function (targetCount) {
-              console.log('Target count: ' + targetCount);
-              console.log('Total: ' + (sourceCount + targetCount) + '\n');
-              done();
-            },
-            function (err) {
-              console.log(
-                'Could not get count of documents in target collection: ' +
-                  targetCollectionName,
-              );
-              console.error(err);
-            },
+  sourceCollection.countDocuments().then(
+    function (sourceCount) {
+      console.log('\nSource count: ' + sourceCount);
+      targetCollection.countDocuments().then(
+        function (targetCount) {
+          console.log('Target count: ' + targetCount);
+          console.log('Total: ' + (sourceCount + targetCount) + '\n');
+          done();
+        },
+        function (err) {
+          console.log(
+            'Could not get count of documents in target collection: ' +
+              targetCollectionName,
           );
-      },
-      function (err) {
-        console.log(
-          'Could not get count of documents in source collection: ' +
-            sourceCollectionName,
-        );
-        console.error(err);
-      },
-    );
+          console.error(err);
+        },
+      );
+    },
+    function (err) {
+      console.log(
+        'Could not get count of documents in source collection: ' +
+          sourceCollectionName,
+      );
+      console.error(err);
+    },
+  );
 }
 
 function moveDoc(doc, callback) {
@@ -122,28 +116,25 @@ async.waterfall(
     // Count total
     function (done) {
       console.log('Counting docs...');
-      sourceCollection
-        .find(filter)
-        .count()
-        .then(function (count) {
-          total = count;
-          if (total <= 0) {
-            console.log('No documents to transfer.');
-            process.exit(0);
-            return;
-          }
+      sourceCollection.countDocuments(filter).then(function (count) {
+        total = count;
+        if (total <= 0) {
+          console.log('No documents to transfer.');
+          process.exit(0);
+          return;
+        }
 
-          console.log(
-            'Going to move ' +
-              total +
-              ' documents from ' +
-              sourceCollectionName +
-              ' to ' +
-              targetCollectionName +
-              '\n',
-          );
-          done();
-        });
+        console.log(
+          'Going to move ' +
+            total +
+            ' documents from ' +
+            sourceCollectionName +
+            ' to ' +
+            targetCollectionName +
+            '\n',
+        );
+        done();
+      });
     },
 
     // Show how many docs each collection has currently
@@ -162,9 +153,7 @@ async.waterfall(
 
       console.log('Fetching docs for transfer...\n');
       // cursor for streaming from mongoDB
-      sourceCollection.find(filter, function (err, cursor) {
-        done(null, cursor);
-      });
+      done(null, sourceCollection.find(filter));
     },
 
     // process docs

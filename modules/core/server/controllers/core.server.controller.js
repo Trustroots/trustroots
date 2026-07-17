@@ -5,6 +5,10 @@ const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
+const {
+  getReactRouteAccessRedirect,
+  getReactRoutePolicy,
+} = require('../../shared/react-route-ownership');
 
 /**
  * Render the main application page
@@ -39,7 +43,19 @@ exports.renderIndex = function (req, res) {
     renderVars.invite = true;
   }
 
-  res.render('index.server.view.html', renderVars);
+  const reactRoutePolicy = getReactRoutePolicy(req.path);
+  const accessRedirect = getReactRouteAccessRedirect(
+    reactRoutePolicy,
+    renderVars.user,
+  );
+  const redirect = reactRoutePolicy?.redirectTo || accessRedirect;
+
+  if (redirect) {
+    return res.redirect(redirect);
+  }
+
+  // All SPA routes use the React shell; unknown paths render React NotFound.
+  res.render('react-index.server.view.html', renderVars);
 };
 
 /**

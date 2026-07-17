@@ -35,26 +35,15 @@ We are also open to improvements that [make trustroots forkable](https://github.
 
 ## nvm & npm
 
-We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage node versions.
+We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage the supported Node.js 24 runtime. Node.js 24 includes the supported npm 11 release.
 
+- `nvm install`
 - `nvm use`
-- `npm -g i npm@latest-7 node-gyp@0.8.0`
-
-It's important to use the latest version of npm v7 and not later.
+- `npm ci`
 
 To be able to install dependencies on macOS / apple silicon, the following dependencies are required:
 
 - `brew install pkg-config cairo pango libpng jpeg giflib librsvg python-setuptools`
-
-Installing mmmagic expects `python` to be a valid binary, which it is not. This can be solved by adding a symlink from `python` to `python3` like so:
-
-- `ln -s "$(brew --prefix)/bin/python"{3,}`
-
-If you're running on apple silicon, you also need to run this command:
-
-- `sed -i '' 's/"rU"/"r"/' ~/.nvm/versions/node/v16.20.2/lib/node_modules/npm/node_modules/node-gyp/gyp/pylib/gyp/input.py`
-
-You might also need to run the linux equivalent of that if you see an error about "ValueError: invalid mode: 'rU' while trying to load binding.gyp". The linux equivalent removes the first set of `''`.
 
 ## Running locally
 
@@ -65,8 +54,13 @@ Choose the setup that fits what you're doing:
 - Dev container: open the repository with **Dev Containers: Reopen in Container**
   and run `npm start` inside the integrated terminal
 
-The host and Docker setups serve the app at http://localhost:3000. Docker also
-starts MailDev at http://localhost:1080.
+The host and Docker setups serve the app at http://localhost:3000.
+
+MailDev (catch outbound mail in development) runs only via Docker Compose or
+the Dev Container, at http://localhost:1080 (SMTP on port 1025). Bare
+`npm start` on the host does not start MailDev — use
+`cd deploy/docker && docker compose up` (or the Dev Container) when you need
+the mail UI.
 
 Docker dev uses hot reload, MailDev, and a shared MongoDB service. See
 [`deploy/docker/README.md`](deploy/docker/README.md) for first-time setup,
