@@ -288,17 +288,19 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(overview).toBeVisible();
       await expect(overview).toHaveCSS('overflow-y', 'auto');
       await expect(overview).toHaveCSS('touch-action', 'pan-y');
-      const isOverviewScrollable = await overview.evaluate(
-        element => element.scrollHeight > element.clientHeight,
-      );
-      if (isOverviewScrollable) {
-        await overview.evaluate(element => {
-          element.scrollTop = element.scrollHeight;
-        });
-        await expect
-          .poll(() => overview.evaluate(element => element.scrollTop))
-          .toBeGreaterThan(0);
-      }
+      await expect
+        .poll(() =>
+          overview.evaluate(
+            element => element.scrollHeight > element.clientHeight,
+          ),
+        )
+        .toBe(true);
+      await overview.evaluate(element => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect
+        .poll(() => overview.evaluate(element => element.scrollTop))
+        .toBeGreaterThan(0);
 
       await expect(
         memberPage.getByRole('button', {
