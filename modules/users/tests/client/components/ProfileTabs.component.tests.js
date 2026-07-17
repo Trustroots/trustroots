@@ -1,24 +1,15 @@
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
 import ProfileTabs from '@/modules/users/client/components/ProfileTabs.component';
-import { $on } from '@/modules/core/client/services/angular-compat';
 import { getCount } from '@/modules/experiences/client/api/experiences.api';
 
-jest.mock('@/modules/core/client/services/angular-compat');
 jest.mock('@/modules/experiences/client/api/experiences.api');
 
 describe('<ProfileTabs />', () => {
-  let stateChangeHandler;
-
   beforeEach(() => {
-    stateChangeHandler = null;
-    $on.mockImplementation((eventName, handler) => {
-      stateChangeHandler = handler;
-      return jest.fn();
-    });
     getCount.mockResolvedValue({ count: 2, hasPending: true });
   });
 
@@ -59,8 +50,8 @@ describe('<ProfileTabs />', () => {
     expect(screen.getByText('2')).toHaveClass('badge');
   });
 
-  it('updates the active tab when Angular reports a route change', () => {
-    render(
+  it('updates the active tab when the route prop changes', () => {
+    const { rerender } = render(
       <ProfileTabs
         contactsCount={1}
         initialPathName="profile.about"
@@ -71,9 +62,17 @@ describe('<ProfileTabs />', () => {
       />,
     );
 
-    act(() => {
-      stateChangeHandler({}, { name: 'profile.contacts' });
-    });
+    rerender(
+      <ProfileTabs
+        activePathName="profile.contacts"
+        contactsCount={1}
+        initialPathName="profile.about"
+        isExperiencesEnabled={false}
+        isOWnProfile={false}
+        userId="user-1"
+        username="alice"
+      />,
+    );
 
     expect(
       screen.getByRole('tab', { name: '1 contacts' }).closest('li'),
@@ -99,10 +98,6 @@ describe('<ProfileTabs />', () => {
     expect(
       screen.queryByRole('tab', { name: /experiences/i }),
     ).not.toBeInTheDocument();
-    expect($on).toHaveBeenCalledWith(
-      '$stateChangeSuccess',
-      expect.any(Function),
-    );
   });
 
   it('shows an experiences notification dot when experiences are pending', async () => {
@@ -178,7 +173,7 @@ describe('<ProfileTabs />', () => {
   });
 
   it('handles route updates that activate the experiences tab', async () => {
-    render(
+    const { rerender } = render(
       <ProfileTabs
         contactsCount={1}
         initialPathName="profile.about"
@@ -189,14 +184,22 @@ describe('<ProfileTabs />', () => {
       />,
     );
 
-    await waitFor(() => expect(stateChangeHandler).not.toBeNull());
+    rerender(
+      <ProfileTabs
+        activePathName="profile.experiences.list"
+        contactsCount={1}
+        initialPathName="profile.about"
+        isExperiencesEnabled
+        isOWnProfile={false}
+        userId="user-1"
+        username="alice"
+      />,
+    );
 
-    act(() => {
-      stateChangeHandler({}, { name: 'profile.experiences.list' });
-    });
-
-    expect(
-      screen.getByRole('tab', { name: /2 experiences/ }).closest('li'),
-    ).toHaveClass('active');
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tab', { name: /2 experiences/ }).closest('li'),
+      ).toHaveClass('active'),
+    );
   });
 });

@@ -221,6 +221,143 @@ describe('Core CRUD tests', function () {
     });
   });
 
+  describe('Frontend app root selection', function () {
+    afterEach(utils.clearDatabase);
+
+    function createUser(overrides) {
+      return new User(
+        Object.assign(
+          {
+            email: 'frontend-root-user@example.com',
+            firstName: 'Frontend',
+            lastName: 'User',
+            password: 'Password123!',
+            provider: 'local',
+            public: true,
+            roles: ['user'],
+            username: 'frontend-root-user',
+          },
+          overrides,
+        ),
+      ).save();
+    }
+
+    it('renders React assets and root for React-owned pages', function (done) {
+      agent.get('/support').end(function (err, res) {
+        should.not.exist(err);
+        res.text.should.containEql('id="tr-react-root"');
+        res.text.should.containEql('assets/react-main.js');
+
+        return done();
+      });
+    });
+
+    it('redirects guests away from protected React-owned pages', function (done) {
+      agent.get('/admin').expect(302).expect('Location', '/signin').end(done);
+    });
+
+    it('redirects non-admin users away from admin React-owned pages', function (done) {
+      const memberCredentials = {
+        password: 'Password123!',
+        username: 'frontend-root-member',
+      };
+
+      createUser({
+        email: 'frontend-root-member@example.com',
+        roles: ['user'],
+        ...memberCredentials,
+      })
+        .then(function () {
+          return utils.signIn(memberCredentials, agent);
+        })
+        .then(function () {
+          agent
+            .get('/admin')
+            .expect(302)
+            .expect('Location', '/volunteering')
+            .end(function (err) {
+              if (err) {
+                return done(err);
+              }
+
+              utils
+                .signOut(agent)
+                .then(() => done())
+                .catch(done);
+            });
+        })
+        .catch(done);
+    });
+
+    it('renders React assets and root for admin users on admin pages', function (done) {
+      const adminCredentials = {
+        password: 'Password123!',
+        username: 'frontend-root-admin',
+      };
+
+      createUser({
+        email: 'frontend-root-admin@example.com',
+        roles: ['user', 'admin'],
+        ...adminCredentials,
+      })
+        .then(function () {
+          return utils.signIn(adminCredentials, agent);
+        })
+        .then(function () {
+          agent.get('/admin').end(function (err, res) {
+            should.not.exist(err);
+            res.text.should.containEql('id="tr-react-root"');
+            res.text.should.containEql('assets/react-main.js');
+            res.text.should.not.containEql('data-ui-view');
+
+            utils
+              .signOut(agent)
+              .then(() => done())
+              .catch(done);
+          });
+        })
+        .catch(done);
+    });
+
+    it('redirects guests away from profile pages', function (done) {
+      agent
+        .get('/profile/alice')
+        .expect(302)
+        .expect('Location', '/signin')
+        .end(done);
+    });
+
+    it('renders React assets and root for authenticated profile pages', function (done) {
+      const profileCredentials = {
+        password: 'Password123!',
+        username: 'frontend-root-profile',
+      };
+
+      createUser({
+        email: 'frontend-root-profile@example.com',
+        roles: ['user'],
+        ...profileCredentials,
+      })
+        .then(function () {
+          return utils.signIn(profileCredentials, agent);
+        })
+        .then(function () {
+          agent.get('/profile/frontend-root-profile').end(function (err, res) {
+            should.not.exist(err);
+            res.text.should.containEql('id="tr-react-root"');
+            res.text.should.containEql('assets/react-main.js');
+            res.text.should.not.containEql('data-ui-view');
+
+            utils
+              .signOut(agent)
+              .then(() => done())
+              .catch(done);
+          });
+        })
+        .catch(done);
+    });
+  });
+
   describe('Legacy redirect routes', function () {
     afterEach(utils.clearDatabase);
 

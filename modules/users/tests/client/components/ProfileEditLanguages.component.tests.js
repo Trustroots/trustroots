@@ -4,9 +4,9 @@ import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
 import ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/core/client/services/angular-compat');
+jest.mock('@/modules/core/client/services/client-runtime');
 jest.mock('@/modules/core/client/components/LanguageSelect', () => {
   function MockLanguageSelect(props) {
     return (
@@ -60,11 +60,11 @@ describe('<ProfileEditLanguages />', () => {
 
     fireEvent.click(select);
 
-    expect($broadcast).toHaveBeenCalledWith('userChanged');
+    expect(broadcastClientEvent).toHaveBeenCalledWith('userChanged');
     expect(onChangeLanguages).toHaveBeenCalledWith(['en', 'pt']);
   });
 
-  it('does not require onChangeLanguages callback prop to update angular state', () => {
+  it('does not require an onChangeLanguages callback to update client state', () => {
     render(
       <ProfileEditLanguages
         profileLanguages={['en']}
@@ -78,7 +78,7 @@ describe('<ProfileEditLanguages />', () => {
 
     fireEvent.click(select);
 
-    expect($broadcast).toHaveBeenCalledWith('userChanged');
+    expect(broadcastClientEvent).toHaveBeenCalledWith('userChanged');
   });
 
   it('always keeps selected languages visible in language select input', () => {

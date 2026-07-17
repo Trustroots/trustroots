@@ -7,15 +7,15 @@ module.exports = {
       '<rootDir>/node_modules/nostr-tools/lib/cjs/relay.js',
     '^nostr-tools/nip19$':
       '<rootDir>/node_modules/nostr-tools/lib/cjs/nip19.js',
-    '^.+\\.(css|jpg|png|gif|webp|svg|less)$':
+    '^.+\\.(css|jpg|png|gif|webp|svg|less|html)$':
       '<rootDir>/jest/jest.empty-module.js',
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.js'],
   testEnvironment: 'jsdom',
+  testRunner: 'jest-jasmine2',
   collectCoverageFrom: [
     '<rootDir>/modules/*/client/**/*.js',
     '!<rootDir>/modules/*/tests/**',
-    '!<rootDir>/modules/*/client/**/*.module.js',
     '!<rootDir>/modules/*/client/**/views/**',
     '!<rootDir>/modules/*/client/**/less/**',
   ],
@@ -24,11 +24,6 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
   transform: {
     '^.+\\.js$': 'babel-jest',
-    '^.+\\.html$': '<rootDir>/jest/jest.transform.html.js',
   },
-  transformIgnorePatterns: [
-    // we want to ignore everything in node_modules
-    // except the html templates inside angular-ui-bootstrap
-    '/node_modules/(?!angular-ui-bootstrap.+\\.html)',
-  ],
+  transformIgnorePatterns: ['/node_modules/'],
 };

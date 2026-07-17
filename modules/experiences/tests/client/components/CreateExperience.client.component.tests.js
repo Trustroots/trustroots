@@ -52,7 +52,7 @@ describe('<CreateExperience />', () => {
     experiencesApi.readMine.mockResolvedValueOnce([]);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     await waitFor(() =>
-      expect(experiencesApi.readMine).toBeCalledWith({
+      expect(experiencesApi.readMine).toHaveBeenCalledWith({
         userWith: userTo._id,
       }),
     );
@@ -71,7 +71,7 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(experiencesApi.readMine).toBeCalledWith({
+    expect(experiencesApi.readMine).toHaveBeenCalledWith({
       userWith: userTo._id,
     });
   });
@@ -89,7 +89,7 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(experiencesApi.readMine).toBeCalledWith({
+    expect(experiencesApi.readMine).toHaveBeenCalledWith({
       userWith: userTo._id,
     });
   });
