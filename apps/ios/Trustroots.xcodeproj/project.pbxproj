@@ -1,0 +1,600 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0E831D2402FCD69878BB4CEF /* NostrIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D160385B89B56C5385E8E9 /* NostrIdentity.swift */; };
+		0EE9C2C716DAC81E1D756A95 /* CircleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */; };
+		15790C63AF0422B5D50AB4EA /* LocationPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5627FC9D7597842E4C1125E1 /* LocationPreviewView.swift */; };
+		29DF2AC39A79037D7C0457CA /* MapFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9474F8363D8A2E281F012D /* MapFilterSheet.swift */; };
+		2B14C92119A7AC3B5F83B6B3 /* TrustrootsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803C2E0AE7321926A1ABB7F0 /* TrustrootsApp.swift */; };
+		39E542290B8429EB621D1D5A /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC27FA444EF5257316FDB35 /* SignInView.swift */; };
+		3DFCCB4DE1888F32FD06A43D /* TrustrootsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A585B155D89FE06EFCB3140 /* TrustrootsTests.swift */; };
+		3F7B4302D3CCCC2F0AEF29F0 /* NIP07Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63684517FEA4D117EEDA1429 /* NIP07Bridge.swift */; };
+		4021B98D81FFA719EFDF01DA /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A72DC40FF60CB3CA2D4A4931 /* Foundation.framework */; };
+		41DFAB865863E84445853B11 /* MemberAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7040954AE5BE42F61ACC6E79 /* MemberAvatarView.swift */; };
+		4951CB2CA766B8942009DE0F /* NostrKeySection.swift in Sources */ = {isa = PBXBuildFile; fileRef = E82F35538CEB951435D8D59F /* NostrKeySection.swift */; };
+		5075F95D7E7D5F5D9D022873 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC636B6F46452816543589A /* EditProfileView.swift */; };
+		5BF5363FD85409C9BDD0E7C3 /* MessageInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDE64017484020751FDBD35 /* MessageInboxView.swift */; };
+		5D53E983A973D00747EA523A /* CommunityNotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D39D0CB9F25268806927E57 /* CommunityNotesStore.swift */; };
+		702E6098414F2BC4B224218A /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7AB2FCB36234867ED449D3 /* ContactsView.swift */; };
+		7125170B263060867C2D9674 /* ContactSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3A8DF28B2E964E6E81F6FC /* ContactSupportView.swift */; };
+		77990193D2DCF1011199162F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */; };
+		7879E8D6BF1D06FFF5E84117 /* ProfileCircleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD89512795B2D934CB3A788 /* ProfileCircleDetailView.swift */; };
+		85477EECEF4A09D56449EF8E /* AccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812386EF5BF95842DAAF39C1 /* AccountView.swift */; };
+		8A534189FD434F68070CB955 /* TrustrootsPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85202EA8935BEB061B55B655 /* TrustrootsPalette.swift */; };
+		8FE78AFBE55997278FA05FC6 /* NostrSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 1741FF1053308D02DB955584 /* NostrSDK */; };
+		A5C31937E8B49D456879DAE3 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A72DC40FF60CB3CA2D4A4931 /* Foundation.framework */; };
+		A868377342498354E7E1646A /* NostrSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 68EA322479A9A220FF6F7708 /* NostrSDK */; };
+		B1C95F9614ACC4A4F57B571E /* CurrentLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC34CCA59CF4924249D463D8 /* CurrentLocationManager.swift */; };
+		B723E46EDE3A2E24538FAB5D /* TrustrootsRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4451489F9D874431A361845 /* TrustrootsRootView.swift */; };
+		BA7460A3665E780B7245EDC7 /* OfflineResponseCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721EB49D8267392766F4B575 /* OfflineResponseCache.swift */; };
+		C5E9F66FE8D73DD80460CD32 /* MemberProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C99E5EF486955BCD9BC9DC7 /* MemberProfileView.swift */; };
+		CE5EC4119A1230187F5012EF /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5790E2D72B85D29F350AE24 /* FlowLayout.swift */; };
+		DB41F3645D6C655B25AA092C /* CirclesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6874F19F24BF3E9D4D801051 /* CirclesView.swift */; };
+		F4991488F43CCE5292D2B198 /* TrustrootsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 780E2E35821BC34C111A81B8 /* TrustrootsAPI.swift */; };
+		F4D20135BF257F65348025D5 /* OfferMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D449CA143A8F71AB9A565F05 /* OfferMapView.swift */; };
+		F7D5EF361B1FFA5A0CA4C8D8 /* TrustrootsBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */; };
+		F91CF77FA8AC58CC93A0633C /* MemberSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7E2961EE91180D18EAD37B7 /* MemberSessionStore.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5A7D5D196AAE0608808031D9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F0C2DE3599D7D097B448A1B2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FA2DC08ABCA8570E20579B8E;
+			remoteInfo = Trustroots;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsBrowserView.swift; sourceTree = "<group>"; };
+		2D39D0CB9F25268806927E57 /* CommunityNotesStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommunityNotesStore.swift; sourceTree = "<group>"; };
+		3BEBBFF3D5A19B724A3AD0AA /* Trustroots.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Trustroots.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4B3A8DF28B2E964E6E81F6FC /* ContactSupportView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContactSupportView.swift; sourceTree = "<group>"; };
+		4C99E5EF486955BCD9BC9DC7 /* MemberProfileView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberProfileView.swift; sourceTree = "<group>"; };
+		4FD89512795B2D934CB3A788 /* ProfileCircleDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileCircleDetailView.swift; sourceTree = "<group>"; };
+		5627FC9D7597842E4C1125E1 /* LocationPreviewView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocationPreviewView.swift; sourceTree = "<group>"; };
+		63684517FEA4D117EEDA1429 /* NIP07Bridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NIP07Bridge.swift; sourceTree = "<group>"; };
+		6874F19F24BF3E9D4D801051 /* CirclesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CirclesView.swift; sourceTree = "<group>"; };
+		6A585B155D89FE06EFCB3140 /* TrustrootsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsTests.swift; sourceTree = "<group>"; };
+		6EC27FA444EF5257316FDB35 /* SignInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		7040954AE5BE42F61ACC6E79 /* MemberAvatarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberAvatarView.swift; sourceTree = "<group>"; };
+		721EB49D8267392766F4B575 /* OfflineResponseCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OfflineResponseCache.swift; sourceTree = "<group>"; };
+		780E2E35821BC34C111A81B8 /* TrustrootsAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsAPI.swift; sourceTree = "<group>"; };
+		803C2E0AE7321926A1ABB7F0 /* TrustrootsApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsApp.swift; sourceTree = "<group>"; };
+		812386EF5BF95842DAAF39C1 /* AccountView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AccountView.swift; sourceTree = "<group>"; };
+		81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CircleDetailView.swift; sourceTree = "<group>"; };
+		85202EA8935BEB061B55B655 /* TrustrootsPalette.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsPalette.swift; sourceTree = "<group>"; };
+		88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		92AE73C6AB6DC2A54B383CFE /* TrustrootsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrustrootsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		96D160385B89B56C5385E8E9 /* NostrIdentity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NostrIdentity.swift; sourceTree = "<group>"; };
+		A72DC40FF60CB3CA2D4A4931 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		AFDE64017484020751FDBD35 /* MessageInboxView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MessageInboxView.swift; sourceTree = "<group>"; };
+		C4451489F9D874431A361845 /* TrustrootsRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsRootView.swift; sourceTree = "<group>"; };
+		D449CA143A8F71AB9A565F05 /* OfferMapView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OfferMapView.swift; sourceTree = "<group>"; };
+		DEC636B6F46452816543589A /* EditProfileView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
+		E5790E2D72B85D29F350AE24 /* FlowLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
+		E7E2961EE91180D18EAD37B7 /* MemberSessionStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberSessionStore.swift; sourceTree = "<group>"; };
+		E82F35538CEB951435D8D59F /* NostrKeySection.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NostrKeySection.swift; sourceTree = "<group>"; };
+		FC34CCA59CF4924249D463D8 /* CurrentLocationManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CurrentLocationManager.swift; sourceTree = "<group>"; };
+		FE7AB2FCB36234867ED449D3 /* ContactsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContactsView.swift; sourceTree = "<group>"; };
+		FF9474F8363D8A2E281F012D /* MapFilterSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MapFilterSheet.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4E0907E8F1010A9D668EC3A7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4021B98D81FFA719EFDF01DA /* Foundation.framework in Frameworks */,
+				A868377342498354E7E1646A /* NostrSDK in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95E0F90FD20682F81DA7DEFA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A5C31937E8B49D456879DAE3 /* Foundation.framework in Frameworks */,
+				8FE78AFBE55997278FA05FC6 /* NostrSDK in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1C70D5DF006B62B67C7D0EF6 /* TrustrootsApp */ = {
+			isa = PBXGroup;
+			children = (
+				812386EF5BF95842DAAF39C1 /* AccountView.swift */,
+				81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */,
+				6874F19F24BF3E9D4D801051 /* CirclesView.swift */,
+				2D39D0CB9F25268806927E57 /* CommunityNotesStore.swift */,
+				4B3A8DF28B2E964E6E81F6FC /* ContactSupportView.swift */,
+				FE7AB2FCB36234867ED449D3 /* ContactsView.swift */,
+				FC34CCA59CF4924249D463D8 /* CurrentLocationManager.swift */,
+				DEC636B6F46452816543589A /* EditProfileView.swift */,
+				E5790E2D72B85D29F350AE24 /* FlowLayout.swift */,
+				5627FC9D7597842E4C1125E1 /* LocationPreviewView.swift */,
+				FF9474F8363D8A2E281F012D /* MapFilterSheet.swift */,
+				7040954AE5BE42F61ACC6E79 /* MemberAvatarView.swift */,
+				4C99E5EF486955BCD9BC9DC7 /* MemberProfileView.swift */,
+				E7E2961EE91180D18EAD37B7 /* MemberSessionStore.swift */,
+				AFDE64017484020751FDBD35 /* MessageInboxView.swift */,
+				63684517FEA4D117EEDA1429 /* NIP07Bridge.swift */,
+				96D160385B89B56C5385E8E9 /* NostrIdentity.swift */,
+				E82F35538CEB951435D8D59F /* NostrKeySection.swift */,
+				D449CA143A8F71AB9A565F05 /* OfferMapView.swift */,
+				721EB49D8267392766F4B575 /* OfflineResponseCache.swift */,
+				4FD89512795B2D934CB3A788 /* ProfileCircleDetailView.swift */,
+				6EC27FA444EF5257316FDB35 /* SignInView.swift */,
+				780E2E35821BC34C111A81B8 /* TrustrootsAPI.swift */,
+				803C2E0AE7321926A1ABB7F0 /* TrustrootsApp.swift */,
+				16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */,
+				85202EA8935BEB061B55B655 /* TrustrootsPalette.swift */,
+				C4451489F9D874431A361845 /* TrustrootsRootView.swift */,
+				88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */,
+			);
+			name = TrustrootsApp;
+			path = TrustrootsApp;
+			sourceTree = "<group>";
+		};
+		2CE3164561742DEA77BC7FB6 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				7810F95DCB740D0F50FDD05E /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2DDCE10317D3E52BEE2AABC4 = {
+			isa = PBXGroup;
+			children = (
+				C0003A53D7A341E470B36A9E /* Products */,
+				2CE3164561742DEA77BC7FB6 /* Frameworks */,
+				1C70D5DF006B62B67C7D0EF6 /* TrustrootsApp */,
+				6518714F4DE2BF250E7D82D7 /* TrustrootsTests */,
+			);
+			sourceTree = "<group>";
+		};
+		6518714F4DE2BF250E7D82D7 /* TrustrootsTests */ = {
+			isa = PBXGroup;
+			children = (
+				6A585B155D89FE06EFCB3140 /* TrustrootsTests.swift */,
+			);
+			name = TrustrootsTests;
+			path = TrustrootsTests;
+			sourceTree = "<group>";
+		};
+		7810F95DCB740D0F50FDD05E /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				A72DC40FF60CB3CA2D4A4931 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		C0003A53D7A341E470B36A9E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3BEBBFF3D5A19B724A3AD0AA /* Trustroots.app */,
+				92AE73C6AB6DC2A54B383CFE /* TrustrootsTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		CD10BD10FA189C5D20E6DD66 /* TrustrootsTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 373DD8BD70E7F5CF54CBA5C6 /* Build configuration list for PBXNativeTarget "TrustrootsTests" */;
+			buildPhases = (
+				8B15C95D7AA6068617D510DC /* Sources */,
+				95E0F90FD20682F81DA7DEFA /* Frameworks */,
+				CA9D2174839F1E6A50CF2DF8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F90B87B1DC44300A450FB2AC /* PBXTargetDependency */,
+			);
+			name = TrustrootsTests;
+			packageProductDependencies = (
+				1741FF1053308D02DB955584 /* NostrSDK */,
+			);
+			productName = TrustrootsTests;
+			productReference = 92AE73C6AB6DC2A54B383CFE /* TrustrootsTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FA2DC08ABCA8570E20579B8E /* Trustroots */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B1F0C793BB952B4B3F3356E5 /* Build configuration list for PBXNativeTarget "Trustroots" */;
+			buildPhases = (
+				697A263EDE362F28A6CDCC42 /* Sources */,
+				4E0907E8F1010A9D668EC3A7 /* Frameworks */,
+				F8D0116F61B44249AD5F99FE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Trustroots;
+			packageProductDependencies = (
+				68EA322479A9A220FF6F7708 /* NostrSDK */,
+			);
+			productName = Trustroots;
+			productReference = 3BEBBFF3D5A19B724A3AD0AA /* Trustroots.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F0C2DE3599D7D097B448A1B2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = 5C784379013E88B5DF07B44F /* Build configuration list for PBXProject "Trustroots" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 2DDCE10317D3E52BEE2AABC4;
+			minimizedProjectReferenceProxies = 0;
+			packageReferences = (
+				F7BBE43AEC9086ED0BA1840C /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C0003A53D7A341E470B36A9E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FA2DC08ABCA8570E20579B8E /* Trustroots */,
+				CD10BD10FA189C5D20E6DD66 /* TrustrootsTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		CA9D2174839F1E6A50CF2DF8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F8D0116F61B44249AD5F99FE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				77990193D2DCF1011199162F /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		697A263EDE362F28A6CDCC42 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				85477EECEF4A09D56449EF8E /* AccountView.swift in Sources */,
+				0EE9C2C716DAC81E1D756A95 /* CircleDetailView.swift in Sources */,
+				DB41F3645D6C655B25AA092C /* CirclesView.swift in Sources */,
+				5D53E983A973D00747EA523A /* CommunityNotesStore.swift in Sources */,
+				7125170B263060867C2D9674 /* ContactSupportView.swift in Sources */,
+				702E6098414F2BC4B224218A /* ContactsView.swift in Sources */,
+				B1C95F9614ACC4A4F57B571E /* CurrentLocationManager.swift in Sources */,
+				5075F95D7E7D5F5D9D022873 /* EditProfileView.swift in Sources */,
+				CE5EC4119A1230187F5012EF /* FlowLayout.swift in Sources */,
+				15790C63AF0422B5D50AB4EA /* LocationPreviewView.swift in Sources */,
+				29DF2AC39A79037D7C0457CA /* MapFilterSheet.swift in Sources */,
+				41DFAB865863E84445853B11 /* MemberAvatarView.swift in Sources */,
+				C5E9F66FE8D73DD80460CD32 /* MemberProfileView.swift in Sources */,
+				F91CF77FA8AC58CC93A0633C /* MemberSessionStore.swift in Sources */,
+				5BF5363FD85409C9BDD0E7C3 /* MessageInboxView.swift in Sources */,
+				3F7B4302D3CCCC2F0AEF29F0 /* NIP07Bridge.swift in Sources */,
+				0E831D2402FCD69878BB4CEF /* NostrIdentity.swift in Sources */,
+				4951CB2CA766B8942009DE0F /* NostrKeySection.swift in Sources */,
+				F4D20135BF257F65348025D5 /* OfferMapView.swift in Sources */,
+				BA7460A3665E780B7245EDC7 /* OfflineResponseCache.swift in Sources */,
+				7879E8D6BF1D06FFF5E84117 /* ProfileCircleDetailView.swift in Sources */,
+				39E542290B8429EB621D1D5A /* SignInView.swift in Sources */,
+				F4991488F43CCE5292D2B198 /* TrustrootsAPI.swift in Sources */,
+				2B14C92119A7AC3B5F83B6B3 /* TrustrootsApp.swift in Sources */,
+				F7D5EF361B1FFA5A0CA4C8D8 /* TrustrootsBrowserView.swift in Sources */,
+				8A534189FD434F68070CB955 /* TrustrootsPalette.swift in Sources */,
+				B723E46EDE3A2E24538FAB5D /* TrustrootsRootView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8B15C95D7AA6068617D510DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DFCCB4DE1888F32FD06A43D /* TrustrootsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F90B87B1DC44300A450FB2AC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Trustroots;
+			target = FA2DC08ABCA8570E20579B8E /* Trustroots */;
+			targetProxy = 5A7D5D196AAE0608808031D9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		10D8E6AA52439B93E718785A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = "";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SUJ594N47C;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TrustrootsApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.trustroots.ios;
+				PRODUCT_MODULE_NAME = Trustroots;
+				PRODUCT_NAME = Trustroots;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		35B802584EF8E3BEA093DDD9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Trustroots.app/Trustroots";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		3E651DAECB6C359B41D01E71 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = "";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGNING_REQUIRED = YES;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = SUJ594N47C;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = TrustrootsApp/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = org.trustroots.ios;
+				PRODUCT_MODULE_NAME = Trustroots;
+				PRODUCT_NAME = Trustroots;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		4A46A2BE61E654F77E258112 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Trustroots.app/Trustroots";
+			};
+			name = Debug;
+		};
+		627D4899A2830383CD48E680 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		99AF3734BED3E435B9D0E926 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		373DD8BD70E7F5CF54CBA5C6 /* Build configuration list for PBXNativeTarget "TrustrootsTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				35B802584EF8E3BEA093DDD9 /* Release */,
+				4A46A2BE61E654F77E258112 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5C784379013E88B5DF07B44F /* Build configuration list for PBXProject "Trustroots" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				99AF3734BED3E435B9D0E926 /* Debug */,
+				627D4899A2830383CD48E680 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B1F0C793BB952B4B3F3356E5 /* Build configuration list for PBXNativeTarget "Trustroots" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				10D8E6AA52439B93E718785A /* Release */,
+				3E651DAECB6C359B41D01E71 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F7BBE43AEC9086ED0BA1840C /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nostr-sdk/nostr-sdk-ios.git";
+			requirement = {
+				kind = revision;
+				revision = e5855cbd3bdabf44075fd2abdf76f63bac4cbd5f;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1741FF1053308D02DB955584 /* NostrSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F7BBE43AEC9086ED0BA1840C /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */;
+			productName = NostrSDK;
+		};
+		68EA322479A9A220FF6F7708 /* NostrSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F7BBE43AEC9086ED0BA1840C /* XCRemoteSwiftPackageReference "nostr-sdk-ios" */;
+			productName = NostrSDK;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = F0C2DE3599D7D097B448A1B2 /* Project object */;
+}
