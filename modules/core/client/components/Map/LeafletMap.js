@@ -3,7 +3,7 @@ import L from 'leaflet';
 import PropTypes from 'prop-types';
 import React, { useEffect, useRef } from 'react';
 
-import { getRasterMapTiles } from '../../utils/map';
+import { addRasterMapTiles } from '../../utils/map';
 
 /**
  * Small Leaflet renderer for maps that cannot use WebGL.
@@ -31,8 +31,7 @@ export default function LeafletMap({
       zoomControl: true,
     }).setView(location, zoom);
 
-    const tiles = getRasterMapTiles();
-    L.tileLayer(tiles.url, tiles.options).addTo(map);
+    addRasterMapTiles({ map, tileLayer: L.tileLayer });
 
     mapRef.current = map;
 

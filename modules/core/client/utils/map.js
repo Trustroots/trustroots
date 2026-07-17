@@ -32,6 +32,31 @@ export const getRasterMapTiles = (mapboxToken = getMapBoxToken()) =>
         url: OSM_TILE_URL,
       };
 
+export const addRasterMapTiles = ({
+  map,
+  mapboxToken = getMapBoxToken(),
+  tileLayer,
+}) => {
+  const primaryTiles = getRasterMapTiles(mapboxToken);
+  const primaryLayer = tileLayer(primaryTiles.url, primaryTiles.options);
+  let fallbackStarted = false;
+
+  if (mapboxToken) {
+    primaryLayer.once('tileerror', () => {
+      if (fallbackStarted) {
+        return;
+      }
+      fallbackStarted = true;
+      primaryLayer.remove();
+      const fallbackTiles = getRasterMapTiles(null);
+      tileLayer(fallbackTiles.url, fallbackTiles.options).addTo(map);
+    });
+  }
+
+  primaryLayer.addTo(map);
+  return primaryLayer;
+};
+
 /**
  * Mapbox GL needs a WebGL context, so callers choose a raster renderer before
  * mounting it when the browser cannot create one.
