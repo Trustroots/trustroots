@@ -1,0 +1,82 @@
+name: Mobile
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/mobile.yml'
+      - 'apps/android/**'
+      - 'apps/ios/**'
+      - 'modules/mobile/**'
+      - 'openspec/changes/add-native-ios-member-mvp/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mobile.yml'
+      - 'apps/android/**'
+      - 'apps/ios/**'
+      - 'modules/mobile/**'
+      - 'openspec/changes/add-native-ios-member-mvp/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  openspec:
+    name: OpenSpec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Validate mobile contract
+        run: >-
+          npm exec --yes --package=@fission-ai/openspec@1.6.0 --
+          openspec validate add-native-ios-member-mvp --strict
+
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Test, lint and build debug APK
+        working-directory: apps/android
+        run: ./gradlew testDebugUnitTest lintDebug assembleDebug
+
+  ios:
+    name: iOS
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select an iPhone simulator
+        id: simulator
+        run: |
+          device_id="$(xcrun simctl list devices available -j | ruby -rjson -e '
+            JSON.parse($stdin.read).fetch("devices").each_value do |devices|
+              iphone = devices.find { |device| device.fetch("name").start_with?("iPhone") }
+              if iphone
+                puts iphone.fetch("udid")
+                break
+              end
+            end
+          ')"
+          test -n "$device_id"
+          echo "id=$device_id" >> "$GITHUB_OUTPUT"
+      - name: Run iOS tests
+        working-directory: apps/ios
+        run: >-
+          xcodebuild
+          -project Trustroots.xcodeproj
+          -scheme TrustrootsTests
+          -destination 'id=${{ steps.simulator.outputs.id }}'
+          CODE_SIGNING_ALLOWED=NO
+          test
