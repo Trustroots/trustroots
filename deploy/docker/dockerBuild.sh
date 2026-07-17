@@ -23,6 +23,8 @@ fi
 
 REMOTE_MAIN_COMMIT=${REMOTE_MAIN%%$'\t'*}
 if [ "$BUILD_COMMIT" != "$REMOTE_MAIN_COMMIT" ]; then
+    echo Current local commit: $BUILD_COMMIT
+    echo Current commit on github: $REMOTE_MAIN_COMMIT
   echo "Docker builds may only be made from the current main branch on GitHub." >&2
   echo "Push or pull changes, then try again." >&2
   exit 1
