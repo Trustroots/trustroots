@@ -4,7 +4,7 @@ import classNames from 'classnames';
 import isArray from 'lodash/isArray';
 
 import { selectPhoto } from '../services/photos.service';
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 
 /**
  * @param {string[]|string} names - array of names or a single name
@@ -46,11 +46,11 @@ export default function Board({
 
     // inform the parent that the photo is displayed
     // ...useful e.g. for displaying photo credits elsewere
-    $broadcast('photoCreditsUpdated', photoObject);
+    broadcastClientEvent('photoCreditsUpdated', photoObject);
 
     // inform the parent that the photo is not displayed anymore
     return () => {
-      $broadcast('photoCreditsRemoved', photoObject);
+      broadcastClientEvent('photoCreditsRemoved', photoObject);
     };
   }, [isArray(names) ? names.join(' ') : names]);
 

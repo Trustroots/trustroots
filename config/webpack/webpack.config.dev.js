@@ -6,15 +6,14 @@ const compact = require('lodash/compact');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 
-// When upgrading to Webpack 5, you might consider swapping this to `@automattic/webpack-rtl-plugin` (fork) because the original isn't maintained anymore
-const WebpackRTLPlugin = require('webpack-rtl-plugin');
+const WebpackRTLPlugin = require('@automattic/webpack-rtl-plugin');
 
 // This is very experimental library
 // There might be another favourite react-refresh webpack plugin at some point ...
 // See https://github.com/facebook/react/issues/16604 for discussion
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
-const { join, resolve } = require('path');
+const { join } = require('path');
 
 const shims = require('./webpack.shims');
 const basedir = join(__dirname, '../..');
@@ -49,27 +48,40 @@ const styleLoaders = [
 
 module.exports = webpackMerge.merge(shims, {
   mode: isProduction ? 'production' : 'development',
-  devtool: isProduction ? 'source-map' : 'cheap-module-eval-source-map',
-  entry: require.resolve('./entries/main'),
+  devtool: isProduction ? 'source-map' : 'eval-cheap-module-source-map',
+  entry: {
+    'react-main': require.resolve('./entries/react-main'),
+  },
   output: {
     path: join(basedir, 'public/assets'),
     publicPath: '/assets/',
+    filename: '[name].js',
   },
   devServer: {
-    index: '',
     host: config.host,
     port: 3000,
-    contentBase: false,
-    publicPath: '/assets/',
-    proxy: {
-      context: () => true,
-      target: 'http://localhost:80',
+    static: false,
+    devMiddleware: {
+      index: false,
+      publicPath: '/assets/',
     },
+    proxy: [
+      {
+        context: () => true,
+        target: 'http://localhost:80',
+      },
+    ],
     // @pmmmwh/react-refresh-webpack-plugin is setting up an overlay too
     // which seems a bit cheeky for a plugin to do, but we don't want two!
-    overlay: false,
+    client: {
+      overlay: false,
+    },
   },
   resolve: {
+    fallback: {
+      querystring: require.resolve('querystring-es3'),
+      url: require.resolve('url/'),
+    },
     alias: {
       '@': basedir,
 
@@ -77,6 +89,12 @@ module.exports = webpackMerge.merge(shims, {
       img: join(basedir, 'public', 'img'),
       less: join(basedir, 'modules', 'core', 'client', 'less'),
       modules: join(basedir, 'modules'),
+
+      // Use the CommonJS targets selected by nostr-tools' public exports.
+      // Explicit aliases keep Webpack and ESLint's Webpack resolver aligned.
+      'nostr-tools$': require.resolve('nostr-tools'),
+      'nostr-tools/relay$': require.resolve('nostr-tools/relay'),
+      'nostr-tools/nip19$': require.resolve('nostr-tools/nip19'),
     },
   },
   module: {
@@ -118,21 +136,6 @@ module.exports = webpackMerge.merge(shims, {
         ],
       },
       {
-        test: /\.(html)$/,
-        use: [
-          {
-            loader: resolve(__dirname + '/templateloader.js'),
-          },
-          {
-            loader: 'html-loader',
-            options: {
-              minimize: true,
-              attrs: ['img:src', ':ng-include'],
-            },
-          },
-        ],
-      },
-      {
         test: /\.css$/,
         use: styleLoaders,
       },
@@ -153,15 +156,10 @@ module.exports = webpackMerge.merge(shims, {
       new BundleAnalyzerPlugin(config.bundleAnalyzer.options),
     isProduction &&
       new MiniCssExtractPlugin({
-        filename: 'main.css',
+        filename: '[name].css',
       }),
     // @TODO: run RTL also on inlined CSS?
-    isProduction &&
-      new WebpackRTLPlugin({
-        diffOnly: true, // The stylesheet created will only contain the css that differs from the source stylesheet.
-        filename: 'main.rtl.css',
-        minify: isProduction,
-      }),
+    isProduction && new WebpackRTLPlugin({ test: /react-main\.css$/ }),
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     }),

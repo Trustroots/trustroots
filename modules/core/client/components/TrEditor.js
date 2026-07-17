@@ -1,8 +1,65 @@
 import { useTranslation } from 'react-i18next';
-import MediumEditor from 'react-medium-editor';
+import MediumEditor from 'medium-editor';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
+
+class MediumEditorBridge extends React.Component {
+  constructor(props) {
+    super(props);
+    this.editorRef = React.createRef();
+    this.state = { text: props.text };
+  }
+
+  componentDidMount() {
+    this.medium = new MediumEditor(this.editorRef.current, this.props.options);
+    this.medium.subscribe('editableInput', this.handleInput);
+  }
+
+  componentDidUpdate() {
+    this.medium.restoreSelection();
+  }
+
+  componentWillUnmount() {
+    this.medium.destroy();
+  }
+
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    if (nextProps.text !== this.state.text && !this.updatedByEditor) {
+      this.setState({ text: nextProps.text });
+    }
+
+    this.updatedByEditor = false;
+  }
+
+  handleInput = () => {
+    this.updatedByEditor = true;
+    this.props.onChange(this.editorRef.current.innerHTML, this.medium);
+  };
+
+  render() {
+    if (this.medium) {
+      this.medium.saveSelection();
+    }
+
+    return (
+      <div
+        className={this.props.className}
+        dangerouslySetInnerHTML={{ __html: this.state.text }}
+        id={this.props.id}
+        ref={this.editorRef}
+      />
+    );
+  }
+}
+
+MediumEditorBridge.propTypes = {
+  className: PropTypes.string.isRequired,
+  id: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  options: PropTypes.object.isRequired,
+  text: PropTypes.string.isRequired,
+};
 
 const baseOptions = {
   disableReturn: false,
@@ -172,7 +229,7 @@ export default function TrEditor({
   placeholder,
   text,
 }) {
-  const ref = React.createRef();
+  const ref = useRef();
   const { t } = useTranslation('core');
 
   useEffect(() => {
@@ -199,7 +256,7 @@ export default function TrEditor({
 
   const editorProps = { id, text, options, className: 'tr-editor' };
   return (
-    <MediumEditor
+    <MediumEditorBridge
       ref={ref}
       onChange={value => onChange(removeTrailingBr(value))}
       {...editorProps}
