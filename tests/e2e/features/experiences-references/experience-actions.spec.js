@@ -3,6 +3,7 @@ const { annotateFeature, expect, test } = require('../../support/test');
 const {
   SEEDED_EXPERIENCE,
   SEEDED_MEMBERS,
+  createIsolatedContext,
   createUser,
   fetchUserIdByUsername,
   registerViaApi,
@@ -42,7 +43,7 @@ test.describe.serial('experience and reference feature coverage', () => {
       'Validation errors are shown for invalid submissions.',
     ]);
 
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -139,7 +140,7 @@ test.describe.serial('experience and reference feature coverage', () => {
       'Existing experience is detected.',
     ]);
 
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -216,7 +217,7 @@ test.describe.serial('experience and reference feature coverage', () => {
     const beijing = SEEDED_MEMBERS[2];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
     const beijingId = await fetchUserIdByUsername(request, beijing.username);
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

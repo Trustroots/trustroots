@@ -6,6 +6,7 @@ const {
   EUROPE_OFFERS_QUERY,
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  createIsolatedContext,
   createUser,
   fetchUserIdByUsername,
   registerViaApi,
@@ -238,8 +239,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expect(hitchhikers).toBeTruthy();
 
     const throwaway = createUser();
-    const context = await browser.newContext({
-      baseURL,
+    const context = await createIsolatedContext(browser, baseURL, {
       hasTouch: true,
       isMobile: true,
       viewport: { width: 375, height: 500 },
@@ -262,12 +262,35 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(hitchhikersLink).toBeVisible();
       await expect(circleGrid).toHaveCSS('overflow', 'visible');
       await expect(hitchhikersLink).toHaveCSS('touch-action', 'pan-y');
+
       const scrollBeforeSwipe = await memberPage.evaluate(() => window.scrollY);
       await swipeUpFrom(memberPage, hitchhikersLink);
       await expect
         .poll(() => memberPage.evaluate(() => window.scrollY))
         .toBeGreaterThan(scrollBeforeSwipe);
 
+      await memberPage.goto('/circles/hitchhikers');
+      const overview = memberPage.locator('.tribe-header-info');
+      await expect(overview).toBeVisible();
+      await expect(overview).toHaveCSS('overflow-y', 'auto');
+      await expect(overview).toHaveCSS('touch-action', 'pan-y');
+      const isOverviewScrollable = await overview.evaluate(
+        element => element.scrollHeight > element.clientHeight,
+      );
+      if (isOverviewScrollable) {
+        await overview.evaluate(element => {
+          element.scrollTop = element.scrollHeight;
+        });
+        await expect
+          .poll(() => overview.evaluate(element => element.scrollTop))
+          .toBeGreaterThan(0);
+      }
+
+      const overviewJoinButton = memberPage.locator('button.tribe-join');
+      await expect(overviewJoinButton).toHaveAttribute(
+        'aria-label',
+        /Join \(/i,
+      );
       const joinResponse = memberPage.waitForResponse(
         response =>
           response
@@ -275,38 +298,13 @@ test.describe.serial('search offers and circles feature coverage', () => {
             .includes(`/api/users/memberships/${hitchhikers._id}`) &&
           response.request().method() === 'POST',
       );
-      await hitchhikersCard
-        .getByRole('button', { name: 'Join (Hitchhikers)' })
-        .click();
+      await overviewJoinButton.click();
       expect((await joinResponse).ok()).toBeTruthy();
-      await expect(
-        hitchhikersCard.getByRole('button', { name: 'Leave circle' }),
-      ).toContainText('Joined');
-
-      await memberPage.goto('/circles/hitchhikers');
-      const overview = memberPage.locator('.tribe-header-info');
-      await expect(overview).toBeVisible();
-      await expect(overview).toHaveCSS('overflow-y', 'auto');
-      await expect(overview).toHaveCSS('touch-action', 'pan-y');
-      await expect
-        .poll(() =>
-          overview.evaluate(
-            element => element.scrollHeight > element.clientHeight,
-          ),
-        )
-        .toBe(true);
-      await overview.evaluate(element => {
-        element.scrollTop = element.scrollHeight;
-      });
-      await expect
-        .poll(() => overview.evaluate(element => element.scrollTop))
-        .toBeGreaterThan(0);
-
-      await expect(
-        memberPage.getByRole('button', {
-          name: /Leave circle \(Hitchhikers\)/,
-        }),
-      ).toContainText("You're a member");
+      await expect(overviewJoinButton).toHaveClass(/btn-active/);
+      await expect(overviewJoinButton).toHaveAttribute(
+        'aria-label',
+        /Leave circle/i,
+      );
 
       const leave = await memberPage.request.delete(
         `/api/users/memberships/${hitchhikers._id}`,

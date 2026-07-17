@@ -13,6 +13,7 @@ PLAYWRIGHT_ERROR=""
 
 export TRUSTROOTS_E2E_WEB_PORT="${TRUSTROOTS_E2E_WEB_PORT:-4300}"
 export TRUSTROOTS_E2E_API_PORT="${TRUSTROOTS_E2E_API_PORT:-4301}"
+export TRUSTROOTS_E2E_HOST="${TRUSTROOTS_E2E_HOST:-127.0.0.1}"
 export TRUSTROOTS_E2E_REUSE_SERVER="${TRUSTROOTS_E2E_REUSE_SERVER:-false}"
 
 if [ "${CI:-}" = "true" ]; then
@@ -40,14 +41,6 @@ if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
   else
     export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true
   fi
-fi
-
-NODE_MAJOR="$(node -e "console.log(process.versions.node.split('.')[0])")"
-if [ "$NODE_MAJOR" -ge 17 ]; then
-  case " ${NODE_OPTIONS:-} " in
-    *" --openssl-legacy-provider "*) ;;
-    *) export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--openssl-legacy-provider" ;;
-  esac
 fi
 
 write_status() {

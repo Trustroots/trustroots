@@ -240,17 +240,35 @@ test.describe('confirmed member flows', () => {
 
   test('member can join and leave a circle from its detail page', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'circles.join-leave', [
       'Member can join a circle from its detail page.',
       'Member can leave that circle again from the same page.',
     ]);
 
+    const tribesResponse = await request.get('/api/tribes?limit=150');
+    expect(tribesResponse.ok()).toBeTruthy();
+    const hikers = (await tribesResponse.json()).find(
+      tribe => tribe.slug === 'hikers',
+    );
+    expect(hikers).toBeTruthy();
+
+    const membershipsResponse = await request.get('/api/users/memberships');
+    expect(membershipsResponse.ok()).toBeTruthy();
+    const memberships = await membershipsResponse.json();
+    if (memberships.some(item => item.tribe._id === hikers._id)) {
+      const leave = await request.delete(
+        `/api/users/memberships/${hikers._id}`,
+      );
+      expect(leave.ok()).toBeTruthy();
+    }
+
     await page.goto('/circles/hikers');
 
     const joinButton = page.locator('button.tribe-join');
     await expect(joinButton).toBeVisible();
-    await expect(joinButton).toHaveAttribute('aria-label', /join this circle/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /join \(/i);
 
     const joinResponse = page.waitForResponse(
       response =>
@@ -260,7 +278,7 @@ test.describe('confirmed member flows', () => {
     );
     await joinButton.click();
     await joinResponse;
-    await expect(joinButton).toContainText(/you'?re a member/i);
+    await expect(joinButton).toContainText(/joined/i);
     await expect(joinButton).toHaveAttribute('aria-label', /leave circle/i);
 
     const leaveResponse = page.waitForResponse(
@@ -270,11 +288,13 @@ test.describe('confirmed member flows', () => {
         response.ok(),
     );
     await joinButton.click();
-    await page
+    const leaveDialog = page.locator('div.modal[role="dialog"]');
+    await expect(leaveDialog).toBeVisible();
+    await leaveDialog
       .getByRole('button', { name: 'Leave circle', exact: true })
       .click();
     await leaveResponse;
-    await expect(joinButton).toContainText(/join this circle/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /join \(/i);
   });
 
   test('shadowbanned member profiles are hidden from other members', async ({

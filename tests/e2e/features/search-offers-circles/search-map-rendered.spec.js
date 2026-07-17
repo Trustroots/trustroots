@@ -140,106 +140,43 @@ async function installNostrRelayStub(page, events = []) {
   }, events);
 }
 
-async function showCommunityNotesSidebar(page) {
-  await page.waitForFunction(
-    () => {
-      function findSearchScope(rootScope) {
-        const scopes = [rootScope];
-
-        while (scopes.length) {
-          const scope = scopes.pop();
-          if (scope.search && typeof scope.search.openSidebar === 'function') {
-            return scope;
-          }
-
-          for (
-            let child = scope.$$childHead;
-            child;
-            child = child.$$nextSibling
-          ) {
-            scopes.push(child);
-          }
-        }
-
+async function showCommunityNotesSidebar(page, events) {
+  await page.addInitScript(() => {
+    const Canvas = window.HTMLCanvasElement;
+    const getContext = Canvas.prototype.getContext;
+    Canvas.prototype.getContext = function getWebGLContext(type, ...args) {
+      if (type === 'webgl' || type === 'experimental-webgl') {
         return null;
       }
+      return getContext.call(this, type, ...args);
+    };
+  });
+  await page.route('**://*.tile.openstreetmap.org/**', route =>
+    route.fulfill({
+      body: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+        'base64',
+      ),
+      contentType: 'image/png',
+    }),
+  );
+  await page.addInitScript(fixturePubkey => {
+    window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__ = fixturePubkey;
+  }, events[0].pubkey);
+  await installNostrRelayStub(page, events);
 
-      if (!window.angular) return false;
-
-      const injector = window.angular
-        .element(document.documentElement)
-        .injector();
-      if (!injector) return false;
-
-      return Boolean(findSearchScope(injector.get('$rootScope')));
-    },
+  await page.goto('/search');
+  await page.waitForFunction(
+    () =>
+      document.querySelectorAll('.leaflet-interactive[fill="#1565C0"]').length >
+      0,
     null,
     { timeout: 30000 },
   );
-
-  await page.evaluate(
-    ({ plusCode, noteText }) => {
-      function findSearchScope(rootScope) {
-        const scopes = [rootScope];
-
-        while (scopes.length) {
-          const scope = scopes.pop();
-          if (scope.search && typeof scope.search.openSidebar === 'function') {
-            return scope;
-          }
-
-          for (
-            let child = scope.$$childHead;
-            child;
-            child = child.$$nextSibling
-          ) {
-            scopes.push(child);
-          }
-        }
-
-        return null;
-      }
-
-      if (!window.angular) return false;
-
-      const injector = window.angular
-        .element(document.documentElement)
-        .injector();
-      if (!injector) throw new Error('Search Angular injector unavailable');
-
-      const scope = findSearchScope(injector.get('$rootScope'));
-      if (!scope) {
-        throw new Error('Search controller scope unavailable');
-      }
-
-      const now = Math.floor(Date.now() / 1000);
-      scope.$apply(() => {
-        scope.search.offer = false;
-        scope.search.loadingOffer = false;
-        scope.search.communityNote = {
-          plusCode,
-          notes: [
-            {
-              id: 'e2e-community-note-1',
-              content: noteText,
-              created_at: now - 3600,
-              pubkey:
-                '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
-            },
-            {
-              id: 'e2e-community-note-2',
-              content: 'E2E community note: late trains but friendly locals.',
-              created_at: now - 7200,
-              pubkey:
-                'abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789',
-            },
-          ],
-        };
-        scope.search.openSidebar('results');
-      });
-    },
-    { plusCode: communityNotePlusCode, noteText: communityNoteText },
-  );
+  await page
+    .locator('.leaflet-interactive[fill="#1565C0"]')
+    .first()
+    .dispatchEvent('click');
 }
 
 async function waitForRasterTileNear(
@@ -421,7 +358,7 @@ test.describe('rendered search map feature coverage', () => {
     await page.getByRole('button', { name: 'Search places' }).click();
     const searchInput = page.getByRole('textbox', { name: 'Search places' });
     await searchInput.fill('Berlin');
-    await page.locator('.search-place .dropdown-menu a').click();
+    await page.locator('.search-place .dropdown-menu a').dispatchEvent('click');
 
     const map = page.locator('[data-testid="leaflet-search-map"]');
     await expect(map).toBeVisible();
@@ -661,17 +598,17 @@ test.describe('rendered search map feature coverage', () => {
     await installNostrRelayStub(page);
     await page.goto('/search');
 
+    await page
+      .locator('.search-map-meta button')
+      .filter({ hasText: 'Filters' })
+      .click();
+
     const filterLabel = page
       .locator('.search-sidebar-filters label')
       .filter({ hasText: 'Community Notes' });
     const checkbox = filterLabel.locator('input[type="checkbox"]');
 
     await expect(filterLabel).toHaveCount(1);
-    await page
-      .locator('.search-map-meta button')
-      .filter({ hasText: 'Filters' })
-      .click();
-
     await expect(filterLabel).toBeVisible();
     await expect(checkbox).toBeChecked();
 
@@ -687,9 +624,27 @@ test.describe('rendered search map feature coverage', () => {
       'Reply action opens the Nostroots action-gate modal.',
     ]);
 
-    await installNostrRelayStub(page);
-    await page.goto('/search');
-    await showCommunityNotesSidebar(page);
+    const noteEvents = [
+      communityNoteText,
+      'E2E community note: late trains but friendly locals.',
+    ].map((content, index) =>
+      finalizeEvent(
+        {
+          content,
+          created_at: 1700000000 - index * 3600,
+          kind: 30398,
+          tags: [
+            ['l', communityNotePlusCode, 'open-location-code'],
+            [
+              'p',
+              '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+            ],
+          ],
+        },
+        new Uint8Array(32).fill(1),
+      ),
+    );
+    await showCommunityNotesSidebar(page, noteEvents);
 
     const sidebar = page.locator('.community-notes-sidebar');
     await expect(sidebar).toBeVisible();

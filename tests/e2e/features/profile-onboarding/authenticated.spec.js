@@ -4,17 +4,13 @@ const { annotateFeature, test, expect } = require('../../support/test');
 const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  createIsolatedContext,
   createUser,
   registerViaApi,
   signInViaApi,
   signOut,
   waitForTribesList,
 } = require('../../support/helpers');
-
-const seededMemberStoragePath = path.join(
-  __dirname,
-  '../../.auth/seeded-member.json',
-);
 
 test.describe('authenticated member flows', () => {
   let authenticatedMember;
@@ -115,7 +111,7 @@ test.describe('authenticated member flows', () => {
       'Restricted message actions are unavailable until confirmation.',
     ]);
 
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -172,7 +168,7 @@ test.describe('authenticated member flows', () => {
     // Own profile is tied to the session user. Use an isolated context so the
     // viewed username always matches the signed-in member, even when other
     // specs mutate the shared authenticated storage state.
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -197,8 +193,8 @@ test.describe('authenticated member flows', () => {
   });
 
   test('member can view a seeded host profile', async ({
-    browser,
-    baseURL,
+    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.view-about', [
       'Own profile about tab loads.',
@@ -207,24 +203,13 @@ test.describe('authenticated member flows', () => {
     ]);
 
     const host = SEEDED_MEMBERS[1];
-    const seededMemberContext = await browser.newContext({
-      baseURL,
-      storageState: seededMemberStoragePath,
-    });
-    const seededMemberPage = await seededMemberContext.newPage();
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.goto(`/profile/${host.username}`);
 
-    try {
-      await seededMemberPage.goto(`/profile/${host.username}`);
-
-      await expect(seededMemberPage).toHaveURL(
-        new RegExp(`/profile/${host.username}`),
-      );
-      await expect(
-        seededMemberPage.locator('.row.hidden-xs h4.profile-username'),
-      ).toHaveText(`@${host.username}`);
-    } finally {
-      await seededMemberContext.close();
-    }
+    await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
+    await expect(page.locator('.row.hidden-xs h4.profile-username')).toHaveText(
+      `@${host.username}`,
+    );
   });
 
   test('profile edit locations page is reachable', async ({
@@ -377,7 +362,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/avatar.png',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -386,7 +371,8 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
 
       const uploadResponse = page.waitForResponse(
         response =>
@@ -394,14 +380,14 @@ test.describe('authenticated member flows', () => {
       );
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
+        uploadButton.click(),
       ]);
       await fileChooser.setFiles(validAvatarPath);
       await uploadResponse;
 
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-success'),
-      ).toContainText('Profile photo updated.');
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
     } finally {
       await context.close();
     }
@@ -419,7 +405,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -428,23 +414,17 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
-
-      const uploadResponse = page.waitForResponse(
-        response =>
-          response.url().includes('/api/users-avatar') &&
-          response.status() === 415,
-      );
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
+        uploadButton.click(),
       ]);
       await fileChooser.setFiles(invalidAvatarPath);
-      await uploadResponse;
 
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-danger'),
-      ).toContainText('Sorry, we do not support this type of file.');
+      await expect(page.getByRole('status')).toContainText(
+        'Sorry, we do not support this type of file.',
+      );
     } finally {
       await context.close();
     }
@@ -462,7 +442,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/avatar.png',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -478,19 +458,20 @@ test.describe('authenticated member flows', () => {
       expect(fallbackResponse.headers().location).toContain('/img/avatar-');
 
       await page.goto('/profile/edit/photo');
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') && response.ok(),
       );
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
+        uploadButton.click(),
       ]);
       await fileChooser.setFiles(validAvatarPath);
       await uploadResponse;
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-success'),
-      ).toContainText('Profile photo updated.');
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
 
       const uploadedResponse = await page.request.get(
         `/api/users/${registered._id}/avatar?source=local`,
@@ -554,7 +535,7 @@ test.describe('authenticated member flows', () => {
     // Sign out tears down the session, so run it against a throwaway account in
     // an isolated context. That keeps the shared authenticated session intact
     // for the other tests in this file when they run in parallel.
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

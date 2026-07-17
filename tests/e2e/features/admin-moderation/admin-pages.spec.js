@@ -5,7 +5,12 @@ const {
   useElementScreenshot,
 } = require('../../support/test');
 
-const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
+const {
+  SEEDED_ADMIN,
+  SEEDED_MEMBERS,
+  signOut,
+  signInViaApi,
+} = require('../../support/helpers');
 
 async function gotoAdminPage(page, path, expectedUrl) {
   let lastError;
@@ -117,5 +122,34 @@ test.describe('admin moderation page flows', () => {
     await expect(
       page.getByRole('heading', { name: /newsletter subscribers/i }),
     ).toBeVisible();
+  });
+});
+
+test.describe('admin React route access boundaries', () => {
+  test('guest direct admin load redirects to sign in', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.route-access', [
+      'Guest direct loads of React-owned admin pages redirect to sign in.',
+    ]);
+
+    await signOut(page);
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveURL(/\/signin$/);
+  });
+
+  test('non-admin direct admin load redirects to volunteering', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.route-access', [
+      'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
+    ]);
+
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveURL(/\/volunteering$/);
   });
 });
