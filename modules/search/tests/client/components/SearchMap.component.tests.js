@@ -18,11 +18,16 @@ const mockGetNostrEventAuthorPubkey = jest.fn(
 );
 const mockSubscribeMapNotes = jest.fn();
 const mockUnsubscribeMapNotes = jest.fn();
+const mockFilterCommunityNotesByAuthorVisibility = jest.fn(notes =>
+  Promise.resolve(notes),
+);
 jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
   getNostrEventAuthorPubkey: event => mockGetNostrEventAuthorPubkey(event),
   nostrService: {
     subscribeMapNotes: (...args) => mockSubscribeMapNotes(...args),
     unsubscribeMapNotes: (...args) => mockUnsubscribeMapNotes(...args),
+    filterCommunityNotesByAuthorVisibility: (...args) =>
+      mockFilterCommunityNotesByAuthorVisibility(...args),
   },
 }));
 
@@ -217,6 +222,9 @@ beforeEach(() => {
     event => event.authorPubkey || event.pubkey,
   );
   mockSubscribeMapNotes.mockResolvedValue({ close: jest.fn() });
+  mockFilterCommunityNotesByAuthorVisibility.mockImplementation(notes =>
+    Promise.resolve(notes),
+  );
   jest.clearAllMocks();
 });
 
@@ -782,10 +790,10 @@ describe('Search', () => {
       onEvent({
         id: 'note-valid',
         content: 'A valid map note',
-        pubkey: 'validation-pubkey',
+        pubkey: 'author-pubkey',
         authorPubkey: 'author-pubkey',
         created_at: 1700000000,
-        kind: 30398,
+        kind: 30397,
         tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
       });
       onEvent({
@@ -803,7 +811,14 @@ describe('Search', () => {
       filters: '{"communityNotes":true}',
     });
 
-    expect(mockSubscribeMapNotes).toHaveBeenCalledWith(expect.any(Function));
+    expect(mockSubscribeMapNotes).toHaveBeenCalledWith(
+      expect.any(Function),
+      undefined,
+      expect.objectContaining({
+        onClose: expect.any(Function),
+        onEose: expect.any(Function),
+      }),
+    );
 
     act(() => {
       jest.advanceTimersByTime(200);
@@ -820,11 +835,190 @@ describe('Search', () => {
         properties: expect.objectContaining({
           authorPubkey: 'author-pubkey',
           content: 'A valid map note',
-          verified: true,
+          kind: 30397,
         }),
       }),
     );
 
+    jest.useRealTimers();
+  });
+
+  it('hides community notes blocked by the Nostr visibility check', async () => {
+    jest.useFakeTimers();
+    mockSubscribeMapNotes.mockImplementationOnce(onEvent => {
+      onEvent({
+        id: 'note-visible',
+        content: 'Visible note',
+        authorPubkey: 'author-visible',
+        tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
+      });
+      onEvent({
+        id: 'note-hidden',
+        content: 'Hidden note',
+        authorPubkey: 'author-hidden',
+        tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
+      });
+      return Promise.resolve();
+    });
+    mockFilterCommunityNotesByAuthorVisibility.mockImplementationOnce(
+      async notes => [notes[0]],
+    );
+
+    renderSearchMap({
+      filters: '{"communityNotes":true}',
+    });
+
+    expect(mockSubscribeMapNotes).toHaveBeenCalledWith(
+      expect.any(Function),
+      undefined,
+      expect.objectContaining({
+        onClose: expect.any(Function),
+        onEose: expect.any(Function),
+      }),
+    );
+
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+
+    await waitFor(() =>
+      expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
+        1,
+      ),
+    );
+    expect(
+      mockSourcePropsById['community-notes'].data.features[0].properties
+        .content,
+    ).toBe('Visible note');
+    expect(mockSourcePropsById['community-notes'].data.features[0].id).toBe(
+      'note-visible',
+    );
+    expect(mockFilterCommunityNotesByAuthorVisibility).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'note-visible' }),
+        expect.objectContaining({ id: 'note-hidden' }),
+      ]),
+    );
+
+    jest.useRealTimers();
+  });
+
+  it('reconnects after an interrupted relay load and deduplicates replayed notes', async () => {
+    jest.useFakeTimers();
+    let firstCallbacks;
+    let secondCallbacks;
+    mockSubscribeMapNotes
+      .mockImplementationOnce((onEvent, limit, callbacks) => {
+        firstCallbacks = callbacks;
+        onEvent({
+          id: 'note-first',
+          authorPubkey: 'author-first',
+          tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
+        });
+        return Promise.resolve();
+      })
+      .mockImplementationOnce((onEvent, limit, callbacks) => {
+        secondCallbacks = callbacks;
+        onEvent({
+          id: 'note-first',
+          authorPubkey: 'author-first',
+          tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
+        });
+        onEvent({
+          id: 'note-second',
+          authorPubkey: 'author-second',
+          tags: [['l', '7FG49Q00+', 'open-location-code']],
+        });
+        return Promise.resolve();
+      });
+
+    const { unmount } = renderSearchMap({
+      filters: '{"communityNotes":true}',
+    });
+    await waitFor(() => expect(firstCallbacks).toBeDefined());
+
+    act(() => {
+      firstCallbacks.onClose();
+      firstCallbacks.onClose();
+      jest.advanceTimersByTime(1000);
+    });
+    await waitFor(() => expect(secondCallbacks).toBeDefined());
+
+    act(() => {
+      secondCallbacks.onEose();
+    });
+    await waitFor(() =>
+      expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
+        2,
+      ),
+    );
+
+    unmount();
+    act(() => {
+      secondCallbacks.onClose();
+      jest.advanceTimersByTime(1000);
+    });
+    expect(mockSubscribeMapNotes).toHaveBeenCalledTimes(2);
+    jest.useRealTimers();
+  });
+
+  it('does not replace newer community notes with a stale visibility result', async () => {
+    jest.useFakeTimers();
+    let onEvent;
+    let resolveFirstVisibilityCheck;
+    const firstVisibilityCheck = new Promise(resolve => {
+      resolveFirstVisibilityCheck = resolve;
+    });
+    mockSubscribeMapNotes.mockImplementationOnce(callback => {
+      onEvent = callback;
+      onEvent({
+        id: 'note-first',
+        content: 'First note',
+        authorPubkey: 'author-first',
+        tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
+      });
+      return Promise.resolve();
+    });
+    mockFilterCommunityNotesByAuthorVisibility
+      .mockImplementationOnce(() => firstVisibilityCheck)
+      .mockImplementationOnce(notes => Promise.resolve(notes));
+
+    renderSearchMap({ filters: '{"communityNotes":true}' });
+
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+
+    onEvent({
+      id: 'note-second',
+      content: 'Second note',
+      authorPubkey: 'author-second',
+      tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
+    });
+    act(() => {
+      jest.advanceTimersByTime(200);
+    });
+
+    await waitFor(() =>
+      expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
+        2,
+      ),
+    );
+
+    await act(async () => {
+      resolveFirstVisibilityCheck([
+        {
+          id: 'note-first',
+          content: 'First note',
+          authorPubkey: 'author-first',
+          tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
+        },
+      ]);
+    });
+
+    expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
+      2,
+    );
     jest.useRealTimers();
   });
 
@@ -1070,23 +1264,25 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(2);
   });
 
-  it('clears community notes when the subscription fails and unsubscribes on unmount', async () => {
+  it('retries failed subscriptions and unsubscribes on unmount', async () => {
+    jest.useFakeTimers();
     mockSubscribeMapNotes.mockRejectedValueOnce(new Error('relay unavailable'));
 
     const { unmount } = renderSearchMap({
       filters: '{"communityNotes":true}',
     });
 
-    await waitFor(() =>
-      expect(mockSourcePropsById['community-notes'].data).toEqual({
-        features: [],
-        type: 'FeatureCollection',
-      }),
-    );
+    await waitFor(() => expect(mockSubscribeMapNotes).toHaveBeenCalledTimes(1));
+
+    act(() => {
+      jest.advanceTimersByTime(1000);
+    });
+    await waitFor(() => expect(mockSubscribeMapNotes).toHaveBeenCalledTimes(2));
 
     unmount();
 
     expect(mockUnsubscribeMapNotes).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
   });
 
   it('logs offer query failures in development without replacing current offers', async () => {

@@ -48,6 +48,8 @@ import {
 import { OpenLocationCode } from 'open-location-code';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
+
 const olc = new OpenLocationCode();
 
 function getPlusCodeFromRawEvent(event) {
@@ -112,7 +114,6 @@ function nostrEventsToGeoJSON(events) {
           pubkey: event.pubkey,
           authorPubkey: getNostrEventAuthorPubkey(event),
           created_at: event.created_at,
-          verified: event.kind === 30398,
           kind: event.kind,
           tags: JSON.stringify(event.tags),
         },
@@ -564,24 +565,73 @@ export default function SearchMap({
     }
 
     communityNotesEventsRef.current = [];
-    nostrService
-      .subscribeMapNotes(event => {
-        communityNotesEventsRef.current.push({
-          ...event,
-          authorPubkey: getNostrEventAuthorPubkey(event),
+    let cancelled = false;
+    let reconnectTimer = null;
+
+    const updateCommunityNotes = async () => {
+      const events = [...communityNotesEventsRef.current];
+      const visibleNotes =
+        await nostrService.filterCommunityNotesByAuthorVisibility(events);
+
+      if (
+        cancelled ||
+        events.length !== communityNotesEventsRef.current.length
+      ) {
+        return;
+      }
+      setCommunityNotes(nostrEventsToGeoJSON(visibleNotes));
+    };
+
+    const receiveCommunityNote = event => {
+      const note = {
+        ...event,
+        authorPubkey: getNostrEventAuthorPubkey(event),
+      };
+      const existingIndex = communityNotesEventsRef.current.findIndex(
+        existing => existing.id === event.id,
+      );
+      if (existingIndex === -1) {
+        communityNotesEventsRef.current.push(note);
+      } else {
+        communityNotesEventsRef.current[existingIndex] = note;
+      }
+      clearTimeout(communityNotesTimerRef.current);
+      communityNotesTimerRef.current = setTimeout(() => {
+        void updateCommunityNotes();
+      }, 200);
+    };
+
+    const handleEose = () => {
+      clearTimeout(communityNotesTimerRef.current);
+      void updateCommunityNotes();
+    };
+
+    const scheduleReconnect = () => {
+      if (cancelled || reconnectTimer) return;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        // Defined below before any reconnect timer can run.
+        // eslint-disable-next-line no-use-before-define
+        void subscribeToCommunityNotes();
+      }, COMMUNITY_NOTES_RECONNECT_DELAY_MS);
+    };
+
+    const subscribeToCommunityNotes = async () => {
+      try {
+        await nostrService.subscribeMapNotes(receiveCommunityNote, undefined, {
+          onClose: scheduleReconnect,
+          onEose: handleEose,
         });
-        clearTimeout(communityNotesTimerRef.current);
-        communityNotesTimerRef.current = setTimeout(() => {
-          setCommunityNotes(
-            nostrEventsToGeoJSON([...communityNotesEventsRef.current]),
-          );
-        }, 200);
-      })
-      .catch(() => {
-        setCommunityNotes({ type: 'FeatureCollection', features: [] });
-      });
+      } catch {
+        scheduleReconnect();
+      }
+    };
+
+    void subscribeToCommunityNotes();
 
     return () => {
+      cancelled = true;
+      clearTimeout(reconnectTimer);
       nostrService.unsubscribeMapNotes();
       clearTimeout(communityNotesTimerRef.current);
     };
