@@ -19,7 +19,7 @@ export default function TribesInCommon({ memberships = [], memberIds = [] }) {
   }
 
   return (
-    <div className="tribes-common">
+    <div className="profile-tribes-common">
       <h4>{t('Circles in common')}</h4>
       <ul className="list-inline">
         {commonMemberships.map(membership => (

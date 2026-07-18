@@ -30,6 +30,7 @@ export default function SearchSidebarFilters({
               onChange={onCommunityNotesToggle}
               type="checkbox"
             />
+            <div className="toggle"></div>
             Community Notes <small className="text-muted">via Nostroots</small>
           </label>
         </p>
@@ -73,6 +74,7 @@ export default function SearchSidebarFilters({
             onChange={onOnlineInPast6MonthsChange}
             type="checkbox"
           />
+          <div className="toggle"></div>
           Online in the past 6 months
         </label>
       </p>

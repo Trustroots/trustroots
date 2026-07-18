@@ -82,6 +82,7 @@ export default function SearchMyCirclesToggle({ selectedTribeIds, onChange }) {
           }}
           type="checkbox"
         />
+        <div className="toggle"></div>
         {label}
       </label>
     </div>

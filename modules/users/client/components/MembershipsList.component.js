@@ -9,11 +9,11 @@ function TribeBadge({ membership }) {
 
   return (
     <li className="tribe">
-      <div
-        className="tribe-badge"
-        style={getCircleBackgroundStyle(tribe, '120x120')}
-      >
-        <div className="tribe-badge-image">
+      <div className="tribe-badge">
+        <div
+          className="tribe-badge-image tribe-image"
+          style={getCircleBackgroundStyle(tribe, '120x120')}
+        >
           {!tribe.image && <span>{tribe.label.charAt(0)}</span>}
         </div>
         <div className="tribe-badge-info">

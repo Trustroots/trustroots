@@ -27,13 +27,14 @@ describe('TribesInCommon', () => {
   });
 
   it('lists shared circles with links', () => {
-    render(
+    const { container } = render(
       <TribesInCommon
         memberIds={['tribe-1', 'tribe-3']}
         memberships={memberships}
       />,
     );
 
+    expect(container.firstChild).toHaveClass('profile-tribes-common');
     expect(screen.getByText('Circles in common')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Cyclists' })).toHaveAttribute(
       'href',

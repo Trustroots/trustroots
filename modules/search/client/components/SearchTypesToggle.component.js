@@ -25,6 +25,7 @@ export default function SearchTypesToggle({ types, onChange }) {
             }}
             type="checkbox"
           />
+          <div className="toggle"></div>
           Hosts
         </label>
       </li>

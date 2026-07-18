@@ -143,6 +143,7 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
                   <JoinButton
                     tribe={tribe}
                     user={user}
+                    className="btn btn-lg btn-default"
                     icon={false}
                     onUpdated={handleMembershipUpdated}
                   />

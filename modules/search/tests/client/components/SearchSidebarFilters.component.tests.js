@@ -88,6 +88,9 @@ describe('<SearchSidebarFilters />', () => {
     expect(
       screen.getByRole('checkbox', { name: /online in the past 6 months/i }),
     ).toBeChecked();
+    screen.getAllByRole('checkbox').forEach(toggle => {
+      expect(toggle.nextElementSibling).toHaveClass('toggle');
+    });
   });
 
   it('forwards filter changes from child controls', () => {

@@ -30,6 +30,9 @@ describe('SearchCirclesToggle', () => {
     expect(
       await screen.findByRole('checkbox', { name: 'Cyclists' }),
     ).toBeChecked();
+    screen.getAllByRole('checkbox').forEach(toggle => {
+      expect(toggle.nextElementSibling).toHaveClass('toggle');
+    });
     expect(screen.getByRole('checkbox', { name: 'Hikers' })).not.toBeChecked();
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Hikers' }));

@@ -128,5 +128,12 @@ describe('MembershipsList', () => {
       screen.getByRole('link', { name: 'Image circle' }),
     ).toBeInTheDocument();
     expect(screen.getByText('No members yet')).toBeInTheDocument();
+    const badge = document.querySelector('.tribe-badge');
+    const image = document.querySelector('.tribe-badge-image');
+    expect(badge).not.toHaveAttribute('style');
+    expect(image).toHaveClass('tribe-image');
+    expect(image.style.backgroundImage).toContain(
+      '/uploads-circle/image/120x120.',
+    );
   });
 });

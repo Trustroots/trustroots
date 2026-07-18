@@ -7,6 +7,8 @@ import Tooltip from '@/modules/core/client/components/Tooltip';
 import * as api from '../api/tribes.api';
 
 function JoinButtonPresentational({
+  className = 'btn btn-sm btn-default',
+  icon = true,
   isMember,
   isLoading,
   tribe,
@@ -26,9 +28,14 @@ function JoinButtonPresentational({
       <a
         href={`/signup?tribe=${tribe.slug}`}
         type="button"
-        className="btn btn-sm btn-default tribe-join"
+        className={`${className} tribe-join`}
       >
-        <i className="icon-plus" /> {buttonLabel}
+        {icon && (
+          <>
+            <i className="icon-plus" />{' '}
+          </>
+        )}
+        {buttonLabel}
       </a>
     );
   }
@@ -42,20 +49,25 @@ function JoinButtonPresentational({
     >
       <button
         type="button"
-        className={`${
-          isMember ? 'btn-active' : ''
-        } btn btn-sm btn-default tribe-join`}
+        className={`${isMember ? 'btn-active' : ''} ${className} tribe-join`}
         disabled={isLoading}
         aria-label={ariaLabel}
         onClick={onToggle}
       >
-        <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
+        {icon && (
+          <>
+            <i className={isMember ? 'icon-ok' : 'icon-plus'} />{' '}
+          </>
+        )}
+        {buttonLabel}
       </button>
     </Tooltip>
   );
 }
 
 JoinButtonPresentational.propTypes = {
+  className: PropTypes.string,
+  icon: PropTypes.bool,
   isMember: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool,
   isLoggedIn: PropTypes.bool.isRequired,
@@ -135,6 +147,8 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 }
 
 JoinButton.propTypes = {
+  className: PropTypes.string,
+  icon: PropTypes.bool,
   tribe: PropTypes.object.isRequired,
   user: PropTypes.object,
   onUpdated: PropTypes.func.isRequired,

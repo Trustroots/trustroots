@@ -12,6 +12,7 @@ describe('SearchTypesToggle', () => {
 
     const hostsToggle = screen.getByRole('checkbox', { name: 'Hosts' });
     expect(hostsToggle).toBeChecked();
+    expect(hostsToggle.nextElementSibling).toHaveClass('toggle');
 
     fireEvent.click(hostsToggle);
 
