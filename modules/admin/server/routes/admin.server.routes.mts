@@ -29,6 +29,7 @@ interface RouteApp {
 /**
  * Module dependencies.
  */
+import adminCircles from '../controllers/admin.circles.server.controller.js';
 
 const registerRoutes = (app: RouteApp): void => {
   app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
@@ -53,6 +54,26 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/hackerspaces/preview')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminHackerspaces.preview);
+  app
+    .route('/api/admin/circles')
+    .all(adminPolicy.isAllowed)
+    .get(adminCircles.list)
+    .post(
+      adminAuditLog.record,
+      adminCircles.processImageUpload,
+      adminCircles.create,
+    );
+
+  app
+    .route('/api/admin/circles/:circle')
+    .all(adminPolicy.isAllowed)
+    .get(adminCircles.get)
+    .put(
+      adminAuditLog.record,
+      adminCircles.processImageUpload,
+      adminCircles.update,
+    );
+
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)
