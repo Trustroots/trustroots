@@ -32,6 +32,14 @@ export const communityNotesClusterCountLayer = {
   },
 };
 
+export const communityNotesClusterCountLayerOSM = {
+  ...communityNotesClusterCountLayer,
+  layout: {
+    ...communityNotesClusterCountLayer.layout,
+    'text-font': ['Open Sans Semibold'],
+  },
+};
+
 export const communityNotesLayer = {
   id: 'community-notes-points',
   type: 'circle',
@@ -39,12 +47,7 @@ export const communityNotesLayer = {
   filter: ['!', ['has', 'point_count']],
   minzoom: MIN_ZOOM,
   paint: {
-    'circle-color': [
-      'case',
-      ['==', ['get', 'verified'], true],
-      '#1565C0', // Verified (kind 30398)
-      '#1976D2', // Unverified (kind 30397)
-    ],
+    'circle-color': '#1565C0',
     // Make circles larger as the user zooms from z2 to z22
     'circle-radius': {
       base: 1.75,

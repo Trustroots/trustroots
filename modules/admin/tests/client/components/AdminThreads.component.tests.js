@@ -35,22 +35,34 @@ const makeUser = overrides => ({
 });
 
 describe('<AdminThreads />', () => {
-  it('uses a valid member id from the URL as the initial query', () => {
+  it('queries automatically using a valid member id from the URL', async () => {
     window.history.pushState({}, '', `/admin/threads?userId=${userId}`);
+    threadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
     expect(screen.getByLabelText('Member username or ID')).toHaveValue(userId);
-    expect(screen.queryByText('Press "Query"')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+        userId,
+        username: '',
+      }),
+    );
   });
 
-  it('uses a username from the URL as the initial query', () => {
+  it('queries automatically using a username from the URL', async () => {
     window.history.pushState({}, '', '/admin/threads?username=alice');
+    threadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
     expect(screen.getByLabelText('Member username or ID')).toHaveValue('alice');
-    expect(screen.queryByText('Press "Query"')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+        userId: '',
+        username: 'alice',
+      }),
+    );
   });
 
   it('queries by username and renders thread state and links', async () => {

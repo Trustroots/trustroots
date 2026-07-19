@@ -6,27 +6,11 @@ import { Relay } from 'nostr-tools/lib/cjs/relay.js';
 
 export const NOSTR_RELAY_URL = 'wss://relay.trustroots.org';
 export const MAP_NOTES_LIMIT = 500;
-
-// Nostroots validation server pubkey — only kind 30398 events signed by this
-// key are considered verified map notes.
-export const NOSTROOTS_VALIDATION_PUBKEY =
-  'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b';
+export const NOSTR_AUTHOR_VISIBILITY_ENDPOINT = '/api/nostr/author-visibility';
+export const AUTHOR_VISIBILITY_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export function getNostrEventAuthorPubkey(event) {
-  if (event?.kind === 30398) {
-    const originalAuthorTag = event.tags?.find(tag => tag[0] === 'p' && tag[1]);
-    if (originalAuthorTag) {
-      return originalAuthorTag[1];
-    }
-  }
-
   return event?.pubkey;
-}
-
-function getReferencedEventIds(event) {
-  return (event.tags ?? [])
-    .filter(tag => tag[0] === 'e' && tag[1])
-    .map(tag => tag[1]);
 }
 
 /**
@@ -37,12 +21,12 @@ export default class NostrService {
   /**
    * @param {string} relayUrl — WebSocket URL of the Nostr relay
    */
-  constructor(relayUrl, validationPubkey = NOSTROOTS_VALIDATION_PUBKEY) {
+  constructor(relayUrl) {
     this.relayUrl = relayUrl;
-    this.validationPubkey = validationPubkey;
     this.relay = null;
     this.subscriptions = new Map();
     this.usernameCache = new Map();
+    this.communityNoteAuthorVisibilityCache = new Map();
   }
 
   /**
@@ -93,15 +77,20 @@ export default class NostrService {
   }
 
   /**
-   * Subscribe to recent verified map notes (kind 30398) from the Nostroots
-   * validation server.
+   * Subscribe to recent original map notes (kind 30397). Author visibility is
+   * evaluated separately against current Trustroots account state.
    * Closes any existing 'mapNotes' subscription before creating a new one.
    *
    * @param {Function} onEvent — callback invoked for each matching event
    * @param {number} [limit=MAP_NOTES_LIMIT] — maximum historical events
+   * @param {object} [callbacks] — subscription lifecycle callbacks
    * @returns {Promise<object>} the subscription handle
    */
-  async subscribeMapNotes(onEvent, limit = MAP_NOTES_LIMIT) {
+  async subscribeMapNotes(
+    onEvent,
+    limit = MAP_NOTES_LIMIT,
+    { onClose, onEose } = {},
+  ) {
     const relay = await this.connect();
 
     this.unsubscribeMapNotes();
@@ -109,14 +98,14 @@ export default class NostrService {
     const sub = relay.subscribe(
       [
         {
-          kinds: [30398],
-          authors: [this.validationPubkey],
+          kinds: [30397],
           limit,
         },
       ],
       {
         onevent: onEvent,
-        oneose() {},
+        oneose: onEose || (() => {}),
+        onclose: onClose,
       },
     );
 
@@ -145,26 +134,8 @@ export default class NostrService {
           return;
         }
         resolved = true;
-        const validatedOriginalEventIds = new Set();
-        events.forEach(event => {
-          if (event.kind === 30398) {
-            getReferencedEventIds(event).forEach(eventId => {
-              validatedOriginalEventIds.add(eventId);
-            });
-          }
-        });
         const dedupedEvents = [
-          ...new Map(
-            events
-              .filter(
-                event =>
-                  !(
-                    event.kind === 30397 &&
-                    validatedOriginalEventIds.has(event.id)
-                  ),
-              )
-              .map(event => [event.id, event]),
-          ).values(),
+          ...new Map(events.map(event => [event.id, event])).values(),
         ]
           .sort((a, b) => b.created_at - a.created_at)
           .slice(0, limit);
@@ -173,15 +144,7 @@ export default class NostrService {
       };
 
       subscriptionRef.current = relay.subscribe(
-        [
-          { kinds: [30397], authors: [pubkeyHex], limit },
-          {
-            kinds: [30398],
-            authors: [this.validationPubkey],
-            '#p': [pubkeyHex],
-            limit,
-          },
-        ],
+        [{ kinds: [30397], authors: [pubkeyHex], limit }],
         {
           onevent(event) {
             events.push(event);
@@ -248,23 +211,73 @@ export default class NostrService {
       );
     });
   }
-}
 
-function runtimeValidationPubkey() {
-  /* istanbul ignore next -- exercised by the browser E2E bundle only */
-  if (
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1') &&
-    window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__
-  ) {
-    return window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__;
+  async filterCommunityNotesByAuthorVisibility(notes) {
+    const now = Date.now();
+    const authorPubkeys = [
+      ...new Set(
+        notes
+          .map(note => (note.authorPubkey || note.pubkey || '').toLowerCase())
+          .filter(pubkey => /^[0-9a-f]{64}$/.test(pubkey)),
+      ),
+    ];
+    const unresolvedPubkeys = authorPubkeys.filter(pubkey => {
+      const cached = this.communityNoteAuthorVisibilityCache.get(pubkey);
+      return !cached || cached.expiresAt <= now;
+    });
+
+    try {
+      for (let index = 0; index < unresolvedPubkeys.length; index += 100) {
+        const query = new URLSearchParams();
+        const batch = unresolvedPubkeys.slice(index, index + 100);
+        batch.forEach(pubkey => query.append('pubkey', pubkey));
+
+        const response = await fetch(
+          `${NOSTR_AUTHOR_VISIBILITY_ENDPOINT}?${query.toString()}`,
+        );
+        if (!response.ok) throw new Error('Author visibility lookup failed');
+
+        const payload = await response.json();
+        if (
+          !angular.isArray(payload?.pubkeys) ||
+          !angular.isArray(payload?.linkedPubkeys)
+        ) {
+          throw new Error('Invalid author visibility response');
+        }
+
+        const linkedPubkeys = new Set(
+          payload.linkedPubkeys
+            .filter(pubkey => angular.isString(pubkey))
+            .map(pubkey => pubkey.toLowerCase()),
+        );
+        const visiblePubkeys = new Set(
+          payload.pubkeys
+            .filter(pubkey => angular.isString(pubkey))
+            .map(pubkey => pubkey.toLowerCase()),
+        );
+        const expiresAt = Date.now() + AUTHOR_VISIBILITY_CACHE_TTL_MS;
+        batch.forEach(pubkey => {
+          this.communityNoteAuthorVisibilityCache.set(pubkey, {
+            visible: !linkedPubkeys.has(pubkey) || visiblePubkeys.has(pubkey),
+            expiresAt,
+          });
+        });
+      }
+    } catch {
+      // Visibility failures are not cached. The next map update can retry.
+    }
+
+    return notes.filter(note => {
+      const authorPubkey = (
+        note.authorPubkey ||
+        note.pubkey ||
+        ''
+      ).toLowerCase();
+      if (!/^[0-9a-f]{64}$/.test(authorPubkey)) return false;
+      const cached = this.communityNoteAuthorVisibilityCache.get(authorPubkey);
+      return cached ? cached.visible : true;
+    });
   }
-
-  return NOSTROOTS_VALIDATION_PUBKEY;
 }
 
-export const nostrService = new NostrService(
-  NOSTR_RELAY_URL,
-  runtimeValidationPubkey(),
-);
+export const nostrService = new NostrService(NOSTR_RELAY_URL);

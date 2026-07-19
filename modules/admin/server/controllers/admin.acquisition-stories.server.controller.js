@@ -301,16 +301,27 @@ function getStories() {
     {
       acquisitionStory: { $exists: true, $ne: '' },
     },
-    '_id acquisitionStory created displayName username',
+    '_id acquisitionStory created displayName member username',
   )
     .sort('-created')
     .limit(3000)
     .exec();
 }
 
+function storyForList(story) {
+  return {
+    _id: story._id,
+    acquisitionStory: story.acquisitionStory,
+    circleCount: story.member.length,
+    created: story.created,
+    displayName: story.displayName,
+    username: story.username,
+  };
+}
+
 exports.list = async (req, res) => {
   const stories = await getStories();
-  res.send(stories || []);
+  res.send(stories ? stories.map(storyForList) : []);
 };
 
 exports.getAnalysis = async (req, res) => {
