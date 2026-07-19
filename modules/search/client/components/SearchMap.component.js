@@ -44,13 +44,31 @@ import {
   communityNotesLayer,
   communityNotesClusterLayer,
   communityNotesClusterCountLayer,
+  communityNotesClusterCountLayerOSM,
 } from './community-notes-layers';
 import { OpenLocationCode } from 'open-location-code';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
 const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
+const MISSING_MAP_LAYER_ERROR =
+  /^The layer '.*' does not exist in the map's style and cannot be queried for features\.$/;
 
 const olc = new OpenLocationCode();
+
+function handleMapError(event) {
+  const error = event?.error;
+
+  // A pointer event can race with style teardown after React has removed the
+  // interactive layers. Mapbox already returns no features for this query, so
+  // do not report the expected lifecycle race as an application error.
+  if (MISSING_MAP_LAYER_ERROR.test(error?.message)) {
+    return;
+  }
+
+  // Keep Mapbox's default behaviour for every other map error.
+  // eslint-disable-next-line no-console
+  console.error(error || event);
+}
 
 function getPlusCodeFromRawEvent(event) {
   const tag = event.tags.find(
@@ -181,6 +199,7 @@ export default function SearchMap({
     typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
   const effectiveMapStyle =
     !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
+  const isOsmStyle = effectiveMapStyle?.name === MAP_STYLE_OSM.name;
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles =
     webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
@@ -693,6 +712,7 @@ export default function SearchMap({
         mapboxApiAccessToken={MAPBOX_TOKEN}
         mapStyle={effectiveMapStyle}
         onClick={onClickMap}
+        onError={handleMapError}
         onHover={onHover}
         onInteractionStateChange={debouncedUpdateOffers}
         onMouseLeave={clearPreviouslyHoveredState}
@@ -727,7 +747,7 @@ export default function SearchMap({
         >
           <Layer {...clusterLayer} />
           {/* OSM and Mapbox use different fonts for cluster numbers */}
-          {effectiveMapStyle === MAP_STYLE_OSM ? (
+          {isOsmStyle ? (
             <Layer {...clusterCountLayerOSM} />
           ) : (
             <Layer {...clusterCountLayerMapbox} />
@@ -745,7 +765,11 @@ export default function SearchMap({
             promoteId="id"
           >
             <Layer {...communityNotesClusterLayer} />
-            <Layer {...communityNotesClusterCountLayer} />
+            {isOsmStyle ? (
+              <Layer {...communityNotesClusterCountLayerOSM} />
+            ) : (
+              <Layer {...communityNotesClusterCountLayer} />
+            )}
             <Layer {...communityNotesLayer} />
           </Source>
         )}

@@ -104,6 +104,7 @@ let mockMapInstance = mockMap;
 let mockMapProps;
 let mockSourceProps;
 let mockSourcePropsById;
+let mockLayerPropsById;
 const mockSource = {
   getClusterExpansionZoom: jest.fn(),
 };
@@ -150,6 +151,7 @@ jest.mock('react-map-gl', () => {
   };
 
   function Layer(props) {
+    mockLayerPropsById[props.id] = props;
     return React.createElement('div', {
       'data-testid': `map-layer-${props.id}`,
     });
@@ -190,6 +192,7 @@ beforeEach(() => {
   mockIsWebGLSupported.mockReturnValue(true);
   mockLeafletSearchMap.mockClear();
   mockSourcePropsById = {};
+  mockLayerPropsById = {};
   mockPersistentMapLocation = {
     latitude: 48.6908333333,
     longitude: 9.14055555556,
@@ -349,6 +352,27 @@ describe('Search', () => {
       'clusters',
       'unclustered-point',
     ]);
+  });
+
+  it('ignores missing-layer errors caused by map style teardown', () => {
+    const consoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    renderSearchMap();
+
+    mockMapProps.onError({
+      error: new Error(
+        "The layer 'clusters' does not exist in the map's style and cannot be queried for features.",
+      ),
+    });
+    expect(consoleError).not.toHaveBeenCalled();
+
+    const otherError = new Error('Map source failed');
+    mockMapProps.onError({ error: otherError });
+    expect(consoleError).toHaveBeenCalledWith(otherError);
+    mockMapProps.onError({});
+    expect(consoleError).toHaveBeenCalledWith({});
+    consoleError.mockRestore();
   });
 
   it('falls back to OSM when a mapbox style is persisted without a token', () => {
@@ -1312,10 +1336,16 @@ describe('Search', () => {
   });
 
   it('uses the OSM cluster count layer when the persisted map style is OSM', () => {
-    mockMapStyle = MAP_STYLE_OSM;
+    mockMapStyle = JSON.parse(JSON.stringify(MAP_STYLE_OSM));
 
-    renderSearchMap();
+    renderSearchMap({ filters: '{"communityNotes":true}' });
 
-    expect(mockMapProps.mapStyle).toBe(MAP_STYLE_OSM);
+    expect(mockMapProps.mapStyle).toEqual(MAP_STYLE_OSM);
+    expect(mockLayerPropsById['cluster-count'].layout['text-font']).toEqual([
+      'Open Sans Bold',
+    ]);
+    expect(
+      mockLayerPropsById['community-notes-cluster-count'].layout['text-font'],
+    ).toEqual(['Open Sans Semibold']);
   });
 });

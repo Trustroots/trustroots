@@ -32,6 +32,14 @@ export const communityNotesClusterCountLayer = {
   },
 };
 
+export const communityNotesClusterCountLayerOSM = {
+  ...communityNotesClusterCountLayer,
+  layout: {
+    ...communityNotesClusterCountLayer.layout,
+    'text-font': ['Open Sans Semibold'],
+  },
+};
+
 export const communityNotesLayer = {
   id: 'community-notes-points',
   type: 'circle',
