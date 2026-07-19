@@ -33,6 +33,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     it('returns acquisition stories for users who have one', async () => {
       const users = utils.generateUsers(2);
       users[0].acquisitionStory = 'Found via couch surfing';
+      users[0].member = [{ tribe: new mongoose.Types.ObjectId() }];
       users[1].acquisitionStory = '';
 
       await utils.saveUsers(users);
@@ -42,6 +43,8 @@ describe('Admin acquisition stories controller unit tests', () => {
 
       res.body.length.should.equal(1);
       res.body[0].acquisitionStory.should.equal('Found via couch surfing');
+      res.body[0].circleCount.should.equal(1);
+      should(res.body[0].member).be.undefined();
     });
 
     it('returns an empty array when no stories exist', async () => {

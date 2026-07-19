@@ -613,23 +613,19 @@ test.describe('rendered search map feature coverage', () => {
       {
         content: communityNoteText,
         created_at: 1700000000,
-        kind: 30398,
-        tags: [
-          ['l', '9F4MGCC4+22', 'open-location-code'],
-          [
-            'p',
-            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
-          ],
-        ],
+        kind: 30397,
+        tags: [['l', '9F4MGCC4+22', 'open-location-code']],
       },
       new Uint8Array(32).fill(1),
     );
-
-    // Local E2E pages accept an explicit fixture validator override. The
-    // deployed site always retains the configured Nostroots validation key.
-    await page.addInitScript(fixturePubkey => {
-      window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__ = fixturePubkey;
-    }, signedNote.pubkey);
+    await context.route('**/api/nostr/author-visibility?*', route =>
+      route.fulfill({
+        json: {
+          linkedPubkeys: [signedNote.pubkey],
+          pubkeys: [signedNote.pubkey],
+        },
+      }),
+    );
     await installNostrRelayStub(page, [signedNote]);
 
     await page.goto('/search');

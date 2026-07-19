@@ -44,11 +44,31 @@ import {
   communityNotesLayer,
   communityNotesClusterLayer,
   communityNotesClusterCountLayer,
+  communityNotesClusterCountLayerOSM,
 } from './community-notes-layers';
 import { OpenLocationCode } from 'open-location-code';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
+const MISSING_MAP_LAYER_ERROR =
+  /^The layer '.*' does not exist in the map's style and cannot be queried for features\.$/;
+
 const olc = new OpenLocationCode();
+
+function handleMapError(event) {
+  const error = event?.error;
+
+  // A pointer event can race with style teardown after React has removed the
+  // interactive layers. Mapbox already returns no features for this query, so
+  // do not report the expected lifecycle race as an application error.
+  if (MISSING_MAP_LAYER_ERROR.test(error?.message)) {
+    return;
+  }
+
+  // Keep Mapbox's default behaviour for every other map error.
+  // eslint-disable-next-line no-console
+  console.error(error || event);
+}
 
 function getPlusCodeFromRawEvent(event) {
   const tag = event.tags.find(
@@ -112,7 +132,6 @@ function nostrEventsToGeoJSON(events) {
           pubkey: event.pubkey,
           authorPubkey: getNostrEventAuthorPubkey(event),
           created_at: event.created_at,
-          verified: event.kind === 30398,
           kind: event.kind,
           tags: JSON.stringify(event.tags),
         },
@@ -180,6 +199,7 @@ export default function SearchMap({
     typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
   const effectiveMapStyle =
     !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
+  const isOsmStyle = effectiveMapStyle?.name === MAP_STYLE_OSM.name;
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles =
     webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
@@ -443,6 +463,64 @@ export default function SearchMap({
     }
   }
 
+  const zoomToCommunityNotesCluster = cluster => {
+    if (!cluster?.geometry?.coordinates) {
+      return;
+    }
+
+    setViewport({
+      ...viewport,
+      latitude: cluster.geometry.coordinates[1],
+      longitude: cluster.geometry.coordinates[0],
+      zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
+      transitionDuration: 'auto',
+      transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
+    });
+  };
+
+  const openCommunityNotesCluster = cluster => {
+    const clusterId = cluster?.properties?.cluster_id;
+    if (clusterId === undefined) {
+      zoomToCommunityNotesCluster(cluster);
+      return;
+    }
+
+    const source = getMapRef()?.getSource(SOURCE_COMMUNITY_NOTES);
+    if (!source) {
+      zoomToCommunityNotesCluster(cluster);
+      return;
+    }
+
+    source.getClusterLeaves(
+      clusterId,
+      cluster.properties.point_count,
+      0,
+      (error, leaves) => {
+        if (error) {
+          zoomToCommunityNotesCluster(cluster);
+          return;
+        }
+
+        const plusCode = getPlusCodeFromEvent(leaves[0].properties);
+        const sharesPlusCode = leaves.every(
+          leaf => getPlusCodeFromEvent(leaf.properties) === plusCode,
+        );
+
+        if (!sharesPlusCode) {
+          zoomToCommunityNotesCluster(cluster);
+          return;
+        }
+
+        if (onCommunityNoteOpen) {
+          onCommunityNoteOpen({
+            notes: leaves.map(leaf => reconstructEvent(leaf.properties)),
+            plusCode,
+          });
+        }
+      },
+    );
+  };
+
   const onClickMap = event => {
     const { features } = event;
     clearPreviouslySelectedState();
@@ -464,17 +542,7 @@ export default function SearchMap({
 
     // Community notes cluster click — zoom in
     if (layerId === communityNotesClusterLayer.id) {
-      const feature = features[0];
-      if (feature?.geometry?.coordinates) {
-        setViewport({
-          ...viewport,
-          latitude: feature.geometry.coordinates[1],
-          longitude: feature.geometry.coordinates[0],
-          zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
-          transitionDuration: 'auto',
-          transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
-        });
-      }
+      openCommunityNotesCluster(features[0]);
       return;
     }
 
@@ -564,24 +632,73 @@ export default function SearchMap({
     }
 
     communityNotesEventsRef.current = [];
-    nostrService
-      .subscribeMapNotes(event => {
-        communityNotesEventsRef.current.push({
-          ...event,
-          authorPubkey: getNostrEventAuthorPubkey(event),
+    let cancelled = false;
+    let reconnectTimer = null;
+
+    const updateCommunityNotes = async () => {
+      const events = [...communityNotesEventsRef.current];
+      const visibleNotes =
+        await nostrService.filterCommunityNotesByAuthorVisibility(events);
+
+      if (
+        cancelled ||
+        events.length !== communityNotesEventsRef.current.length
+      ) {
+        return;
+      }
+      setCommunityNotes(nostrEventsToGeoJSON(visibleNotes));
+    };
+
+    const receiveCommunityNote = event => {
+      const note = {
+        ...event,
+        authorPubkey: getNostrEventAuthorPubkey(event),
+      };
+      const existingIndex = communityNotesEventsRef.current.findIndex(
+        existing => existing.id === event.id,
+      );
+      if (existingIndex === -1) {
+        communityNotesEventsRef.current.push(note);
+      } else {
+        communityNotesEventsRef.current[existingIndex] = note;
+      }
+      clearTimeout(communityNotesTimerRef.current);
+      communityNotesTimerRef.current = setTimeout(() => {
+        void updateCommunityNotes();
+      }, 200);
+    };
+
+    const handleEose = () => {
+      clearTimeout(communityNotesTimerRef.current);
+      void updateCommunityNotes();
+    };
+
+    const scheduleReconnect = () => {
+      if (cancelled || reconnectTimer) return;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        // Defined below before any reconnect timer can run.
+        // eslint-disable-next-line no-use-before-define
+        void subscribeToCommunityNotes();
+      }, COMMUNITY_NOTES_RECONNECT_DELAY_MS);
+    };
+
+    const subscribeToCommunityNotes = async () => {
+      try {
+        await nostrService.subscribeMapNotes(receiveCommunityNote, undefined, {
+          onClose: scheduleReconnect,
+          onEose: handleEose,
         });
-        clearTimeout(communityNotesTimerRef.current);
-        communityNotesTimerRef.current = setTimeout(() => {
-          setCommunityNotes(
-            nostrEventsToGeoJSON([...communityNotesEventsRef.current]),
-          );
-        }, 200);
-      })
-      .catch(() => {
-        setCommunityNotes({ type: 'FeatureCollection', features: [] });
-      });
+      } catch {
+        scheduleReconnect();
+      }
+    };
+
+    void subscribeToCommunityNotes();
 
     return () => {
+      cancelled = true;
+      clearTimeout(reconnectTimer);
       nostrService.unsubscribeMapNotes();
       clearTimeout(communityNotesTimerRef.current);
     };
@@ -643,6 +760,7 @@ export default function SearchMap({
         mapboxApiAccessToken={MAPBOX_TOKEN}
         mapStyle={effectiveMapStyle}
         onClick={onClickMap}
+        onError={handleMapError}
         onHover={onHover}
         onInteractionStateChange={debouncedUpdateOffers}
         onMouseLeave={clearPreviouslyHoveredState}
@@ -677,7 +795,7 @@ export default function SearchMap({
         >
           <Layer {...clusterLayer} />
           {/* OSM and Mapbox use different fonts for cluster numbers */}
-          {effectiveMapStyle === MAP_STYLE_OSM ? (
+          {isOsmStyle ? (
             <Layer {...clusterCountLayerOSM} />
           ) : (
             <Layer {...clusterCountLayerMapbox} />
@@ -695,7 +813,11 @@ export default function SearchMap({
             promoteId="id"
           >
             <Layer {...communityNotesClusterLayer} />
-            <Layer {...communityNotesClusterCountLayer} />
+            {isOsmStyle ? (
+              <Layer {...communityNotesClusterCountLayerOSM} />
+            ) : (
+              <Layer {...communityNotesClusterCountLayer} />
+            )}
             <Layer {...communityNotesLayer} />
           </Source>
         )}

@@ -65,26 +65,53 @@ Nostr connections in public connection statistics.
 
 The system SHALL let signed-in members enable a persistent Community Notes
 filter on the search map and read the associated Nostroots thread for a
-selected location.
+selected location. The map SHALL fetch only original kind `30397` events and
+SHALL NOT fetch kind `30398` validation-server events, so that current
+Trustroots account visibility can be applied without depending on a stale
+validation decision. It SHALL exclude notes authored by known Trustroots
+members who are not eligible for public display while preserving notes from
+valid Nostr authors who are not linked to a Trustroots account.
 
 #### Scenario: Member enables Community Notes
 
 - **WHEN** a signed-in member enables the Community Notes search filter
-- **THEN** the map displays available community-note locations
+- **THEN** the map displays available original community-note locations from eligible and unlinked authors
+- **AND** excludes notes from known shadowbanned, suspended, or private authors
+- **AND** excludes notes with malformed author keys
+- **AND** does not require validation-server copies of the original notes
 - **AND** the filter remains enabled after the member reloads the page
 
 #### Scenario: Member selects a community-note location
 
-- **WHEN** a signed-in member selects a community-note location on the search map
-- **THEN** the system displays the location's note thread and available author information
+- **WHEN** a member selects a community-note location
+- **THEN** the system displays the location's note thread and available author
+  information
 - **AND** a reply action opens the Nostroots action options
+
+### Requirement: Batch Nostr author visibility lookup
+
+The system SHALL provide a public read-only endpoint that accepts one or more
+valid Nostr public-key hex values and identifies which keys are linked to
+Trustroots members and which linked keys are eligible for public display. The
+response SHALL NOT disclose why a linked key is ineligible.
+
+#### Scenario: Lookup includes eligible and ineligible authors
+
+- **WHEN** a client requests visibility for public, shadowbanned, and unknown
+  Nostr public keys
+- **THEN** the response identifies the public and shadowbanned keys as linked
+- **AND** includes only the public member's key as eligible
+- **AND** does not disclose why the shadowbanned key is ineligible
 
 ### Requirement: Profile community notes
 
-The system SHALL show a Nostroots badge and recent community notes on a
-member profile when notes are available for that member's Nostr identity.
+The system SHALL show a Nostroots badge and recent original community notes on
+a member profile when notes are available for that member's Nostr identity. It
+SHALL fetch only kind `30397` events and SHALL NOT fetch kind `30398`
+validation-server events.
 
 #### Scenario: Member with community notes has their profile viewed
 
-- **WHEN** a profile with available community notes is viewed
-- **THEN** the profile displays the Nostroots badge and recent notes
+- **WHEN** a visitor views community notes associated with a member profile
+- **THEN** the system fetches and displays only original kind `30397` events
+- **AND** does not fetch kind `30398` validation-server copies
