@@ -23,6 +23,7 @@
     "build:generate-circle-images": "NODE_ENV=production npm run generate-circle-images",
     "build:webpack": "NODE_ENV=production npm run webpack",
     "build:webpack-service-worker": "NODE_ENV=production npm run webpack:service-worker",
+    "cleanup:historical-spam": "node ./bin/db-maintenance/purge-historical-spam-accounts.js",
     "build:tarball": "npm run build && rm -fr trustroots.tar.gz && touch trustroots.tar.gz && tar --exclude=trustroots.tar.gz --exclude-vcs -czf trustroots.tar.gz .",
     "check-environment": "npm run install-dependencies && npx check-node-version --package && npm run ensure-config-exists && npm run ensure-uploads-dir-exists",
     "clean:public": "rm -fr ./public/dist ./public/assets ./public/push-messaging-sw.js",
