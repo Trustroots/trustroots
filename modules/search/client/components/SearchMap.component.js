@@ -463,6 +463,64 @@ export default function SearchMap({
     }
   }
 
+  const zoomToCommunityNotesCluster = cluster => {
+    if (!cluster?.geometry?.coordinates) {
+      return;
+    }
+
+    setViewport({
+      ...viewport,
+      latitude: cluster.geometry.coordinates[1],
+      longitude: cluster.geometry.coordinates[0],
+      zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
+      transitionDuration: 'auto',
+      transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
+    });
+  };
+
+  const openCommunityNotesCluster = cluster => {
+    const clusterId = cluster?.properties?.cluster_id;
+    if (clusterId === undefined) {
+      zoomToCommunityNotesCluster(cluster);
+      return;
+    }
+
+    const source = getMapRef()?.getSource(SOURCE_COMMUNITY_NOTES);
+    if (!source) {
+      zoomToCommunityNotesCluster(cluster);
+      return;
+    }
+
+    source.getClusterLeaves(
+      clusterId,
+      cluster.properties.point_count,
+      0,
+      (error, leaves) => {
+        if (error) {
+          zoomToCommunityNotesCluster(cluster);
+          return;
+        }
+
+        const plusCode = getPlusCodeFromEvent(leaves[0].properties);
+        const sharesPlusCode = leaves.every(
+          leaf => getPlusCodeFromEvent(leaf.properties) === plusCode,
+        );
+
+        if (!sharesPlusCode) {
+          zoomToCommunityNotesCluster(cluster);
+          return;
+        }
+
+        if (onCommunityNoteOpen) {
+          onCommunityNoteOpen({
+            notes: leaves.map(leaf => reconstructEvent(leaf.properties)),
+            plusCode,
+          });
+        }
+      },
+    );
+  };
+
   const onClickMap = event => {
     const { features } = event;
     clearPreviouslySelectedState();
@@ -484,17 +542,7 @@ export default function SearchMap({
 
     // Community notes cluster click — zoom in
     if (layerId === communityNotesClusterLayer.id) {
-      const feature = features[0];
-      if (feature?.geometry?.coordinates) {
-        setViewport({
-          ...viewport,
-          latitude: feature.geometry.coordinates[1],
-          longitude: feature.geometry.coordinates[0],
-          zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
-          transitionDuration: 'auto',
-          transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
-        });
-      }
+      openCommunityNotesCluster(features[0]);
       return;
     }
 

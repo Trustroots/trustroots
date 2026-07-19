@@ -107,6 +107,7 @@ let mockSourcePropsById;
 let mockLayerPropsById;
 const mockSource = {
   getClusterExpansionZoom: jest.fn(),
+  getClusterLeaves: jest.fn(),
 };
 let mockSourceInstance = mockSource;
 jest.mock('react-map-gl', () => {
@@ -214,6 +215,7 @@ beforeEach(() => {
   mockSource.getClusterExpansionZoom.mockImplementation((clusterId, done) =>
     done(null, 18),
   );
+  mockSource.getClusterLeaves.mockReset();
   mockSourceInstance = mockSource;
   mockMap.getSource.mockImplementation(() => mockSourceInstance);
   mockGetOffer.mockResolvedValue({ _id: 'offer-1' });
@@ -1244,6 +1246,168 @@ describe('Search', () => {
     expect(mockMapProps.latitude).toBe(52);
     expect(mockMapProps.longitude).toBe(13);
     expect(mockMapProps.zoom).toBe(5);
+  });
+
+  it('opens overlapping Community Notes instead of repeatedly zooming', () => {
+    const onCommunityNoteOpen = jest.fn();
+    const makeLeaf = (id, content, createdAt) => ({
+      properties: {
+        id,
+        content,
+        pubkey: `${id}-author`,
+        authorPubkey: `${id}-author`,
+        created_at: createdAt,
+        kind: 30397,
+        tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
+      },
+    });
+    mockSource.getClusterLeaves.mockImplementation(
+      (clusterId, limit, offset, done) => {
+        done(null, [
+          makeLeaf('note-older', 'Older note', 1700000000),
+          makeLeaf('note-newer', 'Newer note', 1700000100),
+        ]);
+      },
+    );
+
+    renderSearchMap({
+      filters: '{"communityNotes":true}',
+      onCommunityNoteOpen,
+    });
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [3.5, 51.5] },
+            layer: { id: 'community-notes-clusters' },
+            properties: { cluster_id: 7, point_count: 2 },
+          },
+        ],
+      });
+    });
+
+    expect(mockSource.getClusterLeaves).toHaveBeenCalledWith(
+      7,
+      2,
+      0,
+      expect.any(Function),
+    );
+    expect(onCommunityNoteOpen).toHaveBeenCalledWith({
+      notes: [
+        expect.objectContaining({ id: 'note-older', content: 'Older note' }),
+        expect.objectContaining({ id: 'note-newer', content: 'Newer note' }),
+      ],
+      plusCode: '9F350000+',
+    });
+    expect(mockMapProps.zoom).toBe(2);
+  });
+
+  it('zooms Community Note clusters whose leaves have different locations', () => {
+    mockSource.getClusterLeaves.mockImplementation(
+      (clusterId, limit, offset, done) => {
+        done(null, [
+          {
+            properties: {
+              tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
+            },
+          },
+          {
+            properties: {
+              tags: JSON.stringify([
+                ['l', '8FVC9G8F+5W', 'open-location-code'],
+              ]),
+            },
+          },
+        ]);
+      },
+    );
+
+    renderSearchMap({ filters: '{"communityNotes":true}' });
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [3.5, 51.5] },
+            layer: { id: 'community-notes-clusters' },
+            properties: { cluster_id: 8, point_count: 2 },
+          },
+        ],
+      });
+    });
+
+    expect(mockMapProps.zoom).toBe(5);
+  });
+
+  it('falls back to zooming when cluster leaves cannot be read', () => {
+    mockSource.getClusterLeaves.mockImplementation(
+      (clusterId, limit, offset, done) => done(new Error('source unavailable')),
+    );
+
+    renderSearchMap({ filters: '{"communityNotes":true}' });
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [3.5, 51.5] },
+            layer: { id: 'community-notes-clusters' },
+            properties: { cluster_id: 9, point_count: 2 },
+          },
+        ],
+      });
+    });
+
+    expect(mockMapProps.zoom).toBe(5);
+  });
+
+  it('falls back to zooming when the Community Notes source is unavailable', () => {
+    mockSourceInstance = null;
+    renderSearchMap({ filters: '{"communityNotes":true}' });
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [3.5, 51.5] },
+            layer: { id: 'community-notes-clusters' },
+            properties: { cluster_id: 10, point_count: 2 },
+          },
+        ],
+      });
+    });
+
+    expect(mockMapProps.zoom).toBe(5);
+  });
+
+  it('does not require a note handler for overlapping Community Notes', () => {
+    mockSource.getClusterLeaves.mockImplementation(
+      (clusterId, limit, offset, done) => {
+        done(null, [
+          {
+            properties: {
+              tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
+            },
+          },
+        ]);
+      },
+    );
+    renderSearchMap({ filters: '{"communityNotes":true}' });
+
+    expect(() => {
+      act(() => {
+        mockMapProps.onClick({
+          features: [
+            {
+              geometry: { coordinates: [3.5, 51.5] },
+              layer: { id: 'community-notes-clusters' },
+              properties: { cluster_id: 11, point_count: 1 },
+            },
+          ],
+        });
+      });
+    }).not.toThrow();
   });
 
   it('uses the default community-note cluster zoom step when viewport zoom is missing', () => {
