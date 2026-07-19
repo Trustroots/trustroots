@@ -36,6 +36,14 @@ describe('<AdminHeader />', () => {
     ).toHaveClass('active');
   });
 
+  it('marks the circles page as active', () => {
+    window.history.pushState({}, '', '/admin/circles');
+    render(<AdminHeader />);
+    expect(
+      screen.getByRole('link', { name: 'Circles' }).closest('li'),
+    ).toHaveClass('active');
+  });
+
   it('focuses the first available admin input', () => {
     render(
       <>

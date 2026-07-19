@@ -50,3 +50,25 @@ supported legacy tribe routes to their circle equivalents.
 
 - **WHEN** a visitor opens a supported legacy tribe route
 - **THEN** the system redirects them to the corresponding circle route
+
+### Requirement: Administrator circle catalogue management
+
+The system SHALL let authorised administrators create and edit circle
+catalogue records, including visibility, descriptive information, image
+attribution, colour, and an optional image.
+
+#### Scenario: Administrator creates a circle
+
+- **WHEN** an authorised administrator submits a valid new circle
+- **THEN** the system creates the circle with a generated public URL slug
+
+#### Scenario: Administrator edits a circle
+
+- **WHEN** an authorised administrator saves changes to an existing circle
+- **THEN** the system updates the circle and preserves its member count
+
+#### Scenario: Administrator uploads a circle image
+
+- **WHEN** an authorised administrator uploads a valid circle image
+- **THEN** the system generates the existing circle image sizes and JPG/WebP
+  formats for the circle slug

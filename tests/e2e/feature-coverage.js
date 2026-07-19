@@ -2775,6 +2775,35 @@ const features = [
     relatedSpecs: [spec('admin-pages.spec.js', 'admin newsletter page loads')],
   },
   {
+    id: 'admin.circles',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Admins can create and edit circles.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-circles', '/admin/circles', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/circles', source.adminServer),
+        apiRoute('POST', '/api/admin/circles', source.adminServer),
+        apiRoute('GET', '/api/admin/circles/:circle', source.adminServer),
+        apiRoute('PUT', '/api/admin/circles/:circle', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admin circles page loads.',
+      'Admin can create a circle.',
+      'Admin can edit an existing circle.',
+    ],
+    relatedSpecs: [
+      spec('admin-circles.spec.js', 'admin can create and edit a circle'),
+    ],
+  },
+  {
     id: 'admin.newsletter-downloads',
     area: AREA.adminModeration,
     status: STATUS.excluded,
