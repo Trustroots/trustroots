@@ -160,9 +160,15 @@ async function showCommunityNotesSidebar(page, events) {
       contentType: 'image/png',
     }),
   );
-  await page.addInitScript(fixturePubkey => {
-    window.__TRUSTROOTS_E2E_NOSTROOTS_VALIDATION_PUBKEY__ = fixturePubkey;
-  }, events[0].pubkey);
+  const authorPubkeys = [...new Set(events.map(event => event.pubkey))];
+  await page.route('**/api/nostr/author-visibility?*', route =>
+    route.fulfill({
+      json: {
+        linkedPubkeys: authorPubkeys,
+        pubkeys: authorPubkeys,
+      },
+    }),
+  );
   await installNostrRelayStub(page, events);
 
   await page.goto('/search');
@@ -628,7 +634,7 @@ test.describe('rendered search map feature coverage', () => {
         {
           content,
           created_at: 1700000000 - index * 3600,
-          kind: 30398,
+          kind: 30397,
           tags: [
             ['l', communityNotePlusCode, 'open-location-code'],
             [
