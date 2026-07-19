@@ -18,6 +18,7 @@ import Admin from '@/modules/admin/client/components/Admin.component';
 import SupportInbox, {
   SupportMemberPage,
 } from '@/modules/admin/client/components/Support.component';
+import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspaces.component';
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
@@ -233,6 +234,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/support/member/:memberId': ({ params }) => (
       <SupportMemberPage id={params.memberId} />
     ),
+    '/admin/circles': () => <AdminCircles />,
     '/admin/hackerspaces': () => <AdminHackerspaces />,
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
