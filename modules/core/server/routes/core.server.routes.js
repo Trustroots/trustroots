@@ -49,6 +49,63 @@ module.exports = function (app) {
 
   app.route('/api/languages').get(core.getLanguages);
 
+  app.route('/api/nostr/author-visibility').get(function (req, res) {
+    const mongoose = require('mongoose');
+    const User = mongoose.model('User');
+    const rawPubkeys = req.query.pubkey;
+    const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
+
+    if (
+      pubkeys.length > 100 ||
+      pubkeys.some(
+        pubkey => typeof pubkey !== 'string' || !/^[0-9a-f]{64}$/i.test(pubkey),
+      )
+    ) {
+      return res
+        .status(400)
+        .send({ error: 'One to 100 valid public keys required.' });
+    }
+
+    const normalizedPubkeys = [
+      ...new Set(pubkeys.map(pubkey => pubkey.toLowerCase())),
+    ];
+    const npubs = normalizedPubkeys.map(pubkey => nip19.npubEncode(pubkey));
+
+    User.find(
+      {
+        nostrNpub: { $in: npubs },
+      },
+      function (err, users) {
+        if (err) {
+          return res.status(500).send({ error: 'Internal server error' });
+        }
+
+        const linkedNpubs = new Set(users.map(user => user.nostrNpub));
+        const visibleNpubs = new Set(
+          users
+            .filter(
+              user =>
+                user.public &&
+                user.email &&
+                !user.roles.some(role =>
+                  ['suspended', 'shadowban'].includes(role),
+                ),
+            )
+            .map(user => user.nostrNpub),
+        );
+
+        return res.json({
+          linkedPubkeys: normalizedPubkeys.filter(pubkey =>
+            linkedNpubs.has(nip19.npubEncode(pubkey)),
+          ),
+          pubkeys: normalizedPubkeys.filter(pubkey =>
+            visibleNpubs.has(nip19.npubEncode(pubkey)),
+          ),
+        });
+      },
+    );
+  });
+
   // Return a 404 for all undefined api, module or lib routes
   app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);
 

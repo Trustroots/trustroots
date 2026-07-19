@@ -1,6 +1,6 @@
 // External dependencies
 import classnames from 'classnames';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 // Internal dependencies
 import { getThreads } from '../api/threads.api';
@@ -24,17 +24,27 @@ export default function AdminThreads() {
   const [query, setQuery] = useState(initialQuery);
   const [threads, setThreads] = useState([]);
 
-  async function onSubmit(event) {
-    event.preventDefault();
-    const trimmedQuery = normalizeAdminQuery(query);
+  const runQuery = useCallback(async queryValue => {
+    const trimmedQuery = normalizeAdminQuery(queryValue);
     const userId = isMongoObjectId(trimmedQuery) ? trimmedQuery : '';
     const username = userId ? '' : trimmedQuery;
 
-    const threads = await getThreads({ userId, username });
+    const result = await getThreads({ userId, username });
     setQueried(true);
-    if (threads) {
-      setThreads(threads);
+    if (result) {
+      setThreads(result);
     }
+  }, []);
+
+  useEffect(() => {
+    if (initialQuery) {
+      void runQuery(initialQuery);
+    }
+  }, [initialQuery, runQuery]);
+
+  function onSubmit(event) {
+    event.preventDefault();
+    void runQuery(query);
   }
 
   function renderResults() {

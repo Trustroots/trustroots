@@ -61,7 +61,7 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
 
   if (!notes || notes.length === 0) return null;
 
-  const sorted = [...notes].sort((a, b) => b.created_at - a.created_at);
+  const sorted = [...notes].sort((a, b) => a.created_at - b.created_at);
 
   return (
     <div className="community-notes-sidebar">
