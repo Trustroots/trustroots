@@ -180,4 +180,65 @@ describe('Service: historical spam cleanup', () => {
     should.not.exist(await User.findById(eligible._id));
     should.exist(await User.findById(manualSuspension._id));
   });
+
+  it('uses defaults when there are no campaign accounts', async () => {
+    const result = await cleanup.run();
+
+    result.should.deepEqual({
+      candidates: 0,
+      eligible: 0,
+      protected: 0,
+      deleted: 0,
+    });
+  });
+
+  it('normalises legacy and missing deletion counts', async () => {
+    await createCandidate();
+    const originalDeleteMany = User.deleteMany;
+
+    try {
+      User.deleteMany = async () => ({ n: 1 });
+      const legacyResult = await cleanup.run({ deleteAccounts: true });
+      legacyResult.deleted.should.equal(1);
+
+      User.deleteMany = async () => ({});
+      const missingResult = await cleanup.run({ deleteAccounts: true });
+      missingResult.deleted.should.equal(0);
+    } finally {
+      User.deleteMany = originalDeleteMany;
+    }
+  });
+
+  it('retains accounts protected during the final safety check', async () => {
+    const candidate = await createCandidate();
+    const originalFind = AdminNote.find;
+    let findCalls = 0;
+
+    AdminNote.find = (...args) => {
+      findCalls += 1;
+      if (findCalls === 2) {
+        return {
+          select() {
+            return this;
+          },
+          lean: async () => [{ user: candidate._id }],
+        };
+      }
+      return originalFind.apply(AdminNote, args);
+    };
+
+    try {
+      const result = await cleanup.run({ deleteAccounts: true });
+
+      result.should.deepEqual({
+        candidates: 1,
+        eligible: 0,
+        protected: 1,
+        deleted: 0,
+      });
+      should.exist(await User.findById(candidate._id));
+    } finally {
+      AdminNote.find = originalFind;
+    }
+  });
 });
