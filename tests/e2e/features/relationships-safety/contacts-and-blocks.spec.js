@@ -3,6 +3,7 @@ const { annotateFeature, expect, test } = require('../../support/test');
 const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  createIsolatedContext,
   createUser,
   fetchUserIdByUsername,
   registerViaApi,
@@ -35,7 +36,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
     const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
     const aliceId = await fetchUserIdByUsername(request, alice.username);
     const member = createUser();
-    const memberContext = await browser.newContext({ baseURL });
+    const memberContext = await createIsolatedContext(browser, baseURL);
     const memberPage = await memberContext.newPage();
 
     try {
@@ -77,7 +78,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
     expect(contact).toBeTruthy();
     expect(contact.confirmed).toBe(false);
 
-    const aliceContext = await browser.newContext({ baseURL });
+    const aliceContext = await createIsolatedContext(browser, baseURL);
     const alicePage = await aliceContext.newPage();
 
     try {
@@ -124,7 +125,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
       SEEDED_RELATIONSHIP_MEMBERS.alice.username,
     );
     const member = createUser();
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -185,7 +186,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
     const unauthorized = await page.request.put(`/api/contact/${contact._id}`);
     expect(unauthorized.status()).toBe(404);
 
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const alicePage = await context.newPage();
     try {
       await signInViaApi(alicePage, context.request, alice);
@@ -220,7 +221,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
     const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
     const bob = SEEDED_RELATIONSHIP_MEMBERS.bob;
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -257,7 +258,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
     const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
     const bob = SEEDED_RELATIONSHIP_MEMBERS.bob;
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -294,7 +295,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
     const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
     const bob = SEEDED_RELATIONSHIP_MEMBERS.bob;
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

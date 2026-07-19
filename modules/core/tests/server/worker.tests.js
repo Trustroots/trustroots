@@ -168,6 +168,11 @@ describe('Worker tests', function () {
     jobNames.should.containEql('welcome sequence third');
   });
 
+  it('defines [publish expired experiences] job', function () {
+    const jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('publish expired experiences');
+  });
+
   it('defines right number of repeating jobs', function () {
     scheduledJobs.length.should.equal(8);
   });

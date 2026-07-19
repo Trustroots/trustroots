@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import classnames from 'classnames';
 
 export default function Switch({ checked, children, onChange, isSmall }) {
-  // Angular Directive supports also `tr-switch-right` CSS class
+  // The legacy `tr-switch-right` CSS class is still supported.
   return (
     <label
       className={classnames('tr-switch', {

@@ -17,7 +17,7 @@ import {
   generateClientUser,
   generateMessage,
 } from '@/testutils/client/data.client.testutil';
-import * as angularCompat from '@/modules/core/client/services/angular-compat';
+import * as angularCompat from '@/modules/core/client/services/client-runtime';
 
 const api = {
   users: usersAPI,
@@ -29,9 +29,9 @@ jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  getRouteParams: jest.fn(),
-  go: jest.fn(),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentRouteParams: jest.fn(),
+  navigate: jest.fn(),
 }));
 let mockIsExtraSmall = true;
 jest.mock('react-responsive', () => ({
@@ -140,7 +140,7 @@ let routeParams = {
   username: otherUser.username,
 };
 
-angularCompat.getRouteParams.mockReturnValue(routeParams);
+angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
 
 describe('<Thread>', () => {
   beforeEach(() => {
@@ -149,7 +149,7 @@ describe('<Thread>', () => {
     routeParams = {
       username: otherUser.username,
     };
-    angularCompat.getRouteParams.mockReturnValue(routeParams);
+    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
   });
 
   it('shows the activation prompt and skips loading for private users', () => {
@@ -223,12 +223,14 @@ describe('<Thread>', () => {
     routeParams = {
       username: me.username,
     };
-    angularCompat.getRouteParams.mockReturnValue(routeParams);
+    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
-    await waitFor(() => expect(angularCompat.go).toHaveBeenCalledWith('inbox'));
+    await waitFor(() =>
+      expect(angularCompat.navigate).toHaveBeenCalledWith('inbox'),
+    );
     expect(
       screen.queryByText(/You haven't been talking yet/),
     ).not.toBeInTheDocument();
@@ -239,7 +241,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    angularCompat.getRouteParams.mockReturnValue(routeParams);
+    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -294,7 +296,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    angularCompat.getRouteParams.mockReturnValue(routeParams);
+    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -329,7 +331,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    angularCompat.getRouteParams.mockReturnValue(routeParams);
+    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {

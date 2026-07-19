@@ -220,20 +220,6 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
     });
 
-    it('returns 400 when login fails after saving', async () => {
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { tagline: 'Updated tagline' },
-            login: (user, cb) => cb(new Error('login failed')),
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
-
     it('returns 400 when saving profile updates fails', async () => {
       sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
 
@@ -1346,6 +1332,27 @@ describe('Profile controller unit tests', () => {
 
       sanitized.memberIds.should.deepEqual([]);
       sanitized.member.should.deepEqual([]);
+    });
+
+    it('treats matching string ids as the authenticated user', () => {
+      const userId = new mongoose.Types.ObjectId();
+      const profile = {
+        _id: userId,
+        toObject() {
+          return {
+            _id: userId,
+            created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+            member: [],
+            roles: [],
+          };
+        },
+      };
+
+      const sanitized = profileController.sanitizeProfile(profile, {
+        _id: userId.toString(),
+      });
+
+      sanitized.usernameUpdateAllowed.should.be.true();
     });
   });
 

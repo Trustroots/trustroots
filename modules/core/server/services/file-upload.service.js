@@ -40,17 +40,23 @@ function detectMimeType(filePath, callback) {
     return detectMimeTypeFallback(filePath, callback);
   }
 
-  const mmmagic = require('mmmagic');
-  const magic = new mmmagic.Magic(mmmagic.MAGIC_MIME_TYPE);
-  return magic.detectFile(filePath, callback);
+  import('file-type')
+    .then(({ fileTypeFromFile }) => fileTypeFromFile(filePath))
+    .then(result => {
+      if (result) {
+        return callback(null, result.mime);
+      }
+      return detectMimeTypeFallback(filePath, callback);
+    })
+    .catch(callback);
 }
 
 /**
- * Upload file handler and validator using Multer and Mmmagic.
+ * Upload file handler and validator using Multer and magic-byte detection.
  * Places the file in a temp folder
  *
  * @link https://github.com/expressjs/multer
- * @link https://www.npmjs.com/package/mmmagic
+ * @link https://www.npmjs.com/package/file-type
  *
  * @param {Array} validMimeTypes - List of mime types filter should accept
  * @param {String} uploadField - Name of the POST upload field in the multipart-form
@@ -128,10 +134,10 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
       });
     }
 
-    // Validate uploaded file using libmagic
+    // Validate the uploaded file from its magic bytes.
     // This is stronger and more secure than lightweight mime check that Multer does
     // The check is performed with "magic bytes"
-    // @link https://www.npmjs.com/package/mmmagic
+    // @link https://www.npmjs.com/package/file-type
     detectMimeType(req.file.path, (err, result) => {
       if (err || (result && !validMimeTypes.includes(result))) {
         return res.status(415).send({

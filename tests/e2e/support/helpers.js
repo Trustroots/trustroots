@@ -126,6 +126,21 @@ function createUser(overrides = {}) {
 }
 
 /**
+ * Create a browser context that cannot inherit a project's saved login.
+ *
+ * Authenticated Playwright projects configure a storage state globally. Tests
+ * that create throwaway members must start from an empty cookie jar; otherwise
+ * Passport can rotate and invalidate the shared project session during signup.
+ */
+function createIsolatedContext(browser, baseURL, options = {}) {
+  return browser.newContext({
+    baseURL,
+    storageState: { cookies: [], origins: [] },
+    ...options,
+  });
+}
+
+/**
  * Register a new member by calling the signup API directly. Useful for setting
  * up authentication state without driving the multi-step signup UI. Returns the
  * created user payload.
@@ -135,6 +150,10 @@ async function registerViaApi(request, user, { attempts = 3 } = {}) {
 
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     const response = await request.post('/api/auth/signup', {
+      // Signup authenticates the new member and Passport rotates any session
+      // supplied with the request. Never let test setup rotate a project's
+      // shared storage-state session.
+      headers: { Cookie: '' },
       data: {
         firstName: user.firstName,
         lastName: user.lastName,
@@ -186,9 +205,17 @@ async function signUp(page, user) {
   await page.getByRole('button', { name: /^next$/i }).click();
 
   const response = await signupResponse;
+  let responseDetail = '';
+
+  if (!response.ok()) {
+    responseDetail = await response
+      .text()
+      .catch(() => 'Response body unavailable.');
+  }
+
   expect(
     response.ok(),
-    `Signup responded with ${response.status()}: ${await response.text()}`,
+    `Signup responded with ${response.status()}: ${responseDetail}`,
   ).toBeTruthy();
 
   const skipButton = page.getByRole('button', { name: /^skip$/i });
@@ -203,6 +230,11 @@ async function signUp(page, user) {
  * picks up the session cookie. Used by Playwright setup projects.
  */
 async function signInViaApi(page, request, user) {
+  // A project storage state can be shared by many test contexts. Passport
+  // regenerates the current session on login, so never send that shared cookie
+  // with a test-specific sign-in request.
+  await page.context().clearCookies();
+
   // Authenticate the supplied request fixture as well as the browser. Several
   // specs use it for API setup after signing in, while browser-context requests
   // alone do not refresh that fixture's cookie jar.
@@ -322,6 +354,7 @@ module.exports = {
   SEEDED_MEET_OFFER,
   EUROPE_OFFERS_QUERY,
   createUser,
+  createIsolatedContext,
   registerViaApi,
   signUp,
   signInViaApi,

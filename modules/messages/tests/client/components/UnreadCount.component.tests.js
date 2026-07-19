@@ -5,7 +5,7 @@ import '@testing-library/jest-dom/extend-expect';
 import '@/config/client/i18n';
 import UnreadCount from 'modules/messages/client/components/UnreadCount.component';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
-import { getUser } from '@/modules/core/client/services/angular-compat';
+import { getCurrentUser } from '@/modules/core/client/services/client-runtime';
 import { generateClientUser } from '@/testutils/common/data.common.testutil';
 import faker from 'faker';
 import {
@@ -26,13 +26,13 @@ const api = {
 };
 
 jest.mock('@/modules/messages/client/api/messages.api');
-jest.mock('@/modules/core/client/services/angular-compat');
+jest.mock('@/modules/core/client/services/client-runtime');
 
 afterEach(() => jest.clearAllMocks());
 
 const user = generateClientUser({ public: true });
 
-getUser.mockReturnValue(user);
+getCurrentUser.mockReturnValue(user);
 
 afterEach(disableUnreadMessageCountPolling);
 

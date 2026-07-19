@@ -846,8 +846,9 @@ describe('Search', () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>
@@ -903,8 +904,9 @@ describe('Search', () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>
@@ -970,8 +972,9 @@ describe('Search', () => {
     });
     await waitFor(() => expect(secondCallbacks).toBeDefined());
 
-    act(() => {
+    await act(async () => {
       secondCallbacks.onEose();
+      await Promise.resolve();
     });
     await waitFor(() =>
       expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
@@ -1011,8 +1014,9 @@ describe('Search', () => {
 
     renderSearchMap({ filters: '{"communityNotes":true}' });
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     onEvent({
@@ -1021,8 +1025,9 @@ describe('Search', () => {
       authorPubkey: 'author-second',
       tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
     });
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>

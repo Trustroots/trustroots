@@ -87,6 +87,22 @@ describe('<JoinButton />', () => {
     );
   });
 
+  it('supports a large iconless presentation', () => {
+    render(
+      <JoinButton
+        className="btn btn-lg btn-default"
+        icon={false}
+        tribe={tribe}
+        user={{ _id: 'user-1', memberIds: ['tribe-1'] }}
+        onUpdated={jest.fn()}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: 'Leave circle' });
+    expect(button).toHaveClass('btn-lg');
+    expect(button.querySelector('i')).not.toBeInTheDocument();
+  });
+
   it('does not start a second join while the first request is pending', async () => {
     join.mockReturnValueOnce(new Promise(() => {}));
 

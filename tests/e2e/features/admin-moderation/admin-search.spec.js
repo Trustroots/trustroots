@@ -4,6 +4,7 @@ const {
   SEEDED_ADMIN,
   SEEDED_MEMBERS,
   SEEDED_SHADOW,
+  createIsolatedContext,
   signInViaApi,
 } = require('../../support/helpers');
 
@@ -130,7 +131,7 @@ test.describe('admin moderation search flows', () => {
       'Admin can list members in a selected role.',
     ]);
 
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

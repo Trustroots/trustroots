@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <title>
+      {% if tribe %}{{ tribe.label | striptags }} - Trustroots circle{% else
+      %}{{ title }}{% endif %}
+    </title>
+    <base href="/" />
+    <meta name="fragment" content="!" />
+    {% for cssFile in reactCssFiles %}
+    <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
+    {% endfor %} {% if sentry.enabled === true %}
+    <script nonce="{{ nonce }}">
+      window.SENTRY_DSN = '{{ sentry.options.dsn }}';
+    </script>
+    {% endif %} {% if env === 'development' or env === 'test' %} {% for jsFile
+    in reactJsFiles %}
+    <script
+      src="/{{jsFile}}?c={{appSettings.commit}}"
+      nonce="{{ nonce }}"
+    ></script>
+    {% endfor %} {% endif %}
+    <link rel="dns-prefetch" href="//api.tiles.mapbox.com" />
+    <link rel="dns-prefetch" href="//graph.facebook.com" />
+    <link rel="dns-prefetch" href="//gravatar.com" />
+    <link rel="dns-prefetch" href="//ucarecdn.com" />
+
+    <meta name="description" content="{{description}}" />
+    {% if googlePage !== '' %}
+    <link rel="publisher" href="{{googlePage}}" />
+    {% endif %}
+    <meta name="application-name" content="{{title}}" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#12b591" />
+    <link rel="manifest" href="/manifest.json" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{hostPort}}/img/icons/android/512.png"
+      sizes="512x512"
+    />
+    <link
+      rel="icon shortcut"
+      type="image/png"
+      href="{{hostPort}}/img/favicon@2x.png"
+      sizes="32x32"
+      id="favicon2x"
+    />
+    <link
+      rel="icon shortcut"
+      type="image/png"
+      href="{{hostPort}}/img/favicon.png"
+      sizes="16x16"
+      id="favicon"
+    />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+    {% if facebookAppId !== '' %}
+    <meta property="fb:app_id" content="{{facebookAppId}}" />
+    {% endif %} {% if tribe %} <meta property="og:title" content="Join
+    {{tribe.label | striptags | replace('"', '\'') }} on Trustroots circle">
+    <meta property="og:description" content="Join to meet, host and get hosted
+    by Trustroots circle {{tribe.label | striptags | replace('"', '\'')}}.
+    Trustroots is a travellers' community for sharing, hosting and getting
+    people together.">
+    <meta property="og:url" content="{{hostPort}}/circles/{{tribe.slug}}" />
+    {% if tribe.image %}
+    <meta
+      property="og:image"
+      content="{{hostPort}}/uploads-circle/{{tribe.slug}}/1400x900.jpg"
+    />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="900" />
+    {% else %}
+    <meta property="og:image" content="{{hostPort}}/img/og_image.jpg" />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="735" />
+    {% endif %} {% else %} {% if invite %}
+    <meta property="og:title" content="You are invited to join Trustroots!" />
+    {% else %}
+    <meta property="og:title" content="{{title}}" />
+    {% endif %}
+    <meta property="og:description" content="{{description}}" />
+    <meta property="og:url" content="{{canonicalUrl}}" />
+    <meta property="og:image" content="{{hostPort}}/img/og_image.jpg" />
+    <meta property="og:image:width" content="1400" />
+    <meta property="og:image:height" content="735" />
+    {% endif %}
+    <meta property="og:site_name" content="{{title}}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_GB" />
+
+    {% if twitterUsername %}
+    <meta name="twitter:site" content="{{twitterUsername}}" />
+    {% endif %} {% if tribe %}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Join {{tribe.label | striptags |
+    replace('"', '\'')}} on Trustroots"> <meta name="twitter:description"
+    content="Join to meet, host and get hosted by Trustroots circle
+    {{tribe.label | striptags | replace('"', '\'')}}. Trustroots is a
+    travellers' community for sharing, hosting and getting people together.">
+    <meta name="twitter:url" content="{{hostPort}}/circles/{{tribe.slug}}" />
+    {% if tribe.image_UUID %}
+    <meta
+      name="twitter:image"
+      content="https://ucarecdn.com/{{tribe.image_UUID}}/-/progressive/yes/-/scale_crop/1200x630/center/-/quality/lightest/-/format/jpeg/-/overlay/b72e2604-e926-4e17-acbd-e37c0e1f5c73/50%25x50%25/center/{{tribe.slug}}.jpg"
+    />
+    {% else %}
+    <meta name="twitter:image" content="{{hostPort}}/img/og_image.jpg" />
+    {% endif %} {% else %}
+    <meta name="twitter:title" content="{{title}}" />
+    <meta name="twitter:description" content="{{description}}" />
+    <meta name="twitter:url" content="{{hostPort}}/" />
+    <meta name="twitter:image" content="{{hostPort}}/img/og_image.jpg" />
+    {% endif %}
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="msapplication-TileColor" content="#FFFFFF" />
+    <meta
+      name="msapplication-TileImage"
+      content="{{hostPort}}/img/icons/apple-touch-icon-144x144-precomposed.png"
+    />
+
+    {% if googleAnalytics.enabled === true %}
+    <script nonce="{{ nonce }}">
+      (function (i, s, o, g, r, a, m) {
+        i['GoogleAnalyticsObject'] = r;
+        (i[r] =
+          i[r] ||
+          function () {
+            (i[r].q = i[r].q || []).push(arguments);
+          }),
+          (i[r].l = 1 * new Date());
+        (a = s.createElement(o)), (m = s.getElementsByTagName(o)[0]);
+        a.async = 1;
+        a.src = g;
+        m.parentNode.insertBefore(a, m);
+      })(
+        window,
+        document,
+        'script',
+        '//www.google-analytics.com/analytics.js',
+        'ga',
+      );
+      ga('create', '{{ googleAnalytics.code }}', 'auto');
+    </script>
+    {% endif %} {# Umami Analytics #}
+    <script
+      defer
+      src="{{ umami.scriptSrc }}"
+      data-website-id="{{ umami.websiteId }}"
+      data-do-not-track="true"
+      nonce="{{ nonce }}"
+    ></script>
+  </head>
+  <body>
+    {% block content %}{% endblock content %}
+
+    <script nonce="{{ nonce }}">
+      var title = "{{title}}",
+          settings = {{ appSettings | dump | safe }},
+          {% if facebookAppId !== '' %}facebookAppId = "{{facebookAppId}}",{% endif %}
+          {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
+          env = "{{ env }}",
+          isNativeMobileApp = {{ isNativeMobileApp }},
+          user = {{ user | dump | safe }};
+    </script>
+
+    {% if env === 'production' %} {% for jsFile in reactJsFiles %}
+    <script
+      src="/{{jsFile}}?c={{appSettings.commit}}"
+      nonce="{{ nonce }}"
+    ></script>
+    {% endfor %} {% endif %}
+  </body>
+</html>

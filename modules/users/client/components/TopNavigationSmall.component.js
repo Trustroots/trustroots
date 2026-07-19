@@ -80,7 +80,7 @@ export default function TopNavigationSmall({
   function handleRemoveSuccess() {
     setShowRemoveModal(false);
 
-    // broadcast the removal to angular
+    // Notify the parent about the removal.
     onContactRemoved(contact);
   }
 
