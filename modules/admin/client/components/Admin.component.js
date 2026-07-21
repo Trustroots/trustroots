@@ -39,6 +39,11 @@ const adminGroups = [
     title: 'Community/admin tools',
     links: [
       {
+        href: '/admin/circles',
+        label: 'Circles',
+        description: 'Create and edit the circle catalogue.',
+      },
+      {
         href: '/admin/acquisition-stories',
         label: 'Acquisition stories',
         description: 'Review member acquisition stories.',

@@ -10,8 +10,29 @@ const adminUsers = require('../controllers/admin.users.server.controller');
 const adminDashboard = require('../controllers/admin.dashboard.server.controller');
 const adminNotes = require('../controllers/admin.notes.server.controller');
 const adminReferenceThreads = require('../controllers/admin.reference-threads.server.controller');
+const adminCircles = require('../controllers/admin.circles.server.controller');
 
 module.exports = app => {
+  app
+    .route('/api/admin/circles')
+    .all(adminPolicy.isAllowed)
+    .get(adminCircles.list)
+    .post(
+      adminAuditLog.record,
+      adminCircles.processImageUpload,
+      adminCircles.create,
+    );
+
+  app
+    .route('/api/admin/circles/:circle')
+    .all(adminPolicy.isAllowed)
+    .get(adminCircles.get)
+    .put(
+      adminAuditLog.record,
+      adminCircles.processImageUpload,
+      adminCircles.update,
+    );
+
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)

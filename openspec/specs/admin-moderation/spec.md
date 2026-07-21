@@ -157,3 +157,19 @@ the available columns to be sorted.
 
 - **WHEN** an authorised administrator requests newsletter subscriber data while the subscriber API is unavailable
 - **THEN** the system fails safely without exposing subscriber data
+
+### Requirement: Circle catalogue administration
+
+The system SHALL provide authorised administrators with tools to create and
+edit circle catalogue records and their associated images.
+
+#### Scenario: Administrator manages circles
+
+- **WHEN** an authorised administrator opens the circle administration view
+- **THEN** the system lists existing circles and provides create and edit
+  controls
+
+#### Scenario: Regular member requests circle administration
+
+- **WHEN** a regular member requests a circle administration API
+- **THEN** the system denies the request
