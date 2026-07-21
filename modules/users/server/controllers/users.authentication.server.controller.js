@@ -14,31 +14,16 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 
-function isNameSpam(input) {
-  if (
-    // The username field says it limits to 34, so apply that to all the fields
-    input.length > 34 ||
-    input.includes(':') ||
-    input.includes('/') ||
-    input.includes('_') ||
-    input.includes('www') ||
-    input.includes('bit.ly')
-  ) {
-    return true;
-  }
-  return false;
+function getUserFacingError(message) {
+  const err = new Error(message);
+  err.userFacing = true;
+  return err;
 }
 
-function isUsernameInvalid(input) {
-  if (
-    input.includes(' ') ||
-    input.includes(':') ||
-    input.includes('www') ||
-    input.includes('/')
-  ) {
-    return true;
-  }
-  return false;
+function getSignupErrorMessage(err) {
+  return err && err.userFacing
+    ? err.message
+    : errorService.getErrorMessage(err);
 }
 
 /**
@@ -65,11 +50,14 @@ exports.signup = function (req, res) {
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
+        const usernameRejectionMessage =
+          authenticationService.getUsernameRejectionMessage(username);
+        if (usernameRejectionMessage) {
+          return done(getUserFacingError(usernameRejectionMessage));
+        }
         if (
-          isNameSpam(firstName) ||
-          isNameSpam(lastName) ||
-          isNameSpam(username) ||
-          isUsernameInvalid(username)
+          !authenticationService.isNameFormatValid(firstName) ||
+          !authenticationService.isNameFormatValid(lastName)
         ) {
           return done(new Error('Invalid signup attempt'));
         }
@@ -159,7 +147,7 @@ exports.signup = function (req, res) {
         statService.stat(statsObject, function () {
           // Send error to the API
           res.status(400).send({
-            message: errorService.getErrorMessage(err),
+            message: getSignupErrorMessage(err),
           });
         });
 
@@ -181,7 +169,7 @@ exports.signup = function (req, res) {
  * Signup validation
  */
 exports.signupValidation = function (req, res) {
-  const username = String(req.body.username || '').toLowerCase();
+  const username = String(req.body.username || '');
 
   async.waterfall(
     [
@@ -195,20 +183,20 @@ exports.signupValidation = function (req, res) {
           );
         }
 
+        // Is username valid?
+        if (!authenticationService.isUsernameFormatValid(username)) {
+          return done(
+            new Error('Username is in invalid format.'),
+            'username-invalid',
+          );
+        }
+
         // Is username reserved?
         // You can modify the list from `config/env/default.js`
         if (authenticationService.isUsernameReserved(username)) {
           return done(
-            new Error('Username is not available.'),
+            new Error(authenticationService.usernameUnavailableMessage),
             'username-not-available-reserved',
-          );
-        }
-
-        // Is username valid?
-        if (!authenticationService.validateUsername(username)) {
-          return done(
-            new Error('Username is in invalid format.'),
-            'username-invalid',
           );
         }
 

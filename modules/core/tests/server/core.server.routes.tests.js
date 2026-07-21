@@ -396,6 +396,21 @@ describe('Core CRUD tests', function () {
         });
     });
 
+    it('should reject nostr requests with unsupported lookup characters', function (done) {
+      agent
+        .get('/.well-known/nostr.json?name=legacy%20user')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) {
+            return done(err);
+          }
+
+          res.body.error.should.equal('Valid username required.');
+
+          return done();
+        });
+    });
+
     it('should use the normalized username as the nostr response key', function (done) {
       createNostrUser({}, function (saveErr) {
         if (saveErr) {
@@ -417,6 +432,46 @@ describe('Core CRUD tests', function () {
             return done();
           });
       });
+    });
+
+    it('should expose npubs for existing legacy-format usernames', function (done) {
+      const cases = ['legacy-user', 'legacy.user', 'legacy_user', '123'];
+      let index = 0;
+
+      function next() {
+        const username = cases[index];
+
+        if (!username) {
+          return done();
+        }
+
+        createNostrUser({ username }, function (saveErr, user) {
+          if (saveErr) {
+            return done(saveErr);
+          }
+
+          agent
+            .get('/.well-known/nostr.json?name=' + encodeURIComponent(username))
+            .expect(200)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+
+              res.body.names.should.have.property(username, validNpubHex);
+              return User.deleteOne({ _id: user._id }, function (deleteErr) {
+                if (deleteErr) {
+                  return done(deleteErr);
+                }
+
+                index += 1;
+                return next();
+              });
+            });
+        });
+      }
+
+      return next();
     });
 
     it('should return empty names for a missing user', function (done) {

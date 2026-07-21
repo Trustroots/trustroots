@@ -4,7 +4,6 @@
 const _ = require('lodash');
 const textService = require('../../../core/server/services/text.server.service');
 const languages = require('../../../../config/languages/languages.json');
-const authenticationService = require('../services/authentication.server.service');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const uniqueValidation = require('mongoose-beautiful-unique-validation');
@@ -29,6 +28,10 @@ const validateLocalStrategyEmail = function (email) {
   );
 };
 
+const validateTemporaryEmail = function (email) {
+  return !email || validator.isEmail(email);
+};
+
 /**
  * A Validation function for password
  */
@@ -37,13 +40,15 @@ const validatePassword = function (password) {
 };
 
 /**
- * A Validation function for username
+ * Mongoose username validator.
+ *
+ * Username policy (format, reserved names) is enforced only at user-facing
+ * routes: signup, signup validation, and profile username changes. Do not rely
+ * on this hook for policy — it only rejects empty usernames so legacy records,
+ * imports, and unrelated profile saves keep working.
  */
 const validateUsername = function (username) {
-  return (
-    this.provider !== 'local' ||
-    authenticationService.validateUsername(username)
-  );
+  return Boolean(username);
 };
 
 const setPlainTextField = function (value) {
@@ -145,7 +150,7 @@ const UserSchema = new Schema({
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+@.+\..+/, 'Please enter a valid email address.'],
+    validate: [validateTemporaryEmail, 'Please enter a valid email address.'],
   },
   tagline: {
     type: String,
@@ -187,10 +192,7 @@ const UserSchema = new Schema({
     type: String,
     unique: 'Username exists already.',
     required: true,
-    validate: [
-      validateUsername,
-      'Please fill in valid username: 3+ characters long, non banned word, characters "_-.", no consecutive dots, does not begin or end with dots, letters a-z and numbers 0-9.',
-    ],
+    validate: [validateUsername, 'Please fill in a username.'],
     lowercase: true, // Stops users creating case sensitive duplicate usernames with "username" and "USERname", via @link https://github.com/meanjs/mean/issues/147
     trim: true,
   },
