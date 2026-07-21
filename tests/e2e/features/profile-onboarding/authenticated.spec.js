@@ -386,17 +386,14 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
+      const fileInput = page.locator('#profile-edit-avatar-file');
+      await fileInput.waitFor({ state: 'attached' });
 
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') && response.ok(),
       );
-      const [fileChooser] = await Promise.all([
-        page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
-      ]);
-      await fileChooser.setFiles(validAvatarPath);
+      await fileInput.setInputFiles(validAvatarPath);
       await uploadResponse;
 
       await expect(
@@ -428,18 +425,15 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
+      const fileInput = page.locator('#profile-edit-avatar-file');
+      await fileInput.waitFor({ state: 'attached' });
 
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') &&
           response.status() === 415,
       );
-      const [fileChooser] = await Promise.all([
-        page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
-      ]);
-      await fileChooser.setFiles(invalidAvatarPath);
+      await fileInput.setInputFiles(invalidAvatarPath);
       await uploadResponse;
 
       await expect(
@@ -478,15 +472,14 @@ test.describe('authenticated member flows', () => {
       expect(fallbackResponse.headers().location).toContain('/img/avatar-');
 
       await page.goto('/profile/edit/photo');
+      const fileInput = page.locator('#profile-edit-avatar-file');
+      await fileInput.waitFor({ state: 'attached' });
+
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') && response.ok(),
       );
-      const [fileChooser] = await Promise.all([
-        page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
-      ]);
-      await fileChooser.setFiles(validAvatarPath);
+      await fileInput.setInputFiles(validAvatarPath);
       await uploadResponse;
       await expect(
         page.locator('#mc-messages-wrapper .alert-success'),
