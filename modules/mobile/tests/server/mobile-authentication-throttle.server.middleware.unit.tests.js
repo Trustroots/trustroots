@@ -75,6 +75,9 @@ describe('Mobile authentication throttle', function () {
     allowExpiredDeletion();
     sinon
       .stub(MobileAuthenticationAttempt, 'findOneAndUpdate')
+      .onFirstCall()
+      .returns(queryResult(null, { count: 1 }))
+      .onSecondCall()
       .returns(queryResult(null, { count: 1 }));
 
     mobileAuthenticationThrottle.signin(request(null), response(), next);
@@ -106,10 +109,11 @@ describe('Mobile authentication throttle', function () {
     );
     increment.onFirstCall().returns(queryResult(duplicate));
     increment.onSecondCall().returns(queryResult(null, { count: 1 }));
+    increment.onThirdCall().returns(queryResult(null, { count: 1 }));
 
     mobileAuthenticationThrottle.signin(request(), response(), next);
 
-    sinon.assert.calledTwice(increment);
+    sinon.assert.calledThrice(increment);
     increment.secondCall.args[2].upsert.should.equal(false);
     sinon.assert.calledOnceWithExactly(next);
   });
@@ -162,7 +166,7 @@ describe('Mobile authentication throttle', function () {
     res.emit('finish');
 
     sinon.assert.calledOnceWithExactly(next);
-    sinon.assert.calledTwice(deletion);
+    sinon.assert.callCount(deletion, 4);
   });
 
   it('retains the atomic failure budget after a rejected response', function () {
@@ -177,7 +181,25 @@ describe('Mobile authentication throttle', function () {
     res.statusCode = 401;
     res.emit('finish');
 
-    sinon.assert.calledOnce(deletion);
+    sinon.assert.calledTwice(deletion);
+  });
+
+  it('applies both the IP and token budgets to refresh attempts', function () {
+    const next = sinon.stub();
+    allowExpiredDeletion();
+    const increment = sinon
+      .stub(MobileAuthenticationAttempt, 'findOneAndUpdate')
+      .onFirstCall()
+      .returns(queryResult(null, { count: 1 }))
+      .onSecondCall()
+      .returns(queryResult(null, { count: 1 }));
+    const req = request();
+    req.body.refreshToken = 'a'.repeat(64);
+
+    mobileAuthenticationThrottle.refresh(req, response(), next);
+
+    sinon.assert.calledTwice(increment);
+    sinon.assert.calledOnceWithExactly(next);
   });
 
   it('trusts the Passenger address only over a loopback app connection', function () {

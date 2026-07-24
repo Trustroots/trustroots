@@ -6,6 +6,8 @@ const MobileAuthenticationAttempt = mongoose.model(
 );
 
 const attemptLimit = 10;
+const ipAttemptLimit = 50;
+const refreshIpAttemptLimit = 100;
 const attemptWindowMs = 15 * 60 * 1000;
 
 function isLoopback(address) {
@@ -26,6 +28,8 @@ function sourceAddress(req) {
       : null;
 
   // Passenger supplies the original address over its local app connection.
+  // Production runs Passenger on loopback; deployments that replace it must
+  // explicitly provide an equivalent authenticated proxy boundary here.
   // Never trust the same header from a remote client, where it could be used
   // to rotate rate-limit identities.
   if (passengerAddress && isLoopback(directAddress)) {
@@ -41,7 +45,7 @@ function attemptKey(req, scope, identity) {
     .digest('hex');
 }
 
-function throttle(scope, identityFromRequest) {
+function throttle(scope, identityFromRequest, limit = attemptLimit) {
   return function (req, res, next) {
     const now = new Date();
     const key = attemptKey(req, scope, identityFromRequest(req));
@@ -76,7 +80,7 @@ function throttle(scope, identityFromRequest) {
         if (!attempt) {
           return next(new Error('Authentication attempt was not recorded.'));
         }
-        if (attempt.count > attemptLimit) {
+        if (attempt.count > limit) {
           return res
             .set('Retry-After', String(attemptWindowMs / 1000))
             .status(429)
@@ -100,16 +104,46 @@ function throttle(scope, identityFromRequest) {
   };
 }
 
-exports.signin = throttle('signin', function (req) {
+const signinByAccount = throttle('signin-account', function (req) {
   return String(req.body.username || '')
     .trim()
     .toLowerCase();
 });
+const signinByIp = throttle(
+  'signin-ip',
+  function () {
+    return '';
+  },
+  ipAttemptLimit,
+);
 
-exports.refresh = throttle('refresh', function () {
-  return '';
+exports.signin = function (req, res, next) {
+  return signinByIp(req, res, function (err) {
+    if (err) return next(err);
+    return signinByAccount(req, res, next);
+  });
+};
+
+const refreshByToken = throttle('refresh-token', function (req) {
+  return String(req.body.refreshToken || '');
 });
+const refreshByIp = throttle(
+  'refresh-ip',
+  function () {
+    return '';
+  },
+  refreshIpAttemptLimit,
+);
+
+exports.refresh = function (req, res, next) {
+  return refreshByIp(req, res, function (err) {
+    if (err) return next(err);
+    return refreshByToken(req, res, next);
+  });
+};
 
 exports.attemptLimit = attemptLimit;
+exports.ipAttemptLimit = ipAttemptLimit;
+exports.refreshIpAttemptLimit = refreshIpAttemptLimit;
 exports.attemptWindowMs = attemptWindowMs;
 exports.sourceAddress = sourceAddress;

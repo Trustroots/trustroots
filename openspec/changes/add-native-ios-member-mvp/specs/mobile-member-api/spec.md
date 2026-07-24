@@ -20,7 +20,6 @@ stable contract.
 - **WHEN** a client requests `GET /api/mobile/v0/status`
 - **THEN** the server returns contract version `v0`
 - **AND** returns the exact running build identifier and start datetime
-- **AND** returns the deployed source revision when it is available
 - **AND** does not require a member session
 
 #### Scenario: Supported iOS client calls a mobile endpoint
@@ -127,9 +126,9 @@ authorised request at most once after a successful refresh.
 ### Requirement: Mobile authentication abuse protection
 
 The system SHALL throttle repeated mobile sign-in and refresh attempts using
-an application-enforced, time-bounded limit that does not store credentials or
-raw tokens. Successful authentication SHALL clear the corresponding failure
-budget.
+application-enforced, time-bounded account/token and network-source limits
+that do not store credentials or raw tokens. Successful authentication SHALL
+clear the corresponding failure budget.
 
 #### Scenario: Client repeatedly submits rejected credentials
 

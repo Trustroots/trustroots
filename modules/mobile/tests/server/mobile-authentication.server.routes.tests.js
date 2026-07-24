@@ -52,7 +52,7 @@ describe('Mobile authentication API', function () {
     response.body.contractVersion.should.equal('v0');
     response.body.buildVersion.should.match(/^v0\.1-\d{8}-\d{4}$/);
     response.body.startedAt.should.equal(app.locals.appSettings.time);
-    response.body.revision.should.equal('1234abc');
+    should.not.exist(response.body.revision);
     response.headers['cache-control'].should.equal('no-store');
     response.headers.pragma.should.equal('no-cache');
 
@@ -150,6 +150,7 @@ describe('Mobile authentication API', function () {
     response.body.member.username.should.equal(member.username);
     response.body.member.email.should.equal(member.email);
     response.headers['cache-control'].should.equal('no-store');
+    should.exist((await User.findById(member._id)).seen);
   });
 
   it('returns the signed-in member profile through the bearer API', async function () {
@@ -335,7 +336,7 @@ describe('Mobile authentication API', function () {
     response.headers['cache-control'].should.equal('no-store');
   });
 
-  it('rotates refresh tokens and rejects the old refresh token', async function () {
+  it('revokes a session when a rotated refresh token is replayed', async function () {
     const signin = await request(app)
       .post('/api/mobile/v0/auth/signin')
       .send(credentials)
@@ -355,6 +356,15 @@ describe('Mobile authentication API', function () {
       .send({ refreshToken: signin.body.refreshToken })
       .expect(401);
     rejected.body.code.should.equal('authentication_required');
+
+    await request(app)
+      .get('/api/mobile/v0/me')
+      .set('Authorization', `Bearer ${refreshed.body.accessToken}`)
+      .expect(401);
+    await request(app)
+      .post('/api/mobile/v0/auth/refresh')
+      .send({ refreshToken: refreshed.body.refreshToken })
+      .expect(401);
   });
 
   it('rejects an expired refresh token without changing the session', async function () {

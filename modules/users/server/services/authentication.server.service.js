@@ -19,6 +19,10 @@ exports.consumePasswordDerivation = function (password) {
   crypto.pbkdf2Sync(password, passwordTimingSalt, 10000, 64, 'SHA1');
 };
 
+exports.isActiveMember = function (user) {
+  return user && !user.roles.includes('suspended');
+};
+
 /**
  * A Validation function for username
  *

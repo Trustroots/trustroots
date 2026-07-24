@@ -3,6 +3,7 @@ const mobileMember = require('../presenters/mobile-member.server.presenter');
 const mobileSession = require('../services/mobile-session.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const authenticationService = require('../../../users/server/services/authentication.server.service');
+const lastSeen = require('../../../users/server/controllers/users.lastseen.server.controller');
 
 const User = mongoose.model('User');
 const tokenPattern = /^[a-f0-9]{64}$/;
@@ -16,10 +17,6 @@ function bearerToken(req) {
   const authorization = req.get('Authorization') || '';
   const match = authorization.match(/^Bearer ([a-f0-9]{64})$/i);
   return match ? match[1].toLowerCase() : null;
-}
-
-function isActiveMember(user) {
-  return user && !user.roles.includes('suspended');
 }
 
 function unauthorised(res) {
@@ -46,7 +43,6 @@ exports.status = function (req, res) {
     contractVersion: 'v0',
     buildVersion: buildVersion(appSettings.time),
     startedAt: appSettings.time,
-    revision: appSettings.commit || null,
   });
 };
 
@@ -60,7 +56,7 @@ exports.authenticate = function (req, res, next) {
     if (err) {
       return next(err);
     }
-    if (!session || !isActiveMember(session.user)) {
+    if (!session || !authenticationService.isActiveMember(session.user)) {
       return unauthorised(res);
     }
 
@@ -70,7 +66,7 @@ exports.authenticate = function (req, res, next) {
     // expects `req.user`. This assignment is confined to the bearer-only
     // mobile route tree; it never creates a browser session.
     req.user = session.user;
-    return next();
+    return lastSeen(req, res, next);
   });
 };
 
@@ -100,7 +96,7 @@ exports.signin = function (req, res, next) {
     if (err) {
       return next(err);
     }
-    if (!user || !isActiveMember(user)) {
+    if (!user || !authenticationService.isActiveMember(user)) {
       authenticationService.consumePasswordDerivation(password);
       return unauthorised(res);
     }
@@ -132,7 +128,7 @@ exports.refresh = function (req, res, next) {
       if (err) {
         return next(err);
       }
-      if (!session || !isActiveMember(session.user)) {
+      if (!session || !authenticationService.isActiveMember(session.user)) {
         return unauthorised(res);
       }
       return noStore(res).json({

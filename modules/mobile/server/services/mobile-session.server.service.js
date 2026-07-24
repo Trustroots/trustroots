@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 
 const MobileSession = mongoose.model('MobileSession');
+const authenticationService = require('../../../users/server/services/authentication.server.service');
 
 const accessTokenLifetimeMs = 15 * 60 * 1000;
 const refreshTokenLifetimeMs = 30 * 24 * 60 * 60 * 1000;
@@ -29,10 +30,6 @@ function serialiseTokens(tokens) {
     refreshToken: tokens.refreshToken,
     accessTokenExpiresAt: tokens.accessExpiresAt.toISOString(),
   };
-}
-
-function isActiveMember(user) {
-  return user && !user.roles.includes('suspended');
 }
 
 exports.create = function (user, callback) {
@@ -73,10 +70,13 @@ exports.rotateRefreshToken = function (refreshToken, callback) {
   MobileSession.findOne(validSession)
     .populate('user')
     .exec(function (findErr, session) {
-      if (findErr || !session) {
+      if (findErr) {
         return callback(findErr, null, null);
       }
-      if (!isActiveMember(session.user)) {
+      if (!session) {
+        return exports.revokeForRefreshTokenReuse(refreshTokenHash, callback);
+      }
+      if (!authenticationService.isActiveMember(session.user)) {
         return callback(null, null, null);
       }
 
@@ -89,16 +89,38 @@ exports.rotateRefreshToken = function (refreshToken, callback) {
             refreshTokenHash: tokenHash(tokens.refreshToken),
             refreshExpiresAt: tokens.refreshExpiresAt,
           },
+          $addToSet: { rotatedRefreshTokenHashes: refreshTokenHash },
         },
         { new: true },
         function (updateErr, updatedSession) {
-          if (updateErr || !updatedSession) {
+          if (updateErr) {
             return callback(updateErr, null, null);
+          }
+          if (!updatedSession) {
+            return exports.revokeForRefreshTokenReuse(
+              refreshTokenHash,
+              callback,
+            );
           }
           return callback(null, session, serialiseTokens(tokens));
         },
       );
     });
+};
+
+exports.revokeForRefreshTokenReuse = function (refreshTokenHash, callback) {
+  MobileSession.findOneAndUpdate(
+    {
+      rotatedRefreshTokenHashes: refreshTokenHash,
+      refreshExpiresAt: { $gt: new Date() },
+      revokedAt: null,
+    },
+    { $set: { revokedAt: new Date() } },
+    { new: true },
+    function (err) {
+      return callback(err, null, null);
+    },
+  );
 };
 
 exports.revoke = function (session, callback) {

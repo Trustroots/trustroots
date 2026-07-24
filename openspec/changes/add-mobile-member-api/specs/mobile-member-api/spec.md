@@ -4,8 +4,8 @@
 
 The server SHALL provide unauthenticated `GET /api/mobile/v0/status` metadata
 with contract version `v0`, a build identifier formatted as
-`v0.1-YYYYMMDDHHmm`, the server start datetime, and the source revision when
-available. The `/api/mobile/v1` namespace SHALL remain reserved for a future
+`v0.1-YYYYMMDDHHmm` and the server start datetime. The `/api/mobile/v1`
+namespace SHALL remain reserved for a future
 stable contract.
 
 #### Scenario: Native client checks compatibility
@@ -44,6 +44,12 @@ MUST no longer authenticate a request.
 - **WHEN** a client presents an unexpired refresh token
 - **THEN** the server returns new access and refresh tokens
 - **AND** rejects the prior refresh token thereafter
+
+#### Scenario: Replayed refresh token
+
+- **WHEN** a client presents a refresh token that was already rotated
+- **THEN** the server revokes the associated mobile session
+- **AND** rejects its current access and refresh tokens
 
 ### Requirement: Token-authenticated member identity
 

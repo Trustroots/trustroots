@@ -24,6 +24,11 @@ const MobileSessionSchema = new Schema({
     required: true,
     unique: true,
   },
+  rotatedRefreshTokenHashes: {
+    type: [String],
+    default: [],
+    index: true,
+  },
   refreshExpiresAt: {
     type: Date,
     required: true,

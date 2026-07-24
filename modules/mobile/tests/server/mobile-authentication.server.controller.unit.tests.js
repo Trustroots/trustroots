@@ -54,7 +54,7 @@ describe('Mobile authentication controller error branches', function () {
       .should.equal('v0.1-20260716-1234');
   });
 
-  it('reports an unknown revision when build metadata is unavailable', function () {
+  it('does not disclose revision metadata', function () {
     const res = response();
     const req = {
       app: {
@@ -70,7 +70,6 @@ describe('Mobile authentication controller error branches', function () {
       contractVersion: 'v0',
       buildVersion: 'v0.1-20260716-1234',
       startedAt: '2026-07-16T12:34:56.000Z',
-      revision: null,
     });
   });
 
@@ -317,10 +316,13 @@ describe('Mobile session service error branches', function () {
     );
   });
 
-  it('returns no tokens when a refresh session does not exist', function () {
+  it('rejects an unrecognised refresh token without revoking a session', function () {
     sinon
       .stub(MobileSession, 'findOne')
       .returns(sessionLookupResult(null, null));
+    const revoke = sinon
+      .stub(MobileSession, 'findOneAndUpdate')
+      .callsArgWith(3, null, null);
 
     mobileSession.rotateRefreshToken(
       'unknown-refresh-token',
@@ -330,6 +332,7 @@ describe('Mobile session service error branches', function () {
         should.not.exist(tokens);
       },
     );
+    sinon.assert.calledOnce(revoke);
   });
 
   it('does not mutate a suspended member session', function () {
@@ -373,14 +376,16 @@ describe('Mobile session service error branches', function () {
     );
   });
 
-  it('returns no tokens when another request already rotated the token', function () {
+  it('revokes the session when another request already rotated the token', function () {
     sinon.stub(MobileSession, 'findOne').returns(
       sessionLookupResult(null, {
         _id: new mongoose.Types.ObjectId(),
         user: { roles: ['user'] },
       }),
     );
-    sinon.stub(MobileSession, 'findOneAndUpdate').callsArgWith(3, null, null);
+    const update = sinon.stub(MobileSession, 'findOneAndUpdate');
+    update.onFirstCall().callsArgWith(3, null, null);
+    update.onSecondCall().callsArgWith(3, null, {});
 
     mobileSession.rotateRefreshToken(
       'already-rotated-token',
@@ -390,6 +395,7 @@ describe('Mobile session service error branches', function () {
         should.not.exist(tokens);
       },
     );
+    sinon.assert.calledTwice(update);
   });
 
   it('expires stored sessions at refresh-token expiry', function () {
