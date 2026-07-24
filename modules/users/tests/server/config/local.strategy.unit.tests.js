@@ -8,12 +8,16 @@ const should = require('should');
 
 describe('Local passport strategy unit tests', () => {
   let User;
+  let authenticationService;
   let verify;
   let strategyOptions;
 
   beforeEach(() => {
     User = {
       findOne: sinon.stub(),
+    };
+    authenticationService = {
+      consumePasswordDerivation: sinon.stub(),
     };
 
     function FakeLocalStrategy(options, strategyVerify) {
@@ -34,6 +38,7 @@ describe('Local passport strategy unit tests', () => {
         'passport-local': {
           Strategy: FakeLocalStrategy,
         },
+        '../../services/authentication.server.service': authenticationService,
       },
     );
 
@@ -73,6 +78,9 @@ describe('Local passport strategy unit tests', () => {
       should(err).be.null();
       user.should.equal(false);
       info.message.should.equal('Unknown user or invalid password');
+      authenticationService.consumePasswordDerivation
+        .calledOnceWithExactly('password')
+        .should.be.true();
       done();
     });
   });
@@ -90,6 +98,7 @@ describe('Local passport strategy unit tests', () => {
       should(err).be.null();
       foundUser.should.equal(false);
       info.message.should.equal('Unknown user or invalid password');
+      authenticationService.consumePasswordDerivation.notCalled.should.be.true();
       done();
     });
   });

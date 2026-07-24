@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const mobileMember = require('../presenters/mobile-member.server.presenter');
 const mobileSession = require('../services/mobile-session.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const authenticationService = require('../../../users/server/services/authentication.server.service');
 
 const User = mongoose.model('User');
 const tokenPattern = /^[a-f0-9]{64}$/;
@@ -99,7 +100,11 @@ exports.signin = function (req, res, next) {
     if (err) {
       return next(err);
     }
-    if (!isActiveMember(user) || !user.authenticate(password)) {
+    if (!user || !isActiveMember(user)) {
+      authenticationService.consumePasswordDerivation(password);
+      return unauthorised(res);
+    }
+    if (!user.authenticate(password)) {
       return unauthorised(res);
     }
 

@@ -4,6 +4,7 @@ const sinon = require('sinon');
 
 const mobileAuthentication = require('../../server/controllers/mobile-authentication.server.controller');
 const mobileSession = require('../../server/services/mobile-session.server.service');
+const authenticationService = require('../../../users/server/services/authentication.server.service');
 
 const User = mongoose.model('User');
 const MobileSession = mongoose.model('MobileSession');
@@ -176,6 +177,10 @@ describe('Mobile authentication controller error branches', function () {
   it('rejects an unknown member', function () {
     const res = response();
     sinon.stub(User, 'findOne').returns(userLookupResult(null, null));
+    const consumePasswordDerivation = sinon.stub(
+      authenticationService,
+      'consumePasswordDerivation',
+    );
 
     mobileAuthentication.signin(
       { body: { username: 'unknown_member', password: 'secret' } },
@@ -184,6 +189,7 @@ describe('Mobile authentication controller error branches', function () {
     );
 
     res.statusCode.should.equal(401);
+    sinon.assert.calledOnceWithExactly(consumePasswordDerivation, 'secret');
   });
 
   it('rejects a suspended member at sign-in', function () {
@@ -195,6 +201,10 @@ describe('Mobile authentication controller error branches', function () {
     sinon
       .stub(User, 'findOne')
       .returns(userLookupResult(null, suspendedMember));
+    const consumePasswordDerivation = sinon.stub(
+      authenticationService,
+      'consumePasswordDerivation',
+    );
 
     mobileAuthentication.signin(
       { body: { username: 'suspended_member', password: 'secret' } },
@@ -204,6 +214,7 @@ describe('Mobile authentication controller error branches', function () {
 
     res.statusCode.should.equal(401);
     sinon.assert.notCalled(suspendedMember.authenticate);
+    sinon.assert.calledOnceWithExactly(consumePasswordDerivation, 'secret');
   });
 
   it('passes session creation errors to the error handler', function () {
