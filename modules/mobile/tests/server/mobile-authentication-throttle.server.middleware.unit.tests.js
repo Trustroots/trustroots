@@ -202,6 +202,30 @@ describe('Mobile authentication throttle', function () {
     sinon.assert.calledOnceWithExactly(next);
   });
 
+  it('passes refresh IP-budget errors to the error handler', function () {
+    const error = new Error('Refresh attempt deletion failed');
+    const next = sinon.stub();
+    sinon
+      .stub(MobileAuthenticationAttempt, 'deleteOne')
+      .returns(queryResult(error));
+
+    mobileAuthenticationThrottle.refresh(request(), response(), next);
+
+    sinon.assert.calledOnceWithExactly(next, error);
+  });
+
+  it('uses an empty token identity when a refresh token is missing', function () {
+    const next = sinon.stub();
+    allowExpiredDeletion();
+    sinon
+      .stub(MobileAuthenticationAttempt, 'findOneAndUpdate')
+      .returns(queryResult(null, { count: 1 }));
+
+    mobileAuthenticationThrottle.refresh(request(), response(), next);
+
+    sinon.assert.calledOnceWithExactly(next);
+  });
+
   it('trusts the Passenger address only over a loopback app connection', function () {
     mobileAuthenticationThrottle
       .sourceAddress(request('member', '198.51.100.7', '127.0.0.1'))
