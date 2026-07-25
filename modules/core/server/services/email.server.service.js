@@ -252,6 +252,23 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
   exports.renderEmailAndSend('signup', params, callback);
 };
 
+exports.sendFlaggedSignupAlert = function (user, matchedKeywords, callback) {
+  const params = {
+    from: 'Trustroots Support <' + config.supportEmail + '>',
+    name: 'Trustroots Support',
+    email: config.supportEmail,
+    subject: 'Signup matched safety-review keywords',
+    matchedKeywords: matchedKeywords.join(', '),
+    memberName: user.displayName,
+    username: user.username,
+    adminProfileUrl: url + '/admin/user?id=' + user._id,
+    skipHtmlTemplate: true,
+    sparkpostCampaign: 'flagged-signup-alert',
+  };
+
+  exports.renderEmailAndSend('flagged-signup-alert', params, callback);
+};
+
 exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
   let subject = 'Support request';
 
