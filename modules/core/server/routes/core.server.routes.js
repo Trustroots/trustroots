@@ -109,6 +109,16 @@ module.exports = function (app) {
   // Return a 404 for all undefined api, module or lib routes
   app.route('/:url(api|modules|lib|developers)/*').get(core.renderNotFound);
 
+  // Protect direct page loads before the client-side route guard is ready.
+  // Signed-in members continue to the generic circle route below.
+  app.route('/circles/naturists').get(function (req, res, next) {
+    if (!req.user) {
+      return res.redirect('/signin');
+    }
+
+    return next();
+  });
+
   // Define a tribes route to ensure we'll pass tribe object to index
   // Object is passed to layout at `core.renderIndex()`
   app.route('/circles/:tribe').get(core.renderIndex);

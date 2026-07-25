@@ -85,6 +85,34 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expect((await tribe.json()).label).toBe('Hitchhikers');
   });
 
+  test('signed-in members can open the Naturists circle', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.member-only', [
+      'Signed-in member can discover and open the Naturists circle.',
+    ]);
+
+    const catalogueResponse = await request.get('/api/tribes', {
+      params: { limit: 150 },
+    });
+    expect(catalogueResponse.ok()).toBeTruthy();
+    expect(
+      (await catalogueResponse.json()).some(
+        circle => circle.slug === 'naturists',
+      ),
+    ).toBe(true);
+
+    const detailResponse = await request.get('/api/tribes/naturists');
+    expect(detailResponse.ok()).toBeTruthy();
+    expect((await detailResponse.json()).label).toBe('Naturists');
+
+    await page.goto('/circles/naturists');
+    await expect(
+      page.locator('h2.tribe-title', { hasText: 'Naturists' }).first(),
+    ).toBeVisible();
+  });
+
   test('host offers can be created, updated, listed, and removed', async ({
     page,
     request,

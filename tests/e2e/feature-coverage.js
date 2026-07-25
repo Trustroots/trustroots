@@ -1772,6 +1772,36 @@ const features = [
     ],
   },
   {
+    id: 'circles.member-only',
+    area: AREA.searchOffersCircles,
+    status: STATUS.active,
+    description:
+      'The Naturists circle is discoverable only by signed-in members.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [
+        clientRoute('circles.circle', '/circles/:circle', source.tribesClient, {
+          conditionalAuth: 'circle=naturists',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/tribes', source.tribesServer),
+        apiRoute('GET', '/api/tribes/:tribe', source.tribesServer),
+      ],
+    },
+    requiredScenarios: [
+      'Visitor cannot discover or open the Naturists circle.',
+      'Signed-in member can discover and open the Naturists circle.',
+    ],
+    relatedSpecs: [
+      spec('seeded-content.spec.js', 'Naturists circle requires sign-in'),
+      spec(
+        'offers-and-circles.spec.js',
+        'signed-in members can open the Naturists circle',
+      ),
+    ],
+  },
+  {
     id: 'circles.join-leave',
     area: AREA.searchOffersCircles,
     status: STATUS.active,
