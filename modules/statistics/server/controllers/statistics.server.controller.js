@@ -326,7 +326,12 @@ exports.getExperienceStatistics = function (since, callback) {
       realLifeConnections: done => {
         Experience.aggregate(
           [
-            { $match: { 'interactions.met': true } },
+            {
+              $match: {
+                recommend: 'yes',
+                'interactions.met': true,
+              },
+            },
             {
               $project: {
                 created: 1,

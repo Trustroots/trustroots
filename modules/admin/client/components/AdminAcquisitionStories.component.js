@@ -22,6 +22,17 @@ function formatDate(value) {
   return date.toISOString().slice(0, 10);
 }
 
+function formatCoordinates(value) {
+  if (!Array.isArray(value) || value.length < 2) {
+    return null;
+  }
+
+  return value
+    .slice(0, 2)
+    .map(coordinate => Number(coordinate).toFixed(3))
+    .join(', ');
+}
+
 const storySortValues = {
   acquisitionStory: story => String(story.acquisitionStory).toLowerCase(),
   circleCount: story => Number(story.circleCount) || 0,
@@ -136,6 +147,7 @@ export default function AdminAcquisitionStories() {
                   onSort={sortBy}
                   sort={sort}
                 />
+                <th>Location</th>
                 <SortableHeader
                   column="acquisitionStory"
                   label="Story"
@@ -180,6 +192,19 @@ export default function AdminAcquisitionStories() {
                     </div>
                   </td>
                   <td>{story.circleCount || 0}</td>
+                  <td>
+                    {story.locationLiving && (
+                      <div>Living: {story.locationLiving}</div>
+                    )}
+                    {story.locationFrom && (
+                      <div>From: {story.locationFrom}</div>
+                    )}
+                    {formatCoordinates(story.hostingLocation) && (
+                      <div>
+                        Hosting: {formatCoordinates(story.hostingLocation)}
+                      </div>
+                    )}
+                  </td>
                   <td>{story.acquisitionStory}</td>
                 </tr>
               ))}

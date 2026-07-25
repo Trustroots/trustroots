@@ -78,10 +78,13 @@ describe('<AdminThreads />', () => {
 
     render(<AdminThreads />);
 
+    expect(
+      screen.queryByRole('button', { name: 'Query' }),
+    ).not.toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     await waitFor(() =>
       expect(threadsApi.getThreads).toHaveBeenCalledWith({
@@ -105,7 +108,6 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: userId },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     await waitFor(() =>
       expect(threadsApi.getThreads).toHaveBeenCalledWith({
@@ -131,7 +133,6 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     expect(await screen.findByText('Read')).toHaveClass('label-success');
   });
@@ -144,7 +145,6 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
   });
@@ -157,7 +157,6 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
   });

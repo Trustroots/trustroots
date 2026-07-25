@@ -10,7 +10,7 @@ afterEach(() => {
 
 describe('admin dashboard api', () => {
   it('fetches dashboard stats', async () => {
-    const data = { negativeReviews: [], topMessengers: [] };
+    const data = { threadVotes: [], topMessengers: [] };
     axios.get.mockResolvedValueOnce({ data });
 
     await expect(getAdminDashboard()).resolves.toBe(data);

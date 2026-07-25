@@ -37,7 +37,23 @@ afterEach(() => {
 describe('<Admin />', () => {
   beforeEach(() => {
     dashboardApi.getAdminDashboard.mockResolvedValue({
-      negativeReviews: [
+      negativeExperiences: [
+        {
+          _id: 'experience-1',
+          created: '2026-06-21T12:00:00.000Z',
+          userFrom: {
+            _id: 'experience-from-1',
+            displayName: 'Experience sender',
+            username: 'experience-sender',
+          },
+          userTo: {
+            _id: 'experience-to-1',
+            displayName: 'Experience receiver',
+            username: 'experience-receiver',
+          },
+        },
+      ],
+      threadVotes: [
         {
           _id: 'review-1',
           created: '2026-06-20T12:00:00.000Z',
@@ -127,11 +143,20 @@ describe('<Admin />', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('12 messages')).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'Last 5 Negative Reviews' }),
+      screen.getByRole('heading', { name: 'Last 10 Thread Votes' }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'sender (Sender)' }),
     ).toHaveAttribute('href', '/admin/user?id=user-from-1');
+    expect(
+      screen.getByRole('heading', { name: 'Last 10 Negative Experiences' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'experience-sender (Experience sender)',
+      }),
+    ).toHaveAttribute('href', '/admin/user?id=experience-from-1');
+    expect(screen.getByText('2026-06-21')).toBeInTheDocument();
   });
 
   it('shows an error when dashboard activity cannot be loaded', async () => {
@@ -143,12 +168,23 @@ describe('<Admin />', () => {
       await screen.findByText('Could not load dashboard activity.'),
     ).toBeInTheDocument();
     expect(screen.getByText('No messages last week.')).toBeInTheDocument();
-    expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
+    expect(screen.getByText('No thread votes found.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No negative experiences found.'),
+    ).toBeInTheDocument();
   });
 
   it('renders dashboard rows with missing optional data', async () => {
     dashboardApi.getAdminDashboard.mockResolvedValueOnce({
-      negativeReviews: [
+      negativeExperiences: [
+        {
+          _id: 'experience-without-date',
+          created: 'not-a-date',
+          userFrom: null,
+          userTo: null,
+        },
+      ],
+      threadVotes: [
         {
           _id: 'review-with-thread',
           thread: 'thread-without-users',
@@ -201,6 +237,7 @@ describe('<Admin />', () => {
     expect(
       screen.queryByRole('link', { name: 'thread-without-users' }),
     ).not.toBeInTheDocument();
+    expect(screen.getByText('Unknown date')).toBeInTheDocument();
   });
 
   it('uses empty dashboard lists when the API omits them', async () => {
@@ -211,7 +248,10 @@ describe('<Admin />', () => {
     expect(
       await screen.findByText('No messages last week.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('No negative reviews found.')).toBeInTheDocument();
+    expect(screen.getByText('No thread votes found.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No negative experiences found.'),
+    ).toBeInTheDocument();
   });
 
   it('does not update dashboard state after an unmount', async () => {
@@ -221,7 +261,7 @@ describe('<Admin />', () => {
     const { unmount } = render(<Admin />);
 
     unmount();
-    pending.resolve({ negativeReviews: [], topMessengers: [] });
+    pending.resolve({ threadVotes: [], topMessengers: [] });
     await pending.promise;
 
     expect(dashboardApi.getAdminDashboard).toHaveBeenCalledTimes(1);
