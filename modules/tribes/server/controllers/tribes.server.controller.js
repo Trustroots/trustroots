@@ -6,6 +6,8 @@ const paginate = require('express-paginate');
 const mongoose = require('mongoose');
 const Tribe = mongoose.model('Tribe');
 
+const MEMBER_ONLY_TRIBE_SLUGS = ['naturists'];
+
 // Publicly exposed fields from tribes
 exports.tribeFields = [
   '_id',
@@ -19,6 +21,16 @@ exports.tribeFields = [
   'description',
   'created',
 ].join(' ');
+
+function visibleTribesQuery(req) {
+  const query = { public: true };
+
+  if (!req.user) {
+    query.slug = { $nin: MEMBER_ONLY_TRIBE_SLUGS };
+  }
+
+  return query;
+}
 
 /**
  * Constructs link headers for pagination
@@ -53,7 +65,9 @@ exports.listTribes = function (req, res) {
     ? parseInt(limitMatch[1], 10)
     : parseInt(req.query.limit, 10) || 0;
 
-  Tribe.find({ public: true })
+  const query = visibleTribesQuery(req);
+
+  Tribe.find(query)
     .select(exports.tribeFields)
     .sort(sort)
     .limit(limit)
@@ -64,7 +78,7 @@ exports.listTribes = function (req, res) {
           message: errorService.getErrorMessage(err),
         });
       }
-      Tribe.countDocuments({ public: true }, function (countErr, total) {
+      Tribe.countDocuments(query, function (countErr, total) {
         if (countErr) {
           return res.status(400).send({
             message: errorService.getErrorMessage(countErr),
@@ -90,6 +104,12 @@ exports.getTribe = function (req, res) {
  * Tribe middleware
  */
 exports.tribeBySlug = function (req, res, next, slug) {
+  if (!req.user && MEMBER_ONLY_TRIBE_SLUGS.includes(slug)) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+
   Tribe.findOne(
     {
       public: true,

@@ -62,6 +62,11 @@ const TRIBES = [
     color: '27ae60',
     description: 'Long-distance walkers and trekkers.',
   },
+  {
+    label: 'Naturists',
+    color: '8e6e53',
+    description: 'A member-only circle for naturist travellers and hosts.',
+  },
 ];
 
 const MEMBERS = [

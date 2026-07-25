@@ -2,6 +2,37 @@ import showTemplateUrl from '@/modules/tribes/client/views/tribe.client.view.htm
 
 angular.module('tribes').config(TribesRoutes);
 
+function resolveCircle(TribeService, $stateParams) {
+  return TribeService.get({
+    tribeSlug: $stateParams.circle,
+  });
+}
+resolveCircle.$inject = ['TribeService', '$stateParams'];
+
+function requiresCircleAuthentication(params) {
+  return params.circle === 'naturists';
+}
+
+function circleDetailState(url, requiresAuth, resolveTribe, requiresAuthFor) {
+  return {
+    url,
+    requiresAuth,
+    requiresAuthFor,
+    footerHidden: true,
+    templateUrl: showTemplateUrl,
+    controller: 'TribeController',
+    controllerAs: 'tribeCtrl',
+    resolve: {
+      // A string value resolves to a service
+      TribeService: 'TribeService',
+      tribe: resolveTribe,
+    },
+    data: {
+      pageTitle: 'Circle',
+    },
+  };
+}
+
 /* @ngInject */
 function TribesRoutes($stateProvider) {
   $stateProvider
@@ -24,23 +55,13 @@ function TribesRoutes($stateProvider) {
         pageTitle: 'Circles',
       },
     })
-    .state('circles.circle', {
-      url: '/:circle',
-      footerHidden: true,
-      templateUrl: showTemplateUrl,
-      controller: 'TribeController',
-      controllerAs: 'tribeCtrl',
-      resolve: {
-        // A string value resolves to a service
-        TribeService: 'TribeService',
-        tribe(TribeService, $stateParams) {
-          return TribeService.get({
-            tribeSlug: $stateParams.circle,
-          });
-        },
-      },
-      data: {
-        pageTitle: 'Circle',
-      },
-    });
+    .state(
+      'circles.circle',
+      circleDetailState(
+        '/:circle',
+        false,
+        resolveCircle,
+        requiresCircleAuthentication,
+      ),
+    );
 }
