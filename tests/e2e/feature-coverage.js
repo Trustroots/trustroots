@@ -2013,6 +2013,8 @@ const features = [
       'Shadowbanned profile is hidden from members.',
       'Shadow-hidden messages are not visible to regular recipients.',
       'Admin tools can still inspect shadow-hidden content.',
+      'Shadowbanned viewers cannot see external profile links or contact details.',
+      'Shadowbanned viewers cannot see contact details in other members offers.',
     ],
     relatedSpecs: [
       spec(
@@ -2449,6 +2451,7 @@ const features = [
     requiredScenarios: [
       'Admin dashboard loads for admin.',
       'Regular member is denied access to admin tools.',
+      'Dashboard shows ten most recent negative experiences.',
     ],
     relatedSpecs: [
       spec(
@@ -2504,6 +2507,7 @@ const features = [
     requiredScenarios: [
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
+      'Story rows show available member and hosting locations.',
     ],
     relatedSpecs: [],
   },

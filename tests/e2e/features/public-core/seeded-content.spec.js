@@ -59,11 +59,11 @@ test.describe('seeded content and public API flows', () => {
     expect(response.ok()).toBeTruthy();
     const publicStatistics = await response.json();
     expect(publicStatistics.experiences).toEqual({
-      total: 2,
+      total: 3,
       recommended: 1,
-      notRecommended: 0,
-      recent: { total: 2, recommended: 1, notRecommended: 0 },
-      realLifeConnections: { total: 2, recent: 2 },
+      notRecommended: 1,
+      recent: { total: 3, recommended: 1, notRecommended: 1 },
+      realLifeConnections: { total: 1, recent: 1 },
     });
     expect(publicStatistics.messageInteractions).toEqual({
       total: 1,

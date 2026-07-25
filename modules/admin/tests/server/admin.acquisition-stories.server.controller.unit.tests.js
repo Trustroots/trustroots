@@ -8,6 +8,7 @@ const sinon = require('sinon');
 
 const adminAcquisitionStories = require('../../server/controllers/admin.acquisition-stories.server.controller');
 const utils = require('../../../../testutils/server/data.server.testutil');
+const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 
 function mockResponse() {
@@ -34,6 +35,8 @@ describe('Admin acquisition stories controller unit tests', () => {
       const users = utils.generateUsers(2);
       users[0].acquisitionStory = 'Found via couch surfing';
       users[0].member = [{ tribe: new mongoose.Types.ObjectId() }];
+      users[0].locationFrom = 'Fictional origin';
+      users[0].locationLiving = 'Fictional home';
       users[1].acquisitionStory = '';
 
       await utils.saveUsers(users);
@@ -44,7 +47,83 @@ describe('Admin acquisition stories controller unit tests', () => {
       res.body.length.should.equal(1);
       res.body[0].acquisitionStory.should.equal('Found via couch surfing');
       res.body[0].circleCount.should.equal(1);
+      res.body[0].locationFrom.should.equal('Fictional origin');
+      res.body[0].locationLiving.should.equal('Fictional home');
+      should(res.body[0].hostingLocation).equal(null);
       should(res.body[0].member).be.undefined();
+    });
+
+    it('returns the latest hosting location with acquisition stories', async () => {
+      const users = utils.generateUsers(1);
+      users[0].acquisitionStory = 'Found through friends';
+      const [savedUser] = await utils.saveUsers(users);
+      sinon.stub(Offer, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: () =>
+              Promise.resolve([
+                {
+                  user: savedUser._id,
+                  location: [10, 20],
+                  locationFuzzy: [10.1, 20.1],
+                },
+                {
+                  user: savedUser._id,
+                  location: [30, 40],
+                  locationFuzzy: [],
+                },
+              ]),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+
+      res.body[0].hostingLocation.should.deepEqual([10.1, 20.1]);
+    });
+
+    it('falls back to a precise hosting location when no fuzzy value exists', async () => {
+      const users = utils.generateUsers(1);
+      users[0].acquisitionStory = 'Found through a gathering';
+      const [savedUser] = await utils.saveUsers(users);
+      sinon.stub(Offer, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: () =>
+              Promise.resolve([
+                {
+                  user: savedUser._id,
+                  location: [30, 40],
+                  locationFuzzy: [],
+                },
+              ]),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+
+      res.body[0].hostingLocation.should.deepEqual([30, 40]);
+    });
+
+    it('handles a missing hosting-offer result', async () => {
+      const users = utils.generateUsers(1);
+      users[0].acquisitionStory = 'Found through a cyclist';
+      await utils.saveUsers(users);
+      sinon.stub(Offer, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            exec: () => Promise.resolve(null),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+
+      should(res.body[0].hostingLocation).equal(null);
     });
 
     it('returns an empty array when no stories exist', async () => {

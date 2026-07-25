@@ -12,7 +12,7 @@ import {
 } from './userSearch.helpers.js';
 
 // Limitations set in the API
-const SEARCH_USERS_LIMIT = 50;
+const SEARCH_USERS_LIMIT = 150;
 
 export class AdminSearchUsersContent extends Component {
   constructor(props) {

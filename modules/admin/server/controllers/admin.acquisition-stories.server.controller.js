@@ -7,6 +7,7 @@ const stopword = require('stopword');
 const winkStatistics = require('wink-statistics');
 const winkTokenizer = require('wink-tokenizer');
 
+const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 
 /**
@@ -301,27 +302,61 @@ function getStories() {
     {
       acquisitionStory: { $exists: true, $ne: '' },
     },
-    '_id acquisitionStory created displayName member username',
+    '_id acquisitionStory created displayName locationFrom locationLiving member username',
   )
     .sort('-created')
     .limit(3000)
     .exec();
 }
 
-function storyForList(story) {
+function storyForList(story, hostingLocation) {
   return {
     _id: story._id,
     acquisitionStory: story.acquisitionStory,
     circleCount: story.member.length,
     created: story.created,
     displayName: story.displayName,
+    hostingLocation,
+    locationFrom: story.locationFrom,
+    locationLiving: story.locationLiving,
     username: story.username,
   };
 }
 
 exports.list = async (req, res) => {
   const stories = await getStories();
-  res.send(stories ? stories.map(storyForList) : []);
+  if (!stories || stories.length === 0) {
+    return res.send([]);
+  }
+
+  const storyUserIds = stories.map(story => story._id);
+  const hostingOffers = await Offer.find({
+    user: { $in: storyUserIds },
+    type: 'host',
+    status: { $in: ['yes', 'maybe'] },
+  })
+    .select('location locationFuzzy updated user')
+    .sort('-updated')
+    .exec();
+  const hostingLocationsByUser = (hostingOffers || []).reduce(
+    (locations, offer) => {
+      const userId = offer.user.toString();
+      if (!locations[userId]) {
+        const location = offer.locationFuzzy.length
+          ? offer.locationFuzzy
+          : offer.location;
+        locations[userId] = Array.from(location);
+      }
+      return locations;
+    },
+    {},
+  );
+
+  return res.send(
+    stories.map(story =>
+      storyForList(story, hostingLocationsByUser[story._id.toString()] || null),
+    ),
+  );
 };
 
 exports.getAnalysis = async (req, res) => {

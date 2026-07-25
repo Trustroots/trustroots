@@ -42,9 +42,14 @@ export default function AdminThreads() {
     }
   }, [initialQuery, runQuery]);
 
-  function onSubmit(event) {
-    event.preventDefault();
-    void runQuery(query);
+  function onQueryChange({ target: { value } }) {
+    setQuery(value);
+    if (value.trim()) {
+      void runQuery(value);
+    } else {
+      setQueried(false);
+      setThreads([]);
+    }
   }
 
   function renderResults() {
@@ -107,25 +112,16 @@ export default function AdminThreads() {
       <AdminHeader />
       <div className="container">
         <h2>Threads</h2>
-        <form className="form-inline" onSubmit={event => onSubmit(event)}>
-          <input
-            aria-label="Member username or ID"
-            className="form-control input-lg"
-            name="query"
-            onChange={({ target: { value } }) => setQuery(value)}
-            placeholder="Member username or ID"
-            size={MONGO_OBJECT_ID_LENGTH + 2}
-            type="text"
-            value={query}
-          />
-          <button
-            className="btn btn-lg btn-default"
-            type="submit"
-            disabled={!query.trim()}
-          >
-            Query
-          </button>
-        </form>
+        <input
+          aria-label="Member username or ID"
+          className="form-control input-lg"
+          name="query"
+          onChange={onQueryChange}
+          placeholder="Member username or ID"
+          size={MONGO_OBJECT_ID_LENGTH + 2}
+          type="text"
+          value={query}
+        />
         <br />
         {renderResults()}
       </div>

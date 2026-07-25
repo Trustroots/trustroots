@@ -15,7 +15,7 @@ const ReferenceThread = mongoose.model('ReferenceThread');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 
-const SEARCH_USERS_LIMIT = 50;
+const SEARCH_USERS_LIMIT = 150;
 const SEARCH_STRING_LIMIT = 3;
 const ADMIN_LISTABLE_ROLES = [
   'admin',

@@ -27,6 +27,9 @@ describe('<AdminAcquisitionStories />', () => {
         circleCount: 3,
         created: '2026-04-05T06:07:08.000Z',
         displayName: 'Alice Example',
+        hostingLocation: [52.37, 4.9],
+        locationFrom: 'Fictional origin',
+        locationLiving: 'Fictional home',
         username: 'alice',
       },
     ]);
@@ -56,6 +59,9 @@ describe('<AdminAcquisitionStories />', () => {
       '/api/users/111111111111111111111111/avatar?size=32',
     );
     expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('Living: Fictional home')).toBeInTheDocument();
+    expect(screen.getByText('From: Fictional origin')).toBeInTheDocument();
+    expect(screen.getByText('Hosting: 52.370, 4.900')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Stories' }).closest('li'),
     ).toHaveClass('active');
@@ -85,6 +91,7 @@ describe('<AdminAcquisitionStories />', () => {
         _id: '222222222222222222222222',
         acquisitionStory: 'Invalid date story.',
         created: 'not-a-date',
+        hostingLocation: [1],
         username: 'bob',
       },
     ]);
