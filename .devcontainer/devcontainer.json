@@ -16,10 +16,6 @@
       "label": "Express API/server",
       "onAutoForward": "ignore"
     },
-    "1080": {
-      "label": "MailDev web UI",
-      "onAutoForward": "ignore"
-    },
     "27017": {
       "label": "MongoDB",
       "onAutoForward": "ignore"

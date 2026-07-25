@@ -42,7 +42,6 @@ services:
       - DB_1_PORT_27017_TCP_ADDR=mongodb
     depends_on:
       - mongodb
-      - maildev
     ports:
       - '3000:3000'
     command: ['npm', 'run', 'start:docker']
@@ -115,11 +114,6 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
     profiles:
       - stats
-
-  maildev:
-    image: soulteary/maildev
-    ports:
-      - '1080:1080'
 
 volumes:
   # Keep WiredTiger data on Docker's Linux filesystem. Host bind mounts on

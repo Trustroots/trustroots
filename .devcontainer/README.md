@@ -23,7 +23,6 @@ apps. Set `TRUSTROOTS_DEV_*_HOST_PORT` before rebuilding to customize.
 | --------------------- | -------------: | ----------------: |
 | Webpack dev server    |         `3000` |           `13000` |
 | Express API/server    |         `3001` |           `13001` |
-| MailDev web UI        |         `1080` |           `11080` |
 | MongoDB               |        `27017` |           `37017` |
 | LiveReload            |        `35729` |           `45729` |
 | Node server inspector |         `5858` |           `15858` |
