@@ -104,6 +104,44 @@ describe('Contacts controller unit tests', () => {
       res.body.message.should.match(/email was sent/);
     });
 
+    it('hides requests from a shadowbanned sender without saving a contact', async () => {
+      user1.roles = ['user', 'shadowban'];
+      await user1.save();
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const contacts = await Contact.find({
+        userFrom: user1._id,
+        userTo: user2._id,
+      });
+      contacts.length.should.equal(0);
+    });
+
+    it('does not create a contact request for a shadowbanned recipient', async () => {
+      user2.roles = ['user', 'shadowban'];
+      await user2.save();
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+      const contacts = await Contact.find({
+        userFrom: user1._id,
+        userTo: user2._id,
+      });
+      contacts.length.should.equal(0);
+    });
+
     it('responds with 400 when the contact lookup fails before creation', async () => {
       sinon.stub(Contact, 'findOne').returns({
         exec: cb => cb(new Error('lookup failed')),

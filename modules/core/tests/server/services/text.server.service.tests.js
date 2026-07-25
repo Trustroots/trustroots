@@ -333,4 +333,32 @@ describe('Text processor tests', function () {
       testString.should.equal('foo&bar');
     });
   });
+
+  describe('Strip contact details', function () {
+    it('returns an empty string for empty content', function () {
+      textService.stripContactDetails(null).should.equal('');
+    });
+
+    it('removes detected URLs, email addresses and phone numbers', function () {
+      const stripped = textService.stripContactDetails(
+        '<p>Write to member@example.org, call (555) 666-7777, or visit https://example.org/profile. Welcome!</p>',
+      );
+
+      stripped.should.equal('Write to , call , or visit . Welcome!');
+    });
+
+    it('preserves unrelated text', function () {
+      textService
+        .stripContactDetails('<p>A quiet place near the station.</p>')
+        .should.equal('A quiet place near the station.');
+    });
+
+    it('removes contact links with custom labels', function () {
+      textService
+        .stripContactDetails(
+          '<p>Use <a href="mailto:member@example.org">this address</a> or <a href="https://example.org/profile">my page</a>.</p>',
+        )
+        .should.equal('Use  or .');
+    });
+  });
 });

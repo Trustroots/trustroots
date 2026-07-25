@@ -58,6 +58,17 @@ access through valid password-reset details.
 - **THEN** the system updates their password
 - **AND** the account holder can sign in with the new password
 
+### Requirement: Welcome-sequence delivery
+
+The system SHALL not send welcome-sequence emails to suspended or shadowbanned
+members.
+
+#### Scenario: Restricted member is eligible for a welcome-sequence step
+
+- **WHEN** a suspended or shadowbanned member otherwise meets a
+  welcome-sequence job's timing and profile criteria
+- **THEN** the job does not select that member for email delivery
+
 ### Requirement: Sign-out
 
 The system SHALL end an account holder's session when they sign out.

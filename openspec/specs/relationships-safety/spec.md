@@ -9,13 +9,21 @@ protecting the community from hidden or harmful activity.
 
 ### Requirement: Contact relationships
 
-The system SHALL let members create, confirm, view, and remove contact
-relationships.
+The system SHALL let available members create, confirm, view, and remove
+contact relationships. Suspended and shadowbanned members cannot create or
+receive contact requests.
 
 #### Scenario: Member creates and confirms a contact relationship
 
 - **WHEN** a member sends a contact request and the other member confirms it
 - **THEN** the system lists the members as confirmed contacts
+
+#### Scenario: Contact request involves a restricted member
+
+- **WHEN** a suspended or shadowbanned member attempts to send a contact
+  request, or another member attempts to contact one
+- **THEN** the system does not create a contact record
+- **AND** the request is not delivered to the other member
 
 #### Scenario: Member creates a duplicate contact request
 
@@ -71,3 +79,36 @@ members while leaving them available to authorised administrators for review.
 
 - **WHEN** an authorised administrator inspects shadow-hidden member activity
 - **THEN** the administration tools provide the relevant profile and message context
+
+### Requirement: External profile links for restricted viewers
+
+The system SHALL omit another member's external social, hospitality-network,
+and Nostr identifiers when the authenticated viewer is shadowbanned.
+
+#### Scenario: Shadowbanned member views another profile
+
+- **WHEN** a shadowbanned member views another member's public profile
+- **THEN** the profile response omits external social, hospitality-network, and
+  Nostr identifiers
+
+#### Scenario: Member views their own profile
+
+- **WHEN** a member views their own profile
+- **THEN** their external network identifiers remain available
+
+### Requirement: Contact details for restricted viewers
+
+The system SHALL remove detected URLs, email addresses, and phone numbers from
+other members' profile and offer descriptions when the authenticated viewer is
+shadowbanned.
+
+#### Scenario: Shadowbanned member views another member's description
+
+- **WHEN** a shadowbanned member views another member's profile or offer
+- **THEN** detected URLs, email addresses, and phone numbers are omitted from
+  the returned description
+
+#### Scenario: Member views their own content
+
+- **WHEN** a member views their own profile or offer
+- **THEN** their description remains available with its contact details

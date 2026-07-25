@@ -4,6 +4,7 @@ const { annotateFeature, test, expect } = require('../../support/test');
 const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  SEEDED_SHADOW,
   createUser,
   registerViaApi,
   signInViaApi,
@@ -103,6 +104,29 @@ test.describe('authenticated member flows', () => {
         name: `${SEEDED_MEMBERS[0].firstName} ${SEEDED_MEMBERS[0].lastName}`,
         exact: true,
       }),
+    ).toBeVisible();
+  });
+
+  test('search members hides shadowbanned profiles', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'safety.shadowban-hiding', [
+      'Shadowbanned members are hidden from public member search.',
+    ]);
+
+    await page.goto('/search/members');
+    await page.locator('#search-users-form input').fill(SEEDED_SHADOW.username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/users?search=') &&
+        response.request().method() === 'GET' &&
+        response.ok(),
+    );
+    await page.locator('#search-users-form button[type="submit"]').click();
+    await searchResponse;
+
+    await expect(
+      page.getByText('No members found by this name.'),
     ).toBeVisible();
   });
 

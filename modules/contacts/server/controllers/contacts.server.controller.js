@@ -7,6 +7,7 @@ const errorService = require('../../../core/server/services/error.server.service
 const textService = require('../../../core/server/services/text.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 const sanitizeHtml = require('sanitize-html');
 const htmlToText = require('html-to-text');
 const async = require('async');
@@ -20,6 +21,13 @@ const User = mongoose.model('User');
 exports.add = function (req, res) {
   // Defined in this scope so we can remove it in in the case of an error
   let contact;
+
+  // Shadowbanned members should not learn that their requests are hidden.
+  if (userRolesService.hasRestrictedMessagingRole(req.user)) {
+    return res.send({
+      message: 'An email was sent to your contact.',
+    });
+  }
 
   async.waterfall(
     [
@@ -78,28 +86,33 @@ exports.add = function (req, res) {
         done(null, messageHTML, messagePlain);
       },
 
-      // Create Contact
+      // Find friend before creating a contact, so restricted profiles do not
+      // receive a request or reveal that they exist.
       function (messageHTML, messagePlain, done) {
+        User.findOne(
+          {
+            _id: req.body.friendUserId,
+            roles: { $nin: userRolesService.restrictedMessagingRoles },
+          },
+          'email displayName roles',
+        ).exec(function (err, friend) {
+          if (!friend)
+            return done(
+              new Error('Failed to load user ' + req.body.friendUserId),
+            );
+
+          done(err, messageHTML, messagePlain, friend);
+        });
+      },
+
+      // Create Contact
+      function (messageHTML, messagePlain, friend, done) {
         contact = new Contact(req.body);
         contact.confirmed = false;
         contact.userFrom = req.user._id;
         contact.userTo = req.body.friendUserId;
 
-        done(null, messageHTML, messagePlain);
-      },
-
-      // Find friend
-      function (messageHTML, messagePlain, done) {
-        User.findById(req.body.friendUserId, 'email displayName roles').exec(
-          function (err, friend) {
-            if (!friend)
-              return done(
-                new Error('Failed to load user ' + req.body.friendUserId),
-              );
-
-            done(err, messageHTML, messagePlain, friend);
-          },
-        );
+        done(null, messageHTML, messagePlain, friend);
       },
 
       // Save contact
