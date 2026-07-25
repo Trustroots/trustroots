@@ -115,7 +115,11 @@ test.describe('authenticated member flows', () => {
     ]);
 
     await page.goto('/search/members');
-    await page.locator('#search-users-form input').fill(SEEDED_SHADOW.username);
+    // MongoDB text search treats hyphens as negation operators, so use the
+    // unique display name rather than the fixture's hyphenated username.
+    await page
+      .locator('#search-users-form input')
+      .fill(SEEDED_SHADOW.firstName);
     const searchResponse = page.waitForResponse(
       response =>
         response.url().includes('/api/users?search=') &&
@@ -128,6 +132,31 @@ test.describe('authenticated member flows', () => {
     await expect(
       page.getByText('No members found by this name.'),
     ).toBeVisible();
+  });
+
+  test('member can download their combined data export', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.data-export', [
+      'The combined export is an attachment with the documented filename.',
+      'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+    ]);
+
+    const response = await page.request.get('/api/users/export');
+
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-disposition']).toContain(
+      'attachment; filename="trustroots-data.json"',
+    );
+    const data = await response.json();
+    expect(data).toMatchObject({
+      format: 'trustroots-data-export',
+      version: 1,
+      profile: expect.any(Object),
+      contacts: expect.any(Array),
+      hostingOffers: expect.any(Array),
+    });
+    expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
   });
 
   test('inbox prompts an unconfirmed member to activate their profile', async ({

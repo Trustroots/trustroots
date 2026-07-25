@@ -1049,6 +1049,37 @@ const features = [
     ],
   },
   {
+    id: 'account.data-export',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Authenticated members can download their profile, contacts, and hosting offers in one versioned JSON file.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          {
+            requiresAuth: true,
+          },
+        ),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/users/export', source.usersServer)],
+    },
+    requiredScenarios: [
+      'The combined export is an attachment with the documented filename.',
+      'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+    ],
+    relatedSpecs: [
+      spec(
+        'authenticated.spec.js',
+        'member can download their combined data export',
+      ),
+    ],
+  },
+  {
     id: 'account.profile-removal',
     area: AREA.authAccount,
     status: STATUS.active,

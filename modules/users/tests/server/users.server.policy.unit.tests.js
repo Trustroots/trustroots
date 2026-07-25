@@ -43,6 +43,9 @@ describe('Users policy unit tests', () => {
     policies[1].allows
       .map(allow => allow.resources)
       .should.containEql('/api/users/push/registrations/:token');
+    policies[1].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/users/export');
   });
 
   it('calls next when ACL allows the request', () => {
@@ -80,6 +83,24 @@ describe('Users policy unit tests', () => {
     );
 
     mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
+  });
+
+  it('refuses unauthenticated member data exports', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, false);
+    const response = mockResponse();
+
+    policy.isAllowed(
+      {
+        route: { path: '/api/users/export' },
+        method: 'GET',
+      },
+      response,
+      () => {},
+    );
+
+    response.statusCode.should.equal(403);
+    response.body.message.should.equal('Forbidden.');
   });
 
   it('allows profile owners past public-profile prechecks', () => {
