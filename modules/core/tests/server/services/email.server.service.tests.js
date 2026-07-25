@@ -73,6 +73,34 @@ describe('Service: email', function () {
     });
   });
 
+  it('can send a flagged signup alert to support', function (done) {
+    const user = {
+      _id: 'member-id',
+      displayName: 'Example Member',
+      username: 'example-member',
+    };
+
+    emailService.sendFlaggedSignupAlert(
+      user,
+      ['support', 'trustroots'],
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.to.address.should.equal(config.supportEmail);
+        jobs[0].data.subject.should.equal(
+          'Signup matched safety-review keywords',
+        );
+        jobs[0].data.text.should.containEql('support, trustroots');
+        jobs[0].data.text.should.containEql(user.displayName);
+        jobs[0].data.text.should.containEql('@' + user.username);
+        jobs[0].data.text.should.containEql('/admin/user?id=' + user._id);
+        should(jobs[0].data.html).equal(undefined);
+        done();
+      },
+    );
+  });
+
   it('can send change email confirmation', function (done) {
     const user = {
       displayName: 'test user',

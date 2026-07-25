@@ -160,4 +160,29 @@ describe('<AdminThreads />', () => {
 
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
   });
+
+  it('clears the results when the query is cleared', async () => {
+    threadsApi.getThreads.mockResolvedValueOnce([
+      {
+        _id: 'thread-1',
+        read: true,
+        updated: '2025-04-05T06:07:08.000Z',
+        userFromProfile: [makeUser({ displayName: 'Alice Example' })],
+        userToProfile: [makeUser({ _id: userId, displayName: 'Bob Example' })],
+      },
+    ]);
+
+    render(<AdminThreads />);
+
+    const query = screen.getByLabelText('Member username or ID');
+    fireEvent.change(query, { target: { value: 'alice' } });
+    expect(
+      await screen.findByText('Messages from/to them'),
+    ).toBeInTheDocument();
+
+    fireEvent.change(query, { target: { value: '   ' } });
+
+    expect(screen.queryByText('Messages from/to them')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nothing found…')).not.toBeInTheDocument();
+  });
 });
