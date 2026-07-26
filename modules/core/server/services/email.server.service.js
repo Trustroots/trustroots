@@ -26,6 +26,13 @@ function getSupportVolunteerName() {
   return _.sample(config.supportVolunteerNames);
 }
 
+function removeLinksFromMessagePreview(content) {
+  return _.toString(content).replace(
+    /<a\b[^>]*>[\s\S]*?<\/a>/gi,
+    '[link removed]',
+  );
+}
+
 exports.sendMessagesUnread = function (
   userFrom,
   userTo,
@@ -60,7 +67,11 @@ exports.sendMessagesUnread = function (
     email: userTo.email,
     mailTitle: mailSubject,
     messageCount: notification.messages.length,
-    messages: notification.messages,
+    messages: notification.messages.map(function (message) {
+      return Object.assign({}, message, {
+        content: removeLinksFromMessagePreview(message.content),
+      });
+    }),
     userFromName: userFrom.displayName,
     userToName: userTo.displayName,
     urlReplyPlainText: urlReply,
