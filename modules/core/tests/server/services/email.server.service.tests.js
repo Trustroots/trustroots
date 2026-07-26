@@ -278,6 +278,12 @@ describe('Service: email', function () {
         notification.messages.forEach(function (notification) {
           jobs[0].data.text.should.containEql(notification.content);
         });
+        jobs[0].data.text.should.containEql(
+          'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+        );
+        jobs[0].data.html.should.containEql(
+          'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+        );
         jobs[0].data.text.should.containEql('/messages/' + userFrom.username);
         jobs[0].data.text.should.containEql('/profile/' + userFrom.username);
         jobs[0].data.html.should.containEql('/messages/' + userFrom.username);
@@ -321,6 +327,44 @@ describe('Service: email', function () {
         jobs[0].data.subject.should.equal(
           userFrom.displayName + ' is still waiting for a reply on Trustroots',
         );
+        done();
+      },
+    );
+  });
+
+  it('removes links from unread message previews', function (done) {
+    const userFrom = {
+      _id: 'from-user-id',
+      username: 'userfrom',
+      displayName: 'from name',
+      email: 'from@test.com',
+    };
+    const userTo = {
+      _id: 'to-user-id',
+      username: 'userto',
+      displayName: 'to name',
+      email: 'to@test.com',
+    };
+    const notification = {
+      messages: [
+        {
+          id: 'message-id-1',
+          content:
+            'Visit <a href="https://example.invalid/payment">example.invalid/payment</a>.',
+        },
+      ],
+    };
+
+    emailService.sendMessagesUnread(
+      userFrom,
+      userTo,
+      notification,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].data.html.should.containEql('Visit [link removed].');
+        jobs[0].data.html.should.not.containEql('https://example.invalid');
+        jobs[0].data.text.should.not.containEql('https://example.invalid');
         done();
       },
     );

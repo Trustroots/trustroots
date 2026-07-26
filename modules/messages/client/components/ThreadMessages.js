@@ -30,6 +30,12 @@ export default function ThreadMessages({
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
   return (
     <InfiniteMessages component={MessagesContainer} onFetchMore={onFetchMore}>
+      <div className="alert alert-warning" role="note">
+        <strong>{t('Safety note:')}</strong>{' '}
+        {t(
+          'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+        )}
+      </div>
       {isExtraSmall && otherUser.username && (
         <div className="message">
           <div className="message-recipient panel panel-default">
