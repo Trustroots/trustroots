@@ -25,7 +25,9 @@ test.describe('admin moderation search flows', () => {
 
     await page.goto('/admin/search-users');
 
-    await page.locator('input[type="search"]').fill(berlin.username);
+    await page
+      .locator('input[type="search"]')
+      .type(`  ${berlin.firstName} ${berlin.lastName}  `);
     const searchResponse = page.waitForResponse(
       response =>
         response.url().includes('/api/admin/users') &&

@@ -47,6 +47,41 @@ describe('<AdminSearchUsers />', () => {
     });
   });
 
+  it('normalises a direct search before querying', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([]);
+    const component = new AdminSearchUsersContent({});
+    component.state.search = '  alice  ';
+    component.setState = jest.fn(update => {
+      component.state = {
+        ...component.state,
+        ...update,
+      };
+    });
+
+    await component.doSearch();
+
+    expect(component.setState).toHaveBeenCalledWith({ search: 'alice' });
+    expect(usersApi.searchUsers).toHaveBeenCalledWith('alice');
+  });
+
+  it('removes an empty normalised search from the URL', async () => {
+    window.history.pushState({}, '', '/admin/search-users?search=old');
+    const component = new AdminSearchUsersContent({});
+    component.state.search = '   ';
+    component.setState = jest.fn(update => {
+      component.state = {
+        ...component.state,
+        ...update,
+      };
+    });
+
+    await component.doSearch();
+
+    expect(component.setState).toHaveBeenCalledWith({ search: '' });
+    expect(window.location.search).toBe('');
+    expect(usersApi.searchUsers).not.toHaveBeenCalled();
+  });
+
   it('does not show legacy moderator as a listable role', () => {
     render(<AdminSearchUsers />);
 
@@ -94,6 +129,33 @@ describe('<AdminSearchUsers />', () => {
 
     expect(window.location.search).toBe('?search=al');
     expect(usersApi.searchUsers).not.toHaveBeenCalled();
+  });
+
+  it('keeps spaces while typing and trims surrounding whitespace on submit', async () => {
+    usersApi.searchUsers.mockResolvedValueOnce([
+      makeUser({ username: 'trimmed-search' }),
+    ]);
+    render(<AdminSearchUsers />);
+
+    const input = screen.getByLabelText('Name, username or email');
+    fireEvent.change(input, { target: { value: 'trustroots' } });
+    fireEvent.change(input, { target: { value: 'trustroots ' } });
+
+    expect(input).toHaveValue('trustroots ');
+
+    fireEvent.change(input, { target: { value: 'trustroots team ' } });
+
+    expect(input).toHaveValue('trustroots team ');
+    expect(window.location.search).toBe('?search=trustroots+team+');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+
+    expect(input).toHaveValue('trustroots team');
+    expect(window.location.search).toBe('?search=trustroots+team');
+    expect(
+      await screen.findByText('trimmed-search (Alice Example)'),
+    ).toBeInTheDocument();
+    expect(usersApi.searchUsers).toHaveBeenCalledWith('trustroots team');
   });
 
   it('searches from the submitted form once the search text is long enough', async () => {

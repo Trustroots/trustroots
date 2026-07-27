@@ -9,6 +9,7 @@ import AdminUserResultsTable from './AdminUserResultsTable.component.js';
 import {
   SEARCH_STRING_LIMIT,
   isObviousSpamUser,
+  normalizeAdminQuery,
 } from './userSearch.helpers.js';
 
 // Limitations set in the API
@@ -34,7 +35,7 @@ export class AdminSearchUsersContent extends Component {
 
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
-    const search = urlParams.get('search');
+    const search = normalizeAdminQuery(urlParams.get('search'));
     if (search) {
       this.setState({ search }, this.doSearch);
     }
@@ -72,7 +73,17 @@ export class AdminSearchUsersContent extends Component {
     if (event) {
       event.preventDefault();
     }
-    const { search } = this.state;
+    const search = normalizeAdminQuery(this.state.search);
+    if (search !== this.state.search) {
+      this.setState({ search });
+    }
+    const url = new URL(document.location);
+    if (search) {
+      url.searchParams.set('search', search);
+    } else {
+      url.searchParams.delete('search');
+    }
+    window.history.pushState({ search }, window.document.title, url.toString());
     if (search.length >= SEARCH_STRING_LIMIT) {
       const userResults = await searchUsers(search);
       this.setState({ userResults, userResultsSource: 'search' });
@@ -82,6 +93,7 @@ export class AdminSearchUsersContent extends Component {
   render() {
     const { showHeading } = this.props;
     const { hideObviousSpamUsers, userResults, userResultsSource } = this.state;
+    const normalizedSearch = normalizeAdminQuery(this.state.search);
     const shouldHideObviousSpamUsers =
       hideObviousSpamUsers && userResultsSource === 'search';
     const visibleUserResults = shouldHideObviousSpamUsers
@@ -111,7 +123,7 @@ export class AdminSearchUsersContent extends Component {
               </label>
               <button
                 className="btn btn-md btn-default"
-                disabled={this.state.search.length < SEARCH_STRING_LIMIT}
+                disabled={normalizedSearch.length < SEARCH_STRING_LIMIT}
                 type="submit"
               >
                 Search

@@ -163,7 +163,7 @@ describe('Admin users controller unit tests', () => {
       res.body.should.deepEqual([undefined]);
     });
 
-    it('throws when escaping a non-string search value', () => {
+    it('throws when creating a search expression from a non-string value', () => {
       (() =>
         adminUsers.searchUsers(
           { body: { search: { length: 3 } } },

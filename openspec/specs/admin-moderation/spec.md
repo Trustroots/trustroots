@@ -43,14 +43,28 @@ activity.
 ### Requirement: Member search and role filtering
 
 The system SHALL let authorised administrators search for members and list
-members with a selected moderation role. The resulting member table SHALL
-allow the administrator to sort by name, username, email address, or signup
-date.
+members with a selected moderation role. Search queries SHALL ignore leading
+and trailing whitespace, and whitespace between query words SHALL be optional
+when matching stored member data. The resulting member table SHALL allow the
+administrator to sort by name, username, email address, or signup date.
 
 #### Scenario: Administrator searches for a member
 
 - **WHEN** an authorised administrator searches using a valid member query
 - **THEN** matching member records are displayed
+
+#### Scenario: Administrator searches with surrounding whitespace
+
+- **WHEN** an authorised administrator searches using a valid member query
+  with leading or trailing whitespace
+- **THEN** the system searches using the trimmed query
+
+#### Scenario: Administrator searches with spacing between words
+
+- **WHEN** an authorised administrator searches using words separated by
+  whitespace
+- **THEN** matching member data is returned whether it stores whitespace
+  between those words or not
 
 #### Scenario: Administrator sorts member search results
 

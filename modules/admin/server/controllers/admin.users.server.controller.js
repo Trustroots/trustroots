@@ -84,20 +84,30 @@ function obfuscateTokens(user) {
  * Import as a package once we support ESM modules
  */
 function escapeStringRegexp(string) {
-  if (typeof string !== 'string') {
-    throw new TypeError('Expected a string');
-  }
-
   // Escape characters with special meaning either inside or outside character sets.
   // Use a simple backslash escape when it’s always valid, and a `\xnn` escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
   return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
+}
+
+function createMemberSearchRegexp(search) {
+  if (typeof search !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+
+  const whitespaceTolerantSearch = search
+    .split(/\s+/)
+    .map(escapeStringRegexp)
+    .join('\\s*');
+
+  return new RegExp('.*' + whitespaceTolerantSearch + '.*', 'i');
 }
 
 /*
  * This middleware sends response with an array of found users
  */
 exports.searchUsers = (req, res) => {
-  const search = _.get(req, ['body', 'search']);
+  const query = _.get(req, ['body', 'search']);
+  const search = typeof query === 'string' ? _.trim(query) : query;
 
   // Validate the query string
   if (!search || search.length < SEARCH_STRING_LIMIT) {
@@ -106,10 +116,7 @@ exports.searchUsers = (req, res) => {
     });
   }
 
-  const regexpSearch = new RegExp(
-    '.*' + escapeStringRegexp(search) + '.*',
-    'i',
-  );
+  const regexpSearch = createMemberSearchRegexp(search);
 
   User.find({
     $or: [
