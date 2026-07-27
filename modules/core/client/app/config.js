@@ -32,13 +32,6 @@ import angularGrid from 'angulargrid';
 
 import ngreact from 'ngreact';
 
-// eslint-disable-next-line angular/window-service
-const SENTRY_DSN = window.SENTRY_DSN;
-
-if (SENTRY_DSN) {
-  require('@/config/client/sentry').init(SENTRY_DSN);
-}
-
 /**
  * Init the application configuration module for AngularJS application
  * Init module configuration options
@@ -66,7 +59,6 @@ const appModuleVendorDependencies = compact([
   angularLocker,
   'angular-confirm',
   angularGrid,
-  SENTRY_DSN && 'ngSentry',
   ...bootstrapModules,
 ]);
 

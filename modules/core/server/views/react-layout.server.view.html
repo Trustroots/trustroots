@@ -15,11 +15,7 @@
     <meta name="fragment" content="!" />
     {% for cssFile in reactCssFiles %}
     <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
-    {% endfor %} {% if sentry.enabled === true %}
-    <script nonce="{{ nonce }}">
-      window.SENTRY_DSN = '{{ sentry.options.dsn }}';
-    </script>
-    {% endif %} {% if env === 'development' or env === 'test' %} {% for jsFile
+    {% endfor %} {% if env === 'development' or env === 'test' %} {% for jsFile
     in reactJsFiles %}
     <script
       src="/{{jsFile}}?c={{appSettings.commit}}"

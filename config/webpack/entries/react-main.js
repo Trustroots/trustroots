@@ -1,4 +1,4 @@
-/* global document, navigator, window */
+/* global document, navigator */
 import React from 'react';
 import ReactDOM from 'react-dom';
 
@@ -9,10 +9,6 @@ import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import './main.less';
 
 importAll(require.context('../../../modules/', true, /\.less$/));
-
-if (window.SENTRY_DSN) {
-  require('@/config/client/sentry').init(window.SENTRY_DSN);
-}
 
 function importAll(r) {
   r.keys().forEach(r);
