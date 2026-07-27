@@ -60,9 +60,7 @@ describe('admin users api', () => {
     );
 
     axios.post.mockResolvedValueOnce({ data });
-    await expect(
-      listUsersByLastIpAddress('203.0.113.20'),
-    ).resolves.toBe(data);
+    await expect(listUsersByLastIpAddress('203.0.113.20')).resolves.toBe(data);
     expect(axios.post).toHaveBeenLastCalledWith(
       '/api/admin/users/by-last-ip-address',
       { ipAddress: '203.0.113.20' },
