@@ -32,7 +32,7 @@ activity.
 
 - **WHEN** an authorised administrator opens the administration dashboard
 - **THEN** the dashboard displays the ten most active messengers from the previous seven days
-- **AND** the ten most recent thread votes
+- **AND** the ten most recent negative thread votes
 - **AND** the ten most recent experiences with a negative recommendation
 
 #### Scenario: Administrator opens a review from the dashboard

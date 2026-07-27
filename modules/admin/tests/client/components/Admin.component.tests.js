@@ -143,7 +143,9 @@ describe('<Admin />', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('12 messages')).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'Last 10 Thread Votes' }),
+      screen.getByRole('heading', {
+        name: 'Last 10 Negative Thread Votes',
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'sender (Sender)' }),
@@ -168,7 +170,9 @@ describe('<Admin />', () => {
       await screen.findByText('Could not load dashboard activity.'),
     ).toBeInTheDocument();
     expect(screen.getByText('No messages last week.')).toBeInTheDocument();
-    expect(screen.getByText('No thread votes found.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No negative thread votes found.'),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('No negative experiences found.'),
     ).toBeInTheDocument();
@@ -248,7 +252,9 @@ describe('<Admin />', () => {
     expect(
       await screen.findByText('No messages last week.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('No thread votes found.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No negative thread votes found.'),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('No negative experiences found.'),
     ).toBeInTheDocument();

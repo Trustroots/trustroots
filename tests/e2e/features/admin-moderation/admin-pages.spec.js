@@ -36,6 +36,7 @@ test.describe('admin moderation page flows', () => {
     annotateFeature(testInfo, 'admin.dashboard', [
       'Admin dashboard loads for admin.',
       'Admin footer uses the shared footer layout.',
+      'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
     ]);
 
@@ -47,12 +48,21 @@ test.describe('admin moderation page flows', () => {
     ).toBeVisible();
     await expect(page.getByLabel('Name, username or email')).toBeVisible();
     await expect(
+      page.getByRole('heading', {
+        name: 'Last 10 Negative Thread Votes',
+      }),
+    ).toBeVisible();
+    await expect(
       page.getByRole('heading', { name: 'Last 10 Negative Experiences' }),
     ).toBeVisible();
 
     const dashboard = await page.request.get('/api/admin/dashboard');
     expect(dashboard.ok()).toBeTruthy();
     const dashboardData = await dashboard.json();
+    expect(dashboardData.threadVotes).toHaveLength(1);
+    expect(
+      dashboardData.threadVotes.every(vote => vote.reference === 'no'),
+    ).toBe(true);
     expect(dashboardData.negativeExperiences).toHaveLength(1);
     expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
 

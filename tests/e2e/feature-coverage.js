@@ -2512,6 +2512,7 @@ const features = [
     requiredScenarios: [
       'Admin dashboard loads for admin.',
       'Regular member is denied access to admin tools.',
+      'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
     ],
     relatedSpecs: [

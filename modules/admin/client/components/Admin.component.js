@@ -26,7 +26,7 @@ const adminGroups = [
       {
         href: '/admin/reference-threads',
         label: 'Reference threads',
-        description: 'Review the latest thread votes.',
+        description: 'Review the latest negative thread votes.',
       },
       {
         href: '/admin/audit-log',
@@ -205,13 +205,15 @@ export default function Admin() {
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">
-                  <a href="/admin/reference-threads">Last 10 Thread Votes</a>
+                  <a href="/admin/reference-threads">
+                    Last 10 Negative Thread Votes
+                  </a>
                 </h2>
               </div>
               <div className="panel-body">
                 {isDashboardLoading && <p className="text-muted">Loading...</p>}
                 {!isDashboardLoading && dashboard.threadVotes.length === 0 && (
-                  <p className="text-muted">No thread votes found.</p>
+                  <p className="text-muted">No negative thread votes found.</p>
                 )}
                 {!isDashboardLoading && dashboard.threadVotes.length > 0 && (
                   <table className="table table-condensed admin-dashboard-table">
