@@ -22,6 +22,28 @@ const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 
+function blockedUserIds(user) {
+  return (user.blocked || []).map(blockedUser => blockedUser.toString());
+}
+
+function excludeBlockedUsers(query, user) {
+  const blocked = blockedUserIds(user);
+
+  if (blocked.length === 0) {
+    return query;
+  }
+
+  return {
+    $and: [
+      query,
+      {
+        userFrom: { $nin: blocked },
+        userTo: { $nin: blocked },
+      },
+    ],
+  };
+}
+
 // Allowed fields of message object to be set over API
 const messageFields = [
   '_id',
@@ -185,10 +207,13 @@ exports.inbox = function (req, res) {
   }
 
   Thread.paginate(
-    {
-      // Returns only threads where currently authenticated user is participating member
-      $or: [{ userFrom: req.user }, { userTo: req.user }],
-    },
+    excludeBlockedUsers(
+      {
+        // Returns only threads where currently authenticated user is participating member
+        $or: [{ userFrom: req.user }, { userTo: req.user }],
+      },
+      req.user,
+    ),
     {
       page: req.query.page || 1,
       limit: req.query.limit || 20,
@@ -645,16 +670,19 @@ exports.threadByUser = function (req, res, next, userId) {
       // Find messages
       function (done) {
         Message.paginate(
-          {
-            $or: [
-              { userFrom: req.user._id, userTo: userId },
-              {
-                userTo: req.user._id,
-                userFrom: userId,
-                shadowHidden: { $ne: true },
-              },
-            ],
-          },
+          excludeBlockedUsers(
+            {
+              $or: [
+                { userFrom: req.user._id, userTo: userId },
+                {
+                  userTo: req.user._id,
+                  userFrom: userId,
+                  shadowHidden: { $ne: true },
+                },
+              ],
+            },
+            req.user,
+          ),
           {
             page: req.query.page || 1,
             limit: req.query.limit || 20,
@@ -787,10 +815,13 @@ exports.messagesCount = function (req, res) {
   }
 
   Thread.countDocuments(
-    {
-      read: false,
-      userTo: req.user._id,
-    },
+    excludeBlockedUsers(
+      {
+        read: false,
+        userTo: req.user._id,
+      },
+      req.user,
+    ),
     function (err, unreadCount) {
       if (err) {
         return res.status(400).send({
@@ -865,12 +896,15 @@ exports.sync = function (req, res) {
         let query;
 
         // This is always part of the query
-        const queryUsers = {
-          $or: [
-            { userFrom: req.user._id },
-            { userTo: req.user._id, shadowHidden: { $ne: true } },
-          ],
-        };
+        const queryUsers = excludeBlockedUsers(
+          {
+            $or: [
+              { userFrom: req.user._id },
+              { userTo: req.user._id, shadowHidden: { $ne: true } },
+            ],
+          },
+          req.user,
+        );
 
         // Filter only by user or also by date?
         if (_.has(queryDate, 'created')) {
