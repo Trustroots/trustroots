@@ -4,7 +4,12 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getUser, searchUsers, setUserRole } from '../api/users.api';
+import {
+  getUser,
+  listUsersByLastIpAddress,
+  searchUsers,
+  setUserRole,
+} from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminNotes from './AdminNotes';
 import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
@@ -103,6 +108,7 @@ export default class AdminUser extends Component {
   constructor(props) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
+    this.getUsersByLastIpAddress = this.getUsersByLastIpAddress.bind(this);
     this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
     this.onHideObviousSpamUsersChange =
       this.onHideObviousSpamUsersChange.bind(this);
@@ -122,10 +128,13 @@ export default class AdminUser extends Component {
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+    const ipAddress = urlParams.get('ip');
     const query = urlParams.get('q');
 
     if (id && isMongoObjectId(id)) {
       this.setState({ query: id }, this.queryUser);
+    } else if (ipAddress) {
+      this.getUsersByLastIpAddress(ipAddress);
     } else if (query) {
       this.setState({ query }, this.queryUser);
     }
@@ -139,6 +148,7 @@ export default class AdminUser extends Component {
     // Update URL
     const url = new URL(document.location);
     url.searchParams.delete('id');
+    url.searchParams.delete('ip');
     url.searchParams.delete('q');
     if (query) {
       if (isMongoObjectId(normalizedQuery)) {
@@ -216,6 +226,16 @@ export default class AdminUser extends Component {
     );
   }
 
+  getUsersByLastIpAddress(ipAddress) {
+    this.setState(
+      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
+      async () => {
+        const matchingUsers = await listUsersByLastIpAddress(ipAddress);
+        this.setState({ isSearching: false, matchingUsers });
+      },
+    );
+  }
+
   hasRole(role) {
     return get(this.state.user, ['profile', 'roles'], []).includes(role);
   }
@@ -273,6 +293,17 @@ export default class AdminUser extends Component {
           ['Profile visible', user.profile.public ? 'Yes' : 'No'],
           ['Signed up', formatDate(user.profile.created)],
           ['Last seen', formatDate(user.profile.seen)],
+          [
+            'Last IP address',
+            user.profile.lastIpAddress && (
+              <a
+                href={`/admin/user?ip=${user.profile.lastIpAddress}`}
+                target="_self"
+              >
+                {user.profile.lastIpAddress}
+              </a>
+            ),
+          ],
           [
             'Location',
             user.profile.location &&

@@ -3,6 +3,7 @@
  */
 const _ = require('lodash');
 const mongoose = require('mongoose');
+const net = require('net');
 
 const errorService = require('../../../core/server/services/error.server.service');
 const log = require('../../../../config/lib/logger');
@@ -38,6 +39,7 @@ const USER_LIST_FIELDS = [
   'displayName',
   'email',
   'emailTemporary',
+  'lastIpAddress',
   'public',
   'removeProfileExpires',
   'removeProfileToken',
@@ -170,6 +172,34 @@ exports.listUsersByRole = (req, res) => {
 
       const result = users ? users.map(obfuscateTokens) : [];
 
+      return res.send(result);
+    });
+};
+
+/*
+ * This middleware sends members whose current stored IP address exactly matches.
+ */
+exports.listUsersByLastIpAddress = (req, res) => {
+  const ipAddress = _.get(req, ['body', 'ipAddress']);
+
+  if (typeof ipAddress !== 'string' || !net.isIP(ipAddress)) {
+    return res.status(400).send({
+      message: 'Invalid IP address.',
+    });
+  }
+
+  User.find({ lastIpAddress: ipAddress })
+    .select(USER_LIST_FIELDS)
+    .sort('username displayName')
+    .limit(SEARCH_USERS_LIMIT)
+    .exec((err, users) => {
+      if (err) {
+        return res.status(400).send({
+          message: errorService.getErrorMessage(err),
+        });
+      }
+
+      const result = users ? users.map(obfuscateTokens) : [];
       return res.send(result);
     });
 };

@@ -70,6 +70,47 @@ test.describe('admin moderation search flows', () => {
     );
   });
 
+  test('admin can inspect members sharing an exact current IP address', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Admin can inspect members sharing an exact current IP address.',
+    ]);
+
+    await page.goto('/admin/search-users');
+    await page.locator('input[type="search"]').fill(SEEDED_ADMIN.username);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.getByRole('button', { name: /^search$/i }).click();
+    await searchResponse;
+
+    const resultRow = page
+      .locator('table tbody tr')
+      .filter({ hasText: SEEDED_ADMIN.username })
+      .first();
+    const ipLink = resultRow.locator('a[href*="/admin/user?ip="]');
+    await expect(ipLink).toBeVisible();
+    const matchingMembersResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users/by-last-ip-address') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await ipLink.click();
+    await matchingMembersResponse;
+
+    await expect(page).toHaveURL(/\/admin\/user\?ip=/);
+    await expect(
+      page.getByRole('link', {
+        name: new RegExp(`^${SEEDED_ADMIN.username} \\(`),
+      }),
+    ).toBeVisible();
+  });
+
   test('admin search finds the shadowbanned member', async ({
     page,
   }, testInfo) => {
@@ -145,6 +186,12 @@ test.describe('admin moderation search flows', () => {
     expect(await invalidRole.json()).toMatchObject({
       message: 'Invalid role.',
     });
+
+    const invalidIpAddress = await page.request.post(
+      '/api/admin/users/by-last-ip-address',
+      { data: { ipAddress: 'invalid' } },
+    );
+    expect(invalidIpAddress.status()).toBe(400);
   });
 
   test('admin search APIs reject regular members', async ({
@@ -160,7 +207,6 @@ test.describe('admin moderation search flows', () => {
     annotateFeature(testInfo, 'admin.list-users-by-role', [
       'Admin can list members in a selected role.',
     ]);
-
     const context = await browser.newContext({ baseURL });
     const page = await context.newPage();
 
@@ -176,6 +222,12 @@ test.describe('admin moderation search flows', () => {
         data: { role: 'shadowban' },
       });
       expect(byRole.status()).toBe(403);
+
+      const byIpAddress = await page.request.post(
+        '/api/admin/users/by-last-ip-address',
+        { data: { ipAddress: '203.0.113.10' } },
+      );
+      expect(byIpAddress.status()).toBe(403);
     } finally {
       await context.close();
     }

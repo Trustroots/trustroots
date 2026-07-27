@@ -263,6 +263,81 @@ describe('Admin users controller unit tests', () => {
     });
   });
 
+  describe('listUsersByLastIpAddress', () => {
+    it('rejects missing and invalid IP addresses', () => {
+      const missingResponse = mockResponse();
+      adminUsers.listUsersByLastIpAddress({ body: {} }, missingResponse);
+      missingResponse.statusCode.should.equal(400);
+      missingResponse.body.message.should.equal('Invalid IP address.');
+
+      const invalidResponse = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: 'not-an-ip-address' } },
+        invalidResponse,
+      );
+      invalidResponse.statusCode.should.equal(400);
+      invalidResponse.body.message.should.equal('Invalid IP address.');
+    });
+
+    it('returns exact IP-address matches', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(2));
+      users[0].lastIpAddress = '2001:db8::10';
+      users[1].lastIpAddress = '2001:db8::11';
+      await Promise.all(users.map(user => user.save()));
+
+      const res = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: '2001:db8::10' } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.body.should.have.length(1);
+      res.body[0]._id.toString().should.equal(users[0]._id.toString());
+    });
+
+    it('returns an empty array when no member has the requested address', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              exec: cb => cb(null, null),
+            }),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: '203.0.113.10' } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.body.should.deepEqual([]);
+    });
+
+    it('returns 400 when the IP-address lookup fails', async () => {
+      sinon.stub(User, 'find').returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({
+              exec: cb => cb(new Error('IP lookup failed')),
+            }),
+          }),
+        }),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: '203.0.113.10' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+  });
+
   describe('getUser', () => {
     it('returns 400 for an invalid id', async () => {
       const res = mockResponse();

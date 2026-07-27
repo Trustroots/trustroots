@@ -93,6 +93,13 @@ describe('Admin User CRUD tests', () => {
         .expect(403);
     });
 
+    it('Non-authenticated users should not be allowed to list users by IP address', async () => {
+      await agent
+        .post('/api/admin/users/by-last-ip-address')
+        .send({ ipAddress: '203.0.113.10' })
+        .expect(403);
+    });
+
     it('Mon-authenticated users should not be allowed to get user by ID', async () => {
       await agent
         .post('/api/admin/user')
@@ -167,6 +174,43 @@ describe('Admin User CRUD tests', () => {
         should(body[0].username).equal('user-regular');
       });
 
+      it('should trim surrounding whitespace from a search query', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({ search: '  user-regular  ' })
+          .expect(200);
+
+        should(body.length).equal(1);
+        should(body[0].username).equal('user-regular');
+      });
+
+      it('should ignore whitespace between search words', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        await new User({
+          displayName: 'Spaceless Member',
+          email: 'spaceless-member@example.test',
+          firstName: 'Spaceless',
+          lastName: 'Member',
+          member: [],
+          password: 'Password123!',
+          provider: 'local',
+          public: true,
+          roles: ['user'],
+          username: 'spacelessmember',
+        }).save();
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({ search: 'spaceless member' })
+          .expect(200);
+
+        should(body.length).equal(1);
+        should(body[0].username).equal('spacelessmember');
+      });
+
       it('should find by email', async () => {
         await utils.signIn(credentialsAdmin, agent);
 
@@ -220,6 +264,55 @@ describe('Admin User CRUD tests', () => {
           .post('/api/admin/users/by-role')
           .send({ role: 'fake' })
           .expect(400);
+      });
+    });
+
+    describe('List users by last IP address', () => {
+      it('non-admin users should not be allowed to list users by IP address', async () => {
+        await utils.signIn(credentialsRegular, agent);
+
+        await agent
+          .post('/api/admin/users/by-last-ip-address')
+          .send({ ipAddress: '203.0.113.10' })
+          .expect(403);
+      });
+
+      it('admin users can list only exact current IP address matches', async () => {
+        userRegular.lastIpAddress = '203.0.113.10';
+        await userRegular.save();
+        const otherUser = new User({
+          displayName: 'Other Name',
+          email: 'other@example.com',
+          firstName: 'Other',
+          lastIpAddress: '203.0.113.100',
+          lastName: 'Name',
+          password: 'Password123!',
+          provider: 'local',
+          public: true,
+          username: 'user-other',
+        });
+        await otherUser.save();
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users/by-last-ip-address')
+          .send({ ipAddress: '203.0.113.10' })
+          .expect(200);
+
+        body.should.have.length(1);
+        body[0].username.should.equal('user-regular');
+        body[0].lastIpAddress.should.equal('203.0.113.10');
+      });
+
+      it('rejects malformed IP addresses', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users/by-last-ip-address')
+          .send({ ipAddress: '203.0.113.10, 198.51.100.10' })
+          .expect(400);
+
+        body.message.should.equal('Invalid IP address.');
       });
     });
 

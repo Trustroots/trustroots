@@ -523,6 +523,7 @@ describe('API route registrations', () => {
       [
         'changeRole',
         'getUser',
+        'listUsersByLastIpAddress',
         'listUsersByRole',
         'searchUsers',
         'usernameToUserId',
@@ -583,6 +584,10 @@ describe('API route registrations', () => {
       auditLog.record,
       users.listUsersByRole,
     ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/users/by-last-ip-address').post,
+      [auditLog.record, users.listUsersByLastIpAddress],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/user').post, [
       auditLog.record,
       users.getUser,

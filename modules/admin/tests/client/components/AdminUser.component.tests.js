@@ -166,6 +166,15 @@ describe('<AdminUser />', () => {
             },
           },
         ],
+        profile: {
+          _id: userId,
+          displayName: 'Alice Example',
+          email: 'alice@example.org',
+          emailTemporary: 'alice-new@example.org',
+          lastIpAddress: '203.0.113.10',
+          roles: ['user'],
+          username: 'alice',
+        },
       }),
     );
 
@@ -186,6 +195,14 @@ describe('<AdminUser />', () => {
     expect(
       screen.getByRole('link', { name: 'Public profile' }),
     ).toHaveAttribute('href', '/profile/alice');
+    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
+      'href',
+      '/admin/user?ip=203.0.113.10',
+    );
+    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
+      'target',
+      '_self',
+    );
     expect(
       screen.getByRole('row', { name: /Email alice@example.org/ }),
     ).toBeInTheDocument();
@@ -228,6 +245,29 @@ describe('<AdminUser />', () => {
     expect(
       screen.getByRole('link', { name: 'Show location on map' }),
     ).toHaveAttribute('href', '/search?location=60.17,24.94');
+  });
+
+  it('lists members with the selected current IP address from the URL', async () => {
+    window.history.pushState({}, '', '/admin/user?ip=203.0.113.10');
+    usersApi.listUsersByLastIpAddress.mockResolvedValueOnce([
+      {
+        _id: userId,
+        created: '2026-01-01T00:00:00.000Z',
+        displayName: 'Alice Example',
+        email: 'alice@example.org',
+        lastIpAddress: '203.0.113.10',
+        username: 'alice',
+      },
+    ]);
+
+    render(<AdminUser />);
+
+    expect(
+      await screen.findByRole('link', { name: 'alice (Alice Example)' }),
+    ).toBeInTheDocument();
+    expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledWith(
+      '203.0.113.10',
+    );
   });
 
   it('hides public profile and role actions for suspended members', async () => {

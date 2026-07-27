@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import {
   searchUsers,
+  listUsersByLastIpAddress,
   listUsersByRole,
   getUser,
   setUserRole,
@@ -32,6 +33,17 @@ describe('admin users api', () => {
     expect(axios.post).toHaveBeenCalledWith('/api/admin/users/by-role', {
       role: 'admin',
     });
+  });
+
+  it('lists users by their exact last IP address', async () => {
+    const data = [{ _id: 'user-1' }];
+    axios.post.mockResolvedValueOnce({ data });
+
+    await expect(listUsersByLastIpAddress('203.0.113.10')).resolves.toBe(data);
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/admin/users/by-last-ip-address',
+      { ipAddress: '203.0.113.10' },
+    );
   });
 
   it('gets a single user by id', async () => {

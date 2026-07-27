@@ -10,6 +10,7 @@ const users = [
     created: '2026-01-01T00:00:00.000Z',
     displayName: 'Zed Example',
     email: 'z@example.test',
+    lastIpAddress: '203.0.113.10',
     username: 'alpha',
   },
   {
@@ -17,6 +18,7 @@ const users = [
     created: '2025-01-01T00:00:00.000Z',
     displayName: 'Amy Example',
     email: 'a@example.test',
+    lastIpAddress: '203.0.113.20',
     username: 'zeta',
   },
   {
@@ -63,5 +65,16 @@ describe('<AdminUserResultsTable />', () => {
     expect(rowOrder()).toEqual(['empty', 'amy', 'zed']);
     fireEvent.click(screen.getByRole('button', { name: 'Signed up ▲' }));
     expect(rowOrder()).toEqual(['zed', 'amy', 'empty']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Last IP' }));
+    expect(rowOrder()).toEqual(['empty', 'zed', 'amy']);
+    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
+      'href',
+      '/admin/user?ip=203.0.113.10',
+    );
+    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
+      'target',
+      '_self',
+    );
   });
 });

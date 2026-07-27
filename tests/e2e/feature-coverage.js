@@ -2665,13 +2665,21 @@ const features = [
           { requiresAuth: true, requiresRole: 'admin' },
         ),
       ],
-      apiRoutes: [apiRoute('POST', '/api/admin/users', source.adminServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/users', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/users/by-last-ip-address',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Admin search finds a confirmed member.',
       'Admin search finds a shadowbanned member.',
       'Search handles no-result state.',
       'Admin can sort member search results by name.',
+      'Admin can inspect members sharing an exact current IP address.',
     ],
     relatedSpecs: [
       spec(
@@ -2681,6 +2689,10 @@ const features = [
       spec(
         'admin-search.spec.js',
         'admin search finds the shadowbanned member',
+      ),
+      spec(
+        'admin-search.spec.js',
+        'admin can inspect members sharing an exact current IP address',
       ),
     ],
   },

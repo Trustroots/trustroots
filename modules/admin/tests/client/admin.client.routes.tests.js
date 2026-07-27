@@ -77,7 +77,7 @@ describe('Admin Route Tests', function () {
     },
     {
       name: 'admin-user',
-      url: '/admin/user',
+      url: '/admin/user?id&ip&q',
       template: '<admin-user></admin-user>',
       requiresAuth: true,
       requiresRole: 'admin',

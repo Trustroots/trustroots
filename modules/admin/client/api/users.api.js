@@ -10,6 +10,13 @@ export async function listUsersByRole(role) {
   return data;
 }
 
+export async function listUsersByLastIpAddress(ipAddress) {
+  const { data } = await axios.post('/api/admin/users/by-last-ip-address', {
+    ipAddress,
+  });
+  return data;
+}
+
 export async function getUser(id) {
   const { data } = await axios.post('/api/admin/user', { id });
   return data;

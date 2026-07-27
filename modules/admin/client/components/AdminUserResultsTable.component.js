@@ -15,6 +15,7 @@ const userSortValues = {
   },
   displayName: user => String(user.displayName || '').toLowerCase(),
   email: user => String(user.email || '').toLowerCase(),
+  lastIpAddress: user => String(user.lastIpAddress || ''),
   username: user => String(user.username || '').toLowerCase(),
 };
 
@@ -119,11 +120,24 @@ export default function AdminUserResultsTable({
                 onSort={sortBy}
                 sort={sort}
               />
+              <SortableHeader
+                column="lastIpAddress"
+                label="Last IP"
+                onSort={sortBy}
+                sort={sort}
+              />
             </tr>
           </thead>
           <tbody>
             {sortedUserResults.map(user => {
-              const { _id, created, email, emailTemporary, username } = user;
+              const {
+                _id,
+                created,
+                email,
+                emailTemporary,
+                lastIpAddress,
+                username,
+              } = user;
               const showProfileLink =
                 showPublicProfileLink && !isSuspendedUser(user);
               return (
@@ -175,6 +189,16 @@ export default function AdminUserResultsTable({
                     )}
                   </td>
                   <td>{formatAdminDate(created)}</td>
+                  <td>
+                    {lastIpAddress && (
+                      <a
+                        href={`/admin/user?ip=${lastIpAddress}`}
+                        target="_self"
+                      >
+                        {lastIpAddress}
+                      </a>
+                    )}
+                  </td>
                 </tr>
               );
             })}
