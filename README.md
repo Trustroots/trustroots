@@ -65,10 +65,10 @@ Choose the setup that fits what you're doing:
 - Dev container: open the repository with **Dev Containers: Reopen in Container**
   and run `npm start` inside the integrated terminal
 
-The host and Docker setups serve the app at http://localhost:3000. Docker also
-starts MailDev at http://localhost:1080.
+The host and Docker setups serve the app at http://localhost:3000.
 
-Docker dev uses hot reload, MailDev, and a shared MongoDB service. See
+Docker dev uses hot reload and a shared MongoDB service. Development emails are
+captured locally and are not delivered. See
 [`deploy/docker/README.md`](deploy/docker/README.md) for first-time setup,
 troubleshooting, dependency rebuilds, test workflows, and production-like image
 checks. See [`.devcontainer/README.md`](.devcontainer/README.md) for editor and

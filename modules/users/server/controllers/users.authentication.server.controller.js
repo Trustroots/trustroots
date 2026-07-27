@@ -6,6 +6,7 @@ const errorService = require('../../../core/server/services/error.server.service
 const emailService = require('../../../core/server/services/email.server.service');
 const userProfile = require('./users.profile.server.controller');
 const authenticationService = require('../services/authentication.server.service');
+const signupSafety = require('../services/signup-safety.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');
 const log = require('../../../../config/lib/logger');
 const passport = require('passport');
@@ -123,6 +124,21 @@ exports.signup = function (req, res) {
 
       // Send email
       function (user, done) {
+        const matchedKeywords = signupSafety.matchSignupProfile(user);
+        if (matchedKeywords.length) {
+          emailService.sendFlaggedSignupAlert(
+            user,
+            matchedKeywords,
+            function (err) {
+              if (err) {
+                log('error', 'Flagged signup alert delivery failed.', {
+                  error: err,
+                });
+              }
+            },
+          );
+        }
+
         emailService.sendSignupEmailConfirmation(user, function (err) {
           done(err, user);
         });

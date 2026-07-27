@@ -52,6 +52,17 @@ describe('Tribes Route Tests', function () {
       expect(TribeService.get).toHaveBeenCalledWith({
         tribeSlug: 'travel',
       });
+      expect(state.requiresAuth).toBe(false);
+    }));
+
+    it('requires authentication only for the Naturists circle', inject(function (
+      $state,
+    ) {
+      const state = $state.get('circles.circle');
+
+      expect(state.requiresAuth).toBe(false);
+      expect(state.requiresAuthFor({ circle: 'naturists' })).toBe(true);
+      expect(state.requiresAuthFor({ circle: 'hitchhikers' })).toBe(false);
     }));
   });
 });

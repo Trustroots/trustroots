@@ -22,6 +22,18 @@ export default function DownloadProfile({ username, userId }) {
               <li>
                 <a
                   className="btn btn-link btn-sm"
+                  href="/api/users/export"
+                  target="_top"
+                  type="application/json"
+                  download="trustroots-data.json"
+                >
+                  {t('Download all data')}
+                </a>
+                <small className="text-muted">(json)</small>
+              </li>
+              <li>
+                <a
+                  className="btn btn-link btn-sm"
                   href={`/api/users/${username}`}
                   target="_top"
                   type="application/json"

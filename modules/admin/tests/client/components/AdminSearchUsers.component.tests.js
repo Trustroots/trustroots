@@ -56,7 +56,7 @@ describe('<AdminSearchUsers />', () => {
   it('runs an initial search from the URL and renders result details', async () => {
     window.history.pushState({}, '', '/admin/search-users?search=alice');
     usersApi.searchUsers.mockResolvedValueOnce(
-      Array.from({ length: 50 }, (_, index) =>
+      Array.from({ length: 150 }, (_, index) =>
         makeUser({
           _id: `1234567890123456789012${String(index).padStart(2, '0')}`,
           displayName: `Alice ${index}`,
@@ -72,11 +72,11 @@ describe('<AdminSearchUsers />', () => {
       '/admin/user?id=123456789012345678901200',
     );
     expect(usersApi.searchUsers).toHaveBeenCalledWith('alice');
-    expect(screen.getByText('50 user(s).')).toBeInTheDocument();
-    expect(screen.getAllByText('2024-01-15')).toHaveLength(50);
+    expect(screen.getByText('150 user(s).')).toBeInTheDocument();
+    expect(screen.getAllByText('2024-01-15')).toHaveLength(150);
     expect(screen.queryByText('ID')).not.toBeInTheDocument();
     expect(
-      screen.getByText(/There might be more results but 50 is maximum./),
+      screen.getByText(/There might be more results but 150 is maximum./),
     ).toBeInTheDocument();
   });
 

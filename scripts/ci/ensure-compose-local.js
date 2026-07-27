@@ -28,11 +28,7 @@ module.exports = {
   },
   mailer: {
     options: {
-      host: 'maildev',
-      port: 1025,
-      ignoreTLS: true,
-      auth: false,
-      pool: true,
+      jsonTransport: true,
     },
   },
 };

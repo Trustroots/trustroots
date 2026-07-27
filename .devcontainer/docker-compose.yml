@@ -17,7 +17,6 @@ services:
       - node_modules:/home/app/trustroots/node_modules
     depends_on:
       - mongodb
-      - maildev
     ports:
       # Keep the dev server private by default. Set
       # TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS=0.0.0.0 before rebuilding the
@@ -36,11 +35,6 @@ services:
       - TRUSTROOTS_FILE_MAGIC_FALLBACK=true
       - TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test
       - TRUSTROOTS_CODEX_MONGO_URI=mongodb://mongodb:27017/trustroots-test
-
-  maildev:
-    image: soulteary/maildev
-    ports:
-      - '127.0.0.1:${TRUSTROOTS_DEV_MAILDEV_HOST_PORT:-11080}:1080'
 
   mongodb:
     image: mongo:4.4

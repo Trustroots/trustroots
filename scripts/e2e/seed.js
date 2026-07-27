@@ -62,6 +62,11 @@ const TRIBES = [
     color: '27ae60',
     description: 'Long-distance walkers and trekkers.',
   },
+  {
+    label: 'Naturists',
+    color: '8e6e53',
+    description: 'A member-only circle for naturist travellers and hosts.',
+  },
 ];
 
 const MEMBERS = [
@@ -117,6 +122,9 @@ const MEMBERS = [
     firstName: 'Alice',
     lastName: 'Contact',
     acquisitionStory: 'I found Trustroots through hitchhiking friends online.',
+    location: [52.37, 4.9],
+    locationFrom: 'Fictional origin',
+    locationLiving: 'Fictional home',
     tribes: ['Families'],
   },
   {
@@ -175,6 +183,14 @@ const EXPERIENCES = [
     interactions: { met: true, guest: false, host: false },
     feedbackPublic: 'E2E seeded private experience for coverage.',
   },
+  {
+    from: 'e2e-seeded-portland',
+    to: 'e2e-seeded-berlin',
+    public: true,
+    recommend: 'no',
+    interactions: { met: true, guest: false, host: true },
+    feedbackPublic: 'E2E seeded negative experience for admin coverage.',
+  },
 ];
 
 const CONTACTS = [
@@ -225,6 +241,8 @@ function buildUser(member) {
     public: true,
     welcomeSequenceStep: 3,
     description: PROFILE_DESCRIPTION,
+    locationFrom: member.locationFrom,
+    locationLiving: member.locationLiving,
     member: [],
     roles: member.roles || ['user'],
     acquisitionStory: member.acquisitionStory,

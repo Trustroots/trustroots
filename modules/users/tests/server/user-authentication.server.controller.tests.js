@@ -396,6 +396,74 @@ describe('Authentication controller OAuth unit tests', () => {
       res.body.username.should.equal('adalovelace');
     });
 
+    it('sends one alert after a matching user is saved', async () => {
+      const sendFlaggedSignupAlert = sinon
+        .stub()
+        .callsFake((user, matchedKeywords, callback) => callback());
+      const controller = proxyquire(controllerPath, {
+        '../../../core/server/services/email.server.service': {
+          sendFlaggedSignupAlert,
+          sendSignupEmailConfirmation: (user, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+      const req = {
+        body: {
+          firstName: 'TrustRoots',
+          lastName: 'Member',
+          username: 'flaggedmember',
+          password: 'password123',
+          email: 'flagged-signup@example.com',
+        },
+        login: (user, callback) => callback(),
+      };
+
+      controller.signup(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      sendFlaggedSignupAlert.calledOnce.should.be.true();
+      sendFlaggedSignupAlert.firstCall.args[1].should.deepEqual(['trustroots']);
+      const saved = await User.findOne({ username: 'flaggedmember' });
+      should.exist(saved);
+    });
+
+    it('continues signup when flagged-alert delivery fails', async () => {
+      const log = sinon.stub();
+      const controller = proxyquire(controllerPath, {
+        '../../../../config/lib/logger': log,
+        '../../../core/server/services/email.server.service': {
+          sendFlaggedSignupAlert: (user, matchedKeywords, callback) =>
+            callback(new Error('alert mail failed')),
+          sendSignupEmailConfirmation: (user, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+      const req = {
+        body: {
+          firstName: 'Support',
+          lastName: 'Member',
+          username: 'alertfailure',
+          password: 'password123',
+          email: 'alert-failure@example.com',
+        },
+        login: (user, callback) => callback(),
+      };
+
+      controller.signup(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.username.should.equal('alertfailure');
+      log
+        .calledWith(
+          'error',
+          'Flagged signup alert delivery failed.',
+          sinon.match.has('error'),
+        )
+        .should.be.true();
+    });
+
     it('returns an empty object when signup completes without a user', async () => {
       const controller = proxyquire(controllerPath, {
         async: {

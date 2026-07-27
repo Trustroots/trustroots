@@ -26,7 +26,7 @@ const adminGroups = [
       {
         href: '/admin/reference-threads',
         label: 'Reference threads',
-        description: 'Check recent threads with negative references.',
+        description: 'Review the latest thread votes.',
       },
       {
         href: '/admin/audit-log',
@@ -105,7 +105,8 @@ function adminMessagesUrl(userFrom, userTo) {
 
 export default function Admin() {
   const [dashboard, setDashboard] = useState({
-    negativeReviews: [],
+    negativeExperiences: [],
+    threadVotes: [],
     topMessengers: [],
   });
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
@@ -120,7 +121,8 @@ export default function Admin() {
 
         if (isMounted) {
           setDashboard({
-            negativeReviews: data.negativeReviews || [],
+            negativeExperiences: data.negativeExperiences || [],
+            threadVotes: data.threadVotes || [],
             topMessengers: data.topMessengers || [],
           });
           setDashboardError(null);
@@ -165,7 +167,7 @@ export default function Admin() {
               <p className="text-danger">{dashboardError}</p>
             </div>
           )}
-          <div className="col-sm-6">
+          <div className="col-sm-4">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">Top 10 Messengers Last Week</h2>
@@ -199,23 +201,22 @@ export default function Admin() {
               </div>
             </section>
           </div>
-          <div className="col-sm-6">
+          <div className="col-sm-4">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">
-                  <a href="/admin/reference-threads">Last 5 Negative Reviews</a>
+                  <a href="/admin/reference-threads">Last 10 Thread Votes</a>
                 </h2>
               </div>
               <div className="panel-body">
                 {isDashboardLoading && <p className="text-muted">Loading...</p>}
-                {!isDashboardLoading &&
-                  dashboard.negativeReviews.length === 0 && (
-                    <p className="text-muted">No negative reviews found.</p>
-                  )}
-                {!isDashboardLoading && dashboard.negativeReviews.length > 0 && (
+                {!isDashboardLoading && dashboard.threadVotes.length === 0 && (
+                  <p className="text-muted">No thread votes found.</p>
+                )}
+                {!isDashboardLoading && dashboard.threadVotes.length > 0 && (
                   <table className="table table-condensed admin-dashboard-table">
                     <tbody>
-                      {dashboard.negativeReviews.map(
+                      {dashboard.threadVotes.map(
                         ({ _id, created, thread, userFrom, userTo }) => {
                           const messagesUrl = adminMessagesUrl(
                             userFrom,
@@ -245,6 +246,41 @@ export default function Admin() {
                     </tbody>
                   </table>
                 )}
+              </div>
+            </section>
+          </div>
+          <div className="col-sm-4">
+            <section className="panel panel-default admin-dashboard-box">
+              <div className="panel-heading">
+                <h2 className="panel-title">Last 10 Negative Experiences</h2>
+              </div>
+              <div className="panel-body">
+                {isDashboardLoading && <p className="text-muted">Loading...</p>}
+                {!isDashboardLoading &&
+                  dashboard.negativeExperiences.length === 0 && (
+                    <p className="text-muted">No negative experiences found.</p>
+                  )}
+                {!isDashboardLoading &&
+                  dashboard.negativeExperiences.length > 0 && (
+                    <table className="table table-condensed admin-dashboard-table">
+                      <tbody>
+                        {dashboard.negativeExperiences.map(
+                          ({ _id, created, userFrom, userTo }) => (
+                            <tr key={_id}>
+                              <td>
+                                <UserLink user={userFrom || {}} />
+                                {' -> '}
+                                <UserLink user={userTo || {}} />
+                              </td>
+                              <td className="text-right">
+                                {formatDate(created) || 'Unknown date'}
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  )}
               </div>
             </section>
           </div>

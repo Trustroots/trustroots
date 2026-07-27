@@ -121,6 +121,16 @@ describe('Core CRUD tests', function () {
     });
   });
 
+  describe('Member-only circle routes', function () {
+    it('redirects visitors away from the Naturists circle', function (done) {
+      agent
+        .get('/circles/naturists')
+        .expect('Location', '/signin')
+        .expect(302)
+        .end(done);
+    });
+  });
+
   describe('Expect-CT header Tests:', function () {
     it('Responses should have Expect-CT header', function (done) {
       agent

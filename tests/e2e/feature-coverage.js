@@ -1049,6 +1049,37 @@ const features = [
     ],
   },
   {
+    id: 'account.data-export',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Authenticated members can download their profile, contacts, and hosting offers in one versioned JSON file.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          {
+            requiresAuth: true,
+          },
+        ),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/users/export', source.usersServer)],
+    },
+    requiredScenarios: [
+      'The combined export is an attachment with the documented filename.',
+      'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+    ],
+    relatedSpecs: [
+      spec(
+        'authenticated.spec.js',
+        'member can download their combined data export',
+      ),
+    ],
+  },
+  {
     id: 'account.profile-removal',
     area: AREA.authAccount,
     status: STATUS.active,
@@ -1741,6 +1772,36 @@ const features = [
     ],
   },
   {
+    id: 'circles.member-only',
+    area: AREA.searchOffersCircles,
+    status: STATUS.active,
+    description:
+      'The Naturists circle is discoverable only by signed-in members.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [
+        clientRoute('circles.circle', '/circles/:circle', source.tribesClient, {
+          conditionalAuth: 'circle=naturists',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/tribes', source.tribesServer),
+        apiRoute('GET', '/api/tribes/:tribe', source.tribesServer),
+      ],
+    },
+    requiredScenarios: [
+      'Visitor cannot discover or open the Naturists circle.',
+      'Signed-in member can discover and open the Naturists circle.',
+    ],
+    relatedSpecs: [
+      spec('seeded-content.spec.js', 'Naturists circle requires sign-in'),
+      spec(
+        'offers-and-circles.spec.js',
+        'signed-in members can open the Naturists circle',
+      ),
+    ],
+  },
+  {
     id: 'circles.join-leave',
     area: AREA.searchOffersCircles,
     status: STATUS.active,
@@ -2013,6 +2074,8 @@ const features = [
       'Shadowbanned profile is hidden from members.',
       'Shadow-hidden messages are not visible to regular recipients.',
       'Admin tools can still inspect shadow-hidden content.',
+      'Shadowbanned viewers cannot see external profile links or contact details.',
+      'Shadowbanned viewers cannot see contact details in other members offers.',
     ],
     relatedSpecs: [
       spec(
@@ -2449,6 +2512,7 @@ const features = [
     requiredScenarios: [
       'Admin dashboard loads for admin.',
       'Regular member is denied access to admin tools.',
+      'Dashboard shows ten most recent negative experiences.',
     ],
     relatedSpecs: [
       spec(
@@ -2504,6 +2568,7 @@ const features = [
     requiredScenarios: [
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
+      'Story rows show available member and hosting locations.',
     ],
     relatedSpecs: [],
   },

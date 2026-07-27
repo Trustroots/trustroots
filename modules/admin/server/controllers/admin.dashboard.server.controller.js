@@ -5,12 +5,14 @@ const mongoose = require('mongoose');
 
 const errorService = require('../../../core/server/services/error.server.service');
 
+const Experience = mongoose.model('Experience');
 const Message = mongoose.model('Message');
 const ReferenceThread = mongoose.model('ReferenceThread');
 const User = mongoose.model('User');
 
 const TOP_MESSENGERS_LIMIT = 10;
-const NEGATIVE_REVIEWS_LIMIT = 5;
+const THREAD_VOTES_LIMIT = 10;
+const NEGATIVE_EXPERIENCES_LIMIT = 10;
 
 function dateDaysAgo(days) {
   const date = new Date();
@@ -48,10 +50,10 @@ async function getTopMessengers() {
   }));
 }
 
-async function getNegativeReviews() {
-  const negativeReviews = await ReferenceThread.find({ reference: 'no' })
+async function getThreadVotes() {
+  const threadVotes = await ReferenceThread.find({})
     .sort('-created')
-    .limit(NEGATIVE_REVIEWS_LIMIT)
+    .limit(THREAD_VOTES_LIMIT)
     .populate({
       path: 'userFrom',
       select: 'username displayName _id',
@@ -64,18 +66,37 @@ async function getNegativeReviews() {
     })
     .exec();
 
-  return negativeReviews || [];
+  return threadVotes || [];
+}
+
+async function getNegativeExperiences() {
+  const negativeExperiences = await Experience.find({ recommend: 'no' })
+    .sort('-created')
+    .limit(NEGATIVE_EXPERIENCES_LIMIT)
+    .populate({
+      path: 'userFrom',
+      select: 'username displayName _id',
+      model: 'User',
+    })
+    .populate({
+      path: 'userTo',
+      select: 'username displayName _id',
+      model: 'User',
+    })
+    .exec();
+
+  return negativeExperiences || [];
 }
 
 exports.getDashboard = async (req, res) => {
   try {
-    const [topMessengers, negativeReviews] = await Promise.all([
-      getTopMessengers(),
-      getNegativeReviews(),
-    ]);
+    const [negativeExperiences, topMessengers, threadVotes] = await Promise.all(
+      [getNegativeExperiences(), getTopMessengers(), getThreadVotes()],
+    );
 
     res.send({
-      negativeReviews,
+      negativeExperiences,
+      threadVotes,
       topMessengers,
     });
   } catch (err) {

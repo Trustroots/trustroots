@@ -411,7 +411,7 @@ describe('Statistics controller unit tests', () => {
       });
     });
 
-    it('aggregates all experiences and unique real-life connections', async () => {
+    it('counts only positive experiences as real-life connections', async () => {
       const users = await utils.saveUsers(utils.generateUsers(4));
       const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
       const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
@@ -467,7 +467,7 @@ describe('Statistics controller unit tests', () => {
         recommended: 2,
         notRecommended: 2,
         recent: { total: 4, recommended: 2, notRecommended: 1 },
-        realLifeConnections: { total: 3, recent: 2 },
+        realLifeConnections: { total: 2, recent: 2 },
       });
     });
   });

@@ -234,6 +234,20 @@ describe('<Thread>', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('shows a safety warning above messages', async () => {
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [generateMessage(otherUser)],
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(
+      await screen.findByText(
+        'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('shows removed user note when user has been deleted and userId exists', async () => {
     routeParams = {
       username: otherUser.username,
