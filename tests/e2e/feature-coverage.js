@@ -2512,6 +2512,8 @@ const features = [
     requiredScenarios: [
       'Admin dashboard loads for admin.',
       'Regular member is denied access to admin tools.',
+      'Guest direct loads of React-owned admin pages redirect to sign in.',
+      'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
       'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
     ],
