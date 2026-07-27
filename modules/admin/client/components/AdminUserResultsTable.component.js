@@ -1,12 +1,50 @@
 // External dependencies
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 
 // Internal dependencies
 import UserLink from './UserLink.component';
 import UserState from './UserState.component';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component';
 import { formatAdminDate, isSuspendedUser } from './userSearch.helpers';
+
+const userSortValues = {
+  created: user => {
+    const timestamp = new Date(user.created).getTime();
+    return Number.isNaN(timestamp) ? 0 : timestamp;
+  },
+  displayName: user => String(user.displayName || '').toLowerCase(),
+  email: user => String(user.email || '').toLowerCase(),
+  username: user => String(user.username || '').toLowerCase(),
+};
+
+function SortableHeader({ column, label, onSort, sort }) {
+  const isActive = sort.column === column;
+  const direction = isActive ? sort.direction : 'none';
+
+  return (
+    <th aria-sort={direction}>
+      <button
+        className="btn btn-link admin-user-results-sort"
+        onClick={() => onSort(column)}
+        type="button"
+      >
+        {label}
+        {isActive && (sort.direction === 'ascending' ? ' ▲' : ' ▼')}
+      </button>
+    </th>
+  );
+}
+
+SortableHeader.propTypes = {
+  column: PropTypes.oneOf(Object.keys(userSortValues)).isRequired,
+  label: PropTypes.string.isRequired,
+  onSort: PropTypes.func.isRequired,
+  sort: PropTypes.shape({
+    column: PropTypes.string,
+    direction: PropTypes.oneOf(['ascending', 'descending']),
+  }).isRequired,
+};
 
 export default function AdminUserResultsTable({
   showLimitWarning,
@@ -16,6 +54,37 @@ export default function AdminUserResultsTable({
   userResults,
   usersLimit,
 }) {
+  const [sort, setSort] = useState({ column: null, direction: null });
+
+  const sortedUserResults = useMemo(() => {
+    if (!sort.column) {
+      return userResults;
+    }
+
+    const direction = sort.direction === 'ascending' ? 1 : -1;
+    const valueFor = userSortValues[sort.column];
+
+    return userResults.slice().sort((left, right) => {
+      const leftValue = valueFor(left);
+      const rightValue = valueFor(right);
+      const comparison =
+        typeof leftValue === 'number'
+          ? leftValue - rightValue
+          : leftValue.localeCompare(rightValue);
+      return comparison * direction;
+    });
+  }, [sort, userResults]);
+
+  function sortBy(column) {
+    setSort(currentSort => ({
+      column,
+      direction:
+        currentSort.column === column && currentSort.direction === 'ascending'
+          ? 'descending'
+          : 'ascending',
+    }));
+  }
+
   if (!userResults.length) {
     return null;
   }
@@ -26,14 +95,34 @@ export default function AdminUserResultsTable({
         <table className="table table-striped table-responsive">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Signed up</th>
+              <SortableHeader
+                column="displayName"
+                label="Name"
+                onSort={sortBy}
+                sort={sort}
+              />
+              <SortableHeader
+                column="username"
+                label="Username"
+                onSort={sortBy}
+                sort={sort}
+              />
+              <SortableHeader
+                column="email"
+                label="Email"
+                onSort={sortBy}
+                sort={sort}
+              />
+              <SortableHeader
+                column="created"
+                label="Signed up"
+                onSort={sortBy}
+                sort={sort}
+              />
             </tr>
           </thead>
           <tbody>
-            {userResults.map(user => {
+            {sortedUserResults.map(user => {
               const { _id, created, email, emailTemporary, username } = user;
               const showProfileLink =
                 showPublicProfileLink && !isSuspendedUser(user);

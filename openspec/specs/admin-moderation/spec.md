@@ -43,12 +43,20 @@ activity.
 ### Requirement: Member search and role filtering
 
 The system SHALL let authorised administrators search for members and list
-members with a selected moderation role.
+members with a selected moderation role. The resulting member table SHALL
+allow the administrator to sort by name, username, email address, or signup
+date.
 
 #### Scenario: Administrator searches for a member
 
 - **WHEN** an authorised administrator searches using a valid member query
 - **THEN** matching member records are displayed
+
+#### Scenario: Administrator sorts member search results
+
+- **WHEN** an authorised administrator selects a member-table column header
+- **THEN** the displayed results are sorted by that column
+- **AND** selecting the active header again reverses the sort direction
 
 #### Scenario: Administrator filters members by role
 

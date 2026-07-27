@@ -2671,6 +2671,7 @@ const features = [
       'Admin search finds a confirmed member.',
       'Admin search finds a shadowbanned member.',
       'Search handles no-result state.',
+      'Admin can sort member search results by name.',
     ],
     relatedSpecs: [
       spec(

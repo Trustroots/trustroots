@@ -39,6 +39,35 @@ test.describe('admin moderation search flows', () => {
     await expect(page.getByText(berlin.email).first()).toBeVisible();
   });
 
+  test('admin can sort member search results by name', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Admin can sort member search results by name.',
+    ]);
+
+    await page.goto('/admin/search-users');
+    await page.locator('input[type="search"]').fill('e2e-seeded');
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/users') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.getByRole('button', { name: /^search$/i }).click();
+    await searchResponse;
+
+    await page.getByRole('button', { name: 'Name', exact: true }).click();
+
+    await expect(page.locator('table tbody tr').first()).toContainText(
+      'e2e-seeded-alice',
+    );
+    await expect(page.locator('table thead th').first()).toHaveAttribute(
+      'aria-sort',
+      'ascending',
+    );
+  });
+
   test('admin search finds the shadowbanned member', async ({
     page,
   }, testInfo) => {
