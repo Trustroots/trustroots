@@ -28,46 +28,38 @@ const users = [
 ];
 
 describe('<AdminUserResultsTable />', () => {
-  it('sorts rows by every column and reverses the active sort', () => {
-    render(<AdminUserResultsTable userResults={users} />);
+  it('requests server sorting for every column', () => {
+    const onSortChange = jest.fn();
+    render(
+      <AdminUserResultsTable
+        onSortChange={onSortChange}
+        sort={{ column: 'username', direction: 'ascending' }}
+        userResults={users}
+      />,
+    );
 
-    const rowOrder = () =>
-      Array.from(document.querySelectorAll('tbody tr')).map(row =>
-        row.textContent.includes('Zed Example')
-          ? 'zed'
-          : row.textContent.includes('Amy Example')
-          ? 'amy'
-          : 'empty',
-      );
-
-    expect(rowOrder()).toEqual(['zed', 'amy', 'empty']);
     expect(screen.getByText('Name').closest('th')).toHaveAttribute(
       'aria-sort',
       'none',
     );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
-    expect(rowOrder()).toEqual(['empty', 'amy', 'zed']);
-    expect(screen.getByText('Name ▲').closest('th')).toHaveAttribute(
+    expect(screen.getByText('Username ▲').closest('th')).toHaveAttribute(
       'aria-sort',
       'ascending',
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Name ▲' }));
-    expect(rowOrder()).toEqual(['zed', 'amy', 'empty']);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Username' }));
-    expect(rowOrder()).toEqual(['empty', 'zed', 'amy']);
-
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Username ▲' }));
     fireEvent.click(screen.getByRole('button', { name: 'Email' }));
-    expect(rowOrder()).toEqual(['empty', 'amy', 'zed']);
-
     fireEvent.click(screen.getByRole('button', { name: 'Signed up' }));
-    expect(rowOrder()).toEqual(['empty', 'amy', 'zed']);
-    fireEvent.click(screen.getByRole('button', { name: 'Signed up ▲' }));
-    expect(rowOrder()).toEqual(['zed', 'amy', 'empty']);
-
     fireEvent.click(screen.getByRole('button', { name: 'Last IP' }));
-    expect(rowOrder()).toEqual(['empty', 'zed', 'amy']);
+
+    expect(onSortChange.mock.calls).toEqual([
+      [{ column: 'displayName', direction: 'ascending' }],
+      [{ column: 'username', direction: 'descending' }],
+      [{ column: 'email', direction: 'ascending' }],
+      [{ column: 'created', direction: 'ascending' }],
+      [{ column: 'lastIpAddress', direction: 'ascending' }],
+    ]);
     expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
       'href',
       '/admin/user?ip=203.0.113.10',
@@ -76,5 +68,41 @@ describe('<AdminUserResultsTable />', () => {
       'target',
       '_self',
     );
+  });
+
+  it('shows page metadata and requests adjacent pages', () => {
+    const onPageChange = jest.fn();
+    const { rerender } = render(
+      <AdminUserResultsTable
+        onPageChange={onPageChange}
+        pagination={{ page: 2, pageSize: 150, total: 301, totalPages: 3 }}
+        userResults={users}
+      />,
+    );
+
+    expect(screen.getByText('301 user(s). Page 2 of 3.')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(onPageChange.mock.calls).toEqual([[1], [3]]);
+
+    rerender(
+      <AdminUserResultsTable
+        pagination={{ page: 1, pageSize: 150, total: 3, totalPages: 1 }}
+        userResults={users}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }));
+
+    rerender(
+      <AdminUserResultsTable
+        pagination={{ page: 1, pageSize: 150, total: 301, totalPages: 3 }}
+        sort={{ column: 'username', direction: 'descending' }}
+        userResults={users}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Username ▼' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   });
 });

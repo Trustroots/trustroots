@@ -27,22 +27,45 @@ describe('admin users api', () => {
 
   it('lists users by role', async () => {
     const data = [{ _id: 'user-1' }];
+    const options = {
+      page: 2,
+      sort: { column: 'created', direction: 'descending' },
+    };
     axios.post.mockResolvedValueOnce({ data });
 
-    await expect(listUsersByRole('admin')).resolves.toBe(data);
+    await expect(listUsersByRole('admin', options)).resolves.toBe(data);
     expect(axios.post).toHaveBeenCalledWith('/api/admin/users/by-role', {
       role: 'admin',
+      ...options,
+    });
+
+    axios.post.mockResolvedValueOnce({ data });
+    await expect(listUsersByRole('volunteer')).resolves.toBe(data);
+    expect(axios.post).toHaveBeenLastCalledWith('/api/admin/users/by-role', {
+      role: 'volunteer',
     });
   });
 
   it('lists users by their exact last IP address', async () => {
     const data = [{ _id: 'user-1' }];
+    const options = { page: 3 };
     axios.post.mockResolvedValueOnce({ data });
 
-    await expect(listUsersByLastIpAddress('203.0.113.10')).resolves.toBe(data);
+    await expect(
+      listUsersByLastIpAddress('203.0.113.10', options),
+    ).resolves.toBe(data);
     expect(axios.post).toHaveBeenCalledWith(
       '/api/admin/users/by-last-ip-address',
-      { ipAddress: '203.0.113.10' },
+      { ipAddress: '203.0.113.10', page: 3 },
+    );
+
+    axios.post.mockResolvedValueOnce({ data });
+    await expect(
+      listUsersByLastIpAddress('203.0.113.20'),
+    ).resolves.toBe(data);
+    expect(axios.post).toHaveBeenLastCalledWith(
+      '/api/admin/users/by-last-ip-address',
+      { ipAddress: '203.0.113.20' },
     );
   });
 

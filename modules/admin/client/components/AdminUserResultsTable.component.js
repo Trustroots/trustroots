@@ -1,6 +1,6 @@
 // External dependencies
 import PropTypes from 'prop-types';
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 
 // Internal dependencies
 import UserLink from './UserLink.component';
@@ -8,26 +8,25 @@ import UserState from './UserState.component';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component';
 import { formatAdminDate, isSuspendedUser } from './userSearch.helpers';
 
-const userSortValues = {
-  created: user => {
-    const timestamp = new Date(user.created).getTime();
-    return Number.isNaN(timestamp) ? 0 : timestamp;
-  },
-  displayName: user => String(user.displayName || '').toLowerCase(),
-  email: user => String(user.email || '').toLowerCase(),
-  lastIpAddress: user => String(user.lastIpAddress || ''),
-  username: user => String(user.username || '').toLowerCase(),
-};
+const USER_SORT_COLUMNS = [
+  'created',
+  'displayName',
+  'email',
+  'lastIpAddress',
+  'username',
+];
 
-function SortableHeader({ column, label, onSort, sort }) {
+function SortableHeader({ column, label, onSortChange, sort }) {
   const isActive = sort.column === column;
   const direction = isActive ? sort.direction : 'none';
+  const nextDirection =
+    isActive && sort.direction === 'ascending' ? 'descending' : 'ascending';
 
   return (
     <th aria-sort={direction}>
       <button
         className="btn btn-link admin-user-results-sort"
-        onClick={() => onSort(column)}
+        onClick={() => onSortChange({ column, direction: nextDirection })}
         type="button"
       >
         {label}
@@ -38,9 +37,9 @@ function SortableHeader({ column, label, onSort, sort }) {
 }
 
 SortableHeader.propTypes = {
-  column: PropTypes.oneOf(Object.keys(userSortValues)).isRequired,
+  column: PropTypes.oneOf(USER_SORT_COLUMNS).isRequired,
   label: PropTypes.string.isRequired,
-  onSort: PropTypes.func.isRequired,
+  onSortChange: PropTypes.func.isRequired,
   sort: PropTypes.shape({
     column: PropTypes.string,
     direction: PropTypes.oneOf(['ascending', 'descending']),
@@ -48,44 +47,15 @@ SortableHeader.propTypes = {
 };
 
 export default function AdminUserResultsTable({
-  showLimitWarning,
+  onPageChange,
+  onSortChange,
+  pagination,
   showPublicProfileLink,
   showUserState,
   showZendeskActions,
+  sort,
   userResults,
-  usersLimit,
 }) {
-  const [sort, setSort] = useState({ column: null, direction: null });
-
-  const sortedUserResults = useMemo(() => {
-    if (!sort.column) {
-      return userResults;
-    }
-
-    const direction = sort.direction === 'ascending' ? 1 : -1;
-    const valueFor = userSortValues[sort.column];
-
-    return userResults.slice().sort((left, right) => {
-      const leftValue = valueFor(left);
-      const rightValue = valueFor(right);
-      const comparison =
-        typeof leftValue === 'number'
-          ? leftValue - rightValue
-          : leftValue.localeCompare(rightValue);
-      return comparison * direction;
-    });
-  }, [sort, userResults]);
-
-  function sortBy(column) {
-    setSort(currentSort => ({
-      column,
-      direction:
-        currentSort.column === column && currentSort.direction === 'ascending'
-          ? 'descending'
-          : 'ascending',
-    }));
-  }
-
   if (!userResults.length) {
     return null;
   }
@@ -99,37 +69,37 @@ export default function AdminUserResultsTable({
               <SortableHeader
                 column="displayName"
                 label="Name"
-                onSort={sortBy}
+                onSortChange={onSortChange}
                 sort={sort}
               />
               <SortableHeader
                 column="username"
                 label="Username"
-                onSort={sortBy}
+                onSortChange={onSortChange}
                 sort={sort}
               />
               <SortableHeader
                 column="email"
                 label="Email"
-                onSort={sortBy}
+                onSortChange={onSortChange}
                 sort={sort}
               />
               <SortableHeader
                 column="created"
                 label="Signed up"
-                onSort={sortBy}
+                onSortChange={onSortChange}
                 sort={sort}
               />
               <SortableHeader
                 column="lastIpAddress"
                 label="Last IP"
-                onSort={sortBy}
+                onSortChange={onSortChange}
                 sort={sort}
               />
             </tr>
           </thead>
           <tbody>
-            {sortedUserResults.map(user => {
+            {userResults.map(user => {
               const {
                 _id,
                 created,
@@ -205,14 +175,31 @@ export default function AdminUserResultsTable({
           </tbody>
         </table>
       </div>
-      {showLimitWarning && (
+      {pagination && (
         <div className="panel-footer">
-          {userResults.length} user(s).
-          {userResults.length === usersLimit && (
-            <p className="text-warning">
-              There might be more results but {usersLimit} is maximum.
-            </p>
-          )}
+          <span>
+            {pagination.total} user(s). Page {pagination.page} of{' '}
+            {Math.max(pagination.totalPages, 1)}.
+          </span>{' '}
+          <button
+            className="btn btn-default btn-sm"
+            disabled={pagination.page <= 1}
+            onClick={() => onPageChange(pagination.page - 1)}
+            type="button"
+          >
+            Previous
+          </button>{' '}
+          <button
+            className="btn btn-default btn-sm"
+            disabled={
+              pagination.totalPages === 0 ||
+              pagination.page >= pagination.totalPages
+            }
+            onClick={() => onPageChange(pagination.page + 1)}
+            type="button"
+          >
+            Next
+          </button>
         </div>
       )}
     </div>
@@ -220,18 +207,33 @@ export default function AdminUserResultsTable({
 }
 
 AdminUserResultsTable.propTypes = {
-  showLimitWarning: PropTypes.bool,
+  onPageChange: PropTypes.func,
+  onSortChange: PropTypes.func,
+  pagination: PropTypes.shape({
+    page: PropTypes.number.isRequired,
+    pageSize: PropTypes.number.isRequired,
+    total: PropTypes.number.isRequired,
+    totalPages: PropTypes.number.isRequired,
+  }),
   showPublicProfileLink: PropTypes.bool,
   showUserState: PropTypes.bool,
   showZendeskActions: PropTypes.bool,
+  sort: PropTypes.shape({
+    column: PropTypes.oneOf(USER_SORT_COLUMNS).isRequired,
+    direction: PropTypes.oneOf(['ascending', 'descending']).isRequired,
+  }),
   userResults: PropTypes.array.isRequired,
-  usersLimit: PropTypes.number,
 };
 
 AdminUserResultsTable.defaultProps = {
-  showLimitWarning: false,
+  onPageChange: () => {},
+  onSortChange: () => {},
+  pagination: null,
   showPublicProfileLink: false,
   showUserState: false,
   showZendeskActions: false,
-  usersLimit: 0,
+  sort: {
+    column: 'username',
+    direction: 'ascending',
+  },
 };

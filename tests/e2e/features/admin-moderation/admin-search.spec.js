@@ -163,6 +163,58 @@ test.describe('admin moderation search flows', () => {
     await expect(page.getByText(SEEDED_SHADOW.username).first()).toBeVisible();
   });
 
+  test('admin can paginate a role list', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'admin.list-users-by-role', [
+      'Admin can paginate a role list.',
+    ]);
+    const requests = [];
+    const makeUser = (id, username) => ({
+      _id: id,
+      created: '2026-01-01T00:00:00.000Z',
+      displayName: `${username} Example`,
+      email: `${username}@example.test`,
+      roles: ['user', 'volunteer'],
+      username,
+    });
+
+    await page.route('**/api/admin/users/by-role', async route => {
+      const request = route.request().postDataJSON();
+      requests.push(request);
+      const pageNumber = request.page || 1;
+      await route.fulfill({
+        contentType: 'application/json',
+        json: {
+          pagination: {
+            page: pageNumber,
+            pageSize: 150,
+            total: 151,
+            totalPages: 2,
+          },
+          sort: request.sort,
+          users:
+            pageNumber === 1
+              ? [makeUser('111111111111111111111111', 'page-one-member')]
+              : [makeUser('222222222222222222222222', 'page-two-member')],
+        },
+      });
+    });
+
+    await page.goto('/admin/search-users');
+    await page.locator('select[name="role"]').selectOption('volunteer');
+    await page.getByRole('button', { name: /list users in role/i }).click();
+
+    await expect(page.getByText(/page-one-member/).first()).toBeVisible();
+    await expect(page.getByText('151 user(s). Page 1 of 2.')).toBeVisible();
+    await page.getByRole('button', { name: 'Next' }).click();
+
+    await expect(page.getByText(/page-two-member/).first()).toBeVisible();
+    expect(requests[1]).toMatchObject({
+      page: 2,
+      role: 'volunteer',
+      sort: { column: 'username', direction: 'ascending' },
+    });
+  });
+
   test('admin search APIs reject invalid input', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.search-users', [
       'Search handles no-result state.',

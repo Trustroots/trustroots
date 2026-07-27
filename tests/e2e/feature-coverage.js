@@ -2717,6 +2717,7 @@ const features = [
     },
     requiredScenarios: [
       'Admin can list members in a selected role.',
+      'Admin can paginate a role list.',
       'Role list respects deterministic seeded users.',
     ],
     relatedSpecs: [
@@ -2724,6 +2725,7 @@ const features = [
         'admin-search.spec.js',
         'admin can list members in the shadowban role',
       ),
+      spec('admin-search.spec.js', 'admin can paginate a role list'),
     ],
   },
   {

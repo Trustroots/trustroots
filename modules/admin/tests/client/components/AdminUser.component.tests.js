@@ -101,6 +101,21 @@ const makeReportCard = overrides => ({
   ...overrides,
 });
 
+const makeMemberList = (users, overrides = {}) => ({
+  pagination: {
+    page: 1,
+    pageSize: 150,
+    total: users.length,
+    totalPages: users.length ? 1 : 0,
+  },
+  sort: {
+    column: 'username',
+    direction: 'ascending',
+  },
+  users,
+  ...overrides,
+});
+
 function submitMemberSearch(value) {
   const input = screen.getByLabelText('Member username, email or ID');
   fireEvent.change(input, { target: { value } });
@@ -249,16 +264,40 @@ describe('<AdminUser />', () => {
 
   it('lists members with the selected current IP address from the URL', async () => {
     window.history.pushState({}, '', '/admin/user?ip=203.0.113.10');
-    usersApi.listUsersByLastIpAddress.mockResolvedValueOnce([
-      {
-        _id: userId,
-        created: '2026-01-01T00:00:00.000Z',
-        displayName: 'Alice Example',
-        email: 'alice@example.org',
-        lastIpAddress: '203.0.113.10',
-        username: 'alice',
-      },
-    ]);
+    const matchingUser = {
+      _id: userId,
+      created: '2026-01-01T00:00:00.000Z',
+      displayName: 'Alice Example',
+      email: 'alice@example.org',
+      lastIpAddress: '203.0.113.10',
+      username: 'alice',
+    };
+    usersApi.listUsersByLastIpAddress
+      .mockResolvedValueOnce(
+        makeMemberList([matchingUser], {
+          pagination: {
+            page: 1,
+            pageSize: 150,
+            total: 151,
+            totalPages: 2,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeMemberList([matchingUser], {
+          pagination: {
+            page: 2,
+            pageSize: 150,
+            total: 151,
+            totalPages: 2,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeMemberList([matchingUser], {
+          sort: { column: 'lastIpAddress', direction: 'ascending' },
+        }),
+      );
 
     render(<AdminUser />);
 
@@ -267,6 +306,40 @@ describe('<AdminUser />', () => {
     ).toBeInTheDocument();
     expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledWith(
       '203.0.113.10',
+      {
+        page: 1,
+        sort: { column: 'username', direction: 'ascending' },
+      },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() =>
+      expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(2),
+    );
+    expect(screen.getByText('151 user(s). Page 2 of 2.')).toBeInTheDocument();
+    expect(usersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
+      2,
+      '203.0.113.10',
+      {
+        page: 2,
+        sort: { column: 'username', direction: 'ascending' },
+      },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Last IP' }));
+    await waitFor(() =>
+      expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(3),
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Last IP ▲' }),
+    ).toBeInTheDocument();
+    expect(usersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
+      3,
+      '203.0.113.10',
+      {
+        page: 1,
+        sort: { column: 'lastIpAddress', direction: 'ascending' },
+      },
     );
   });
 
@@ -346,12 +419,14 @@ describe('<AdminUser />', () => {
 
   it('loads a query from the URL', async () => {
     window.history.pushState({}, '', '/admin/user?q=alice');
-    usersApi.searchUsers.mockResolvedValueOnce([
-      {
-        _id: userId,
-        username: 'alice',
-      },
-    ]);
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([
+        {
+          _id: userId,
+          username: 'alice',
+        },
+      ]),
+    );
     usersApi.getUser.mockResolvedValueOnce(makeReportCard());
 
     render(<AdminUser />);
@@ -360,7 +435,10 @@ describe('<AdminUser />', () => {
       'alice',
     );
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice'),
+      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+        page: 1,
+        sort: { column: 'username', direction: 'ascending' },
+      }),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
   });
@@ -377,14 +455,16 @@ describe('<AdminUser />', () => {
   });
 
   it('loads an exact username match', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce([
-      {
-        _id: userId,
-        displayName: 'Alice Example',
-        email: 'alice@example.org',
-        username: 'alice',
-      },
-    ]);
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([
+        {
+          _id: userId,
+          displayName: 'Alice Example',
+          email: 'alice@example.org',
+          username: 'alice',
+        },
+      ]),
+    );
     usersApi.getUser.mockResolvedValueOnce(makeReportCard());
 
     render(<AdminUser />);
@@ -392,7 +472,10 @@ describe('<AdminUser />', () => {
     submitMemberSearch('alice');
 
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice'),
+      expect(usersApi.searchUsers).toHaveBeenCalledWith('alice', {
+        page: 1,
+        sort: { column: 'username', direction: 'ascending' },
+      }),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
@@ -403,14 +486,16 @@ describe('<AdminUser />', () => {
   });
 
   it('loads an exact email match ignoring case', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce([
-      {
-        _id: userId,
-        displayName: 'Alice Example',
-        email: 'alice@example.org',
-        username: 'alice',
-      },
-    ]);
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([
+        {
+          _id: userId,
+          displayName: 'Alice Example',
+          email: 'alice@example.org',
+          username: 'alice',
+        },
+      ]),
+    );
     usersApi.getUser.mockResolvedValueOnce(makeReportCard());
 
     render(<AdminUser />);
@@ -418,7 +503,10 @@ describe('<AdminUser />', () => {
     submitMemberSearch('ALICE@EXAMPLE.ORG');
 
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('ALICE@EXAMPLE.ORG'),
+      expect(usersApi.searchUsers).toHaveBeenCalledWith('ALICE@EXAMPLE.ORG', {
+        page: 1,
+        sort: { column: 'username', direction: 'ascending' },
+      }),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
@@ -429,26 +517,29 @@ describe('<AdminUser />', () => {
   });
 
   it('shows matching users when there is no exact match', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce([
-      {
-        _id: otherUserId,
-        created: '2024-02-03T04:05:06.000Z',
-        displayName: 'Alice Similar',
-        email: 'similar@example.org',
-        emailTemporary: 'pending@example.org',
-        username: 'alice-similar',
-      },
-      {
-        _id: '333333333333333333333333',
-        created: '2021-07-06T00:00:00.000Z',
-        displayName: 'Hot Daria Wants To Date https://bit.ly/lovezones Come In',
-        email: 'spam@example.org',
-        emailTemporary: 'spam@example.org',
-        public: false,
-        roles: ['user', 'suspended'],
-        username: '24721768s',
-      },
-    ]);
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([
+        {
+          _id: otherUserId,
+          created: '2024-02-03T04:05:06.000Z',
+          displayName: 'Alice Similar',
+          email: 'similar@example.org',
+          emailTemporary: 'pending@example.org',
+          username: 'alice-similar',
+        },
+        {
+          _id: '333333333333333333333333',
+          created: '2021-07-06T00:00:00.000Z',
+          displayName:
+            'Hot Daria Wants To Date https://bit.ly/lovezones Come In',
+          email: 'spam@example.org',
+          emailTemporary: 'spam@example.org',
+          public: false,
+          roles: ['user', 'suspended'],
+          username: '24721768s',
+        },
+      ]),
+    );
 
     render(<AdminUser />);
 
@@ -469,26 +560,91 @@ describe('<AdminUser />', () => {
     expect(usersApi.getUser).not.toHaveBeenCalled();
   });
 
+  it('paginates and server-sorts non-exact member matches', async () => {
+    const matchingUser = {
+      _id: otherUserId,
+      created: '2024-02-03T04:05:06.000Z',
+      displayName: 'Alice Similar',
+      email: 'similar@example.org',
+      username: 'alice-similar',
+    };
+    usersApi.searchUsers
+      .mockResolvedValueOnce(
+        makeMemberList([matchingUser], {
+          pagination: {
+            page: 1,
+            pageSize: 150,
+            total: 151,
+            totalPages: 2,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeMemberList([matchingUser], {
+          pagination: {
+            page: 2,
+            pageSize: 150,
+            total: 151,
+            totalPages: 2,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeMemberList([matchingUser], {
+          sort: { column: 'email', direction: 'ascending' },
+        }),
+      );
+
+    render(<AdminUser />);
+    submitMemberSearch('alice similar');
+    expect(
+      await screen.findByRole('link', {
+        name: 'alice-similar (Alice Similar)',
+      }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await waitFor(() => expect(usersApi.searchUsers).toHaveBeenCalledTimes(2));
+    expect(screen.getByText('151 user(s). Page 2 of 2.')).toBeInTheDocument();
+    expect(usersApi.searchUsers).toHaveBeenNthCalledWith(2, 'alice similar', {
+      page: 2,
+      sort: { column: 'username', direction: 'ascending' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Email' }));
+    await waitFor(() => expect(usersApi.searchUsers).toHaveBeenCalledTimes(3));
+    expect(
+      await screen.findByRole('button', { name: 'Email ▲' }),
+    ).toBeInTheDocument();
+    expect(usersApi.searchUsers).toHaveBeenNthCalledWith(3, 'alice similar', {
+      page: 1,
+      sort: { column: 'email', direction: 'ascending' },
+    });
+  });
+
   it('reveals non-exact obvious spam matches when toggled off', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce([
-      {
-        _id: otherUserId,
-        created: '2024-02-03T04:05:06.000Z',
-        displayName: 'Alice Similar',
-        email: 'similar@example.org',
-        username: 'alice-similar',
-      },
-      {
-        _id: '333333333333333333333333',
-        created: '2021-07-06T00:00:00.000Z',
-        displayName: 'Hot Daria Wants To Date https://bit.ly/lovezones Come In',
-        email: 'spam@example.org',
-        emailTemporary: 'spam@example.org',
-        public: false,
-        roles: ['user', 'suspended'],
-        username: '24721768s',
-      },
-    ]);
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([
+        {
+          _id: otherUserId,
+          created: '2024-02-03T04:05:06.000Z',
+          displayName: 'Alice Similar',
+          email: 'similar@example.org',
+          username: 'alice-similar',
+        },
+        {
+          _id: '333333333333333333333333',
+          created: '2021-07-06T00:00:00.000Z',
+          displayName:
+            'Hot Daria Wants To Date https://bit.ly/lovezones Come In',
+          email: 'spam@example.org',
+          emailTemporary: 'spam@example.org',
+          public: false,
+          roles: ['user', 'suspended'],
+          username: '24721768s',
+        },
+      ]),
+    );
 
     render(<AdminUser />);
 
@@ -513,17 +669,19 @@ describe('<AdminUser />', () => {
   });
 
   it('loads an exact obvious spam match instead of hiding it', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce([
-      {
-        _id: userId,
-        displayName: 'Hot Daria Wants To Date',
-        email: 'spam@example.org',
-        emailTemporary: 'spam@example.org',
-        public: false,
-        roles: ['user', 'suspended'],
-        username: '24721768s',
-      },
-    ]);
+    usersApi.searchUsers.mockResolvedValueOnce(
+      makeMemberList([
+        {
+          _id: userId,
+          displayName: 'Hot Daria Wants To Date',
+          email: 'spam@example.org',
+          emailTemporary: 'spam@example.org',
+          public: false,
+          roles: ['user', 'suspended'],
+          username: '24721768s',
+        },
+      ]),
+    );
     usersApi.getUser.mockResolvedValueOnce(
       makeReportCard({
         profile: {
@@ -541,7 +699,10 @@ describe('<AdminUser />', () => {
     submitMemberSearch('24721768s');
 
     await waitFor(() =>
-      expect(usersApi.searchUsers).toHaveBeenCalledWith('24721768s'),
+      expect(usersApi.searchUsers).toHaveBeenCalledWith('24721768s', {
+        page: 1,
+        sort: { column: 'username', direction: 'ascending' },
+      }),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledWith(userId));
     expect(
@@ -552,7 +713,7 @@ describe('<AdminUser />', () => {
   });
 
   it('shows an empty state when no users match', async () => {
-    usersApi.searchUsers.mockResolvedValueOnce([]);
+    usersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
 
     render(<AdminUser />);
 
