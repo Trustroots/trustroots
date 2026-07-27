@@ -44,8 +44,17 @@ describe('Admin Reference thread CRUD tests', () => {
       userTo: userRegular1Id,
     });
 
+    const oldReference = new ReferenceThread({
+      ...referenceBase,
+      created: new Date('2020-01-01T00:00:00.000Z'),
+      reference: 'no',
+      userFrom: userRegular2Id,
+      userTo: userRegular1Id,
+    });
+
     await reference1.save();
     await reference2.save();
+    await oldReference.save();
   });
 
   afterEach(utils.clearDatabase);
@@ -82,7 +91,7 @@ describe('Admin Reference thread CRUD tests', () => {
           .expect(200);
 
         // Should contain only "no" references
-        body.items.length.should.equal(1);
+        body.items.length.should.equal(2);
         body.items[0].reference.should.equal('no');
         body.topNegativeRecipients.length.should.equal(1);
         body.topNegativeRecipients[0].count.should.equal(1);
