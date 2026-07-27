@@ -191,30 +191,35 @@ module.exports.initViewEngine = function (app) {
 module.exports.initSession = function (app, connection) {
   // Express MongoDB session storage
   // https://www.npmjs.com/package/express-session
-  app.use(
-    session({
-      saveUninitialized: true,
-      resave: true,
-      secret: config.sessionSecret,
-      cookie: {
-        // If secure is true, and you access your site over HTTP, the cookie will not be set.
-        secure: false, // ...or you could use `config.https`, but it screws things up with Nginx proxy.
+  const browserSession = session({
+    saveUninitialized: true,
+    resave: true,
+    secret: config.sessionSecret,
+    cookie: {
+      // If secure is true, and you access your site over HTTP, the cookie will not be set.
+      secure: false, // ...or you could use `config.https`, but it screws things up with Nginx proxy.
 
-        // Specifies the number (in milliseconds) to use when calculating the
-        // Expires Set-Cookie attribute. This is done by taking the current
-        // server time and adding maxAge milliseconds to the value to calculate
-        // an Expires datetime.
-        // By default cookie.maxAge is null, meaning no "expires" parameter is
-        // set so the cookie becomes a browser-session cookie. When the user
-        // closes the browser the cookie (and session) will be removed.
-        maxAge: 2419200000, // (in milliseconds) 28 days
-      },
-      store: mongoStore.create({
-        client: connection.client,
-        collection: config.sessionCollection,
-      }),
+      // Specifies the number (in milliseconds) to use when calculating the
+      // Expires Set-Cookie attribute. This is done by taking the current
+      // server time and adding maxAge milliseconds to the value to calculate
+      // an Expires datetime.
+      // By default cookie.maxAge is null, meaning no "expires" parameter is
+      // set so the cookie becomes a browser-session cookie. When the user
+      // closes the browser the cookie (and session) will be removed.
+      maxAge: 2419200000, // (in milliseconds) 28 days
+    },
+    store: mongoStore.create({
+      client: connection.client,
+      collection: config.sessionCollection,
     }),
-  );
+  });
+
+  app.use(function browserSessionOnly(req, res, next) {
+    if (/^\/api\/mobile\/v0(?:\/|$)/.test(req.path)) {
+      return next();
+    }
+    return browserSession(req, res, next);
+  });
 };
 
 /**

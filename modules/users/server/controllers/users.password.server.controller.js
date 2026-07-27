@@ -329,6 +329,11 @@ exports.changePassword = function (req, res) {
 
       // Login again and return new user
       function (user, done) {
+        // A bearer-authenticated mobile request must not establish an Express
+        // browser session while changing the password.
+        if (req.mobileSession) {
+          return done(null, user);
+        }
         req.login(user, function (err) {
           if (err) return done(err);
           done(null, user);

@@ -504,6 +504,36 @@ describe('Password controller unit tests', () => {
       res.body.message.should.equal('Password changed successfully!');
     });
 
+    it('does not create a browser session for a mobile password change', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.password = 'oldpassword1';
+      await userDoc.save();
+
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          mobileSession: { id: 'mobile-session-id' },
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword1',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: () => {
+            throw new Error(
+              'mobile requests must not create a browser session',
+            );
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Password changed successfully!');
+    });
+
     it('returns 400 when login fails after changing the password', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));

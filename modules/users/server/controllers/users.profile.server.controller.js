@@ -278,6 +278,12 @@ exports.update = function (req, res) {
 
         user.save(function (err) {
           if (!err) {
+            // Native bearer requests retain their mobile session and must not
+            // create a browser-session cookie as a side effect of profile
+            // updates. Browser requests keep the established login refresh.
+            if (req.mobileSession) {
+              return done(null, token, user);
+            }
             req.login(user, function (err) {
               if (err) {
                 done(err);

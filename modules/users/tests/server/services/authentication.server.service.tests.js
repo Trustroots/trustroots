@@ -1,6 +1,5 @@
 const proxyquire = require('proxyquire').noCallThru();
-
-require('should');
+const should = require('should');
 
 const authenticationService = proxyquire(
   '../../../server/services/authentication.server.service',
@@ -33,6 +32,14 @@ describe('Service: authentication', function () {
       );
 
       token.should.equal(Buffer.from('salt:new@example.org').toString('hex'));
+    });
+  });
+
+  describe('consumePasswordDerivation', function () {
+    it('performs the local password derivation without returning a value', function () {
+      should.not.exist(
+        authenticationService.consumePasswordDerivation('password'),
+      );
     });
   });
 

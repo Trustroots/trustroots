@@ -1,9 +1,26 @@
 const config = require('../../../../config/config');
+const crypto = require('crypto');
+
+// Keep failed local-password checks comparable in cost even when no member was
+// found. The value is deliberately fixed: it is only used to consume the same
+// PBKDF2 work as User#authenticate, never to authenticate a member.
+const passwordTimingSalt = Buffer.from(
+  'dHJ1c3Ryb290cy1wYXNzd29yZC10aW1pbmc=',
+  'base64',
+);
 
 exports.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;
   const buf = Buffer.concat([saltBuffer, Buffer.from(email)]);
   return buf.toString('hex');
+};
+
+exports.consumePasswordDerivation = function (password) {
+  crypto.pbkdf2Sync(password, passwordTimingSalt, 10000, 64, 'SHA1');
+};
+
+exports.isActiveMember = function (user) {
+  return user && !user.roles.includes('suspended');
 };
 
 /**
