@@ -2,6 +2,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 
 const express = require('../../../../config/lib/express');
+const errorService = require('../../../core/server/services/error.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -156,7 +157,9 @@ describe('Admin Newsletter subscribers API tests', () => {
       .get('/api/admin/newsletter-subscribers/circle')
       .expect(400);
 
-    response.body.message.should.equal('Please fill in a valid ID.');
+    response.body.message.should.equal(
+      errorService.getErrorMessageByKey('invalid-id'),
+    );
 
     await utils.signOut(agent);
   });
@@ -181,7 +184,7 @@ describe('Admin Newsletter subscribers API tests', () => {
       .expect(415);
 
     response.body.message.should.equal(
-      'Please upload a file that is in correct format.',
+      errorService.getErrorMessageByKey('unsupported-media-type'),
     );
 
     await utils.signOut(agent);
