@@ -123,6 +123,58 @@ describe('Admin newsletter controller edge-case unit tests', () => {
   });
 
   describe('splitSubscribers', () => {
+    it('returns 400 when uploaded CSV is empty', async () => {
+      const { controller } = loadController();
+      const res = mockResponse();
+
+      await controller.splitSubscribers(
+        {
+          file: {
+            buffer: Buffer.from(''),
+          },
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Could not find any email addresses in the uploaded CSV file.',
+      );
+    });
+
+    it('skips rows where the first CSV field is missing', async () => {
+      const { controller, findStub } = loadController({
+        findResults: [
+          {
+            email: 'valid@example.com',
+            firstName: 'Valid',
+            lastName: 'Subscriber',
+            public: true,
+            newsletter: true,
+            roles: [],
+          },
+        ],
+      });
+      const res = mockResponse();
+
+      await controller.splitSubscribers(
+        {
+          file: {
+            buffer: Buffer.from(
+              ['Email Address', ',just-a-name', 'valid@example.com'].join('\n'),
+            ),
+          },
+        },
+        res,
+      );
+
+      findStub.calledOnce.should.equal(true);
+      res.statusCode.should.equal(200);
+      res.body.totalEmailCount.should.equal(1);
+      res.body.subscribedCount.should.equal(1);
+      res.body.unsubscribedCount.should.equal(0);
+    });
+
     it('covers quoted CSV parsing and reason fallbacks', async () => {
       const { controller, findStub } = loadController({
         findResults: [
