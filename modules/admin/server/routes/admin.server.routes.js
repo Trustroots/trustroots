@@ -86,4 +86,14 @@ module.exports = app => {
       adminNewsletter.uploadSubscribersCsv,
       adminNewsletter.splitSubscribers,
     );
+
+  app
+    .route('/api/admin/newsletter-subscribers')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminNewsletter.list);
+
+  app
+    .route('/api/admin/newsletter-subscribers/circle')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminNewsletter.listCircleMembers);
 };

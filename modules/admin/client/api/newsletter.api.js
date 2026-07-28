@@ -1,5 +1,20 @@
 import axios from 'axios';
 
+export async function getNewsletterSubscribersCsv() {
+  const { data } = await axios.get('/api/admin/newsletter-subscribers', {
+    responseType: 'text',
+  });
+  return data;
+}
+
+export async function getNewsletterCircleSubscribersCsv(circleId) {
+  const { data } = await axios.get('/api/admin/newsletter-subscribers/circle', {
+    params: { circleId },
+    responseType: 'text',
+  });
+  return data;
+}
+
 export async function splitNewsletterSubscribers(newsletterCsvFile) {
   const formData = new FormData();
   formData.append('newsletterCsv', newsletterCsvFile);

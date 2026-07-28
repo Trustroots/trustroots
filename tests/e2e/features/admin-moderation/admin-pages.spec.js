@@ -121,6 +121,7 @@ test.describe('admin moderation page flows', () => {
     annotateFeature(testInfo, 'admin.newsletter-page', [
       'Newsletter admin page loads.',
       'Newsletter page includes the CSV upload splitting tool.',
+      'Newsletter page includes full and circle subscriber export tools.',
     ]);
 
     await gotoAdminPage(page, '/admin/newsletter', /\/admin\/newsletter/);
@@ -129,6 +130,10 @@ test.describe('admin moderation page flows', () => {
     await expect(
       page.getByRole('heading', { name: /newsletter subscribers/i }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Export all subscribers CSV' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Circle ID')).toBeVisible();
     await expect(page.getByLabel('Newsletter CSV file')).toBeVisible();
   });
 });

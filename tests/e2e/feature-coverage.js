@@ -2835,6 +2835,7 @@ const features = [
     requiredScenarios: [
       'Newsletter admin page loads.',
       'Newsletter page includes the CSV upload splitting tool.',
+      'Newsletter page includes full and circle subscriber export tools.',
     ],
     relatedSpecs: [spec('admin-pages.spec.js', 'admin newsletter page loads')],
   },
@@ -2862,16 +2863,33 @@ const features = [
           '/api/admin/newsletter-subscribers/split',
           source.adminServer,
         ),
+        apiRoute(
+          'GET',
+          '/api/admin/newsletter-subscribers',
+          source.adminServer,
+        ),
+        apiRoute(
+          'GET',
+          '/api/admin/newsletter-subscribers/circle',
+          source.adminServer,
+        ),
       ],
     },
     requiredScenarios: [
       'Admin can upload a newsletter CSV and split recipients by subscription status.',
       'Split response includes downloadable subscribed and unsubscribed CSV files.',
+      'Admin can export all eligible subscribers as CSV.',
+      'Admin can export eligible subscribers for a specific circle.',
+      'Restricted-role members are excluded from eligible newsletter exports.',
     ],
     relatedSpecs: [
       spec(
         'admin-newsletter-api.spec.js',
         'admin can split newsletter recipients from uploaded CSV',
+      ),
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can export all and circle subscriber CSVs',
       ),
     ],
   },

@@ -1,9 +1,7 @@
 /**
  * Unit tests for the admin newsletter controller.
  *
- * The HTTP routes for these handlers are currently disabled (see #egW6Qq in
- * `admin.server.routes.js`), so the controller functions are exercised here
- * directly against the test database instead of through supertest.
+ * These handlers are exercised directly against the test database.
  */
 const mongoose = require('mongoose');
 
@@ -43,12 +41,17 @@ describe('Admin newsletter controller unit tests', () => {
   afterEach(utils.clearDatabase);
 
   describe('list', () => {
-    it('returns CSV with only public newsletter subscribers', async () => {
-      const _users = utils.generateUsers(3, { public: true, newsletter: true });
+    it('returns CSV with only email-eligible newsletter subscribers', async () => {
+      const _users = utils.generateUsers(5, { public: true, newsletter: true });
       // Public, but not subscribed to the newsletter
       _users[1].newsletter = false;
       // Subscribed, but not a public (confirmed) profile
       _users[2].public = false;
+      // Subscribed, but suspended
+      _users[3].roles = ['user', 'suspended'];
+      // Subscribed, but pending profile deletion
+      _users[4].removeProfileToken = 'remove-token';
+      _users[4].removeProfileExpires = Date.now() + 3600 * 1000;
 
       _users[0].email = 'subscriber@example.com';
       _users[0].firstName = 'Alice';
@@ -63,7 +66,7 @@ describe('Admin newsletter controller unit tests', () => {
 
       const lines = res.body.split('\n');
       lines[0].should.equal('Email Address,First Name,Last Name');
-      // Only the single public + subscribed user should be present
+      // Only the single eligible user should be present
       lines.length.should.equal(2);
       lines[1].should.equal('subscriber@example.com,Alice,Anderson');
     });
@@ -118,7 +121,7 @@ describe('Admin newsletter controller unit tests', () => {
       );
     });
 
-    it('returns only newsletter subscribers of a circle by default', async () => {
+    it('returns only email-eligible newsletter subscribers of a circle by default', async () => {
       const member = [
         {
           tribe: new mongoose.Types.ObjectId(circleId),
@@ -126,7 +129,7 @@ describe('Admin newsletter controller unit tests', () => {
         },
       ];
 
-      const _users = utils.generateUsers(2, { public: true });
+      const _users = utils.generateUsers(4, { public: true });
       // Circle member, subscribed
       _users[0].newsletter = true;
       _users[0].member = member;
@@ -136,6 +139,15 @@ describe('Admin newsletter controller unit tests', () => {
       // Circle member, NOT subscribed
       _users[1].newsletter = false;
       _users[1].member = member;
+      // Circle member, subscribed, but suspended
+      _users[2].newsletter = true;
+      _users[2].member = member;
+      _users[2].roles = ['user', 'suspended'];
+      // Circle member, subscribed, but pending profile deletion
+      _users[3].newsletter = true;
+      _users[3].member = member;
+      _users[3].removeProfileToken = 'remove-token';
+      _users[3].removeProfileExpires = Date.now() + 3600 * 1000;
 
       await utils.saveUsers(_users);
 
@@ -211,7 +223,7 @@ describe('Admin newsletter controller unit tests', () => {
     });
 
     it('splits uploaded recipients into subscribed and unsubscribed CSV files', async () => {
-      const _users = utils.generateUsers(3, {
+      const _users = utils.generateUsers(5, {
         public: true,
         newsletter: false,
       });
@@ -231,6 +243,19 @@ describe('Admin newsletter controller unit tests', () => {
       _users[2].lastName = 'Member';
       _users[2].newsletter = true;
       _users[2].public = false;
+      // Suspended users are treated as unsubscribed.
+      _users[3].email = 'suspended@example.com';
+      _users[3].firstName = 'Suspended';
+      _users[3].lastName = 'Member';
+      _users[3].newsletter = true;
+      _users[3].roles = ['user', 'suspended'];
+      // Deletion-pending users are treated as unsubscribed.
+      _users[4].email = 'pending-delete@example.com';
+      _users[4].firstName = 'Pending';
+      _users[4].lastName = 'Deletion';
+      _users[4].newsletter = true;
+      _users[4].removeProfileToken = 'remove-token';
+      _users[4].removeProfileExpires = Date.now() + 3600 * 1000;
 
       await utils.saveUsers(_users);
 
@@ -244,6 +269,8 @@ describe('Admin newsletter controller unit tests', () => {
                 'subscribed@example.com',
                 'unsubscribed@example.com',
                 'private@example.com',
+                'suspended@example.com',
+                'pending-delete@example.com',
                 'missing@example.com',
                 'SUBSCRIBED@example.com',
               ].join('\n'),
@@ -254,9 +281,9 @@ describe('Admin newsletter controller unit tests', () => {
       );
 
       res.statusCode.should.equal(200);
-      res.body.totalEmailCount.should.equal(4);
+      res.body.totalEmailCount.should.equal(6);
       res.body.subscribedCount.should.equal(1);
-      res.body.unsubscribedCount.should.equal(3);
+      res.body.unsubscribedCount.should.equal(5);
       res.body.subscribedCsv.should.equal(
         'Email Address,First Name,Last Name\nsubscribed@example.com,Subscribed,Member',
       );
@@ -265,6 +292,8 @@ describe('Admin newsletter controller unit tests', () => {
           'Email Address,First Name,Last Name',
           'unsubscribed@example.com,Unsubscribed,Member',
           'private@example.com,Private,Member',
+          'suspended@example.com,Suspended,Member',
+          'pending-delete@example.com,Pending,Deletion',
           'missing@example.com,,',
         ].join('\n'),
       );

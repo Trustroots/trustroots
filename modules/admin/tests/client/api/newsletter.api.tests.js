@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-import { splitNewsletterSubscribers } from '@/modules/admin/client/api/newsletter.api';
+import {
+  getNewsletterCircleSubscribersCsv,
+  getNewsletterSubscribersCsv,
+  splitNewsletterSubscribers,
+} from '@/modules/admin/client/api/newsletter.api';
 
 jest.mock('axios');
 
@@ -9,6 +13,37 @@ afterEach(() => {
 });
 
 describe('admin newsletter api', () => {
+  it('fetches all subscribers CSV export', async () => {
+    const data =
+      'Email Address,First Name,Last Name\nalice@example.com,Alice,Example';
+    axios.get.mockResolvedValueOnce({ data });
+
+    await expect(getNewsletterSubscribersCsv()).resolves.toEqual(data);
+    expect(axios.get).toHaveBeenCalledWith(
+      '/api/admin/newsletter-subscribers',
+      {
+        responseType: 'text',
+      },
+    );
+  });
+
+  it('fetches circle subscribers CSV export', async () => {
+    const data =
+      'Email Address,First Name,Last Name\nalice@example.com,Alice,Example';
+    axios.get.mockResolvedValueOnce({ data });
+
+    await expect(
+      getNewsletterCircleSubscribersCsv('5fbab4f7fed63c7ed73276d3'),
+    ).resolves.toEqual(data);
+    expect(axios.get).toHaveBeenCalledWith(
+      '/api/admin/newsletter-subscribers/circle',
+      {
+        params: { circleId: '5fbab4f7fed63c7ed73276d3' },
+        responseType: 'text',
+      },
+    );
+  });
+
   it('uploads CSV file for subscriber split', async () => {
     const file = new File(
       ['Email Address\nalice@example.com'],

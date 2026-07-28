@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const config = require('../../../../config/config');
 
 const errorService = require('../../../core/server/services/error.server.service');
+const userRolesService = require('../../../users/server/services/user-roles.server.service');
 
 const User = mongoose.model('User');
 const CSV_HEADER = 'Email Address,First Name,Last Name';
@@ -33,7 +34,53 @@ const newsletterCsvUpload = multer({
 }).single('newsletterCsv');
 
 function isNewsletterSubscriber(user) {
-  return Boolean(user && user.public && user.newsletter);
+  if (!user || !user.public || !user.newsletter) {
+    return false;
+  }
+
+  if (userRolesService.hasRestrictedMessagingRole(user)) {
+    return false;
+  }
+
+  if (isProfileDeletionPending(user)) {
+    return false;
+  }
+
+  return true;
+}
+
+function isProfileDeletionPending(user) {
+  if (!user || !user.removeProfileToken) {
+    return false;
+  }
+
+  if (!user.removeProfileExpires) {
+    return true;
+  }
+
+  const expiresAt = new Date(user.removeProfileExpires);
+  if (Number.isNaN(expiresAt.getTime())) {
+    return true;
+  }
+
+  return expiresAt.getTime() > Date.now();
+}
+
+function buildEligibleSubscribersQuery(query = {}) {
+  return {
+    ...query,
+    newsletter: true,
+    public: true,
+    roles: { $nin: userRolesService.restrictedMessagingRoles },
+    $or: [
+      { removeProfileToken: { $exists: false } },
+      { removeProfileToken: null },
+      {
+        removeProfileToken: { $exists: true, $ne: null },
+        removeProfileExpires: { $lte: new Date() },
+      },
+    ],
+  };
 }
 
 function normaliseEmail(value) {
@@ -130,10 +177,11 @@ function extractEmailsFromCsv(csvText) {
 }
 
 exports.list = async (req, res) => {
-  const users = await User.find(
-    { public: true, newsletter: true },
-    { email: 1, firstName: 1, lastName: 1 },
-  ).exec();
+  const users = await User.find(buildEligibleSubscribersQuery(), {
+    email: 1,
+    firstName: 1,
+    lastName: 1,
+  }).exec();
 
   const csv = usersToCSV(users);
   res.set('Content-Type', 'text/csv').send(csv);
@@ -148,23 +196,31 @@ exports.listCircleMembers = async (req, res) => {
     });
   }
 
-  const query = {
-    public: true,
-    'member.tribe': circleId,
-  };
-
-  // Include only newsletter subscribers
-  if (!req?.query?.onlyNewsletterCircleMembers) {
-    query.newsletter = true;
-  }
+  const onlyNewsletterCircleMembers = !req?.query?.onlyNewsletterCircleMembers;
+  const query = onlyNewsletterCircleMembers
+    ? buildEligibleSubscribersQuery({
+        'member.tribe': circleId,
+      })
+    : {
+        public: true,
+        'member.tribe': circleId,
+        roles: { $nin: userRolesService.restrictedMessagingRoles },
+      };
 
   const users = await User.find(query, {
     email: 1,
     firstName: 1,
     lastName: 1,
+    newsletter: 1,
+    public: 1,
+    roles: 1,
+    removeProfileExpires: 1,
+    removeProfileToken: 1,
   }).exec();
 
-  const csv = usersToCSV(users);
+  const csv = usersToCSV(
+    onlyNewsletterCircleMembers ? users.filter(isNewsletterSubscriber) : users,
+  );
   res.set('Content-Type', 'text/csv').send(csv);
 };
 
@@ -221,7 +277,16 @@ exports.splitSubscribers = async (req, res) => {
 
   const users = await User.find(
     { email: { $in: emails } },
-    { email: 1, firstName: 1, lastName: 1, newsletter: 1, public: 1 },
+    {
+      email: 1,
+      firstName: 1,
+      lastName: 1,
+      newsletter: 1,
+      public: 1,
+      removeProfileExpires: 1,
+      removeProfileToken: 1,
+      roles: 1,
+    },
   ).exec();
 
   const usersByEmail = new Map(

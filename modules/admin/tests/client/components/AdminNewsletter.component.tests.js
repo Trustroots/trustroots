@@ -22,6 +22,12 @@ describe('<AdminNewsletter />', () => {
 
     expect(screen.getByText('Newsletter subscribers')).toBeInTheDocument();
     expect(
+      screen.getByRole('button', { name: 'Export all subscribers CSV' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Export circle subscribers CSV' }),
+    ).toBeInTheDocument();
+    expect(
       screen.getByText(
         /split it into two downloadable CSV files: still subscribed and unsubscribed/i,
       ),
@@ -38,6 +44,59 @@ describe('<AdminNewsletter />', () => {
 
     expect(await screen.findByText('Choose a CSV file first.')).toBeVisible();
     expect(newsletterApi.splitNewsletterSubscribers).not.toHaveBeenCalled();
+  });
+
+  it('exports all subscribers CSV', async () => {
+    newsletterApi.getNewsletterSubscribersCsv.mockResolvedValueOnce(
+      'Email Address,First Name,Last Name\nalice@example.com,Alice,Example',
+    );
+    render(<AdminNewsletter />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Export all subscribers CSV' }),
+    );
+
+    await waitFor(() =>
+      expect(newsletterApi.getNewsletterSubscribersCsv).toHaveBeenCalledTimes(
+        1,
+      ),
+    );
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
+    expect(URL.revokeObjectURL).toHaveBeenCalledTimes(1);
+  });
+
+  it('validates circle export input', async () => {
+    render(<AdminNewsletter />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Export circle subscribers CSV' }),
+    );
+
+    expect(await screen.findByText('Enter a circle ID first.')).toBeVisible();
+    expect(
+      newsletterApi.getNewsletterCircleSubscribersCsv,
+    ).not.toHaveBeenCalled();
+  });
+
+  it('exports circle subscribers CSV', async () => {
+    newsletterApi.getNewsletterCircleSubscribersCsv.mockResolvedValueOnce(
+      'Email Address,First Name,Last Name\nalice@example.com,Alice,Example',
+    );
+    render(<AdminNewsletter />);
+
+    fireEvent.change(screen.getByLabelText('Circle ID'), {
+      target: { value: '5fbab4f7fed63c7ed73276d3' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Export circle subscribers CSV' }),
+    );
+
+    await waitFor(() =>
+      expect(
+        newsletterApi.getNewsletterCircleSubscribersCsv,
+      ).toHaveBeenCalledWith('5fbab4f7fed63c7ed73276d3'),
+    );
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
   });
 
   it('uploads and shows download actions for both CSV outputs', async () => {
@@ -107,5 +166,22 @@ describe('<AdminNewsletter />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Split recipients' }));
 
     expect(await screen.findByText('Unsupported file type.')).toBeVisible();
+  });
+
+  it('shows API error text when export fails', async () => {
+    newsletterApi.getNewsletterSubscribersCsv.mockRejectedValueOnce({
+      response: {
+        data: {
+          message: 'Export failed.',
+        },
+      },
+    });
+    render(<AdminNewsletter />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Export all subscribers CSV' }),
+    );
+
+    expect(await screen.findByText('Export failed.')).toBeVisible();
   });
 });
