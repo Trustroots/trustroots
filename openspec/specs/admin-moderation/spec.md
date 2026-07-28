@@ -161,6 +161,7 @@ location context, and allow the available columns to be sorted.
 - **WHEN** an authorised administrator uploads a CSV file of email recipients in the newsletter view
 - **THEN** the system classifies uploaded emails as still subscribed or unsubscribed
 - **AND** the "still subscribed" CSV includes only members who are eligible for newsletter emails
+- **AND** the unsubscribed CSV includes a reason for each excluded recipient
 - **AND** provides one downloadable CSV for still subscribed recipients
 - **AND** provides one downloadable CSV for unsubscribed recipients
 
