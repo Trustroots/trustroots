@@ -108,11 +108,11 @@ describe('Admin Newsletter subscribers API tests', () => {
     );
     body.unsubscribedCsv.should.equal(
       [
-        'Email Address,First Name,Last Name',
-        'inactive@example.com,Inactive,Subscriber',
-        'suspended@example.com,Suspended,Subscriber',
-        'pending-delete@example.com,Pending,Deletion',
-        'missing@example.com,,',
+        'Email Address,First Name,Last Name,Reason',
+        'inactive@example.com,Inactive,Subscriber,Newsletter disabled',
+        'suspended@example.com,Suspended,Subscriber,Account suspended',
+        'pending-delete@example.com,Pending,Deletion,Profile deletion pending',
+        'missing@example.com,,,Email not found',
       ].join('\n'),
     );
 

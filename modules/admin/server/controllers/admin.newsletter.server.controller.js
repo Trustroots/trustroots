@@ -9,7 +9,15 @@ const errorService = require('../../../core/server/services/error.server.service
 const userRolesService = require('../../../users/server/services/user-roles.server.service');
 
 const User = mongoose.model('User');
-const CSV_HEADER = 'Email Address,First Name,Last Name';
+const CSV_COLUMNS = [
+  { key: 'email', label: 'Email Address' },
+  { key: 'firstName', label: 'First Name' },
+  { key: 'lastName', label: 'Last Name' },
+];
+const UNSUBSCRIBED_CSV_COLUMNS = [
+  ...CSV_COLUMNS,
+  { key: 'reason', label: 'Reason' },
+];
 const CSV_CONTENT_TYPES = [
   'application/csv',
   'application/vnd.ms-excel',
@@ -103,21 +111,47 @@ function csvCell(value) {
     .replace(/[,'"]/g, '');
 }
 
-const usersToCSV = users => {
+function rowsToCSV(rows, columns = CSV_COLUMNS) {
   // First CSV line is the header
-  let data = CSV_HEADER;
+  let data = columns.map(({ label }) => csvCell(label)).join(',');
 
-  if (users && users.length > 0) {
-    users.forEach(user => {
+  if (rows && rows.length > 0) {
+    rows.forEach(row => {
       data += '\n';
-      data += [user.email, user.firstName, user.lastName]
-        .map(csvCell)
-        .join(',');
+      data += columns.map(({ key }) => csvCell(row[key])).join(',');
     });
   }
 
   return data;
-};
+}
+
+function getUnsubscribedReason(user) {
+  if (!user) {
+    return 'Email not found';
+  }
+
+  if (userRolesService.hasRole(user, 'suspended')) {
+    return 'Account suspended';
+  }
+
+  if (userRolesService.hasRole(user, 'shadowban')) {
+    return 'Account shadowbanned';
+  }
+
+  if (isProfileDeletionPending(user)) {
+    return 'Profile deletion pending';
+  }
+
+  if (!user.public) {
+    return 'Profile not public';
+  }
+
+  if (!user.newsletter) {
+    return 'Newsletter disabled';
+  }
+
+  return 'Not eligible for newsletter emails';
+}
 
 function parseFirstCsvField(line) {
   let value = '';
@@ -183,7 +217,7 @@ exports.list = async (req, res) => {
     lastName: 1,
   }).exec();
 
-  const csv = usersToCSV(users);
+  const csv = rowsToCSV(users);
   res.set('Content-Type', 'text/csv').send(csv);
 };
 
@@ -218,7 +252,7 @@ exports.listCircleMembers = async (req, res) => {
     removeProfileToken: 1,
   }).exec();
 
-  const csv = usersToCSV(
+  const csv = rowsToCSV(
     onlyNewsletterCircleMembers ? users.filter(isNewsletterSubscriber) : users,
   );
   res.set('Content-Type', 'text/csv').send(csv);
@@ -310,14 +344,17 @@ exports.splitSubscribers = async (req, res) => {
       return;
     }
 
-    unsubscribed.push(userForCsv);
+    unsubscribed.push({
+      ...userForCsv,
+      reason: getUnsubscribedReason(user),
+    });
   });
 
   return res.send({
     subscribedCount: subscribed.length,
-    subscribedCsv: usersToCSV(subscribed),
+    subscribedCsv: rowsToCSV(subscribed),
     totalEmailCount: emails.length,
     unsubscribedCount: unsubscribed.length,
-    unsubscribedCsv: usersToCSV(unsubscribed),
+    unsubscribedCsv: rowsToCSV(unsubscribed, UNSUBSCRIBED_CSV_COLUMNS),
   });
 };

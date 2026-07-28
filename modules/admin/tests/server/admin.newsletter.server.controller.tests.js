@@ -289,12 +289,12 @@ describe('Admin newsletter controller unit tests', () => {
       );
       res.body.unsubscribedCsv.should.equal(
         [
-          'Email Address,First Name,Last Name',
-          'unsubscribed@example.com,Unsubscribed,Member',
-          'private@example.com,Private,Member',
-          'suspended@example.com,Suspended,Member',
-          'pending-delete@example.com,Pending,Deletion',
-          'missing@example.com,,',
+          'Email Address,First Name,Last Name,Reason',
+          'unsubscribed@example.com,Unsubscribed,Member,Newsletter disabled',
+          'private@example.com,Private,Member,Profile not public',
+          'suspended@example.com,Suspended,Member,Account suspended',
+          'pending-delete@example.com,Pending,Deletion,Profile deletion pending',
+          'missing@example.com,,,Email not found',
         ].join('\n'),
       );
     });
