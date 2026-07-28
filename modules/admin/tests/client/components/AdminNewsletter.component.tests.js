@@ -168,6 +168,54 @@ describe('<AdminNewsletter />', () => {
     expect(await screen.findByText('Unsupported file type.')).toBeVisible();
   });
 
+  it('shows fallback error text when splitting fails without API message', async () => {
+    newsletterApi.splitNewsletterSubscribers.mockRejectedValueOnce(
+      new Error('Network issue'),
+    );
+    const file = new File(
+      ['Email Address\nalice@example.com'],
+      'newsletter.csv',
+      {
+        type: 'text/csv',
+      },
+    );
+
+    render(<AdminNewsletter />);
+
+    fireEvent.change(screen.getByLabelText('Newsletter CSV file'), {
+      target: { files: [file] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Split recipients' }));
+
+    expect(
+      await screen.findByText(
+        'Could not split newsletter subscribers from this CSV file.',
+      ),
+    ).toBeVisible();
+  });
+
+  it('clears selected file when file input becomes empty', async () => {
+    const file = new File(
+      ['Email Address\nalice@example.com'],
+      'newsletter.csv',
+      {
+        type: 'text/csv',
+      },
+    );
+    render(<AdminNewsletter />);
+
+    fireEvent.change(screen.getByLabelText('Newsletter CSV file'), {
+      target: { files: [file] },
+    });
+    fireEvent.change(screen.getByLabelText('Newsletter CSV file'), {
+      target: { files: null },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Split recipients' }));
+
+    expect(await screen.findByText('Choose a CSV file first.')).toBeVisible();
+    expect(newsletterApi.splitNewsletterSubscribers).not.toHaveBeenCalled();
+  });
+
   it('shows API error text when export fails', async () => {
     newsletterApi.getNewsletterSubscribersCsv.mockRejectedValueOnce({
       response: {
@@ -183,5 +231,40 @@ describe('<AdminNewsletter />', () => {
     );
 
     expect(await screen.findByText('Export failed.')).toBeVisible();
+  });
+
+  it('shows fallback error text when export all fails without API message', async () => {
+    newsletterApi.getNewsletterSubscribersCsv.mockRejectedValueOnce(
+      new Error('Network issue'),
+    );
+    render(<AdminNewsletter />);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Export all subscribers CSV' }),
+    );
+
+    expect(
+      await screen.findByText('Could not export newsletter subscribers.'),
+    ).toBeVisible();
+  });
+
+  it('shows fallback error text when circle export fails without API message', async () => {
+    newsletterApi.getNewsletterCircleSubscribersCsv.mockRejectedValueOnce(
+      new Error('Network issue'),
+    );
+    render(<AdminNewsletter />);
+
+    fireEvent.change(screen.getByLabelText('Circle ID'), {
+      target: { value: '5fbab4f7fed63c7ed73276d3' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Export circle subscribers CSV' }),
+    );
+
+    expect(
+      await screen.findByText(
+        'Could not export newsletter subscribers for this circle.',
+      ),
+    ).toBeVisible();
   });
 });
