@@ -120,7 +120,7 @@ test.describe('admin moderation page flows', () => {
   test('admin newsletter page loads', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.newsletter-page', [
       'Newsletter admin page loads.',
-      'Unavailable download actions degrade safely because subscriber APIs are disabled.',
+      'Newsletter page includes the CSV upload splitting tool.',
     ]);
 
     await gotoAdminPage(page, '/admin/newsletter', /\/admin\/newsletter/);
@@ -129,5 +129,6 @@ test.describe('admin moderation page flows', () => {
     await expect(
       page.getByRole('heading', { name: /newsletter subscribers/i }),
     ).toBeVisible();
+    await expect(page.getByLabel('Newsletter CSV file')).toBeVisible();
   });
 });

@@ -2816,8 +2816,7 @@ const features = [
     id: 'admin.newsletter-page',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description:
-      'Admins can open the newsletter admin page when still supported.',
+    description: 'Admins can open the newsletter CSV splitter page.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -2835,15 +2834,15 @@ const features = [
     },
     requiredScenarios: [
       'Newsletter admin page loads.',
-      'Unavailable download actions degrade safely because subscriber APIs are disabled.',
+      'Newsletter page includes the CSV upload splitting tool.',
     ],
     relatedSpecs: [spec('admin-pages.spec.js', 'admin newsletter page loads')],
   },
   {
     id: 'admin.newsletter-downloads',
     area: AREA.adminModeration,
-    status: STATUS.excluded,
-    description: 'Disabled newsletter subscriber download APIs.',
+    status: STATUS.active,
+    description: 'Newsletter recipient CSV split and download flow.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -2859,23 +2858,22 @@ const features = [
       ],
       apiRoutes: [
         apiRoute(
-          'GET',
-          '/api/admin/newsletter-subscribers',
+          'POST',
+          '/api/admin/newsletter-subscribers/split',
           source.adminServer,
-          { disabledInSource: true },
-        ),
-        apiRoute(
-          'GET',
-          '/api/admin/newsletter-subscribers/circle',
-          source.adminServer,
-          { disabledInSource: true },
         ),
       ],
     },
-    exclusionReason:
-      'Routes are commented out in the server route module and intentionally disabled.',
-    requiredScenarios: [],
-    relatedSpecs: [],
+    requiredScenarios: [
+      'Admin can upload a newsletter CSV and split recipients by subscription status.',
+      'Split response includes downloadable subscribed and unsubscribed CSV files.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can split newsletter recipients from uploaded CSV',
+      ),
+    ],
   },
   {
     id: 'integration.sparkpost-webhook',

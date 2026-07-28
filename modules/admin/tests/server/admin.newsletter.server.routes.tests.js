@@ -5,31 +5,22 @@ const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-describe.skip('Admin Newsletter subscribers CRUD tests', () => {
+describe('Admin Newsletter subscribers split API tests', () => {
   // Get application
   const app = express.init(mongoose.connection);
   const agent = request.agent(app);
 
-  // One public user without newsletter subscription
-  // One private user with newsletter subscription
-  // Two public users with newsletter subscription
-  // => API result should have two users listed
-  const _users = utils.generateUsers(4, { newsletter: true, public: true });
+  const _users = utils.generateUsers(4, { newsletter: false, public: true });
   _users[0].roles = ['user', 'admin'];
-  _users[0].newsletter = false;
-  _users[1].public = false;
+  _users[2].email = 'active@example.com';
+  _users[2].firstName = 'Active';
+  _users[2].lastName = 'Subscriber';
+  _users[2].newsletter = true;
 
-  // Test for non-alloed characters; they should get stripped out
-  _users[2].firstName = "First o'name";
-  _users[2].lastName = 'Last," name ';
-  _users[3].firstName = 'First name';
-  _users[3].lastName = 'Last name ';
-  _users[3].member = [
-    {
-      tribe: new mongoose.Types.ObjectId('5fbab4f7fed63c7ed73276d3'),
-      since: new Date(),
-    },
-  ];
+  _users[3].email = 'inactive@example.com';
+  _users[3].firstName = 'Inactive';
+  _users[3].lastName = 'Subscriber';
+  _users[3].newsletter = false;
 
   const adminAuth = {
     username: _users[0].username,
@@ -41,75 +32,80 @@ describe.skip('Admin Newsletter subscribers CRUD tests', () => {
     password: _users[1].password,
   };
 
-  let users;
-
   before(async () => {
-    users = await utils.saveUsers(_users);
+    await utils.saveUsers(_users);
   });
 
   after(utils.clearDatabase);
 
-  it('non-authenticated users should not be allowed to read newsletter subscribers', async () => {
-    await agent.get('/api/admin/newsletter-subscribers').expect(403);
+  it('non-authenticated users should not be allowed to split subscribers', async () => {
+    await agent.post('/api/admin/newsletter-subscribers/split').expect(403);
   });
 
-  it('non-admin users should not be allowed to read newsletter subscribers', async () => {
+  it('non-admin users should not be allowed to split subscribers', async () => {
     await utils.signIn(nonAdminAuth, agent);
-    await agent.get('/api/admin/newsletter-subscribers').expect(403);
+    await agent.post('/api/admin/newsletter-subscribers/split').expect(403);
     await utils.signOut(agent);
   });
 
-  it('admin users should be allowed to read newsletter subscribers', async () => {
+  it('admin users can split uploaded subscribers into two CSV exports', async () => {
     await utils.signIn(adminAuth, agent);
 
-    const { type, text } = await agent
-      .get('/api/admin/newsletter-subscribers')
-      .expect(200);
-
-    type.should.equal('text/csv');
-
-    const lines = text.split('\n');
-    lines.length.should.equal(3);
-    lines[0].should.equal('Email Address,First Name,Last Name');
-    lines[1].should.equal(`${users[2].email},First oname,Last name`);
-    lines[2].should.equal(`${users[3].email},First name,Last name`);
-
-    await utils.signOut(agent);
-  });
-
-  it('non-authenticated users should not be allowed to read newsletter subscribers', async () => {
-    await agent
-      .get(
-        '/api/admin/newsletter-subscribers/circle?circle=5fbab4f7fed63c7ed73276d3',
-      )
-      .expect(403);
-  });
-
-  it('non-admin users should not be allowed to read newsletter subscribers for a circle', async () => {
-    await utils.signIn(nonAdminAuth, agent);
-    await agent
-      .get(
-        '/api/admin/newsletter-subscribers/circle?circle=5fbab4f7fed63c7ed73276d3',
-      )
-      .expect(403);
-    await utils.signOut(agent);
-  });
-
-  it('admin users should be allowed to read newsletter subscribers for a circle', async () => {
-    await utils.signIn(adminAuth, agent);
-
-    const { type, text } = await agent
-      .get(
-        '/api/admin/newsletter-subscribers/circle?circleId=5fbab4f7fed63c7ed73276d3',
+    const { body } = await agent
+      .post('/api/admin/newsletter-subscribers/split')
+      .attach(
+        'newsletterCsv',
+        Buffer.from(
+          [
+            'Email Address',
+            'active@example.com',
+            'inactive@example.com',
+            'missing@example.com',
+          ].join('\n'),
+        ),
+        'newsletter.csv',
       )
       .expect(200);
 
-    type.should.equal('text/csv');
+    body.totalEmailCount.should.equal(3);
+    body.subscribedCount.should.equal(1);
+    body.unsubscribedCount.should.equal(2);
+    body.subscribedCsv.should.equal(
+      'Email Address,First Name,Last Name\nactive@example.com,Active,Subscriber',
+    );
+    body.unsubscribedCsv.should.equal(
+      [
+        'Email Address,First Name,Last Name',
+        'inactive@example.com,Inactive,Subscriber',
+        'missing@example.com,,',
+      ].join('\n'),
+    );
 
-    const lines = text.split('\n');
-    lines.length.should.equal(2);
-    lines[0].should.equal('Email Address,First Name,Last Name');
-    lines[1].should.equal(`${users[3].email},First name,Last name`);
+    await utils.signOut(agent);
+  });
+
+  it('admin users receive validation errors for missing CSV uploads', async () => {
+    await utils.signIn(adminAuth, agent);
+
+    await agent.post('/api/admin/newsletter-subscribers/split').expect(422);
+
+    await utils.signOut(agent);
+  });
+
+  it('admin users receive unsupported media errors for non-csv files', async () => {
+    await utils.signIn(adminAuth, agent);
+
+    const response = await agent
+      .post('/api/admin/newsletter-subscribers/split')
+      .attach('newsletterCsv', Buffer.from('{}'), {
+        contentType: 'application/json',
+        filename: 'newsletter.json',
+      })
+      .expect(415);
+
+    response.body.message.should.equal(
+      'Please upload a file that is in correct format.',
+    );
 
     await utils.signOut(agent);
   });

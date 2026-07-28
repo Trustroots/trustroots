@@ -177,4 +177,97 @@ describe('Admin newsletter controller unit tests', () => {
       lines.length.should.equal(3);
     });
   });
+
+  describe('splitSubscribers', () => {
+    it('responds with 422 when no CSV upload is present', async () => {
+      const res = mockResponse();
+
+      await adminNewsletter.splitSubscribers({}, res);
+
+      res.statusCode.should.equal(422);
+      res.body.message.should.equal(
+        errorService.getErrorMessageByKey('unprocessable-entity'),
+      );
+    });
+
+    it('responds with 400 when uploaded CSV contains no valid emails', async () => {
+      const res = mockResponse();
+
+      await adminNewsletter.splitSubscribers(
+        {
+          file: {
+            buffer: Buffer.from(
+              'Email Address\nnot-an-email\nstill-not-an-email',
+            ),
+          },
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Could not find any email addresses in the uploaded CSV file.',
+      );
+    });
+
+    it('splits uploaded recipients into subscribed and unsubscribed CSV files', async () => {
+      const _users = utils.generateUsers(3, {
+        public: true,
+        newsletter: false,
+      });
+      _users[0].email = 'subscribed@example.com';
+      _users[0].firstName = 'Subscribed';
+      _users[0].lastName = 'Member';
+      _users[0].newsletter = true;
+
+      _users[1].email = 'unsubscribed@example.com';
+      _users[1].firstName = 'Unsubscribed';
+      _users[1].lastName = 'Member';
+      _users[1].newsletter = false;
+
+      // Non-public users are treated as unsubscribed in this tool.
+      _users[2].email = 'private@example.com';
+      _users[2].firstName = 'Private';
+      _users[2].lastName = 'Member';
+      _users[2].newsletter = true;
+      _users[2].public = false;
+
+      await utils.saveUsers(_users);
+
+      const res = mockResponse();
+      await adminNewsletter.splitSubscribers(
+        {
+          file: {
+            buffer: Buffer.from(
+              [
+                'Email Address',
+                'subscribed@example.com',
+                'unsubscribed@example.com',
+                'private@example.com',
+                'missing@example.com',
+                'SUBSCRIBED@example.com',
+              ].join('\n'),
+            ),
+          },
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.totalEmailCount.should.equal(4);
+      res.body.subscribedCount.should.equal(1);
+      res.body.unsubscribedCount.should.equal(3);
+      res.body.subscribedCsv.should.equal(
+        'Email Address,First Name,Last Name\nsubscribed@example.com,Subscribed,Member',
+      );
+      res.body.unsubscribedCsv.should.equal(
+        [
+          'Email Address,First Name,Last Name',
+          'unsubscribed@example.com,Unsubscribed,Member',
+          'private@example.com,Private,Member',
+          'missing@example.com,,',
+        ].join('\n'),
+      );
+    });
+  });
 });

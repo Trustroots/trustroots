@@ -506,6 +506,10 @@ describe('API route registrations', () => {
     );
     const auditLog = controller(['list', 'record'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
+    const newsletter = controller(
+      ['splitSubscribers', 'uploadSubscribersCsv'],
+      'adminNewsletter',
+    );
     const notes = controller(['addNote', 'getNotes'], 'adminNotes');
     const referenceThreads = controller(['list'], 'adminReferenceThreads');
     const threads = controller(['getThreads'], 'adminThreads');
@@ -527,6 +531,7 @@ describe('API route registrations', () => {
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
         '../controllers/admin.messages.server.controller': messages,
+        '../controllers/admin.newsletter.server.controller': newsletter,
         '../controllers/admin.notes.server.controller': notes,
         '../controllers/admin.reference-threads.server.controller':
           referenceThreads,
@@ -584,6 +589,14 @@ describe('API route registrations', () => {
       auditLog.record,
       referenceThreads.list,
     ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/split').post,
+      [
+        auditLog.record,
+        newsletter.uploadSubscribersCsv,
+        newsletter.splitSubscribers,
+      ],
+    );
     routes.forEach(route => assertPolicy(route, policy));
   });
 
