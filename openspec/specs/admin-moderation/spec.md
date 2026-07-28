@@ -156,7 +156,9 @@ location context, and allow the available columns to be sorted.
 - **WHEN** an authorised administrator opens an available operational view
 - **THEN** the requested view displays its available data
 
-#### Scenario: Administrator requests unavailable newsletter subscriber data
+#### Scenario: Administrator splits uploaded newsletter CSV recipients
 
-- **WHEN** an authorised administrator requests newsletter subscriber data while the subscriber API is unavailable
-- **THEN** the system fails safely without exposing subscriber data
+- **WHEN** an authorised administrator uploads a CSV file of email recipients in the newsletter view
+- **THEN** the system classifies uploaded emails as still subscribed or unsubscribed
+- **AND** provides one downloadable CSV for still subscribed recipients
+- **AND** provides one downloadable CSV for unsubscribed recipients
