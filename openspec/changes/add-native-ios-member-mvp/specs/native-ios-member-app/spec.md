@@ -198,7 +198,15 @@ enabled by default, and disabling a layer SHALL remove its annotations.
 
 - **WHEN** the member opens native search with default filters
 - **THEN** authorised host and meetup offers are requested
+- **AND** offers are limited to members seen within the past six months
 - **AND** verified Community Notes are loaded from the Trustroots Nostr relay
+
+#### Scenario: Member changes the recent-login filter
+
+- **WHEN** the member disables Logged in within 6 months
+- **THEN** the offer search uses the website-compatible 24-month window
+- **AND** the member can restore the default six-month window from the same
+  native filter sheet
 
 #### Scenario: Member disables a map layer
 
@@ -286,6 +294,35 @@ by sending the first message, without leaving that profile for the website.
   session
 - **THEN** the previously assembled contact, recommendation and active-member
   groups appear without repeating the full lookup
+
+### Requirement: Native member safety actions
+
+Native member profiles SHALL let a signed-in member report or block another
+member through the established support and blocked-member routes without
+opening the website. The app SHALL clearly confirm blocking before changing the
+relationship and SHALL keep reporting and blocking as independent actions.
+
+#### Scenario: Member reports another member
+
+- **WHEN** a signed-in member selects Report member on another member's profile
+- **THEN** the app presents a native form identifying the reported member
+- **AND** submits the member's description through the existing `/api/support`
+  route with the reported username
+- **AND** confirms that the report was sent
+
+#### Scenario: Member blocks another member
+
+- **WHEN** a signed-in member confirms Block member on another member's profile
+- **THEN** the app uses the existing `/api/blocked-users/:username` route
+- **AND** indicates that the member is blocked
+- **AND** no longer offers to start or continue a conversation with that member
+
+#### Scenario: Member unblocks another member
+
+- **WHEN** a signed-in member confirms Unblock member on a blocked member's
+  profile
+- **THEN** the app removes the block through the existing blocked-member route
+- **AND** restores the permitted messaging action
 
 ### Requirement: Configured member avatars
 

@@ -811,7 +811,8 @@ final class TrustrootsAPI {
         serverURLString: String,
         in region: MKCoordinateRegion,
         types: [String] = ["host"],
-        tribeIDs: [String] = []
+        tribeIDs: [String] = [],
+        seenWithinMonths: Int = 6
     ) async throws -> [MapOffer] {
         let latitudeDelta = region.span.latitudeDelta / 2
         let longitudeDelta = region.span.longitudeDelta / 2
@@ -825,7 +826,8 @@ final class TrustrootsAPI {
                 URLQueryItem(name: "northEastLng", value: String(region.center.longitude + longitudeDelta)),
                 URLQueryItem(
                     name: "filters",
-                    value: "{\"types\":\(types.jsonArray),\"tribes\":\(tribeIDs.jsonArray)}"
+                    value: "{\"types\":\(types.jsonArray),\"tribes\":\(tribeIDs.jsonArray),"
+                        + "\"seen\":{\"months\":\(seenWithinMonths)}}"
                 ),
             ]
         )
@@ -978,7 +980,11 @@ final class TrustrootsAPI {
         }
     }
 
-    func sendSupportMessage(serverURLString: String, message: String) async throws {
+    func sendSupportMessage(
+        serverURLString: String,
+        message: String,
+        reportMember: String? = nil
+    ) async throws {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
@@ -987,7 +993,50 @@ final class TrustrootsAPI {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try encoder.encode(["message": message])
+        var body = ["message": message]
+        if let reportMember, !reportMember.isEmpty {
+            body["reportMember"] = reportMember
+        }
+        request.httpBody = try encoder.encode(body)
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw TrustrootsAPIError.invalidResponse
+            }
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                throw decodedError(from: data, statusCode: httpResponse.statusCode)
+            }
+        } catch let error as TrustrootsAPIError {
+            throw error
+        } catch {
+            throw TrustrootsAPIError.requestFailed(error.localizedDescription)
+        }
+    }
+
+    func blockedMembers(serverURLString: String) async throws -> [MiniMember] {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/blocked-users"
+        )
+    }
+
+    func setMemberBlocked(
+        serverURLString: String,
+        username: String,
+        blocked: Bool
+    ) async throws {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        var request = URLRequest(
+            url: configuration.baseURL
+                .appendingPathComponent("api/blocked-users")
+                .appendingPathComponent(username)
+        )
+        authorise(&request)
+        request.httpMethod = blocked ? "PUT" : "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         do {
             let (data, response) = try await session.data(for: request)

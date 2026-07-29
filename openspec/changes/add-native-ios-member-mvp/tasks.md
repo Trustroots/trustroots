@@ -27,6 +27,8 @@
       proposal.
 - [x] 2.5.3 Enable Meetups by default and add the website-compatible,
       validator-approved Community Notes via Nostroots map layer.
+- [x] 2.5.4 Default map results to members seen within six months and provide
+      the website-compatible toggle between six- and 24-month windows.
 - [ ] 2.6 Implement inbox, paginated conversation history, sending replies,
       unread state, and protected/empty/error states.
 - [ ] 2.6.1 Add native local filtering for loaded conversations and circles.
@@ -49,6 +51,8 @@
 - [x] 2.11 Show the existing last-seen and reply statistics on native profiles,
       and let a member open or begin the existing native conversation with
       another member directly from their profile.
+- [x] 2.12 Let a member report, block and unblock another member from a native
+      profile through the existing support and blocked-member routes.
 
 ## 3. TestFlight readiness
 
