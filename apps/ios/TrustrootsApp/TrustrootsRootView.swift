@@ -57,6 +57,8 @@ struct TrustrootsRootView: View {
                             )
                         case .contacts:
                             ContactsView(session: session)
+                        case .memberSearch:
+                            MemberSearchView(session: session)
                         case .support:
                             ContactSupportView(session: session) {
                                 browserRoute = .website(path: "/faq", title: "Frequently asked questions")
@@ -312,6 +314,7 @@ private enum TrustrootsDestination: CaseIterable {
     case profile
     case editProfile
     case contacts
+    case memberSearch
     case support
     case account
     case search
@@ -324,6 +327,7 @@ private enum TrustrootsDestination: CaseIterable {
         case .profile: return "Profile"
         case .editProfile: return "Edit profile"
         case .contacts: return "Contacts"
+        case .memberSearch: return "Find members"
         case .support: return "Contact and support"
         case .account: return "Account"
         case .search: return "Search"
@@ -338,6 +342,7 @@ private enum TrustrootsDestination: CaseIterable {
         case .profile: return "person.2.fill"
         case .editProfile: return "pencil"
         case .contacts: return "person.2.fill"
+        case .memberSearch: return "person.crop.circle.badge.magnifyingglass"
         case .support: return "questionmark.circle"
         case .account: return "person.crop.circle"
         case .search: return "magnifyingglass"
@@ -352,6 +357,7 @@ private enum TrustrootsDestination: CaseIterable {
         case .profile: return "/ios/profile"
         case .editProfile: return "/ios/profile/edit"
         case .contacts: return "/ios/contacts"
+        case .memberSearch: return "/ios/search/members"
         case .support: return "/ios/support"
         case .account: return "/ios/account"
         case .search: return "/ios/search"
@@ -477,7 +483,7 @@ private struct MoreView: View {
                     selectDestination(.contacts)
                 }
                 Button {
-                    openBrowser(.website(path: "/search/members", title: "Find members"))
+                    selectDestination(.memberSearch)
                 } label: {
                     Label("Find members", systemImage: "person.crop.circle.badge.magnifyingglass")
                 }
