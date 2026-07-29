@@ -14,6 +14,11 @@ struct MemberProfileView: View {
     @State private var showAllExperiences = false
     @State private var errorMessage: String?
     @State private var isLoading = false
+    @State private var isBlocked = false
+    @State private var isUpdatingBlock = false
+    @State private var showBlockConfirmation = false
+    @State private var showReportMember = false
+    @State private var safetyErrorMessage: String?
 
     private let api = TrustrootsAPI()
 
@@ -125,6 +130,38 @@ struct MemberProfileView: View {
                                 .tint(TrustrootsPalette.green)
                             }
 
+                            if !isOwnProfile(profile), !isBlocked, let memberID = profile.id {
+                                NavigationLink {
+                                    ConversationView(
+                                        otherMember: MiniMember(
+                                            id: memberID,
+                                            username: profile.username,
+                                            displayName: profile.displayName
+                                        ),
+                                        session: session
+                                    )
+                                } label: {
+                                    VStack(spacing: 3) {
+                                        Label("Message", systemImage: "bubble.left.and.bubble.right.fill")
+                                            .font(.subheadline.weight(.semibold))
+                                        Text("Open or start a conversation")
+                                            .font(.caption)
+                                            .opacity(0.85)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 9)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(TrustrootsPalette.green)
+                                .accessibilityLabel("Open or start a conversation with \(profile.displayName)")
+                            }
+
+                            ProfileActivityView(
+                                seen: profile.seen,
+                                replyRate: profile.replyRate,
+                                replyTime: profile.replyTime
+                            )
+
                             if profile.locationLiving != nil || profile.locationFrom != nil {
                                 VStack(alignment: .leading, spacing: 10) {
                                     if let living = profile.locationLiving, !living.isEmpty {
@@ -226,6 +263,10 @@ struct MemberProfileView: View {
                                     }
                                 }
                             }
+
+                            if !isOwnProfile(profile) {
+                                memberSafetySection(profile)
+                            }
                         }
                         .padding(20)
                     }
@@ -255,6 +296,37 @@ struct MemberProfileView: View {
             .onReceive(NotificationCenter.default.publisher(for: .trustrootsReturnToMap)) { _ in
                 dismiss()
             }
+            .sheet(isPresented: $showReportMember) {
+                if let profile {
+                    ReportMemberView(
+                        session: session,
+                        username: profile.username,
+                        displayName: profile.displayName
+                    )
+                }
+            }
+            .confirmationDialog(
+                isBlocked ? "Unblock this member?" : "Block this member?",
+                isPresented: $showBlockConfirmation,
+                titleVisibility: .visible
+            ) {
+                if isBlocked {
+                    Button("Unblock member") {
+                        Task { await updateBlock(blocked: false) }
+                    }
+                } else {
+                    Button("Block member", role: .destructive) {
+                        Task { await updateBlock(blocked: true) }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                if isBlocked {
+                    Text("They will be able to see your profile and message you again.")
+                } else {
+                    Text("They will no longer be able to see your profile or message you.")
+                }
+            }
     }
 
     private var shouldOpenCanonicalOwnProfile: Bool {
@@ -262,6 +334,11 @@ struct MemberProfileView: View {
               let username,
               let signedInUsername = session.member?.username else { return false }
         return username.caseInsensitiveCompare(signedInUsername) == .orderedSame
+    }
+
+    private func isOwnProfile(_ profile: MemberProfile) -> Bool {
+        guard let signedInUsername = session.member?.username else { return false }
+        return profile.username.caseInsensitiveCompare(signedInUsername) == .orderedSame
     }
 
     private func loadProfile() async {
@@ -273,6 +350,17 @@ struct MemberProfileView: View {
         do {
             let loadedProfile = try await api.profile(serverURLString: session.serverURLString, username: username)
             profile = loadedProfile
+            if !isOwnProfile(loadedProfile) {
+                let blockedMembers = (try? await api.blockedMembers(
+                    serverURLString: session.serverURLString
+                )) ?? []
+                isBlocked = blockedMembers.contains { member in
+                    if let memberID = member.id, let loadedID = loadedProfile.id {
+                        return memberID == loadedID
+                    }
+                    return member.username?.caseInsensitiveCompare(loadedProfile.username) == .orderedSame
+                }
+            }
             if let userID = loadedProfile.id {
                 async let loadedContacts = api.contacts(serverURLString: session.serverURLString, userID: userID)
                 async let loadedExperiences = api.experiences(serverURLString: session.serverURLString, userID: userID)
@@ -286,6 +374,74 @@ struct MemberProfileView: View {
             }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private func memberSafetySection(_ profile: MemberProfile) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Divider()
+
+            if isBlocked {
+                Text("You have blocked \(profile.displayName).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 18) {
+                Button {
+                    showReportMember = true
+                } label: {
+                    Label("Report member", systemImage: "flag")
+                }
+                .foregroundStyle(.secondary)
+
+                Button(role: isBlocked ? nil : .destructive) {
+                    showBlockConfirmation = true
+                } label: {
+                    if isUpdatingBlock {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Label(
+                            isBlocked ? "Unblock" : "Block",
+                            systemImage: isBlocked ? "hand.raised.slash" : "hand.raised"
+                        )
+                    }
+                }
+                .foregroundStyle(isBlocked ? Color.secondary : Color.red)
+                .disabled(isUpdatingBlock)
+
+                Spacer()
+            }
+            .font(.footnote)
+            .buttonStyle(.plain)
+            .frame(minHeight: 32)
+
+            if let safetyErrorMessage {
+                Text(safetyErrorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
+    }
+
+    private func updateBlock(blocked: Bool) async {
+        guard !isUpdatingBlock, let profile else { return }
+        isUpdatingBlock = true
+        safetyErrorMessage = nil
+        defer { isUpdatingBlock = false }
+
+        do {
+            try await api.setMemberBlocked(
+                serverURLString: session.serverURLString,
+                username: profile.username,
+                blocked: blocked
+            )
+            isBlocked = blocked
+        } catch {
+            safetyErrorMessage = error.localizedDescription
         }
     }
 
@@ -355,6 +511,180 @@ struct MemberProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct ReportMemberView: View {
+    @Environment(\.dismiss) private var dismiss
+    @ObservedObject var session: MemberSessionStore
+    let username: String
+    let displayName: String
+    @State private var message = ""
+    @State private var isSending = false
+    @State private var isSent = false
+    @State private var errorMessage: String?
+    @FocusState private var messageIsFocused: Bool
+
+    private let api = TrustrootsAPI()
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if isSent {
+                    ContentUnavailableView(
+                        "Report sent",
+                        systemImage: "checkmark.circle.fill",
+                        description: Text("Thank you. The Trustroots support team will review your report.")
+                    )
+                } else {
+                    Form {
+                        Section("Reporting") {
+                            LabeledContent("Member", value: "\(displayName) (@\(username))")
+                        }
+
+                        Section {
+                            TextEditor(text: $message)
+                                .frame(minHeight: 150)
+                                .focused($messageIsFocused)
+                                .accessibilityLabel("Describe your concern")
+                        } header: {
+                            Text("What happened?")
+                        } footer: {
+                            Text("Please include enough detail for the support team to understand and investigate.")
+                        }
+
+                        if let errorMessage {
+                            Section {
+                                Text(errorMessage)
+                                    .foregroundStyle(.red)
+                            }
+                        }
+
+                        Section {
+                            Button {
+                                Task { await sendReport() }
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    if isSending {
+                                        ProgressView()
+                                    } else {
+                                        Label("Send report", systemImage: "flag.fill")
+                                    }
+                                    Spacer()
+                                }
+                            }
+                            .disabled(
+                                message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                    || isSending
+                            )
+                        } footer: {
+                            Text("If anyone is in immediate danger or a crime has occurred, contact local emergency services.")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Report member")
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled(isSending)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(isSent ? "Done" : "Cancel") {
+                        dismiss()
+                    }
+                    .disabled(isSending)
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") {
+                        messageIsFocused = false
+                    }
+                }
+            }
+        }
+    }
+
+    private func sendReport() async {
+        guard !isSending else { return }
+        let trimmedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedMessage.isEmpty else { return }
+        isSending = true
+        errorMessage = nil
+        messageIsFocused = false
+        defer { isSending = false }
+
+        do {
+            try await api.sendSupportMessage(
+                serverURLString: session.serverURLString,
+                message: trimmedMessage,
+                reportMember: username
+            )
+            message = ""
+            isSent = true
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+}
+
+private struct ProfileActivityView: View {
+    let seen: Date?
+    let replyRate: String?
+    let replyTime: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Activity")
+                .font(.headline)
+
+            activityRow(
+                systemImage: "clock.arrow.circlepath",
+                title: "Last login",
+                value: seen?.formatted(.relative(presentation: .named)) ?? "Long ago"
+            )
+            activityRow(
+                systemImage: "arrowshape.turn.up.left.fill",
+                title: "Reply rate",
+                value: nonEmpty(replyRate) ?? "Not available yet"
+            )
+            if let replyTime = nonEmpty(replyTime) {
+                activityRow(
+                    systemImage: "timer",
+                    title: "Usually replies",
+                    value: "Within \(replyTime)"
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(TrustrootsPalette.paleGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func activityRow(
+        systemImage: String,
+        title: String,
+        value: String
+    ) -> some View {
+        HStack(spacing: 11) {
+            Image(systemName: systemImage)
+                .foregroundStyle(TrustrootsPalette.darkGreen)
+                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+            }
+            Spacer()
+        }
+    }
+
+    private func nonEmpty(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmed, !trimmed.isEmpty else { return nil }
+        return trimmed
     }
 }
 

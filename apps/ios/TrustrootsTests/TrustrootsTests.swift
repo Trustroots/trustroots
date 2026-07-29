@@ -1,3 +1,4 @@
+import MapKit
 import XCTest
 @testable import Trustroots
 
@@ -179,6 +180,49 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(offer.coordinate?.longitude, -9.1393)
     }
 
+    func testOfferSearchDefaultsToMembersSeenWithinSixMonths() async throws {
+        let credentialStore = InMemorySessionCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+        ))
+
+        var recordedRequest: URLRequest?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"features":[]}"#.utf8))
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore
+        )
+
+        _ = try await api.searchOffers(
+            serverURLString: "https://api.example.test",
+            in: MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 38.72, longitude: -9.14),
+                span: MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+            )
+        )
+
+        let filtersValue = URLComponents(
+            url: try XCTUnwrap(recordedRequest?.url),
+            resolvingAgainstBaseURL: false
+        )?.queryItems?.first(where: { $0.name == "filters" })?.value
+        let filtersData = try XCTUnwrap(filtersValue?.data(using: .utf8))
+        let filters = try JSONSerialization.jsonObject(with: filtersData) as? [String: Any]
+        let seen = filters?["seen"] as? [String: Any]
+
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/offers")
+        XCTAssertEqual(seen?["months"] as? Int, 6)
+    }
+
     func testAboutRouteUsesTheDedicatedWebsitePage() {
         XCTAssertEqual(
             TrustrootsBrowserRoute.website(path: "/about", title: "About Trustroots").url.path,
@@ -261,7 +305,9 @@ final class TrustrootsTests: XCTestCase {
             )!
             return (
                 response,
-                Data(#"{"username":"traveller","displayName":"A Traveller","public":true}"#.utf8)
+                Data(
+                    #"{"username":"traveller","displayName":"A Traveller","public":true,"seen":"2026-07-29T12:00:00Z","replyRate":"82%","replyTime":"4 hours"}"#.utf8
+                )
             )
         }
         defer { APIURLProtocol.handler = nil }
@@ -276,6 +322,9 @@ final class TrustrootsTests: XCTestCase {
         let member = try await api.currentMember(serverURLString: "https://api.example.test")
 
         XCTAssertEqual(member.username, "traveller")
+        XCTAssertNotNil(member.seen)
+        XCTAssertEqual(member.replyRate, "82%")
+        XCTAssertEqual(member.replyTime, "4 hours")
         XCTAssertEqual(recordedRequest?.url?.path, "/api/users/traveller")
         XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
         XCTAssertNil(recordedRequest?.value(forHTTPHeaderField: "Authorization"))
@@ -326,6 +375,80 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(members.first?.username, "alex")
         XCTAssertEqual(members.first?.displayName, "Alex Traveller")
         XCTAssertEqual(members.first?.locationSummary, "Lisbon")
+    }
+
+    func testMemberReportUsesExistingSupportRouteWithReportedUsername() async throws {
+        let credentialStore = InMemorySessionCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+        ))
+
+        var recordedRequest: URLRequest?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"message":"Support request sent."}"#.utf8))
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore
+        )
+
+        try await api.sendSupportMessage(
+            serverURLString: "https://api.example.test",
+            message: "This profile contains abusive content.",
+            reportMember: "reported-member"
+        )
+
+        let body = try JSONDecoder().decode(
+            [String: String].self,
+            from: try XCTUnwrap(recordedRequest?.httpBody)
+        )
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/support")
+        XCTAssertEqual(recordedRequest?.httpMethod, "POST")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        XCTAssertEqual(body["reportMember"], "reported-member")
+        XCTAssertEqual(body["message"], "This profile contains abusive content.")
+    }
+
+    func testMemberBlockUsesExistingBlockedMemberRoute() async throws {
+        let credentialStore = InMemorySessionCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+        ))
+
+        var recordedRequest: URLRequest?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data("Member added to block list.".utf8))
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore
+        )
+
+        try await api.setMemberBlocked(
+            serverURLString: "https://api.example.test",
+            username: "reported-member",
+            blocked: true
+        )
+
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/blocked-users/reported-member")
+        XCTAssertEqual(recordedRequest?.httpMethod, "PUT")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
     }
 
     func testAccommodationUsesExistingOfferByUserRoute() async throws {

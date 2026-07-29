@@ -15,7 +15,8 @@ authorisation and visibility behaviour.
   keep the signed session cookie in the iOS Keychain and call the established
   `/api/*` resources.
 - Deliver native profile, member-search, circle, offer-search, contacts,
-  experiences, messaging, account and support interfaces.
+  experiences, messaging, account and support interfaces, including the
+  established member-reporting and blocking safeguards.
 - Keep confirmation and password recovery in an allowlisted `WKWebView`
   because those are existing website flows.
 - Add a permissioned NIP-07 bridge for approved Trustroots and Hitchwiki HTTPS

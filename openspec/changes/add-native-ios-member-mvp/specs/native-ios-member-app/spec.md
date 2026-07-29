@@ -198,7 +198,15 @@ enabled by default, and disabling a layer SHALL remove its annotations.
 
 - **WHEN** the member opens native search with default filters
 - **THEN** authorised host and meetup offers are requested
+- **AND** offers are limited to members seen within the past six months
 - **AND** verified Community Notes are loaded from the Trustroots Nostr relay
+
+#### Scenario: Member changes the recent-login filter
+
+- **WHEN** the member disables Logged in within 6 months
+- **THEN** the offer search uses the website-compatible 24-month window
+- **AND** the member can restore the default six-month window from the same
+  native filter sheet
 
 #### Scenario: Member disables a map layer
 
@@ -246,12 +254,75 @@ using the established offer-by-user endpoint.
 - **AND** the experience section summarises recommendation, meeting and
   hosting percentages from the loaded experiences
 
+### Requirement: Native profile activity and messaging
+
+Native member profiles SHALL display the existing public last-seen and reply
+statistics returned by the protected profile route. A signed-in member SHALL be
+able to open the existing native conversation with another member, or begin it
+by sending the first message, without leaving that profile for the website.
+
+#### Scenario: Profile has activity and reply statistics
+
+- **WHEN** a member opens a profile whose response includes `seen`,
+  `replyRate`, or `replyTime`
+- **THEN** the profile displays the available last-login, reply-rate and
+  typical-reply-time information
+- **AND** does not derive or request additional private activity data
+
+#### Scenario: Profile has no reply statistics
+
+- **WHEN** a member opens a profile whose reply statistics are empty
+- **THEN** the profile explains that reply data is not available yet
+- **AND** remains otherwise fully usable
+
+#### Scenario: Member opens messaging from another profile
+
+- **WHEN** a signed-in member selects the profile's conversation action
+- **THEN** the app opens the existing native conversation and displays its
+  history
+- **AND** if the conversation is empty, provides the composer that creates the
+  thread when the first message is sent
+
+#### Scenario: Member views their own profile
+
+- **WHEN** the signed-in member opens their own profile
+- **THEN** the app does not offer a conversation with themselves
+
 #### Scenario: Member returns to a circle
 
 - **WHEN** a member revisits a recently loaded circle during the same app
   session
 - **THEN** the previously assembled contact, recommendation and active-member
   groups appear without repeating the full lookup
+
+### Requirement: Native member safety actions
+
+Native member profiles SHALL let a signed-in member report or block another
+member through the established support and blocked-member routes without
+opening the website. The app SHALL clearly confirm blocking before changing the
+relationship and SHALL keep reporting and blocking as independent actions.
+
+#### Scenario: Member reports another member
+
+- **WHEN** a signed-in member selects Report member on another member's profile
+- **THEN** the app presents a native form identifying the reported member
+- **AND** submits the member's description through the existing `/api/support`
+  route with the reported username
+- **AND** confirms that the report was sent
+
+#### Scenario: Member blocks another member
+
+- **WHEN** a signed-in member confirms Block member on another member's profile
+- **THEN** the app uses the existing `/api/blocked-users/:username` route
+- **AND** indicates that the member is blocked
+- **AND** no longer offers to start or continue a conversation with that member
+
+#### Scenario: Member unblocks another member
+
+- **WHEN** a signed-in member confirms Unblock member on a blocked member's
+  profile
+- **THEN** the app removes the block through the existing blocked-member route
+- **AND** restores the permitted messaging action
 
 ### Requirement: Configured member avatars
 

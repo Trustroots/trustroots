@@ -14,6 +14,7 @@ struct OfferMapView: View {
     @State private var showingFilters = false
     @State private var showingHosts = true
     @State private var showingCommunityNotes = true
+    @State private var onlineInPastSixMonths = true
     @State private var circles: [TrustrootsCircle] = []
     @State private var selectedCircleIDs: Set<String> = []
     @State private var searchGeneration = 0
@@ -162,6 +163,7 @@ struct OfferMapView: View {
                 MapFilterSheet(
                     showingHosts: $showingHosts,
                     showingCommunityNotes: $showingCommunityNotes,
+                    onlineInPastSixMonths: $onlineInPastSixMonths,
                     circles: circles,
                     selectedCircleIDs: $selectedCircleIDs
                 )
@@ -215,7 +217,8 @@ struct OfferMapView: View {
                 serverURLString: session.serverURLString,
                 in: region,
                 types: types,
-                tribeIDs: selectedCircleIDs.sorted()
+                tribeIDs: selectedCircleIDs.sorted(),
+                seenWithinMonths: onlineInPastSixMonths ? 6 : 24
             )
             guard generation == searchGeneration else { return }
             offers = fetchedOffers
