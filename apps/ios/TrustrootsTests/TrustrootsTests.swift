@@ -319,7 +319,10 @@ final class TrustrootsTests: XCTestCase {
             credentialStore: credentialStore
         )
 
-        let member = try await api.currentMember(serverURLString: "https://api.example.test")
+        let member = try await api.profile(
+            serverURLString: "https://api.example.test",
+            username: "traveller"
+        )
 
         XCTAssertEqual(member.username, "traveller")
         XCTAssertNotNil(member.seen)
@@ -384,8 +387,10 @@ final class TrustrootsTests: XCTestCase {
         ))
 
         var recordedRequest: URLRequest?
+        var recordedBody: Data?
         APIURLProtocol.handler = { request in
             recordedRequest = request
+            recordedBody = request.bodyData
             let response = HTTPURLResponse(
                 url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
             )!
@@ -408,7 +413,7 @@ final class TrustrootsTests: XCTestCase {
 
         let body = try JSONDecoder().decode(
             [String: String].self,
-            from: try XCTUnwrap(recordedRequest?.httpBody)
+            from: try XCTUnwrap(recordedBody)
         )
         XCTAssertEqual(recordedRequest?.url?.path, "/api/support")
         XCTAssertEqual(recordedRequest?.httpMethod, "POST")
@@ -594,5 +599,31 @@ private final class InMemorySessionCredentialStore: SessionCredentialStoring {
 
     func delete() {
         credentials = nil
+    }
+}
+
+private extension URLRequest {
+    var bodyData: Data? {
+        if let httpBody {
+            return httpBody
+        }
+        guard let stream = httpBodyStream else {
+            return nil
+        }
+
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1_024)
+        while true {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            if count < 0 {
+                return nil
+            }
+            if count == 0 {
+                return data
+            }
+            data.append(buffer, count: count)
+        }
     }
 }
