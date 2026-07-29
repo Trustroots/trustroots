@@ -281,6 +281,53 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertNil(recordedRequest?.value(forHTTPHeaderField: "Authorization"))
     }
 
+    func testMemberSearchUsesExistingProtectedRouteAndDecodesNativeResults() async throws {
+        let credentialStore = InMemorySessionCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+        ))
+
+        var recordedRequest: URLRequest?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (
+                response,
+                Data(
+                    #"[{"_id":"member-1","username":"alex","displayName":"Alex Traveller","locationLiving":"Lisbon"}]"#.utf8
+                )
+            )
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore
+        )
+
+        let members = try await api.searchMembers(
+            serverURLString: "https://api.example.test",
+            query: "alex"
+        )
+
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/users")
+        XCTAssertEqual(
+            URLComponents(url: try XCTUnwrap(recordedRequest?.url), resolvingAgainstBaseURL: false)?
+                .queryItems?
+                .first(where: { $0.name == "search" })?
+                .value,
+            "alex"
+        )
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        XCTAssertEqual(members.first?.username, "alex")
+        XCTAssertEqual(members.first?.displayName, "Alex Traveller")
+        XCTAssertEqual(members.first?.locationSummary, "Lisbon")
+    }
+
     func testAccommodationUsesExistingOfferByUserRoute() async throws {
         let credentialStore = InMemorySessionCredentialStore()
         XCTAssertTrue(credentialStore.save(

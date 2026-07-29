@@ -10,6 +10,7 @@
 		0E831D2402FCD69878BB4CEF /* NostrIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D160385B89B56C5385E8E9 /* NostrIdentity.swift */; };
 		0EE9C2C716DAC81E1D756A95 /* CircleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */; };
 		15790C63AF0422B5D50AB4EA /* LocationPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5627FC9D7597842E4C1125E1 /* LocationPreviewView.swift */; };
+		1F1A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift */; };
 		29DF2AC39A79037D7C0457CA /* MapFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9474F8363D8A2E281F012D /* MapFilterSheet.swift */; };
 		2B14C92119A7AC3B5F83B6B3 /* TrustrootsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803C2E0AE7321926A1ABB7F0 /* TrustrootsApp.swift */; };
 		39E542290B8429EB621D1D5A /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EC27FA444EF5257316FDB35 /* SignInView.swift */; };
@@ -54,6 +55,7 @@
 
 /* Begin PBXFileReference section */
 		16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsBrowserView.swift; sourceTree = "<group>"; };
+		1F2A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberSearchView.swift; sourceTree = "<group>"; };
 		2D39D0CB9F25268806927E57 /* CommunityNotesStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommunityNotesStore.swift; sourceTree = "<group>"; };
 		3BEBBFF3D5A19B724A3AD0AA /* Trustroots.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Trustroots.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B3A8DF28B2E964E6E81F6FC /* ContactSupportView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContactSupportView.swift; sourceTree = "<group>"; };
@@ -125,6 +127,7 @@
 				FF9474F8363D8A2E281F012D /* MapFilterSheet.swift */,
 				7040954AE5BE42F61ACC6E79 /* MemberAvatarView.swift */,
 				4C99E5EF486955BCD9BC9DC7 /* MemberProfileView.swift */,
+				1F2A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift */,
 				E7E2961EE91180D18EAD37B7 /* MemberSessionStore.swift */,
 				AFDE64017484020751FDBD35 /* MessageInboxView.swift */,
 				63684517FEA4D117EEDA1429 /* NIP07Bridge.swift */,
@@ -302,6 +305,7 @@
 				29DF2AC39A79037D7C0457CA /* MapFilterSheet.swift in Sources */,
 				41DFAB865863E84445853B11 /* MemberAvatarView.swift in Sources */,
 				C5E9F66FE8D73DD80460CD32 /* MemberProfileView.swift in Sources */,
+				1F1A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift in Sources */,
 				F91CF77FA8AC58CC93A0633C /* MemberSessionStore.swift in Sources */,
 				5BF5363FD85409C9BDD0E7C3 /* MessageInboxView.swift in Sources */,
 				3F7B4302D3CCCC2F0AEF29F0 /* NIP07Bridge.swift in Sources */,

@@ -32,8 +32,8 @@ implemented MVP areas and SHALL NOT provide administration or moderation tools.
 
 #### Scenario: Member uses a supported MVP area
 
-- **WHEN** an eligible member opens a supported account, profile, circle,
-  offer-search, offer-management, or messaging area in the iOS app
+- **WHEN** an eligible member opens a supported account, profile, member-search,
+  circle, offer-search, offer-management, or messaging area in the iOS app
 - **THEN** the app presents a native iOS interface for that area
 
 #### Scenario: Administrator needs administration tools
@@ -79,8 +79,41 @@ developer API availability controls.
 - **WHEN** the member opens the native menu
 - **THEN** the menu does not show API origin, build or availability diagnostics
 - **AND** does not show an API availability check or refresh control
-- **AND** provides a Find members action that opens the existing member-search
-  page in the built-in browser
+- **AND** provides a Find members action that opens native member search
+
+### Requirement: Native member search
+
+The native app SHALL let signed-in members find other available members through
+the existing protected member-search route without opening the built-in
+browser. The native results SHALL preserve the website route's visibility,
+blocking and role restrictions.
+
+#### Scenario: Member searches for another member
+
+- **WHEN** a signed-in member submits at least three characters in native
+  member search
+- **THEN** the app requests matching members from the existing
+  `/api/users?search=` route
+- **AND** displays the returned members in a native list
+- **AND** selecting a result opens that member's native profile
+
+#### Scenario: Native member search has no matches
+
+- **WHEN** the protected member-search route returns no members
+- **THEN** the native screen explains that no members matched
+- **AND** remains ready for another search
+
+#### Scenario: Native member search input is incomplete
+
+- **WHEN** the member enters fewer than three characters
+- **THEN** the app does not submit a request
+- **AND** explains the minimum search length
+
+#### Scenario: Member uses the on-screen keyboard
+
+- **WHEN** the member enters a native member search
+- **THEN** the app provides visible Search and Done keyboard actions
+- **AND** does not move the primary navigation above the keyboard
 
 #### Scenario: Member filters a native list
 

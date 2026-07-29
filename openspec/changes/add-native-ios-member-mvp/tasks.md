@@ -43,6 +43,9 @@
       operations and origin-permission decisions with iOS tests.
 - [x] 2.9 Add an account/server-scoped protected cache for authenticated GET
       responses and a persistent warning whenever cached data is being shown.
+- [x] 2.10 Implement native member search through the existing protected
+      `/api/users?search=` route, including native results, empty and error
+      states, keyboard dismissal, and navigation to native profiles.
 
 ## 3. TestFlight readiness
 

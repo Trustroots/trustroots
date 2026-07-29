@@ -194,6 +194,45 @@ struct MiniMember: Decodable {
     }
 }
 
+struct MemberSearchResult: Decodable, Identifiable {
+    let id: String?
+    let username: String
+    let displayName: String
+    let locationLiving: String?
+    let locationFrom: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case mongoID = "_id"
+        case username
+        case displayName
+        case locationLiving
+        case locationFrom
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .mongoID)
+            ?? container.decodeIfPresent(String.self, forKey: .id)
+        username = try container.decode(String.self, forKey: .username)
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName) ?? username
+        locationLiving = try container.decodeIfPresent(String.self, forKey: .locationLiving)
+        locationFrom = try container.decodeIfPresent(String.self, forKey: .locationFrom)
+    }
+
+    var locationSummary: String? {
+        let living = locationLiving?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let living, !living.isEmpty {
+            return living
+        }
+        let from = locationFrom?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let from, !from.isEmpty {
+            return "From \(from)"
+        }
+        return nil
+    }
+}
+
 struct MemberProfile: Decodable {
     let id: String?
     let displayName: String
@@ -795,6 +834,21 @@ final class TrustrootsAPI {
         try await get(
             serverURLString: serverURLString,
             path: "api/users/\(username)"
+        )
+    }
+
+    func searchMembers(
+        serverURLString: String,
+        query: String,
+        limit: Int = 50
+    ) async throws -> [MemberSearchResult] {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/users",
+            queryItems: [
+                URLQueryItem(name: "search", value: query),
+                URLQueryItem(name: "limit", value: String(limit)),
+            ]
         )
     }
 
