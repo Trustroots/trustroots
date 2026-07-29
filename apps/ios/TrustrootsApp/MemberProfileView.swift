@@ -156,10 +156,6 @@ struct MemberProfileView: View {
                                 .accessibilityLabel("Open or start a conversation with \(profile.displayName)")
                             }
 
-                            if !isOwnProfile(profile) {
-                                memberSafetySection(profile)
-                            }
-
                             ProfileActivityView(
                                 seen: profile.seen,
                                 replyRate: profile.replyRate,
@@ -266,6 +262,10 @@ struct MemberProfileView: View {
                                         )
                                     }
                                 }
+                            }
+
+                            if !isOwnProfile(profile) {
+                                memberSafetySection(profile)
                             }
                         }
                         .padding(20)
@@ -378,42 +378,44 @@ struct MemberProfileView: View {
     }
 
     private func memberSafetySection(_ profile: MemberProfile) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 6) {
+            Divider()
+
             if isBlocked {
-                Label(
-                    "You have blocked \(profile.displayName).",
-                    systemImage: "hand.raised.fill"
-                )
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.red)
+                Text("You have blocked \(profile.displayName).")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: 18) {
                 Button {
                     showReportMember = true
                 } label: {
                     Label("Report member", systemImage: "flag")
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .foregroundStyle(.secondary)
 
                 Button(role: isBlocked ? nil : .destructive) {
                     showBlockConfirmation = true
                 } label: {
                     if isUpdatingBlock {
                         ProgressView()
-                            .frame(maxWidth: .infinity)
+                            .controlSize(.small)
                     } else {
                         Label(
                             isBlocked ? "Unblock" : "Block",
                             systemImage: isBlocked ? "hand.raised.slash" : "hand.raised"
                         )
-                        .frame(maxWidth: .infinity)
                     }
                 }
-                .buttonStyle(.bordered)
+                .foregroundStyle(isBlocked ? Color.secondary : Color.red)
                 .disabled(isUpdatingBlock)
+
+                Spacer()
             }
+            .font(.footnote)
+            .buttonStyle(.plain)
+            .frame(minHeight: 32)
 
             if let safetyErrorMessage {
                 Text(safetyErrorMessage)
@@ -422,9 +424,7 @@ struct MemberProfileView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.top, 2)
     }
 
     private func updateBlock(blocked: Bool) async {
