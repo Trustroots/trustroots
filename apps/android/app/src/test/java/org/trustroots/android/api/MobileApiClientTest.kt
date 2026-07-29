@@ -28,6 +28,20 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun selectsMemberSessionFromMultipleResponseCookies() {
+        val sessionCookie = sessionCookieFrom(
+            mapOf(
+                "set-cookie" to listOf(
+                    "_passenger_route=route-value; Path=/; Secure",
+                    "connect.sid=session-value; Path=/; HttpOnly",
+                ),
+            ),
+        )
+
+        assertEquals("connect.sid=session-value", sessionCookie)
+    }
+
+    @Test
     fun usesUsernameWhenDisplayNameIsAbsent() {
         val member = mobileMemberFrom(JSONObject("""{"username":"quiet-fox"}"""))
 

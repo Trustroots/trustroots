@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -55,7 +57,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import org.trustroots.android.api.MobileApiClient
@@ -116,8 +120,7 @@ private fun SignInScreen(
         val installedAt = context.packageManager
             .getPackageInfo(context.packageName, 0)
             .lastUpdateTime
-        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-            .format(Date(installedAt))
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(installedAt))
     }
     val attemptSignIn: () -> Unit = {
         scope.launch {
@@ -136,106 +139,110 @@ private fun SignInScreen(
         return
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(TrustrootsPaleGreen)
-            .padding(horizontal = 24.dp, vertical = 36.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .safeDrawingPadding()
+            .imePadding(),
     ) {
-        Image(
-            painter = painterResource(R.drawable.trustroots_logo),
-            contentDescription = "Trustroots",
-            modifier = Modifier.size(124.dp),
-        )
-        Text("Travellers’ community", style = MaterialTheme.typography.titleMedium)
-        Text(
-            "Sharing, hosting and getting people together.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(28.dp))
-        OutlinedTextField(
-            value = username,
-            onValueChange = { username = it },
-            label = { Text("Username or email") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done,
-            ),
-            keyboardActions = KeyboardActions(onDone = { attemptSignIn() }),
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        error?.let {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 24.dp, top = 72.dp, end = 24.dp, bottom = 72.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.trustroots_logo),
+                contentDescription = "Trustroots",
+                modifier = Modifier.size(124.dp),
+            )
+            Text("Travellers’ community", style = MaterialTheme.typography.titleMedium)
             Text(
-                it,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
+                "Sharing, hosting and getting people together.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(28.dp))
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text("Username or email") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done,
+                ),
+                keyboardActions = KeyboardActions(onDone = { attemptSignIn() }),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            error?.let {
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                )
+            }
+            Button(
+                onClick = attemptSignIn,
+                enabled = !isLoading && username.isNotBlank() && password.isNotBlank(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp),
-            )
-        }
-        Button(
-            onClick = attemptSignIn,
-            enabled = !isLoading && username.isNotBlank() && password.isNotBlank(),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 18.dp),
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(20.dp),
-                    color = Color.White,
-                    strokeWidth = 2.dp,
-                )
-            } else {
-                Text("Sign in")
+                    .padding(top = 18.dp),
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text("Sign in")
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                TextButton(
+                    onClick = {
+                        browserRoute = BrowserRoute(
+                            title = "Join Trustroots",
+                            url = "https://www.trustroots.org/signup",
+                        )
+                    },
+                ) { Text("Join") }
+                TextButton(
+                    onClick = {
+                        browserRoute = BrowserRoute(
+                            title = "Reset password",
+                            url = "https://www.trustroots.org/password/forgot",
+                        )
+                    },
+                ) { Text("Forgot password?") }
             }
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            TextButton(
-                onClick = {
-                    browserRoute = BrowserRoute(
-                        title = "Join Trustroots",
-                        url = "https://www.trustroots.org/signup",
-                    )
-                },
-            ) { Text("Join") }
-            TextButton(
-                onClick = {
-                    browserRoute = BrowserRoute(
-                        title = "Reset password",
-                        url = "https://www.trustroots.org/password/forgot",
-                    )
-                },
-            ) { Text("Forgot password?") }
-        }
-        Text(
-            "API: ${BuildConfig.API_BASE_URL}",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 14.dp),
-        )
         Text(
             "Build: $buildDate",
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 3.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp),
         )
     }
 }

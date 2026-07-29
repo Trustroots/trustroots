@@ -114,9 +114,7 @@ class MobileApiClient(baseURL: String) {
             }
             return JsonResponse(
                 body = if (responseBody.isBlank()) JSONObject() else JSONObject(responseBody),
-                sessionCookie = connection.getHeaderField("Set-Cookie")
-                    ?.substringBefore(';')
-                    ?.takeIf { it.startsWith("connect.sid=") },
+                sessionCookie = sessionCookieFrom(connection.headerFields),
             )
         } finally {
             connection.disconnect()
@@ -124,6 +122,14 @@ class MobileApiClient(baseURL: String) {
     }
 
 }
+
+internal fun sessionCookieFrom(headers: Map<String?, List<String>>): String? =
+    headers.entries
+        .asSequence()
+        .filter { (name) -> name.equals("Set-Cookie", ignoreCase = true) }
+        .flatMap { (_, values) -> values.asSequence() }
+        .map { it.substringBefore(';') }
+        .firstOrNull { it.startsWith("connect.sid=") }
 
 internal fun secureApiBaseURL(value: String): String {
     val url = URL(value.trim())

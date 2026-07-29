@@ -33,4 +33,5 @@ device appearance setting. With Android Studio's bundled JDK selected, run:
 ```
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The
-sign-in screen shows both its build date and the exact API server in use.
+sign-in screen shows its build date; the signed-in menu also shows the exact API
+server in use.
