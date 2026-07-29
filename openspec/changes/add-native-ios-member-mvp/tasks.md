@@ -46,6 +46,9 @@
 - [x] 2.10 Implement native member search through the existing protected
       `/api/users?search=` route, including native results, empty and error
       states, keyboard dismissal, and navigation to native profiles.
+- [x] 2.11 Show the existing last-seen and reply statistics on native profiles,
+      and let a member open or begin the existing native conversation with
+      another member directly from their profile.
 
 ## 3. TestFlight readiness
 

@@ -261,7 +261,9 @@ final class TrustrootsTests: XCTestCase {
             )!
             return (
                 response,
-                Data(#"{"username":"traveller","displayName":"A Traveller","public":true}"#.utf8)
+                Data(
+                    #"{"username":"traveller","displayName":"A Traveller","public":true,"seen":"2026-07-29T12:00:00Z","replyRate":"82%","replyTime":"4 hours"}"#.utf8
+                )
             )
         }
         defer { APIURLProtocol.handler = nil }
@@ -276,6 +278,9 @@ final class TrustrootsTests: XCTestCase {
         let member = try await api.currentMember(serverURLString: "https://api.example.test")
 
         XCTAssertEqual(member.username, "traveller")
+        XCTAssertNotNil(member.seen)
+        XCTAssertEqual(member.replyRate, "82%")
+        XCTAssertEqual(member.replyTime, "4 hours")
         XCTAssertEqual(recordedRequest?.url?.path, "/api/users/traveller")
         XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
         XCTAssertNil(recordedRequest?.value(forHTTPHeaderField: "Authorization"))

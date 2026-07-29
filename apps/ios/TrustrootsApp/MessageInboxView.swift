@@ -200,7 +200,7 @@ private struct MessageThreadRow: View {
     }
 }
 
-private struct ConversationView: View {
+struct ConversationView: View {
     let otherMember: MiniMember
     @ObservedObject var session: MemberSessionStore
     @State private var messages: [DirectMessage] = []

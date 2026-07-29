@@ -246,6 +246,40 @@ using the established offer-by-user endpoint.
 - **AND** the experience section summarises recommendation, meeting and
   hosting percentages from the loaded experiences
 
+### Requirement: Native profile activity and messaging
+
+Native member profiles SHALL display the existing public last-seen and reply
+statistics returned by the protected profile route. A signed-in member SHALL be
+able to open the existing native conversation with another member, or begin it
+by sending the first message, without leaving that profile for the website.
+
+#### Scenario: Profile has activity and reply statistics
+
+- **WHEN** a member opens a profile whose response includes `seen`,
+  `replyRate`, or `replyTime`
+- **THEN** the profile displays the available last-login, reply-rate and
+  typical-reply-time information
+- **AND** does not derive or request additional private activity data
+
+#### Scenario: Profile has no reply statistics
+
+- **WHEN** a member opens a profile whose reply statistics are empty
+- **THEN** the profile explains that reply data is not available yet
+- **AND** remains otherwise fully usable
+
+#### Scenario: Member opens messaging from another profile
+
+- **WHEN** a signed-in member selects the profile's conversation action
+- **THEN** the app opens the existing native conversation and displays its
+  history
+- **AND** if the conversation is empty, provides the composer that creates the
+  thread when the first message is sent
+
+#### Scenario: Member views their own profile
+
+- **WHEN** the signed-in member opens their own profile
+- **THEN** the app does not offer a conversation with themselves
+
 #### Scenario: Member returns to a circle
 
 - **WHEN** a member revisits a recently loaded circle during the same app

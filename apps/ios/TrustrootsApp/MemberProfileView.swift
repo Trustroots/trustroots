@@ -125,6 +125,38 @@ struct MemberProfileView: View {
                                 .tint(TrustrootsPalette.green)
                             }
 
+                            if !isOwnProfile(profile), let memberID = profile.id {
+                                NavigationLink {
+                                    ConversationView(
+                                        otherMember: MiniMember(
+                                            id: memberID,
+                                            username: profile.username,
+                                            displayName: profile.displayName
+                                        ),
+                                        session: session
+                                    )
+                                } label: {
+                                    VStack(spacing: 3) {
+                                        Label("Message", systemImage: "bubble.left.and.bubble.right.fill")
+                                            .font(.subheadline.weight(.semibold))
+                                        Text("Open or start a conversation")
+                                            .font(.caption)
+                                            .opacity(0.85)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 9)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(TrustrootsPalette.green)
+                                .accessibilityLabel("Open or start a conversation with \(profile.displayName)")
+                            }
+
+                            ProfileActivityView(
+                                seen: profile.seen,
+                                replyRate: profile.replyRate,
+                                replyTime: profile.replyTime
+                            )
+
                             if profile.locationLiving != nil || profile.locationFrom != nil {
                                 VStack(alignment: .leading, spacing: 10) {
                                     if let living = profile.locationLiving, !living.isEmpty {
@@ -264,6 +296,11 @@ struct MemberProfileView: View {
         return username.caseInsensitiveCompare(signedInUsername) == .orderedSame
     }
 
+    private func isOwnProfile(_ profile: MemberProfile) -> Bool {
+        guard let signedInUsername = session.member?.username else { return false }
+        return profile.username.caseInsensitiveCompare(signedInUsername) == .orderedSame
+    }
+
     private func loadProfile() async {
         guard !isLoading, let username = username ?? session.member?.username else { return }
         isLoading = true
@@ -355,6 +392,67 @@ struct MemberProfileView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
+    }
+}
+
+private struct ProfileActivityView: View {
+    let seen: Date?
+    let replyRate: String?
+    let replyTime: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Activity")
+                .font(.headline)
+
+            activityRow(
+                systemImage: "clock.arrow.circlepath",
+                title: "Last login",
+                value: seen?.formatted(.relative(presentation: .named)) ?? "Long ago"
+            )
+            activityRow(
+                systemImage: "arrowshape.turn.up.left.fill",
+                title: "Reply rate",
+                value: nonEmpty(replyRate) ?? "Not available yet"
+            )
+            if let replyTime = nonEmpty(replyTime) {
+                activityRow(
+                    systemImage: "timer",
+                    title: "Usually replies",
+                    value: "Within \(replyTime)"
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(TrustrootsPalette.paleGreen)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func activityRow(
+        systemImage: String,
+        title: String,
+        value: String
+    ) -> some View {
+        HStack(spacing: 11) {
+            Image(systemName: systemImage)
+                .foregroundStyle(TrustrootsPalette.darkGreen)
+                .frame(width: 22)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .font(.subheadline.weight(.semibold))
+            }
+            Spacer()
+        }
+    }
+
+    private func nonEmpty(_ value: String?) -> String? {
+        let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmed, !trimmed.isEmpty else { return nil }
+        return trimmed
     }
 }
 

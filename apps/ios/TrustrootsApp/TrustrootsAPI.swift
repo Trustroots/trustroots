@@ -185,6 +185,12 @@ struct MiniMember: Decodable {
         case displayName
     }
 
+    init(id: String?, username: String?, displayName: String?) {
+        self.id = id
+        self.username = username
+        self.displayName = displayName
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .mongoID)
@@ -242,8 +248,11 @@ struct MemberProfile: Decodable {
     let locationLiving: String?
     let locationFrom: String?
     let languages: [String]?
+    let seen: Date?
     let created: Date?
     let avatarUploaded: Bool?
+    let replyRate: String?
+    let replyTime: String?
     let email: String?
     let emailTemporary: String?
     let newsletter: Bool?
@@ -259,8 +268,11 @@ struct MemberProfile: Decodable {
         case locationLiving
         case locationFrom
         case languages
+        case seen
         case created
         case avatarUploaded
+        case replyRate
+        case replyTime
         case email
         case emailTemporary
         case newsletter
@@ -278,8 +290,11 @@ struct MemberProfile: Decodable {
         locationLiving = try container.decodeIfPresent(String.self, forKey: .locationLiving)
         locationFrom = try container.decodeIfPresent(String.self, forKey: .locationFrom)
         languages = try container.decodeIfPresent([String].self, forKey: .languages)
+        seen = try container.decodeIfPresent(Date.self, forKey: .seen)
         created = try container.decodeIfPresent(Date.self, forKey: .created)
         avatarUploaded = try container.decodeIfPresent(Bool.self, forKey: .avatarUploaded)
+        replyRate = try container.decodeIfPresent(String.self, forKey: .replyRate)
+        replyTime = try container.decodeIfPresent(String.self, forKey: .replyTime)
         email = try container.decodeIfPresent(String.self, forKey: .email)
         emailTemporary = try container.decodeIfPresent(String.self, forKey: .emailTemporary)
         newsletter = try container.decodeIfPresent(Bool.self, forKey: .newsletter)
