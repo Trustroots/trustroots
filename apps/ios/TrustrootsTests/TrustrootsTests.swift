@@ -74,6 +74,20 @@ final class TrustrootsTests: XCTestCase {
         )
     }
 
+    func testBrowserHomeRouteDoesNotBehaveLikeAChildPage() {
+        XCTAssertTrue(TrustrootsBrowserRoute.website(path: "/", title: "Trustroots").isHome)
+        XCTAssertTrue(
+            TrustrootsBrowserRoute.website(
+                path: "https://www.trustroots.org/",
+                title: "Trustroots"
+            ).isHome
+        )
+        XCTAssertFalse(
+            TrustrootsBrowserRoute.website(path: "/about", title: "About Trustroots").isHome
+        )
+        XCTAssertFalse(TrustrootsBrowserRoute.join.isHome)
+    }
+
     func testBrowserKeepsTrustrootsSubdomainsInApp() throws {
         XCTAssertTrue(
             TrustrootsWebView.Coordinator.isTrustrootsURL(

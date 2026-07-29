@@ -30,6 +30,15 @@ enum TrustrootsBrowserRoute: Identifiable {
         }
     }
 
+    var isHome: Bool {
+        guard case .website(let path, _) = self else { return false }
+        if let absoluteURL = URL(string: path), absoluteURL.scheme != nil {
+            return absoluteURL.host == "www.trustroots.org" &&
+                (absoluteURL.path.isEmpty || absoluteURL.path == "/")
+        }
+        return path == "/"
+    }
+
     var url: URL {
         switch self {
         case .join:
@@ -153,6 +162,8 @@ struct TrustrootsWebView: UIViewRepresentable {
             #tr-header { display: none !important; }
             .container-spacer { margin-top: 0 !important; }
             .container-fullscreen.container-spacer { top: 0 !important; }
+            .home-intro .home-join,
+            #manifesto a[href^="/signup"] { display: none !important; }
           `;
           (document.head || document.documentElement).appendChild(style);
         })();

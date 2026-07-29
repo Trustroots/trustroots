@@ -100,7 +100,7 @@ struct TrustrootsRootView: View {
 
             TrustrootsBrandHeader(
                 isOverArtwork: isImmersiveDetail,
-                goBack: browserRoute == nil ? nil : {
+                goBack: browserRoute == nil || browserRoute?.isHome == true ? nil : {
                     browserRoute = nil
                 },
                 openHome: {
@@ -186,6 +186,10 @@ struct TrustrootsRootView: View {
 }
 
 private struct TrustrootsBrandHeader: View {
+    private static let islandHalfWidth: CGFloat = 63
+    private static let islandCentreY: CGFloat = 29
+    private static let islandSpacing: CGFloat = 7
+
     let isOverArtwork: Bool
     let goBack: (() -> Void)?
     let openHome: () -> Void
@@ -194,7 +198,7 @@ private struct TrustrootsBrandHeader: View {
 
     var body: some View {
         GeometryReader { proxy in
-            HStack(spacing: 0) {
+            HStack(spacing: 4) {
                 if let goBack {
                     headerButton("chevron.backward", label: "Back", action: goBack)
                 }
@@ -204,25 +208,32 @@ private struct TrustrootsBrandHeader: View {
                         .renderingMode(.template)
                         .scaledToFit()
                         .foregroundStyle(.white)
-                        .frame(width: 36, height: 36)
-                        .frame(width: 38, height: 38)
-                        .background(buttonBackground)
-                        .clipShape(Circle())
+                        .frame(width: 42, height: 42)
+                        .shadow(color: isOverArtwork ? .black.opacity(0.7) : .clear, radius: 2, y: 1)
                 }
                 .accessibilityLabel("Trustroots home")
             }
             .position(
-                x: proxy.size.width / 2 - (goBack == nil ? 91 : 109),
-                y: 19
+                x: proxy.size.width / 2
+                    - Self.islandHalfWidth
+                    - Self.islandSpacing
+                    - (goBack == nil ? 21 : 42),
+                y: Self.islandCentreY
             )
 
-            HStack(spacing: 0) {
+            HStack(spacing: 4) {
                 headerButton("person.crop.circle.fill", label: "Profile", action: openProfile)
                 headerButton("gearshape.fill", label: "Account", action: openAccount)
             }
-            .position(x: proxy.size.width / 2 + 103, y: 19)
+            .position(
+                x: proxy.size.width / 2
+                    + Self.islandHalfWidth
+                    + Self.islandSpacing
+                    + 38,
+                y: Self.islandCentreY
+            )
         }
-        .frame(height: 44)
+        .frame(height: 52)
         .background(isOverArtwork ? Color.clear : TrustrootsPalette.green)
         .shadow(color: isOverArtwork ? .black.opacity(0.45) : .clear, radius: 3, y: 1)
     }
