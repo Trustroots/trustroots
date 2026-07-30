@@ -154,9 +154,11 @@ describe('Admin Newsletter subscribers API tests', () => {
     body.outputFormat.should.equal('ndjson');
     body.subscribedCount.should.equal(1);
     body.unsubscribedCount.should.equal(1);
-    body.subscribedContent.should.equal(
-      '{"email":"active@example.com","firstName":"Active","lastName":"Subscriber"}',
-    );
+    JSON.parse(body.subscribedContent).should.containDeep({
+      displayName: 'Active Subscriber',
+      email: 'active@example.com',
+      username: _users[2].username.toLowerCase(),
+    });
     body.unsubscribedContent.should.match(
       /"email":"inactive@example.com".*"reason":"Newsletter disabled"/,
     );

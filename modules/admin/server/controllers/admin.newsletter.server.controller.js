@@ -433,9 +433,11 @@ function rowsToJsonLines(rows, includeReason = false) {
   return rows
     .map(row => {
       const record = {
+        displayName: row.displayName || '',
         email: row.email,
         firstName: row.firstName || '',
         lastName: row.lastName || '',
+        username: row.username || '',
       };
       if (includeReason) {
         record.reason = row.reason;
@@ -586,6 +588,7 @@ exports.splitSubscribers = async (req, res) => {
     { email: { $in: emails } },
     {
       email: 1,
+      displayName: 1,
       firstName: 1,
       lastName: 1,
       newsletter: 1,
@@ -593,6 +596,7 @@ exports.splitSubscribers = async (req, res) => {
       removeProfileExpires: 1,
       removeProfileToken: 1,
       roles: 1,
+      username: 1,
     },
   ).exec();
 
@@ -606,19 +610,21 @@ exports.splitSubscribers = async (req, res) => {
 
   emails.forEach(email => {
     const user = usersByEmail.get(email);
-    const userForCsv = {
+    const userForOutput = {
+      displayName: user ? user.displayName : '',
       email,
       firstName: user ? user.firstName : '',
       lastName: user ? user.lastName : '',
+      username: user ? user.username : '',
     };
 
     if (isNewsletterSubscriber(user)) {
-      subscribed.push(userForCsv);
+      subscribed.push(userForOutput);
       return;
     }
 
     unsubscribed.push({
-      ...userForCsv,
+      ...userForOutput,
       reason: getUnsubscribedReason(user),
     });
   });

@@ -77,7 +77,12 @@ test.describe('admin newsletter API feature coverage', () => {
     for await (const chunk of eligibleStream) {
       eligibleText += chunk.toString();
     }
-    expect(JSON.parse(eligibleText).email).toBe(SEEDED_MEMBERS[0].email);
+    const eligibleRecord = JSON.parse(eligibleText);
+    expect(eligibleRecord.email).toBe(SEEDED_MEMBERS[0].email);
+    expect(eligibleRecord.username).toBe(SEEDED_MEMBERS[0].username);
+    expect(eligibleRecord.displayName).toBe(
+      `${SEEDED_MEMBERS[0].firstName} ${SEEDED_MEMBERS[0].lastName}`,
+    );
 
     const [excludedDownload] = await Promise.all([
       page.waitForEvent('download'),
