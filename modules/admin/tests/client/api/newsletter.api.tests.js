@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 import {
+  getNewsletterAudienceCsv,
   getNewsletterCircleSubscribersCsv,
   getNewsletterSubscribersCsv,
+  previewNewsletterAudience,
   splitNewsletterSubscribers,
 } from '@/modules/admin/client/api/newsletter.api';
 
@@ -44,6 +46,47 @@ describe('admin newsletter api', () => {
     );
   });
 
+  it('previews a targeted audience', async () => {
+    const criteria = {
+      locationText: 'Berlin',
+      sources: ['living', 'from'],
+    };
+    axios.post.mockResolvedValueOnce({ data: { count: 12 } });
+
+    await expect(previewNewsletterAudience(criteria)).resolves.toEqual({
+      count: 12,
+    });
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/admin/newsletter-subscribers/audience',
+      {
+        ...criteria,
+        format: 'preview',
+      },
+    );
+  });
+
+  it('exports a targeted audience CSV', async () => {
+    const criteria = {
+      circleIds: ['5fbab4f7fed63c7ed73276d3'],
+      sources: [],
+    };
+    const data =
+      'Email Address,First Name,Last Name\nalice@example.com,Alice,Example';
+    axios.post.mockResolvedValueOnce({ data });
+
+    await expect(getNewsletterAudienceCsv(criteria)).resolves.toEqual(data);
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/admin/newsletter-subscribers/audience',
+      {
+        ...criteria,
+        format: 'csv',
+      },
+      {
+        responseType: 'text',
+      },
+    );
+  });
+
   it('uploads CSV file for subscriber split', async () => {
     const file = new File(
       ['Email Address\nalice@example.com'],
@@ -53,12 +96,13 @@ describe('admin newsletter api', () => {
       },
     );
     const data = {
+      outputFormat: 'csv',
       subscribedCount: 1,
-      subscribedCsv:
+      subscribedContent:
         'Email Address,First Name,Last Name\nalice@example.com,Alice,Example',
       totalEmailCount: 1,
       unsubscribedCount: 0,
-      unsubscribedCsv: 'Email Address,First Name,Last Name',
+      unsubscribedContent: 'Email Address,First Name,Last Name',
     };
     axios.post.mockResolvedValueOnce({ data });
 

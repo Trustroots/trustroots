@@ -10,6 +10,8 @@ const errorService = require('../../../core/server/services/error.server.service
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
+const Offer = mongoose.model('Offer');
+
 /**
  * Minimal Express-like response mock that records what the controller sends
  * back without needing the full HTTP stack.
@@ -190,6 +192,207 @@ describe('Admin newsletter controller unit tests', () => {
     });
   });
 
+  describe('audience', () => {
+    const berlin = {
+      latitude: 52.52,
+      longitude: 13.405,
+      radiusKm: 50,
+    };
+
+    it('matches living and origin text and escapes regular expressions', async () => {
+      const _users = utils.generateUsers(4, {
+        public: true,
+        newsletter: true,
+      });
+      _users[0].email = 'living@example.com';
+      _users[0].locationLiving = 'Berlin (Germany)';
+      _users[1].email = 'origin@example.com';
+      _users[1].locationFrom = 'Berlin (Germany)';
+      _users[2].email = 'other@example.com';
+      _users[2].locationLiving = 'Berlin Germany';
+      _users[3].email = 'restricted@example.com';
+      _users[3].locationLiving = 'Berlin (Germany)';
+      _users[3].roles = ['user', 'shadowban'];
+      await utils.saveUsers(_users);
+
+      const res = mockResponse();
+      await adminNewsletter.audience(
+        {
+          body: {
+            format: 'csv',
+            locationText: 'Berlin (Germany)',
+            sources: ['living', 'from'],
+          },
+        },
+        res,
+      );
+
+      res.headers['Content-Type'].should.equal('text/csv');
+      res.body.should.match(/living@example.com/);
+      res.body.should.match(/origin@example.com/);
+      res.body.should.not.match(/other@example.com/);
+      res.body.should.not.match(/restricted@example.com/);
+    });
+
+    it('combines any selected circle with a location match', async () => {
+      const matchingCircle = new mongoose.Types.ObjectId();
+      const otherCircle = new mongoose.Types.ObjectId();
+      const _users = utils.generateUsers(3, {
+        public: true,
+        newsletter: true,
+      });
+      _users[0].locationLiving = 'Berlin, Germany';
+      _users[0].member = [{ tribe: matchingCircle, since: new Date() }];
+      _users[1].locationLiving = 'Berlin, Germany';
+      _users[1].member = [{ tribe: otherCircle, since: new Date() }];
+      _users[2].locationLiving = 'Lisbon, Portugal';
+      _users[2].member = [{ tribe: matchingCircle, since: new Date() }];
+      await utils.saveUsers(_users);
+
+      const res = mockResponse();
+      await adminNewsletter.audience(
+        {
+          body: {
+            circleIds: [matchingCircle.toString()],
+            locationText: 'Berlin',
+            sources: ['living'],
+          },
+        },
+        res,
+      );
+
+      res.body.should.deepEqual({ count: 1 });
+    });
+
+    it('builds an audience from circles without location criteria', async () => {
+      const matchingCircle = new mongoose.Types.ObjectId();
+      const _users = utils.generateUsers(2, {
+        public: true,
+        newsletter: true,
+      });
+      _users[0].member = [{ tribe: matchingCircle, since: new Date() }];
+      await utils.saveUsers(_users);
+
+      const res = mockResponse();
+      await adminNewsletter.audience(
+        {
+          body: {
+            circleIds: [matchingCircle.toString()],
+          },
+        },
+        res,
+      );
+
+      res.body.should.deepEqual({ count: 1 });
+    });
+
+    it('matches current hosting offers inside the requested radius', async () => {
+      const _users = await utils.saveUsers(
+        utils.generateUsers(4, {
+          public: true,
+          newsletter: true,
+        }),
+      );
+      await Offer.create([
+        {
+          location: [52.51, 13.4],
+          status: 'yes',
+          type: 'host',
+          user: _users[0]._id,
+        },
+        {
+          location: [52.52, 13.41],
+          status: 'maybe',
+          type: 'host',
+          user: _users[1]._id,
+        },
+        {
+          location: [52.52, 13.41],
+          status: 'no',
+          type: 'host',
+          user: _users[2]._id,
+        },
+        {
+          location: [52.52, 13.41],
+          type: 'host',
+          user: _users[3]._id,
+          validUntil: new Date(Date.now() - 60 * 1000),
+        },
+      ]);
+
+      const res = mockResponse();
+      await adminNewsletter.audience(
+        {
+          body: {
+            ...berlin,
+            sources: ['hosting'],
+          },
+        },
+        res,
+      );
+
+      res.body.should.deepEqual({ count: 2 });
+    });
+
+    [
+      {
+        body: {},
+        message: 'Choose at least one location source or circle.',
+      },
+      {
+        body: { format: 'xml', sources: ['living'] },
+        message: 'Choose preview or CSV audience output.',
+      },
+      {
+        body: { sources: ['somewhere'] },
+        message: 'Choose valid newsletter location sources.',
+      },
+      {
+        body: { sources: ['living'] },
+        message: 'Enter a location for living or origin matching.',
+      },
+      {
+        body: {
+          latitude: 91,
+          longitude: 13.405,
+          radiusKm: 50,
+          sources: ['hosting'],
+        },
+        message: 'Enter valid latitude and longitude for hosting matching.',
+      },
+      {
+        body: {
+          ...berlin,
+          radiusKm: 501,
+          sources: ['hosting'],
+        },
+        message: 'Enter a hosting radius between 0 and 500 kilometres.',
+      },
+      {
+        body: { circleIds: ['invalid'] },
+        message: 'Choose valid newsletter circles.',
+      },
+    ].forEach(({ body, message }) => {
+      it(`rejects invalid criteria: ${message}`, async () => {
+        const res = mockResponse();
+        await adminNewsletter.audience({ body }, res);
+
+        res.statusCode.should.equal(400);
+        res.body.message.should.equal(message);
+      });
+    });
+
+    it('rejects a request without a body', async () => {
+      const res = mockResponse();
+      await adminNewsletter.audience({}, res);
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Choose at least one location source or circle.',
+      );
+    });
+  });
+
   describe('splitSubscribers', () => {
     it('responds with 422 when no CSV upload is present', async () => {
       const res = mockResponse();
@@ -218,8 +421,72 @@ describe('Admin newsletter controller unit tests', () => {
 
       res.statusCode.should.equal(400);
       res.body.message.should.equal(
-        'Could not find any email addresses in the uploaded CSV file.',
+        'Could not find any email addresses in the uploaded file.',
       );
+    });
+
+    it('extracts unique emails from JSONL strings and supported object fields', async () => {
+      const _users = utils.generateUsers(1, {
+        public: true,
+        newsletter: true,
+      });
+      _users[0].email = 'eligible@example.com';
+      await utils.saveUsers(_users);
+
+      const res = mockResponse();
+      await adminNewsletter.splitSubscribers(
+        {
+          file: {
+            buffer: Buffer.from(
+              [
+                '\uFEFF{"email":"eligible@example.com"}',
+                '{"emailAddress":"missing-one@example.com"}',
+                '{"address":"missing-two@example.com"}',
+                '"missing-three@example.com"',
+                '{"email":"ELIGIBLE@example.com"}',
+                '{"name":"No email"}',
+                '',
+              ].join('\n'),
+            ),
+            mimetype: 'application/x-ndjson',
+            originalname: 'recipients.jsonl',
+          },
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.outputFormat.should.equal('jsonl');
+      res.body.totalEmailCount.should.equal(4);
+      res.body.subscribedCount.should.equal(1);
+      res.body.unsubscribedCount.should.equal(3);
+      JSON.parse(res.body.subscribedContent).email.should.equal(
+        'eligible@example.com',
+      );
+      res.body.unsubscribedContent.should.match(/missing-one@example.com/);
+      res.body.unsubscribedContent.should.match(/missing-two@example.com/);
+      res.body.unsubscribedContent.should.match(/missing-three@example.com/);
+      res.body.unsubscribedContent.should.match(/"reason":"Email not found"/);
+    });
+
+    it('rejects malformed NDJSON without returning partial results', async () => {
+      const res = mockResponse();
+
+      await adminNewsletter.splitSubscribers(
+        {
+          file: {
+            buffer: Buffer.from(
+              '{"email":"valid@example.com"}\n{"email":"broken@example.com"',
+            ),
+            mimetype: 'application/ndjson',
+            originalname: 'recipients.ndjson',
+          },
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Could not parse JSON on line 2.');
     });
 
     it('splits uploaded recipients into subscribed and unsubscribed CSV files', async () => {
@@ -282,12 +549,13 @@ describe('Admin newsletter controller unit tests', () => {
 
       res.statusCode.should.equal(200);
       res.body.totalEmailCount.should.equal(6);
+      res.body.outputFormat.should.equal('csv');
       res.body.subscribedCount.should.equal(1);
       res.body.unsubscribedCount.should.equal(5);
-      res.body.subscribedCsv.should.equal(
+      res.body.subscribedContent.should.equal(
         'Email Address,First Name,Last Name\nsubscribed@example.com,Subscribed,Member',
       );
-      res.body.unsubscribedCsv.should.equal(
+      res.body.unsubscribedContent.should.equal(
         [
           'Email Address,First Name,Last Name,Reason',
           'unsubscribed@example.com,Unsubscribed,Member,Newsletter disabled',

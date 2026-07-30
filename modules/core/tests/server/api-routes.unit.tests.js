@@ -507,7 +507,13 @@ describe('API route registrations', () => {
     const auditLog = controller(['list', 'record'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
-      ['list', 'listCircleMembers', 'splitSubscribers', 'uploadSubscribersCsv'],
+      [
+        'audience',
+        'list',
+        'listCircleMembers',
+        'splitSubscribers',
+        'uploadSubscribersCsv',
+      ],
       'adminNewsletter',
     );
     const notes = controller(['addNote', 'getNotes'], 'adminNotes');
@@ -600,6 +606,10 @@ describe('API route registrations', () => {
     assertHandlers(
       routeByPath(routes, '/api/admin/newsletter-subscribers').get,
       [auditLog.record, newsletter.list],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/audience').post,
+      [auditLog.record, newsletter.audience],
     );
     assertHandlers(
       routeByPath(routes, '/api/admin/newsletter-subscribers/circle').get,

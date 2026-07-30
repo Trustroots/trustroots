@@ -40,6 +40,10 @@ exports.invokeRolesPolicies = () => {
           permissions: ['get'],
         },
         {
+          resources: '/api/admin/newsletter-subscribers/audience',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/admin/newsletter-subscribers/split',
           permissions: ['post'],
         },

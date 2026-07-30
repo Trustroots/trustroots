@@ -15,6 +15,31 @@ export async function getNewsletterCircleSubscribersCsv(circleId) {
   return data;
 }
 
+export async function previewNewsletterAudience(criteria) {
+  const { data } = await axios.post(
+    '/api/admin/newsletter-subscribers/audience',
+    {
+      ...criteria,
+      format: 'preview',
+    },
+  );
+  return data;
+}
+
+export async function getNewsletterAudienceCsv(criteria) {
+  const { data } = await axios.post(
+    '/api/admin/newsletter-subscribers/audience',
+    {
+      ...criteria,
+      format: 'csv',
+    },
+    {
+      responseType: 'text',
+    },
+  );
+  return data;
+}
+
 export async function splitNewsletterSubscribers(newsletterCsvFile) {
   const formData = new FormData();
   formData.append('newsletterCsv', newsletterCsvFile);

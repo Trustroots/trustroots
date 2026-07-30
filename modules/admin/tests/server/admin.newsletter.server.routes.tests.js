@@ -21,6 +21,7 @@ describe('Admin Newsletter subscribers API tests', () => {
   _users[2].lastName = 'Subscriber';
   _users[2].newsletter = true;
   _users[2].member = circleMembership;
+  _users[2].locationLiving = 'Berlin, Germany';
 
   _users[3].email = 'inactive@example.com';
   _users[3].firstName = 'Inactive';
@@ -66,6 +67,10 @@ describe('Admin Newsletter subscribers API tests', () => {
   it('non-authenticated users should not be allowed to export subscribers', async () => {
     await agent.get('/api/admin/newsletter-subscribers').expect(403);
     await agent
+      .post('/api/admin/newsletter-subscribers/audience')
+      .send({ locationText: 'Berlin', sources: ['living'] })
+      .expect(403);
+    await agent
       .get(`/api/admin/newsletter-subscribers/circle?circleId=${circleId}`)
       .expect(403);
   });
@@ -74,6 +79,10 @@ describe('Admin Newsletter subscribers API tests', () => {
     await utils.signIn(nonAdminAuth, agent);
     await agent.post('/api/admin/newsletter-subscribers/split').expect(403);
     await agent.get('/api/admin/newsletter-subscribers').expect(403);
+    await agent
+      .post('/api/admin/newsletter-subscribers/audience')
+      .send({ locationText: 'Berlin', sources: ['living'] })
+      .expect(403);
     await agent
       .get(`/api/admin/newsletter-subscribers/circle?circleId=${circleId}`)
       .expect(403);
@@ -102,12 +111,13 @@ describe('Admin Newsletter subscribers API tests', () => {
       .expect(200);
 
     body.totalEmailCount.should.equal(5);
+    body.outputFormat.should.equal('csv');
     body.subscribedCount.should.equal(1);
     body.unsubscribedCount.should.equal(4);
-    body.subscribedCsv.should.equal(
+    body.subscribedContent.should.equal(
       'Email Address,First Name,Last Name\nactive@example.com,Active,Subscriber',
     );
-    body.unsubscribedCsv.should.equal(
+    body.unsubscribedContent.should.equal(
       [
         'Email Address,First Name,Last Name,Reason',
         'inactive@example.com,Inactive,Subscriber,Newsletter disabled',
@@ -115,6 +125,40 @@ describe('Admin Newsletter subscribers API tests', () => {
         'pending-delete@example.com,Pending,Deletion,Profile deletion pending',
         'missing@example.com,,,Email not found',
       ].join('\n'),
+    );
+
+    await utils.signOut(agent);
+  });
+
+  it('admin users can split an uploaded NDJSON recipient list', async () => {
+    await utils.signIn(adminAuth, agent);
+
+    const { body } = await agent
+      .post('/api/admin/newsletter-subscribers/split')
+      .attach(
+        'newsletterCsv',
+        Buffer.from(
+          [
+            '{"email":"active@example.com"}',
+            '{"email":"inactive@example.com"}',
+          ].join('\n'),
+        ),
+        {
+          contentType: 'application/x-ndjson',
+          filename: 'newsletter.ndjson',
+        },
+      )
+      .expect(200);
+
+    body.totalEmailCount.should.equal(2);
+    body.outputFormat.should.equal('ndjson');
+    body.subscribedCount.should.equal(1);
+    body.unsubscribedCount.should.equal(1);
+    body.subscribedContent.should.equal(
+      '{"email":"active@example.com","firstName":"Active","lastName":"Subscriber"}',
+    );
+    body.unsubscribedContent.should.match(
+      /"email":"inactive@example.com".*"reason":"Newsletter disabled"/,
     );
 
     await utils.signOut(agent);
@@ -142,6 +186,32 @@ describe('Admin Newsletter subscribers API tests', () => {
       .get(`/api/admin/newsletter-subscribers/circle?circleId=${circleId}`)
       .expect(200);
 
+    type.should.equal('text/csv');
+    text.should.equal(
+      'Email Address,First Name,Last Name\nactive@example.com,Active,Subscriber',
+    );
+
+    await utils.signOut(agent);
+  });
+
+  it('admin users can preview and export a targeted audience', async () => {
+    await utils.signIn(adminAuth, agent);
+
+    const criteria = {
+      circleIds: [circleId.toString()],
+      locationText: 'Berlin',
+      sources: ['living', 'from'],
+    };
+    const preview = await agent
+      .post('/api/admin/newsletter-subscribers/audience')
+      .send(criteria)
+      .expect(200);
+    preview.body.should.deepEqual({ count: 1 });
+
+    const { type, text } = await agent
+      .post('/api/admin/newsletter-subscribers/audience')
+      .send({ ...criteria, format: 'csv' })
+      .expect(200);
     type.should.equal('text/csv');
     text.should.equal(
       'Email Address,First Name,Last Name\nactive@example.com,Active,Subscriber',

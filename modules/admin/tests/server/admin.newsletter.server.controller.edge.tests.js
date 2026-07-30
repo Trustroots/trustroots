@@ -138,7 +138,7 @@ describe('Admin newsletter controller edge-case unit tests', () => {
 
       res.statusCode.should.equal(400);
       res.body.message.should.equal(
-        'Could not find any email addresses in the uploaded CSV file.',
+        'Could not find any email addresses in the uploaded file.',
       );
     });
 
@@ -245,7 +245,8 @@ describe('Admin newsletter controller edge-case unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.subscribedCount.should.equal(0);
       res.body.unsubscribedCount.should.equal(5);
-      res.body.unsubscribedCsv.should.equal(
+      res.body.outputFormat.should.equal('csv');
+      res.body.unsubscribedContent.should.equal(
         [
           'Email Address,First Name,Last Name,Reason',
           'shadow@example.com,Shadow,User,Account shadowbanned',

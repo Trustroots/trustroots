@@ -20,16 +20,16 @@ test.describe('admin newsletter API feature coverage', () => {
     expect(response.ok()).toBeTruthy();
   }
 
-  test('admin can split newsletter recipients from uploaded CSV', async ({
+  test('admin can split newsletter recipients from uploaded NDJSON', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.newsletter-downloads', [
-      'Admin can upload a newsletter CSV and split recipients by subscription status.',
-      'Split response includes downloadable subscribed and unsubscribed CSV files.',
+      'Admin can upload a newsletter NDJSON file and split recipients by subscription status.',
+      'Split downloads preserve the uploaded recipient-list format.',
     ]);
     annotateFeature(testInfo, 'admin.newsletter-page', [
-      'Newsletter page includes the CSV upload splitting tool.',
+      'Newsletter page includes the recipient upload splitting tool.',
     ]);
 
     await setNewsletterPreference(page, request, SEEDED_MEMBERS[0], true);
@@ -37,34 +37,55 @@ test.describe('admin newsletter API feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
 
     await page.goto('/admin/newsletter');
-    await expect(page.getByLabel('Newsletter CSV file')).toBeVisible();
+    await expect(
+      page.getByLabel('Recipient file (CSV, JSONL, or NDJSON)'),
+    ).toBeVisible();
 
-    await page.locator('#newsletter-csv-file').setInputFiles({
+    await page.locator('#newsletter-recipient-file').setInputFiles({
       buffer: Buffer.from(
         [
-          'Email Address',
-          SEEDED_MEMBERS[0].email,
-          SEEDED_MEMBERS[1].email,
-          'missing@example.test',
+          JSON.stringify({ email: SEEDED_MEMBERS[0].email }),
+          JSON.stringify({ email: SEEDED_MEMBERS[1].email }),
+          JSON.stringify({ email: 'missing@example.test' }),
         ].join('\n'),
       ),
-      mimeType: 'text/csv',
-      name: 'newsletter.csv',
+      mimeType: 'application/x-ndjson',
+      name: 'newsletter.ndjson',
     });
 
-    await page.getByRole('button', { name: 'Split recipients' }).click();
+    await page.getByRole('button', { name: 'Check recipients' }).click();
 
     await expect(
-      page.getByText(
-        'Processed 3 emails: 1 still subscribed and 2 unsubscribed.',
-      ),
+      page.getByText('Processed 3 emails: 1 eligible and 2 excluded.'),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Download still subscribed CSV' }),
+      page.getByRole('button', { name: 'Download eligible NDJSON' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('button', { name: 'Download unsubscribed CSV' }),
+      page.getByRole('button', { name: 'Download excluded NDJSON' }),
     ).toBeVisible();
+
+    const [eligibleDownload] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Download eligible NDJSON' }).click(),
+    ]);
+    expect(eligibleDownload.suggestedFilename()).toBe(
+      'newsletter-eligible.ndjson',
+    );
+    const eligibleStream = await eligibleDownload.createReadStream();
+    let eligibleText = '';
+    for await (const chunk of eligibleStream) {
+      eligibleText += chunk.toString();
+    }
+    expect(JSON.parse(eligibleText).email).toBe(SEEDED_MEMBERS[0].email);
+
+    const [excludedDownload] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Download excluded NDJSON' }).click(),
+    ]);
+    expect(excludedDownload.suggestedFilename()).toBe(
+      'newsletter-excluded.ndjson',
+    );
   });
 
   test('admin can export all and circle subscriber CSVs', async ({
@@ -126,5 +147,52 @@ test.describe('admin newsletter API feature coverage', () => {
     expect(circleExportText).toContain(SEEDED_MEMBERS[0].email);
     expect(circleExportText).not.toContain(SEEDED_MEMBERS[1].email);
     expect(circleExportText).not.toContain(SEEDED_MEMBERS[2].email);
+  });
+
+  test('admin can build a location and circle newsletter audience', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.newsletter-audiences', [
+      'Admin can combine selected location sources with selected circles.',
+      'Admin can preview and export the eligible targeted audience.',
+      'Audience counts refresh automatically after valid filters change.',
+    ]);
+    annotateFeature(testInfo, 'admin.newsletter-page', [
+      'Newsletter page includes the targeted audience builder.',
+    ]);
+
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    const updateResponse = await request.put('/api/users', {
+      data: {
+        locationLiving: 'Northbridge, Exampleland',
+        newsletter: true,
+      },
+    });
+    expect(updateResponse.ok()).toBeTruthy();
+    await signInViaApi(page, request, SEEDED_ADMIN);
+
+    const memberId = await fetchUserIdByUsername(
+      request,
+      SEEDED_MEMBERS[0].username,
+    );
+    const memberReport = await request.post('/api/admin/user', {
+      data: { id: memberId },
+    });
+    const reportBody = await memberReport.json();
+    const circleId = reportBody?.profile?.member?.[0]?.tribe?._id;
+    expect(Boolean(circleId)).toBeTruthy();
+
+    await page.goto('/admin/newsletter');
+    await page.getByLabel('Hosting location').uncheck();
+    await page.getByLabel('Location name').fill('Northbridge');
+    await page.getByLabel('Circles (optional)').selectOption(circleId);
+    await expect(
+      page.getByText('1 eligible recipient matches these filters.'),
+    ).toBeVisible();
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Export audience CSV' }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('newsletter-audience.csv');
   });
 });

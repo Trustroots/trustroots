@@ -93,6 +93,11 @@ module.exports = app => {
     .get(adminAuditLog.record, adminNewsletter.list);
 
   app
+    .route('/api/admin/newsletter-subscribers/audience')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminNewsletter.audience);
+
+  app
     .route('/api/admin/newsletter-subscribers/circle')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminNewsletter.listCircleMembers);
