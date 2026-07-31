@@ -49,6 +49,16 @@ describe('Admin access route tests', () => {
     },
     {
       method: 'post',
+      path: '/api/admin/messages/scammer-recipients',
+      body: { username: _usersRaw[2].username },
+    },
+    {
+      method: 'post',
+      path: '/api/admin/messages/scammer-warning',
+      body: { username: _usersRaw[2].username, content: 'Warning' },
+    },
+    {
+      method: 'post',
       path: '/api/admin/threads',
       body: { userId: targetUserId },
     },
