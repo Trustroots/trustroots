@@ -1,7 +1,8 @@
 # Docker
 
 This directory is the **single** local Docker setup for Trustroots (dev,
-mongodb, optional prod-like image test, data import, and production image build).
+Mailpit, MongoDB, optional prod-like image test, data import, and production
+image build).
 
 > Production is **not** deployed from this `docker-compose.yml`. Production runs
 > images built by `dockerBuild.sh` elsewhere.
@@ -9,7 +10,8 @@ mongodb, optional prod-like image test, data import, and production image build)
 ## First-time setup
 
 Create `data/local.js` (the `data/` directory is gitignored). It is mounted into
-the app and must point the database at the `mongodb` compose service:
+the app and must point the database at the `mongodb` Compose service and email
+at the `mailpit` service:
 
 ```js
 'use strict';
@@ -27,7 +29,12 @@ module.exports = {
   },
   mailer: {
     options: {
-      jsonTransport: true,
+      jsonTransport: false,
+      host: 'mailpit',
+      port: 1025,
+      ignoreTLS: true,
+      auth: false,
+      pool: true,
     },
   },
 };
@@ -42,8 +49,10 @@ docker compose up
 
 - App with hot reload at http://localhost:3000 (webpack-dev-server; the API runs
   on :3001 inside the container).
-- Development emails are captured locally and are not delivered.
-- Runs `dev` + `mongodb`; the repo is bind-mounted.
+- Mailpit UI at http://localhost:1080 (SMTP to `mailpit:1025` from the app).
+- Runs `dev` + `mongodb` + `mailpit`; the repo is bind-mounted.
+- Mailpit's UI is bound to localhost and its SMTP port is not published to the
+  host. It runs on an internal-only Docker network with no outbound relay.
 - Uses the `trustroots` database, so data imported via `importMongoData.sh` is
   visible.
 - MongoDB data lives in the `trustroots_mongodb_data` Docker volume. This keeps

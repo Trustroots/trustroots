@@ -67,8 +67,13 @@ Choose the setup that fits what you're doing:
 
 The host and Docker setups serve the app at http://localhost:3000.
 
-Docker dev uses hot reload and a shared MongoDB service. Development emails are
-captured locally and are not delivered. See
+Mailpit catches outbound development email when using Docker Compose or the Dev
+Container. Its web UI is available at http://localhost:1080 for Docker Compose
+and http://localhost:11080 for the Dev Container. Bare `npm start` uses an
+in-process JSON transport instead and does not start the mail UI.
+
+Docker dev uses hot reload, Mailpit, and a shared MongoDB service. Development
+emails are captured locally and are not delivered. See
 [`deploy/docker/README.md`](deploy/docker/README.md) for first-time setup,
 troubleshooting, dependency rebuilds, test workflows, and production-like image
 checks. See [`.devcontainer/README.md`](.devcontainer/README.md) for editor and
