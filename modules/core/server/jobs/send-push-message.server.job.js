@@ -1,3 +1,4 @@
+/* eslint-disable no-unreachable */
 const async = require('async');
 const firebaseMessaging = require('../../../../config/lib/firebase-messaging');
 const exponentNotifications = require('../../../../config/lib/exponent-notifications');
