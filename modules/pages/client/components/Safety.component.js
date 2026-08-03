@@ -261,11 +261,11 @@ export default function Safety() {
                 'If you feel that you have violated someone’s boundaries and caused harm, this resource can help you ',
               )}
               <a
-                href="https://docs.google.com/document/d/1WiMevd1_zxWF63sdElbkPsNC3aNbcMdJCrO6p5JfQbM/edit?tab=t.0"
+                href="https://team.trustroots.org/accountability/"
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('show accountability and make amends (Google Docs)')}
+                {t('show accountability and make amends')}
               </a>
               {t('.')}
             </p>

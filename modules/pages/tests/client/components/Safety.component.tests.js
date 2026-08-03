@@ -65,7 +65,12 @@ describe('<Safety />', () => {
     );
     expect(
       screen.getByRole('link', {
-        name: 'show accountability and make amends (Google Docs)',
+        name: 'show accountability and make amends',
+      }),
+    ).toHaveAttribute('href', 'https://team.trustroots.org/accountability/');
+    expect(
+      screen.getByRole('link', {
+        name: 'show accountability and make amends',
       }),
     ).toHaveAttribute('target', '_blank');
   });
