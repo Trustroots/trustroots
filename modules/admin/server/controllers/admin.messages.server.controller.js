@@ -12,7 +12,7 @@ const MessagesController = require('../../../messages/server/controllers/message
 const textService = require('../../../core/server/services/text.server.service');
 
 async function findScammerRecipients(username, currentUserId) {
-  if (!username || typeof username !== 'string') {
+  if (typeof username !== 'string' || !username.trim()) {
     const error = new Error('Missing `username` field.');
     error.statusCode = 400;
     throw error;
@@ -61,7 +61,8 @@ exports.getScammerRecipients = async (req, res) => {
 
 exports.sendScammerWarning = async (req, res) => {
   const content = _.get(req, ['body', 'content']);
-  if (!content || textService.isEmpty(content)) {
+  const cleanContent = textService.html(content);
+  if (!cleanContent || textService.isEmpty(cleanContent)) {
     return res.status(400).send({ message: 'Please write a message.' });
   }
 
@@ -70,7 +71,6 @@ exports.sendScammerWarning = async (req, res) => {
       _.get(req, ['body', 'username']),
       req.user && req.user._id,
     );
-    const cleanContent = textService.html(content);
     const messages = recipients.map(recipient => ({
       content: cleanContent,
       userFrom: req.user._id,

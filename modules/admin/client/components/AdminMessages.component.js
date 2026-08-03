@@ -78,11 +78,12 @@ export default function AdminMessages() {
 
   async function previewScammerRecipients(event) {
     event.preventDefault();
+    const username = scammerUsername.trim();
     setScammerError('');
     setWarningSent(null);
     setIsLoadingRecipients(true);
     try {
-      setScammerRecipients(await getScammerRecipients(scammerUsername));
+      setScammerRecipients(await getScammerRecipients(username));
     } catch (error) {
       setScammerRecipients(null);
       setScammerError(
@@ -99,8 +100,12 @@ export default function AdminMessages() {
     setWarningSent(null);
     setIsSendingWarning(true);
     try {
-      const result = await sendScammerWarning(scammerUsername, warningContent);
+      const result = await sendScammerWarning(
+        scammerRecipients.scammer.username,
+        warningContent,
+      );
       setWarningSent(result.sent);
+      setScammerRecipients(null);
     } catch (error) {
       setScammerError(
         error.response?.data?.message || 'Could not send the warning.',
@@ -126,7 +131,13 @@ export default function AdminMessages() {
               <input
                 aria-label="Scammer username"
                 className="form-control"
-                onChange={({ target: { value } }) => setScammerUsername(value)}
+                disabled={isLoadingRecipients || isSendingWarning}
+                onChange={({ target: { value } }) => {
+                  setScammerUsername(value);
+                  setScammerRecipients(null);
+                  setScammerError('');
+                  setWarningSent(null);
+                }}
                 placeholder="Scammer username"
                 type="text"
                 value={scammerUsername}
@@ -145,6 +156,15 @@ export default function AdminMessages() {
                   <strong>{scammerRecipients.recipients.length}</strong>{' '}
                   recipient(s) found for @{scammerRecipients.scammer.username}.
                 </p>
+                {scammerRecipients.recipients.length > 0 && (
+                  <ul>
+                    {scammerRecipients.recipients.map(recipient => (
+                      <li key={recipient._id}>
+                        <UserLink user={recipient} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
                 {scammerRecipients.recipients.length > 0 && (
                   <>
                     <textarea

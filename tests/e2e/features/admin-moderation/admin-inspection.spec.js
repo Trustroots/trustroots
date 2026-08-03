@@ -49,6 +49,32 @@ test.describe('admin moderation inspection flows', () => {
     ).toBeVisible();
   });
 
+  test('admin can preview recipients contacted by a reported member', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.messages', [
+      'Admin can preview recipients contacted by a reported member.',
+    ]);
+
+    await page.goto('/admin/messages');
+    await page.getByLabel('Scammer username').fill(SEEDED_SHADOW.username);
+    const recipientsResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/messages/scammer-recipients') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.getByRole('button', { name: 'Show recipients' }).click();
+    await recipientsResponse;
+
+    await expect(
+      page.getByText(SEEDED_MEMBERS[0].username, { exact: false }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Send warning to all' }),
+    ).toBeVisible();
+  });
+
   test('admin user report card shows message counts for a shadowbanned member', async ({
     page,
   }, testInfo) => {
