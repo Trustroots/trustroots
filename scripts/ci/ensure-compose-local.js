@@ -28,7 +28,12 @@ module.exports = {
   },
   mailer: {
     options: {
-      jsonTransport: true,
+      jsonTransport: false,
+      host: 'mailpit',
+      port: 1025,
+      ignoreTLS: true,
+      auth: false,
+      pool: true,
     },
   },
 };
