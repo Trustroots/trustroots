@@ -11,7 +11,11 @@
  */
 
 // Disable all welcome emails
-module.exports = function () {};
+module.exports = function (job, done) {
+  if (typeof done === 'function') {
+    return done();
+  }
+};
 
 /*
 const _ = require('lodash');

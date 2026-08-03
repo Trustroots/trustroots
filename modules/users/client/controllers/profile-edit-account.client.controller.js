@@ -1,3 +1,10 @@
+import {
+  USERNAME_FORMAT_MESSAGE,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_REGEX,
+} from '@/modules/users/client/config/username.client.constants';
+
 angular
   .module('users')
   .controller('ProfileEditAccountController', ProfileEditAccountController);
@@ -24,6 +31,13 @@ function ProfileEditAccountController(
   vm.changeUserPassword = changeUserPassword;
   vm.user = Authentication.user;
   vm.getUsernameValidationError = getUsernameValidationError;
+  vm.hasLegacyUsername = hasLegacyUsername;
+  vm.usernameMinlength = USERNAME_MIN_LENGTH;
+  vm.usernameMaxlength = USERNAME_MAX_LENGTH;
+  vm.usernamePattern = USERNAME_REGEX;
+  vm.usernameHint = USERNAME_FORMAT_MESSAGE;
+
+  const initialUsername = vm.user && vm.user.username;
 
   // Related to profile removal
   vm.removeProfileConfirm = false;
@@ -63,22 +77,33 @@ function ProfileEditAccountController(
     }
 
     if (err.maxlength) {
-      return 'Too long, maximum length is 34 characters.';
+      return (
+        'Too long, maximum length is ' + vm.usernameMaxlength + ' characters.'
+      );
     }
 
     if (err.minlength) {
-      return 'Too short, minumum length is 3 characters.';
+      return (
+        'Too short, minumum length is ' + vm.usernameMinlength + ' characters.'
+      );
     }
 
     if (err.pattern) {
-      return 'Invalid username.';
+      return USERNAME_FORMAT_MESSAGE;
     }
 
     if (err.username) {
-      return 'This username is already in use or invalid.';
+      return (
+        usernameModel.$usernameValidationMessage ||
+        'This username is already in use or invalid.'
+      );
     }
 
     return 'Invalid username.';
+  }
+
+  function hasLegacyUsername() {
+    return Boolean(initialUsername && !USERNAME_REGEX.test(initialUsername));
   }
 
   // Activate controller

@@ -216,7 +216,9 @@ describe('SignupController', function () {
           $error: { pattern: true },
           $valid: false,
         }),
-      ).toBe('Invalid username.');
+      ).toBe(
+        'Use 3-34 lowercase letters and numbers, including at least one letter.',
+      );
       expect(
         controller.getUsernameValidationError({
           $dirty: true,
@@ -224,6 +226,14 @@ describe('SignupController', function () {
           $valid: false,
         }),
       ).toBe('This username is already in use.');
+      expect(
+        controller.getUsernameValidationError({
+          $dirty: true,
+          $error: { username: true },
+          $usernameValidationMessage: 'Username is not available.',
+          $valid: false,
+        }),
+      ).toBe('Username is not available.');
       expect(
         controller.getUsernameValidationError({
           $dirty: true,

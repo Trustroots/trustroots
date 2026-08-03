@@ -28,6 +28,7 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
       ngModel.$asyncValidators.username = function (modelValue) {
         return $q(function (resolve, reject) {
           ngModel.$setValidity('username', true);
+          ngModel.$usernameValidationMessage = '';
 
           if (modelValue && modelValue.length >= minlength) {
             if (delayedUsernameValidation) {
@@ -42,15 +43,17 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
                 attr.trValidateUsername &&
                 modelValue === attr.trValidateUsername
               ) {
+                ngModel.$usernameValidationMessage = '';
                 return resolve();
               }
 
               SignupValidation.post({ username: modelValue }).$promise.then(
                 function (results) {
                   if (results && !results.valid) {
-                    // Got result and it's negative
+                    ngModel.$usernameValidationMessage = results.message || '';
                     reject();
                   } else {
+                    ngModel.$usernameValidationMessage = '';
                     // Either result was positive or we couldn't receive any
                     // response, but regard networks errors as false negatives.
                     // Otherwise we'd flag everything invalid
@@ -58,6 +61,7 @@ function trValidateUsernameDirective($q, $timeout, SignupValidation) {
                   }
                 },
                 function () {
+                  ngModel.$usernameValidationMessage = '';
                   // Network failures should be treated as valid rather than blocking
                   // all users until next keystroke.
                   resolve();

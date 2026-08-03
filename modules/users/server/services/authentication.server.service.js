@@ -1,4 +1,16 @@
 const config = require('../../../../config/config');
+// Emoji sequences can combine pictographs, modifiers, joiners and selectors.
+// eslint-disable-next-line no-misleading-character-class
+const nameRegex = new RegExp(
+  '^(?=.*\\p{L})[\\p{L}\\p{M} ._’\\-\\p{Extended_Pictographic}\\p{Emoji_Modifier}\\u200D\\uFE0F]*$',
+  'u',
+);
+const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;
+const legacyUsernameLookupRegex = /^[A-Za-z0-9._-]{3,34}$/;
+
+exports.usernameFormatErrorMessage =
+  'Use 3-34 lowercase letters and numbers, including at least one letter.';
+exports.usernameUnavailableMessage = 'Username is not available.';
 
 exports.generateEmailToken = function (user, saltBuffer) {
   const email = user.emailTemporary || user.email;
@@ -9,26 +21,77 @@ exports.generateEmailToken = function (user, saltBuffer) {
 /**
  * A Validation function for username
  *
- * Used at Mongoose Schema
+ * Used for signup and username changes.
  *
  * - at least 3 characters
- * - only a-z0-9_-.
- * - contain at least one alphanumeric character
+ * - at most 34 characters
+ * - only a-z0-9
+ * - contain at least one letter
  * - not in list of illegal usernames
- * - no consecutive dots: "." ok, ".." nope
- * - not begin or end with "."
  */
 exports.validateUsername = function (username) {
-  username = String(username).toLowerCase();
-  const usernameRegex = /^(?=.*[0-9a-z])[0-9a-z.\-_]{3,34}$/;
-  const dotsRegex = /^[^.](?!.*(\.)\1).*[^.]$/;
+  username = String(username);
 
-  return (
+  return Boolean(
     username &&
-    usernameRegex.test(username) &&
-    dotsRegex.test(username) &&
-    !exports.isUsernameReserved(username)
+      exports.isUsernameFormatValid(username) &&
+      !exports.isUsernameReserved(username),
   );
+};
+
+exports.isUsernameFormatValid = function (username) {
+  return usernameRegex.test(String(username));
+};
+
+/**
+ * Name fields shown on profiles and in administration tools.
+ *
+ * Keep this deliberately permissive for international names while excluding
+ * digits and code-like punctuation. Names may contain letters, combining
+ * marks, spaces, full stops, underscores, apostrophes, hyphens, and emoji. At
+ * least one letter is still required, so emoji can decorate a name but cannot
+ * replace it.
+ */
+exports.isNameFormatValid = function (name) {
+  return (
+    typeof name === 'string' &&
+    name.length <= 34 &&
+    !name.toLowerCase().includes('www') &&
+    !name.toLowerCase().includes('bit.ly') &&
+    nameRegex.test(name)
+  );
+};
+
+/**
+ * NIP-05 and other legacy username lookups.
+ *
+ * Uses the pre-policy character set (including `.`, `-`, `_`) and does not
+ * require a letter, so existing users like `123` or `legacy.user` stay
+ * addressable. New signups use `isUsernameFormatValid` instead — do not
+ * merge these regexes.
+ */
+exports.isLegacyUsernameLookupValid = function (username) {
+  return (
+    typeof username === 'string' && legacyUsernameLookupRegex.test(username)
+  );
+};
+
+/**
+ * User-facing rejection message for signup and username changes, or null if ok.
+ *
+ * @param {String} username
+ * @returns {String|null}
+ */
+exports.getUsernameRejectionMessage = function (username) {
+  if (!exports.isUsernameFormatValid(username)) {
+    return exports.usernameFormatErrorMessage;
+  }
+
+  if (exports.isUsernameReserved(username)) {
+    return exports.usernameUnavailableMessage;
+  }
+
+  return null;
 };
 
 /**

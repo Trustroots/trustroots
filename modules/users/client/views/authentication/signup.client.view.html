@@ -145,9 +145,9 @@
                 ng-model="signup.credentials.username"
                 ng-minlength="::signup.usernameMinlength"
                 ng-maxlength="::signup.usernameMaxlength"
-                ng-pattern="/^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/"
+                ng-pattern="signup.usernamePattern"
                 tr-validate-username
-                tr-focustip="'Can contain only letters, numbers, periods and hyphens.<br>3—34 characters long.<br>Note: no underscores ___!'"
+                tr-focustip="signup.usernameHint"
                 tooltip-is-open="!userForm.username.$pending && userForm.username.$dirty && !userForm.username.$valid"
                 uib-tooltip="{{signup.getUsernameValidationError(userForm.username)}}"
                 tooltip-popup-delay="500"

@@ -10,6 +10,7 @@ const tribesHandler = require('../../../tribes/server/controllers/tribes.server.
 const contactHandler = require('../../../contacts/server/controllers/contacts.server.controller');
 const messageHandler = require('../../../messages/server/controllers/messages.server.controller');
 const offerHandler = require('../../../offers/server/controllers/offers.server.controller');
+const authenticationService = require('../services/authentication.server.service');
 const emailService = require('../../../core/server/services/email.server.service');
 const pushService = require('../../../core/server/services/push.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');
@@ -23,6 +24,7 @@ const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const nip19 = require('nostr-tools/nip19');
+const validator = require('validator');
 const User = mongoose.model('User');
 
 // Fields to send publicly about any user profile
@@ -85,6 +87,26 @@ exports.update = function (req, res) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
     });
+  }
+
+  if (
+    req.body.email &&
+    (typeof req.body.email !== 'string' || !validator.isEmail(req.body.email))
+  ) {
+    return res.status(400).send({
+      message: 'Please enter a valid email address.',
+    });
+  }
+
+  for (const nameField of ['firstName', 'lastName']) {
+    if (
+      Object.prototype.hasOwnProperty.call(req.body, nameField) &&
+      !authenticationService.isNameFormatValid(req.body[nameField])
+    ) {
+      return res.status(400).send({
+        message: errorService.getErrorMessageByKey('bad-request'),
+      });
+    }
   }
 
   // validate locale
@@ -219,6 +241,16 @@ exports.update = function (req, res) {
       // User wants to change the username
       function (token, email, done) {
         if (req.body.username && req.body.username !== req.user.username) {
+          const usernameRejectionMessage =
+            authenticationService.getUsernameRejectionMessage(
+              req.body.username,
+            );
+          if (usernameRejectionMessage) {
+            return res.status(400).send({
+              message: usernameRejectionMessage,
+            });
+          }
+
           // They are not allowed to do so
           if (!isUsernameUpdateAllowed(req.user)) {
             return res.status(403).send({
