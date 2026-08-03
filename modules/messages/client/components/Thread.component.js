@@ -82,6 +82,8 @@ function SafetyReminder() {
     <p className="text-muted text-center">
       {t('Before meeting someone new, read our ')}
       <a href="/safety">{t('safety tips')}</a>
+      {t(' and ')}
+      <a href="/rules">{t('community rules')}</a>
       {t('.')}
     </p>
   );

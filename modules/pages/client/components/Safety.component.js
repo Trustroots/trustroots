@@ -265,7 +265,7 @@ export default function Safety() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('show accountability and make amends')}
+                {t('show accountability and make amends (Google Docs)')}
               </a>
               {t('.')}
             </p>

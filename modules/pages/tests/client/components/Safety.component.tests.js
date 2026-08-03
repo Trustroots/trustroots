@@ -65,7 +65,7 @@ describe('<Safety />', () => {
     );
     expect(
       screen.getByRole('link', {
-        name: 'show accountability and make amends',
+        name: 'show accountability and make amends (Google Docs)',
       }),
     ).toHaveAttribute('target', '_blank');
   });

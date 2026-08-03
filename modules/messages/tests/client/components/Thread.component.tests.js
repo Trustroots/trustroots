@@ -188,6 +188,9 @@ describe('<Thread>', () => {
         'href',
         '/safety',
       );
+      expect(
+        screen.getByRole('link', { name: 'community rules' }),
+      ).toHaveAttribute('href', '/rules');
     });
 
     it('sends a typed reply and appends the API response to the thread', async () => {
@@ -254,6 +257,9 @@ describe('<Thread>', () => {
       'href',
       '/safety',
     );
+    expect(
+      screen.getByRole('link', { name: 'community rules' }),
+    ).toHaveAttribute('href', '/rules');
   });
 
   it('shows removed user note when user has been deleted and userId exists', async () => {

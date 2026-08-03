@@ -39,6 +39,8 @@
   "{{count}} unread messages": "{{count}} unread messages",
   "{{count}} unread messages_plural": "{{count}} unread messages",
   ".": ".",
+  " and ": " and ",
   "Before meeting someone new, read our ": "Before meeting someone new, read our ",
+  "community rules": "community rules",
   "safety tips": "safety tips"
 }
