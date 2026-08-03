@@ -141,9 +141,9 @@ export default function FaqFoundation() {
       <div className="faq-question" id="who-decides-what-gets-done">
         <h3>{t('Who decides what gets done?')}</h3>
         <Trans t={t} ns="pages">
-          Since we went into maintenance mode in late 2022, the project has been
-          led by a small team of volunteers, including two of the original
-          founders. Learn more at{' '}
+          Trustroots returned to active development in 2026. The project is led
+          by a small team of volunteers, including two of the original founders.
+          Learn more at{' '}
           <a href="https://team.trustroots.org/">team.trustroots.org</a>.
         </Trans>
       </div>

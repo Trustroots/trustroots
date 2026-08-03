@@ -101,9 +101,14 @@ describe('FAQ page sections', () => {
     expect(
       screen.getByRole('heading', { name: 'Is Trustroots open source?' }),
     ).toBeInTheDocument();
+    expect(screen.getByText(/active development again/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/',
+    );
     expect(
-      screen.getByText(/working on moving the whole platform over to nostr/i),
-    ).toBeInTheDocument();
+      screen.getByRole('link', { name: 'Nostroots repository' }),
+    ).toHaveAttribute('href', 'https://github.com/Trustroots/nostroots');
   });
 
   it('renders bugs-and-features FAQ text', () => {
@@ -113,5 +118,10 @@ describe('FAQ page sections', () => {
       screen.getByRole('heading', { name: 'How do I report a bug?' }),
     ).toBeInTheDocument();
     expect(screen.getByText(/search bar/i)).toBeInTheDocument();
+    expect(screen.getByText(/active development again/i)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/',
+    );
   });
 });
