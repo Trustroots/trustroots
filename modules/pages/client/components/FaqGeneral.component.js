@@ -44,9 +44,10 @@ export default function FaqGeneral() {
 
       <div className="faq-question" id="is-there-mobile-app">
         <h3>{t('Is there a mobile app?')}</h3>
-        {t(
-          'No. There used to be an android app, but it is no longer maintained and not available.',
-        )}
+        <Trans t={t} ns="pages">
+          Yes. You can use Trustroots through the{' '}
+          <a href="https://nos.trustroots.org/">Nostroots mobile apps</a>.
+        </Trans>
         <br />
         <br />
         <Trans t={t} ns="pages">

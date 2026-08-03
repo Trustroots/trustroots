@@ -37,6 +37,9 @@ describe('FAQ page sections', () => {
         content.includes('No. Trustroots is for everyone.'),
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Nostroots mobile apps' }),
+    ).toHaveAttribute('href', 'https://nos.trustroots.org/');
   });
 
   it('renders foundation FAQ text', () => {
