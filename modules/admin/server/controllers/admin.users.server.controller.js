@@ -3,6 +3,7 @@
  */
 const _ = require('lodash');
 const mongoose = require('mongoose');
+const net = require('net');
 
 const errorService = require('../../../core/server/services/error.server.service');
 const log = require('../../../../config/lib/logger');
@@ -15,8 +16,19 @@ const ReferenceThread = mongoose.model('ReferenceThread');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 
-const SEARCH_USERS_LIMIT = 150;
+const ADMIN_MEMBER_PAGE_SIZE = 150;
 const SEARCH_STRING_LIMIT = 3;
+const ADMIN_MEMBER_SORT_FIELDS = {
+  created: 'created',
+  displayName: 'displayName',
+  email: 'email',
+  lastIpAddress: 'lastIpAddress',
+  username: 'username',
+};
+const DEFAULT_ADMIN_MEMBER_SORT = {
+  column: 'username',
+  direction: 'ascending',
+};
 const ADMIN_LISTABLE_ROLES = [
   'admin',
   'shadowban',
@@ -38,6 +50,7 @@ const USER_LIST_FIELDS = [
   'displayName',
   'email',
   'emailTemporary',
+  'lastIpAddress',
   'public',
   'removeProfileExpires',
   'removeProfileToken',
@@ -84,20 +97,102 @@ function obfuscateTokens(user) {
  * Import as a package once we support ESM modules
  */
 function escapeStringRegexp(string) {
-  if (typeof string !== 'string') {
-    throw new TypeError('Expected a string');
-  }
-
   // Escape characters with special meaning either inside or outside character sets.
   // Use a simple backslash escape when it’s always valid, and a `\xnn` escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
   return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
 }
 
+function createMemberSearchRegexp(search) {
+  if (typeof search !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+
+  const whitespaceTolerantSearch = search
+    .split(/\s+/)
+    .map(escapeStringRegexp)
+    .join('\\s*');
+
+  return new RegExp('.*' + whitespaceTolerantSearch + '.*', 'i');
+}
+
+function getMemberListOptions(body) {
+  const page = _.get(body, ['page'], 1);
+  const sortColumn = _.get(
+    body,
+    ['sort', 'column'],
+    DEFAULT_ADMIN_MEMBER_SORT.column,
+  );
+  const sortDirection = _.get(
+    body,
+    ['sort', 'direction'],
+    DEFAULT_ADMIN_MEMBER_SORT.direction,
+  );
+
+  if (
+    !Number.isInteger(page) ||
+    page < 1 ||
+    !ADMIN_MEMBER_SORT_FIELDS[sortColumn] ||
+    !['ascending', 'descending'].includes(sortDirection)
+  ) {
+    return null;
+  }
+
+  return {
+    page,
+    sort: {
+      column: sortColumn,
+      direction: sortDirection,
+    },
+  };
+}
+
+async function sendMemberList(req, res, query) {
+  const options = getMemberListOptions(req.body);
+
+  if (!options) {
+    return res.status(400).send({
+      message: 'Invalid member-list options.',
+    });
+  }
+
+  try {
+    const total = await User.countDocuments(query).exec();
+    const totalPages = Math.ceil(total / ADMIN_MEMBER_PAGE_SIZE);
+    const page = Math.min(options.page, Math.max(totalPages, 1));
+    const sortValue = options.sort.direction === 'ascending' ? 1 : -1;
+    const users = await User.find(query)
+      .select(USER_LIST_FIELDS)
+      .sort({
+        [ADMIN_MEMBER_SORT_FIELDS[options.sort.column]]: sortValue,
+        _id: 1,
+      })
+      .skip((page - 1) * ADMIN_MEMBER_PAGE_SIZE)
+      .limit(ADMIN_MEMBER_PAGE_SIZE)
+      .exec();
+
+    return res.send({
+      users: users ? users.map(obfuscateTokens) : [],
+      pagination: {
+        page,
+        pageSize: ADMIN_MEMBER_PAGE_SIZE,
+        total,
+        totalPages,
+      },
+      sort: options.sort,
+    });
+  } catch (err) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err),
+    });
+  }
+}
+
 /*
- * This middleware sends response with an array of found users
+ * This middleware sends a page of found users.
  */
 exports.searchUsers = (req, res) => {
-  const search = _.get(req, ['body', 'search']);
+  const query = _.get(req, ['body', 'search']);
+  const search = typeof query === 'string' ? _.trim(query) : query;
 
   // Validate the query string
   if (!search || search.length < SEARCH_STRING_LIMIT) {
@@ -106,37 +201,20 @@ exports.searchUsers = (req, res) => {
     });
   }
 
-  const regexpSearch = new RegExp(
-    '.*' + escapeStringRegexp(search) + '.*',
-    'i',
-  );
+  const regexpSearch = createMemberSearchRegexp(search);
 
-  User.find({
+  return sendMemberList(req, res, {
     $or: [
       { displayName: regexpSearch },
       { email: regexpSearch },
       { emailTemporary: regexpSearch },
       { username: regexpSearch },
     ],
-  })
-    .select(USER_LIST_FIELDS)
-    .sort('username displayName')
-    .limit(SEARCH_USERS_LIMIT)
-    .exec((err, users) => {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-
-      const result = users ? users.map(obfuscateTokens) : [];
-
-      return res.send(result);
-    });
+  });
 };
 
 /*
- * This middleware sends response with an array of found users
+ * This middleware sends a page of users with the selected role.
  */
 exports.listUsersByRole = (req, res) => {
   const role = _.get(req, ['body', 'role']);
@@ -148,23 +226,24 @@ exports.listUsersByRole = (req, res) => {
     });
   }
 
-  User.find({
+  return sendMemberList(req, res, {
     roles: { $in: [role] },
-  })
-    .select(USER_LIST_FIELDS)
-    .sort('username displayName')
-    .limit(SEARCH_USERS_LIMIT)
-    .exec((err, users) => {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
+  });
+};
 
-      const result = users ? users.map(obfuscateTokens) : [];
+/*
+ * This middleware sends members whose current stored IP address exactly matches.
+ */
+exports.listUsersByLastIpAddress = (req, res) => {
+  const ipAddress = _.get(req, ['body', 'ipAddress']);
 
-      return res.send(result);
+  if (typeof ipAddress !== 'string' || !net.isIP(ipAddress)) {
+    return res.status(400).send({
+      message: 'Invalid IP address.',
     });
+  }
+
+  return sendMemberList(req, res, { lastIpAddress: ipAddress });
 };
 
 const handleAdminApiError = (res, err) => {

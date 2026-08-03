@@ -2512,6 +2512,9 @@ const features = [
     requiredScenarios: [
       'Admin dashboard loads for admin.',
       'Regular member is denied access to admin tools.',
+      'Guest direct loads of React-owned admin pages redirect to sign in.',
+      'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
+      'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
     ],
     relatedSpecs: [
@@ -2664,12 +2667,21 @@ const features = [
           { requiresAuth: true, requiresRole: 'admin' },
         ),
       ],
-      apiRoutes: [apiRoute('POST', '/api/admin/users', source.adminServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/users', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/users/by-last-ip-address',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Admin search finds a confirmed member.',
       'Admin search finds a shadowbanned member.',
       'Search handles no-result state.',
+      'Admin can sort member search results by name.',
+      'Admin can inspect members sharing an exact current IP address.',
     ],
     relatedSpecs: [
       spec(
@@ -2679,6 +2691,10 @@ const features = [
       spec(
         'admin-search.spec.js',
         'admin search finds the shadowbanned member',
+      ),
+      spec(
+        'admin-search.spec.js',
+        'admin can inspect members sharing an exact current IP address',
       ),
     ],
   },
@@ -2703,6 +2719,7 @@ const features = [
     },
     requiredScenarios: [
       'Admin can list members in a selected role.',
+      'Admin can paginate a role list.',
       'Role list respects deterministic seeded users.',
     ],
     relatedSpecs: [
@@ -2710,6 +2727,7 @@ const features = [
         'admin-search.spec.js',
         'admin can list members in the shadowban role',
       ),
+      spec('admin-search.spec.js', 'admin can paginate a role list'),
     ],
   },
   {

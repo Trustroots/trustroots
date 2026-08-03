@@ -113,6 +113,7 @@
   "Information about you": "Information about you",
   "Information about you from other members; references": "Information about you from other members; references",
   "Information from 3rd party once you connect your account to them": "Information from 3rd party once you connect your account to them",
+  "The most recent IP address used during authenticated activity. We use it to help administrators investigate abuse and protect the community. Only administrators can access it, it replaces any previously stored IP address, and it is deleted with your account.": "The most recent IP address used during authenticated activity. We use it to help administrators investigate abuse and protect the community. Only administrators can access it, it replaces any previously stored IP address, and it is deleted with your account.",
   "Install <1>Ghostery</1>, <4>Noscript</4>, <6>Disconnect</6> or <9>uBlock</9>. These browser extensions will disable all known JavaScript trackers and ensure that your browser does not send a request to external tracking servers.": "Install <1>Ghostery</1>, <4>Noscript</4>, <6>Disconnect</6> or <9>uBlock</9>. These browser extensions will disable all known JavaScript trackers and ensure that your browser does not send a request to external tracking servers.",
   "Install Google's official <2>opt out extension</2>": "Install Google's official <2>opt out extension</2>",
   "Interviews": "Interviews",

@@ -273,6 +273,11 @@ const UserSchema = new Schema({
   seen: {
     type: Date,
   },
+  // The current client IP address from authenticated activity; no history is kept.
+  lastIpAddress: {
+    type: String,
+    index: true,
+  },
   updated: {
     type: Date,
   },

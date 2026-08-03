@@ -5,7 +5,12 @@ const {
   useElementScreenshot,
 } = require('../../support/test');
 
-const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
+const {
+  SEEDED_ADMIN,
+  SEEDED_MEMBERS,
+  signOut,
+  signInViaApi,
+} = require('../../support/helpers');
 
 async function gotoAdminPage(page, path, expectedUrl) {
   let lastError;
@@ -36,6 +41,7 @@ test.describe('admin moderation page flows', () => {
     annotateFeature(testInfo, 'admin.dashboard', [
       'Admin dashboard loads for admin.',
       'Admin footer uses the shared footer layout.',
+      'Dashboard shows ten most recent negative thread votes.',
       'Dashboard shows ten most recent negative experiences.',
     ]);
 
@@ -47,12 +53,21 @@ test.describe('admin moderation page flows', () => {
     ).toBeVisible();
     await expect(page.getByLabel('Name, username or email')).toBeVisible();
     await expect(
+      page.getByRole('heading', {
+        name: 'Last 10 Negative Thread Votes',
+      }),
+    ).toBeVisible();
+    await expect(
       page.getByRole('heading', { name: 'Last 10 Negative Experiences' }),
     ).toBeVisible();
 
     const dashboard = await page.request.get('/api/admin/dashboard');
     expect(dashboard.ok()).toBeTruthy();
     const dashboardData = await dashboard.json();
+    expect(dashboardData.threadVotes).toHaveLength(1);
+    expect(
+      dashboardData.threadVotes.every(vote => vote.reference === 'no'),
+    ).toBe(true);
     expect(dashboardData.negativeExperiences).toHaveLength(1);
     expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
 
@@ -141,5 +156,34 @@ test.describe('admin moderation page flows', () => {
     await expect(
       page.getByRole('button', { name: 'Count recipients' }),
     ).toBeVisible();
+  });
+});
+
+test.describe('admin React route access boundaries', () => {
+  test('guest direct admin load redirects to sign in', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Guest direct loads of React-owned admin pages redirect to sign in.',
+    ]);
+
+    await signOut(page);
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveURL(/\/signin$/);
+  });
+
+  test('non-admin direct admin load redirects to volunteering', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
+    ]);
+
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveURL(/\/volunteering$/);
   });
 });

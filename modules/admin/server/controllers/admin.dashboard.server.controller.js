@@ -51,7 +51,7 @@ async function getTopMessengers() {
 }
 
 async function getThreadVotes() {
-  const threadVotes = await ReferenceThread.find({})
+  const threadVotes = await ReferenceThread.find({ reference: 'no' })
     .sort('-created')
     .limit(THREAD_VOTES_LIMIT)
     .populate({

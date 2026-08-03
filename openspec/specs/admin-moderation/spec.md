@@ -32,7 +32,7 @@ activity.
 
 - **WHEN** an authorised administrator opens the administration dashboard
 - **THEN** the dashboard displays the ten most active messengers from the previous seven days
-- **AND** the ten most recent thread votes
+- **AND** the ten most recent negative thread votes
 - **AND** the ten most recent experiences with a negative recommendation
 
 #### Scenario: Administrator opens a review from the dashboard
@@ -43,17 +43,47 @@ activity.
 ### Requirement: Member search and role filtering
 
 The system SHALL let authorised administrators search for members and list
-members with a selected moderation role.
+members with a selected moderation role. Search queries SHALL ignore leading
+and trailing whitespace, and whitespace between query words SHALL be optional
+when matching stored member data. Member collections SHALL be paginated and
+server-side sortable by name, username, email address, signup date, or current
+IP address. The selected sort order SHALL be retained while an administrator
+moves between pages.
 
 #### Scenario: Administrator searches for a member
 
 - **WHEN** an authorised administrator searches using a valid member query
-- **THEN** matching member records are displayed
+- **THEN** the first page of matching member records is displayed
+
+#### Scenario: Administrator searches with surrounding whitespace
+
+- **WHEN** an authorised administrator searches using a valid member query
+  with leading or trailing whitespace
+- **THEN** the system searches using the trimmed query
+
+#### Scenario: Administrator searches with spacing between words
+
+- **WHEN** an authorised administrator searches using words separated by
+  whitespace
+- **THEN** matching member data is returned whether it stores whitespace
+  between those words or not
 
 #### Scenario: Administrator filters members by role
 
 - **WHEN** an authorised administrator selects a moderation role
-- **THEN** members with that role are displayed
+- **THEN** the first page of members with that role is displayed
+
+#### Scenario: Administrator sorts member search results
+
+- **WHEN** an authorised administrator selects a member-table column header
+- **THEN** the displayed member collection is sorted by that column on the server
+- **AND** selecting the active header again reverses the sort direction
+
+#### Scenario: Administrator opens another member-list page
+
+- **WHEN** an authorised administrator selects a subsequent or previous page
+- **THEN** the system displays that page of the same member collection
+- **AND** retains the selected sort column and direction
 
 #### Scenario: Administrator submits an invalid search or role
 
@@ -233,3 +263,33 @@ exclude suspended, shadowbanned, and profile-deletion-pending members.
 
 - **WHEN** an authorised administrator previews or exports an audience
 - **THEN** the request criteria are recorded in the administration audit log
+
+### Requirement: Current IP address moderation context
+
+The system SHALL retain only the current client IP address observed during a
+member's authenticated activity. It SHALL make that address available only to
+authorised administrators in member-search results and member reports.
+
+#### Scenario: Member performs authenticated activity
+
+- **WHEN** a member performs authenticated activity from a client IP address
+- **THEN** the system records the member's current client IP address
+- **AND** replaces any previously stored IP address for that member
+
+#### Scenario: Administrator views a member
+
+- **WHEN** an authorised administrator views a member in a search result or
+  member report
+- **THEN** the system displays the member's current stored IP address when one
+  is available
+
+#### Scenario: Administrator follows an IP address
+
+- **WHEN** an authorised administrator selects a displayed IP address
+- **THEN** the system displays members whose current stored IP address exactly
+  matches that address
+
+#### Scenario: Regular member requests an IP-address lookup
+
+- **WHEN** a regular member requests the administrator IP-address lookup
+- **THEN** the system denies access

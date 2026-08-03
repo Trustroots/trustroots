@@ -64,6 +64,11 @@ module.exports = app => {
     .post(adminAuditLog.record, adminUsers.listUsersByRole);
 
   app
+    .route('/api/admin/users/by-last-ip-address')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminUsers.listUsersByLastIpAddress);
+
+  app
     .route('/api/admin/user')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.getUser);

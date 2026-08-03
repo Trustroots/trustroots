@@ -9,15 +9,6 @@ import * as usersApi from '@/modules/admin/client/api/users.api';
 jest.mock('@/modules/admin/client/api/admin-dashboard.api');
 jest.mock('@/modules/admin/client/api/users.api');
 
-function expectLink(name, href) {
-  expect(
-    screen
-      .getAllByRole('link')
-      .filter(link => (link.textContent || '').trim().startsWith(name))
-      .some(link => link.getAttribute('href') === href),
-  ).toBe(true);
-}
-
 function deferred() {
   let resolve;
   let reject;
@@ -82,7 +73,7 @@ describe('<Admin />', () => {
     });
   });
 
-  it('renders grouped admin workflow links', async () => {
+  it('renders dashboard activity without the old workflow link boxes', async () => {
     window.history.pushState({}, '', '/admin');
     render(<Admin />);
 
@@ -104,8 +95,8 @@ describe('<Admin />', () => {
       'External tools',
     ].forEach(heading => {
       expect(
-        screen.getByRole('heading', { name: heading }),
-      ).toBeInTheDocument();
+        screen.queryByRole('heading', { name: heading }),
+      ).not.toBeInTheDocument();
     });
 
     expect(
@@ -114,24 +105,6 @@ describe('<Admin />', () => {
     expect(
       screen.queryByRole('link', { name: 'Member report card' }),
     ).not.toBeInTheDocument();
-    expectLink('Member threads', '/admin/threads');
-    expectLink('Messages', '/admin/messages');
-    expectLink('Reference threads', '/admin/reference-threads');
-    expectLink('Audit log', '/admin/audit-log');
-    expectLink('Acquisition stories', '/admin/acquisition-stories');
-    expectLink(
-      'Acquisition story analysis',
-      '/admin/acquisition-stories/analysis',
-    );
-    expectLink('Newsletter', '/admin/newsletter');
-    expectLink('Support queue', 'https://trustroots.zendesk.com/inbox/');
-    expectLink('Blog admin', 'https://ideas.trustroots.org/wp-admin/');
-    expectLink(
-      'Newsletter admin',
-      'https://ideas.trustroots.org/wp-admin/admin.php?page=mailpoet-newsletters',
-    );
-    expectLink('Statistics', 'https://grafana.trustroots.org/');
-
     expect(
       screen.queryByText('Remember to logout on public computers!'),
     ).not.toBeInTheDocument();
@@ -143,7 +116,9 @@ describe('<Admin />', () => {
     ).toBeInTheDocument();
     expect(await screen.findByText('12 messages')).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'Last 10 Thread Votes' }),
+      screen.getByRole('heading', {
+        name: 'Last 10 Negative Thread Votes',
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'sender (Sender)' }),
@@ -168,7 +143,9 @@ describe('<Admin />', () => {
       await screen.findByText('Could not load dashboard activity.'),
     ).toBeInTheDocument();
     expect(screen.getByText('No messages last week.')).toBeInTheDocument();
-    expect(screen.getByText('No thread votes found.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No negative thread votes found.'),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('No negative experiences found.'),
     ).toBeInTheDocument();
@@ -248,7 +225,9 @@ describe('<Admin />', () => {
     expect(
       await screen.findByText('No messages last week.'),
     ).toBeInTheDocument();
-    expect(screen.getByText('No thread votes found.')).toBeInTheDocument();
+    expect(
+      screen.getByText('No negative thread votes found.'),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('No negative experiences found.'),
     ).toBeInTheDocument();
