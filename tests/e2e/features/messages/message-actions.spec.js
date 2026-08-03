@@ -3,6 +3,7 @@ const { annotateFeature, expect, test } = require('../../support/test');
 const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  createIsolatedContext,
   fetchUserIdByUsername,
   signInViaApi,
 } = require('../../support/helpers');
@@ -106,7 +107,7 @@ test.describe.serial('message action feature coverage', () => {
 
     const berlinId = await fetchUserIdByUsername(request, berlin.username);
     const aliceId = await fetchUserIdByUsername(request, alice.username);
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

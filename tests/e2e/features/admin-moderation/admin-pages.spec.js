@@ -170,7 +170,7 @@ test.describe('admin React route access boundaries', () => {
     await signOut(page);
     await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
-    await expect(page).toHaveURL(/\/signin$/);
+    await expect(page).toHaveURL(/\/signin\?continue=true&returnTo=%2Fadmin/);
   });
 
   test('non-admin direct admin load redirects to volunteering', async ({

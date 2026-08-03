@@ -70,9 +70,7 @@ test.describe('public pages and unauthenticated flows', () => {
     await page.getByRole('button', { name: /login/i }).click();
     await signInResponse;
 
-    await expect(
-      page.locator('#mc-messages-wrapper .alert-danger'),
-    ).toBeVisible();
+    await expect(page.getByRole('alert')).toBeVisible();
     await expect(page).toHaveURL(/\/signin/);
   });
 

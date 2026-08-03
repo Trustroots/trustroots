@@ -2,6 +2,7 @@ const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
   SEEDED_ADMIN,
+  createIsolatedContext,
   createUser,
   registerViaApi,
   signInViaApi,
@@ -45,7 +46,7 @@ test.describe('admin role and audit feature coverage', () => {
     ]);
 
     const user = createUser();
-    const setupContext = await browser.newContext({ baseURL });
+    const setupContext = await createIsolatedContext(browser, baseURL);
     try {
       await registerViaApi(setupContext.request, user);
     } finally {

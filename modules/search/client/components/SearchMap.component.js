@@ -188,6 +188,7 @@ export default function SearchMap({
   const [leafletMapState, setLeafletMapState] = useState();
   const communityNotesTimerRef = useRef(null);
   const communityNotesEventsRef = useRef([]);
+  const hasInitialisedFiltersRef = useRef(false);
 
   const parsedFilters = filters ? JSON.parse(filters) : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
@@ -615,8 +616,13 @@ export default function SearchMap({
   // Apply externally changed filters object
   // Changed by the search sidebar
   useEffect(() => {
-    // Clear out previous open offers and such
-    onOfferClose();
+    // Preserve an offer opened from the initial URL. Later filter changes
+    // clear the selection because it may no longer match the visible results.
+    if (hasInitialisedFiltersRef.current) {
+      onOfferClose();
+    } else {
+      hasInitialisedFiltersRef.current = true;
+    }
     clearPreviouslySelectedState();
     clearPreviouslyHoveredState();
 
