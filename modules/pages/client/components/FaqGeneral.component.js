@@ -122,7 +122,14 @@ export default function FaqGeneral() {
       <div className="faq-question" id="why-is-there-no-forum">
         <h3>{t('Why is there no forum?')}</h3>
         {t(
-          'The practical answer: it takes time to set up a forum and even more time to keep it spam-free. The less practical answer: In our long-term and short-term experience forum activity is not necessarily the best way to get to more real life interactions. In the long term we do want to provide a way to communicate on the site, but this will probably look more like the quick and easy way you can interact on Facebook or Diaspora than a full fledged forum.',
+          'A forum takes significant time to set up and even more time to keep welcoming and spam-free. In our experience, traditional forum activity also does not always lead to more real-life interactions.',
+        )}
+        <br />
+        <br />
+        {t('For community conversations, try ')}
+        <a href="https://nos.trustroots.org/">Nostroots</a>
+        {t(
+          '. It is not a traditional forum: it is a decentralised social app built on Nostr.',
         )}
         <br />
         <br />
@@ -166,9 +173,7 @@ export default function FaqGeneral() {
           <a href="https://github.com/Trustroots/trustroots/issues">
             report bugs at GitHub
           </a>
-          , reach out via <a href="https://twitter.com/trustroots">Twitter</a>{' '}
-          or <a href="https://www.facebook.com/trustroots.org/">Facebook</a> and
-          to directly contact individuals, see <a href="/team">the team </a>{' '}
+          . To contact individuals directly, see <a href="/team">the team</a>{' '}
           page.
         </Trans>
       </div>

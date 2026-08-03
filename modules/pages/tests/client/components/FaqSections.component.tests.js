@@ -46,6 +46,17 @@ describe('FAQ page sections', () => {
     expect(
       screen.getByRole('link', { name: 'Nostroots mobile apps' }),
     ).toHaveAttribute('href', 'https://nos.trustroots.org/');
+    expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/',
+    );
+    expect(screen.getByText(/not a traditional forum/i)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Twitter' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Facebook' }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders foundation FAQ text', () => {
@@ -64,6 +75,9 @@ describe('FAQ page sections', () => {
           content.includes('section 60 exemption'),
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'team.trustroots.org' }),
+    ).toHaveAttribute('href', 'https://team.trustroots.org/');
   });
 
   it('renders tribes FAQ text', () => {
