@@ -120,7 +120,9 @@ test.describe('admin moderation page flows', () => {
   test('admin newsletter page loads', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.newsletter-page', [
       'Newsletter admin page loads.',
-      'Unavailable download actions degrade safely because subscriber APIs are disabled.',
+      'Newsletter page includes the recipient upload splitting tool.',
+      'Newsletter page includes full and circle subscriber export tools.',
+      'Newsletter page includes the targeted audience builder.',
     ]);
 
     await gotoAdminPage(page, '/admin/newsletter', /\/admin\/newsletter/);
@@ -128,6 +130,16 @@ test.describe('admin moderation page flows', () => {
     await expect(page).toHaveTitle(/Admin - Newsletter - Trustroots/);
     await expect(
       page.getByRole('heading', { name: /newsletter subscribers/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Export all subscribers CSV' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Circle ID')).toBeVisible();
+    await expect(
+      page.getByLabel('Recipient file (CSV, JSONL, or NDJSON)'),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Count recipients' }),
     ).toBeVisible();
   });
 });

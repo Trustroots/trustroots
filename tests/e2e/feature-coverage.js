@@ -2816,8 +2816,7 @@ const features = [
     id: 'admin.newsletter-page',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description:
-      'Admins can open the newsletter admin page when still supported.',
+    description: 'Admins can build audiences and check recipient files.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -2835,15 +2834,17 @@ const features = [
     },
     requiredScenarios: [
       'Newsletter admin page loads.',
-      'Unavailable download actions degrade safely because subscriber APIs are disabled.',
+      'Newsletter page includes the recipient upload splitting tool.',
+      'Newsletter page includes full and circle subscriber export tools.',
+      'Newsletter page includes the targeted audience builder.',
     ],
     relatedSpecs: [spec('admin-pages.spec.js', 'admin newsletter page loads')],
   },
   {
-    id: 'admin.newsletter-downloads',
+    id: 'admin.newsletter-audiences',
     area: AREA.adminModeration,
-    status: STATUS.excluded,
-    description: 'Disabled newsletter subscriber download APIs.',
+    status: STATUS.active,
+    description: 'Targeted newsletter audience builder and CSV export.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -2859,23 +2860,77 @@ const features = [
       ],
       apiRoutes: [
         apiRoute(
+          'POST',
+          '/api/admin/newsletter-subscribers/audience',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Admin can combine selected location sources with selected circles.',
+      'Admin can preview and export the eligible targeted audience.',
+      'Audience counts refresh automatically after valid filters change.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can build a location and circle newsletter audience',
+      ),
+    ],
+  },
+  {
+    id: 'admin.newsletter-downloads',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Newsletter recipient-file split and CSV download flow.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-newsletter',
+          '/admin/newsletter',
+          source.adminClient,
+          {
+            requiresAuth: true,
+            requiresRole: 'admin',
+          },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'POST',
+          '/api/admin/newsletter-subscribers/split',
+          source.adminServer,
+        ),
+        apiRoute(
           'GET',
           '/api/admin/newsletter-subscribers',
           source.adminServer,
-          { disabledInSource: true },
         ),
         apiRoute(
           'GET',
           '/api/admin/newsletter-subscribers/circle',
           source.adminServer,
-          { disabledInSource: true },
         ),
       ],
     },
-    exclusionReason:
-      'Routes are commented out in the server route module and intentionally disabled.',
-    requiredScenarios: [],
-    relatedSpecs: [],
+    requiredScenarios: [
+      'Admin can upload a newsletter NDJSON file and split recipients by subscription status.',
+      'Split downloads preserve the uploaded recipient-list format.',
+      'Admin can export all eligible subscribers as CSV.',
+      'Admin can export eligible subscribers for a specific circle.',
+      'Restricted-role members are excluded from eligible newsletter exports.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can split newsletter recipients from uploaded NDJSON',
+      ),
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can export all and circle subscriber CSVs',
+      ),
+    ],
   },
   {
     id: 'integration.sparkpost-webhook',

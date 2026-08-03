@@ -31,15 +31,22 @@ exports.invokeRolesPolicies = () => {
         { resources: '/api/admin/users', permissions: ['post'] },
         { resources: '/api/admin/users/by-role', permissions: ['post'] },
         { resources: '/api/admin/reference-threads', permissions: ['get'] },
-        // #egW6Qq Disable email download
-        // {
-        //   resources: '/api/admin/newsletter-subscribers',
-        //   permissions: ['get'],
-        // },
-        // {
-        //   resources: '/api/admin/newsletter-subscribers/circle',
-        //   permissions: ['get'],
-        // },
+        {
+          resources: '/api/admin/newsletter-subscribers',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/newsletter-subscribers/circle',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/newsletter-subscribers/audience',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/newsletter-subscribers/split',
+          permissions: ['post'],
+        },
       ],
     },
   ]);

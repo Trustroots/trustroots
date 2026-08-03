@@ -4,6 +4,7 @@
 const adminAcquisitionStories = require('../controllers/admin.acquisition-stories.server.controller');
 const adminAuditLog = require('../controllers/admin.audit-log.server.controller');
 const adminMessages = require('../controllers/admin.messages.server.controller');
+const adminNewsletter = require('../controllers/admin.newsletter.server.controller');
 const adminPolicy = require('../policies/admin.server.policy');
 const adminThreads = require('../controllers/admin.threads.server.controller');
 const adminUsers = require('../controllers/admin.users.server.controller');
@@ -77,14 +78,27 @@ module.exports = app => {
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminReferenceThreads.list);
 
-  // #egW6Qq Disable email download
-  // app
-  //   .route('/api/admin/newsletter-subscribers')
-  //   .all(adminPolicy.isAllowed)
-  //   .get(adminNewsletter.list);
+  app
+    .route('/api/admin/newsletter-subscribers/split')
+    .all(adminPolicy.isAllowed)
+    .post(
+      adminAuditLog.record,
+      adminNewsletter.uploadSubscribersCsv,
+      adminNewsletter.splitSubscribers,
+    );
 
-  // app
-  //   .route('/api/admin/newsletter-subscribers/circle')
-  //   .all(adminPolicy.isAllowed)
-  //   .get(adminNewsletter.listCircleMembers);
+  app
+    .route('/api/admin/newsletter-subscribers')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminNewsletter.list);
+
+  app
+    .route('/api/admin/newsletter-subscribers/audience')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminNewsletter.audience);
+
+  app
+    .route('/api/admin/newsletter-subscribers/circle')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminNewsletter.listCircleMembers);
 };
