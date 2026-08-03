@@ -56,13 +56,9 @@ module.exports.initLocalVariables = function (app) {
     process.env.NODE_ENV === 'production' ||
     process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
   ) {
-    app.locals.jsFiles = ['assets/main.js'];
-    app.locals.cssFiles = ['assets/main.css'];
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = ['assets/react-main.css'];
   } else {
-    app.locals.jsFiles = ['assets/main.js'];
-    app.locals.cssFiles = []; // style is bundled with javascript
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = []; // style is bundled with javascript
   }

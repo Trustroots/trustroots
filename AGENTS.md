@@ -22,6 +22,11 @@ Prefer git worktrees for parallel, exploratory, or potentially disruptive work.
 Create them under `.worktrees/` inside this repository so they remain within
 the workspace boundary.
 
+When an independent operation needs a permission prompt, delegate that bounded
+operation to a sub-agent when possible so the primary agent can continue useful
+work. Do not use delegation to bypass a permission decision that must be made by
+the user.
+
 Both server and client test coverage are currently at 100%; keep them at this
 level. Do not lower coverage thresholds or baselines without a clear reason.
 

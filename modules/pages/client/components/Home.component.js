@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
-import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from '@/modules/core/client/components/Board.js';
@@ -81,14 +81,14 @@ export function getSignupUrl(circleSlug) {
 export default function Home({ user, photoCredits, build }) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
-  const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
+  const { circle: circleRouteParam, tribe: tribeRouteParam } =
+    getCurrentRouteParams();
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
   const memberCount = new Intl.NumberFormat().format(140000);
 
   // TODO get header height instead of magic number 56
-  // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
   const headerHeight = 56;
 
   const boardHeight =

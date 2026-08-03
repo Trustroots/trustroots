@@ -1,10 +1,9 @@
-import createPersistedState from 'use-persisted-state';
-
-// Module name + hook name as a key
-const useMapStyleState = createPersistedState('search-map-style');
+import useLocalStorageState from 'use-local-storage-state';
 
 const useMapStyle = initialMapStyle => {
-  const [mapStyle, setMapStyle] = useMapStyleState(initialMapStyle);
+  const [mapStyle, setMapStyle] = useLocalStorageState('search-map-style', {
+    defaultValue: initialMapStyle,
+  });
   return [mapStyle, newStyle => setMapStyle(newStyle)];
 };
 

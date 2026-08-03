@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import TrEditor from '@/modules/core/client/components/TrEditor';
-import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
+import { plainTextLength } from '@/modules/core/client/utils/filters';
 
 export default function ThreadReply({ onSend, cacheKey }) {
   const { t } = useTranslation('messages');

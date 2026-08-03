@@ -46,3 +46,18 @@ export async function queryOffers(query = {}) {
   const { data } = await axios.get(`/api/offers?${new URLSearchParams(query)}`);
   return data;
 }
+
+export async function createOffer(payload) {
+  const { data } = await axios.post('/api/offers', payload);
+  return data;
+}
+
+export async function updateOffer(offerId, payload) {
+  const { data } = await axios.put(`/api/offers/${offerId}`, payload);
+  return data;
+}
+
+export async function deleteOffer(offerId) {
+  const { data } = await axios.delete(`/api/offers/${offerId}`);
+  return data;
+}
