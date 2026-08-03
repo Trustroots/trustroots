@@ -4,8 +4,8 @@ import '@testing-library/jest-dom/extend-expect';
 
 import ReactFooter from '@/modules/core/client/react-app/ReactFooter';
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  $on: jest.fn(() => () => {}),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  onClientEvent: jest.fn(() => () => {}),
 }));
 
 const build = {

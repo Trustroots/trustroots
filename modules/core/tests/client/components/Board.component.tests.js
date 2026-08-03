@@ -3,10 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import Board from '@/modules/core/client/components/Board';
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  $broadcast: jest.fn(),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  broadcastClientEvent: jest.fn(),
 }));
 
 describe('<Board />', () => {
@@ -36,7 +36,7 @@ describe('<Board />', () => {
         backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
       }),
     );
-    expect($broadcast).toHaveBeenCalledWith(
+    expect(broadcastClientEvent).toHaveBeenCalledWith(
       'photoCreditsUpdated',
       expect.objectContaining({
         bokeh: expect.objectContaining({
@@ -64,7 +64,7 @@ describe('<Board />', () => {
 
     unmount();
 
-    expect($broadcast).toHaveBeenCalledWith(
+    expect(broadcastClientEvent).toHaveBeenCalledWith(
       'photoCreditsRemoved',
       expect.objectContaining({
         bokeh: expect.objectContaining({
@@ -86,7 +86,7 @@ describe('<Board />', () => {
         backgroundImage: 'url("/img/board/flickr-bokeh.jpg")',
       }),
     );
-    expect($broadcast).toHaveBeenCalledWith(
+    expect(broadcastClientEvent).toHaveBeenCalledWith(
       'photoCreditsUpdated',
       expect.objectContaining({
         bokeh: expect.objectContaining({

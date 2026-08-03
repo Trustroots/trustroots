@@ -313,10 +313,10 @@ describe('<AdminUser />', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    await waitFor(() =>
-      expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(2),
-    );
-    expect(screen.getByText('151 user(s). Page 2 of 2.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('151 user(s). Page 2 of 2.'),
+    ).toBeInTheDocument();
+    expect(usersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(2);
     expect(usersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
       2,
       '203.0.113.10',
@@ -604,8 +604,10 @@ describe('<AdminUser />', () => {
     ).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    await waitFor(() => expect(usersApi.searchUsers).toHaveBeenCalledTimes(2));
-    expect(screen.getByText('151 user(s). Page 2 of 2.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('151 user(s). Page 2 of 2.'),
+    ).toBeInTheDocument();
+    expect(usersApi.searchUsers).toHaveBeenCalledTimes(2);
     expect(usersApi.searchUsers).toHaveBeenNthCalledWith(2, 'alice similar', {
       page: 2,
       sort: { column: 'username', direction: 'ascending' },
@@ -660,7 +662,7 @@ describe('<AdminUser />', () => {
     fireEvent.click(screen.getByLabelText('Hide obvious spam'));
 
     expect(
-      screen.getByText(
+      await screen.findByText(
         '24721768s (Hot Daria Wants To Date https://bit.ly/lovezones Come In)',
       ),
     ).toBeInTheDocument();

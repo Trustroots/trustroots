@@ -9,23 +9,11 @@ const utils = require('../../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
 
-const nodeMajor = Number(process.versions.node.split('.')[0]);
-
 describe('job: send push message', function () {
   let sendPushJobHandler;
   const messages = []; // Collects firebase messages that are sent
 
-  before(function () {
-    if (nodeMajor >= 22) {
-      this.skip();
-    }
-  });
-
   beforeEach(function () {
-    if (nodeMajor >= 22) {
-      this.skip();
-    }
-
     sendPushJobHandler = proxyquireFirebaseMessaging(
       // Decides whether to return error code
       token => token === 'toberemoved',

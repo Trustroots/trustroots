@@ -10,6 +10,12 @@ function PathConsumer() {
   return <span>{currentPath}</span>;
 }
 
+function LocationConsumer() {
+  const currentPath = useCurrentPath({ includeSearch: true });
+
+  return <span>{currentPath}</span>;
+}
+
 describe('useCurrentPath', () => {
   afterEach(() => {
     window.history.pushState({}, '', '/');
@@ -27,5 +33,19 @@ describe('useCurrentPath', () => {
     });
 
     expect(screen.getByText('/faq')).toBeInTheDocument();
+  });
+
+  it('observes query-string changes when requested', () => {
+    window.history.pushState({}, '', '/support?report=alice');
+    render(<LocationConsumer />);
+
+    expect(screen.getByText('/support?report=alice')).toBeInTheDocument();
+
+    act(() => {
+      window.history.pushState({}, '', '/support?report=bob');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(screen.getByText('/support?report=bob')).toBeInTheDocument();
   });
 });

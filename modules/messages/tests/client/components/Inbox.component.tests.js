@@ -9,10 +9,10 @@ import {
   generateClientUser,
   generateThreads,
 } from '@/testutils/client/data.client.testutil';
-import { eventTrack } from '@/modules/core/client/services/angular-compat';
+import { trackEvent } from '@/modules/core/client/services/client-runtime';
 
 jest.mock('@/modules/messages/client/api/messages.api');
-jest.mock('@/modules/core/client/services/angular-compat');
+jest.mock('@/modules/core/client/services/client-runtime');
 
 afterEach(() => jest.clearAllMocks());
 
@@ -104,7 +104,7 @@ describe('<Inbox>', () => {
     const items = queryAllByRole('listitem');
     expect(items.length).toBe(threads.length + moreThreads.length);
 
-    expect(eventTrack).toHaveBeenCalledWith('inbox-pagination', {
+    expect(trackEvent).toHaveBeenCalledWith('inbox-pagination', {
       category: 'messages.inbox',
       label: 'Inbox page 2',
     });
