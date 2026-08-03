@@ -44,8 +44,9 @@ export default function FaqGeneral() {
       <div className="faq-question" id="is-there-mobile-app">
         <h3>{t('Is there a mobile app?')}</h3>
         <Trans t={t} ns="pages">
-          Yes. You can use Trustroots through the{' '}
-          <a href="https://nos.trustroots.org/">Nostroots mobile apps</a>.
+          Trustroots itself does not currently have a mobile app, but we have
+          new features that are available through the{' '}
+          <a href="https://nos.trustroots.org/">Nostroots mobile app</a>.
         </Trans>
         <br />
         <br />

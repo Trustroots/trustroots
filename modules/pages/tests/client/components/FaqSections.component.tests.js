@@ -44,7 +44,7 @@ describe('FAQ page sections', () => {
       screen.queryByRole('link', { name: 'Read more' }),
     ).not.toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Nostroots mobile apps' }),
+      screen.getByRole('link', { name: 'Nostroots mobile app' }),
     ).toHaveAttribute('href', 'https://nos.trustroots.org/');
     expect(screen.getByRole('link', { name: 'Nostroots' })).toHaveAttribute(
       'href',
