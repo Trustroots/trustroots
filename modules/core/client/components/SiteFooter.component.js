@@ -62,6 +62,9 @@ function FooterLinks() {
         <a href="/rules">Rules</a>
       </li>
       <li>
+        <a href="/safety">Safety</a>
+      </li>
+      <li>
         <a href="/faq">FAQ</a>
       </li>
       <li>

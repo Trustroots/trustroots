@@ -26,6 +26,7 @@ test.describe('public footer', () => {
     for (const [name, href] of [
       ['Volunteering', 'https://team.trustroots.org/'],
       ['Rules', '/rules'],
+      ['Safety', '/safety'],
       ['FAQ', '/faq'],
       ['Privacy', '/privacy'],
       ['Contact', '/contact'],

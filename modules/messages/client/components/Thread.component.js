@@ -76,6 +76,19 @@ function YouHaveNotBeenTalkingYet() {
   );
 }
 
+function SafetyReminder() {
+  const { t } = useTranslation('messages');
+  return (
+    <p className="text-muted text-center">
+      {t('Before meeting someone new, read our ')}
+      <a href="/safety">{t('safety tips')}</a>
+      {t(' and ')}
+      <a href="/rules">{t('community rules')}</a>
+      {t('.')}
+    </p>
+  );
+}
+
 function YourProfileSeemsQuiteEmpty() {
   const { t } = useTranslation('messages');
   return (
@@ -339,6 +352,7 @@ export default function Thread({ user, profileMinimumLength }) {
                   onFetchMore={fetchMoreData}
                 />
               )}
+              {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showQuickReply && (
                 <QuickReply
                   onSend={content => sendMessage(content)}

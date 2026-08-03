@@ -199,6 +199,16 @@ test.describe('public pages and unauthenticated flows', () => {
       },
     },
     {
+      path: '/safety',
+      title: /Safety - Trustroots/,
+      feature: {
+        id: 'public.safety',
+        scenarios: [
+          'Safety page loads with precautions, reporting, and emergency guidance.',
+        ],
+      },
+    },
+    {
       path: '/guide',
       title: /Guide - Trustroots/,
       feature: {
@@ -252,6 +262,18 @@ test.describe('public pages and unauthenticated flows', () => {
         const body = await volunteers.json();
         expect(Array.isArray(body.volunteers)).toBeTruthy();
         expect(Array.isArray(body.alumni)).toBeTruthy();
+      }
+
+      if (pagePath === '/safety') {
+        await expect(
+          page.getByRole('navigation', { name: /safety page contents/i }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('heading', { name: /emergencies/i }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('link', { name: /contact the trustroots team/i }),
+        ).toHaveAttribute('href', '/support');
       }
     });
   }

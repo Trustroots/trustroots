@@ -37,5 +37,10 @@
   "Your profile seems quite empty.": "Your profile seems quite empty.",
   "Your response won't be visible to them.": "Your response won't be visible to them.",
   "{{count}} unread messages": "{{count}} unread messages",
-  "{{count}} unread messages_plural": "{{count}} unread messages"
+  "{{count}} unread messages_plural": "{{count}} unread messages",
+  ".": ".",
+  " and ": " and ",
+  "Before meeting someone new, read our ": "Before meeting someone new, read our ",
+  "community rules": "community rules",
+  "safety tips": "safety tips"
 }

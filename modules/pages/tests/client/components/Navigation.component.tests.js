@@ -56,6 +56,10 @@ describe('<Navigation />', () => {
       'href',
       '/statistics',
     );
+    expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
   });
 
   it('invokes onSignout when sign out link is clicked', () => {

@@ -563,6 +563,7 @@ test.describe('authenticated member flows', () => {
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
       'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
       'Sign out action clears the session.',
     ]);
 
@@ -590,12 +591,17 @@ test.describe('authenticated member flows', () => {
     await expect(page.locator('.list-group a[href="/statistics"]')).toHaveText(
       'Statistics',
     );
+    await expect(page.locator('.list-group a[href="/safety"]')).toHaveText(
+      'Safety',
+    );
   });
 
   test('member can sign out', async ({ browser, baseURL }, testInfo) => {
     annotateFeature(testInfo, 'public.navigation', [
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
       'Sign out action clears the session.',
     ]);
 

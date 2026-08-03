@@ -21,8 +21,9 @@ and present entry points for signing in and creating an account.
 
 ### Requirement: Public information and circles
 
-The system SHALL make its public information pages and circle catalogue
-available without authentication.
+The system SHALL make its public information pages, including practical safety
+guidance for hosts and travellers, and circle catalogue available without
+authentication.
 
 #### Scenario: Visitor browses circles
 
@@ -33,6 +34,19 @@ available without authentication.
 
 - **WHEN** a visitor opens a supported public information page
 - **THEN** the requested page is displayed without requiring authentication
+
+#### Scenario: Visitor opens the safety guidance
+
+- **WHEN** a visitor opens `/safety`
+- **THEN** the page presents precautions for arranging and completing stays
+- **AND** explains how to report concerning behaviour and respond to an
+  immediate emergency
+- **AND** provides in-page navigation to its main sections
+
+#### Scenario: Visitor discovers safety guidance from the homepage
+
+- **WHEN** a visitor views the Trustroots homepage
+- **THEN** the homepage provides a link to the public safety guidance
 
 ### Requirement: Unknown-route response
 
