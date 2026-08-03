@@ -16,7 +16,7 @@ exports.renderIndex = function (req, res) {
 
   // Expose user
   if (req.user) {
-    renderVars.user = userProfile.sanitizeProfile(req.user, req.user);
+    renderVars.user = userProfile.sanitizeOwnProfile(req.user);
 
     // `sanitizeProfile` strips `roles` so they never leak for *other*
     // members, but the client needs the *current* user's own roles to drive

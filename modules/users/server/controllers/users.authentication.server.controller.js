@@ -148,7 +148,7 @@ exports.signup = function (req, res) {
       function (user, done) {
         req.login(user, function (err) {
           // Remove sensitive data befor sending user
-          user = userProfile.sanitizeProfile(user);
+          user = userProfile.sanitizeOwnProfile(user);
 
           done(err, user);
         });
@@ -361,7 +361,7 @@ exports.signin = function (req, res, next) {
       statsObject.tags.status = 'success';
       statService.stat(statsObject, function () {
         // Remove sensitive data before sending out
-        user = userProfile.sanitizeProfile(user);
+        user = userProfile.sanitizeOwnProfile(user);
         res.json(user);
       });
     });
@@ -428,7 +428,7 @@ exports.removeOAuthProvider = function (req, res) {
         }
 
         // Remove sensitive data before sending out
-        user = userProfile.sanitizeProfile(user);
+        user = userProfile.sanitizeOwnProfile(user);
         res.json(user);
       });
     }
@@ -531,7 +531,7 @@ exports.confirmEmail = function (req, res) {
       function (result, user) {
         // Return authenticated user
         // Remove sensitive data befor sending user
-        result.user = userProfile.sanitizeProfile(user);
+        result.user = userProfile.sanitizeOwnProfile(user);
 
         return res.json(result);
       },
