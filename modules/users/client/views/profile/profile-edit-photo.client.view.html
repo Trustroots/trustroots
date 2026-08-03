@@ -105,19 +105,24 @@
               </p>
               <div>
                 <!-- File upload selector -->
-                <button
-                  role="button"
-                  id="profile-edit-avatar-file"
-                  ng-disabled="profileEditPhoto.avatarUploading"
-                  ngf-select="profileEditPhoto.fileSelected($files, $event)"
-                  ngf-multiple="false"
-                  accept="image/*"
-                  ngf-accept="'image/*'"
-                  ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
+                <label
                   class="btn btn-primary"
+                  ng-class="{ disabled: profileEditPhoto.avatarUploading }"
+                  aria-disabled="{{ profileEditPhoto.avatarUploading }}"
                 >
+                  <input
+                    type="file"
+                    id="profile-edit-avatar-file"
+                    ng-disabled="profileEditPhoto.avatarUploading"
+                    ngf-select="profileEditPhoto.fileSelected($files, $event)"
+                    ngf-multiple="false"
+                    accept="image/*"
+                    ngf-accept="'image/*'"
+                    ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
+                    class="sr-only"
+                  />
                   <i class="icon-picture-change"></i> Select a photo
-                </button>
+                </label>
 
                 <!-- Photo uploader via camera for small screens -->
                 <div class="visible-xs-block text-muted">
@@ -125,20 +130,25 @@
                   <small>— or —</small>
                   <br />
                 </div>
-                <button
-                  role="button"
-                  id="profile-edit-avatar-camera"
-                  ng-disabled="profileEditPhoto.avatarUploading"
-                  ngf-select="profileEditPhoto.fileSelected($files, $event)"
-                  ngf-multiple="false"
-                  accept="image/*"
-                  ngf-capture="'camera'"
-                  ngf-accept="'image/*'"
-                  ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
+                <label
                   class="btn btn-primary visible-xs-block center-block"
+                  ng-class="{ disabled: profileEditPhoto.avatarUploading }"
+                  aria-disabled="{{ profileEditPhoto.avatarUploading }}"
                 >
+                  <input
+                    type="file"
+                    id="profile-edit-avatar-camera"
+                    ng-disabled="profileEditPhoto.avatarUploading"
+                    ngf-select="profileEditPhoto.fileSelected($files, $event)"
+                    ngf-multiple="false"
+                    accept="image/*"
+                    ngf-capture="'camera'"
+                    ngf-accept="'image/*'"
+                    ngf-validate="{ size: { min: 1024, max: app.appSettings.maxUploadSize } }"
+                    class="sr-only"
+                  />
                   <i class="icon-camera"></i> Take a photo
-                </button>
+                </label>
               </div>
             </div>
           </div>
