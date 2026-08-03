@@ -39,7 +39,6 @@ export default function FaqGeneral() {
             '"We want a world that encourages trust, adventure and intercultural connections."',
           )}
         </em>
-        <a href="/foundation">{t('Read more')}</a>.
       </div>
 
       <div className="faq-question" id="is-there-mobile-app">

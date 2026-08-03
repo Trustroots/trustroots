@@ -38,6 +38,12 @@ describe('FAQ page sections', () => {
       ),
     ).toBeInTheDocument();
     expect(
+      screen.getByRole('heading', { name: 'What is your long term vision?' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Read more' }),
+    ).not.toBeInTheDocument();
+    expect(
       screen.getByRole('link', { name: 'Nostroots mobile apps' }),
     ).toHaveAttribute('href', 'https://nos.trustroots.org/');
   });
