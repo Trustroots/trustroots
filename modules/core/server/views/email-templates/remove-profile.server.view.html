@@ -7,12 +7,12 @@
 
   <p>If you did not request this, just ignore this email. We'll keep your account safe.</p>
 
-  <p>Please click the link below to confirm your profile removal. The link is valid for 24 hours.</p>
+  <p>This link opens a final confirmation page. Your account will not be deleted unless you confirm there. The link is valid for 24 hours.</p>
 {% endblock textcontent %}
 
 {% block actionbutton %}
   {% from "./partials/button.server.view.html" import button %}
-  {{ button(urlConfirm, 'Confirm removing my profile') }}
+  {{ button(urlConfirm, 'Review account deletion') }}
 
   {% from "./partials/copypasteurl.server.view.html" import copyPasteUrl %}
   {{ copyPasteUrl(urlConfirmPlainText) }}
