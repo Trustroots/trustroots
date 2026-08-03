@@ -62,6 +62,13 @@ exports.sendMessagesUnread = function (
 
   // Variables passed to email text/html templates
   const params = exports.addEmailBaseTemplateParams({
+    // Messages sent by administrators (including scam warnings) are
+    // delivered as official Trustroots support mail rather than from an
+    // individual administrator account.
+    from:
+      userFrom.roles && userFrom.roles.includes('admin')
+        ? 'Trustroots Support <' + config.supportEmail + '>'
+        : undefined,
     subject: mailSubject,
     name: userTo.displayName,
     email: userTo.email,

@@ -2,6 +2,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
 const ReferenceThread = mongoose.model('ReferenceThread');
+const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
@@ -189,6 +190,96 @@ describe('Admin Message CRUD tests', () => {
               return done(err);
             });
         });
+    });
+  });
+
+  describe('Warn scammer recipients', () => {
+    it('lists distinct existing recipients contacted by a username', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      await new Message({
+        content: 'another message',
+        userFrom: userRegular1Id,
+        userTo: userRegular2Id,
+      }).save();
+      await new Message({
+        content: 'message to the administrator',
+        userFrom: userRegular1Id,
+        userTo: userAdmin._id,
+      }).save();
+
+      const { body } = await agent
+        .post('/api/admin/messages/scammer-recipients')
+        .send({ username: userRegular1.username })
+        .expect(200);
+
+      body.scammer.username.should.equal(userRegular1.username);
+      body.recipients.length.should.equal(1);
+      body.recipients[0].username.should.equal(userRegular2.username);
+    });
+
+    it('sends a sanitised warning and updates the recipient thread', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+
+      const { body } = await agent
+        .post('/api/admin/messages/scammer-warning')
+        .send({
+          username: userRegular1.username,
+          content: '<p>Ignore this scam.</p><script>unsafe()</script>',
+        })
+        .expect(200);
+
+      body.sent.should.equal(1);
+      const warning = await Message.findOne({
+        userFrom: userAdmin._id,
+        userTo: userRegular2Id,
+      }).exec();
+      warning.content.should.equal('<p>Ignore this scam.</p>');
+      const thread = await Thread.findOne({ message: warning._id }).exec();
+      thread.userFrom.toString().should.equal(userAdmin._id.toString());
+      thread.userTo.toString().should.equal(userRegular2Id.toString());
+      thread.read.should.equal(false);
+    });
+
+    it('reports zero deliveries when the member contacted nobody', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+
+      const { body } = await agent
+        .post('/api/admin/messages/scammer-warning')
+        .send({ username: userAdmin.username, content: 'Safety warning' })
+        .expect(200);
+
+      body.sent.should.equal(0);
+    });
+
+    it('validates the username and warning content', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+
+      let response = await agent
+        .post('/api/admin/messages/scammer-recipients')
+        .send({})
+        .expect(400);
+      response.body.message.should.equal('Missing `username` field.');
+
+      response = await agent
+        .post('/api/admin/messages/scammer-recipients')
+        .send({ username: 'missing-member' })
+        .expect(404);
+      response.body.message.should.equal('Member does not exist.');
+
+      response = await agent
+        .post('/api/admin/messages/scammer-warning')
+        .send({
+          username: userRegular1.username,
+          content: '<script>x</script>',
+        })
+        .expect(400);
+      response.body.message.should.equal('Please write a message.');
+
+      response = await agent
+        .post('/api/admin/messages/scammer-recipients')
+        .send({ username: '   ' })
+        .expect(400);
+      response.body.message.should.equal('Missing `username` field.');
     });
   });
 });

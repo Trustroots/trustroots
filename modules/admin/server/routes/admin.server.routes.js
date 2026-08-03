@@ -38,6 +38,16 @@ module.exports = app => {
     .post(adminAuditLog.record, adminMessages.getMessages);
 
   app
+    .route('/api/admin/messages/scammer-recipients')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminMessages.getScammerRecipients);
+
+  app
+    .route('/api/admin/messages/scammer-warning')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminMessages.sendScammerWarning);
+
+  app
     .route('/api/admin/threads')
     .all(adminPolicy.isAllowed)
     .post(

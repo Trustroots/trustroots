@@ -2614,17 +2614,34 @@ const features = [
           requiresRole: 'admin',
         }),
       ],
-      apiRoutes: [apiRoute('POST', '/api/admin/messages', source.adminServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/messages', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-recipients',
+          source.adminServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-warning',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Admin messages page loads.',
       'Admin can query messages between two users.',
+      'Admin can preview recipients contacted by a reported member.',
       'Shadow-hidden messages are visible to admin.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
         'admin messages tool shows shadow-hidden messages between members',
+      ),
+      spec(
+        'admin-inspection.spec.js',
+        'admin can preview recipients contacted by a reported member',
       ),
     ],
   },
