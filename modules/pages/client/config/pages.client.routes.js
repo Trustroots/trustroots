@@ -26,6 +26,13 @@ function PagesRoutes($stateProvider) {
         pageTitle: 'Rules',
       },
     })
+    .state('safety', {
+      url: '/safety',
+      template: '<safety />',
+      data: {
+        pageTitle: 'Safety',
+      },
+    })
     .state('team', {
       url: '/team',
       template: `

@@ -78,6 +78,12 @@
 </url>
 
 <url>
+  <loc>https://www.trustroots.org/safety</loc>
+  <changefreq>daily</changefreq>
+  <priority>0.90</priority>
+</url>
+
+<url>
   <loc>https://www.trustroots.org/team</loc>
   <changefreq>daily</changefreq>
   <priority>0.90</priority>

@@ -29,6 +29,7 @@ test.describe.serial('authentication smoke', () => {
       'Homepage loads for visitors.',
       'Sign in and sign up entry points are visible.',
       'Homepage footer links to public statistics.',
+      'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
     ]);
 
@@ -40,6 +41,9 @@ test.describe.serial('authentication smoke', () => {
     await expect(
       page.locator('.home-footer-pages a[href="/statistics"]'),
     ).toHaveText('Statistics');
+    await expect(
+      page.locator('.home-footer-pages a[href="/safety"]'),
+    ).toHaveText('Safety');
   });
 
   test('signup submits a unique user through the UI', async ({

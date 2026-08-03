@@ -147,6 +147,7 @@ const features = [
       'Homepage loads for visitors.',
       'Sign in and sign up entry points are visible.',
       'Homepage footer links to public statistics.',
+      'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
     ],
     relatedSpecs: [
@@ -194,6 +195,24 @@ const features = [
     requiredScenarios: ['Rules page loads with the expected title/content.'],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /rules loads'),
+    ],
+  },
+  {
+    id: 'public.safety',
+    area: AREA.publicCore,
+    status: STATUS.active,
+    description:
+      'Practical safety guidance is available to hosts, travellers, and visitors.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [clientRoute('safety', '/safety', source.pagesClient)],
+      apiRoutes: [],
+    },
+    requiredScenarios: [
+      'Safety page loads with precautions, reporting, and emergency guidance.',
+    ],
+    relatedSpecs: [
+      spec('public-pages.spec.js', 'public marketing page /safety loads'),
     ],
   },
   {
@@ -453,6 +472,7 @@ const features = [
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
       'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
       'Sign out action clears the session.',
     ],
     relatedSpecs: [
@@ -2181,6 +2201,7 @@ const features = [
     requiredScenarios: [
       'Profile action links to a new message thread.',
       'New thread empty state is visible.',
+      'New thread empty state links to safety guidance.',
       'Sending an opening message creates the conversation.',
     ],
     relatedSpecs: [

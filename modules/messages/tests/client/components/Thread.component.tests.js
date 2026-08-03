@@ -184,6 +184,10 @@ describe('<Thread>', () => {
       const form = await findByRole('form');
       expect(queryByText(/You haven't been talking yet/)).toBeInTheDocument();
       expect(within(form).queryByRole('textbox')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
+        'href',
+        '/safety',
+      );
     });
 
     it('sends a typed reply and appends the API response to the thread', async () => {
@@ -246,6 +250,10 @@ describe('<Thread>', () => {
         'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
       ),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
   });
 
   it('shows removed user note when user has been deleted and userId exists', async () => {

@@ -165,6 +165,7 @@ test.describe('confirmed member flows', () => {
     annotateFeature(testInfo, 'messages.new-conversation', [
       'Profile action links to a new message thread.',
       'New thread empty state is visible.',
+      'New thread empty state links to safety guidance.',
       'Sending an opening message creates the conversation.',
     ]);
 
@@ -437,6 +438,9 @@ test.describe('confirmed member flows', () => {
     await page.goto(`/messages/${beijing.username}?userId=${beijingId}`);
 
     await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /safety tips/i }),
+    ).toHaveAttribute('href', '/safety');
   });
 
   test('experience form shows duplicate when already shared', async ({
