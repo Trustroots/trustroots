@@ -1653,12 +1653,17 @@ const features = [
       'Host offer edit page loads.',
       'Member can create/update a host offer.',
       'Host offer visibility appears in profile/search.',
+      'Host can limit search visibility to members sharing a circle.',
       'Member can remove or disable a host offer.',
     ],
     relatedSpecs: [
       spec(
         'member.spec.js',
         'host offer edit page loads for a confirmed member',
+      ),
+      spec(
+        'offers-and-circles.spec.js',
+        'hosts can limit search visibility to members in their circles',
       ),
     ],
   },
