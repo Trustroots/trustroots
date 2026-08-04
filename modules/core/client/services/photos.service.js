@@ -165,7 +165,7 @@ const photos = {
 export function selectPhoto(name) {
   const photo = photos[name];
   const file =
-    window.innerWidth <= 480 && photo.file_mobile // eslint-disable-line angular/window-service
+    window.innerWidth <= 480 && photo.file_mobile
       ? photo.file_mobile
       : photo.file;
   const imageUrl = `/img/board/${file}`;

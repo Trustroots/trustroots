@@ -188,6 +188,7 @@ export default function SearchMap({
   const [leafletMapState, setLeafletMapState] = useState();
   const communityNotesTimerRef = useRef(null);
   const communityNotesEventsRef = useRef([]);
+  const hasInitialisedFiltersRef = useRef(false);
 
   const parsedFilters = filters ? JSON.parse(filters) : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
@@ -527,7 +528,7 @@ export default function SearchMap({
 
     if (!features?.length) {
       // Close open offers when clicking on map canvas
-      // Delegated to Angular controller; to be refactored to React
+      // Delegated to the search shell.
       onOfferClose();
       return;
     }
@@ -562,14 +563,14 @@ export default function SearchMap({
   };
 
   /**
-   * Fetch offer data and open it on seach sidebar (handled by Angular)
+   * Fetch offer data and open it in the search sidebar.
    */
   async function openOfferById(offerId) {
     // @TODO: cancellation when opening another offer instead
     const offer = await getOffer(offerId);
 
     if (offer) {
-      // Delegated to Angular controller, to be refactored
+      // Delegated to the search shell.
       onOfferOpen(offer);
     }
   }
@@ -605,7 +606,7 @@ export default function SearchMap({
   }, []);
 
   // Apply externally changed bounds object
-  // Changed by Angular search sidebar
+  // Changed by the search sidebar
   useEffect(() => {
     if (webGLSupported && bounds?.northEast && bounds?.southWest) {
       zoomToBounds(bounds);
@@ -613,10 +614,15 @@ export default function SearchMap({
   }, [bounds, webGLSupported]);
 
   // Apply externally changed filters object
-  // Changed by Angular search sidebar
+  // Changed by the search sidebar
   useEffect(() => {
-    // Clear out previous open offers and such
-    onOfferClose();
+    // Preserve an offer opened from the initial URL. Later filter changes
+    // clear the selection because it may no longer match the visible results.
+    if (hasInitialisedFiltersRef.current) {
+      onOfferClose();
+    } else {
+      hasInitialisedFiltersRef.current = true;
+    }
     clearPreviouslySelectedState();
     clearPreviouslyHoveredState();
 
@@ -705,7 +711,7 @@ export default function SearchMap({
   }, [communityNotesEnabled]);
 
   // Apply externally changed location object
-  // Changed by Angular controller when loading offer via URL
+  // Changed by the search shell when loading an offer via the URL
   useEffect(() => {
     if (location?.lat && location?.lng) {
       setViewport({

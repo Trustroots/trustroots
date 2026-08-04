@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import MediumEditor from 'react-medium-editor';
+import MediumEditor from 'medium-editor';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
 
 const baseOptions = {
@@ -172,21 +172,15 @@ export default function TrEditor({
   placeholder,
   text,
 }) {
-  const ref = React.createRef();
+  const editorElementRef = useRef();
+  const mediumRef = useRef();
+  const onChangeRef = useRef(onChange);
+  const onCtrlEnterRef = useRef(onCtrlEnter);
+  const updatedByEditorRef = useRef(false);
   const { t } = useTranslation('core');
 
-  useEffect(() => {
-    const { medium } = ref.current;
-    const onEnter = event => event.ctrlKey && onCtrlEnter(event);
-    medium.subscribe('editableKeydownEnter', onEnter);
-    return () => {
-      // the onCtrlEnter that gets passed through will change quite a lot as it
-      // probably gets redefined over and over with different bound state
-      // this means it'll actually subscribe/unsubscribe per keypress...
-      // seems a bit much, but that's how these react hooks work!
-      medium.unsubscribe('editableKeydownEnter', onEnter);
-    };
-  }, [onCtrlEnter]);
+  onChangeRef.current = onChange;
+  onCtrlEnterRef.current = onCtrlEnter;
 
   const options = {
     // https://github.com/yabwe/medium-editor#placeholder-options
@@ -196,15 +190,48 @@ export default function TrEditor({
     },
     ...baseOptions,
   };
+  const optionsRef = useRef(options);
 
-  const editorProps = { id, text, options, className: 'tr-editor' };
-  return (
-    <MediumEditor
-      ref={ref}
-      onChange={value => onChange(removeTrailingBr(value))}
-      {...editorProps}
-    />
-  );
+  useEffect(() => {
+    const medium = new MediumEditor(
+      editorElementRef.current,
+      optionsRef.current,
+    );
+    const handleInput = () => {
+      updatedByEditorRef.current = true;
+      onChangeRef.current(removeTrailingBr(editorElementRef.current.innerHTML));
+    };
+    const handleEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
+
+    mediumRef.current = medium;
+    medium.subscribe('editableInput', handleInput);
+    medium.subscribe('editableKeydownEnter', handleEnter);
+
+    return () => {
+      medium.unsubscribe('editableInput', handleInput);
+      medium.unsubscribe('editableKeydownEnter', handleEnter);
+      medium.destroy();
+      mediumRef.current = null;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (updatedByEditorRef.current) {
+      updatedByEditorRef.current = false;
+      return;
+    }
+
+    const element = editorElementRef.current;
+    if (element.innerHTML === text) {
+      return;
+    }
+
+    mediumRef.current?.saveSelection();
+    element.innerHTML = text;
+    mediumRef.current?.restoreSelection();
+  }, [text]);
+
+  return <div className="tr-editor" id={id} ref={editorElementRef} />;
 }
 
 TrEditor.defaultProps = {

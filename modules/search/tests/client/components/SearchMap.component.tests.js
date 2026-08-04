@@ -428,7 +428,8 @@ describe('Search', () => {
       onOfferClose,
     });
 
-    await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockMapProps.zoom).toBe(6));
+    expect(onOfferClose).not.toHaveBeenCalled();
     expect(mockQueryOffers).not.toHaveBeenCalled();
   });
 
@@ -449,14 +450,31 @@ describe('Search', () => {
     const onOfferClose = jest.fn();
     renderSearchMap({ onOfferClose });
 
-    await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
-    onOfferClose.mockClear();
+    expect(onOfferClose).not.toHaveBeenCalled();
 
     act(() => {
       mockMapProps.onClick({ features: [] });
     });
 
     expect(onOfferClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes an open offer when search filters change', async () => {
+    const onOfferClose = jest.fn();
+    const { rerender } = renderSearchMap({ onOfferClose });
+
+    expect(onOfferClose).not.toHaveBeenCalled();
+
+    rerender(
+      <SearchMap
+        filters='{"hosting":"yes"}'
+        isUserPublic={true}
+        onOfferClose={onOfferClose}
+        onOfferOpen={jest.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
   });
 
   it('ignores hover events that do not identify a new offer point', () => {
@@ -846,8 +864,9 @@ describe('Search', () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>
@@ -903,8 +922,9 @@ describe('Search', () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>
@@ -970,8 +990,9 @@ describe('Search', () => {
     });
     await waitFor(() => expect(secondCallbacks).toBeDefined());
 
-    act(() => {
+    await act(async () => {
       secondCallbacks.onEose();
+      await Promise.resolve();
     });
     await waitFor(() =>
       expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
@@ -1011,8 +1032,9 @@ describe('Search', () => {
 
     renderSearchMap({ filters: '{"communityNotes":true}' });
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     onEvent({
@@ -1021,8 +1043,9 @@ describe('Search', () => {
       authorPubkey: 'author-second',
       tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
     });
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>

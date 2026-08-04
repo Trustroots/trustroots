@@ -135,13 +135,17 @@ export default function Statistics({ isAuthenticated }) {
     recentMessageInteractionStatistics.negative,
   );
 
-  useEffect(async () => {
-    const [{ data }, suggestion] = await Promise.all([
-      get(),
-      isAuthenticated ? getSuggestion().catch(() => null) : null,
-    ]);
-    setStatistics(data);
-    setExperienceSuggestion(suggestion);
+  useEffect(() => {
+    const loadStatistics = async () => {
+      const [{ data }, suggestion] = await Promise.all([
+        get(),
+        isAuthenticated ? getSuggestion().catch(() => null) : null,
+      ]);
+      setStatistics(data);
+      setExperienceSuggestion(suggestion);
+    };
+
+    loadStatistics();
   }, [isAuthenticated]);
 
   return (

@@ -2,7 +2,7 @@ schema: spec-driven
 
 context: |
   Trustroots is a community networking web application.
-  Tech stack: Node.js 16, Express, MongoDB/Mongoose, AngularJS 1.x, and npm.
+  Tech stack: Node.js 24, Express, MongoDB/Mongoose, AngularJS 1.x, and npm.
   The repository is an active long-lived codebase; make focused, compatible
   changes and follow the existing module structure and coding conventions.
   User-facing text uses British spelling. Do not change established code

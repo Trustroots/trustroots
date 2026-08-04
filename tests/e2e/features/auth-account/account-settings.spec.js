@@ -205,6 +205,12 @@ test.describe.serial('account settings feature coverage', () => {
 
     const saveButton = page.getByRole('button', { name: 'Save' });
     const legacyConnections = page.locator('.legacy-social-connections');
+    const deleteConnectionButton = provider =>
+      legacyConnections
+        .locator('li')
+        .filter({ hasText: new RegExp(`^${provider}\\s+Legacy`, 'i') })
+        .getByRole('button', { name: /^delete$/i });
+
     await expect(legacyConnections).toBeVisible();
     expect(
       await saveButton.evaluate(
@@ -218,11 +224,7 @@ test.describe.serial('account settings feature coverage', () => {
     ).toBeTruthy();
 
     for (const provider of ['facebook', 'github', 'twitter']) {
-      await expect(
-        page.getByRole('button', {
-          name: new RegExp(`delete ${provider} connection`, 'i'),
-        }),
-      ).toBeVisible();
+      await expect(deleteConnectionButton(provider)).toBeVisible();
       const removedRoute = await page.request.get(`/api/auth/${provider}`);
       expect(removedRoute.status()).toBe(404);
     }
@@ -246,11 +248,7 @@ test.describe.serial('account settings feature coverage', () => {
           response.request().method() === 'DELETE' &&
           response.url().endsWith(`/api/users/accounts/${provider}`),
       );
-      await page
-        .getByRole('button', {
-          name: new RegExp(`delete ${provider} connection`, 'i'),
-        })
-        .click();
+      await deleteConnectionButton(provider).click();
       expect((await disconnect).ok()).toBeTruthy();
     }
 

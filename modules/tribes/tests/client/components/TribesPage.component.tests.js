@@ -7,14 +7,14 @@ import {
   generateTribes,
 } from '@/testutils/common/data.common.testutil';
 
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 
 const api = { tribes: tribesApi };
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
-jest.mock('@/modules/core/client/services/angular-compat');
+jest.mock('@/modules/core/client/services/client-runtime');
 
 const onMembershipUpdated = jest.fn();
 
@@ -121,12 +121,12 @@ describe('CirclesPage', () => {
       expect(api.tribes.read).toHaveBeenCalledWith();
 
       // it should broadcast photo credit changes
-      expect($broadcast).toHaveBeenCalledTimes(2);
-      expect($broadcast).toHaveBeenCalledWith(
+      expect(broadcastClientEvent).toHaveBeenCalledTimes(2);
+      expect(broadcastClientEvent).toHaveBeenCalledWith(
         'photoCreditsRemoved',
         expect.anything(),
       );
-      expect($broadcast).toHaveBeenCalledWith(
+      expect(broadcastClientEvent).toHaveBeenCalledWith(
         'photoCreditsUpdated',
         expect.anything(),
       );

@@ -1,11 +1,11 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
 import ReactApp from '@/modules/core/client/react-app/ReactApp';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
-import { routes } from '@/modules/core/client/react-app/routes';
+import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership';
 
 jest.mock('@/modules/admin/client/components/Admin.component', () => {
   const React = require('react');
@@ -133,7 +133,12 @@ jest.mock('@/modules/support/client/components/SupportPage.component', () => {
   const React = require('react');
 
   function MockSupportPage({ user }) {
-    return <main>Support route {user?.username}</main>;
+    return (
+      <main>
+        <span>Support route {user?.username}</span>
+        <span>Query {global.location.search}</span>
+      </main>
+    );
   }
 
   MockSupportPage.propTypes = {
@@ -205,28 +210,28 @@ describe('<ReactApp />', () => {
     );
   }
 
-  it('renders a React-owned route and updates the document title', () => {
+  it('renders a React-owned route and updates the document title', async () => {
     renderApp('/rules');
 
-    expect(screen.getByText('Rules route')).toBeInTheDocument();
+    expect(await screen.findByText('Rules route')).toBeInTheDocument();
     expect(screen.getByText('Header guest')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
     expect(document.title).toBe('Rules - Trustroots');
     expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
   });
 
-  it('passes bootstrap user data to route and shell components', () => {
+  it('passes bootstrap user data to route and shell components', async () => {
     renderApp('/support?report=alice', {
       user: {
         username: 'bob',
       },
     });
 
-    expect(screen.getByText('Support route bob')).toBeInTheDocument();
+    expect(await screen.findByText('Support route bob')).toBeInTheDocument();
     expect(screen.getByText('Header bob')).toBeInTheDocument();
   });
 
-  it('renders admin routes for admin users and shows the admin footer', () => {
+  it('renders admin routes for admin users and shows the admin footer', async () => {
     renderApp('/admin/audit-log', {
       user: {
         roles: ['user', 'admin'],
@@ -234,21 +239,21 @@ describe('<ReactApp />', () => {
       },
     });
 
-    expect(screen.getByText('Admin audit route')).toBeInTheDocument();
+    expect(await screen.findByText('Admin audit route')).toBeInTheDocument();
     expect(screen.getByText('Header admin')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
     expect(document.title).toBe('Admin - Audit log - Trustroots');
   });
 
-  it('honors headerHidden and noScrollingTop route metadata', () => {
-    const route = routes.find(route => route.path === '/rules');
+  it('honors headerHidden and noScrollingTop route metadata', async () => {
+    const route = REACT_ROUTE_POLICIES.find(route => route.path === '/rules');
     route.headerHidden = true;
     route.noScrollingTop = true;
 
     try {
       renderApp('/rules');
 
-      expect(screen.getByText('Rules route')).toBeInTheDocument();
+      expect(await screen.findByText('Rules route')).toBeInTheDocument();
       expect(screen.queryByText('Header guest')).not.toBeInTheDocument();
       expect(window.scrollTo).not.toHaveBeenCalled();
     } finally {
@@ -262,16 +267,12 @@ describe('<ReactApp />', () => {
 
     renderApp('/admin', {}, { navigate });
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/signin'));
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith(
+        '/signin?continue=true&returnTo=%2Fadmin',
+      ),
+    );
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
-  });
-
-  it('preserves the legacy about redirect', async () => {
-    const navigate = jest.fn();
-
-    renderApp('/about', {}, { navigate });
-
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/'));
   });
 
   it('defensively redirects non-admin users away from admin routes', async () => {
@@ -292,11 +293,84 @@ describe('<ReactApp />', () => {
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
   });
 
-  it('renders not found content for unmatched React paths', () => {
-    renderApp('/missing-react-route');
+  it('redirects legacy routes to their replacement', async () => {
+    const navigate = jest.fn();
 
-    expect(screen.getByText(/this page cannot be found/i)).toBeInTheDocument();
+    renderApp('/about', {}, { navigate });
+
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/'));
+  });
+
+  it('routes ordinary React-owned links through client navigation', async () => {
+    const navigate = jest.fn();
+    renderApp('/rules', {}, { navigate });
+    await screen.findByText('Rules route');
+    const link = document.createElement('a');
+    link.href = '/faq?topic=routes';
+    link.textContent = 'FAQ';
+    document.body.appendChild(link);
+
+    try {
+      fireEvent.click(link);
+      expect(navigate).toHaveBeenCalledWith('/faq?topic=routes');
+    } finally {
+      link.remove();
+    }
+  });
+
+  it('remounts the current route when client navigation changes its query', async () => {
+    renderApp('/support?report=alice');
+    const link = document.createElement('a');
+    link.href = '/support?report=bob';
+    link.textContent = 'Change report';
+    document.body.appendChild(link);
+
+    try {
+      expect(
+        await screen.findByText('Query ?report=alice'),
+      ).toBeInTheDocument();
+      fireEvent.click(link);
+      await waitFor(() =>
+        expect(window.location.pathname + window.location.search).toBe(
+          '/support?report=bob',
+        ),
+      );
+      await screen.findByText('Query ?report=bob');
+      expect(window.location.pathname + window.location.search).toBe(
+        '/support?report=bob',
+      );
+    } finally {
+      link.remove();
+    }
+  });
+
+  it('leaves links outside React route ownership to the browser', async () => {
+    const navigate = jest.fn();
+    renderApp('/rules', {}, { navigate });
+    await screen.findByText('Rules route');
+    const link = document.createElement('a');
+    link.href = '/api/auth/signout';
+    link.textContent = 'Sign out';
+    document.body.appendChild(link);
+
+    try {
+      fireEvent.click(link);
+      expect(navigate).not.toHaveBeenCalled();
+    } finally {
+      link.remove();
+    }
+  });
+
+  it('redirects unmatched paths to the not-found route', async () => {
+    const navigate = jest.fn();
+
+    renderApp('/missing-react-route', {}, { navigate });
+
+    expect(
+      await screen.findByText(/this page cannot be found/i),
+    ).toBeInTheDocument();
     expect(screen.getByText('Header guest')).toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/not-found'));
   });
 });

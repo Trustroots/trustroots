@@ -12,8 +12,8 @@ jest.mock('@/modules/tribes/client/api/tribes.api');
 
 const mockGetRouteParams = jest.fn();
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  getRouteParams: () => mockGetRouteParams(),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentRouteParams: () => mockGetRouteParams(),
 }));
 
 jest.mock('@/modules/core/client/components/Board.js', () => {

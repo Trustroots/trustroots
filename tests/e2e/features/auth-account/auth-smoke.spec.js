@@ -1,6 +1,7 @@
 const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
+  SEEDED_MEMBERS,
   createUser,
   registerViaApi,
   signOut,
@@ -108,5 +109,26 @@ test.describe.serial('authentication smoke', () => {
 
     await signOut(page);
     await signInExisting(page, user.email);
+  });
+
+  test('sign-in continues to the protected destination', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.protected-route-redirect', [
+      'Protected routes preserve their path and query when redirecting to sign in.',
+    ]);
+
+    await signOut(page);
+    await page.goto('/messages?filter=unread');
+    await expect(page).toHaveURL(
+      /\/signin\?continue=true&returnTo=%2Fmessages%3Ffilter%3Dunread/,
+    );
+
+    const confirmedMember = SEEDED_MEMBERS[0];
+    await page.locator('#username').fill(confirmedMember.username);
+    await page.locator('#password').fill(confirmedMember.password);
+    await page.getByRole('button', { name: /sign in to continue/i }).click();
+
+    await expect(page).toHaveURL(/\/messages\?filter=unread/);
   });
 });

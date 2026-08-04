@@ -154,7 +154,7 @@ describe('<AdminSearchUsers />', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
   });
 
-  it('updates the URL while typing and blocks too-short searches', () => {
+  it('updates the URL on submit and blocks too-short searches', () => {
     render(<AdminSearchUsers />);
 
     const input = screen.getByLabelText('Name, username or email');
@@ -164,6 +164,7 @@ describe('<AdminSearchUsers />', () => {
     expect(button).toBeDisabled();
 
     fireEvent.change(input, { target: { value: 'al' } });
+    expect(window.location.search).toBe('');
     fireEvent.submit(form);
 
     expect(window.location.search).toBe('?search=al');
@@ -185,7 +186,7 @@ describe('<AdminSearchUsers />', () => {
     fireEvent.change(input, { target: { value: 'trustroots team ' } });
 
     expect(input).toHaveValue('trustroots team ');
-    expect(window.location.search).toBe('?search=trustroots+team+');
+    expect(window.location.search).toBe('');
 
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 

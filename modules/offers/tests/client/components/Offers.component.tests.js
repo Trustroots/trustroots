@@ -57,13 +57,11 @@ describe('<Offers />', () => {
       />,
     );
 
-    await waitFor(() =>
-      expect(getOffers).toHaveBeenCalledWith('user-1', 'host'),
-    );
+    expect(await screen.findByText('status:yes')).toBeInTheDocument();
+    expect(getOffers).toHaveBeenCalledWith('user-1', 'host');
 
     expect(screen.getByText('own:true')).toBeInTheDocument();
     expect(screen.getByText('public:true')).toBeInTheDocument();
-    expect(screen.getByText('status:yes')).toBeInTheDocument();
     expect(screen.getByText('username:alice')).toBeInTheDocument();
   });
 
@@ -110,13 +108,11 @@ describe('<Offers />', () => {
 
     render(<Offers profile={{ _id: 'user-1', username: 'alice' }} />);
 
-    await waitFor(() =>
-      expect(getOffers).toHaveBeenCalledWith('user-1', 'host'),
-    );
+    expect(await screen.findByText('status:maybe')).toBeInTheDocument();
+    expect(getOffers).toHaveBeenCalledWith('user-1', 'host');
 
     expect(screen.getByText('own:false')).toBeInTheDocument();
     expect(screen.getByText('public:false')).toBeInTheDocument();
-    expect(screen.getByText('status:maybe')).toBeInTheDocument();
   });
 
   it('detects native mobile app environments during construction', () => {

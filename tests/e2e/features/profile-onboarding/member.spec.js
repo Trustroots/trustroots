@@ -5,6 +5,7 @@ const {
   SEEDED_MEMBERS,
   SEEDED_OFFER,
   SEEDED_PROFILE_DESCRIPTION,
+  SEEDED_RELATIONSHIP_MEMBERS,
   SEEDED_SHADOW,
   EUROPE_OFFERS_QUERY,
   fetchUserIdByUsername,
@@ -241,17 +242,35 @@ test.describe('confirmed member flows', () => {
 
   test('member can join and leave a circle from its detail page', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'circles.join-leave', [
       'Member can join a circle from its detail page.',
       'Member can leave that circle again from the same page.',
     ]);
 
+    const tribesResponse = await request.get('/api/tribes?limit=150');
+    expect(tribesResponse.ok()).toBeTruthy();
+    const hikers = (await tribesResponse.json()).find(
+      tribe => tribe.slug === 'hikers',
+    );
+    expect(hikers).toBeTruthy();
+
+    const membershipsResponse = await request.get('/api/users/memberships');
+    expect(membershipsResponse.ok()).toBeTruthy();
+    const memberships = await membershipsResponse.json();
+    if (memberships.some(item => item.tribe._id === hikers._id)) {
+      const leave = await request.delete(
+        `/api/users/memberships/${hikers._id}`,
+      );
+      expect(leave.ok()).toBeTruthy();
+    }
+
     await page.goto('/circles/hikers');
 
     const joinButton = page.locator('button.tribe-join');
     await expect(joinButton).toBeVisible();
-    await expect(joinButton).toHaveAttribute('aria-label', /join this circle/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /join \(/i);
 
     const joinResponse = page.waitForResponse(
       response =>
@@ -261,7 +280,12 @@ test.describe('confirmed member flows', () => {
     );
     await joinButton.click();
     await joinResponse;
-    await expect(joinButton).toContainText(/you'?re a member/i);
+    await expect(joinButton).toContainText("You're a member");
+    await expect(joinButton).toHaveClass(/btn-primary/);
+    await expect(joinButton).not.toHaveCSS(
+      'background-color',
+      'rgb(255, 255, 255)',
+    );
     await expect(joinButton).toHaveAttribute('aria-label', /leave circle/i);
 
     const leaveResponse = page.waitForResponse(
@@ -271,11 +295,13 @@ test.describe('confirmed member flows', () => {
         response.ok(),
     );
     await joinButton.click();
-    await page
+    const leaveDialog = page.locator('div.modal[role="dialog"]');
+    await expect(leaveDialog).toBeVisible();
+    await leaveDialog
       .getByRole('button', { name: 'Leave circle', exact: true })
       .click();
     await leaveResponse;
-    await expect(joinButton).toContainText(/join this circle/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /join \(/i);
   });
 
   test('shadowbanned member profiles are hidden from other members', async ({
@@ -424,7 +450,6 @@ test.describe('confirmed member flows', () => {
 
   test('new message thread shows the empty conversation state', async ({
     page,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.new-conversation', [
       'Profile action links to a new message thread.',
@@ -432,10 +457,9 @@ test.describe('confirmed member flows', () => {
       'Sending an opening message creates the conversation.',
     ]);
 
-    const beijing = SEEDED_MEMBERS[2];
-    const beijingId = await fetchUserIdByUsername(request, beijing.username);
+    const recipient = SEEDED_RELATIONSHIP_MEMBERS.alice;
 
-    await page.goto(`/messages/${beijing.username}?userId=${beijingId}`);
+    await page.goto(`/messages/${recipient.username}?userId=${recipient.id}`);
 
     await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
     await expect(

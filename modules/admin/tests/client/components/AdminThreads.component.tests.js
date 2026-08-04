@@ -86,13 +86,13 @@ describe('<AdminThreads />', () => {
       target: { value: 'alice' },
     });
 
-    await waitFor(() =>
-      expect(threadsApi.getThreads).toHaveBeenCalledWith({
-        userId: '',
-        username: 'alice',
-      }),
-    );
-    expect(screen.getByText('Messages from/to them')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Messages from/to them'),
+    ).toBeInTheDocument();
+    expect(threadsApi.getThreads).toHaveBeenCalledWith({
+      userId: '',
+      username: 'alice',
+    });
     expect(screen.getByText('Unread')).toHaveClass('label-warning');
     expect(screen.getByRole('link', { name: 'Read thread' })).toHaveAttribute(
       'href',
