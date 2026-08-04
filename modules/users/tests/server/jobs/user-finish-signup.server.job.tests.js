@@ -211,7 +211,7 @@ describe('Job: user finish signup', function () {
   it('Do not remind unconfirmed users >2 hours after their signup again before another >2 days has passed', function (done) {
     unConfirmedUser.publicReminderCount = 1;
     unConfirmedUser.publicReminderSent = moment().subtract(
-      moment.duration({ days: 2 }),
+      moment.duration({ days: 2, hours: 1 }),
     );
     unConfirmedUser.save(function (err) {
       if (err) return done(err);
