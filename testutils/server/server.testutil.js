@@ -16,15 +16,13 @@ exports.catchJobs = function () {
 
     // Make agenda.now() give us it's jobs
     originalNow = agenda.now;
-    agenda.now = function (type, data) {
+    agenda.now = function (type, data, callback) {
       // ensure it is plain data by serializing to json and back
       jobs.push(JSON.parse(JSON.stringify({ type, data })));
 
-      // Resolve asynchronously, matching Agenda's promise-based API.
-      return new Promise(function (resolve) {
-        process.nextTick(function () {
-          resolve({ attrs: { name: type, data } });
-        });
+      // run in nextTick() to simulate async action that real agenda would do
+      process.nextTick(function () {
+        callback();
       });
     };
   });

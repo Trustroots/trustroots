@@ -171,18 +171,11 @@ function runMocha(done) {
               // and pass the error state back to gulp
               // @TODO: https://github.com/Trustroots/trustroots/issues/438
               // @link https://github.com/agenda/agenda/pull/450
-              agenda.close().then(
-                function () {
-                  mongooseService.disconnect(function () {
-                    done(error);
-                  });
-                },
-                function (closeError) {
-                  mongooseService.disconnect(function () {
-                    done(error || closeError);
-                  });
-                },
-              );
+              agenda._mdb.close(function () {
+                mongooseService.disconnect(function () {
+                  done(error);
+                });
+              });
             });
           })
           .catch(function (err) {

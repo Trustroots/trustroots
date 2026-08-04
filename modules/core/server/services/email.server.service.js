@@ -689,11 +689,6 @@ exports.renderEmail = function (templateName, params, callback) {
 exports.renderEmailAndSend = function (templateName, params, callback) {
   exports.renderEmail(templateName, params, function (err, email) {
     if (err) return callback(err);
-    agenda
-      .now('send email', email)
-      .then(function (job) {
-        callback(null, job);
-      })
-      .catch(callback);
+    agenda.now('send email', email, callback);
   });
 };

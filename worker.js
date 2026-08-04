@@ -29,15 +29,12 @@ async.waterfall(
       worker.unlockAgendaJobs(done);
     },
 
-    function (done) {
+    function () {
       // Start the worker
-      worker.start(
-        {
-          maxAttempts: 10,
-          retryDelaySeconds: 10,
-        },
-        done,
-      );
+      worker.start({
+        maxAttempts: 10,
+        retryDelaySeconds: 10,
+      });
     },
   ],
   function (err) {

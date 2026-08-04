@@ -139,10 +139,5 @@ exports.sendUserNotification = function (user, notification, callback) {
     notification,
   };
 
-  agenda
-    .now('send push message', data)
-    .then(function (job) {
-      callback(null, job);
-    })
-    .catch(callback);
+  agenda.now('send push message', data, callback);
 };
