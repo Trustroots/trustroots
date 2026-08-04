@@ -164,6 +164,95 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expect(remove.ok()).toBeTruthy();
   });
 
+  test('hosts can limit search visibility to members in their circles', async ({
+    baseURL,
+    browser,
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'offers.host', [
+      'Host can limit search visibility to members sharing a circle.',
+    ]);
+
+    const aliceId = await fetchUserIdByUsername(request, alice.username);
+    const [aliceOffer] = await findOffersByUser(aliceId, { type: 'host' });
+    expect(aliceOffer).toBeTruthy();
+
+    const circles = await request.get('/api/tribes', {
+      params: { limit: 150 },
+    });
+    expect(circles.ok()).toBeTruthy();
+    const families = (await circles.json()).find(
+      circle => circle.label === 'Families',
+    );
+    expect(families).toBeTruthy();
+
+    const hostContext = await browser.newContext({ baseURL });
+    const hostPage = await hostContext.newPage();
+    let joinedFamilies = false;
+
+    try {
+      await signInViaApi(hostPage, hostContext.request, alice);
+      await hostPage.goto('/offer/host');
+
+      const circleOnly = hostPage.getByLabel(
+        'People that are not in any of my circles should not find me.',
+      );
+      await expect(circleOnly).toBeVisible();
+      await circleOnly.check();
+
+      const saved = hostPage.waitForResponse(
+        response =>
+          response.url().endsWith(`/api/offers/${aliceOffer._id}`) &&
+          response.request().method() === 'PUT',
+      );
+      await hostPage.locator('button[type="submit"].hidden-xs').click();
+      expect((await saved).ok()).toBeTruthy();
+
+      const withoutSharedCircle = await request.get(
+        `/api/offers${EUROPE_OFFERS_QUERY}`,
+      );
+      expect(withoutSharedCircle.ok()).toBeTruthy();
+      expect(
+        (await withoutSharedCircle.json()).features.map(
+          feature => feature.properties.id,
+        ),
+      ).not.toContain(aliceOffer._id.toString());
+
+      const join = await page.request.post(
+        `/api/users/memberships/${families._id}`,
+      );
+      expect(join.ok()).toBeTruthy();
+      joinedFamilies = true;
+
+      const withSharedCircle = await request.get(
+        `/api/offers${EUROPE_OFFERS_QUERY}`,
+      );
+      expect(withSharedCircle.ok()).toBeTruthy();
+      expect(
+        (await withSharedCircle.json()).features.map(
+          feature => feature.properties.id,
+        ),
+      ).toContain(aliceOffer._id.toString());
+    } finally {
+      if (joinedFamilies) {
+        await page.request.delete(`/api/users/memberships/${families._id}`);
+      }
+
+      await hostContext.request.put(`/api/offers/${aliceOffer._id}`, {
+        data: {
+          status: aliceOffer.status,
+          description: aliceOffer.description,
+          noOfferDescription: aliceOffer.noOfferDescription,
+          maxGuests: aliceOffer.maxGuests,
+          location: aliceOffer.location,
+          showOnlyInMyCircles: aliceOffer.showOnlyInMyCircles,
+        },
+      });
+      await hostContext.close();
+    }
+  });
+
   test('meet offers can be listed, created, edited, expired, and deleted', async ({
     page,
     request,
