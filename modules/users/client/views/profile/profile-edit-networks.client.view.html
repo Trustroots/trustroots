@@ -6,82 +6,68 @@
   <div class="panel panel-default">
     <div class="panel-heading">Elsewhere</div>
     <div class="panel-body">
-      <div
-        ng-if="!profileEditNetworks.isConnectedSocialAccount('facebook') ||
-                !profileEditNetworks.isConnectedSocialAccount('github')"
-      >
-        <h4>Connect to</h4>
-        <ul class="list-unstyled elsewhere-profiles">
-          <li
-            class="social-profile social-profile-connect"
-            ng-repeat="providerName in ['facebook', 'github'] track by providerName"
-            ng-if="!profileEditNetworks.isConnectedSocialAccount(providerName)"
+      <div class="extsites nostroots-network">
+        <h4>
+          <a href="https://nos.trustroots.org" target="_blank" rel="noopener">
+            Nostroots
+          </a>
+        </h4>
+        <div class="form-group">
+          <div class="input-group">
+            <div class="input-group-addon">
+              <a
+                tabindex="0"
+                class="icon-help cursor-help tr-help"
+                popover-placement="bottom-left"
+                popover-trigger="'mouseenter'"
+                uib-popover-template="'nostrGuidePopover.html'"
+              ></a>
+              <script type="text/ng-template" id="nostrGuidePopover.html">
+                <div>
+                  Paste your nostr npub (public key) in here.
+                  <br><br>
+                  <strong>Important:</strong> Never paste your nsec (secret key) here. Only use your npub (public key).
+                </div>
+              </script>
+            </div>
+            <label class="input-group-addon" for="nostrNpub">
+              <span class="hidden-xs"></span>
+              <span class="visible-xs-inline">npub:</span>
+            </label>
+            <input
+              id="nostrNpub"
+              name="nostrNpub"
+              type="text"
+              class="form-control"
+              ng-model="profileEditNetworks.user.nostrNpub"
+              ng-change="profileEdit.unsavedModifications=true"
+              ng-pattern="/^(|npub1[ac-hj-np-z02-9]+)$/i"
+              placeholder="npub"
+              aria-label="nostr npub"
+            />
+          </div>
+          <p
+            class="help-block text-danger"
+            ng-if="userForm.nostrNpub.$dirty && userForm.nostrNpub.$error.pattern"
           >
-            <i class="icon-lg icon-{{::providerName}} social-profile-icon"></i>
-            <a
-              class="btn btn-default text-capitalize social-profile-handle"
-              target="_top"
-              ng-href="/api/auth/{{::providerName}}"
-              ng-data-aria-label="Connect your profile to {{::providerName}}"
-            >
-              {{::providerName}}
-            </a>
-          </li>
-        </ul>
-        <br /><br />
-      </div>
-
-      <div ng-if="profileEditNetworks.hasConnectedAdditionalSocialAccounts()">
-        <h4>Connected to networks</h4>
-        <ul class="list-unstyled elsewhere-profiles">
-          <li
-            class="social-profile social-profile-connect"
-            ng-repeat="(providerName, providerData) in profileEditNetworks.user.additionalProvidersData track by providerName"
-            ng-class="{
-              'bg-danger social-profile-active': profileEditNetworks.removingSocialAccount === providerName
-            }"
+            Invalid nostr key. Please provide your npub (public key) starting
+            with "npub". Never use your nsec (secret key).
+          </p>
+          <p
+            class="help-block nostr-nip07-suggestion"
+            ng-if="profileEditNetworks.hasNostrNip07Suggestion()"
           >
-            <i
-              class="icon-fw icon-lg icon-{{::providerName}} social-profile-icon"
-            ></i>
-
-            <!-- Connection name -->
+            Your browser Nostr extension suggests
+            <code>{{ profileEditNetworks.nostrNip07SuggestedNpub }}</code>
             <button
-              class="btn btn-default text-capitalize social-profile-handle"
               type="button"
-              ng-click="profileEditNetworks.removingSocialAccount = providerName"
-              ng-if="profileEditNetworks.removingSocialAccount !== providerName"
-              ng-data-aria-label="Disconnect your profile from {{::providerName}}"
+              class="btn btn-default btn-xs"
+              ng-click="profileEditNetworks.applyNostrNip07Suggestion()"
             >
-              {{::providerName}} (disconnect)
+              {{ profileEditNetworks.nostrNip07SuggestionButtonText() }}
             </button>
-
-            <!-- Confirm disconnecting -->
-            <span
-              class="text-danger"
-              ng-if="profileEditNetworks.removingSocialAccount === providerName"
-            >
-              Disconnect from
-              <span class="text-capitalize" ng-bind="::providerName"></span
-              >?<br />
-              <button
-                class="btn btn-danger"
-                type="button"
-                ng-click="profileEditNetworks.removeUserSocialAccount(providerName)"
-              >
-                Yes, disconnect
-              </button>
-              <button
-                class="btn btn-link"
-                type="button"
-                ng-click="profileEditNetworks.removingSocialAccount = false"
-              >
-                Cancel
-              </button>
-            </span>
-          </li>
-        </ul>
-        <br /><br />
+          </p>
+        </div>
       </div>
 
       <div class="extsites">
@@ -292,89 +278,6 @@
         </div>
       </div>
 
-      <div class="extsites">
-        <h4>nostr</h4>
-        <!--
-      Note:
-        - links here have `rel="noopener"` because;
-          https://mathiasbynens.github.io/rel-noopener/
-        - CS link has `rel="noreferrer"` because;
-          https://github.com/Trustroots/trustroots/issues/464
-      -->
-        <div class="form-group">
-          <div class="input-group">
-            <div class="input-group-addon">
-              <a
-                tabindex="0"
-                class="icon-help cursor-help tr-help"
-                popover-placement="bottom-left"
-                popover-trigger="'mouseenter'"
-                uib-popover-template="'nostrGuidePopover.html'"
-              ></a>
-              <script type="text/ng-template" id="nostrGuidePopover.html">
-                <div>
-                  Paste your nostr npub (public key) in here.
-                  <br><br>
-                  <strong>Important:</strong> Never paste your nsec (secret key) here. Only use your npub (public key).
-                </div>
-              </script>
-            </div>
-            <label class="input-group-addon" for="nostrNpub">
-              <span class="hidden-xs"></span>
-              <span class="visible-xs-inline">npub:</span>
-            </label>
-            <input
-              id="nostrNpub"
-              name="nostrNpub"
-              type="text"
-              class="form-control"
-              ng-model="profileEditNetworks.user.nostrNpub"
-              ng-change="profileEdit.unsavedModifications=true"
-              ng-pattern="/^(|npub1[ac-hj-np-z02-9]+)$/i"
-              placeholder="npub"
-              aria-label="nostr npub"
-            />
-            <!--
-            <span
-              class="input-group-btn"
-              ng-if="profileEditNetworks.user.nostrNpub.length"
-            >
-              <a
-                ng-href="https://couchers.org/user/{{ profileEditNetworks.user.extSitesCouchers }}"
-                target="_blank"
-                class="btn btn-primary"
-                role="button"
-                rel="noopener"
-              >
-                <small>Test</small>
-              </a>
-            </span>
-	    -->
-          </div>
-          <p
-            class="help-block text-danger"
-            ng-if="userForm.nostrNpub.$dirty && userForm.nostrNpub.$error.pattern"
-          >
-            Invalid nostr key. Please provide your npub (public key) starting
-            with "npub". Never use your nsec (secret key).
-          </p>
-          <p
-            class="help-block nostr-nip07-suggestion"
-            ng-if="profileEditNetworks.hasNostrNip07Suggestion()"
-          >
-            Your browser Nostr extension suggests
-            <code>{{ profileEditNetworks.nostrNip07SuggestedNpub }}</code>
-            <button
-              type="button"
-              class="btn btn-default btn-xs"
-              ng-click="profileEditNetworks.applyNostrNip07Suggestion()"
-            >
-              {{ profileEditNetworks.nostrNip07SuggestionButtonText() }}
-            </button>
-          </p>
-        </div>
-      </div>
-
       <p>
         <button
           type="submit"
@@ -384,15 +287,44 @@
           Save
         </button>
       </p>
+
+      <div
+        class="legacy-social-connections"
+        ng-if="profileEditNetworks.hasLegacySocialAccounts()"
+      >
+        <hr />
+        <h4>Legacy connections</h4>
+        <p class="text-muted">
+          New social account connections are no longer supported. You can delete
+          previously stored connection data here.
+        </p>
+        <ul class="list-unstyled">
+          <li
+            ng-repeat="providerName in profileEditNetworks.legacySocialProviders track by providerName"
+            ng-if="profileEditNetworks.isConnectedSocialAccount(providerName)"
+          >
+            <span class="legacy-social-provider">
+              <i class="icon-fw icon-{{::providerName}}"></i>
+              <span class="text-capitalize" ng-bind="::providerName"></span>
+              <small>Legacy</small>
+            </span>
+            <button
+              class="btn btn-sm btn-danger"
+              type="button"
+              ng-click="profileEditNetworks.removeUserSocialAccount(providerName)"
+              ng-attr-aria-label="Delete {{::providerName}} connection"
+            >
+              Delete
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
     <div class="panel-footer">
       <small class="text-muted">
-        Connecting your profile to these networks is absolutely
-        <strong>optional</strong>.<br />
-        If you do, other members in Trustroots will be able to see a link to
-        your other profile and some basic info about you and content you like
-        there. In future you will be able to use e.g. your contact list here in
-        Trustroots. We will never send any of your profile data to them.
+        Adding links to other hospitality networks or a Nostr public key is
+        absolutely <strong>optional</strong>. We will never send your profile
+        data to these services.
       </small>
     </div>
   </div>

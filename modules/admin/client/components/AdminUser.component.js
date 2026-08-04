@@ -4,7 +4,12 @@ import PropTypes from 'prop-types';
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getUser, searchUsers, setUserRole } from '../api/users.api';
+import {
+  getUser,
+  listUsersByLastIpAddress,
+  searchUsers,
+  setUserRole,
+} from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminNotes from './AdminNotes';
 import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
@@ -21,6 +26,11 @@ import {
   normalizeAdminQuery,
   isSuspendedUser,
 } from './userSearch.helpers';
+
+const DEFAULT_MEMBER_LIST_SORT = {
+  column: 'username',
+  direction: 'ascending',
+};
 
 function formatDate(value) {
   if (!value) {
@@ -103,9 +113,12 @@ export default class AdminUser extends Component {
   constructor(props) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
+    this.getUsersByLastIpAddress = this.getUsersByLastIpAddress.bind(this);
     this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
     this.onHideObviousSpamUsersChange =
       this.onHideObviousSpamUsersChange.bind(this);
+    this.onMatchingUsersPageChange = this.onMatchingUsersPageChange.bind(this);
+    this.onMatchingUsersSortChange = this.onMatchingUsersSortChange.bind(this);
     this.onQueryChange = this.onQueryChange.bind(this);
     this.queryUser = this.queryUser.bind(this);
     this.state = {
@@ -113,6 +126,10 @@ export default class AdminUser extends Component {
       hideObviousSpamUsers: true,
       isSettingUserRole: false,
       isSearching: false,
+      matchingUsersIpAddress: null,
+      matchingUsersPagination: null,
+      matchingUsersSort: DEFAULT_MEMBER_LIST_SORT,
+      matchingUsersSource: null,
       matchingUsers: [],
       query: '',
       user: false,
@@ -122,10 +139,13 @@ export default class AdminUser extends Component {
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('id');
+    const ipAddress = urlParams.get('ip');
     const query = urlParams.get('q');
 
     if (id && isMongoObjectId(id)) {
       this.setState({ query: id }, this.queryUser);
+    } else if (ipAddress) {
+      this.getUsersByLastIpAddress(ipAddress);
     } else if (query) {
       this.setState({ query }, this.queryUser);
     }
@@ -139,6 +159,7 @@ export default class AdminUser extends Component {
     // Update URL
     const url = new URL(document.location);
     url.searchParams.delete('id');
+    url.searchParams.delete('ip');
     url.searchParams.delete('q');
     if (query) {
       if (isMongoObjectId(normalizedQuery)) {
@@ -152,6 +173,28 @@ export default class AdminUser extends Component {
 
   onHideObviousSpamUsersChange(event) {
     this.setState({ hideObviousSpamUsers: event.target.checked });
+  }
+
+  onMatchingUsersPageChange(page) {
+    if (this.state.matchingUsersSource === 'ip') {
+      return this.getUsersByLastIpAddress(this.state.matchingUsersIpAddress, {
+        page,
+      });
+    }
+    return this.queryUser(null, { page });
+  }
+
+  onMatchingUsersSortChange(sort) {
+    this.setState({ matchingUsersSort: sort }, () => {
+      if (this.state.matchingUsersSource === 'ip') {
+        this.getUsersByLastIpAddress(this.state.matchingUsersIpAddress, {
+          page: 1,
+          sort,
+        });
+      } else {
+        this.queryUser(null, { page: 1, sort });
+      }
+    });
   }
 
   handleUserRoleChange(role) {
@@ -169,7 +212,7 @@ export default class AdminUser extends Component {
     }
   }
 
-  queryUser(event) {
+  queryUser(event, options = {}) {
     if (event) {
       event.preventDefault();
     }
@@ -182,12 +225,16 @@ export default class AdminUser extends Component {
       this.getUserById(query);
       return;
     }
+    const requestedSort = options.sort || this.state.matchingUsersSort;
 
     this.setState(
       { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
       async () => {
-        const matchingUsers = await searchUsers(query);
-        const exactMatch = matchingUsers.find(user =>
+        const memberList = await searchUsers(query, {
+          page: options.page || 1,
+          sort: requestedSort,
+        });
+        const exactMatch = memberList.users.find(user =>
           isExactUserMatch(query, user),
         );
 
@@ -198,7 +245,10 @@ export default class AdminUser extends Component {
 
         this.setState({
           isSearching: false,
-          matchingUsers,
+          matchingUsers: memberList.users,
+          matchingUsersPagination: memberList.pagination,
+          matchingUsersSort: memberList.sort,
+          matchingUsersSource: 'search',
         });
       },
     );
@@ -216,6 +266,27 @@ export default class AdminUser extends Component {
     );
   }
 
+  getUsersByLastIpAddress(ipAddress, options = {}) {
+    const requestedSort = options.sort || this.state.matchingUsersSort;
+    this.setState(
+      { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
+      async () => {
+        const memberList = await listUsersByLastIpAddress(ipAddress, {
+          page: options.page || 1,
+          sort: requestedSort,
+        });
+        this.setState({
+          isSearching: false,
+          matchingUsers: memberList.users,
+          matchingUsersIpAddress: ipAddress,
+          matchingUsersPagination: memberList.pagination,
+          matchingUsersSort: memberList.sort,
+          matchingUsersSource: 'ip',
+        });
+      },
+    );
+  }
+
   hasRole(role) {
     return get(this.state.user, ['profile', 'roles'], []).includes(role);
   }
@@ -227,6 +298,8 @@ export default class AdminUser extends Component {
       isSearching,
       isSettingUserRole,
       matchingUsers,
+      matchingUsersPagination,
+      matchingUsersSort,
       query,
       user,
     } = this.state;
@@ -273,6 +346,17 @@ export default class AdminUser extends Component {
           ['Profile visible', user.profile.public ? 'Yes' : 'No'],
           ['Signed up', formatDate(user.profile.created)],
           ['Last seen', formatDate(user.profile.seen)],
+          [
+            'Last IP address',
+            user.profile.lastIpAddress && (
+              <a
+                href={`/admin/user?ip=${user.profile.lastIpAddress}`}
+                target="_self"
+              >
+                {user.profile.lastIpAddress}
+              </a>
+            ),
+          ],
           [
             'Location',
             user.profile.location &&
@@ -368,7 +452,13 @@ export default class AdminUser extends Component {
           </div>
 
           {!isProfile && (
-            <AdminUserResultsTable userResults={visibleMatchingUsers} />
+            <AdminUserResultsTable
+              onPageChange={this.onMatchingUsersPageChange}
+              onSortChange={this.onMatchingUsersSortChange}
+              pagination={matchingUsersPagination}
+              sort={matchingUsersSort}
+              userResults={visibleMatchingUsers}
+            />
           )}
 
           {!isProfile && hiddenObviousSpamUserCount > 0 && (

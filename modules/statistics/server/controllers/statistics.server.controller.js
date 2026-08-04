@@ -17,6 +17,10 @@ const ReferenceThread = mongoose.model('ReferenceThread');
 const PUBLIC_STATISTICS_CACHE_SECONDS = 60 * 60;
 let publicStatisticsCache;
 
+function connectionPercentage(count, total) {
+  return total ? Math.round((count / total) * 1000) / 10 : 0;
+}
+
 exports.clearPublicStatisticsCache = function () {
   publicStatisticsCache = undefined;
 };
@@ -322,7 +326,12 @@ exports.getExperienceStatistics = function (since, callback) {
       realLifeConnections: done => {
         Experience.aggregate(
           [
-            { $match: { 'interactions.met': true } },
+            {
+              $match: {
+                recommend: 'yes',
+                'interactions.met': true,
+              },
+            },
             {
               $project: {
                 created: 1,
@@ -598,7 +607,7 @@ exports.getPublicStatistics = function (req, res) {
           req.statistics.connections.push({
             network: 'bewelcome',
             count,
-            percentage: Math.round((count / req.statistics.total) * 100),
+            percentage: connectionPercentage(count, req.statistics.total),
           });
           done();
         });
@@ -613,7 +622,7 @@ exports.getPublicStatistics = function (req, res) {
           req.statistics.connections.push({
             network: 'couchsurfing',
             count,
-            percentage: Math.round((count / req.statistics.total) * 100),
+            percentage: connectionPercentage(count, req.statistics.total),
           });
           done();
         });
@@ -628,7 +637,7 @@ exports.getPublicStatistics = function (req, res) {
           req.statistics.connections.push({
             network: 'warmshowers',
             count,
-            percentage: Math.round((count / req.statistics.total) * 100),
+            percentage: connectionPercentage(count, req.statistics.total),
           });
           done();
         });
@@ -643,7 +652,7 @@ exports.getPublicStatistics = function (req, res) {
           req.statistics.connections.push({
             network: 'facebook',
             count,
-            percentage: Math.round((count / req.statistics.total) * 100),
+            percentage: connectionPercentage(count, req.statistics.total),
           });
           done();
         });
@@ -658,7 +667,7 @@ exports.getPublicStatistics = function (req, res) {
           req.statistics.connections.push({
             network: 'github',
             count,
-            percentage: Math.round((count / req.statistics.total) * 100),
+            percentage: connectionPercentage(count, req.statistics.total),
           });
           done();
         });
@@ -673,7 +682,7 @@ exports.getPublicStatistics = function (req, res) {
           req.statistics.connections.push({
             network: 'nostr',
             count,
-            percentage: Math.round((count / req.statistics.total) * 100),
+            percentage: connectionPercentage(count, req.statistics.total),
           });
           done();
         });

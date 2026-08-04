@@ -84,11 +84,15 @@ describe('SearchMapController', function () {
 
     expect(controller.filters).toBe(angular.toJson(filters));
 
+    controller.bounds = bounds;
     $scope.$broadcast('search.mapCenter', center);
     expect(controller.location).toBe(center);
+    expect(controller.bounds).toEqual({});
 
+    controller.location = center;
     $scope.$broadcast('search.mapBounds', bounds);
     expect(controller.bounds).toBe(bounds);
+    expect(controller.location).toEqual({});
 
     $scope.$broadcast('search.filtersUpdated', updatedFilters);
     expect(controller.filters).toBe(angular.toJson(updatedFilters));
@@ -100,6 +104,10 @@ describe('SearchMapController', function () {
       location: [60.17, 24.94],
     };
     const { $analytics, $scope, $state, controller } = createController();
+    controller.bounds = {
+      northEast: { lat: 61, lng: 25 },
+      southWest: { lat: 60, lng: 24 },
+    };
 
     controller.previewOffer(offer, true);
 
@@ -121,6 +129,7 @@ describe('SearchMapController', function () {
       lng: 24.94,
       zoom: 13,
     });
+    expect(controller.bounds).toEqual({});
     expect($analytics.eventTrack).toHaveBeenCalledWith('offer.preview', {
       category: 'search.map',
       label: 'Preview offer',

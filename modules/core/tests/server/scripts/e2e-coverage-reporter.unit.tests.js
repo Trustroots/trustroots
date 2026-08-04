@@ -19,8 +19,14 @@ const {
   validateFeatureManifest,
 } = require('../../../../../scripts/e2e/feature-coverage-summary');
 const {
+  featureCoverageIncomplete,
   summarizeReport,
 } = require('../../../../../scripts/e2e/summarize-results');
+const {
+  buildE2eMetrics,
+  resolveE2eLaneMessage,
+  resolveE2eLaneStatus,
+} = require('../../../../../scripts/coverage/generate-report');
 
 function reportWithSpecs(specs) {
   return {
@@ -374,6 +380,10 @@ describe('E2E coverage reporter unit tests', () => {
         os.tmpdir(),
         `trustroots-e2e-status-${process.pid}-${Date.now()}.json`,
       );
+      const missingResultsPath = path.join(
+        os.tmpdir(),
+        `trustroots-e2e-results-missing-${process.pid}-${Date.now()}.json`,
+      );
 
       const result = spawnSync(
         process.execPath,
@@ -386,6 +396,7 @@ describe('E2E coverage reporter unit tests', () => {
             EXIT_CODE: '0',
             MESSAGE: 'isolated status path test',
             TRUSTROOTS_E2E_STATUS_PATH: statusPath,
+            TRUSTROOTS_E2E_RESULTS_PATH: missingResultsPath,
           },
           encoding: 'utf8',
         },
@@ -398,6 +409,114 @@ describe('E2E coverage reporter unit tests', () => {
       status.exitCode.should.equal(0);
 
       fs.unlinkSync(statusPath);
+    });
+
+    it('marks incomplete feature coverage as failed', () => {
+      featureCoverageIncomplete({
+        missingScenarioCount: 1,
+        featurePassCoverage: 98.98,
+      }).should.equal(true);
+      featureCoverageIncomplete({
+        missingScenarioCount: 0,
+        featurePassCoverage: 100,
+      }).should.equal(false);
+    });
+
+    it('fails status output when required feature scenarios are missing', () => {
+      const statusPath = path.join(
+        os.tmpdir(),
+        `trustroots-e2e-status-${process.pid}-${Date.now()}.json`,
+      );
+      const resultsPath = path.join(
+        os.tmpdir(),
+        `trustroots-e2e-results-${process.pid}-${Date.now()}.json`,
+      );
+
+      const report = reportWithSpecs([
+        {
+          file: 'tests/e2e/features/messages/messages.spec.js',
+          title: 'inbox lists seeded conversation',
+          tests: [
+            testCase('passed', [
+              featureAnnotation(
+                'messages.inbox',
+                'Inbox lists seeded conversation.',
+              ),
+            ]),
+          ],
+        },
+      ]);
+      fs.writeFileSync(resultsPath, `${JSON.stringify(report)}\n`);
+
+      const result = spawnSync(
+        process.execPath,
+        ['scripts/e2e/summarize-results.js'],
+        {
+          cwd: path.resolve(__dirname, '../../../../../'),
+          env: {
+            ...process.env,
+            STATUS: 'passed',
+            EXIT_CODE: '0',
+            MESSAGE: 'End-to-end Playwright tests passed.',
+            TRUSTROOTS_E2E_STATUS_PATH: statusPath,
+            TRUSTROOTS_E2E_RESULTS_PATH: resultsPath,
+          },
+          encoding: 'utf8',
+        },
+      );
+
+      result.status.should.equal(1);
+      const status = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
+      status.status.should.equal('failed');
+      status.exitCode.should.equal(1);
+      status.message.should.match(/feature scenarios missing/);
+      status.metrics.missingScenarioCount.should.be.above(0);
+
+      fs.unlinkSync(statusPath);
+      fs.unlinkSync(resultsPath);
+    });
+  });
+
+  describe('coverage report e2e lane status', () => {
+    it('does not keep a passed lane when feature coverage is incomplete', () => {
+      const metrics = buildE2eMetrics(
+        {
+          total: 174,
+          passed: 174,
+          failed: 0,
+          passRate: 100,
+          durationMs: 1000,
+          areaCoverage: 100,
+          areaPassCoverage: 100,
+          featureCoverage: 98.98,
+          featurePassCoverage: 98.98,
+          scenarioCoverage: 99.6,
+          definedAreaCount: 8,
+          exercisedAreaCount: 8,
+          greenAreaCount: 8,
+          activeFeatureCount: 98,
+          coveredFeatureCount: 97,
+          missingFeatureCount: 1,
+          requiredScenarioCount: 247,
+          coveredScenarioCount: 246,
+          missingScenarioCount: 1,
+        },
+        {
+          tests: 46,
+          passRate: 100,
+          areaCoverage: 0,
+          areaPassCoverage: 0,
+          featureCoverage: 100,
+          featurePassCoverage: 100,
+          scenarioCoverage: 100,
+        },
+      );
+
+      metrics.passed.should.equal(false);
+      resolveE2eLaneStatus('passed', metrics).should.equal('failed');
+      resolveE2eLaneMessage('passed', metrics, 'Playwright passed.').should.match(
+        /feature coverage is below 100%/,
+      );
     });
   });
 });

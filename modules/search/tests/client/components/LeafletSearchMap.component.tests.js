@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import L from 'leaflet';
 
 import LeafletSearchMap from '@/modules/search/client/components/LeafletSearchMap';
@@ -9,6 +9,7 @@ const mockMap = {
   getBounds: jest.fn(),
   getCenter: jest.fn(),
   getZoom: jest.fn(),
+  fitBounds: jest.fn(),
   invalidateSize: jest.fn(),
   on: jest.fn((name, handler) => {
     mockMapHandlers[name] = handler;
@@ -136,6 +137,7 @@ beforeEach(() => {
   mockMap.getBounds.mockReturnValue(bounds);
   mockMap.getCenter.mockReturnValue({ lat: 52, lng: 13 });
   mockMap.getZoom.mockReturnValue(6);
+  mockMap.fitBounds.mockClear();
   mockMap.invalidateSize.mockClear();
   mockMap.setView.mockClear();
   mockMap.remove.mockClear();
@@ -185,6 +187,12 @@ describe('<LeafletSearchMap />', () => {
     });
     expect(mockMarkers).toHaveLength(1);
     expect(mockCircleMarkers).toHaveLength(2);
+    expect(mockMarkers[0].options.bubblingMouseEvents).toBe(false);
+    expect(
+      mockCircleMarkers.every(
+        marker => marker.options.bubblingMouseEvents === false,
+      ),
+    ).toBe(true);
 
     mockMapHandlers.click();
     expect(onMapClick).toHaveBeenCalledTimes(1);
@@ -231,6 +239,64 @@ describe('<LeafletSearchMap />', () => {
     expect(mockMap.remove).toHaveBeenCalledTimes(1);
   });
 
+  it('refits selected bounds after mobile layout settles', () => {
+    jest.useFakeTimers();
+    const selectedBounds = {
+      northEast: { lat: 52.6755, lng: 13.7611 },
+      southWest: { lat: 52.3383, lng: 13.0884 },
+    };
+
+    const { rerender, unmount } = renderMap({ bounds: selectedBounds });
+
+    expect(mockMap.invalidateSize).toHaveBeenCalledWith({ pan: false });
+    expect(mockMap.fitBounds).toHaveBeenCalledWith(
+      [
+        [52.3383, 13.0884],
+        [52.6755, 13.7611],
+      ],
+      { padding: [40, 40] },
+    );
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <LeafletSearchMap
+        bounds={selectedBounds}
+        communityNotes={{ features: [] }}
+        offers={{ features: [] }}
+        onCommunityNoteClick={jest.fn()}
+        onMapChange={jest.fn()}
+        onMapClick={jest.fn()}
+        onOfferClick={jest.fn()}
+        viewport={{ latitude: 40, longitude: -74, zoom: 4 }}
+      />,
+    );
+    expect(mockMap.setView).not.toHaveBeenCalledWith([40, -74], 4);
+
+    act(() => jest.runOnlyPendingTimers());
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(3);
+
+    unmount();
+    jest.useRealTimers();
+  });
+
+  it('does not refit selected bounds after map interaction starts', () => {
+    jest.useFakeTimers();
+    const selectedBounds = {
+      northEast: { lat: 52.6755, lng: 13.7611 },
+      southWest: { lat: 52.3383, lng: 13.0884 },
+    };
+
+    const { getByTestId, unmount } = renderMap({ bounds: selectedBounds });
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
+
+    fireEvent.pointerDown(getByTestId('leaflet-search-map'));
+    act(() => jest.runOnlyPendingTimers());
+
+    expect(mockMap.fitBounds).toHaveBeenCalledTimes(1);
+    unmount();
+    jest.useRealTimers();
+  });
+
   it('does not render markers while the map is zoomed out', () => {
     mockClusterResults.push([point('offer-1')], [point('note-1')]);
 
@@ -246,7 +312,7 @@ describe('<LeafletSearchMap />', () => {
     expect(mockLayerGroups[1].clearLayers).toHaveBeenCalledTimes(1);
   });
 
-  it('uses fallback colours for unknown offers and unverified notes', () => {
+  it('uses fallback colours for unknown offers and Community Notes', () => {
     mockClusterResults.push(
       [point('offer-1', { offer: 'unknown' })],
       [point('note-1', { verified: false })],
@@ -258,7 +324,7 @@ describe('<LeafletSearchMap />', () => {
     });
 
     expect(mockCircleMarkers[0].options.fillColor).toBe('#ccc');
-    expect(mockCircleMarkers[1].options.fillColor).toBe('#1976D2');
+    expect(mockCircleMarkers[1].options.fillColor).toBe('#1565C0');
     expect(() => mockCircleMarkers[0].handlers.click({})).not.toThrow();
   });
 });

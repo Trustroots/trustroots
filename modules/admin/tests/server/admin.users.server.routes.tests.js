@@ -93,6 +93,13 @@ describe('Admin User CRUD tests', () => {
         .expect(403);
     });
 
+    it('Non-authenticated users should not be allowed to list users by IP address', async () => {
+      await agent
+        .post('/api/admin/users/by-last-ip-address')
+        .send({ ipAddress: '203.0.113.10' })
+        .expect(403);
+    });
+
     it('Mon-authenticated users should not be allowed to get user by ID', async () => {
       await agent
         .post('/api/admin/user')
@@ -137,15 +144,21 @@ describe('Admin User CRUD tests', () => {
           .post('/api/admin/users')
           .send({ search: 'Name' })
           .expect(200);
+        const { users } = body;
 
-        should(body.length).equal(2);
+        should(users.length).equal(2);
+        should(body.pagination.total).equal(2);
+        should(body.sort).deepEqual({
+          column: 'username',
+          direction: 'ascending',
+        });
 
-        should.exist(body[0].created);
-        should.exist(body[1].created);
-        should(body[0].username).equal('user-admin');
-        should(body[1].username).equal('user-regular');
+        should.exist(users[0].created);
+        should.exist(users[1].created);
+        should(users[0].username).equal('user-admin');
+        should(users[1].username).equal('user-regular');
 
-        body.forEach(user => {
+        users.forEach(user => {
           // These should have been removed
           should.not.exist(user.password);
           should.not.exist(user.salt);
@@ -163,8 +176,66 @@ describe('Admin User CRUD tests', () => {
           .send({ search: 'user-regular' })
           .expect(200);
 
-        should(body.length).equal(1);
-        should(body[0].username).equal('user-regular');
+        should(body.users.length).equal(1);
+        should(body.users[0].username).equal('user-regular');
+      });
+
+      it('should sort matching users on the server', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({
+            search: 'Name',
+            sort: { column: 'displayName', direction: 'descending' },
+          })
+          .expect(200);
+
+        should(body.users.map(user => user.displayName)).deepEqual([
+          'Full Name',
+          'Admin Name',
+        ]);
+        should(body.sort).deepEqual({
+          column: 'displayName',
+          direction: 'descending',
+        });
+      });
+
+      it('should trim surrounding whitespace from a search query', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({ search: '  user-regular  ' })
+          .expect(200);
+
+        should(body.users.length).equal(1);
+        should(body.users[0].username).equal('user-regular');
+      });
+
+      it('should ignore whitespace between search words', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        await new User({
+          displayName: 'Spaceless Member',
+          email: 'spaceless-member@example.test',
+          firstName: 'Spaceless',
+          lastName: 'Member',
+          member: [],
+          password: 'Password123!',
+          provider: 'local',
+          public: true,
+          roles: ['user'],
+          username: 'spacelessmember',
+        }).save();
+
+        const { body } = await agent
+          .post('/api/admin/users')
+          .send({ search: 'spaceless member' })
+          .expect(200);
+
+        should(body.users.length).equal(1);
+        should(body.users[0].username).equal('spacelessmember');
       });
 
       it('should find by email', async () => {
@@ -175,8 +246,8 @@ describe('Admin User CRUD tests', () => {
           .send({ search: 'regular@example.com' })
           .expect(200);
 
-        should(body.length).equal(1);
-        should(body[0].email).equal('regular@example.com');
+        should(body.users.length).equal(1);
+        should(body.users[0].email).equal('regular@example.com');
       });
     });
 
@@ -198,9 +269,9 @@ describe('Admin User CRUD tests', () => {
           .send({ role: 'admin' })
           .expect(200);
 
-        should(body.length).equal(1);
+        should(body.users.length).equal(1);
 
-        const user = body[0];
+        const user = body.users[0];
 
         should(user.username).equal('user-admin');
 
@@ -220,6 +291,55 @@ describe('Admin User CRUD tests', () => {
           .post('/api/admin/users/by-role')
           .send({ role: 'fake' })
           .expect(400);
+      });
+    });
+
+    describe('List users by last IP address', () => {
+      it('non-admin users should not be allowed to list users by IP address', async () => {
+        await utils.signIn(credentialsRegular, agent);
+
+        await agent
+          .post('/api/admin/users/by-last-ip-address')
+          .send({ ipAddress: '203.0.113.10' })
+          .expect(403);
+      });
+
+      it('admin users can list only exact current IP address matches', async () => {
+        userRegular.lastIpAddress = '203.0.113.10';
+        await userRegular.save();
+        const otherUser = new User({
+          displayName: 'Other Name',
+          email: 'other@example.com',
+          firstName: 'Other',
+          lastIpAddress: '203.0.113.100',
+          lastName: 'Name',
+          password: 'Password123!',
+          provider: 'local',
+          public: true,
+          username: 'user-other',
+        });
+        await otherUser.save();
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users/by-last-ip-address')
+          .send({ ipAddress: '203.0.113.10' })
+          .expect(200);
+
+        body.users.should.have.length(1);
+        body.users[0].username.should.equal('user-regular');
+        body.users[0].lastIpAddress.should.equal('203.0.113.10');
+      });
+
+      it('rejects malformed IP addresses', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/users/by-last-ip-address')
+          .send({ ipAddress: '203.0.113.10, 198.51.100.10' })
+          .expect(400);
+
+        body.message.should.equal('Invalid IP address.');
       });
     });
 

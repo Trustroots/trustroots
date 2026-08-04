@@ -47,7 +47,7 @@ describe('user network utilities', () => {
     expect(getNetworkName('bewelcome')).toBe('BeWelcome');
     expect(getNetworkName('couchsurfing')).toBe('Couchsurfing');
     expect(getNetworkName('facebook')).toBe('Facebook');
-    expect(getNetworkName('github')).toBe('Github');
+    expect(getNetworkName('github')).toBe('GitHub');
     expect(getNetworkName('twitter')).toBe('Twitter');
     expect(getNetworkName('warmshowers')).toBe('Warmshowers');
     expect(getNetworkName('unknown-network')).toBe('unknown-network');

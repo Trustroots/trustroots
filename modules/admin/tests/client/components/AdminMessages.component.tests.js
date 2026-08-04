@@ -227,9 +227,9 @@ describe('<AdminMessages />', () => {
 
     render(<AdminMessages />);
 
-    expect(screen.getByText('Press "Read"')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Read' }));
-
+    await waitFor(() =>
+      expect(messagesApi.getMessages).toHaveBeenCalledWith(user1, user2),
+    );
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
   });
 

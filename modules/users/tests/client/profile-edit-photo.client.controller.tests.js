@@ -288,6 +288,32 @@ describe('ProfileEditPhotoController', function () {
     );
   });
 
+  it('uses the payload status when the upload error callback omits the HTTP status', function () {
+    selectValidImage();
+
+    uploadErrorCallback({ status: 415 }, null);
+
+    expect(ProfileEditPhotoController.avatarUploading).toBe(false);
+    expect(ProfileEditPhotoController.avatarPreview).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Sorry, we do not support this type of file.',
+    );
+  });
+
+  it('falls back to a generic error when neither callback arg has a numeric status', function () {
+    selectValidImage();
+
+    uploadErrorCallback(null, 'invalid');
+
+    expect(ProfileEditPhotoController.avatarUploading).toBe(false);
+    expect(ProfileEditPhotoController.avatarPreview).toBe(false);
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Oops! Something went wrong. Try again later.',
+    );
+  });
+
   it('shows the generic avatar upload error for unknown upload failures', function () {
     selectValidImage();
 

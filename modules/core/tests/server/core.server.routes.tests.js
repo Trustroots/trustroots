@@ -121,6 +121,16 @@ describe('Core CRUD tests', function () {
     });
   });
 
+  describe('Member-only circle routes', function () {
+    it('redirects visitors away from the Naturists circle', function (done) {
+      agent
+        .get('/circles/naturists')
+        .expect('Location', '/signin')
+        .expect(302)
+        .end(done);
+    });
+  });
+
   describe('Expect-CT header Tests:', function () {
     it('Responses should have Expect-CT header', function (done) {
       agent
@@ -215,6 +225,116 @@ describe('Core CRUD tests', function () {
         should.not.exist(err);
 
         res.text.should.containEql('isNativeMobileApp = true');
+
+        return done();
+      });
+    });
+  });
+
+  describe('Frontend app root selection', function () {
+    afterEach(utils.clearDatabase);
+
+    function createUser(overrides) {
+      return new User(
+        Object.assign(
+          {
+            email: 'frontend-root-user@example.com',
+            firstName: 'Frontend',
+            lastName: 'User',
+            password: 'Password123!',
+            provider: 'local',
+            public: true,
+            roles: ['user'],
+            username: 'frontend-root-user',
+          },
+          overrides,
+        ),
+      ).save();
+    }
+
+    it('renders React assets and root for React-owned pages', function (done) {
+      agent.get('/support').end(function (err, res) {
+        should.not.exist(err);
+        res.text.should.containEql('id="tr-react-root"');
+        res.text.should.containEql('assets/react-main.js');
+        res.text.should.containEql(config.umami.scriptSrc);
+
+        return done();
+      });
+    });
+
+    it('redirects guests away from protected React-owned pages', function (done) {
+      agent.get('/admin').expect(302).expect('Location', '/signin').end(done);
+    });
+
+    it('redirects non-admin users away from admin React-owned pages', function (done) {
+      const memberCredentials = {
+        password: 'Password123!',
+        username: 'frontend-root-member',
+      };
+
+      createUser({
+        email: 'frontend-root-member@example.com',
+        roles: ['user'],
+        ...memberCredentials,
+      })
+        .then(function () {
+          return utils.signIn(memberCredentials, agent);
+        })
+        .then(function () {
+          agent
+            .get('/admin')
+            .expect(302)
+            .expect('Location', '/volunteering')
+            .end(function (err) {
+              if (err) {
+                return done(err);
+              }
+
+              utils
+                .signOut(agent)
+                .then(() => done())
+                .catch(done);
+            });
+        })
+        .catch(done);
+    });
+
+    it('renders React assets and root for admin users on admin pages', function (done) {
+      const adminCredentials = {
+        password: 'Password123!',
+        username: 'frontend-root-admin',
+      };
+
+      createUser({
+        email: 'frontend-root-admin@example.com',
+        roles: ['user', 'admin'],
+        ...adminCredentials,
+      })
+        .then(function () {
+          return utils.signIn(adminCredentials, agent);
+        })
+        .then(function () {
+          agent.get('/admin').end(function (err, res) {
+            should.not.exist(err);
+            res.text.should.containEql('id="tr-react-root"');
+            res.text.should.containEql('assets/react-main.js');
+            res.text.should.not.containEql('data-ui-view');
+
+            utils
+              .signOut(agent)
+              .then(() => done())
+              .catch(done);
+          });
+        })
+        .catch(done);
+    });
+
+    it('keeps rendering Angular assets and root for Angular-owned pages', function (done) {
+      agent.get('/profile/alice').end(function (err, res) {
+        should.not.exist(err);
+        res.text.should.containEql('data-ui-view');
+        res.text.should.containEql('assets/main.js');
 
         return done();
       });
@@ -532,6 +652,169 @@ describe('Core CRUD tests', function () {
 
         expectEmptyNames('nostruser', done);
       });
+    });
+  });
+
+  describe('Nostr author visibility API', function () {
+    const validNpub =
+      'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+    const validNpubHex =
+      '0000000000000000000000000000000000000000000000000000000000000000';
+
+    afterEach(utils.clearDatabase);
+
+    function createNostrUser(overrides, done) {
+      const user = new User(
+        Object.assign(
+          {
+            public: true,
+            firstName: 'Nostr',
+            lastName: 'User',
+            email: 'nostruser@example.com',
+            username: 'nostruser',
+            password: 'M3@n.jsI$Aw3$0m3',
+            provider: 'local',
+            roles: ['user'],
+            nostrNpub: validNpub,
+          },
+          overrides,
+        ),
+      );
+
+      user.save(done);
+    }
+
+    it('returns only eligible public author keys from a batch', function (done) {
+      createNostrUser({}, function (saveErr) {
+        if (saveErr) return done(saveErr);
+
+        agent
+          .get(
+            '/api/nostr/author-visibility?pubkey=' +
+              validNpubHex +
+              '&pubkey=' +
+              '11'.repeat(32),
+          )
+          .expect(200)
+          .end(function (err, res) {
+            if (err) return done(err);
+            res.body.should.deepEqual({
+              linkedPubkeys: [validNpubHex],
+              pubkeys: [validNpubHex],
+            });
+            return done();
+          });
+      });
+    });
+
+    it('excludes shadowbanned author keys', function (done) {
+      createNostrUser({ roles: ['user', 'shadowban'] }, function (saveErr) {
+        if (saveErr) return done(saveErr);
+
+        agent
+          .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+          .expect(200)
+          .end(function (err, res) {
+            if (err) return done(err);
+            res.body.should.deepEqual({
+              linkedPubkeys: [validNpubHex],
+              pubkeys: [],
+            });
+            return done();
+          });
+      });
+    });
+
+    it('identifies private author keys without making them visible', function (done) {
+      createNostrUser({ public: false }, function (saveErr) {
+        if (saveErr) return done(saveErr);
+
+        agent
+          .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+          .expect(200)
+          .end(function (err, res) {
+            if (err) return done(err);
+            res.body.should.deepEqual({
+              linkedPubkeys: [validNpubHex],
+              pubkeys: [],
+            });
+            return done();
+          });
+      });
+    });
+
+    it('identifies unconfirmed author keys without making them visible', function (done) {
+      createNostrUser({}, function (saveErr, user) {
+        if (saveErr) return done(saveErr);
+
+        User.updateOne(
+          { _id: user._id },
+          { $set: { email: '' } },
+          function (updateErr) {
+            if (updateErr) return done(updateErr);
+
+            agent
+              .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+              .expect(200)
+              .end(function (err, res) {
+                if (err) return done(err);
+                res.body.should.deepEqual({
+                  linkedPubkeys: [validNpubHex],
+                  pubkeys: [],
+                });
+                return done();
+              });
+          },
+        );
+      });
+    });
+
+    it('rejects invalid author key batches', function (done) {
+      agent
+        .get('/api/nostr/author-visibility?pubkey=invalid')
+        .expect(400)
+        .end(function (err, res) {
+          if (err) return done(err);
+          res.body.error.should.equal('One to 100 valid public keys required.');
+          return done();
+        });
+    });
+
+    it('rejects non-string and oversized author key batches', function (done) {
+      const oversizedBatch = Array(101).fill(validNpubHex).join('&pubkey=');
+
+      agent
+        .get('/api/nostr/author-visibility?pubkey[$ne]=x')
+        .expect(400)
+        .end(function (objectErr) {
+          if (objectErr) return done(objectErr);
+
+          agent
+            .get('/api/nostr/author-visibility?pubkey=' + oversizedBatch)
+            .expect(400)
+            .end(function (batchErr, res) {
+              if (batchErr) return done(batchErr);
+              res.body.error.should.equal(
+                'One to 100 valid public keys required.',
+              );
+              return done();
+            });
+        });
+    });
+
+    it('returns an error when the author lookup fails', function (done) {
+      const sinon = require('sinon');
+      sinon.stub(User, 'find').yields(new Error('db unavailable'));
+
+      agent
+        .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+        .expect(500)
+        .end(function (err, res) {
+          sinon.restore();
+          if (err) return done(err);
+          res.body.error.should.equal('Internal server error');
+          return done();
+        });
     });
   });
 });

@@ -28,6 +28,10 @@ async function createPublicUser(request, overrides = {}) {
 }
 
 test.describe.serial('experience and reference feature coverage', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  });
+
   test('members can create private and public experiences', async ({
     browser,
     baseURL,

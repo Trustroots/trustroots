@@ -4,84 +4,6 @@ import AdminHeader from './AdminHeader.component.js';
 import { AdminSearchUsersContent } from './AdminSearchUsers.component.js';
 import UserLink from './UserLink.component.js';
 
-const adminGroups = [
-  {
-    title: 'Members',
-    links: [
-      {
-        href: '/admin/threads',
-        label: 'Member threads',
-        description: 'Review message threads for one member.',
-      },
-    ],
-  },
-  {
-    title: 'Moderation',
-    links: [
-      {
-        href: '/admin/messages',
-        label: 'Messages',
-        description: 'Read messages between two members.',
-      },
-      {
-        href: '/admin/reference-threads',
-        label: 'Reference threads',
-        description: 'Check recent threads with negative references.',
-      },
-      {
-        href: '/admin/audit-log',
-        label: 'Audit log',
-        description: 'Review recent admin dashboard queries.',
-      },
-    ],
-  },
-  {
-    title: 'Community/admin tools',
-    links: [
-      {
-        href: '/admin/acquisition-stories',
-        label: 'Acquisition stories',
-        description: 'Review member acquisition stories.',
-      },
-      {
-        href: '/admin/acquisition-stories/analysis',
-        label: 'Acquisition story analysis',
-        description: 'Analyze acquisition story themes.',
-      },
-      {
-        href: '/admin/newsletter',
-        label: 'Newsletter',
-        description: 'Export newsletter recipient lists.',
-      },
-    ],
-  },
-  {
-    title: 'External tools',
-    links: [
-      {
-        href: 'https://trustroots.zendesk.com/inbox/',
-        label: 'Support queue',
-        description: 'Open the Zendesk support inbox.',
-      },
-      {
-        href: 'https://ideas.trustroots.org/wp-admin/',
-        label: 'Blog admin',
-        description: 'Manage the Trustroots ideas blog.',
-      },
-      {
-        href: 'https://ideas.trustroots.org/wp-admin/admin.php?page=mailpoet-newsletters',
-        label: 'Newsletter admin',
-        description: 'Manage Mailpoet newsletters.',
-      },
-      {
-        href: 'https://grafana.trustroots.org/',
-        label: 'Statistics',
-        description: 'Open Grafana statistics.',
-      },
-    ],
-  },
-];
-
 function formatDate(value) {
   if (!value) {
     return null;
@@ -105,7 +27,8 @@ function adminMessagesUrl(userFrom, userTo) {
 
 export default function Admin() {
   const [dashboard, setDashboard] = useState({
-    negativeReviews: [],
+    negativeExperiences: [],
+    threadVotes: [],
     topMessengers: [],
   });
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
@@ -120,7 +43,8 @@ export default function Admin() {
 
         if (isMounted) {
           setDashboard({
-            negativeReviews: data.negativeReviews || [],
+            negativeExperiences: data.negativeExperiences || [],
+            threadVotes: data.threadVotes || [],
             topMessengers: data.topMessengers || [],
           });
           setDashboardError(null);
@@ -165,7 +89,7 @@ export default function Admin() {
               <p className="text-danger">{dashboardError}</p>
             </div>
           )}
-          <div className="col-sm-6">
+          <div className="col-sm-4">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">Top 10 Messengers Last Week</h2>
@@ -199,23 +123,24 @@ export default function Admin() {
               </div>
             </section>
           </div>
-          <div className="col-sm-6">
+          <div className="col-sm-4">
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">
-                  <a href="/admin/reference-threads">Last 5 Negative Reviews</a>
+                  <a href="/admin/reference-threads">
+                    Last 10 Negative Thread Votes
+                  </a>
                 </h2>
               </div>
               <div className="panel-body">
                 {isDashboardLoading && <p className="text-muted">Loading...</p>}
-                {!isDashboardLoading &&
-                  dashboard.negativeReviews.length === 0 && (
-                    <p className="text-muted">No negative reviews found.</p>
-                  )}
-                {!isDashboardLoading && dashboard.negativeReviews.length > 0 && (
+                {!isDashboardLoading && dashboard.threadVotes.length === 0 && (
+                  <p className="text-muted">No negative thread votes found.</p>
+                )}
+                {!isDashboardLoading && dashboard.threadVotes.length > 0 && (
                   <table className="table table-condensed admin-dashboard-table">
                     <tbody>
-                      {dashboard.negativeReviews.map(
+                      {dashboard.threadVotes.map(
                         ({ _id, created, thread, userFrom, userTo }) => {
                           const messagesUrl = adminMessagesUrl(
                             userFrom,
@@ -248,34 +173,41 @@ export default function Admin() {
               </div>
             </section>
           </div>
-        </div>
-
-        <div className="row admin-index">
-          {adminGroups.map(({ title, links }) => (
-            <div className="col-sm-6" key={title}>
-              <section className="panel panel-default admin-index-section">
-                <div className="panel-heading">
-                  <h2 className="panel-title">{title}</h2>
-                </div>
-                <div className="panel-body">
-                  <ul className="admin-index-links">
-                    {links.map(({ href, label, description }) => (
-                      <li className="admin-index-link" key={href}>
-                        <a href={href}>
-                          <span className="admin-index-link-title">
-                            {label}
-                          </span>
-                          <span className="admin-index-link-description">
-                            {description}
-                          </span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </section>
-            </div>
-          ))}
+          <div className="col-sm-4">
+            <section className="panel panel-default admin-dashboard-box">
+              <div className="panel-heading">
+                <h2 className="panel-title">Last 10 Negative Experiences</h2>
+              </div>
+              <div className="panel-body">
+                {isDashboardLoading && <p className="text-muted">Loading...</p>}
+                {!isDashboardLoading &&
+                  dashboard.negativeExperiences.length === 0 && (
+                    <p className="text-muted">No negative experiences found.</p>
+                  )}
+                {!isDashboardLoading &&
+                  dashboard.negativeExperiences.length > 0 && (
+                    <table className="table table-condensed admin-dashboard-table">
+                      <tbody>
+                        {dashboard.negativeExperiences.map(
+                          ({ _id, created, userFrom, userTo }) => (
+                            <tr key={_id}>
+                              <td>
+                                <UserLink user={userFrom || {}} />
+                                {' -> '}
+                                <UserLink user={userTo || {}} />
+                              </td>
+                              <td className="text-right">
+                                {formatDate(created) || 'Unknown date'}
+                              </td>
+                            </tr>
+                          ),
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+              </div>
+            </section>
+          </div>
         </div>
       </div>
     </>

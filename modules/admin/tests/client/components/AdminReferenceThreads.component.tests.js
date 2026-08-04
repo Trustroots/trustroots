@@ -85,7 +85,9 @@ describe('<AdminReferenceThreads />', () => {
 
     render(<AdminReferenceThreads />);
 
-    expect(await screen.findByText('Top score')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Top score from the last year'),
+    ).toBeInTheDocument();
     expect(screen.getByText('7')).toHaveClass('label-danger');
     expect(screen.getAllByText('bob (Bob Receiver)')[0]).toHaveAttribute(
       'href',
@@ -128,7 +130,9 @@ describe('<AdminReferenceThreads />', () => {
         screen.queryByText('Loading reference threads...'),
       ).not.toBeInTheDocument(),
     );
-    expect(screen.queryByText('Top score')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Top score from the last year'),
+    ).not.toBeInTheDocument();
   });
 
   it('logs and clears loading state when loading fails', async () => {

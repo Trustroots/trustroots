@@ -158,5 +158,33 @@ describe('Coverage PR summary unit tests', () => {
 
       markdown.should.containEql('Status: **Needs attention**');
     });
+
+    it('marks failed feature coverage as needing attention', () => {
+      const markdown = buildMarkdown([
+        clientLane,
+        {
+          ...e2eLane,
+          status: 'failed',
+          message:
+            'End-to-end feature coverage is below 100%: 246/247 scenarios covered.',
+          e2eMetrics: {
+            ...e2eLane.e2eMetrics,
+            coveredFeatureCount: 97,
+            activeFeatureCount: 98,
+            coveredScenarioCount: 246,
+            requiredScenarioCount: 247,
+            featureValues: {
+              featureCoverage: { current: 98.98 },
+              scenarioCoverage: { current: 99.6 },
+            },
+          },
+        },
+      ]);
+
+      markdown.should.containEql('Status: **Needs attention**');
+      markdown.should.containEql('<td>✗ FAILED</td>');
+      markdown.should.containEql('Features           🟡 97/98');
+      markdown.should.containEql('Scenario coverage  🟡 99.60%');
+    });
   });
 });

@@ -13,6 +13,9 @@ const TOP_NEGATIVE_RECIPIENTS_LIMIT = 10;
 
 exports.list = async (req, res) => {
   try {
+    const topScoreCutoff = new Date();
+    topScoreCutoff.setUTCFullYear(topScoreCutoff.getUTCFullYear() - 1);
+
     const [items, topNegativeRecipientCounts] = await Promise.all([
       ReferenceThread.find({ reference: 'no' })
         .sort('-created')
@@ -29,7 +32,12 @@ exports.list = async (req, res) => {
         })
         .exec(),
       ReferenceThread.aggregate([
-        { $match: { reference: 'no' } },
+        {
+          $match: {
+            created: { $gte: topScoreCutoff },
+            reference: 'no',
+          },
+        },
         { $group: { _id: '$userTo', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: TOP_NEGATIVE_RECIPIENTS_LIMIT },

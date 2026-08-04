@@ -17,6 +17,10 @@ exports.invokeRolesPolicies = function () {
           permissions: ['get'],
         },
         {
+          resources: '/api/experiences/suggestion',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/my-experience',
           permissions: ['get'],
         },

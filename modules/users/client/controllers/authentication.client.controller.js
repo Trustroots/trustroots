@@ -12,7 +12,6 @@ function AuthenticationController(
   $analytics,
   Authentication,
   messageCenterService,
-  Facebook,
   push,
   trNativeAppBridge,
 ) {
@@ -53,9 +52,6 @@ function AuthenticationController(
           category: 'authentication',
           label: 'Login success',
         });
-
-        // Initialize FB SDK
-        Facebook.init();
 
         // Initialize the push service if available
         // It will check if user intended to enable push for this browser

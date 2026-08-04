@@ -33,6 +33,40 @@ function mockResponse() {
   return res;
 }
 
+function stubMemberListQuery({
+  count = 0,
+  countError,
+  findError,
+  users = [],
+} = {}) {
+  const calls = {};
+  sinon.stub(User, 'countDocuments').returns({
+    exec: () =>
+      countError ? Promise.reject(countError) : Promise.resolve(count),
+  });
+  sinon.stub(User, 'find').returns({
+    select() {
+      return this;
+    },
+    sort(value) {
+      calls.sort = value;
+      return this;
+    },
+    skip(value) {
+      calls.skip = value;
+      return this;
+    },
+    limit(value) {
+      calls.limit = value;
+      return this;
+    },
+    exec() {
+      return findError ? Promise.reject(findError) : Promise.resolve(users);
+    },
+  });
+  return calls;
+}
+
 describe('Admin users controller unit tests', () => {
   afterEach(() => {
     sinon.restore();
@@ -60,15 +94,66 @@ describe('Admin users controller unit tests', () => {
       );
     });
 
+    it('rejects invalid pagination and sorting options', () => {
+      [
+        { page: 0 },
+        { page: '2' },
+        { sort: { column: 'not-a-column', direction: 'ascending' } },
+        { sort: { column: 'created', direction: 'sideways' } },
+      ].forEach(options => {
+        const res = mockResponse();
+        adminUsers.searchUsers({ body: { search: 'alice', ...options } }, res);
+        res.statusCode.should.equal(400);
+        res.body.message.should.equal('Invalid member-list options.');
+      });
+    });
+
+    it('applies server sorting and clamps pages past the final page', async () => {
+      const calls = stubMemberListQuery({ count: 151, users: [] });
+      const res = mockResponse();
+
+      adminUsers.searchUsers(
+        {
+          body: {
+            page: 99,
+            search: 'alice',
+            sort: { column: 'created', direction: 'descending' },
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      calls.sort.should.deepEqual({ created: -1, _id: 1 });
+      calls.skip.should.equal(150);
+      calls.limit.should.equal(150);
+      res.body.pagination.should.deepEqual({
+        page: 2,
+        pageSize: 150,
+        total: 151,
+        totalPages: 2,
+      });
+      res.body.sort.should.deepEqual({
+        column: 'created',
+        direction: 'descending',
+      });
+    });
+
+    it('returns 400 when counting matching members fails', async () => {
+      stubMemberListQuery({
+        countError: new Error('count failed'),
+      });
+      const res = mockResponse();
+
+      adminUsers.searchUsers({ body: { search: 'alice' } }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+    });
+
     it('returns 400 when the database lookup fails', async () => {
-      sinon.stub(User, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              exec: cb => cb(new Error('search failed')),
-            }),
-          }),
-        }),
+      stubMemberListQuery({
+        findError: new Error('search failed'),
       });
 
       const res = mockResponse();
@@ -88,9 +173,23 @@ describe('Admin users controller unit tests', () => {
       adminUsers.searchUsers({ body: { search: userDoc.username } }, res);
       await res.waitForResponse();
 
-      res.body.length.should.equal(1);
-      res.body[0].removeProfileToken.should.equal('(Hidden from admins.)');
-      res.body[0].resetPasswordToken.should.equal('(Hidden from admins.)');
+      res.body.users.length.should.equal(1);
+      res.body.users[0].removeProfileToken.should.equal(
+        '(Hidden from admins.)',
+      );
+      res.body.users[0].resetPasswordToken.should.equal(
+        '(Hidden from admins.)',
+      );
+      res.body.pagination.should.deepEqual({
+        page: 1,
+        pageSize: 150,
+        total: 1,
+        totalPages: 1,
+      });
+      res.body.sort.should.deepEqual({
+        column: 'username',
+        direction: 'ascending',
+      });
     });
 
     it('obfuscates OAuth tokens in search results', async () => {
@@ -103,67 +202,45 @@ describe('Admin users controller unit tests', () => {
       };
       await userDoc.save();
 
-      sinon.stub(User, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              exec: cb => cb(null, [userDoc]),
-            }),
-          }),
-        }),
-      });
+      stubMemberListQuery({ count: 1, users: [userDoc] });
 
       const res = mockResponse();
       adminUsers.searchUsers({ body: { search: userDoc.username } }, res);
       await res.waitForResponse();
 
-      res.body.length.should.equal(1);
-      res.body[0].additionalProvidersData.facebook.accessToken.should.equal(
+      res.body.users.length.should.equal(1);
+      res.body.users[0].additionalProvidersData.facebook.accessToken.should.equal(
         '(Hidden from admins.)',
       );
-      res.body[0].additionalProvidersData.github.accessToken.should.equal(
+      res.body.users[0].additionalProvidersData.github.accessToken.should.equal(
         '(Hidden from admins.)',
       );
-      res.body[0].additionalProvidersData.twitter.token.should.equal(
+      res.body.users[0].additionalProvidersData.twitter.token.should.equal(
         '(Hidden from admins.)',
       );
     });
 
     it('returns an empty array when the database returns no users', async () => {
-      sinon.stub(User, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              exec: cb => cb(null, null),
-            }),
-          }),
-        }),
-      });
+      stubMemberListQuery({ users: null });
 
       const res = mockResponse();
       adminUsers.searchUsers({ body: { search: 'abc' } }, res);
       await res.waitForResponse();
-      res.body.should.deepEqual([]);
+      res.body.users.should.deepEqual([]);
+      res.body.pagination.total.should.equal(0);
+      res.body.pagination.totalPages.should.equal(0);
     });
 
     it('keeps null database rows unchanged while obfuscating results', async () => {
-      sinon.stub(User, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              exec: cb => cb(null, [null]),
-            }),
-          }),
-        }),
-      });
+      stubMemberListQuery({ count: 1, users: [null] });
 
       const res = mockResponse();
       adminUsers.searchUsers({ body: { search: 'abc' } }, res);
       await res.waitForResponse();
-      res.body.should.deepEqual([undefined]);
+      res.body.users.should.deepEqual([undefined]);
     });
 
-    it('throws when escaping a non-string search value', () => {
+    it('throws when creating a search expression from a non-string value', () => {
       (() =>
         adminUsers.searchUsers(
           { body: { search: { length: 3 } } },
@@ -206,36 +283,22 @@ describe('Admin users controller unit tests', () => {
       const res = mockResponse();
       adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
       await res.waitForResponse();
-      res.body.length.should.equal(1);
-      res.body[0]._id.toString().should.equal(userDoc._id.toString());
+      res.body.users.length.should.equal(1);
+      res.body.users[0]._id.toString().should.equal(userDoc._id.toString());
     });
 
     it('returns an empty array when the role lookup returns no users', async () => {
-      sinon.stub(User, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              exec: cb => cb(null, null),
-            }),
-          }),
-        }),
-      });
+      stubMemberListQuery({ users: null });
 
       const res = mockResponse();
       adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
       await res.waitForResponse();
-      res.body.should.deepEqual([]);
+      res.body.users.should.deepEqual([]);
     });
 
     it('returns 400 when the database lookup fails', async () => {
-      sinon.stub(User, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              exec: cb => cb(new Error('role lookup failed')),
-            }),
-          }),
-        }),
+      stubMemberListQuery({
+        findError: new Error('role lookup failed'),
       });
 
       const res = mockResponse();
@@ -245,21 +308,74 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('returns users when the role query returns an empty array', async () => {
-      sinon.stub(User, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              exec: cb => cb(null, []),
-            }),
-          }),
-        }),
-      });
+      stubMemberListQuery({ users: [] });
 
       const res = mockResponse();
       adminUsers.listUsersByRole({ body: { role: 'volunteer' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(200);
-      res.body.should.deepEqual([]);
+      res.body.users.should.deepEqual([]);
+    });
+  });
+
+  describe('listUsersByLastIpAddress', () => {
+    it('rejects missing and invalid IP addresses', () => {
+      const missingResponse = mockResponse();
+      adminUsers.listUsersByLastIpAddress({ body: {} }, missingResponse);
+      missingResponse.statusCode.should.equal(400);
+      missingResponse.body.message.should.equal('Invalid IP address.');
+
+      const invalidResponse = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: 'not-an-ip-address' } },
+        invalidResponse,
+      );
+      invalidResponse.statusCode.should.equal(400);
+      invalidResponse.body.message.should.equal('Invalid IP address.');
+    });
+
+    it('returns exact IP-address matches', async () => {
+      const users = await utils.saveUsers(utils.generateUsers(2));
+      users[0].lastIpAddress = '2001:db8::10';
+      users[1].lastIpAddress = '2001:db8::11';
+      await Promise.all(users.map(user => user.save()));
+
+      const res = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: '2001:db8::10' } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.body.users.should.have.length(1);
+      res.body.users[0]._id.toString().should.equal(users[0]._id.toString());
+    });
+
+    it('returns an empty array when no member has the requested address', async () => {
+      stubMemberListQuery({ users: null });
+
+      const res = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: '203.0.113.10' } },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.body.users.should.deepEqual([]);
+    });
+
+    it('returns 400 when the IP-address lookup fails', async () => {
+      stubMemberListQuery({
+        findError: new Error('IP lookup failed'),
+      });
+
+      const res = mockResponse();
+      adminUsers.listUsersByLastIpAddress(
+        { body: { ipAddress: '203.0.113.10' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
   });
 

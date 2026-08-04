@@ -93,7 +93,7 @@ function AdminRoutes($stateProvider) {
       },
     })
     .state('admin-user', {
-      url: '/admin/user',
+      url: '/admin/user?id&ip&q',
       // `template` is Angular state so
       // it should be lowercase, with dashes
       // This is the bridge towards (and from) React

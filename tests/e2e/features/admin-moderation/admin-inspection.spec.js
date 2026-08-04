@@ -34,16 +34,13 @@ test.describe('admin moderation inspection flows', () => {
     const berlin = await findUserByUsername('e2e-seeded-berlin');
     const berlinId = String(berlin._id);
 
-    await page.goto(`/admin/messages?userId1=${shadowId}&userId2=${berlinId}`);
     const messagesResponse = page.waitForResponse(
       response =>
         response.url().includes('/api/admin/messages') &&
         response.request().method() === 'POST' &&
         response.ok(),
     );
-    await page.locator('input[name="member1"]').fill(shadowId);
-    await page.locator('input[name="member2"]').fill(berlinId);
-    await page.getByRole('button', { name: /^read$/i }).click();
+    await page.goto(`/admin/messages?userId1=${shadowId}&userId2=${berlinId}`);
     await messagesResponse;
 
     await expect(page.getByText(SEEDED_SHADOW_MESSAGE).first()).toBeVisible();

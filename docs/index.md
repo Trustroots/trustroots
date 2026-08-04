@@ -13,16 +13,22 @@ redirect_from:
 
 There are plenty of things to do. In June 2026 we went out of maintenance mode. Further down on this page you can see a bunch of actual tasks that people are working on. If you have tech skills it should be fairly easy to jump in and help out. If you don't have tech skills and you want to help there's still ways to do that, especially around testing.
 
-If you don't have tech skills, let us know what you have in mind on how you think you can do to improve Trustroots?
+If you don't have tech skills, [let us know](https://www.trustroots.org/support) what you have in mind on how you think you can do to improve Trustroots?
 
-Here are some vague open ideas:
+Here are some ideas:
 * communication
 * help trustroots users to organize locally
 * welcoming new members
   * there is no functionality for this now but we can make this
+* help support members through conflicts and contribute to community safety processes
+ 
 * improve the [Trustroots Wiki](https://wiki.trustroots.org/) and connect it to the main site
   * for example, it would be cool to have circle descriptions directly on the wiki, so that all trustroots users will add information
   * develop ideas that are hidden in there, such as [Rural Hospitality](https://wiki.trustroots.org/en/Rural_hospitality)
+
+
+[Contact us if you want to help](https://www.trustroots.org/support).
+
 
 ### Decentralized social networking
 

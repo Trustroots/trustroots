@@ -5,8 +5,10 @@ import '@testing-library/jest-dom/extend-expect';
 import '@/config/client/i18n';
 import Statistics from '@/modules/statistics/client/components/Statistics.component';
 import { get } from '@/modules/statistics/client/api/statistics.api';
+import { getSuggestion } from '@/modules/experiences/client/api/experiences.api';
 
 jest.mock('@/modules/statistics/client/api/statistics.api');
+jest.mock('@/modules/experiences/client/api/experiences.api');
 
 jest.mock('@/modules/core/client/components/Board', () => {
   const React = require('react');
@@ -17,12 +19,21 @@ jest.mock('@/modules/core/client/components/Board', () => {
   return MockBoard;
 });
 
+beforeEach(() => {
+  getSuggestion.mockResolvedValue(null);
+});
+
 afterEach(() => {
   jest.clearAllMocks();
 });
 
 describe('<Statistics />', () => {
   it('renders statistics from the api', async () => {
+    getSuggestion.mockResolvedValueOnce({
+      _id: 'contact-1',
+      displayName: 'Casey Contact',
+      username: 'casey-contact',
+    });
     get.mockResolvedValueOnce({
       data: {
         total: 12345,
@@ -35,7 +46,8 @@ describe('<Statistics />', () => {
           maybePercentage: 20,
         },
         connections: [
-          { network: 'facebook', count: 100, percentage: 10 },
+          { network: 'facebook', count: 45, percentage: 4.5 },
+          { network: 'github', count: 3, percentage: 0.3 },
           { network: 'nostr', count: 12, percentage: 1 },
         ],
         newsletter: { percentage: 30, count: 3000 },
@@ -69,13 +81,28 @@ describe('<Statistics />', () => {
     expect(
       screen.getByRole('link', { name: 'Subscribe to newsletter' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Nostroots 1%')).toBeInTheDocument();
+    expect(screen.getByText('Nostroots')).toBeInTheDocument();
+    expect(screen.getByText('Facebook')).toBeInTheDocument();
+    expect(screen.getByText('GitHub')).toBeInTheDocument();
+    expect(screen.getByText('4.5%')).toBeInTheDocument();
+    expect(screen.getByText('0.3%')).toBeInTheDocument();
+    expect(screen.getAllByText('Legacy')).toHaveLength(2);
+    expect(
+      screen.getByText(
+        'Facebook and GitHub percentages represent legacy connections made before social account linking was retired.',
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText('Real-life connections')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'A lower bound: most people do not share an experience, and only experiences shared since 2016 are counted.',
+        'This is a lower bound: most people do not share an experience, and Trustroots did not have this experience feature until 2021.',
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'Why not write some nice words about Casey Contact?',
+      }),
+    ).toHaveAttribute('href', '/profile/casey-contact/experiences/new');
     expect(screen.getByText('89% recommended overall')).toBeInTheDocument();
     expect(
       screen.getByText('83% recommended in the last 90 days'),
@@ -112,6 +139,35 @@ describe('<Statistics />', () => {
     expect(
       screen.queryByRole('link', { name: 'Subscribe to newsletter' }),
     ).not.toBeInTheDocument();
+    expect(getSuggestion).not.toHaveBeenCalled();
+    expect(
+      screen.queryByText(/Help make this picture more complete/),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a general encouragement when no suggestion is available', async () => {
+    get.mockResolvedValueOnce({ data: { total: 1, connections: [] } });
+
+    render(<Statistics isAuthenticated={true} />);
+
+    expect(
+      await screen.findByText(
+        "Help make this picture more complete by sharing an experience from a member's profile.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the general encouragement when suggestion loading fails', async () => {
+    get.mockResolvedValueOnce({ data: { total: 1, connections: [] } });
+    getSuggestion.mockRejectedValueOnce(new Error('unavailable'));
+
+    render(<Statistics isAuthenticated={true} />);
+
+    expect(
+      await screen.findByText(
+        "Help make this picture more complete by sharing an experience from a member's profile.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it('renders network loading placeholders while statistics are pending', () => {
@@ -133,7 +189,8 @@ describe('<Statistics />', () => {
 
     render(<Statistics isAuthenticated={true} />);
 
-    expect(await screen.findByText('Warmshowers 0%')).toBeInTheDocument();
+    expect(await screen.findByText('Warmshowers')).toBeInTheDocument();
+    expect(screen.getByText('0.0%')).toBeInTheDocument();
     expect(screen.getAllByText('0%')).toHaveLength(2);
     expect(screen.getByText('0% yes')).toBeInTheDocument();
     expect(screen.getByText('0 subscribers')).toBeInTheDocument();

@@ -29,6 +29,7 @@ Icon
 .eslintcache
 .nodemonignore
 node_modules/
+/.tmp/
 /.worktrees/
 .vagrant
 *.pyc

@@ -47,6 +47,25 @@ describe('Pages Route Tests', function () {
       });
     });
 
+    describe('Safety Route', function () {
+      let mainstate;
+      beforeEach(inject(function ($state) {
+        mainstate = $state.get('safety');
+      }));
+
+      it('Should have the correct URL', function () {
+        expect(mainstate.url).toEqual('/safety');
+      });
+
+      it('Should not be abstract', function () {
+        expect(mainstate.abstract).toBe(undefined);
+      });
+
+      it('Should have the correct page title', function () {
+        expect(mainstate.data.pageTitle).toBe('Safety');
+      });
+    });
+
     describe('Privacy Route', function () {
       let mainstate;
       beforeEach(inject(function ($state) {

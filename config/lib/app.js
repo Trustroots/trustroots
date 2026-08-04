@@ -5,15 +5,6 @@ const config = require('../config');
 const mongoose = require('./mongoose');
 const express = require('./express');
 const chalk = require('chalk');
-const Sentry = require('@sentry/node');
-const Tracing = require('@sentry/tracing');
-
-if (config.sentry.enabled) {
-  Sentry.init({
-    ...config.sentry.options,
-    integrations: [new Tracing.Integrations.Mongo({ useMongoose: true })],
-  });
-}
 
 // Initialize Models
 mongoose.loadModels();
@@ -82,13 +73,6 @@ module.exports.start = function start(callback) {
               : 'off'),
         ),
       );
-      console.log(
-        chalk.green(
-          'Sentry:\t\t' +
-            (config.sentry && config.sentry.enabled === true ? 'on' : 'off'),
-        ),
-      );
-
       // Reset console color
       console.log(chalk.white('--'));
       console.log('');

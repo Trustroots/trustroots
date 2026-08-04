@@ -17,12 +17,7 @@
     <meta name="fragment" content="!" />
     {% for cssFile in cssFiles %}
     <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
-    {% endfor %} {# Sentry DSN - make sure this is above scripts #} {% if
-    sentry.enabled === true %}
-    <script nonce="{{ nonce }}">
-      window.SENTRY_DSN = '{{ sentry.options.dsn }}';
-    </script>
-    {% endif %} {% if env === 'development' or env === 'test' %} {# in dev/test
+    {% endfor %} {% if env === 'development' or env === 'test' %} {# in dev/test
     load js in head, as it also contains CSS, so we prevent flash of unstyled
     page #} {% for jsFile in jsFiles %}
     <script
@@ -142,10 +137,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-    {# Facebook #} {% if facebookAppId !== '' %}
-    <meta property="fb:app_id" content="{{facebookAppId}}" />
-    {% endif %} {% if tribe %} <meta property="og:title" content="Join
-    {{tribe.label | striptags | replace('"', '\'') }} on Trustroots"> <meta
+    {% if tribe %} <meta property="og:title" content="Join {{tribe.label |
+    striptags | replace('"', '\'') }} on Trustroots"> <meta
     property="og:description" content="Join to meet, host and get hosted by
     Trustroots circle {{tribe.label | striptags | replace('"', '\'')}}.
     Trustroots is a travellers' community for sharing, hosting and getting
@@ -288,7 +281,6 @@
     <script nonce="{{ nonce }}">
       var title = "{{title}}",
           settings = {{ appSettings | dump | safe }},
-          {% if facebookAppId !== '' %}facebookAppId = "{{facebookAppId}}",{% endif %}
           {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
           env = "{{ env }}",
           isNativeMobileApp = {{ isNativeMobileApp }},

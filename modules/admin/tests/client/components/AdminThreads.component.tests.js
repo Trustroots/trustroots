@@ -35,22 +35,34 @@ const makeUser = overrides => ({
 });
 
 describe('<AdminThreads />', () => {
-  it('uses a valid member id from the URL as the initial query', () => {
+  it('queries automatically using a valid member id from the URL', async () => {
     window.history.pushState({}, '', `/admin/threads?userId=${userId}`);
+    threadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
     expect(screen.getByLabelText('Member username or ID')).toHaveValue(userId);
-    expect(screen.queryByText('Press "Query"')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+        userId,
+        username: '',
+      }),
+    );
   });
 
-  it('uses a username from the URL as the initial query', () => {
+  it('queries automatically using a username from the URL', async () => {
     window.history.pushState({}, '', '/admin/threads?username=alice');
+    threadsApi.getThreads.mockResolvedValueOnce([]);
 
     render(<AdminThreads />);
 
     expect(screen.getByLabelText('Member username or ID')).toHaveValue('alice');
-    expect(screen.queryByText('Press "Query"')).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(threadsApi.getThreads).toHaveBeenCalledWith({
+        userId: '',
+        username: 'alice',
+      }),
+    );
   });
 
   it('queries by username and renders thread state and links', async () => {
@@ -66,10 +78,13 @@ describe('<AdminThreads />', () => {
 
     render(<AdminThreads />);
 
+    expect(
+      screen.queryByRole('button', { name: 'Query' }),
+    ).not.toBeInTheDocument();
+
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     await waitFor(() =>
       expect(threadsApi.getThreads).toHaveBeenCalledWith({
@@ -93,7 +108,6 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: userId },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     await waitFor(() =>
       expect(threadsApi.getThreads).toHaveBeenCalledWith({
@@ -119,7 +133,6 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     expect(await screen.findByText('Read')).toHaveClass('label-success');
   });
@@ -132,7 +145,6 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
   });
@@ -145,8 +157,32 @@ describe('<AdminThreads />', () => {
     fireEvent.change(screen.getByLabelText('Member username or ID'), {
       target: { value: 'alice' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Query' }));
 
     expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
+  });
+
+  it('clears the results when the query is cleared', async () => {
+    threadsApi.getThreads.mockResolvedValueOnce([
+      {
+        _id: 'thread-1',
+        read: true,
+        updated: '2025-04-05T06:07:08.000Z',
+        userFromProfile: [makeUser({ displayName: 'Alice Example' })],
+        userToProfile: [makeUser({ _id: userId, displayName: 'Bob Example' })],
+      },
+    ]);
+
+    render(<AdminThreads />);
+
+    const query = screen.getByLabelText('Member username or ID');
+    fireEvent.change(query, { target: { value: 'alice' } });
+    expect(
+      await screen.findByText('Messages from/to them'),
+    ).toBeInTheDocument();
+
+    fireEvent.change(query, { target: { value: '   ' } });
+
+    expect(screen.queryByText('Messages from/to them')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nothing found…')).not.toBeInTheDocument();
   });
 });
