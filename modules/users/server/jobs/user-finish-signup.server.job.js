@@ -3,7 +3,7 @@
  * have `public:false` in their profile. The script sends 3 (configurable)
  * reminder emails to these users in 2 day intervals, starting 4h after signup.
  *
- * Ignores users with `suspended` role.
+ * Ignores users with `suspended` or `shadowban` roles.
  *
  * Keeps count of reminder emails at user's model.
  */
@@ -36,12 +36,8 @@ module.exports = function (job, agendaDone) {
           created: {
             $lt: createdTimeAgo,
           },
-          // Exlude users with `suspended` role
-          roles: {
-            $not: {
-              $eq: 'suspended',
-            },
-          },
+          // Exclude users with restricted roles.
+          roles: { $nin: ['suspended', 'shadowban'] },
         })
           .and([
             {

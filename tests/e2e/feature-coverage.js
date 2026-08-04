@@ -2770,6 +2770,7 @@ const features = [
     requiredScenarios: [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
+      'Report card shows a read-only current role inventory.',
       'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ],

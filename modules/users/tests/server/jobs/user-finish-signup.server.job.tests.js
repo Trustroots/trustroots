@@ -290,16 +290,18 @@ describe('Job: user finish signup', function () {
     });
   });
 
-  it('Do not remind users with "suspended" role', function (done) {
-    unConfirmedUser.roles = ['suspended'];
-    unConfirmedUser.created = moment().subtract(moment.duration({ days: 8 }));
-    unConfirmedUser.save(function (err) {
-      if (err) return done(err);
-
-      userFinishSignupJobHandler({}, function (err) {
+  ['suspended', 'shadowban'].forEach(function (role) {
+    it(`Do not remind users with "${role}" role`, function (done) {
+      unConfirmedUser.roles = [role];
+      unConfirmedUser.created = moment().subtract(moment.duration({ days: 8 }));
+      unConfirmedUser.save(function (err) {
         if (err) return done(err);
-        jobs.length.should.equal(0);
-        done();
+
+        userFinishSignupJobHandler({}, function (err) {
+          if (err) return done(err);
+          jobs.length.should.equal(0);
+          done();
+        });
       });
     });
   });

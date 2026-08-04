@@ -32,6 +32,17 @@ const DEFAULT_MEMBER_LIST_SORT = {
   direction: 'ascending',
 };
 
+const ROLE_DESCRIPTIONS = {
+  admin: 'Full access to administration and moderation tools.',
+  moderator: 'Legacy moderation role retained for historical accounts.',
+  shadowban:
+    'Member can use the site, but their profile and outreach are hidden from others.',
+  suspended: 'Member access is blocked until an administrator intervenes.',
+  user: 'Standard Trustroots member access.',
+  volunteer: 'Current Trustroots volunteer.',
+  'volunteer-alumni': 'Former Trustroots volunteer.',
+};
+
 function formatDate(value) {
   if (!value) {
     return null;
@@ -532,6 +543,30 @@ export default class AdminUser extends Component {
                       {label}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <h4 id="roles">
+                <a href="#roles">Role management</a>{' '}
+                <small className="text-muted">read-only</small>
+              </h4>
+              <div className="panel panel-default admin-user-roles">
+                <div className="panel-body">
+                  <p className="text-muted">
+                    Current role inventory. Role editing will be added here in a
+                    future change; existing moderation actions remain above.
+                  </p>
+                  <dl>
+                    {user.profile.roles.map(role => (
+                      <React.Fragment key={role}>
+                        <dt>{role}</dt>
+                        <dd>
+                          {ROLE_DESCRIPTIONS[role] ||
+                            'Role stored on this member.'}
+                        </dd>
+                      </React.Fragment>
+                    ))}
+                  </dl>
                 </div>
               </div>
 

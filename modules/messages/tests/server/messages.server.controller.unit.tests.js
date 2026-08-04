@@ -9,6 +9,7 @@ const sinon = require('sinon');
 const messagesController = require('../../server/controllers/messages.server.controller');
 const config = require('../../../../config/config');
 const spamService = require('../../../core/server/services/spam.server.service');
+const messageStatService = require('../../server/services/message-stat.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -686,6 +687,10 @@ describe('Messages controller unit tests', () => {
       const { sender, receiver } = await prepareSender();
       sender.roles = ['user', 'shadowban'];
       await sender.save();
+      const updateMessageStat = sinon.stub(
+        messageStatService,
+        'updateMessageStat',
+      );
 
       const res = deferredResponse();
       messagesController.send(
@@ -708,6 +713,7 @@ describe('Messages controller unit tests', () => {
       });
       saved.shadowHidden.should.be.true();
       saved.read.should.be.true();
+      sinon.assert.notCalled(updateMessageStat);
     });
   });
 

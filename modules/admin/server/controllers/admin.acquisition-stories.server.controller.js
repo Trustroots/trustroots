@@ -450,7 +450,7 @@ exports.list = async (req, res) => {
   }
 
   const storyUserIds = stories.map(story => story._id);
-  const restrictedUsers = (await getRestrictedUsers()) || [];
+  const restrictedUsers = await getRestrictedUsers();
   const hostingOffers = await Offer.find({
     user: { $in: storyUserIds },
     type: 'host',
