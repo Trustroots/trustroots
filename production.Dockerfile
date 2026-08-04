@@ -24,7 +24,7 @@ WORKDIR /trustroots
 # - Ensures that local changes to your `node_modules/` folder are not copied to
 #   the container
 # - Allows docker to reuse previous build layers if these files do not change
-COPY package*.json .npmrc ./
+COPY package*.json ./
 # This takes FOREVER if it's run in the passenger container, that's why we
 # created the multi stage build with a build container first.
 RUN npm ci --quiet

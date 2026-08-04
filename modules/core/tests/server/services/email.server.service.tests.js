@@ -10,9 +10,9 @@ describe('Service: email', function () {
   function loadEmailService(stubs = {}) {
     jobs = [];
     const agenda = {
-      now(type, data, callback) {
+      now(type, data) {
         jobs.push(JSON.parse(JSON.stringify({ type, data })));
-        process.nextTick(callback);
+        return Promise.resolve({ attrs: { name: type } });
       },
     };
 
@@ -882,9 +882,9 @@ describe('Service: email', function () {
   it('passes Agenda scheduling failures to renderEmailAndSend callbacks', function (done) {
     const service = loadEmailService({
       '../../../../config/lib/agenda': {
-        now(type, data, callback) {
+        now(type, data) {
           jobs.push(JSON.parse(JSON.stringify({ type, data })));
-          callback(new Error('agenda failed'));
+          return Promise.reject(new Error('agenda failed'));
         },
       },
     });

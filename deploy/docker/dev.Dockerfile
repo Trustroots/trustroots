@@ -41,7 +41,7 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/home/app/ms-playwright
 
 WORKDIR /home/app/trustroots
 
-COPY package*.json .npmrc ./
+COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --quiet
 

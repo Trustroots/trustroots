@@ -26,7 +26,7 @@ RUN apt-get -qq update && apt-get -q install -y \
 
 WORKDIR /home/app/trustroots
 
-COPY package*.json .npmrc ./
+COPY package*.json ./
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --quiet
 
