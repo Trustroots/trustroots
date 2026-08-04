@@ -6,6 +6,7 @@ const {
   normalizePath,
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
+  routeRequiresAuth,
 } = require('../../shared/react-route-ownership');
 
 const should = require('should');
@@ -52,9 +53,22 @@ describe('React route ownership', function () {
         path: '/circles/:circle',
       },
     });
+    matchReactRoute('/circles/naturists').should.containDeep({
+      policy: {
+        requiresAuthParams: {
+          circle: ['naturists'],
+        },
+      },
+    });
     matchReactRoute('/search').should.containDeep({
       policy: {
         path: '/search',
+        requiresAuth: true,
+      },
+    });
+    matchReactRoute('/search/members').should.containDeep({
+      policy: {
+        footerHidden: true,
         requiresAuth: true,
       },
     });
@@ -100,6 +114,42 @@ describe('React route ownership', function () {
     ).should.equal(
       '/signin?continue=true&returnTo=%2Fmessages%3Ffilter%3Dunread',
     );
+    getReactRouteAccessRedirect(
+      getReactRoutePolicy('/circles/naturists'),
+      null,
+      '/circles/naturists',
+    ).should.equal('/signin?continue=true&returnTo=%2Fcircles%2Fnaturists');
+    should(
+      getReactRouteAccessRedirect(
+        getReactRoutePolicy('/circles/hitchhikers'),
+        null,
+        '/circles/hitchhikers',
+      ),
+    ).be.null();
+  });
+
+  it('evaluates exact parameter-based authentication requirements', function () {
+    routeRequiresAuth(null, '/').should.be.false();
+    routeRequiresAuth(
+      getReactRoutePolicy('/messages'),
+      '/messages',
+    ).should.be.true();
+    routeRequiresAuth(
+      getReactRoutePolicy('/support'),
+      '/support',
+    ).should.be.false();
+    routeRequiresAuth(
+      getReactRoutePolicy('/circles/naturists'),
+      '/circles/naturists',
+    ).should.be.true();
+    routeRequiresAuth(
+      getReactRoutePolicy('/circles/hitchhikers'),
+      '/circles/hitchhikers',
+    ).should.be.false();
+    routeRequiresAuth(
+      getReactRoutePolicy('/circles/hitchhikers'),
+      '/not-a-route',
+    ).should.be.false();
   });
 
   it('matches profile and contact route policies', function () {

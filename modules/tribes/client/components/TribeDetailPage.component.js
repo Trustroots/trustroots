@@ -152,7 +152,7 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
                   &nbsp;
                   <a
                     className="btn btn-lg btn-default"
-                    href={`/search/map?tribe=${tribe.slug}`}
+                    href={`/search?tribe=${tribe.slug}`}
                   >
                     {t('Find members')}
                   </a>

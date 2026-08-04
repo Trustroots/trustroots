@@ -102,7 +102,7 @@ describe('<TribeDetailPage />', () => {
     expect(screen.getByText('Guide the galaxy.')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /find members/i })).toHaveAttribute(
       'href',
-      '/search/map?tribe=hitchhikers',
+      '/search?tribe=hitchhikers',
     );
     expect(screen.getByRole('link', { name: /circle wiki/i })).toHaveAttribute(
       'href',

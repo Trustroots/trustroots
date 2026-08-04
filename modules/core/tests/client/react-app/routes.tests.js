@@ -397,6 +397,11 @@ describe('React route ownership', () => {
     expect(matchReactRoute('/circles/hitchhikers')).toMatchObject({
       params: { circle: 'hitchhikers' },
     });
+    expect(findRoute('/circles/naturists')).toMatchObject({
+      requiresAuthParams: {
+        circle: ['naturists'],
+      },
+    });
   });
 
   it('keeps the shared route policy aligned with owned paths', () => {
@@ -442,6 +447,20 @@ describe('React route ownership', () => {
     expect(
       getReactRouteAccessRedirect(getReactRoutePolicy('/messages'), null),
     ).toBe('/signin');
+    expect(
+      getReactRouteAccessRedirect(
+        getReactRoutePolicy('/circles/naturists'),
+        null,
+        '/circles/naturists',
+      ),
+    ).toBe('/signin?continue=true&returnTo=%2Fcircles%2Fnaturists');
+    expect(
+      getReactRouteAccessRedirect(
+        getReactRoutePolicy('/circles/hitchhikers'),
+        null,
+        '/circles/hitchhikers',
+      ),
+    ).toBe(null);
   });
 
   it('matches profile and contact route policies', () => {
@@ -466,6 +485,17 @@ describe('React route ownership', () => {
     });
     expect(
       getReactRouteAccessRedirect(getReactRoutePolicy('/profile/alice'), null),
+    ).toBe('/signin');
+  });
+
+  it('keeps member search authenticated and footer-free', () => {
+    expect(findRoute('/search/members')).toMatchObject({
+      footerHidden: true,
+      path: '/search/members',
+      requiresAuth: true,
+    });
+    expect(
+      getReactRouteAccessRedirect(getReactRoutePolicy('/search/members'), null),
     ).toBe('/signin');
   });
 

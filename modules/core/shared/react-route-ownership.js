@@ -117,6 +117,9 @@ const REACT_ROUTE_POLICIES = [
     path: '/circles/:circle',
     title: 'Circle',
     footerHidden: true,
+    requiresAuthParams: {
+      circle: ['naturists'],
+    },
   },
   {
     path: '/messages',
@@ -138,6 +141,8 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/search/members',
     title: 'Search members',
+    requiresAuth: true,
+    footerHidden: true,
   },
   {
     path: '/profile/:username/experiences/new',
@@ -412,12 +417,32 @@ function userHasRequiredRole(user, requiredRole) {
   return Boolean(requiredRole && (user?.roles || []).includes(requiredRole));
 }
 
+function routeRequiresAuth(route, path) {
+  if (!route) {
+    return false;
+  }
+
+  if (route.requiresAuth || route.requiresRole) {
+    return true;
+  }
+
+  if (!route.requiresAuthParams) {
+    return false;
+  }
+
+  const params = matchReactRoute(path)?.params || {};
+
+  return Object.entries(route.requiresAuthParams).some(([param, values]) =>
+    values.includes(params[param]),
+  );
+}
+
 function getReactRouteAccessRedirect(route, user, returnTo) {
   if (!route) {
     return null;
   }
 
-  if ((route.requiresAuth || route.requiresRole) && !user) {
+  if (routeRequiresAuth(route, returnTo) && !user) {
     if (returnTo) {
       return `/signin?continue=true&returnTo=${encodeURIComponent(returnTo)}`;
     }
@@ -440,6 +465,7 @@ module.exports = {
   REACT_OWNED_PATHS,
   isReactOwnedPath,
   normalizePath,
+  routeRequiresAuth,
   toTanStackPath,
   userHasRequiredRole,
 };
