@@ -17,6 +17,8 @@ const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 
 const ADMIN_MEMBER_PAGE_SIZE = 150;
+const POTENTIAL_MATCH_LIMIT = 25;
+const POTENTIAL_MATCH_MIN_IDENTIFIER_LENGTH = 4;
 const SEARCH_STRING_LIMIT = 3;
 const ADMIN_MEMBER_SORT_FIELDS = {
   created: 'created',
@@ -59,6 +61,8 @@ const USER_LIST_FIELDS = [
   'roles',
   'username',
 ];
+
+const POTENTIAL_MATCH_FIELDS = [...USER_LIST_FIELDS, 'acquisitionStory'];
 
 /**
  * Overwrite tokens from results as a security measure.
@@ -113,6 +117,116 @@ function createMemberSearchRegexp(search) {
     .join('\\s*');
 
   return new RegExp('.*' + whitespaceTolerantSearch + '.*', 'i');
+}
+
+function normalizeIdentifier(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function getEmailLocalPart(value) {
+  return value.split('@')[0];
+}
+
+function normalizeAcquisitionStory(value) {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function createFlexibleIdentifierRegexp(identifier, emailLocalPartOnly) {
+  const pattern = identifier
+    .split('')
+    .map(escapeStringRegexp)
+    .join('[\\s._+\\x2d]*');
+
+  return new RegExp(
+    emailLocalPartOnly ? `^[^@]*${pattern}[^@]*@` : pattern,
+    'i',
+  );
+}
+
+function getPotentialMatchSignals(user) {
+  const signals = [
+    { label: 'Username identifier', value: normalizeIdentifier(user.username) },
+    {
+      label: 'Email identifier',
+      value: normalizeIdentifier(getEmailLocalPart(user.email)),
+    },
+    {
+      label: 'Temporary email identifier',
+      value: normalizeIdentifier(getEmailLocalPart(user.emailTemporary)),
+    },
+  ].filter(
+    ({ value }, index, items) =>
+      value.length >= POTENTIAL_MATCH_MIN_IDENTIFIER_LENGTH &&
+      items.findIndex(item => item.value === value) === index,
+  );
+  const acquisitionStory = normalizeAcquisitionStory(user.acquisitionStory);
+
+  return {
+    acquisitionStory,
+    identifiers: signals,
+  };
+}
+
+function getPotentialMatchReasons(user, signals) {
+  const candidateIdentifiers = [
+    normalizeIdentifier(user.username),
+    normalizeIdentifier(getEmailLocalPart(user.email)),
+    normalizeIdentifier(getEmailLocalPart(user.emailTemporary)),
+  ];
+  const reasons = signals.identifiers
+    .filter(({ value }) =>
+      candidateIdentifiers.some(identifier => identifier.includes(value)),
+    )
+    .map(({ label }) => label);
+
+  if (
+    signals.acquisitionStory &&
+    normalizeAcquisitionStory(user.acquisitionStory) ===
+      signals.acquisitionStory
+  ) {
+    reasons.push('Acquisition story');
+  }
+
+  return reasons;
+}
+
+async function findPotentialMatches(user) {
+  const signals = getPotentialMatchSignals(user);
+  const querySignals = signals.identifiers.flatMap(({ value }) => [
+    { username: createFlexibleIdentifierRegexp(value, false) },
+    { email: createFlexibleIdentifierRegexp(value, true) },
+    { emailTemporary: createFlexibleIdentifierRegexp(value, true) },
+  ]);
+
+  if (signals.acquisitionStory) {
+    querySignals.push({
+      acquisitionStory: new RegExp(
+        `^\\s*${signals.acquisitionStory
+          .split(' ')
+          .map(escapeStringRegexp)
+          .join('\\s+')}\\s*$`,
+        'i',
+      ),
+    });
+  }
+
+  if (!querySignals.length) {
+    return [];
+  }
+
+  const matches = await User.find({
+    _id: { $ne: user._id },
+    $or: querySignals,
+  })
+    .select(POTENTIAL_MATCH_FIELDS)
+    .sort({ created: -1, _id: 1 })
+    .limit(POTENTIAL_MATCH_LIMIT)
+    .exec();
+
+  return matches.map(match => ({
+    ...obfuscateTokens(match),
+    matchReasons: getPotentialMatchReasons(match, signals),
+  }));
 }
 
 function getMemberListOptions(body) {
@@ -345,11 +459,19 @@ exports.getUser = async (req, res) => {
 
     const offers = await Offer.find({ user: userId });
 
+    const isRestricted = ['shadowban', 'suspended'].some(role =>
+      user.roles.includes(role),
+    );
+    const potentialMatches = isRestricted
+      ? await findPotentialMatches(user)
+      : [];
+
     res.send({
       contacts: contacts || [],
       messageFromCount,
       messageToCount,
       offers: offers || [],
+      potentialMatches,
       profile: obfuscateTokens(user),
       threadCount,
       threadReferencesSentNo,
@@ -365,6 +487,8 @@ exports.getUser = async (req, res) => {
     handleAdminApiError(res, err);
   }
 };
+
+exports.findPotentialMatches = findPotentialMatches;
 
 /**
  * This middleware changes user roles by ID

@@ -635,6 +635,40 @@ describe('Contacts controller unit tests', () => {
       req.contacts.length.should.equal(1);
     });
 
+    it('omits existing contacts with restricted members', async () => {
+      const [restrictedUser] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      restrictedUser.roles = ['user', 'shadowban'];
+      await restrictedUser.save();
+      await Contact.insertMany([
+        {
+          userFrom: user1._id,
+          userTo: user2._id,
+          confirmed: true,
+        },
+        {
+          userFrom: user1._id,
+          userTo: restrictedUser._id,
+          confirmed: true,
+        },
+      ]);
+
+      const req = { user: user1 };
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          req,
+          res,
+          next,
+          user1._id.toString(),
+        ),
+      );
+
+      nextCalled.should.be.true();
+      req.contacts.should.have.length(1);
+      req.contacts[0].user._id.toString().should.equal(user2._id.toString());
+    });
+
     it('passes aggregate errors to next', async () => {
       sinon.stub(Contact, 'aggregate').returns({
         exec: cb => cb(new Error('aggregate failed')),

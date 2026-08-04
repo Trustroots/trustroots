@@ -452,6 +452,14 @@ exports.contactListByUser = function (req, res, next, listUserId) {
     // `[{userObject}]`, we have to unwind it back to `{userObject}`
     { $unwind: '$user' },
 
+    // Existing relationship records may outlive a moderation action. Keep
+    // restricted members out of all user-facing contact lists.
+    {
+      $match: {
+        'user.roles': { $nin: userRolesService.restrictedMessagingRoles },
+      },
+    },
+
     // Another round of formating results as we now have `user` field populated
     {
       $project: {

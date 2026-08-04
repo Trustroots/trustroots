@@ -52,9 +52,7 @@ describe('Job: user finish signup direct unit tests', function () {
         should.not.exist(err);
         sinon.assert.calledOnce(User.find);
         User.find.firstCall.args[0].roles.should.eql({
-          $not: {
-            $eq: 'suspended',
-          },
+          $nin: ['suspended', 'shadowban'],
         });
         query.and.firstCall.args[0][0].$or[0].publicReminderCount.$lt.should.equal(
           3,

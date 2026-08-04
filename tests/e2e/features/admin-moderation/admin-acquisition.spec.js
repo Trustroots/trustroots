@@ -16,6 +16,7 @@ test.describe('admin acquisition feature coverage', () => {
       'Story rows link profile pictures to public member profiles.',
       'Story rows show circle participation.',
       'Story rows show available member and hosting locations.',
+      'Story rows show matching restricted accounts.',
       'Story columns can be sorted.',
     ]);
     annotateFeature(testInfo, 'admin.acquisition-analysis', [
@@ -36,6 +37,13 @@ test.describe('admin acquisition feature coverage', () => {
     await expect(page.getByText('Living: Fictional home')).toBeVisible();
     await expect(page.getByText('From: Fictional origin')).toBeVisible();
     await expect(page.getByText(/^Hosting: /)).toBeVisible();
+    const aliceRow = page.locator('tr').filter({ hasText: 'Alice Contact' });
+    await expect(
+      aliceRow.getByRole('link', {
+        name: 'e2e-seeded-shadow (Shadow Spammer)',
+      }),
+    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000004');
+    await expect(aliceRow.getByText(/Acquisition story/)).toBeVisible();
     await expect(page.locator('img[loading="lazy"]').first()).toHaveAttribute(
       'src',
       /\/api\/users\/.+\/avatar\?size=32/,
@@ -52,6 +60,12 @@ test.describe('admin acquisition feature coverage', () => {
     expect(aliceStory.locationLiving).toBe('Fictional home');
     expect(aliceStory.locationFrom).toBe('Fictional origin');
     expect(aliceStory.hostingLocation).toHaveLength(2);
+    expect(aliceStory.restrictedMatches).toEqual([
+      expect.objectContaining({
+        username: 'e2e-seeded-shadow',
+        matchReasons: ['Acquisition story'],
+      }),
+    ]);
 
     await page.goto('/admin/acquisition-stories/analysis');
     await expect(page).toHaveURL(/\/admin\/acquisition-stories\/analysis/);
