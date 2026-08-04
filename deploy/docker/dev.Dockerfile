@@ -1,7 +1,7 @@
 # Development image for local `docker compose up` and devcontainer.
 #
 # Node 16, native build deps, npm ci to seed the `node_modules` named volume.
-# App code is bind-mounted at runtime. Playwright Chromium is baked for E2E.
+# App code is bind-mounted at runtime. Playwright browsers are baked for E2E.
 
 FROM node:16-bullseye-slim
 
@@ -18,15 +18,26 @@ RUN apt-get -qq update && apt-get -q install -y \
   libnspr4 \
   libatk1.0-0 \
   libatk-bridge2.0-0 \
+  ffmpeg \
+  libcairo-gobject2 \
+  libdbus-1-3 \
+  libdbus-glib-1-2 \
   libdrm2 \
+  libgtk-3-0 \
   libatspi2.0-0 \
   libxcomposite1 \
+  libxcursor1 \
   libxdamage1 \
   libxfixes3 \
+  libxi6 \
   libxrandr2 \
+  libxrender1 \
   libgbm1 \
   libxkbcommon0 \
+  libxcb-shm0 \
   libasound2 \
+  libxt6 \
+  libxtst6 \
   libcairo2-dev \
   libpango1.0-dev \
   libpng-dev \
@@ -51,5 +62,5 @@ RUN --mount=type=cache,target=/root/.npm \
 
 RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
   && chmod 777 "$PLAYWRIGHT_BROWSERS_PATH" \
-  && npx playwright install chromium \
+  && npx playwright install chromium firefox \
   && chmod -R 777 "$PLAYWRIGHT_BROWSERS_PATH"

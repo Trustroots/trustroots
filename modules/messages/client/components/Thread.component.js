@@ -40,6 +40,8 @@ const ThreadContainer = styled.div`
   top: 44px;
   bottom: 0;
   width: 100%;
+  min-height: 0;
+  overflow: hidden;
   @media (min-width: 768px) {
     width: 505px;
     bottom: 12px;

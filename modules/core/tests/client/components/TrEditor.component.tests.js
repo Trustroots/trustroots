@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
@@ -12,7 +12,7 @@ jest.mock('react-medium-editor', () => {
   const PropTypes = require('prop-types');
 
   const MockMediumEditor = React.forwardRef(function MockMediumEditor(
-    { onChange, options },
+    { onChange, options, text },
     ref,
   ) {
     const medium = React.useRef(null);
@@ -34,6 +34,8 @@ jest.mock('react-medium-editor', () => {
           (subscribers[eventName] || []).forEach(handler => handler(...args));
         },
         onChange,
+        text,
+        renderCount: 0,
         _subscribers: subscribers,
       };
 
@@ -41,6 +43,8 @@ jest.mock('react-medium-editor', () => {
     }
 
     medium.current.onChange = onChange;
+    medium.current.text = text;
+    medium.current.renderCount += 1;
 
     React.useImperativeHandle(ref, () => ({
       medium: medium.current,
@@ -57,6 +61,7 @@ jest.mock('react-medium-editor', () => {
   MockMediumEditor.propTypes = {
     onChange: PropTypes.func,
     options: PropTypes.object,
+    text: PropTypes.string,
   };
 
   return {
@@ -133,6 +138,44 @@ describe('<TrEditor />', () => {
     editor.onChange('<p>Hello</p>');
 
     expect(onChange).toHaveBeenCalledWith('<p>Hello</p>');
+  });
+
+  it('does not re-render the editor for its own input but accepts external text', async () => {
+    const onChange = jest.fn();
+    const onCtrlEnter = jest.fn();
+    const { rerender } = render(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={onCtrlEnter}
+        text="initial"
+      />,
+    );
+
+    const editor = mediumEditors[0];
+    editor.onChange('<p>initial edit</p>');
+    rerender(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={onCtrlEnter}
+        text="<p>initial edit</p>"
+      />,
+    );
+
+    expect(editor.renderCount).toBe(1);
+
+    rerender(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={onCtrlEnter}
+        text=""
+      />,
+    );
+
+    await waitFor(() => expect(editor.text).toBe(''));
+    expect(editor.renderCount).toBe(2);
   });
 
   it('uses translated default placeholder text when none is provided', () => {
