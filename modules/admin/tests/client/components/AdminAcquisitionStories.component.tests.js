@@ -30,6 +30,15 @@ describe('<AdminAcquisitionStories />', () => {
         hostingLocation: [52.37, 4.9],
         locationFrom: 'Fictional origin',
         locationLiving: 'Fictional home',
+        restrictedMatches: [
+          {
+            _id: '222222222222222222222222',
+            displayName: 'Restricted Example',
+            matchReasons: ['Acquisition story'],
+            roles: ['user', 'shadowban'],
+            username: 'restricted',
+          },
+        ],
         username: 'alice',
       },
     ]);
@@ -62,6 +71,12 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getByText('Living: Fictional home')).toBeInTheDocument();
     expect(screen.getByText('From: Fictional origin')).toBeInTheDocument();
     expect(screen.getByText('Hosting: 52.370, 4.900')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'restricted (Restricted Example)',
+      }),
+    ).toHaveAttribute('href', '/admin/user?id=222222222222222222222222');
+    expect(screen.getByText(/— Acquisition story/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Stories' }).closest('li'),
     ).toHaveClass('active');

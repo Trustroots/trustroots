@@ -382,6 +382,70 @@ describe('<AdminUser />', () => {
     expect(
       screen.queryByRole('button', { name: 'Make volunteer alumni' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Potential related accounts' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('No potential related accounts found.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows acquisition context and potential matches for a shadowbanned member', async () => {
+    usersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        potentialMatches: [
+          {
+            _id: otherUserId,
+            acquisitionStory: 'A fictional club introduced me.',
+            displayName: 'Related Example',
+            email: 'related@example.org',
+            matchReasons: ['Email identifier', 'Acquisition story'],
+            roles: ['user'],
+            username: 'related',
+          },
+          {
+            _id: '333333333333333333333333',
+            acquisitionStory: '',
+            displayName: '',
+            email: 'username-lead@example.org',
+            matchReasons: ['Username identifier'],
+            roles: ['user', 'suspended'],
+            username: 'username-lead',
+          },
+        ],
+        profile: {
+          _id: userId,
+          acquisitionStory: 'A fictional club introduced me.',
+          email: 'alice@example.org',
+          roles: ['user', 'shadowban'],
+          username: 'alice',
+        },
+      }),
+    );
+
+    window.history.pushState({}, '', `/admin/user?id=${userId}`);
+    render(<AdminUser />);
+
+    expect(
+      await screen.findByRole('link', { name: 'Potential related accounts' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('row', {
+        name: /Related Example.*related@example.org.*Email identifier, Acquisition story.*A fictional club introduced me/,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'Related Example' }),
+    ).toHaveAttribute('href', `/admin/user?id=${otherUserId}`);
+    expect(screen.getByRole('link', { name: 'username-lead' })).toHaveAttribute(
+      'href',
+      '/admin/user?id=333333333333333333333333',
+    );
+    expect(
+      screen.getAllByRole('row', {
+        name: /Acquisition story A fictional club introduced me/,
+      }),
+    ).toHaveLength(2);
   });
 
   it('updates the URL while typing and queries valid member ids', async () => {

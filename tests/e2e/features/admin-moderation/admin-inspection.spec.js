@@ -55,6 +55,7 @@ test.describe('admin moderation inspection flows', () => {
     annotateFeature(testInfo, 'admin.user-report', [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
+      'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ]);
 
@@ -70,6 +71,16 @@ test.describe('admin moderation inspection flows', () => {
     ).toBeVisible();
     await expect(page.getByText('shadowban').first()).toBeVisible();
     await expect(page.getByText('1 sent').first()).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Potential related accounts' }),
+    ).toBeVisible();
+    await expect(page.getByText('Acquisition story').first()).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Alice Contact' }),
+    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000006');
+    await expect(
+      page.getByText('Acquisition story', { exact: true }).last(),
+    ).toBeVisible();
   });
 
   test('admin user report API rejects malformed ids', async ({

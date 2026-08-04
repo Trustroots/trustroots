@@ -305,6 +305,10 @@ export default class AdminUser extends Component {
     } = this.state;
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
+    const isRestricted = get(user, ['profile', 'roles'], []).some(role =>
+      ['shadowban', 'suspended'].includes(role),
+    );
+    const potentialMatches = get(user, ['potentialMatches'], []);
     const visibleMatchingUsers = hideObviousSpamUsers
       ? matchingUsers.filter(user => !isObviousSpamUser(user))
       : matchingUsers;
@@ -337,6 +341,7 @@ export default class AdminUser extends Component {
           ],
           ['Email', user.profile.email],
           ['Temporary email', user.profile.emailTemporary],
+          ['Acquisition story', user.profile.acquisitionStory],
           [
             'Roles',
             user.profile.roles && user.profile.roles.length
@@ -633,6 +638,56 @@ export default class AdminUser extends Component {
               )}
 
               <AdminNotes id={userId} />
+
+              {isRestricted && (
+                <>
+                  <h4 id="potential-matches">
+                    <a href="#potential-matches">Potential related accounts</a>
+                  </h4>
+                  <div className="panel panel-warning">
+                    <div className="panel-body">
+                      <p className="text-muted">
+                        Investigation leads only. Matches do not change account
+                        state automatically.
+                      </p>
+                      <table className="table table-condensed table-striped">
+                        <thead>
+                          <tr>
+                            <th>Member</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Matched on</th>
+                            <th>Acquisition story</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {potentialMatches.map(match => (
+                            <tr key={match._id}>
+                              <td>
+                                <a href={`/admin/user?id=${match._id}`}>
+                                  {match.displayName || match.username}
+                                </a>
+                                <div className="text-muted">
+                                  @{match.username}
+                                </div>
+                              </td>
+                              <td>{match.email}</td>
+                              <td>{match.roles.join(', ')}</td>
+                              <td>{match.matchReasons.join(', ')}</td>
+                              <td>{match.acquisitionStory}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {!potentialMatches.length && (
+                        <p>
+                          <em>No potential related accounts found.</em>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <h4 id="profile">
                 <a href="#profile">Profile</a>
