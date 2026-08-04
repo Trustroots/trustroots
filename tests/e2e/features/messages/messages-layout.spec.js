@@ -2,29 +2,28 @@
 
 const { annotateFeature, test, expect } = require('../../support/test');
 
-const {
-  SEEDED_MEMBERS,
-  fetchUserIdByUsername,
-} = require('../../support/helpers');
+const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const {
   assertReplyComposerCaretAndComposition,
 } = require('../../support/message-reply-editor');
 
 test.describe('message thread layout', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  });
+
   test('reply editor remains usable when long text overflows', async ({
     page,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.reply-send', [
       'Reply composer remains usable when draft content overflows.',
     ]);
 
     const portland = SEEDED_MEMBERS[1];
-    const portlandId = await fetchUserIdByUsername(request, portland.username);
 
     // Short desktop viewport that reproduces the Firefox overflow from #2722.
     await page.setViewportSize({ width: 1158, height: 407 });
-    await page.goto(`/messages/${portland.username}?userId=${portlandId}`);
+    await page.goto(`/messages/${portland.username}`);
 
     const editor = page.locator('#message-reply-content');
     await expect(editor).toBeVisible();
@@ -63,7 +62,6 @@ test.describe('message thread layout', () => {
 
   test('reply composer preserves a multiline caret and composed characters', async ({
     page,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.reply-send', [
       'Editing an earlier line does not move or reorder the reply text.',
@@ -71,10 +69,9 @@ test.describe('message thread layout', () => {
     ]);
 
     const portland = SEEDED_MEMBERS[1];
-    const portlandId = await fetchUserIdByUsername(request, portland.username);
     await assertReplyComposerCaretAndComposition(
       page,
-      `/messages/${portland.username}?userId=${portlandId}`,
+      `/messages/${portland.username}`,
     );
   });
 });
