@@ -208,7 +208,7 @@ describe('Member data export controller', () => {
     );
     responseBody(response).should.containEql({
       format: 'trustroots-data-export',
-      version: 1,
+      version: 2,
       exportedAt: '2026-10-14T09:31:00.000Z',
       profile: {
         username: user.username,

@@ -1,3 +1,6 @@
+import log from '../../../../config/lib/logger.mjs';
+import * as canonical from '../services/data-export-canonical.server.service.mjs';
+import * as signing from '../services/data-export-signing.server.service.mjs';
 import type { NextFunction, Response } from 'express';
 import mongoose, { type Types } from 'mongoose';
 import type {
@@ -101,7 +104,7 @@ type ExportMiddleware<
 
 interface ExportBody {
   format: 'trustroots-data-export';
-  version: 1;
+  version: 2;
   exportedAt: string;
   profile: unknown;
   circles: ExportRecord[];
@@ -335,21 +338,22 @@ service.download = async function (
       service.memberOffers(req.user._id),
     ]);
     const exportedAt = new Date();
-    const body: ExportBody = {
-      format: 'trustroots-data-export',
-      version: 1,
-      exportedAt: exportedAt.toISOString(),
+    const body = canonical.buildSignedPayload({
       profile,
       circles: circlesFromProfile(profile),
       contacts: req.contacts || [],
       hostingOffers,
       messages,
       experiences,
-    };
+    });
+    const signature = signing.signPayload(body, { username: req.user.username });
+    if (!signature) {
+      log('warn', 'Serving an unsigned export because no signing key is configured.');
+    }
     res
       .type('application/json')
       .attachment(buildExportFilename(req.user.username, exportedAt))
-      .send(body);
+      .send({ ...body, exportedAt: exportedAt.toISOString(), signature });
   } catch (error) {
     next(error);
   }
