@@ -1073,7 +1073,7 @@ const features = [
     area: AREA.authAccount,
     status: STATUS.active,
     description:
-      'Authenticated members can download their profile, contacts, and hosting offers in one versioned JSON file.',
+      'Authenticated members can download their profile, contacts, and hosting offers in one versioned, signed JSON file.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1091,6 +1091,7 @@ const features = [
     requiredScenarios: [
       'The combined export is an attachment with the documented filename.',
       'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+      'Two exports of unchanged data attest the same content, because the request timestamp is not signed.',
     ],
     relatedSpecs: [
       spec(
