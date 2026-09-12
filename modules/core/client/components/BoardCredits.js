@@ -15,10 +15,12 @@ export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
 
   const [photoCredits, setPhotoCredits] = useState(initialPhotoCredits);
 
+  useEffect(() => setPhotoCredits(initialPhotoCredits), [initialPhotoCredits]);
+
   useEffect(
     () =>
       $on('photoCreditsUpdated', (scope, photo) =>
-        setPhotoCredits({ ...photoCredits, ...photo }),
+        setPhotoCredits(current => ({ ...current, ...photo })),
       ),
     [],
   );
@@ -26,7 +28,7 @@ export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
   useEffect(
     () =>
       $on('photoCreditsRemoved', (scope, photo) =>
-        setPhotoCredits(omit(photoCredits, Object.keys(photo))),
+        setPhotoCredits(current => omit(current, Object.keys(photo))),
       ),
     [],
   );
