@@ -33,6 +33,7 @@ const DEFAULT_MEMBER_LIST_SORT = {
 };
 
 const ROLE_DESCRIPTIONS = {
+  'welcome-team': 'Can view acquisition stories and analysis.',
   admin: 'Full access to administration and moderation tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:
@@ -208,17 +209,35 @@ export default class AdminUser extends Component {
     });
   }
 
-  handleUserRoleChange(role) {
+  handleUserRoleChange(role, action) {
     const id = get(this, ['state', 'user', 'profile', '_id']);
     if (id) {
       const username = get(this, ['state', 'user', 'profile', 'username']);
-      if (window.confirm(`Set ${username} role to ${role}?`)) {
-        this.setState({ isSettingUserRole: true }, async () => {
-          await setUserRole(id, role);
-          // Get fresh user profile
-          this.getUserById(id);
-          this.setState({ isSettingUserRole: false });
-        });
+      if (
+        window.confirm(
+          action === 'remove'
+            ? `Remove ${username} from Welcome team?`
+            : `Set ${username} role to ${role}?`,
+        )
+      ) {
+        this.setState(
+          { isSettingUserRole: true, roleChangeError: false },
+          async () => {
+            try {
+              if (action) {
+                await setUserRole(id, role, action);
+              } else {
+                await setUserRole(id, role);
+              }
+              const user = await getUser(id);
+              this.setState({ user });
+            } catch (error) {
+              this.setState({ roleChangeError: true });
+            } finally {
+              this.setState({ isSettingUserRole: false });
+            }
+          },
+        );
       }
     }
   }
@@ -548,18 +567,39 @@ export default class AdminUser extends Component {
 
               <h4 id="roles">
                 <a href="#roles">Role management</a>{' '}
-                <small className="text-muted">read-only</small>
               </h4>
               <div className="panel panel-default admin-user-roles">
                 <div className="panel-body">
                   <p className="text-muted">
-                    Current role inventory. Role editing will be added here in a
-                    future change; existing moderation actions remain above.
+                    Welcome team members can view acquisition stories and
+                    analysis.
                   </p>
+                  {this.state.roleChangeError && (
+                    <p role="alert">
+                      Could not change the role. Please try again.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-default"
+                    disabled={isSettingUserRole}
+                    onClick={() =>
+                      this.handleUserRoleChange(
+                        'welcome-team',
+                        this.hasRole('welcome-team') ? 'remove' : 'add',
+                      )
+                    }
+                  >
+                    {this.hasRole('welcome-team')
+                      ? 'Remove from Welcome team'
+                      : 'Add to Welcome team'}
+                  </button>
                   <dl>
                     {user.profile.roles.map(role => (
                       <React.Fragment key={role}>
-                        <dt>{role}</dt>
+                        <dt>
+                          {role === 'welcome-team' ? 'Welcome team' : role}
+                        </dt>
                         <dd>
                           {ROLE_DESCRIPTIONS[role] ||
                             'Role stored on this member.'}

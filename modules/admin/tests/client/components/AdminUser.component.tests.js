@@ -208,7 +208,9 @@ describe('<AdminUser />', () => {
     expect(
       screen.getByRole('link', { name: 'Role management' }),
     ).toHaveAttribute('href', '#roles');
-    expect(screen.getByText('read-only')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Add to Welcome team' }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText('Standard Trustroots member access.'),
     ).toBeInTheDocument();
@@ -1000,6 +1002,49 @@ describe('<AdminUser />', () => {
       expect(usersApi.setUserRole).toHaveBeenCalledWith(userId, 'suspended'),
     );
     await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+  });
+
+  it.each(['add', 'remove'])('can %s Welcome team membership', async action => {
+    window.confirm = jest.fn(() => true);
+    const roles = action === 'remove' ? ['user', 'welcome-team'] : ['user'];
+    usersApi.getUser.mockResolvedValue(
+      makeReportCard({ profile: { _id: userId, username: 'river', roles } }),
+    );
+    usersApi.setUserRole.mockResolvedValue({});
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+    const label =
+      action === 'remove' ? 'Remove from Welcome team' : 'Add to Welcome team';
+    fireEvent.click(await screen.findByRole('button', { name: label }));
+    await waitFor(() =>
+      expect(usersApi.setUserRole).toHaveBeenCalledWith(
+        userId,
+        'welcome-team',
+        action,
+      ),
+    );
+    await waitFor(() => expect(usersApi.getUser).toHaveBeenCalledTimes(2));
+  });
+
+  it('shows failed role changes and re-enables the control', async () => {
+    window.confirm = jest.fn(() => true);
+    usersApi.getUser.mockResolvedValue(
+      makeReportCard({
+        profile: { _id: userId, username: 'river', roles: ['user'] },
+      }),
+    );
+    usersApi.setUserRole.mockRejectedValueOnce(new Error('Unavailable'));
+    render(<AdminUser />);
+    submitMemberSearch(userId);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Add to Welcome team' }),
+    );
+    expect(
+      await screen.findByText('Could not change the role. Please try again.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Add to Welcome team' }),
+    ).toBeEnabled();
   });
 
   it('does not change roles when confirmation is declined', async () => {

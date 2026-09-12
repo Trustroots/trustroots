@@ -4,11 +4,37 @@ import '@testing-library/jest-dom/extend-expect';
 
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
 
+jest.mock('@/modules/core/client/services/angular-compat', () => ({
+  getUser: () => global.window.user,
+}));
+
 afterEach(() => {
   window.history.pushState({}, '', '/');
 });
 
+beforeEach(() => {
+  window.user = { roles: ['admin'] };
+});
+afterEach(() => {
+  delete window.user;
+});
+
 describe('<AdminHeader />', () => {
+  it.each([{ roles: ['welcome-team'] }, {}, null])(
+    'shows only acquisition navigation for non-admin %j',
+    user => {
+      window.user = user;
+      render(<AdminHeader />);
+      expect(
+        screen.getByRole('link', { name: 'Welcome team' }),
+      ).toHaveAttribute('href', '/admin/acquisition-stories');
+      expect(screen.getAllByRole('link')).toHaveLength(2);
+      expect(
+        screen.queryByRole('link', { name: 'Audit log' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
   it('marks the current admin page as active', () => {
     window.history.pushState({}, '', '/admin/messages');
 

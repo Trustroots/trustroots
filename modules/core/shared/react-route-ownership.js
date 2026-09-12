@@ -90,11 +90,13 @@ const REACT_ROUTE_POLICIES = [
   {
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/acquisition-stories',
+    requiresRole: ['admin', 'welcome-team'],
     title: 'Admin - Acquisition stories',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/acquisition-stories/analysis',
+    requiresRole: ['admin', 'welcome-team'],
     title: 'Admin - Acquisition stories analysis',
   },
   {
@@ -152,7 +154,10 @@ function isReactOwnedPath(path) {
 }
 
 function userHasRequiredRole(user, requiredRole) {
-  return Boolean(requiredRole && (user?.roles || []).includes(requiredRole));
+  return Boolean(
+    requiredRole &&
+      [].concat(requiredRole).some(role => (user?.roles || []).includes(role)),
+  );
 }
 
 function getReactRouteAccessRedirect(route, user) {
