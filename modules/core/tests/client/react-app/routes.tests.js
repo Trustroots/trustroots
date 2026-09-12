@@ -200,6 +200,15 @@ describe('React route ownership', () => {
     expect(findRoute('/circles/naturists').requiresAuth).toBe(true);
   });
 
+  it.each([
+    '/circles/Hitchhikers',
+    '/circles/sample_circle',
+    '/circles/:circle',
+  ])('renders the not-found page for %s without returning to Angular', path => {
+    expect(isReactRoute(path)).toBe(true);
+    expect(findRoute(path).path).toBe('/not-found');
+  });
+
   it('renders every React-owned route', () => {
     const user = { username: 'alice' };
 

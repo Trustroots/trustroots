@@ -2,6 +2,24 @@
 const { annotateFeature, expect, test } = require('../../support/test');
 const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
 
+test('invalid circle addresses show a stable not-found page', async ({
+  page,
+}) => {
+  for (const path of [
+    '/circles/Hitchhikers',
+    '/circles/sample_circle',
+    '/circles/:circle',
+  ]) {
+    await page.goto(path);
+    await expect(page.locator('#tr-react-root')).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'This page cannot be found.' }),
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'Contact us', exact: true }).click();
+    await expect(page).toHaveURL(/\/support$/);
+  }
+});
+
 test('circle pages use React and preserve guest navigation', async ({
   page,
 }, testInfo) => {

@@ -86,12 +86,15 @@ describe('Circle route ownership', () => {
     getReactRoutePolicy('/circles/%73ample-circle').params.circle.should.equal(
       'sample-circle',
     );
+    should(getReactRoutePolicy('/circles/sample/extra')).be.undefined();
     for (const path of [
-      '/circles/sample/extra',
       '/circles/%ZZ',
       '/circles/sample%2Fextra',
+      '/circles/Hitchhikers',
+      '/circles/sample_circle',
+      '/circles/:circle',
     ]) {
-      should(getReactRoutePolicy(path)).be.undefined();
+      getReactRoutePolicy(path).path.should.equal('/not-found');
     }
   });
   it('preserves member-only circle access', () => {
