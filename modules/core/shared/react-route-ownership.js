@@ -5,6 +5,8 @@ const ADMIN_ROUTE_DEFAULTS = {
 };
 
 const REACT_ROUTE_POLICIES = [
+  { path: '/', footerHidden: true },
+  { path: '/safety', title: 'Safety' },
   {
     path: '/about',
     redirectTo: '/',

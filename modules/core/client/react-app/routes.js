@@ -1,4 +1,6 @@
 import React from 'react';
+import HomeRoute from '@/modules/pages/client/components/HomeRoute';
+import Safety from '@/modules/pages/client/components/Safety.component';
 
 import {
   getReactRoutePolicy,
@@ -43,6 +45,8 @@ function renderStatistics({ user }) {
 }
 
 const renderByPath = {
+  '/': renderWithUser(HomeRoute),
+  '/safety': () => <Safety />,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (

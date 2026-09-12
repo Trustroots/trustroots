@@ -238,7 +238,7 @@ describe('Pages Route Tests', function () {
 
         expect(state.url).toEqual('/?tribe?circle');
         expect(state.footerHidden).toBe(true);
-        expect(state.template).toContain('<home');
+        expect(state.onEnter).toBeDefined();
       });
 
       it('about route defines a controller and url', function () {
