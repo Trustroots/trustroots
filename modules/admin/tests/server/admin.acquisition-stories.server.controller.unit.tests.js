@@ -31,6 +31,91 @@ describe('Admin acquisition stories controller unit tests', () => {
   });
 
   describe('list', () => {
+    it('yields to I/O at the source limits and prepares each story only once', async function () {
+      this.timeout(30000);
+      const readStory = sinon.spy(
+        () =>
+          'A fictional traveller recommended this community while discussing a journey.',
+      );
+      const stories = Array.from({ length: 500 }, (_, index) => ({
+        _id: `visitor-${index}`,
+        username: `visitor${index}`,
+        email: `visitor${index}@example.test`,
+        emailTemporary: '',
+        member: [],
+        acquisitionStory: 'An unrelated fictional source with different words.',
+      }));
+      const restrictedUsers = Array.from({ length: 1000 }, (_, index) => ({
+        _id: `restricted-${index}`,
+        username: `restricted${index}`,
+        email: `restricted${index}@example.test`,
+        emailTemporary: '',
+        get acquisitionStory() {
+          return readStory();
+        },
+      }));
+      const find = sinon.stub(User, 'find');
+      const storyLimit = sinon.stub().returns({ exec: async () => stories });
+      find.onFirstCall().returns({
+        sort: () => ({ limit: storyLimit }),
+      });
+      find.onSecondCall().returns({
+        select: () => ({
+          sort: () => ({
+            limit: () => ({ exec: async () => restrictedUsers }),
+          }),
+        }),
+      });
+      sinon.stub(Offer, 'find').returns({
+        select: () => ({ sort: () => ({ exec: async () => [] }) }),
+      });
+      let ioTurns = 0;
+      let pending;
+      const heartbeat = () => {
+        ioTurns += 1;
+        pending = setImmediate(heartbeat);
+      };
+      pending = setImmediate(heartbeat);
+      const res = mockResponse();
+      try {
+        await adminAcquisitionStories.list({}, res);
+      } finally {
+        clearImmediate(pending);
+      }
+      sinon.assert.calledOnceWithExactly(storyLimit, 500);
+      ioTurns.should.be.aboveOrEqual(5000);
+      readStory.callCount.should.equal(1000);
+      res.body.should.have.length(500);
+      res.body
+        .every(story => story.restrictedMatches.length === 0)
+        .should.be.true();
+    });
+
+    it('keeps the first ten matches in source order and excludes the member itself', async () => {
+      const users = utils.generateUsers(12);
+      users.forEach(user => {
+        user.roles = ['user', 'shadowban'];
+        user.acquisitionStory = 'The same fictional community recommendation.';
+      });
+      await utils.saveUsers(users);
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+      const expected = await User.find({ roles: 'shadowban' }).sort({
+        created: -1,
+        _id: 1,
+      });
+      res.body.forEach(story => {
+        story.restrictedMatches
+          .map(user => user._id.toString())
+          .should.deepEqual(
+            expected
+              .filter(user => !user._id.equals(story._id))
+              .slice(0, 10)
+              .map(user => user._id.toString()),
+          );
+      });
+    });
+
     it('returns acquisition stories for users who have one', async () => {
       const users = utils.generateUsers(2);
       users[0].acquisitionStory = 'Found via couch surfing';
@@ -233,9 +318,11 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('returns frequency analysis with expected shape', async () => {
+      const find = sinon.spy(User, 'find');
       const res = mockResponse();
       await adminAcquisitionStories.getAnalysis({}, res);
 
+      find.firstCall.returnValue.options.limit.should.equal(3000);
       should.exist(res.body);
       should(res.body).have.property('table');
       should(res.body).have.property('size');

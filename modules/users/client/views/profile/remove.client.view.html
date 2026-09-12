@@ -21,6 +21,29 @@
     <div class="col-xs-12 text-center">
       <br /><br />
 
+      <!-- Review -->
+      <div
+        ng-if="removeProfile.state === 'review' || removeProfile.state === 'loading'"
+      >
+        <h3>Delete your account?</h3>
+        <p class="lead">
+          This will permanently delete your Trustroots profile and cannot be
+          undone.
+        </p>
+        <button
+          class="btn btn-danger"
+          type="button"
+          ng-click="removeProfile.removeProfile()"
+          ng-disabled="removeProfile.state === 'loading'"
+        >
+          Permanently delete my account
+        </button>
+        <br /><br />
+        <a ui-sref="profile-edit.account({ '#': 'remove' })">
+          Cancel and keep my account
+        </a>
+      </div>
+
       <!-- Loading -->
       <tr-spinner
         ng-if="removeProfile.state === 'loading'"
