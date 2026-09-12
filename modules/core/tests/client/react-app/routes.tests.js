@@ -117,6 +117,24 @@ jest.mock(
   '@/modules/pages/client/components/Volunteering.component',
   () => () => <main>Volunteering</main>,
 );
+
+jest.mock(
+  '@/modules/users/client/components/ForgotPasswordPage.component',
+  () => () => <main>ForgotPasswordPage</main>,
+);
+jest.mock(
+  '@/modules/users/client/components/ResetPasswordSuccessPage.component',
+  () => () => <main>ResetPasswordSuccessPage</main>,
+);
+jest.mock(
+  '@/modules/users/client/components/ResetPasswordInvalidPage.component',
+  () => () => <main>ResetPasswordInvalidPage</main>,
+);
+jest.mock(
+  '@/modules/users/client/components/ConfirmEmailInvalidPage.component',
+  () => () => <main>ConfirmEmailInvalidPage</main>,
+);
+
 /* eslint-enable react/display-name */
 
 describe('React route ownership', () => {

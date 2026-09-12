@@ -1,4 +1,8 @@
 import React from 'react';
+import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
+import ResetPasswordSuccessPage from '@/modules/users/client/components/ResetPasswordSuccessPage.component';
+import ResetPasswordInvalidPage from '@/modules/users/client/components/ResetPasswordInvalidPage.component';
+import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
 
 import {
   getReactRoutePolicy,
@@ -43,6 +47,14 @@ function renderStatistics({ user }) {
 }
 
 const renderByPath = {
+  '/password/forgot': () => (
+    <ForgotPasswordPage
+      userhandle={new URLSearchParams(window.location.search).get('userhandle')}
+    />
+  ),
+  '/password/reset/success': () => <ResetPasswordSuccessPage />,
+  '/password/reset/invalid': () => <ResetPasswordInvalidPage />,
+  '/confirm-email-invalid': () => <ConfirmEmailInvalidPage />,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (

@@ -13,10 +13,6 @@ import profileSignupTemplateUrl from '@/modules/users/client/views/profile/profi
 import signupTemplateUrl from '@/modules/users/client/views/authentication/signup.client.view.html';
 import signinTemplateUrl from '@/modules/users/client/views/authentication/signin.client.view.html';
 import confirmTemplateUrl from '@/modules/users/client/views/authentication/confirm-email.client.view.html';
-import confirmInvalidTemplateUrl from '@/modules/users/client/views/authentication/confirm-email-invalid.client.view.html';
-import forgotPasswordTemplateUrl from '@/modules/users/client/views/password/forgot-password.client.view.html';
-import resetPasswordInvalidTemplateUrl from '@/modules/users/client/views/password/reset-password-invalid.client.view.html';
-import resetPasswordSuccessTemplateUrl from '@/modules/users/client/views/password/reset-password-success.client.view.html';
 import resetPasswordTemplateUrl from '@/modules/users/client/views/password/reset-password.client.view.html';
 import profileRemoveTemplateUrl from '@/modules/users/client/views/profile/remove.client.view.html';
 import profileReferencesTemplateUrl from '@/modules/users/client/views/profile/profile-view-references.client.view.html';
@@ -292,8 +288,11 @@ function UsersRoutes($stateProvider) {
     })
     .state('confirm-email-invalid', {
       url: '/confirm-email-invalid',
-      templateUrl: confirmInvalidTemplateUrl,
       requiresAuth: false,
+      /* @ngInject */
+      onEnter($window) {
+        $window.location.assign('/confirm-email-invalid');
+      },
       data: {
         pageTitle: 'Confirm email invalid',
       },
@@ -301,26 +300,36 @@ function UsersRoutes($stateProvider) {
     // Password reset
     .state('forgot', {
       url: '/password/forgot?userhandle=',
-      templateUrl: forgotPasswordTemplateUrl,
-      controller: 'ForgotPasswordController',
-      controllerAs: 'forgotPassword',
       footerHidden: true,
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        const query = $stateParams.userhandle
+          ? `?userhandle=${encodeURIComponent($stateParams.userhandle)}`
+          : '';
+        $window.location.assign(`/password/forgot${query}`);
+      },
       data: {
         pageTitle: 'Reset password',
       },
     })
     .state('reset-invalid', {
       url: '/password/reset/invalid',
-      templateUrl: resetPasswordInvalidTemplateUrl,
       footerHidden: true,
+      /* @ngInject */
+      onEnter($window) {
+        $window.location.assign('/password/reset/invalid');
+      },
       data: {
         pageTitle: 'Reset password',
       },
     })
     .state('reset-success', {
       url: '/password/reset/success',
-      templateUrl: resetPasswordSuccessTemplateUrl,
       footerHidden: true,
+      /* @ngInject */
+      onEnter($window) {
+        $window.location.assign('/password/reset/success');
+      },
       data: {
         pageTitle: 'Reset password',
       },

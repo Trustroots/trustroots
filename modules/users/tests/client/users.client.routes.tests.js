@@ -438,8 +438,6 @@ describe('Users Route Tests', function () {
       {
         name: 'forgot',
         url: '/password/forgot?userhandle=',
-        templateUrl:
-          '/modules/users/views/password/forgot-password.client.view.html',
         data: { pageTitle: 'Reset password' },
       },
       {
