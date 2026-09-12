@@ -38,13 +38,7 @@ function visibleTribesQuery(req) {
 const setLinkHeader = function (req, res, pageCount) {
   if (paginate.hasNextPages(req)(pageCount)) {
     const nextPage = { page: req.query.page + 1 };
-    const linkHead =
-      '<' +
-      req.protocol +
-      ':' +
-      res.locals.url.slice(0, -1) +
-      res.locals.paginate.href(nextPage) +
-      '>; rel="next"';
+    const linkHead = `<${res.locals.paginate.href(nextPage)}>; rel="next"`;
     res.set('Link', linkHead);
   }
 };

@@ -29,7 +29,10 @@ function UsersRoutes($stateProvider) {
     // Users state routing
     .state('welcome', {
       url: '/welcome',
-      template: '<welcome />',
+      /* @ngInject */
+      onEnter($window) {
+        $window.location.assign('/welcome');
+      },
       requiresAuth: true,
       footerHidden: true,
       data: {

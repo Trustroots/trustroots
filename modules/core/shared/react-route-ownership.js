@@ -7,6 +7,26 @@ const ADMIN_ROUTE_DEFAULTS = {
 const REACT_ROUTE_POLICIES = [
   { path: '/', footerHidden: true },
   { path: '/safety', title: 'Safety' },
+  { path: '/circles', title: 'Circles' },
+  { path: '/circles/:circle', title: 'Circle', footerHidden: true },
+  {
+    path: '/welcome',
+    title: 'Welcome',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/navigation',
+    title: 'Navigation',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/search/members',
+    title: 'Search members',
+    requiresAuth: true,
+    footerHidden: true,
+  },
   {
     path: '/about',
     redirectTo: '/',
@@ -148,7 +168,34 @@ function normalizePath(path) {
 function getReactRoutePolicy(path) {
   const normalizedPath = normalizePath(path);
 
-  return REACT_ROUTE_POLICIES.find(route => route.path === normalizedPath);
+  const exact = REACT_ROUTE_POLICIES.find(
+    route => route.path !== '/circles/:circle' && route.path === normalizedPath,
+  );
+  if (exact) return exact;
+
+  const circleMatch = /^\/circles\/([^/]+)$/.exec(normalizedPath);
+  if (!circleMatch) return undefined;
+
+  const notFound = REACT_ROUTE_POLICIES.find(
+    route => route.path === '/not-found',
+  );
+
+  let circle;
+  try {
+    circle = decodeURIComponent(circleMatch[1]);
+  } catch {
+    return notFound;
+  }
+  if (!/^[a-z0-9-]+$/.test(circle)) return notFound;
+
+  const policy = REACT_ROUTE_POLICIES.find(
+    route => route.path === '/circles/:circle',
+  );
+  return {
+    ...policy,
+    params: { circle },
+    requiresAuth: circle === 'naturists',
+  };
 }
 
 function isReactOwnedPath(path) {
