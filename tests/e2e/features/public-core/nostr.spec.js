@@ -15,6 +15,8 @@ const {
   signInViaApi,
 } = require('../../support/helpers');
 const { installNostrRelayStub } = require('../../support/nostr');
+const jsQR = require('jsqr');
+const sharp = require('sharp');
 
 // `npub1qqq…zqujme` decodes to an all-zero 32-byte public key, which is the
 // canonical "valid but empty" key the server-side tests reuse.
@@ -143,6 +145,59 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     await signIn(page, user);
   });
 
+  test('offers personalised onboarding and a scannable desktop QR above the public key field', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Network settings offer username-prefilled Nostroots onboarding.',
+      'The desktop QR preserves the exact onboarding URL.',
+    ]);
+    await page.goto('/profile/edit/networks');
+    const action = page.locator('.nostroots-onboarding');
+    const link = action.getByRole('link', { name: 'Continue in Nostroots' });
+    const url = `https://nos.trustroots.org/open/onboarding?username=${encodeURIComponent(
+      user.username,
+    )}`;
+    await expect(link).toHaveAttribute('href', url);
+    await expect(link).toHaveAttribute(
+      'data-umami-event-source',
+      'network-settings',
+    );
+    await expect(page.locator('#nostrNpub')).toBeVisible();
+
+    const qr = action.getByRole('img', {
+      name: 'Scan to continue in Nostroots on your phone',
+    });
+    await expect(qr).toBeVisible();
+    const screenshot = await qr.screenshot();
+    const { data, info } = await sharp(screenshot)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    const decoded = jsQR(new Uint8ClampedArray(data), info.width, info.height);
+    expect(decoded && decoded.data).toBe(url);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(link).toBeVisible();
+    await expect(qr).toBeHidden();
+    await expect(
+      action.getByText(
+        /return to this page and open the link again afterwards/,
+      ),
+    ).toBeVisible();
+
+    // Exercise the real anchor without relying on a store or installed app.
+    await page.route('https://nos.trustroots.org/open/onboarding**', route =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<h1>Onboarding test destination</h1>',
+      }),
+    );
+    await link.click();
+    await expect(page).toHaveURL(url);
+  });
+
   test('shows a validation error when a secret key is entered', async ({
     page,
   }, testInfo) => {
@@ -259,6 +314,70 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 });
 
 test.describe('nostr community notes badge on the profile view', () => {
+  test('uses the viewer identity on another profile and keeps signed-out profile access gated', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Profile note onboarding uses the viewer rather than the author.',
+      'Signed-out visitors still need to sign in before viewing profiles.',
+    ]);
+    const author = SEEDED_MEMBERS[0];
+    const viewer = SEEDED_MEMBERS[1];
+    await signInViaApi(page, request, author);
+    const profile = await page.request.get(`/api/users/${author.username}`);
+    expect(profile.ok()).toBeTruthy();
+    const originalNpub = (await profile.json()).nostrNpub || '';
+    const secretKey = generateSecretKey();
+    const npub = nip19.npubEncode(getPublicKey(secretKey));
+    const note = finalizeEvent(
+      {
+        kind: 30397,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [['d', 'onboarding-example']],
+        content: 'Fictional community note for onboarding.',
+      },
+      secretKey,
+    );
+    try {
+      const update = await page.request.put('/api/users', {
+        data: { nostrNpub: npub },
+      });
+      expect(update.ok()).toBeTruthy();
+      await installNostrRelayStub(page, { events: [note] });
+      await signInViaApi(page, request, viewer);
+      await page.goto(`/profile/${author.username}`);
+      await page
+        .getByRole('button', { name: /See all notes on Nostroots/ })
+        .click();
+      const dialog = page.getByRole('dialog', { name: 'Get Nostroots' });
+      await expect(
+        dialog.getByRole('link', { name: 'Continue in Nostroots' }),
+      ).toHaveAttribute(
+        'href',
+        `https://nos.trustroots.org/open/onboarding?username=${encodeURIComponent(
+          viewer.username,
+        )}`,
+      );
+      await expect(
+        dialog.getByRole('link', { name: 'Continue in Nostroots' }),
+      ).toHaveAttribute('data-umami-event-source', 'profile-notes');
+
+      await page.context().clearCookies();
+      await page.goto(`/profile/${author.username}`);
+      await expect(page).toHaveURL(/\/signin/);
+      await expect(
+        page.getByRole('link', { name: 'Continue in Nostroots' }),
+      ).toHaveCount(0);
+    } finally {
+      await signInViaApi(page, request, author);
+      const restore = await page.request.put('/api/users', {
+        data: { nostrNpub: originalNpub },
+      });
+      expect(restore.ok()).toBeTruthy();
+    }
+  });
+
   test('shows the Nostroots badge and recent notes for a member with map notes', async ({
     page,
     request,

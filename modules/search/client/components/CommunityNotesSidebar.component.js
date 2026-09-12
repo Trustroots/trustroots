@@ -130,6 +130,7 @@ export default function CommunityNotesSidebar({ notes, plusCode }) {
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         plusCode={plusCode}
+        source="community-notes"
       />
     </div>
   );

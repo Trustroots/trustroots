@@ -67,6 +67,7 @@ export default function ProfileNostrBadge({ npubHex }) {
       <NostrootsActionModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        source="profile-notes"
       />
     </div>
   );
