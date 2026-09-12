@@ -130,5 +130,15 @@ function AdminRoutes($stateProvider) {
       data: {
         pageTitle: 'Admin - Newsletter',
       },
+    })
+    .state('admin-circles', {
+      url: '/admin/circles',
+      template: '<admin-circles></admin-circles>',
+      requiresRole: 'admin',
+      requiresAuth: true,
+      footerVariant: 'admin',
+      data: {
+        pageTitle: 'Admin - Circles',
+      },
     });
 }

@@ -15,7 +15,10 @@ Guidance for contributing circle images and photos to Trustroots.
 
 ### Adding new circle
 
-Circles are added directly to the database manually.
+Administrators can add and edit circles from `/admin/circles`. The editor
+stores the circle details in the database and generates the URL slug from the
+circle name. Existing members and their cached count are preserved when a
+circle is edited.
 
 ### Adding circle image
 
@@ -30,6 +33,14 @@ Image requirements:
 - Work with text overlay
 - Preferably have humans to be easier to identify with
 - Allowed to use non-commercially (E.g. be Creative Commons licensed)
+
+When an administrator uploads an image, Trustroots converts it to a canonical
+JPG named after the circle slug and generates 120x120, 742x496, 906x240, and
+1400x900 JPG and WebP variants. The public circle pages use those generated
+files. Renaming a circle moves its existing image assets to the new slug.
+
+The manual file workflow below remains useful for deployments and for updating
+assets outside the administrator interface.
 
 #### Test images locally
 

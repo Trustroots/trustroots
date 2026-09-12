@@ -23,6 +23,7 @@ const AREA_BY_SPEC = {
   'experiences.spec.js': 'Experiences',
   'experience-actions.spec.js': 'Experiences',
   'admin.spec.js': 'Admin',
+  'admin-circles.spec.js': 'Admin',
   'admin-actions.spec.js': 'Admin',
   'admin-acquisition.spec.js': 'Admin',
   'admin-inspection.spec.js': 'Admin',

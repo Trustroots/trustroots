@@ -102,6 +102,15 @@ describe('Admin Route Tests', function () {
       footerVariant: 'admin',
       pageTitle: 'Admin - Newsletter',
     },
+    {
+      name: 'admin-circles',
+      url: '/admin/circles',
+      template: '<admin-circles></admin-circles>',
+      requiresAuth: true,
+      requiresRole: 'admin',
+      footerVariant: 'admin',
+      pageTitle: 'Admin - Circles',
+    },
   ];
 
   adminStates.forEach(

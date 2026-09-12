@@ -383,3 +383,19 @@ Administrators SHALL be able to grant and revoke `welcome-team` from member role
 
 - **WHEN** a non-administrator requests a role change
 - **THEN** the request is forbidden
+
+### Requirement: Circle catalogue administration
+
+The system SHALL provide authorised administrators with tools to create and
+edit circle catalogue records and their associated images.
+
+#### Scenario: Administrator manages circles
+
+- **WHEN** an authorised administrator opens the circle administration view
+- **THEN** the system lists existing circles and provides create and edit
+  controls
+
+#### Scenario: Regular member requests circle administration
+
+- **WHEN** a regular member requests a circle administration API
+- **THEN** the system denies the request
