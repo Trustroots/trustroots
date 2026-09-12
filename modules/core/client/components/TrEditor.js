@@ -7,7 +7,6 @@ import React, {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
 } from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
 
@@ -192,7 +191,8 @@ export default function TrEditor({
   const onChangeRef = useRef(onChange);
   const onCtrlEnterRef = useRef(onCtrlEnter);
   const latestEditorText = useRef(text);
-  const [editorText, setEditorText] = useState(text);
+  const initialText = useRef(text);
+  const isApplyingExternalText = useRef(false);
   const { t } = useTranslation('core');
 
   useLayoutEffect(() => {
@@ -206,7 +206,15 @@ export default function TrEditor({
     // the selection, which corrupts multi-line cursor positions and IME input.
     if (text !== latestEditorText.current) {
       latestEditorText.current = text;
-      setEditorText(text);
+      // The React wrapper ignores the next text prop after editableInput, and
+      // cannot reset to its initial value reliably. Use MediumEditor's public
+      // API for external changes while keeping the wrapper's props stable.
+      isApplyingExternalText.current = true;
+      try {
+        ref.current.medium.setContent(text);
+      } finally {
+        isApplyingExternalText.current = false;
+      }
     }
   }, [text]);
 
@@ -232,6 +240,8 @@ export default function TrEditor({
   );
 
   const handleChange = useCallback(value => {
+    // setContent emits editableInput too; external changes are not user input.
+    if (isApplyingExternalText.current) return;
     const normalisedValue = removeTrailingBr(value);
     latestEditorText.current = normalisedValue;
     onChangeRef.current(normalisedValue);
@@ -241,7 +251,7 @@ export default function TrEditor({
     <StableMediumEditor
       ref={ref}
       id={id}
-      text={editorText}
+      text={initialText.current}
       options={options}
       className="tr-editor"
       onChange={handleChange}

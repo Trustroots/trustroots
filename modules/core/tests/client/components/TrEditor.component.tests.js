@@ -34,6 +34,10 @@ jest.mock('react-medium-editor', () => {
           (subscribers[eventName] || []).forEach(handler => handler(...args));
         },
         onChange,
+        setContent: jest.fn(value => {
+          medium.current.text = value;
+          medium.current.onChange(value);
+        }),
         text,
         renderCount: 0,
         _subscribers: subscribers,
@@ -175,7 +179,9 @@ describe('<TrEditor />', () => {
     );
 
     await waitFor(() => expect(editor.text).toBe(''));
-    expect(editor.renderCount).toBe(2);
+    expect(editor.renderCount).toBe(1);
+    expect(editor.setContent).toHaveBeenCalledWith('');
+    expect(onChange).toHaveBeenCalledTimes(1);
   });
 
   it('uses translated default placeholder text when none is provided', () => {
