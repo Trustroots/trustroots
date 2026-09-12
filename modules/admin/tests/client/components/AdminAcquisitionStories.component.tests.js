@@ -5,6 +5,10 @@ import '@testing-library/jest-dom/extend-expect';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import * as acquisitionStoriesApi from '@/modules/admin/client/api/acquisition-stories.api';
 
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentUser: () => global.window.user,
+}));
+
 jest.mock('@/modules/admin/client/api/acquisition-stories.api');
 jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
   const React = require('react');
@@ -14,11 +18,44 @@ jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
   };
 });
 
+beforeEach(() => {
+  window.user = { roles: ['admin'] };
+});
+
 afterEach(() => {
+  delete window.user;
   jest.clearAllMocks();
 });
 
 describe('<AdminAcquisitionStories />', () => {
+  it.each([{ roles: ['welcome-team'] }, {}, null])(
+    'uses public member links for a non-administrator %j',
+    async user => {
+      window.user = user;
+      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        {
+          _id: 'member-id',
+          username: 'river',
+          acquisitionStory: 'Friends',
+          restrictedMatches: [
+            {
+              _id: 'match-id',
+              username: 'forest',
+              matchReasons: ['Acquisition story'],
+            },
+          ],
+        },
+      ]);
+      render(<AdminAcquisitionStories />);
+      expect(
+        await screen.findByRole('link', { name: 'river', exact: true }),
+      ).toHaveAttribute('href', '/profile/river');
+      expect(
+        screen.getByRole('link', { name: 'forest', exact: true }),
+      ).toHaveAttribute('href', '/profile/forest');
+    },
+  );
+
   it('loads and renders acquisition stories with member links', async () => {
     acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {

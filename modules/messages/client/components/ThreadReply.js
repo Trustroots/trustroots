@@ -72,7 +72,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
       className="form-horizontal"
       onSubmit={event => send(event)}
     >
-      <div className="row">
+      <div className="row message-reply-editor-row">
         <div className="col-xs-12">
           <div className="panel panel-default">
             <TrEditor
@@ -85,7 +85,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
           </div>
         </div>
       </div>
-      <div className="col-xs-2 col-sm-12">
+      <div className="col-xs-2 col-sm-12 message-reply-actions">
         <small className="text-muted hidden-xs">
           {t(
             'Highlight text to add links or change its appearance. Ctrl+Enter to send.',

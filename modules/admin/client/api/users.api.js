@@ -29,10 +29,11 @@ export async function getUser(id) {
   return data;
 }
 
-export async function setUserRole(id, role) {
+export async function setUserRole(id, role, action) {
   const { data } = await axios.post('/api/admin/user/change-role', {
     id,
     role,
+    ...(action === undefined ? {} : { action }),
   });
   return data;
 }

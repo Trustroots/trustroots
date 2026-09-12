@@ -14,6 +14,16 @@ const aclInstance = new acl(new acl.memoryBackend());
 exports.invokeRolesPolicies = () => {
   aclInstance.allow([
     {
+      roles: ['welcome-team'],
+      allows: [
+        { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+        {
+          resources: '/api/admin/acquisition-stories/analysis',
+          permissions: ['post'],
+        },
+      ],
+    },
+    {
       roles: ['admin'],
       allows: [
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },

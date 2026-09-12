@@ -1,5 +1,6 @@
 // External dependencies
 import PropTypes from 'prop-types';
+import { getCurrentUser } from '../../../core/client/services/client-runtime';
 import React, { useMemo, useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -184,6 +185,9 @@ export default function AdminAcquisitionStories() {
                         />
                       </a>
                       <UserLink
+                        publicProfile={
+                          !(getCurrentUser()?.roles || []).includes('admin')
+                        }
                         user={{
                           _id: story._id,
                           displayName: story.displayName,
@@ -210,7 +214,12 @@ export default function AdminAcquisitionStories() {
                   <td>
                     {(story.restrictedMatches || []).map(match => (
                       <div key={match._id}>
-                        <UserLink user={match} />
+                        <UserLink
+                          user={match}
+                          publicProfile={
+                            !(getCurrentUser()?.roles || []).includes('admin')
+                          }
+                        />
                         <small className="text-muted">
                           {' '}
                           — {match.matchReasons.join(', ')}

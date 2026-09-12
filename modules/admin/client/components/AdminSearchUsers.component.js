@@ -194,13 +194,14 @@ export class AdminSearchUsersContent extends Component {
               >
                 {[
                   'admin',
+                  'welcome-team',
                   'shadowban',
                   'suspended',
                   'volunteer-alumni',
                   'volunteer',
                 ].map(role => (
                   <option value={role} key={role}>
-                    {role}
+                    {role === 'welcome-team' ? 'Welcome team' : role}
                   </option>
                 ))}
               </select>

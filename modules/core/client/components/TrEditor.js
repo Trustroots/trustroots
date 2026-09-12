@@ -176,7 +176,7 @@ export default function TrEditor({
   const mediumRef = useRef();
   const onChangeRef = useRef(onChange);
   const onCtrlEnterRef = useRef(onCtrlEnter);
-  const updatedByEditorRef = useRef(false);
+  const latestEditorText = useRef(null);
   const { t } = useTranslation('core');
 
   onChangeRef.current = onChange;
@@ -198,8 +198,9 @@ export default function TrEditor({
       optionsRef.current,
     );
     const handleInput = () => {
-      updatedByEditorRef.current = true;
-      onChangeRef.current(removeTrailingBr(editorElementRef.current.innerHTML));
+      const value = removeTrailingBr(editorElementRef.current.innerHTML);
+      latestEditorText.current = value;
+      onChangeRef.current(value);
     };
     const handleEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
 
@@ -216,11 +217,11 @@ export default function TrEditor({
   }, []);
 
   useLayoutEffect(() => {
-    if (updatedByEditorRef.current) {
-      updatedByEditorRef.current = false;
+    if (text === latestEditorText.current) {
       return;
     }
 
+    latestEditorText.current = text;
     const element = editorElementRef.current;
     if (element.innerHTML === text) {
       return;

@@ -172,4 +172,21 @@ describe('React route ownership', function () {
   it('does not claim legacy Angular profile-edit paths', function () {
     isReactOwnedPath('/profile-edit/about').should.be.false();
   });
+  it('allows either acquisition role while keeping other admin routes restricted', () => {
+    for (const route of REACT_ROUTE_POLICIES.filter(route =>
+      route.path.startsWith('/admin'),
+    )) {
+      const acquisition = route.path.startsWith('/admin/acquisition-stories');
+      should(
+        getReactRouteAccessRedirect(route, { roles: ['welcome-team'] }),
+      ).equal(acquisition ? null : '/volunteering');
+      should(
+        getReactRouteAccessRedirect(route, { roles: ['admin'] }),
+      ).be.null();
+      getReactRouteAccessRedirect(route, { roles: ['user'] }).should.equal(
+        '/volunteering',
+      );
+      getReactRouteAccessRedirect(route, null).should.equal('/signin');
+    }
+  });
 });

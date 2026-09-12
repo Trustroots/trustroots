@@ -179,4 +179,23 @@ describe('<TrEditor />', () => {
     expect(editor.saveSelection).not.toHaveBeenCalled();
     expect(editor.restoreSelection).not.toHaveBeenCalled();
   });
+  it('applies an external reset immediately after input without restoring selection on echoed input', () => {
+    const onChange = jest.fn();
+    const { container, rerender } = renderEditor({ onChange });
+    const editor = mockMediumEditors[0];
+    const element = container.querySelector('.tr-editor');
+    element.innerHTML = '<p>Draft reply</p>';
+    act(() => editor.trigger('editableInput'));
+    rerender(
+      <TrEditor id="bio" onChange={onChange} text="<p>Draft reply</p>" />,
+    );
+    expect(editor.saveSelection).not.toHaveBeenCalled();
+    expect(editor.restoreSelection).not.toHaveBeenCalled();
+    expect(MediumEditor).toHaveBeenCalledTimes(1);
+    element.innerHTML = '<p>Changed draft</p>';
+    act(() => editor.trigger('editableInput'));
+    rerender(<TrEditor id="bio" onChange={onChange} text="" />);
+    expect(element).toBeEmptyDOMElement();
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
 });
