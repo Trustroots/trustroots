@@ -39,4 +39,4 @@ RUN --mount=type=cache,target=/root/.npm \
   && npm rebuild sharp --build-from-source \
   && npm rebuild mmmagic --build-from-source
 
-RUN npx playwright install --with-deps chromium firefox
+RUN npx playwright install chromium firefox
