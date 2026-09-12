@@ -859,7 +859,7 @@ function sameUser(profile, authenticatedUser) {
   return authenticatedUser._id.toString() === profile._id.toString();
 }
 
-function sanitizeProfile(profile, isOwnProfile) {
+function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
   if (!profile) {
     return;
   }
@@ -867,12 +867,24 @@ function sanitizeProfile(profile, isOwnProfile) {
   // Destruct Mongoose object to regular object so that we can manipulate it
   profile = profile.toObject();
 
+  const authenticatedRoles = authenticatedUser?.roles || [];
+  const hideExternalContactDetails =
+    !isOwnProfile &&
+    authenticatedRoles.includes('shadowban') &&
+    !authenticatedRoles.includes('admin');
+
   // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
-  if (profile.description)
+  if (profile.description) {
     profile.description = sanitizeHtml(
       profile.description,
       textService.sanitizeOptions,
     );
+    if (hideExternalContactDetails) {
+      profile.description = textService.stripContactDetails(
+        profile.description,
+      );
+    }
+  }
 
   // Remove tribes without reference object (= they've been deleted from `tribes` table)
   if (profile.member && profile.member.length > 0) {
@@ -923,6 +935,36 @@ function sanitizeProfile(profile, isOwnProfile) {
   delete profile.salt;
   delete profile.roles;
 
+  // Legacy social connections are still shown so members can remove them.
+  // Only the identifiers needed for those rows and existing public links may
+  // reach the client; provider payloads can also contain credentials and PII.
+  if (hideExternalContactDetails) {
+    delete profile.additionalProvidersData;
+    delete profile.extSitesBW;
+    delete profile.extSitesCS;
+    delete profile.extSitesCouchers;
+    delete profile.extSitesWS;
+    delete profile.nostrNpub;
+  } else if (_.isObject(profile.additionalProvidersData)) {
+    const providerIdentityFields = {
+      facebook: ['id'],
+      github: ['login'],
+      twitter: ['screen_name'],
+    };
+    const sanitizedProviders = {};
+
+    _.forEach(providerIdentityFields, function (fields, provider) {
+      if (_.has(profile.additionalProvidersData, provider)) {
+        sanitizedProviders[provider] = _.pick(
+          profile.additionalProvidersData[provider],
+          fields,
+        );
+      }
+    });
+
+    profile.additionalProvidersData = sanitizedProviders;
+  }
+
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;
   delete profile.publicReminderSent;
@@ -949,11 +991,15 @@ function sanitizeProfile(profile, isOwnProfile) {
  * @return {Object} Sanitized profile.
  */
 exports.sanitizeProfile = function (profile, authenticatedUser) {
-  return sanitizeProfile(profile, sameUser(profile, authenticatedUser));
+  return sanitizeProfile(
+    profile,
+    sameUser(profile, authenticatedUser),
+    authenticatedUser,
+  );
 };
 
 exports.sanitizeOwnProfile = function (profile) {
-  return sanitizeProfile(profile, true);
+  return sanitizeProfile(profile, true, profile);
 };
 
 /**
@@ -1434,6 +1480,7 @@ exports.search = function (req, res, next) {
       $and: [
         { public: true }, // only public users
         { _id: { $nin: blocked } }, // remove ones that I blocked
+        { roles: { $nin: ['suspended', 'shadowban'] } },
         {
           $text: {
             $search: req.query.search,

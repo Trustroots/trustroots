@@ -16,8 +16,8 @@
       "label": "Express API/server",
       "onAutoForward": "ignore"
     },
-    "1080": {
-      "label": "MailDev web UI",
+    "8025": {
+      "label": "Mailpit web UI",
       "onAutoForward": "ignore"
     },
     "27017": {

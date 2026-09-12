@@ -34,7 +34,6 @@ require('@/modules/core/client/filters/plain-text-length.client.filter');
 require('@/modules/core/client/filters/trusted-html.client.filter');
 
 // services
-require('@/modules/core/client/services/facebook.client.service');
 require('@/modules/core/client/services/firebase-messaging.client.service');
 require('@/modules/core/client/services/languages.client.service');
 require('@/modules/core/client/services/location.client.service');

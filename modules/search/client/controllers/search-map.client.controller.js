@@ -38,10 +38,12 @@ function SearchMapController(
 
     // Listen to new map location values from other controllers
     $scope.$on('search.mapCenter', (event, location) => {
+      vm.bounds = {};
       vm.location = location;
     });
 
     $scope.$on('search.mapBounds', (event, bounds) => {
+      vm.location = {};
       vm.bounds = bounds;
     });
 
@@ -71,6 +73,7 @@ function SearchMapController(
 
       // Re-position map
       if (reCenterMap) {
+        vm.bounds = {};
         vm.location = {
           lat: offer.location[0],
           lng: offer.location[1],

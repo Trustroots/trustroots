@@ -53,6 +53,18 @@ describe('Admin policy unit tests', () => {
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/reference-threads');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/newsletter-subscribers/audience');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/newsletter-subscribers');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/newsletter-subscribers/circle');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/newsletter-subscribers/split');
   });
 
   it('calls next when ACL allows the admin request', () => {

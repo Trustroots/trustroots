@@ -23,7 +23,8 @@ function FiltersService($log, Authentication, locker) {
 
   // Look up for filters from cache.
   // Returns `defaultFilters` if nothing is found.
-  let filters = locker.supported()
+  const storageSupported = locker.supported();
+  let filters = storageSupported
     ? locker.get(cachePrefix, defaultFilters)
     : defaultFilters;
 
@@ -31,6 +32,15 @@ function FiltersService($log, Authentication, locker) {
   // `angular.extend` extends `filters` by copying own enumerable
   // properties from `defaultFilters` to `filters`.
   filters = angular.extend(defaultFilters, filters);
+  const normalizedTypes = normalizeTypes(filters.types);
+  const typesChanged = !angular.equals(filters.types, normalizedTypes);
+  filters.types = normalizedTypes;
+
+  // Upgrade cached host-only or empty filters even when the sidebar directive
+  // is not mounted (for example for visitors).
+  if (storageSupported && typesChanged) {
+    locker.put(cachePrefix, filters);
+  }
 
   const service = {
     set,
@@ -38,6 +48,14 @@ function FiltersService($log, Authentication, locker) {
   };
 
   return service;
+
+  function normalizeTypes(types) {
+    const hasHosts = (types || []).some(function (type) {
+      return (angular.isObject(type) ? type.id : type) === 'host';
+    });
+
+    return hasHosts ? ['host', 'meet'] : ['meet'];
+  }
 
   /**
    * Get filter(s)
@@ -63,7 +81,7 @@ function FiltersService($log, Authentication, locker) {
    * Set filter
    */
   function set(filter, content) {
-    filters[filter] = content;
+    filters[filter] = filter === 'types' ? normalizeTypes(content) : content;
 
     // Cache whole filters object
     if (locker.supported()) {

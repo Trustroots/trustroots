@@ -226,7 +226,7 @@ describe('ProfileEditNetworksController', function () {
     expect(vm.isWarmshowersId()).toBe(true);
   });
 
-  it('checks additional social network presence', function () {
+  it('checks legacy social connection presence', function () {
     const { vm } = createController();
 
     vm.user.additionalProvidersData = {
@@ -235,20 +235,26 @@ describe('ProfileEditNetworksController', function () {
       },
     };
 
-    expect(vm.hasConnectedAdditionalSocialAccounts()).toBeTruthy();
+    expect(vm.hasLegacySocialAccounts()).toBe(false);
     expect(vm.isConnectedSocialAccount('google')).toBeTruthy();
     expect(vm.isConnectedSocialAccount('facebook')).toBeFalsy();
+
+    vm.user.additionalProvidersData.facebook = {
+      id: 'fictional-facebook-id',
+    };
+    expect(vm.hasLegacySocialAccounts()).toBe(true);
+    expect(vm.legacySocialProviders).toEqual(['facebook', 'github', 'twitter']);
   });
 
-  it('shows remove account success and emits user updated event', function () {
+  it('shows delete connection success and emits user updated event', function () {
     const { vm, $scope } = createController();
 
-    $httpBackend.expectDELETE('/api/users/accounts/google').respond(200, {
+    $httpBackend.expectDELETE('/api/users/accounts/facebook').respond(200, {
       ...Authentication.user,
       additionalProvidersData: {},
     });
 
-    vm.removeUserSocialAccount('google');
+    vm.removeUserSocialAccount('facebook');
     $httpBackend.flush();
 
     expect(vm.user).toEqual(
@@ -258,7 +264,7 @@ describe('ProfileEditNetworksController', function () {
     );
     expect(messageCenterService.add).toHaveBeenCalledWith(
       'success',
-      'Succesfully disconnected from google',
+      'Successfully deleted the facebook connection.',
     );
     expect($scope.$emit).toHaveBeenCalledWith('userUpdated');
   });
@@ -266,11 +272,11 @@ describe('ProfileEditNetworksController', function () {
   it('reports remove account error from API response', function () {
     const { vm } = createController();
 
-    $httpBackend.expectDELETE('/api/users/accounts/google').respond(500, {
+    $httpBackend.expectDELETE('/api/users/accounts/github').respond(500, {
       message: 'Not possible',
     });
 
-    vm.removeUserSocialAccount('google');
+    vm.removeUserSocialAccount('github');
     $httpBackend.flush();
 
     expect(messageCenterService.add).toHaveBeenCalledWith(
@@ -283,14 +289,14 @@ describe('ProfileEditNetworksController', function () {
   it('reports fallback remove account error when API omits a message', function () {
     const { vm } = createController();
 
-    $httpBackend.expectDELETE('/api/users/accounts/google').respond(500, {});
+    $httpBackend.expectDELETE('/api/users/accounts/twitter').respond(500, {});
 
-    vm.removeUserSocialAccount('google');
+    vm.removeUserSocialAccount('twitter');
     $httpBackend.flush();
 
     expect(messageCenterService.add).toHaveBeenCalledWith(
       'danger',
-      'Something went wrong. Try again or contact us to disconnect your profile.',
+      'Something went wrong. Try again or contact us to delete this connection.',
       { timeout: 10000 },
     );
   });

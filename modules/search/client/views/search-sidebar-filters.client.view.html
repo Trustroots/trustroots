@@ -1,10 +1,21 @@
 <section class="search-sidebar-section search-sidebar-filters">
-  <!-- Offer type filter -->
-  <div role="group" aria-label="Hosts or meetups?">
-    <h4>Hosts or meetups?</h4>
+  <!-- Map content filter -->
+  <div role="group" aria-label="Map content">
+    <h4>Map content</h4>
     <div tr-types-toggle="search.filters.types"></div>
+
+    <p>
+      <label tr-switch>
+        <input
+          type="checkbox"
+          ng-model="search.communityNotesEnabled"
+          ng-change="search.onCommunityNotesToggle()"
+        />
+        Community Notes <small class="text-muted">via Nostroots</small>
+      </label>
+    </p>
   </div>
-  <!-- /Offer type filter -->
+  <!-- /Map content filter -->
 
   <hr class="hr-gray hr-tight" />
 
@@ -45,19 +56,6 @@
     </label>
   </p>
   <!-- /Online recently filter (aka "seen") -->
-
-  <hr class="hr-gray hr-tight" />
-
-  <p>
-    <label tr-switch>
-      <input
-        type="checkbox"
-        ng-model="search.communityNotesEnabled"
-        ng-change="search.onCommunityNotesToggle()"
-      />
-      Community Notes <small class="text-muted">via Nostroots</small>
-    </label>
-  </p>
 
   <hr class="hr-gray hr-tight" />
 

@@ -6,7 +6,6 @@ describe('trShareFb directive', function () {
   let $rootScope;
   let $window;
   let Authentication;
-  let originalGlobalFB;
 
   beforeEach(
     angular.mock.module(AppConfig.appModuleName, function ($provide) {
@@ -18,9 +17,8 @@ describe('trShareFb directive', function () {
 
       $window = {
         location: {
-          href: 'https://trustroots.org/profile/alice',
+          href: 'https://trustroots.org/profile/fictional-member',
         },
-        FB: undefined,
       };
 
       $provide.value('Authentication', Authentication);
@@ -31,67 +29,31 @@ describe('trShareFb directive', function () {
   beforeEach(inject(function (_$compile_, _$rootScope_) {
     $compile = _$compile_;
     $rootScope = _$rootScope_;
-    originalGlobalFB = global.FB;
-    delete global.FB;
   }));
-
-  afterEach(function () {
-    if (typeof originalGlobalFB === 'undefined') {
-      delete global.FB;
-    } else {
-      global.FB = originalGlobalFB;
-    }
-  });
 
   function compile() {
     const scope = $rootScope.$new();
     const element = $compile('<div tr-share-fb></div>')(scope);
     scope.$digest();
-    return { element, scope };
+    return element;
   }
 
   it('does nothing when user is not connected to Facebook', function () {
-    const { element } = compile();
-    expect(element.html()).toBe('');
+    expect(compile().html()).toBe('');
   });
 
-  it('renders share markup immediately when FB API is present', function () {
+  it('renders a direct share link without the Facebook SDK', function () {
     Authentication.user.additionalProvidersData.facebook = {
-      id: 'fb-user',
-    };
-    global.FB = $window.FB = {
-      XFBML: {
-        parse: jasmine.createSpy('parse'),
-      },
+      id: 'fictional-facebook-id',
     };
 
-    const { element } = compile();
+    const link = compile().find('a');
 
-    expect($window.FB.XFBML.parse).toHaveBeenCalledWith(
-      jasmine.any(HTMLDivElement),
+    expect(link.attr('href')).toBe(
+      'https://www.facebook.com/sharer/sharer.php?u=' +
+        encodeURIComponent($window.location.href),
     );
-    expect(element.html()).toContain('fb-share-button');
-    expect(element.html()).toContain(
-      'https://www.facebook.com/sharer/sharer.php?u=',
-    );
-  });
-
-  it('waits for facebookReady when FB API is not yet loaded', function () {
-    Authentication.user.additionalProvidersData.facebook = {
-      id: 'fb-user',
-    };
-    const parse = jasmine.createSpy('parse');
-    const { element } = compile();
-
-    global.FB = $window.FB = {
-      XFBML: {
-        parse,
-      },
-    };
-    $rootScope.$broadcast('facebookReady');
-    $rootScope.$digest();
-
-    expect(parse).toHaveBeenCalledWith(jasmine.any(HTMLDivElement));
-    expect(element.html()).toContain('fb-share-button');
+    expect(link.attr('target')).toBe('_blank');
+    expect(link.attr('rel')).toBe('noopener');
   });
 });

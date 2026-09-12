@@ -165,6 +165,7 @@ test.describe('confirmed member flows', () => {
     annotateFeature(testInfo, 'messages.new-conversation', [
       'Profile action links to a new message thread.',
       'New thread empty state is visible.',
+      'New thread empty state links to safety guidance.',
       'Sending an opening message creates the conversation.',
     ]);
 
@@ -236,6 +237,45 @@ test.describe('confirmed member flows', () => {
     await joinResponse;
 
     await expect(joinButton).toContainText(/joined/i);
+  });
+
+  test('member can join and leave a circle from its detail page', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.join-leave', [
+      'Member can join a circle from its detail page.',
+      'Member can leave that circle again from the same page.',
+    ]);
+
+    await page.goto('/circles/hikers');
+
+    const joinButton = page.locator('button.tribe-join');
+    await expect(joinButton).toBeVisible();
+    await expect(joinButton).toHaveAttribute('aria-label', /join this circle/i);
+
+    const joinResponse = page.waitForResponse(
+      response =>
+        response.url().match(/\/api\/users\/memberships\//) &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await joinButton.click();
+    await joinResponse;
+    await expect(joinButton).toContainText(/you'?re a member/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /leave circle/i);
+
+    const leaveResponse = page.waitForResponse(
+      response =>
+        response.url().match(/\/api\/users\/memberships\//) &&
+        response.request().method() === 'DELETE' &&
+        response.ok(),
+    );
+    await joinButton.click();
+    await page
+      .getByRole('button', { name: 'Leave circle', exact: true })
+      .click();
+    await leaveResponse;
+    await expect(joinButton).toContainText(/join this circle/i);
   });
 
   test('shadowbanned member profiles are hidden from other members', async ({
@@ -398,6 +438,9 @@ test.describe('confirmed member flows', () => {
     await page.goto(`/messages/${beijing.username}?userId=${beijingId}`);
 
     await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /safety tips/i }),
+    ).toHaveAttribute('href', '/safety');
   });
 
   test('experience form shows duplicate when already shared', async ({

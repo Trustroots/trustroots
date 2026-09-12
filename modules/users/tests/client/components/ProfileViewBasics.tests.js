@@ -90,7 +90,7 @@ describe('<ProfileViewBasics />', () => {
     expect(screen.getByText('language-en')).toBeInTheDocument();
     expect(screen.getByText('language-pt')).toBeInTheDocument();
 
-    expect(screen.getByRole('link', { name: 'Github' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
       'href',
       'https://github.com/trustroots',
     );

@@ -78,6 +78,18 @@ describe('Controller: core', function () {
       (res.renderVars.invite === undefined).should.be.true();
     });
 
+    it('renders the React index for React-owned paths', function () {
+      const res = mockResponse();
+      coreController.renderIndex({ path: '/support' }, res);
+      res.rendered.should.equal('react-index.server.view.html');
+    });
+
+    it('renders the Angular index for Angular-owned paths', function () {
+      const res = mockResponse();
+      coreController.renderIndex({ path: '/profile/alice' }, res);
+      res.rendered.should.equal('index.server.view.html');
+    });
+
     it('exposes a sanitized user profile when signed in', function () {
       const res = mockResponse();
       coreController.renderIndex(

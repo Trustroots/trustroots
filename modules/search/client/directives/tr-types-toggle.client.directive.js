@@ -13,8 +13,6 @@ angular.module('search').directive('trTypesToggle', trTypesToggleDirective);
 
 /* @ngInject */
 function trTypesToggleDirective() {
-  let ignoreToggles = false;
-
   const directive = {
     restrict: 'A',
     replace: true,
@@ -30,18 +28,16 @@ function trTypesToggleDirective() {
 
   /* @ngInject */
   function trTypesToggleDirectiveController($scope) {
+    let ignoreToggles = false;
     // View Model
     const vm = this;
 
-    // Offer types and their labels
+    // Selectable offer types. Meetups are always included in the published
+    // filter, but no longer need their own map control.
     vm.types = [
       {
         id: 'host',
         label: 'Hosts',
-      },
-      {
-        id: 'meet',
-        label: 'Meetups',
       },
     ];
 
@@ -57,10 +53,24 @@ function trTypesToggleDirective() {
      * Initialize directive controller
      */
     function activate() {
-      if ($scope.types && $scope.types.length) {
-        angular.forEach($scope.types, function (type) {
-          vm.toggles[type] = true;
-        });
+      vm.toggles.host = includesType($scope.types, 'host');
+      publishTypes(false);
+    }
+
+    function includesType(types, requestedType) {
+      return (types || []).some(function (type) {
+        return (angular.isObject(type) ? type.id : type) === requestedType;
+      });
+    }
+
+    function publishTypes(ignoreWatcher) {
+      const types = vm.toggles.host ? ['host', 'meet'] : ['meet'];
+
+      if (!angular.equals($scope.types, types)) {
+        // Tell the watcher when this value came from a visible toggle. During
+        // activation, the watcher has not been registered yet.
+        ignoreToggles = ignoreWatcher;
+        $scope.types = types;
       }
     }
 
@@ -69,16 +79,7 @@ function trTypesToggleDirective() {
      * into an array of tribe ids: `[id1, id2, ...]`
      */
     function onToggleChange() {
-      const types = [];
-      angular.forEach(vm.toggles, function (active, type) {
-        if (active) {
-          types.push(type);
-        }
-      });
-      // Tell tribeIds $watch that we changed `$scope.types`
-      // from inside the directive
-      ignoreToggles = true;
-      $scope.types = types;
+      publishTypes(true);
     }
 
     /**
@@ -94,14 +95,10 @@ function trTypesToggleDirective() {
           return;
         }
 
-        // Clear all previous toggles
-        vm.toggles = {};
-        if (newTypes && newTypes.length) {
-          // Loop trough new values and set toggles on for requested types
-          angular.forEach(newTypes, function (type) {
-            vm.toggles[angular.isObject(type) ? type.id : type] = true;
-          });
-        }
+        vm.toggles = {
+          host: includesType(newTypes, 'host'),
+        };
+        publishTypes(true);
       }
     });
   }

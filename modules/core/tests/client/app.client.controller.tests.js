@@ -253,6 +253,37 @@ describe('App Controller Tests', function () {
     expect($state.go).toHaveBeenCalledWith('signin', { continue: true });
   });
 
+  it('should conditionally require authentication from route parameters', function () {
+    Authentication.user = null;
+    const toParams = { circle: 'member-only' };
+    const toState = {
+      name: 'circles.circle',
+      requiresAuthFor: params => params.circle === 'member-only',
+    };
+
+    const event = $scope.$broadcast('$stateChangeStart', toState, toParams);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect($rootScope.signinState).toBe('circles.circle');
+    expect($rootScope.signinStateParams).toEqual(toParams);
+    expect($state.go).toHaveBeenCalledWith('signin', { continue: true });
+  });
+
+  it('should allow route parameters that do not require authentication', function () {
+    Authentication.user = null;
+    const toState = {
+      name: 'circles.circle',
+      requiresAuthFor: params => params.circle === 'member-only',
+    };
+
+    const event = $scope.$broadcast('$stateChangeStart', toState, {
+      circle: 'public',
+    });
+
+    expect(event.defaultPrevented).toBe(false);
+    expect($state.go).not.toHaveBeenCalled();
+  });
+
   it('should clear page state and scroll on successful state changes', function () {
     $scope.vm.photoCredits = { test: true };
     $scope.vm.photoCreditsCount = 1;

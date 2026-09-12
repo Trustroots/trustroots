@@ -2,10 +2,16 @@ const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_EXPERIENCE,
+  SEEDED_MEMBERS,
   fetchUserIdByUsername,
+  signInViaApi,
 } = require('../../support/helpers');
 
 test.describe('seeded experience flows', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  });
+
   test('profile experiences tab shows the seeded public experience', async ({
     page,
     request,

@@ -184,6 +184,13 @@ describe('<Thread>', () => {
       const form = await findByRole('form');
       expect(queryByText(/You haven't been talking yet/)).toBeInTheDocument();
       expect(within(form).queryByRole('textbox')).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
+        'href',
+        '/safety',
+      );
+      expect(
+        screen.getByRole('link', { name: 'community rules' }),
+      ).toHaveAttribute('href', '/rules');
     });
 
     it('sends a typed reply and appends the API response to the thread', async () => {
@@ -232,6 +239,27 @@ describe('<Thread>', () => {
     expect(
       screen.queryByText(/You haven't been talking yet/),
     ).not.toBeInTheDocument();
+  });
+
+  it('shows a safety warning above messages', async () => {
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [generateMessage(otherUser)],
+    });
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(
+      await screen.findByText(
+        'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'safety tips' })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
+    expect(
+      screen.getByRole('link', { name: 'community rules' }),
+    ).toHaveAttribute('href', '/rules');
   });
 
   it('shows removed user note when user has been deleted and userId exists', async () => {

@@ -34,9 +34,9 @@ export default function Privacy() {
               itemProp="datePublished"
               dateTime="2014-12-23"
             >
-              <time itemProp="dateModified" dateTime="2026-07-15">
+              <time itemProp="dateModified" dateTime="2026-07-26">
                 {t('Last updated on {{date, LL}}', {
-                  date: new Date(2026, 6, 15),
+                  date: new Date(2026, 6, 26),
                 })}
               </time>
             </p>
@@ -86,6 +86,11 @@ export default function Privacy() {
                 <li>
                   {t(
                     'Information from 3rd party once you connect your account to them',
+                  )}
+                </li>
+                <li>
+                  {t(
+                    'The most recent IP address used during authenticated activity. We use it to help administrators investigate abuse and protect the community. Only administrators can access it, it replaces any previously stored IP address, and it is deleted with your account.',
                   )}
                 </li>
               </ul>
@@ -138,7 +143,7 @@ export default function Privacy() {
                 </li>
                 <li>
                   {t(
-                    'Gravatar and Facebook may be used for profile images or information you choose to connect to your Trustroots profile.',
+                    'Gravatar may be used for profile images. Members who connected Facebook in the past can continue using their stored Facebook profile image.',
                   )}
                 </li>
                 <li>

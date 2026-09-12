@@ -1,7 +1,9 @@
 const { annotateFeature, expect, test } = require('../../support/test');
 
 const {
+  SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  SEEDED_SHADOW,
   createUser,
   fetchUserIdByUsername,
   registerViaApi,
@@ -9,10 +11,15 @@ const {
 } = require('../../support/helpers');
 const {
   findContactByUsers,
+  findOffersByUser,
   updateUserByUsername,
 } = require('../../support/db');
 
 test.describe.serial('contacts and safety feature coverage', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  });
+
   test('members can add and confirm contacts through the UI', async ({
     browser,
     baseURL,
@@ -101,6 +108,134 @@ test.describe.serial('contacts and safety feature coverage', () => {
 
     const confirmed = await findContactByUsers(memberId, aliceId);
     expect(confirmed.confirmed).toBe(true);
+  });
+
+  test('shadowbanned members cannot create visible contact requests', async ({
+    browser,
+    baseURL,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'safety.shadowban-hiding', [
+      'Shadowbanned contact requests are not delivered to other members.',
+    ]);
+
+    const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
+    const aliceId = await fetchUserIdByUsername(request, alice.username);
+    const context = await browser.newContext({ baseURL });
+    const page = await context.newPage();
+
+    try {
+      await signInViaApi(page, context.request, SEEDED_SHADOW);
+      await page.goto(`/contact-add/${aliceId}`);
+
+      const addContact = page.waitForResponse(
+        response =>
+          response.url().includes('/api/contact') &&
+          response.request().method() === 'POST' &&
+          response.ok(),
+      );
+      await page.getByRole('button', { name: /^add contact$/i }).click();
+      await addContact;
+      await expect(page.getByText(/done! we sent an email/i)).toBeVisible();
+    } finally {
+      await context.close();
+    }
+
+    const contact = await findContactByUsers(SEEDED_SHADOW.id, aliceId);
+    expect(contact).toBeFalsy();
+  });
+
+  test('shadowbanned viewers cannot see external contact details', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'safety.shadowban-hiding', [
+      'Shadowbanned viewers cannot see external profile links or contact details.',
+      'Shadowbanned viewers cannot see contact details in other members offers.',
+    ]);
+
+    const target = createUser();
+    const targetContext = await browser.newContext({ baseURL });
+    let targetId;
+    let offerId;
+
+    try {
+      const createdTarget = await registerViaApi(targetContext.request, target);
+      targetId = createdTarget._id;
+      await updateUserByUsername(target.username, {
+        $set: {
+          public: true,
+          description:
+            'A quiet host. Contact member@example.org, (555) 666-7777 or https://example.org/profile.',
+          extSitesBW: 'fictional-member',
+          extSitesCS: 'fictional-member',
+          extSitesCouchers: 'fictional-member',
+          extSitesWS: 'fictional-member',
+          additionalProvidersData: {
+            github: { login: 'fictional-member' },
+          },
+        },
+        $unset: {
+          emailTemporary: 1,
+          emailToken: 1,
+        },
+      });
+
+      const createOffer = await targetContext.request.post('/api/offers', {
+        data: {
+          type: 'host',
+          status: 'yes',
+          description:
+            'A spare room. Write to member@example.org or visit https://example.org/offer.',
+          location: [52.37, 4.9],
+        },
+      });
+      expect(createOffer.ok()).toBeTruthy();
+      const [createdOffer] = await findOffersByUser(targetId, {
+        type: 'host',
+      });
+      expect(createdOffer).toBeTruthy();
+      offerId = createdOffer._id;
+    } finally {
+      await targetContext.close();
+    }
+
+    const shadowContext = await browser.newContext({ baseURL });
+    const shadowPage = await shadowContext.newPage();
+
+    try {
+      await signInViaApi(shadowPage, shadowContext.request, SEEDED_SHADOW);
+
+      const profileResponse = await shadowContext.request.get(
+        `/api/users/${target.username}`,
+      );
+      expect(profileResponse.ok()).toBeTruthy();
+      const profile = await profileResponse.json();
+      expect(profile.description).toBe('A quiet host. Contact ,  or .');
+      expect(profile.additionalProvidersData).toBeUndefined();
+      expect(profile.extSitesBW).toBeUndefined();
+      expect(profile.extSitesCS).toBeUndefined();
+      expect(profile.extSitesCouchers).toBeUndefined();
+      expect(profile.extSitesWS).toBeUndefined();
+
+      const offerResponse = await shadowContext.request.get(
+        `/api/offers/${offerId}`,
+      );
+      expect(offerResponse.ok()).toBeTruthy();
+      const offer = await offerResponse.json();
+      expect(offer.description).toBe('A spare room. Write to  or visit .');
+
+      await shadowPage.goto(`/profile/${target.username}`);
+      await expect(shadowPage.getByText('A quiet host.')).toBeVisible();
+      await expect(
+        shadowPage.getByRole('heading', { name: 'Elsewhere' }),
+      ).toHaveCount(0);
+      await expect(
+        shadowPage.getByText(/member@example\.org|example\.org|555/),
+      ).toHaveCount(0);
+    } finally {
+      await shadowContext.close();
+    }
   });
 
   test('members can create pending contacts and see duplicate state', async ({

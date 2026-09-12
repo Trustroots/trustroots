@@ -104,6 +104,44 @@ describe('Contacts controller unit tests', () => {
       res.body.message.should.match(/email was sent/);
     });
 
+    it('hides requests from a shadowbanned sender without saving a contact', async () => {
+      user1.roles = ['user', 'shadowban'];
+      await user1.save();
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const contacts = await Contact.find({
+        userFrom: user1._id,
+        userTo: user2._id,
+      });
+      contacts.length.should.equal(0);
+    });
+
+    it('does not create a contact request for a shadowbanned recipient', async () => {
+      user2.roles = ['user', 'shadowban'];
+      await user2.save();
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+      const contacts = await Contact.find({
+        userFrom: user1._id,
+        userTo: user2._id,
+      });
+      contacts.length.should.equal(0);
+    });
+
     it('responds with 400 when the contact lookup fails before creation', async () => {
       sinon.stub(Contact, 'findOne').returns({
         exec: cb => cb(new Error('lookup failed')),
@@ -595,6 +633,40 @@ describe('Contacts controller unit tests', () => {
       );
       nextCalled.should.be.true();
       req.contacts.length.should.equal(1);
+    });
+
+    it('omits existing contacts with restricted members', async () => {
+      const [restrictedUser] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      restrictedUser.roles = ['user', 'shadowban'];
+      await restrictedUser.save();
+      await Contact.insertMany([
+        {
+          userFrom: user1._id,
+          userTo: user2._id,
+          confirmed: true,
+        },
+        {
+          userFrom: user1._id,
+          userTo: restrictedUser._id,
+          confirmed: true,
+        },
+      ]);
+
+      const req = { user: user1 };
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          req,
+          res,
+          next,
+          user1._id.toString(),
+        ),
+      );
+
+      nextCalled.should.be.true();
+      req.contacts.should.have.length(1);
+      req.contacts[0].user._id.toString().should.equal(user2._id.toString());
     });
 
     it('passes aggregate errors to next', async () => {

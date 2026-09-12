@@ -1,16 +1,13 @@
-/* global FB */
 /**
- * FB share button for current URL
+ * Facebook share button for the current URL.
  *
- * Usage:
- * ```
- * <div tr-share-facebook></div>
- * ```
+ * This remains available to members with a legacy Facebook connection, but it
+ * uses Facebook's normal sharing URL and does not load the Facebook SDK.
  */
 angular.module('core').directive('trShareFb', trShareFbDirective);
 
 /* @ngInject */
-function trShareFbDirective($rootScope, $window, Authentication) {
+function trShareFbDirective($window, Authentication) {
   return {
     restrict: 'A',
     replace: true,
@@ -19,7 +16,6 @@ function trShareFbDirective($rootScope, $window, Authentication) {
   };
 
   function trShareFbDirectiveLink(scope, element) {
-    // Don't show share button if user isn't connected to FB
     if (
       !Authentication.user ||
       !Authentication.user.additionalProvidersData ||
@@ -28,45 +24,15 @@ function trShareFbDirective($rootScope, $window, Authentication) {
       return;
     }
 
-    // FB API ready, activate
-    if (angular.isDefined($window.FB)) {
-      activate();
-    } else {
-      // FB API was not ready, wait for the ready event
-      const watch = $rootScope.$on('facebookReady', function () {
-        activate();
-        // Removes watch:
-        watch();
-      });
-    }
+    const shareUrl =
+      'https://www.facebook.com/sharer/sharer.php?u=' +
+      encodeURIComponent($window.location.href);
 
-    /**
-     * Activate directive
-     * https://developers.facebook.com/docs/plugins/share-button
-     */
-    function activate() {
-      const button =
-        '<div ' +
-        'class="fb-share-button" ' +
-        'data-href="' +
-        location.href +
-        '" ' +
-        'data-layout="button_count" ' +
-        'data-size="small" ' +
-        'data-mobile-iframe="true"> ' +
-        '  <a class="fb-xfbml-parse-ignore" ' +
-        '    target="_blank" ' +
-        '    href="https://www.facebook.com/sharer/sharer.php?u=' +
-        encodeURIComponent(location.href) +
-        '">' +
-        '      Share' +
-        '  </a> ' +
-        '</div>';
-
-      element.html(button);
-
-      // Parse XFBML code
-      FB.XFBML.parse(element[0]);
-    }
+    element.html(
+      '<a class="btn btn-default btn-xs" target="_blank" rel="noopener" ' +
+        'href="' +
+        shareUrl +
+        '">Share</a>',
+    );
   }
 }

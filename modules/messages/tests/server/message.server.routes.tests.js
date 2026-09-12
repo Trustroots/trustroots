@@ -166,6 +166,29 @@ describe('Message CRUD tests', function () {
       });
   });
 
+  it('should hide all messages from a blocked member', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent.post('/api/messages').send(message).expect(200);
+
+    userTo.blocked = [userFromId];
+    await userTo.save();
+
+    await agent
+      .post('/api/auth/signin')
+      .send({ username: 'username2', password: 'password123' })
+      .expect(200);
+
+    const [threadResponse, inboxResponse, unreadResponse] = await Promise.all([
+      agent.get('/api/messages/' + userFromId).expect(200),
+      agent.get('/api/messages').expect(200),
+      agent.get('/api/messages-count').expect(200),
+    ]);
+
+    threadResponse.body.should.be.empty();
+    inboxResponse.body.should.be.empty();
+    unreadResponse.body.unread.should.equal(0);
+  });
+
   it('should be able to send and read own messages when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
 

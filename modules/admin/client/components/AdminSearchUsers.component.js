@@ -9,10 +9,13 @@ import AdminUserResultsTable from './AdminUserResultsTable.component.js';
 import {
   SEARCH_STRING_LIMIT,
   isObviousSpamUser,
+  normalizeAdminQuery,
 } from './userSearch.helpers.js';
 
-// Limitations set in the API
-const SEARCH_USERS_LIMIT = 50;
+const DEFAULT_MEMBER_LIST_SORT = {
+  column: 'username',
+  direction: 'ascending',
+};
 
 export class AdminSearchUsersContent extends Component {
   constructor(props) {
@@ -21,20 +24,24 @@ export class AdminSearchUsersContent extends Component {
     this.onHideObviousSpamUsersChange =
       this.onHideObviousSpamUsersChange.bind(this);
     this.onRoleChange = this.onRoleChange.bind(this);
+    this.onPageChange = this.onPageChange.bind(this);
+    this.onSortChange = this.onSortChange.bind(this);
     this.doSearch = this.doSearch.bind(this);
     this.doListUsersByRole = this.doListUsersByRole.bind(this);
     this.state = {
       hideObviousSpamUsers: true,
       role: 'admin',
       search: '',
+      sort: DEFAULT_MEMBER_LIST_SORT,
       userResults: [],
+      userResultsPagination: null,
       userResultsSource: false,
     };
   }
 
   componentDidMount() {
     const urlParams = new URLSearchParams(window.location.search);
-    const search = urlParams.get('search');
+    const search = normalizeAdminQuery(urlParams.get('search'));
     if (search) {
       this.setState({ search }, this.doSearch);
     }
@@ -59,29 +66,80 @@ export class AdminSearchUsersContent extends Component {
     this.setState({ hideObviousSpamUsers: event.target.checked });
   }
 
-  async doListUsersByRole(event) {
-    if (event) {
-      event.preventDefault();
+  onPageChange(page) {
+    if (this.state.userResultsSource === 'role') {
+      return this.doListUsersByRole(null, { page });
     }
-    const { role } = this.state;
-    const userResults = await listUsersByRole(role);
-    this.setState({ userResults, userResultsSource: 'role' });
+    return this.doSearch(null, { page });
   }
 
-  async doSearch(event) {
+  onSortChange(sort) {
+    this.setState({ sort }, () => {
+      if (this.state.userResultsSource === 'role') {
+        this.doListUsersByRole(null, { page: 1, sort });
+      } else {
+        this.doSearch(null, { page: 1, sort });
+      }
+    });
+  }
+
+  async doListUsersByRole(event, options = {}) {
     if (event) {
       event.preventDefault();
     }
-    const { search } = this.state;
+    const { role, sort } = this.state;
+    const memberList = await listUsersByRole(role, {
+      page: options.page || 1,
+      sort: options.sort || sort,
+    });
+    this.setState({
+      sort: memberList.sort,
+      userResults: memberList.users,
+      userResultsPagination: memberList.pagination,
+      userResultsSource: 'role',
+    });
+  }
+
+  async doSearch(event, options = {}) {
+    if (event) {
+      event.preventDefault();
+    }
+    const { sort } = this.state;
+    const search = normalizeAdminQuery(this.state.search);
+    if (search !== this.state.search) {
+      this.setState({ search });
+    }
+    const url = new URL(document.location);
+    if (search) {
+      url.searchParams.set('search', search);
+    } else {
+      url.searchParams.delete('search');
+    }
+    window.history.pushState({ search }, window.document.title, url.toString());
     if (search.length >= SEARCH_STRING_LIMIT) {
-      const userResults = await searchUsers(search);
-      this.setState({ userResults, userResultsSource: 'search' });
+      const memberList = await searchUsers(search, {
+        page: options.page || 1,
+        sort: options.sort || sort,
+      });
+      this.setState({
+        sort: memberList.sort,
+        userResults: memberList.users,
+        userResultsPagination: memberList.pagination,
+        userResultsSource: 'search',
+      });
     }
   }
 
   render() {
     const { showHeading } = this.props;
-    const { hideObviousSpamUsers, userResults, userResultsSource } = this.state;
+    const {
+      hideObviousSpamUsers,
+      sort,
+      userResults,
+      userResultsPagination,
+      userResultsSource,
+    } = this.state;
+    const normalizedSearch = normalizeAdminQuery(this.state.search);
     const shouldHideObviousSpamUsers =
       hideObviousSpamUsers && userResultsSource === 'search';
     const visibleUserResults = shouldHideObviousSpamUsers
@@ -111,7 +169,7 @@ export class AdminSearchUsersContent extends Component {
               </label>
               <button
                 className="btn btn-md btn-default"
-                disabled={this.state.search.length < SEARCH_STRING_LIMIT}
+                disabled={normalizedSearch.length < SEARCH_STRING_LIMIT}
                 type="submit"
               >
                 Search
@@ -159,12 +217,14 @@ export class AdminSearchUsersContent extends Component {
         </div>
 
         <AdminUserResultsTable
-          showLimitWarning
+          onPageChange={this.onPageChange}
+          onSortChange={this.onSortChange}
+          pagination={userResultsPagination}
           showPublicProfileLink
           showUserState
           showZendeskActions
+          sort={sort}
           userResults={visibleUserResults}
-          usersLimit={SEARCH_USERS_LIMIT}
         />
 
         {hiddenObviousSpamUserCount > 0 && (
