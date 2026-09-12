@@ -170,6 +170,7 @@ contacted by a member username and send one warning message to all of them.
 - **WHEN** warning delivery fails or its response is lost and the administrator retries the same warning request
 - **THEN** the request reuses its message identifiers and repairs missing or older thread state without duplicating messages
 - **AND** retries preserve read state and newer conversation messages
+- **AND** overlapping retries create only one inbox thread for each administrator and recipient pair
 - **AND** a new deliberate warning uses a new request identifier
 
 #### Scenario: Regular member requests a scammer warning

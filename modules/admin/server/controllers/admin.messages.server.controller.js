@@ -110,40 +110,57 @@ exports.sendScammerWarning = async (req, res) => {
       }),
     );
     if (savedMessages.length) {
-      await Thread.bulkWrite(
-        savedMessages.flatMap(message => {
-          const pair = {
-            $or: [
-              { userTo: message.userTo, userFrom: message.userFrom },
-              { userTo: message.userFrom, userFrom: message.userTo },
-            ],
-          };
-          const latest = {
-            updated: message.created,
-            userFrom: message.userFrom,
-            userTo: message.userTo,
-            message: message._id,
-            read: message.read,
-          };
-          return [
-            {
-              updateOne: {
-                filter: pair,
-                update: { $setOnInsert: latest },
-                upsert: true,
-              },
+      const updates = savedMessages.flatMap(message => {
+        const pair = {
+          $or: [
+            { userTo: message.userTo, userFrom: message.userFrom },
+            { userTo: message.userFrom, userFrom: message.userTo },
+          ],
+        };
+        const latest = {
+          updated: message.created,
+          userFrom: message.userFrom,
+          userTo: message.userTo,
+          message: message._id,
+          read: message.read,
+        };
+        // Concurrent retries must also agree on the new thread's primary key.
+        // Existing threads retain their IDs, including the reverse direction.
+        const threadId = crypto
+          .createHash('sha256')
+          .update(
+            JSON.stringify(
+              [String(message.userFrom), String(message.userTo)].sort(),
+            ),
+          )
+          .digest('hex')
+          .slice(0, 24);
+        return [
+          {
+            updateOne: {
+              filter: pair,
+              update: { $setOnInsert: { ...latest, _id: threadId } },
+              upsert: true,
             },
-            // Repair an older thread after a partial failure, without marking a
-            // read warning unread again or replacing a newer conversation message.
-            {
-              updateOne: {
-                filter: { ...pair, updated: { $lt: message.created } },
-                update: { $set: latest },
-              },
+          },
+          // Repair an older thread after a partial failure, without marking a
+          // read warning unread again or replacing a newer conversation message.
+          {
+            updateOne: {
+              filter: { ...pair, updated: { $lt: message.created } },
+              update: { $set: latest },
             },
-          ];
-        }),
-      );
+          },
+        ];
+      });
+      try {
+        await Thread.bulkWrite(updates, { ordered: false });
+      } catch (err) {
+        if (err.code !== 11000) throw err;
+        // Another request inserted a shared primary key. The unordered batch
+        // has finished; retry against the now-existing threads to repair state.
+        await Thread.bulkWrite(updates, { ordered: false });
+      }
     }
     return res.send({
       scammer: { _id: scammer._id, username: scammer.username },

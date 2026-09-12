@@ -303,6 +303,126 @@ describe('Admin Message CRUD tests', () => {
       );
     });
 
+    it('keeps one inbox thread when warning retries overlap', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const payload = {
+        username: userRegular1.username,
+        content: 'Please ignore the earlier message.',
+        requestId: '44444444444444444444444444444444',
+      };
+      const send = () =>
+        agent
+          .post('/api/admin/messages/scammer-warning')
+          .send(payload)
+          .expect(200);
+      await send();
+      // Model the state after messages were saved but thread creation failed.
+      await Thread.deleteMany({});
+      const originalBulkWrite = Thread.bulkWrite;
+      const retries = 20;
+      let waiting = 0;
+      let release;
+      const barrier = new Promise(resolve => {
+        release = resolve;
+      });
+      const bulkWrite = sinon
+        .stub(Thread, 'bulkWrite')
+        .callsFake(async function (...args) {
+          if (++waiting === retries) release();
+          await barrier;
+          return originalBulkWrite.apply(this, args);
+        });
+      try {
+        await Promise.all(Array.from({ length: retries }, send));
+      } finally {
+        bulkWrite.restore();
+      }
+      (await Message.countDocuments({ userFrom: userAdmin._id })).should.equal(
+        1,
+      );
+      (await Thread.countDocuments({})).should.equal(1);
+    });
+
+    it('repairs a thread after another warning request wins the insert race', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const originalBulkWrite = Thread.bulkWrite;
+      const bulkWrite = sinon.stub(Thread, 'bulkWrite');
+      bulkWrite
+        .onFirstCall()
+        .rejects(
+          Object.assign(new Error('Concurrent insert'), { code: 11000 }),
+        );
+      bulkWrite.onSecondCall().callsFake(function (...args) {
+        return originalBulkWrite.apply(this, args);
+      });
+      try {
+        await agent
+          .post('/api/admin/messages/scammer-warning')
+          .send({
+            username: userRegular1.username,
+            content: 'Safety warning',
+            requestId: '55555555555555555555555555555555',
+          })
+          .expect(200);
+        bulkWrite.callCount.should.equal(2);
+        (await Thread.countDocuments({})).should.equal(1);
+      } finally {
+        bulkWrite.restore();
+      }
+    });
+
+    it('updates an existing reverse-direction thread and preserves a newer reply on retry', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const oldThread = await Thread.create({
+        userFrom: userRegular2Id,
+        userTo: userAdmin._id,
+        updated: new Date('2026-01-01T00:00:00Z'),
+        read: true,
+      });
+      const payload = {
+        username: userRegular1.username,
+        content: 'Safety warning',
+        requestId: '66666666666666666666666666666666',
+      };
+      const send = () =>
+        agent
+          .post('/api/admin/messages/scammer-warning')
+          .send(payload)
+          .expect(200);
+      await send();
+      const warning = await Message.findOne({ userFrom: userAdmin._id });
+      const updatedThread = await Thread.findById(oldThread._id);
+      updatedThread.message.toString().should.equal(warning._id.toString());
+      updatedThread.read.should.equal(false);
+      const reply = await Message.create({
+        userFrom: userRegular2Id,
+        userTo: userAdmin._id,
+        content: 'Thanks for the warning.',
+        created: new Date(warning.created.getTime() + 1000),
+      });
+      await Thread.updateOne(
+        { _id: oldThread._id },
+        {
+          $set: {
+            message: reply._id,
+            updated: reply.created,
+            read: true,
+            userFrom: userRegular2Id,
+            userTo: userAdmin._id,
+          },
+        },
+      );
+      await send();
+      const finalThread = await Thread.findById(oldThread._id);
+      finalThread.message.toString().should.equal(reply._id.toString());
+      finalThread.userFrom.toString().should.equal(userRegular2Id.toString());
+      finalThread.read.should.equal(true);
+      (await Thread.countDocuments({})).should.equal(1);
+      (await Message.countDocuments({ userFrom: userAdmin._id })).should.equal(
+        1,
+      );
+    });
+
     it('reports zero deliveries when the member contacted nobody', async () => {
       await utils.signIn(credentialsAdmin, agent);
 
