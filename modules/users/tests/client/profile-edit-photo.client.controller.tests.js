@@ -121,8 +121,8 @@ describe('ProfileEditPhotoController', function () {
     };
   }
 
-  function selectValidImage() {
-    const file = imageFile();
+  function selectValidImage(overrides = {}) {
+    const file = imageFile(overrides);
     ProfileEditPhotoController.fileSelected([file]);
     MockFileReader.instances[0].onloadend();
     return file;
@@ -154,6 +154,14 @@ describe('ProfileEditPhotoController', function () {
     expect(messageCenterService.add).not.toHaveBeenCalled();
   });
 
+  it('ignores a missing file selection', function () {
+    ProfileEditPhotoController.fileSelected();
+
+    expect(Upload.upload).not.toHaveBeenCalled();
+    expect(ProfileEditPhotoController.avatarPreview).toBe(false);
+    expect(messageCenterService.add).not.toHaveBeenCalled();
+  });
+
   it('shows a validation message for unsupported file types', function () {
     ProfileEditPhotoController.fileSelected([
       imageFile({ name: 'avatar.txt', type: 'text/plain' }),
@@ -165,6 +173,31 @@ describe('ProfileEditPhotoController', function () {
     expect(messageCenterService.add).toHaveBeenCalledWith(
       'danger',
       'Please give a jpg, gif, or png image.',
+    );
+  });
+
+  it('shows a validation message when file metadata is missing', function () {
+    ProfileEditPhotoController.fileSelected([
+      imageFile({ name: undefined, type: undefined }),
+    ]);
+
+    expect(Upload.upload).not.toHaveBeenCalled();
+    expect(messageCenterService.add).toHaveBeenCalledWith(
+      'danger',
+      'Please give a jpg, gif, or png image.',
+    );
+  });
+
+  it('accepts image files when the browser omits the MIME type', function () {
+    const file = selectValidImage({ name: 'avatar.jpg', type: '' });
+
+    expect(ProfileEditPhotoController.avatarPreview).toBe(true);
+    expect(Upload.upload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: {
+          avatar: file,
+        },
+      }),
     );
   });
 

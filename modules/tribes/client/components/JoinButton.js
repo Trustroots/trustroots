@@ -7,8 +7,12 @@ import Tooltip from '@/modules/core/client/components/Tooltip';
 import * as api from '../api/tribes.api';
 
 function JoinButtonPresentational({
+  className = 'btn btn-sm btn-default',
+  activeClassName,
+  icon = true,
   isMember,
   isLoading,
+  memberLabel,
   tribe,
   isLoggedIn,
   onToggle,
@@ -18,7 +22,9 @@ function JoinButtonPresentational({
   const ariaLabel = isMember
     ? t('Leave circle')
     : t('Join ({{label}})', { label: tribe.label });
-  const buttonLabel = isMember ? t('Joined') : t('Join');
+  const buttonLabel = isMember ? memberLabel || t('Joined') : t('Join');
+  const currentClassName =
+    isMember && activeClassName ? activeClassName : className;
 
   // a button to be shown when user is signed out
   if (!isLoggedIn) {
@@ -26,9 +32,14 @@ function JoinButtonPresentational({
       <a
         href={`/signup?tribe=${tribe.slug}`}
         type="button"
-        className="btn btn-sm btn-default tribe-join"
+        className={`${className} tribe-join`}
       >
-        <i className="icon-plus" /> {buttonLabel}
+        {icon && (
+          <>
+            <i className="icon-plus" />{' '}
+          </>
+        )}
+        {buttonLabel}
       </a>
     );
   }
@@ -44,21 +55,30 @@ function JoinButtonPresentational({
         type="button"
         className={`${
           isMember ? 'btn-active' : ''
-        } btn btn-sm btn-default tribe-join`}
+        } ${currentClassName} tribe-join`}
         disabled={isLoading}
         aria-label={ariaLabel}
         onClick={onToggle}
       >
-        <i className={isMember ? 'icon-ok' : 'icon-plus'} /> {buttonLabel}
+        {icon && (
+          <>
+            <i className={isMember ? 'icon-ok' : 'icon-plus'} />{' '}
+          </>
+        )}
+        {buttonLabel}
       </button>
     </Tooltip>
   );
 }
 
 JoinButtonPresentational.propTypes = {
+  activeClassName: PropTypes.string,
+  className: PropTypes.string,
+  icon: PropTypes.bool,
   isMember: PropTypes.bool.isRequired,
   isLoading: PropTypes.bool,
   isLoggedIn: PropTypes.bool.isRequired,
+  memberLabel: PropTypes.string,
   tribe: PropTypes.object.isRequired,
   onToggle: PropTypes.func,
 };
@@ -135,6 +155,10 @@ export default function JoinButton({ tribe, user, onUpdated, ...rest }) {
 }
 
 JoinButton.propTypes = {
+  activeClassName: PropTypes.string,
+  className: PropTypes.string,
+  icon: PropTypes.bool,
+  memberLabel: PropTypes.string,
   tribe: PropTypes.object.isRequired,
   user: PropTypes.object,
   onUpdated: PropTypes.func.isRequired,

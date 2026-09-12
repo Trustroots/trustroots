@@ -1,68 +1,44 @@
 import '@/modules/tribes/client/tribes.client.module';
 import AppConfig from '@/modules/core/client/app/config';
 
-describe('Tribes Route Tests', function () {
+describe('Circle route handover', function () {
   beforeEach(angular.mock.module(AppConfig.appModuleName));
-
   beforeEach(
     angular.mock.module(function ($urlRouterProvider) {
       $urlRouterProvider.deferIntercept();
     }),
   );
 
-  describe('Route Config', function () {
-    let mainstate;
+  it('keeps the legacy state names for links from Angular pages', inject(function (
+    $state,
+  ) {
+    expect($state.get('circles').abstract).toBe(true);
+    expect($state.get('circles').url).toBe('/circles');
+    expect($state.get('circles.list').url).toBe('');
+    expect($state.get('circles.circle').url).toBe('/:circle');
+  }));
 
-    it('configures root circles route', inject(function ($state) {
-      mainstate = $state.get('circles');
+  it('opens the React catalogue from the list state', inject(function (
+    $state,
+    $injector,
+  ) {
+    const assign = jest.fn();
+    $injector.invoke($state.get('circles.list').onEnter, null, {
+      $window: { location: { assign } },
+      $stateParams: {},
+    });
+    expect(assign).toHaveBeenCalledWith('/circles');
+  }));
 
-      expect(mainstate.url).toEqual('/circles');
-      expect(mainstate.abstract).toBe(true);
-      expect(mainstate.template).toBe('<ui-view/>');
-    }));
-
-    it('configures circles list route', inject(function ($state) {
-      mainstate = $state.get('circles.list');
-
-      expect(mainstate.url).toEqual('');
-      expect(mainstate.abstract).toBeUndefined();
-      expect(mainstate.template).toContain('tribes-page');
-      expect(mainstate.templateUrl).toBeUndefined();
-      expect(mainstate.controller).toBe('TribesListController');
-      expect(mainstate.controllerAs).toBe('tribesList');
-    }));
-
-    it('loads circle data by slug from TribeService', inject(function (
-      $state,
-      $injector,
-    ) {
-      const state = $state.get('circles.circle');
-      const TribeService = {
-        get: jest.fn().mockReturnValue('circle-response'),
-      };
-
-      expect(
-        $injector.invoke(state.resolve.tribe, null, {
-          TribeService,
-          $stateParams: {
-            circle: 'travel',
-          },
-        }),
-      ).toBe('circle-response');
-      expect(TribeService.get).toHaveBeenCalledWith({
-        tribeSlug: 'travel',
-      });
-      expect(state.requiresAuth).toBe(false);
-    }));
-
-    it('requires authentication only for the Naturists circle', inject(function (
-      $state,
-    ) {
-      const state = $state.get('circles.circle');
-
-      expect(state.requiresAuth).toBe(false);
-      expect(state.requiresAuthFor({ circle: 'naturists' })).toBe(true);
-      expect(state.requiresAuthFor({ circle: 'hitchhikers' })).toBe(false);
-    }));
-  });
+  it('encodes the circle slug when handing over a detail route', inject(function (
+    $state,
+    $injector,
+  ) {
+    const assign = jest.fn();
+    $injector.invoke($state.get('circles.circle').onEnter, null, {
+      $window: { location: { assign } },
+      $stateParams: { circle: 'sample/circle' },
+    });
+    expect(assign).toHaveBeenCalledWith('/circles/sample%2Fcircle');
+  }));
 });

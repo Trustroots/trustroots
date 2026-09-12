@@ -119,7 +119,7 @@ NODE
 
 needs_firefox_browser() {
   case " $* " in
-    *" --project=messages-firefox-layout "* | *" --project messages-firefox-layout "*)
+    *" --project=photo-upload-firefox "* | *" --project photo-upload-firefox "* | *" --project=messages-firefox-layout "* | *" --project messages-firefox-layout "*)
       return 0
       ;;
     *" --project"*)
@@ -319,18 +319,18 @@ fi
 
 if ! ensure_playwright_browsers "$@"; then
   if has_codex_network_denial "$PLAYWRIGHT_ERROR"; then
-    echo "Network access is required to download the required Playwright browser. Grant network permission, then rerun." >&2
+    echo "Network access is required to download the required Playwright browsers. Grant network permission, then rerun." >&2
     exit_with_status \
       "blocked" \
       1 \
-      "End-to-end tests blocked by network permission while installing the required Playwright browser."
+      "End-to-end tests blocked by network permission while installing the required Playwright browsers."
   fi
 
   echo "$PLAYWRIGHT_ERROR" >&2
   exit_with_status \
     "blocked" \
     1 \
-    "End-to-end tests blocked because the required Playwright browser could not be installed."
+    "End-to-end tests blocked because the required Playwright browsers could not be installed."
 fi
 
 rm -rf coverage/e2e/js-raw coverage/e2e/captured-bundles

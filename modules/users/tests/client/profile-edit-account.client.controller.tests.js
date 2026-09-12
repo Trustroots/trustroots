@@ -54,6 +54,14 @@ describe('ProfileEditAccountController', function () {
       it('returns user-facing validation errors for invalid usernames', function () {
         expect(
           ProfileEditAccountController.getUsernameValidationError({
+            $dirty: true,
+            $valid: false,
+            $error: { username: true },
+            $usernameValidationMessage: 'Username is not available.',
+          }),
+        ).toEqual('Username is not available.');
+        expect(
+          ProfileEditAccountController.getUsernameValidationError({
             $dirty: false,
             $valid: false,
           }),

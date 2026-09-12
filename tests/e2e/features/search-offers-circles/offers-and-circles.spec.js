@@ -421,7 +421,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
 
       await expect(
         memberPage.getByRole('button', {
-          name: /Leave circle \(Hitchhikers\)/,
+          name: 'Leave circle',
         }),
       ).toContainText("You're a member");
 

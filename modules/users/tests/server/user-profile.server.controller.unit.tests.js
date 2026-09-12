@@ -306,6 +306,37 @@ describe('Profile controller unit tests', () => {
       login.called.should.equal(false);
     });
 
+    it('keeps derived and server-managed fields when applying profile edits', async () => {
+      userDoc.lastIpAddress = '192.0.2.10';
+      userDoc.providerData = { id: 'sample-provider' };
+      await userDoc.save();
+      const previousName = userDoc.displayName;
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: {
+              tagline: 'A normal edit',
+              displayName: 'Unrelated name',
+              lastIpAddress: '198.51.100.20',
+              providerData: { id: 'replacement' },
+              roles: ['admin'],
+              public: false,
+              _doc: { roles: ['admin'] },
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      const saved = await User.findById(userDoc._id);
+      saved.tagline.should.equal('A normal edit');
+      saved.displayName.should.equal(previousName);
+      saved.lastIpAddress.should.equal('192.0.2.10');
+      saved.providerData.should.deepEqual({ id: 'sample-provider' });
+      saved.roles.should.not.containEql('admin');
+    });
+
     it('returns 400 when saving profile updates fails', async () => {
       sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
 

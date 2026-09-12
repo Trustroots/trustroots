@@ -251,7 +251,7 @@ test.describe('confirmed member flows', () => {
 
     const joinButton = page.locator('button.tribe-join');
     await expect(joinButton).toBeVisible();
-    await expect(joinButton).toHaveAttribute('aria-label', /join this circle/i);
+    await expect(joinButton).toHaveAttribute('aria-label', 'Join (Hikers)');
 
     const joinResponse = page.waitForResponse(
       response =>
@@ -272,10 +272,12 @@ test.describe('confirmed member flows', () => {
     );
     await joinButton.click();
     await page
+      .getByRole('dialog')
       .getByRole('button', { name: 'Leave circle', exact: true })
       .click();
     await leaveResponse;
-    await expect(joinButton).toContainText(/join this circle/i);
+    await expect(joinButton).toHaveText('Join');
+    await expect(joinButton).toHaveAttribute('aria-label', 'Join (Hikers)');
   });
 
   test('shadowbanned member profiles are hidden from other members', async ({

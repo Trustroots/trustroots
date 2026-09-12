@@ -78,10 +78,15 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
-export default function Home({ user, photoCredits, build }) {
+export default function Home({
+  user,
+  photoCredits,
+  build,
+  routeParams = getRouteParams(),
+}) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
-  const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
+  const { circle: circleRouteParam, tribe: tribeRouteParam } = routeParams;
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
@@ -513,6 +518,7 @@ export default function Home({ user, photoCredits, build }) {
 }
 
 Home.propTypes = {
+  routeParams: PropTypes.object,
   user: userType,
   isNativeMobileApp: PropTypes.bool,
   photoCredits: PropTypes.object,

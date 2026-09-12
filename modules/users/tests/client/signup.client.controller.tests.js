@@ -178,6 +178,14 @@ describe('SignupController', function () {
       expect(
         controller.getUsernameValidationError({
           $dirty: true,
+          $valid: false,
+          $error: { username: true },
+          $usernameValidationMessage: 'Username is not available.',
+        }),
+      ).toEqual('Username is not available.');
+      expect(
+        controller.getUsernameValidationError({
+          $dirty: true,
           $error: { required: true },
           $valid: false,
         }),

@@ -62,8 +62,14 @@ function SearchRoutes($stateProvider) {
       },
     })
     .state('search-users', {
-      url: '/search/members',
-      template: '<search-users />',
+      url: '/search/members?search',
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        const query = $stateParams.search
+          ? `?search=${encodeURIComponent($stateParams.search)}`
+          : '';
+        $window.location.assign(`/search/members${query}`);
+      },
       requiresAuth: true,
       footerHidden: true,
       data: {

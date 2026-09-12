@@ -1316,6 +1316,9 @@ const features = [
     requiredScenarios: [
       'Photo edit page is reachable.',
       'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
       'Invalid upload shows an error.',
       'Avatar endpoint returns uploaded or fallback image.',
     ],
@@ -2649,17 +2652,34 @@ const features = [
           requiresRole: 'admin',
         }),
       ],
-      apiRoutes: [apiRoute('POST', '/api/admin/messages', source.adminServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/messages', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-recipients',
+          source.adminServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-warning',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Admin messages page loads.',
       'Admin can query messages between two users.',
+      'Admin can preview recipients contacted by a reported member.',
       'Shadow-hidden messages are visible to admin.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
         'admin messages tool shows shadow-hidden messages between members',
+      ),
+      spec(
+        'admin-inspection.spec.js',
+        'admin can preview recipients contacted by a reported member',
       ),
     ],
   },

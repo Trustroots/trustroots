@@ -1,6 +1,9 @@
 const path = require('path');
 
 const AREA_BY_SPEC = {
+  'react-home-safety.spec.js': 'Public pages',
+  'circles-react.spec.js': 'Member flows',
+  'member-entry-react.spec.js': 'Member flows',
   'auth-smoke.spec.js': 'Authentication',
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',
@@ -69,7 +72,9 @@ function computeAreaCoverage(byArea = {}) {
         ? Number(((exercisedAreas.length / defined) * 100).toFixed(2))
         : 0,
     areaPassCoverage:
-      defined > 0 ? Number(((greenAreas.length / defined) * 100).toFixed(2)) : 0,
+      defined > 0
+        ? Number(((greenAreas.length / defined) * 100).toFixed(2))
+        : 0,
   };
 }
 
