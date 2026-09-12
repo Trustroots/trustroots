@@ -426,6 +426,7 @@ test.describe('authenticated member flows', () => {
       'Valid upload succeeds through deterministic file processing.',
       'Photo upload controls show keyboard focus.',
       'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
     ]);
 
     const validAvatarPath = path.join(
@@ -475,6 +476,23 @@ test.describe('authenticated member flows', () => {
       await expect(
         page.locator('#mc-messages-wrapper .alert-success'),
       ).toContainText('Profile photo updated.');
+
+      // Some browsers cannot infer a MIME type from the local file. Exercise
+      // that browser File through the same input, multipart upload and server.
+      const untypedUploadResponse = page.waitForResponse(response =>
+        response.url().includes('/api/users-avatar'),
+      );
+      await fileInput.evaluate(input => {
+        const { File, DataTransfer } = input.ownerDocument.defaultView;
+        const file = new File([input.files[0]], 'browser-photo.png', {
+          type: '',
+        });
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      expect((await untypedUploadResponse).status()).toBe(200);
     } finally {
       await context.close();
     }

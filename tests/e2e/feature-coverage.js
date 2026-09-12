@@ -1318,6 +1318,7 @@ const features = [
       'Valid upload succeeds through deterministic file processing.',
       'Photo upload controls show keyboard focus.',
       'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
       'Invalid upload shows an error.',
       'Avatar endpoint returns uploaded or fallback image.',
     ],
