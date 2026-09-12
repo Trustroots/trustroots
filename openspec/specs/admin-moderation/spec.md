@@ -346,18 +346,18 @@ acquisition stories. Matches SHALL NOT automatically change account state.
 - **AND** a story row has no qualifying restricted-account match
 - **THEN** the row is shown without a restricted-account lead
 
-### Requirement: Read-only member role inventory
+### Requirement: Member role inventory
 
-The system SHALL show authorised administrators a read-only inventory of a
-member's current roles and concise explanations of those roles as a foundation
-for future role management.
+The system SHALL show authorised administrators an inventory of a member's
+current roles and concise explanations of those roles alongside the Welcome
+team membership controls.
 
 #### Scenario: Administrator reviews member roles
 
 - **WHEN** an authorised administrator opens a member report
 - **THEN** the report lists the member's current roles
 - **AND** explains each recognised role
-- **AND** does not provide new role-removal controls
+- **AND** role-removal controls are limited to Welcome team membership
 
 ### Requirement: Welcome team acquisition access
 
