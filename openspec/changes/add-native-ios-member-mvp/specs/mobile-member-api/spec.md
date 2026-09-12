@@ -102,6 +102,15 @@ authorised request at most once after a successful refresh.
 - **THEN** the client rotates the token pair and retries that `/api/mobile/v0`
   request once
 
+#### Scenario: Access token expires while composing or editing
+
+- **WHEN** a message, profile, account, password, membership, experience,
+  support or read-acknowledgement request receives HTTP 401
+- **AND** the stored refresh token remains valid
+- **THEN** the client rotates the tokens and retries the original method and
+  body once
+- **AND** it does not replay requests rejected by a domain policy with HTTP 403
+
 #### Scenario: Several requests observe one expired access token
 
 - **WHEN** concurrent `/api/mobile/v0` requests receive
@@ -215,6 +224,14 @@ blocking, confirmation, and moderation rules for every mobile response.
   blocking, or moderation rules
 - **THEN** the system does not expose the protected data
 
+#### Scenario: Unconfirmed member presents a valid bearer token
+
+- **WHEN** an unpublished member requests offers, contacts, experiences,
+  messages or another member's profile
+- **THEN** the same publication and role policies as the website deny access
+- **AND** the member can still access their own profile and account resources
+  needed to complete confirmation
+
 #### Scenario: Native MVP reaches full bearer coverage
 
 - **WHEN** the bearer migration is complete
@@ -234,3 +251,21 @@ and SHALL provide pagination metadata where a result can span multiple pages.
   response may contain
 - **THEN** the system returns an initial page and metadata that lets the app
   request the remaining authorised messages
+
+#### Scenario: Native inbox searches conversation content
+
+- **WHEN** the client fetches `GET /api/mobile/v0/messages/:memberId` with
+  `markRead=false` to search its content
+- **THEN** the server returns the authorised messages without changing thread
+  or message read state
+- **AND** ordinary conversation requests retain the existing thread-read
+  behaviour
+
+#### Scenario: Native member reads received messages
+
+- **WHEN** the native conversation displays incoming messages
+- **THEN** it acknowledges their IDs through bearer-authenticated
+  `POST /api/mobile/v0/messages-read` with a `messageIds` array
+- **AND** the server accepts between 1 and 100 valid message IDs and only marks
+  messages addressed to that member as read
+- **AND** acknowledged messages no longer qualify for unread-message reminders

@@ -592,7 +592,13 @@ exports.thread = function (req, res) {
 /**
  * Thread middleware
  */
-exports.threadByUser = function (req, res, next, userId) {
+exports.threadByUser = function (
+  req,
+  res,
+  next,
+  userId,
+  markThreadRead = true,
+) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
@@ -695,6 +701,11 @@ exports.threadByUser = function (req, res, next, userId) {
         }
 
         req.messages = messages;
+
+        // Mobile inbox search loads content without opening the conversation.
+        if (!markThreadRead) {
+          return done();
+        }
 
         // If latest message in the thread was to current user, mark thread read
         if (

@@ -8,6 +8,13 @@ const experiences = require('../../../experiences/server/controllers/experiences
 const messages = require('../../../messages/server/controllers/messages.server.controller');
 const support = require('../../../support/server/controllers/support.server.controller');
 const userPassword = require('../../../users/server/controllers/users.password.server.controller');
+const resourcePolicy = require('../middleware/mobile-resource-policy.server.middleware');
+const offersPolicy = require('../../../offers/server/policies/offers.server.policy');
+const tribesPolicy = require('../../../tribes/server/policies/tribes.server.policy');
+const usersPolicy = require('../../../users/server/policies/users.server.policy');
+const contactsPolicy = require('../../../contacts/server/policies/contacts.server.policy');
+const experiencesPolicy = require('../../../experiences/server/policies/experiences.server.policy');
+const messagesPolicy = require('../../../messages/server/policies/messages.server.policy');
 
 module.exports = function (app) {
   app.route('/api/mobile/v0/status').get(mobileAuthentication.status);
@@ -27,7 +34,9 @@ module.exports = function (app) {
     .route('/api/mobile/v0/profiles/:profileUsername')
     .get(
       mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
       mobileAuthentication.loadProfile,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users/:username'),
       mobileAuthentication.profile,
     );
 
@@ -39,11 +48,13 @@ module.exports = function (app) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(offersPolicy.isAllowed, '/api/offers'),
       offers.list,
     );
   app.route('/api/mobile/v0/offers/:mobileOfferId').get(
     mobileAuthentication.authenticate,
     mobileAuthentication.prepareResource,
+    resourcePolicy(offersPolicy.isAllowed, '/api/offers/:offerId'),
     function (req, res, next) {
       return offers.offerById(req, res, next, req.params.mobileOfferId);
     },
@@ -54,6 +65,7 @@ module.exports = function (app) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(tribesPolicy.isAllowed, '/api/tribes'),
       tribes.listTribes,
     );
   app
@@ -61,6 +73,7 @@ module.exports = function (app) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users/memberships'),
       userProfile.getUserMemberships,
     );
   app
@@ -68,17 +81,20 @@ module.exports = function (app) {
     .post(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users/memberships/:tribeId'),
       userProfile.joinTribe,
     )
     .delete(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users/memberships/:tribeId'),
       userProfile.leaveTribe,
     );
 
   app.route('/api/mobile/v0/contacts/:memberId').get(
     mobileAuthentication.authenticate,
     mobileAuthentication.prepareResource,
+    resourcePolicy(contactsPolicy.isAllowed, '/api/contacts/:listUserId'),
     function (req, res, next) {
       return contacts.contactListByUser(req, res, next, req.params.memberId);
     },
@@ -89,11 +105,13 @@ module.exports = function (app) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(experiencesPolicy.isAllowed, '/api/experiences'),
       experiences.readMany,
     )
     .post(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(experiencesPolicy.isAllowed, '/api/experiences'),
       experiences.create,
     );
   app
@@ -101,6 +119,7 @@ module.exports = function (app) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(experiencesPolicy.isAllowed, '/api/my-experience'),
       function (req, res, next) {
         req.query.userWith = req.params.memberId;
         return experiences.readMine(req, res, next);
@@ -112,26 +131,45 @@ module.exports = function (app) {
     .get(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(messagesPolicy.isAllowed, '/api/messages'),
       messages.inbox,
     )
     .post(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(messagesPolicy.isAllowed, '/api/messages'),
       messages.send,
     );
   app.route('/api/mobile/v0/messages/:memberId').get(
     mobileAuthentication.authenticate,
     mobileAuthentication.prepareResource,
+    resourcePolicy(messagesPolicy.isAllowed, '/api/messages/:messageUserId'),
     function (req, res, next) {
-      return messages.threadByUser(req, res, next, req.params.memberId);
+      return messages.threadByUser(
+        req,
+        res,
+        next,
+        req.params.memberId,
+        req.query.markRead !== 'false',
+      );
     },
     messages.thread,
   );
+  app
+    .route('/api/mobile/v0/messages-read')
+    .post(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+      resourcePolicy(messagesPolicy.isAllowed, '/api/messages-read'),
+      mobileAuthentication.validateMessageIds,
+      messages.markRead,
+    );
   app
     .route('/api/mobile/v0/account')
     .put(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users'),
       userProfile.update,
     );
   app
@@ -139,6 +177,7 @@ module.exports = function (app) {
     .put(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users'),
       userProfile.update,
     );
   app
@@ -146,6 +185,7 @@ module.exports = function (app) {
     .post(
       mobileAuthentication.authenticate,
       mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users/password'),
       userPassword.changePassword,
     );
   app

@@ -9,6 +9,8 @@ const MobileSession = mongoose.model('MobileSession');
 const MobileAuthenticationAttempt = mongoose.model(
   'MobileAuthenticationAttempt',
 );
+const Message = mongoose.model('Message');
+const Thread = mongoose.model('Thread');
 
 let app;
 let member;
@@ -234,6 +236,7 @@ describe('Mobile authentication API', function () {
     }
 
     const protectedWrites = [
+      { method: 'post', path: '/api/mobile/v0/messages-read' },
       { method: 'post', path: '/api/mobile/v0/experiences' },
       { method: 'post', path: '/api/mobile/v0/messages' },
       { method: 'put', path: '/api/mobile/v0/account' },
@@ -295,6 +298,156 @@ describe('Mobile authentication API', function () {
 
     response.body.tagline.should.equal('Updated from the native app.');
     should.not.exist(response.headers['set-cookie']);
+  });
+
+  it('applies publication policies without blocking account confirmation resources', async function () {
+    member.public = false;
+    await member.save();
+    const otherMember = await new User({
+      username: 'published_traveller',
+      firstName: 'Published',
+      lastName: 'Traveller',
+      email: 'published@example.org',
+      password: 'strong-password',
+      provider: 'local',
+      public: true,
+      displayName: 'Published Traveller',
+      roles: ['user'],
+    }).save();
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const authenticated = {
+      Authorization: `Bearer ${signin.body.accessToken}`,
+    };
+    const denied = [
+      ['get', '/api/mobile/v0/offers'],
+      ['get', `/api/mobile/v0/offers/${member.id}`],
+      ['get', `/api/mobile/v0/contacts/${member.id}`],
+      ['get', '/api/mobile/v0/experiences'],
+      ['post', '/api/mobile/v0/experiences'],
+      ['get', `/api/mobile/v0/experiences/with/${member.id}`],
+      ['get', '/api/mobile/v0/messages'],
+      ['post', '/api/mobile/v0/messages'],
+      ['get', `/api/mobile/v0/messages/${member.id}`],
+      ['post', '/api/mobile/v0/messages-read'],
+      ['get', `/api/mobile/v0/profiles/${otherMember.username}`],
+    ];
+    for (const [method, path] of denied) {
+      await request(app)[method](path).set(authenticated).expect(403);
+    }
+    for (const path of [
+      '/api/mobile/v0/me',
+      '/api/mobile/v0/circles',
+      '/api/mobile/v0/memberships',
+      `/api/mobile/v0/profiles/${member.username}`,
+    ]) {
+      await request(app).get(path).set(authenticated).expect(200);
+    }
+    await request(app)
+      .put('/api/mobile/v0/profile')
+      .set(authenticated)
+      .send({ tagline: 'Completing my profile.' })
+      .expect(200);
+  });
+
+  it('enforces role permissions as well as bearer authentication', async function () {
+    member.roles = [];
+    await member.save();
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    await request(app)
+      .get('/api/mobile/v0/messages')
+      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .expect(403);
+  });
+
+  it('keeps search unread and acknowledges only messages addressed to the reader', async function () {
+    const otherMember = await new User({
+      username: 'message_traveller',
+      firstName: 'Message',
+      lastName: 'Traveller',
+      email: 'message.traveller@example.org',
+      password: 'strong-password',
+      provider: 'local',
+      public: true,
+      displayName: 'Message Traveller',
+      roles: ['user'],
+    }).save();
+    const incoming = await new Message({
+      userFrom: otherMember.id,
+      userTo: member.id,
+      content: 'An incoming example.',
+    }).save();
+    const outgoing = await new Message({
+      userFrom: member.id,
+      userTo: otherMember.id,
+      content: 'An outgoing example.',
+    }).save();
+    const thread = await new Thread({
+      userFrom: otherMember.id,
+      userTo: member.id,
+      message: incoming.id,
+    }).save();
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const authenticated = {
+      Authorization: `Bearer ${signin.body.accessToken}`,
+    };
+
+    const search = await request(app)
+      .get(`/api/mobile/v0/messages/${otherMember.id}?markRead=false`)
+      .set(authenticated)
+      .expect(200);
+    search.body.should.have.length(2);
+    (await Thread.findById(thread.id)).read.should.equal(false);
+    (await Message.findById(incoming.id)).read.should.equal(false);
+
+    // Make the incoming message the latest before opening the conversation.
+    await Message.updateOne(
+      { _id: incoming.id },
+      { created: new Date(Date.now() + 1000) },
+    );
+    await request(app)
+      .get(`/api/mobile/v0/messages/${otherMember.id}`)
+      .set(authenticated)
+      .expect(200);
+    (await Thread.findById(thread.id)).read.should.equal(true);
+    const acknowledged = await request(app)
+      .post('/api/mobile/v0/messages-read')
+      .set(authenticated)
+      .send({ messageIds: [incoming.id, outgoing.id] })
+      .expect(200);
+    should.not.exist(acknowledged.headers['set-cookie']);
+    acknowledged.headers['cache-control'].should.equal('no-store');
+    (await Message.findById(incoming.id)).read.should.equal(true);
+    (await Message.findById(outgoing.id)).read.should.equal(false);
+  });
+
+  it('rejects malformed or unbounded message acknowledgements', async function () {
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    for (const messageIds of [
+      undefined,
+      'not-an-array',
+      [],
+      [123],
+      ['not-an-id'],
+      Array(101).fill(member.id),
+    ]) {
+      await request(app)
+        .post('/api/mobile/v0/messages-read')
+        .set('Authorization', `Bearer ${signin.body.accessToken}`)
+        .send({ messageIds })
+        .expect(400);
+    }
   });
 
   it("does not return another member's account details in a bearer profile", async function () {

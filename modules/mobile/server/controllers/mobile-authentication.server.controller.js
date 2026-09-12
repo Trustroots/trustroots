@@ -75,6 +75,23 @@ exports.prepareResource = function (req, res, next) {
   return next();
 };
 
+exports.validateMessageIds = function (req, res, next) {
+  const messageIds = req.body.messageIds;
+  if (
+    !Array.isArray(messageIds) ||
+    messageIds.length === 0 ||
+    messageIds.length > 100 ||
+    !messageIds.every(
+      id => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id),
+    )
+  ) {
+    return res
+      .status(400)
+      .json({ message: 'Provide between 1 and 100 valid message IDs.' });
+  }
+  return next();
+};
+
 exports.signin = function (req, res, next) {
   const username = String(req.body.username || '')
     .trim()
