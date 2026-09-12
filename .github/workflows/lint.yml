@@ -22,10 +22,10 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 16
+          node-version-file: '.nvmrc'
           cache: npm
-      - name: Pin npm to v7
-        run: npm i -g npm@7
+      - name: Pin npm to v11
+        run: npm i -g npm@11.19.0
       - name: Reconfigure git to use HTTP authentication
         run: >
           git config --global url."https://github.com/".insteadOf

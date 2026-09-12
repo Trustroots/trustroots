@@ -9,8 +9,8 @@
     "url": "https://github.com/Trustroots/trustroots"
   },
   "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0 <8.0.0",
+    "node": ">=24.0.0 <25.0.0",
+    "npm": ">=11.0.0 <12.0.0",
     "mongodb": ">=3.6 <=4.4"
   },
   "browserslist": [
