@@ -37,7 +37,7 @@ describe('Admin acquisition stories controller unit tests', () => {
         () =>
           'A fictional traveller recommended this community while discussing a journey.',
       );
-      const stories = Array.from({ length: 3000 }, (_, index) => ({
+      const stories = Array.from({ length: 500 }, (_, index) => ({
         _id: `visitor-${index}`,
         username: `visitor${index}`,
         email: `visitor${index}@example.test`,
@@ -55,8 +55,9 @@ describe('Admin acquisition stories controller unit tests', () => {
         },
       }));
       const find = sinon.stub(User, 'find');
+      const storyLimit = sinon.stub().returns({ exec: async () => stories });
       find.onFirstCall().returns({
-        sort: () => ({ limit: () => ({ exec: async () => stories }) }),
+        sort: () => ({ limit: storyLimit }),
       });
       find.onSecondCall().returns({
         select: () => ({
@@ -81,9 +82,10 @@ describe('Admin acquisition stories controller unit tests', () => {
       } finally {
         clearImmediate(pending);
       }
-      ioTurns.should.be.aboveOrEqual(30000);
+      sinon.assert.calledOnceWithExactly(storyLimit, 500);
+      ioTurns.should.be.aboveOrEqual(5000);
       readStory.callCount.should.equal(1000);
-      res.body.should.have.length(3000);
+      res.body.should.have.length(500);
       res.body
         .every(story => story.restrictedMatches.length === 0)
         .should.be.true();
@@ -316,9 +318,11 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('returns frequency analysis with expected shape', async () => {
+      const find = sinon.spy(User, 'find');
       const res = mockResponse();
       await adminAcquisitionStories.getAnalysis({}, res);
 
+      find.firstCall.returnValue.options.limit.should.equal(3000);
       should.exist(res.body);
       should(res.body).have.property('table');
       should(res.body).have.property('size');

@@ -297,7 +297,7 @@ function analyseStories(stories) {
  *
  * @return {[Promise]} List of stories
  */
-function getStories() {
+function getStories(limit) {
   return User.find(
     {
       acquisitionStory: { $exists: true, $ne: '' },
@@ -305,7 +305,7 @@ function getStories() {
     '_id acquisitionStory created displayName email emailTemporary locationFrom locationLiving member username',
   )
     .sort('-created')
-    .limit(3000)
+    .limit(limit)
     .exec();
 }
 
@@ -425,7 +425,7 @@ async function getRestrictedMatches(story, restrictedUsers) {
   const matches = [];
   for (let index = 0; index < restrictedUsers.length; index += 1) {
     // Yield to I/O even when none of the candidates match. A result limit alone
-    // does not bound the synchronous work for a list of 3,000 stories.
+    // does not bound the synchronous work for a list of 500 stories.
     if (index % MATCH_BATCH_SIZE === 0) {
       await new Promise(resolve => setImmediate(resolve));
     }
@@ -477,7 +477,7 @@ function storyForList(story, hostingLocation, restrictedMatches) {
 }
 
 exports.list = async (req, res) => {
-  const stories = await getStories();
+  const stories = await getStories(500);
   if (!stories || stories.length === 0) {
     return res.send([]);
   }
@@ -524,7 +524,7 @@ exports.list = async (req, res) => {
 };
 
 exports.getAnalysis = async (req, res) => {
-  const stories = await getStories();
+  const stories = await getStories(3000);
   const analysis = analyseStories(stories);
   res.send(analysis);
 };
