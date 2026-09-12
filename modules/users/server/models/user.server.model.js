@@ -145,7 +145,10 @@ const UserSchema = new Schema({
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+@.+\..+/, 'Please enter a valid email address.'],
+    validate: [
+      email => !email || validator.isEmail(email),
+      'Please enter a valid email address.',
+    ],
   },
   tagline: {
     type: String,

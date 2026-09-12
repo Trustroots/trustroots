@@ -273,6 +273,48 @@ describe('Core CRUD tests', function () {
         .end(done);
     });
 
+    it('requires sign-in for all React member entry pages', async function () {
+      for (const page of [
+        '/welcome',
+        '/navigation',
+        '/search/members?search=sample',
+      ]) {
+        await agent
+          .get(page)
+          .expect(302)
+          .expect(
+            'Location',
+            `/signin?continue=true&returnTo=${encodeURIComponent(page)}`,
+          );
+      }
+    });
+
+    it('renders React assets for a signed-in member on entry pages', async function () {
+      const credentials = {
+        username: 'sample-entry-member',
+        password: 'Password123!',
+      };
+      await createUser({
+        ...credentials,
+        email: 'sample-entry-member@example.test',
+      });
+      await utils.signIn(credentials, agent);
+      try {
+        for (const page of [
+          '/welcome',
+          '/navigation',
+          '/search/members?search=sample',
+        ]) {
+          const response = await agent.get(page).expect(200);
+          response.text.should.containEql('id="tr-react-root"');
+          response.text.should.containEql('assets/react-main.js');
+          response.text.should.not.containEql('data-ui-view');
+        }
+      } finally {
+        await utils.signOut(agent);
+      }
+    });
+
     it('redirects non-admin users away from admin React-owned pages', function (done) {
       const memberCredentials = {
         password: 'Password123!',

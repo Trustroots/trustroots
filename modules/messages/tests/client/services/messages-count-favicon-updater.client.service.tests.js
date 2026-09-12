@@ -1,7 +1,7 @@
 import { ready } from '@/modules/core/client/utils/dom';
 import { watch } from '@/modules/messages/client/services/unread-message-count.client.service';
 import { enable } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 jest.mock('@/modules/core/client/utils/dom', () => ({
   ready: jest.fn(),

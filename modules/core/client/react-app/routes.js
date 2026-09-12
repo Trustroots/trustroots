@@ -25,7 +25,7 @@ import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
-import Home from '@/modules/pages/client/components/Home.component';
+import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import Contribute from '@/modules/pages/client/components/Contribute.component';
 import FaqBugsAndFeatures from '@/modules/pages/client/components/FaqBugsAndFeatures.component';
@@ -98,24 +98,6 @@ function renderOfferPage(Component) {
   };
 }
 
-function HomeRoute({ user }) {
-  const { isNativeMobileApp } = useAppConfig();
-  const { build } = useSettings();
-
-  return (
-    <Home
-      build={build}
-      isNativeMobileApp={isNativeMobileApp}
-      photoCredits={{}}
-      user={user}
-    />
-  );
-}
-
-HomeRoute.propTypes = {
-  user: PropTypes.object,
-};
-
 function NavigationRoute({ user }) {
   const { isNativeMobileApp } = useAppConfig();
 
@@ -138,7 +120,7 @@ function TribesPageRoute({ user }) {
   const handleMembershipUpdated = data => {
     /* istanbul ignore else -- malformed membership callbacks cannot update auth state. */
     if (data?.user) {
-      setUser(data.user);
+      setUser({ ...user, ...data.user, roles: user.roles });
     }
   };
 
@@ -151,18 +133,19 @@ TribesPageRoute.propTypes = {
   user: PropTypes.object,
 };
 
-function TribeDetailPageRoute({ user }) {
+function TribeDetailPageRoute({ user, circle }) {
   const { setUser } = useAuth();
 
   const handleMembershipUpdated = data => {
     /* istanbul ignore else -- malformed membership callbacks cannot update auth state. */
     if (data?.user) {
-      setUser(data.user);
+      setUser({ ...user, ...data.user, roles: user.roles });
     }
   };
 
   return (
     <TribeDetailPage
+      circle={circle}
       onMembershipUpdated={handleMembershipUpdated}
       user={user}
     />
@@ -170,6 +153,7 @@ function TribeDetailPageRoute({ user }) {
 }
 
 TribeDetailPageRoute.propTypes = {
+  circle: PropTypes.string,
   user: PropTypes.object,
 };
 
@@ -183,6 +167,13 @@ function ThreadRoute({ user }) {
 ThreadRoute.propTypes = {
   user: PropTypes.object,
 };
+
+function renderCircleDetail({ user, params }) {
+  return React.createElement(TribeDetailPageRoute, {
+    user,
+    circle: params.circle,
+  });
+}
 
 const renderByPath = {
   '/': renderWithUser(HomeRoute),
@@ -200,7 +191,7 @@ const renderByPath = {
   '/admin/threads': () => <AdminThreads />,
   '/admin/user': () => <AdminUser />,
   '/circles': renderWithUser(TribesPageRoute),
-  '/circles/:circle': renderWithUser(TribeDetailPageRoute),
+  '/circles/:circle': renderCircleDetail,
   '/contact': renderWithUser(SupportPage),
   '/contribute': () => <Contribute />,
   '/faq': () => <FaqGeneral />,

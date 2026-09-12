@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import SearchCirclesToggle from '@/modules/search/client/components/SearchCirclesToggle.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';

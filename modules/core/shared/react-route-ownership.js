@@ -401,6 +401,24 @@ function normalizePath(path) {
 
 function matchReactRoute(path) {
   const normalizedPath = normalizePath(path);
+  const circleMatch = /^\/circles\/([^/]+)$/.exec(normalizedPath);
+  if (normalizedPath.startsWith('/circles/') && !circleMatch) {
+    return null;
+  }
+  if (circleMatch) {
+    let circle;
+    try {
+      circle = decodeURIComponent(circleMatch[1]);
+    } catch {
+      circle = '';
+    }
+    if (!/^[a-z0-9-]+$/.test(circle)) {
+      return {
+        params: {},
+        policy: REACT_ROUTE_POLICIES.find(route => route.path === '/not-found'),
+      };
+    }
+  }
   const matches = policyRouter.matchRoutes(normalizedPath);
   const match = matches?.[matches.length - 1];
   const policy = match && policyByRouteId.get(match.routeId);

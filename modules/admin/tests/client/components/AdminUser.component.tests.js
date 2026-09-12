@@ -6,7 +6,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';

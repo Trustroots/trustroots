@@ -147,6 +147,37 @@ messages between identified members, and reference threads for moderation.
 - **WHEN** an authorised administrator submits a malformed member identifier
 - **THEN** the system rejects the request with an error response
 
+### Requirement: Scammer recipient warnings
+
+The system SHALL let authorised administrators find the distinct members
+contacted by a member username and send one warning message to all of them.
+
+#### Scenario: Administrator previews scammer recipients
+
+- **WHEN** an authorised administrator supplies a member username
+- **THEN** the system displays the distinct existing members that member has
+  contacted
+
+#### Scenario: Administrator sends a scammer warning
+
+- **WHEN** an authorised administrator confirms a non-empty warning message
+- **THEN** the system sends it to every previewed recipient in a normal message
+  thread
+- **AND** the notification email is sent from Trustroots Support
+
+#### Scenario: Administrator retries a partially completed warning
+
+- **WHEN** warning delivery fails or its response is lost and the administrator retries the same warning request
+- **THEN** the request reuses its message identifiers and repairs missing or older thread state without duplicating messages
+- **AND** retries preserve read state and newer conversation messages
+- **AND** overlapping retries create only one inbox thread for each administrator and recipient pair
+- **AND** a new deliberate warning uses a new request identifier
+
+#### Scenario: Regular member requests a scammer warning
+
+- **WHEN** a regular member requests the lookup or send endpoint
+- **THEN** the system denies access
+
 ### Requirement: Readable moderation context
 
 The system SHALL present member search results, reports, message inspection,

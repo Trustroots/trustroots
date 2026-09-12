@@ -133,6 +133,19 @@ module.exports = defineConfig({
       },
     },
     {
+      name: 'photo-upload-firefox',
+      testMatch: /features\/profile-onboarding\/authenticated\.spec\.js/,
+      grep: /member can upload a valid profile photo/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['authenticated'],
+      ),
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Firefox'],
+      },
+    },
+    {
       name: 'public',
       testMatch: /features\/public-core\/.*\.spec\.js/,
       dependencies: serializedDependencies([], ['auth-smoke']),

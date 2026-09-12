@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import * as locationApi from '@/modules/search/client/api/location.api';

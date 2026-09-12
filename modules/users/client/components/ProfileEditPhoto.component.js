@@ -37,11 +37,11 @@ export default function ProfileEditPhoto({ user }) {
       return;
     }
 
-    if (
-      file.type.indexOf('jpeg') === -1 &&
-      file.type.indexOf('gif') === -1 &&
-      file.type.indexOf('png') === -1
-    ) {
+    const type = file.type.toLowerCase();
+    const supported = type
+      ? /^image\/(?:jpe?g|gif|png)$/.test(type)
+      : /\.(jpe?g|gif|png)$/i.test(file.name);
+    if (!supported) {
       setStatusMessage(t('Please give a jpg, gif, or png image.'));
       return;
     }
@@ -135,7 +135,7 @@ export default function ProfileEditPhoto({ user }) {
                 />
                 <button
                   type="button"
-                  className="btn btn-default"
+                  className="btn btn-default profile-photo-picker"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
                 >

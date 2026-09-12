@@ -87,7 +87,11 @@ export default function ReactAppShell() {
       <div id="tr-wrap">
         {!route?.headerHidden && <AppHeader onSignout={signout} user={user} />}
         <article className="content" id="tr-main" role="main" tabIndex="-1">
-          {redirect ? <NotFoundPage /> : <Outlet />}
+          {redirect || route?.path === '/not-found' ? (
+            <NotFoundPage />
+          ) : (
+            <Outlet />
+          )}
         </article>
       </div>
       {!route?.footerHidden && (

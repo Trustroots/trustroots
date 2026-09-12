@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditPage.component';
 import * as offersApi from '@/modules/offers/client/api/offers.api';

@@ -1,7 +1,7 @@
 # Non-production image for local `deploy/docker` development and CI test jobs.
 #
 # Node 24, native build deps, npm ci to seed the `node_modules` named volume.
-# App code is bind-mounted at runtime. Playwright Chromium is baked for E2E.
+# App code is bind-mounted at runtime. Playwright browsers is baked for E2E.
 
 FROM node:24.18.0-bookworm-slim
 
@@ -30,4 +30,4 @@ COPY package*.json .npmrc ./
 RUN --mount=type=cache,target=/root/.npm \
   npm ci --quiet
 
-RUN npx playwright install chromium
+RUN npx playwright install chromium firefox

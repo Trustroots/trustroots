@@ -6,7 +6,7 @@ import {
   waitForElementToBeRemoved,
   screen,
 } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
 

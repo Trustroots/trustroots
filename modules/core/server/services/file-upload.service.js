@@ -74,11 +74,20 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     dest: config.uploadTmpDir || os.tmpdir(),
     limits: {
       fileSize: config.maxUploadSize, // max file size in bytes
+      files: 1,
+      fields: 10,
+      parts: 11,
     },
     // Filter Multer uploads based on mime Type
     // Note: A proper "magic byte" check is still required after this
     fileFilter: (req, file, callback) => {
-      if (!file.mimetype || !validMimeTypes.includes(file.mimetype)) {
+      // Browsers send application/octet-stream when File.type is empty.
+      // Let the content detector below validate these files by their bytes.
+      if (
+        !file.mimetype ||
+        (!validMimeTypes.includes(file.mimetype) &&
+          file.mimetype !== 'application/octet-stream')
+      ) {
         const err = new Error(
           'Please upload a file that is in correct format.',
         );
@@ -139,9 +148,13 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     // The check is performed with "magic bytes"
     // @link https://www.npmjs.com/package/file-type
     detectMimeType(req.file.path, (err, result) => {
-      if (err || (result && !validMimeTypes.includes(result))) {
-        return res.status(415).send({
-          message: errorService.getErrorMessageByKey('unsupported-media-type'),
+      if (err || !validMimeTypes.includes(result)) {
+        return fs.unlink(req.file.path, () => {
+          res.status(415).send({
+            message: errorService.getErrorMessageByKey(
+              'unsupported-media-type',
+            ),
+          });
         });
       }
 

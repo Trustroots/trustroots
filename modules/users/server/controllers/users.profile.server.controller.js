@@ -23,6 +23,7 @@ const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const nip19 = require('nostr-tools/nip19');
+const validator = require('validator');
 const User = mongoose.model('User');
 
 // Fields to send publicly about any user profile
@@ -84,6 +85,16 @@ exports.update = function (req, res) {
   if (!req.user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(req.body, 'email') &&
+    (typeof req.body.email !== 'string' ||
+      (req.body.email !== '' && !validator.isEmail(req.body.email)))
+  ) {
+    return res.status(400).send({
+      message: 'Please enter a valid email address.',
     });
   }
 
@@ -235,39 +246,28 @@ exports.update = function (req, res) {
 
       // Update user
       function (token, email, done) {
-        // For security measurement do not use _id from the req.body object
-        delete req.body._id;
-
-        // For security measurement remove these from the req.body object
-        // Users aren't allowed to modify these directly
-        delete req.body.member;
-        delete req.body.public;
-        delete req.body.created;
-        delete req.body.seen;
-        delete req.body.passwordUpdated;
-        delete req.body.roles;
-        delete req.body.email;
-        delete req.body.emailHash;
-        delete req.body.emailToken;
-        delete req.body.emailTemporary;
-        delete req.body.provider;
-        delete req.body.usernameUpdated;
-        delete req.body.salt;
-        delete req.body.password;
-        delete req.body.resetPasswordToken;
-        delete req.body.resetPasswordExpires;
-        delete req.body.removeProfileToken;
-        delete req.body.removeProfileExpires;
-        delete req.body.additionalProvidersData;
-        delete req.body.publicReminderCount;
-        delete req.body.publicReminderSent;
-        delete req.body.welcomeSequenceStep;
-        delete req.body.welcomeSequenceSent;
-        delete req.body.acquisitionStory;
-
-        // Merge existing user
-        let user = req.user;
-        user = _.extend(user, req.body);
+        const editableFields = [
+          'firstName',
+          'lastName',
+          'tagline',
+          'description',
+          'birthdate',
+          'gender',
+          'languages',
+          'locationLiving',
+          'locationFrom',
+          'username',
+          'extSitesCouchers',
+          'extSitesBW',
+          'extSitesCS',
+          'extSitesWS',
+          'nostrNpub',
+          'avatarSource',
+          'avatarUploaded',
+          'newsletter',
+          'locale',
+        ];
+        const user = _.extend(req.user, _.pick(req.body, editableFields));
         user.updated = Date.now();
 
         // This is set only if user edited email

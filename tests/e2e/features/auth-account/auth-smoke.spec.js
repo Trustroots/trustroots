@@ -85,6 +85,96 @@ test.describe.serial('authentication smoke', () => {
     await signUp(page, signupUser);
   });
 
+  test('signup rejects reserved service names', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    const member = createUser();
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    const validationResponse = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/auth/signup/validate') &&
+        response.request().postDataJSON().username === 'nostr',
+    );
+    await page.locator('#username').fill('nostr');
+    await page.locator('#username').blur();
+    expect(await (await validationResponse).json()).toMatchObject({
+      valid: false,
+      message: 'Username is not available.',
+    });
+    await expect(
+      page.getByText('Username is not available.', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    const rejected = await request.post('/api/auth/signup', {
+      data: { ...member, username: 'nostr' },
+    });
+    expect(rejected.status()).toBe(400);
+    await page.locator('#username').fill(member.username);
+    await page.locator('#username').blur();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
+
+  test('signup explains underscores and waits for username validation', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    const member = createUser();
+    let releaseValidation;
+    const validationGate = new Promise(resolve => {
+      releaseValidation = resolve;
+    });
+    await page.route('**/api/auth/signup/validate', async route => {
+      await validationGate;
+      await route.continue();
+    });
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    await page.locator('#username').fill('sample_member');
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    await page.locator('#username').blur();
+    await expect(
+      page
+        .getByText(
+          'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+        )
+        .first(),
+    ).toBeVisible();
+    const rejected = await request.post('/api/auth/signup', {
+      data: { ...member, username: 'sample_member' },
+    });
+    expect(rejected.status()).toBe(400);
+    expect((await rejected.json()).message).toContain(
+      'Underscores are not allowed at signup.',
+    );
+    await page.locator('#username').fill(member.username);
+    try {
+      await expect(
+        page.getByRole('button', { name: 'Checking username…' }),
+      ).toBeDisabled();
+    } finally {
+      releaseValidation();
+    }
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
+
   test('signed out user can sign in with username', async ({
     page,
   }, testInfo) => {

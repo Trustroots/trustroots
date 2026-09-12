@@ -409,6 +409,9 @@ test.describe('authenticated member flows', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-photo', [
       'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
     ]);
 
     const validAvatarPath = path.join(
@@ -427,6 +430,13 @@ test.describe('authenticated member flows', () => {
       const uploadButton = page.getByRole('button', { name: /upload photo/i });
       await expect(uploadButton).toBeVisible();
 
+      await uploadButton.focus();
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Shift+Tab');
+      await expect(uploadButton).toBeFocused();
+      await expect(uploadButton).toHaveCSS('outline-style', 'solid');
+      await expect(uploadButton).toHaveCSS('outline-width', '3px');
+
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') && response.ok(),
@@ -441,6 +451,20 @@ test.describe('authenticated member flows', () => {
       await expect(page.getByRole('status')).toContainText(
         'Profile photo updated.',
       );
+      const untypedUploadResponse = page.waitForResponse(response =>
+        response.url().includes('/api/users-avatar'),
+      );
+      await page.locator('input[type="file"]').evaluate(input => {
+        const { File, DataTransfer } = input.ownerDocument.defaultView;
+        const file = new File([input.files[0]], 'browser-photo.png', {
+          type: '',
+        });
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      expect((await untypedUploadResponse).status()).toBe(200);
     } finally {
       await context.close();
     }

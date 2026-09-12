@@ -89,6 +89,39 @@ describe('User signup and authentication CRUD tests', function () {
 
   afterEach(dataUtils.clearDatabase);
 
+  it('explains underscore rejection without creating an account', async function () {
+    const response = await agent
+      .post('/api/auth/signup')
+      .send({
+        firstName: 'Amina',
+        lastName: 'Vale',
+        username: 'sample_member',
+        email: 'sample-member@example.org',
+        password: 'password123',
+      })
+      .expect(400);
+    response.body.message.should.equal(
+      'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+    );
+    should.not.exist(await User.findOne({ username: 'sample_member' }));
+  });
+
+  for (const username of ['Sample.Member', 'sample-member', '12345678']) {
+    it('preserves signup support for ' + username, async function () {
+      const response = await agent
+        .post('/api/auth/signup')
+        .send({
+          firstName: 'Amina',
+          lastName: 'Vale',
+          username,
+          email: 'sample-member@example.org',
+          password: 'password123',
+        })
+        .expect(200);
+      response.body.username.should.equal(username.toLowerCase());
+    });
+  }
+
   it('should be able to register a new user', function (done) {
     _unConfirmedUser.username = 'RegisterNewUser';
     _unConfirmedUser.email = 'register-new-user@example.org';

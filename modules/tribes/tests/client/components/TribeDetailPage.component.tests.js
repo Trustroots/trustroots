@@ -1,16 +1,12 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
-
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: () => ({ circle: 'hitchhikers' }),
-}));
 
 jest.mock('@/modules/core/client/components/LoadingIndicator', () => ({
   __esModule: true,
@@ -43,7 +39,7 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => ({
   ),
 }));
 
-describe('<TribeDetailPage />', () => {
+describe('<TribeDetailPage circle="hitchhikers" />', () => {
   const tribe = {
     _id: 'tribe-1',
     slug: 'hitchhikers',
@@ -63,7 +59,11 @@ describe('<TribeDetailPage />', () => {
     tribesApi.get.mockReturnValue(new Promise(() => {}));
 
     render(
-      <TribeDetailPage onMembershipUpdated={jest.fn()} user={{ _id: 'u1' }} />,
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'u1' }}
+      />,
     );
 
     expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
@@ -74,7 +74,11 @@ describe('<TribeDetailPage />', () => {
     tribesApi.get.mockRejectedValue(new Error('missing'));
 
     render(
-      <TribeDetailPage onMembershipUpdated={jest.fn()} user={{ _id: 'u1' }} />,
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'u1' }}
+      />,
     );
 
     expect(
@@ -90,6 +94,7 @@ describe('<TribeDetailPage />', () => {
   it('renders circle details for signed-in members', async () => {
     render(
       <TribeDetailPage
+        circle="hitchhikers"
         onMembershipUpdated={jest.fn()}
         user={{ _id: 'user-1', username: 'alice' }}
       />,
@@ -115,7 +120,13 @@ describe('<TribeDetailPage />', () => {
   });
 
   it('prompts guests to sign up for the circle', async () => {
-    render(<TribeDetailPage onMembershipUpdated={jest.fn()} user={null} />);
+    render(
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={null}
+      />,
+    );
 
     expect(
       await screen.findByRole('link', {
@@ -130,6 +141,7 @@ describe('<TribeDetailPage />', () => {
 
     render(
       <TribeDetailPage
+        circle="hitchhikers"
         onMembershipUpdated={onMembershipUpdated}
         user={{ _id: 'user-1' }}
       />,
@@ -149,7 +161,11 @@ describe('<TribeDetailPage />', () => {
     tribesApi.get.mockResolvedValue({ ...tribe, count: 0 });
 
     render(
-      <TribeDetailPage onMembershipUpdated={jest.fn()} user={{ _id: 'u1' }} />,
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'u1' }}
+      />,
     );
 
     expect(await screen.findByText('No members yet')).toBeInTheDocument();
@@ -159,7 +175,11 @@ describe('<TribeDetailPage />', () => {
     tribesApi.get.mockResolvedValue({ ...tribe, slug: '' });
 
     render(
-      <TribeDetailPage onMembershipUpdated={jest.fn()} user={{ _id: 'u1' }} />,
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'u1' }}
+      />,
     );
 
     await waitFor(() => {
@@ -173,6 +193,14 @@ describe('<TribeDetailPage />', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('uses the singular member label', async () => {
+    tribesApi.get.mockResolvedValue({ ...tribe, count: 1 });
+    render(
+      <TribeDetailPage circle="hitchhikers" onMembershipUpdated={jest.fn()} />,
+    );
+    expect(await screen.findByText('One member')).toBeInTheDocument();
+  });
+
   it('shows attribution without a link and ignores empty updates', async () => {
     tribesApi.get.mockResolvedValue({
       ...tribe,
@@ -182,6 +210,7 @@ describe('<TribeDetailPage />', () => {
 
     render(
       <TribeDetailPage
+        circle="hitchhikers"
         onMembershipUpdated={onMembershipUpdated}
         user={{ _id: 'user-1' }}
       />,
@@ -210,7 +239,11 @@ describe('<TribeDetailPage />', () => {
       }),
     );
     const firstRender = render(
-      <TribeDetailPage onMembershipUpdated={jest.fn()} user={{ _id: 'u1' }} />,
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'u1' }}
+      />,
     );
     firstRender.unmount();
     resolveCircle(tribe);
@@ -223,7 +256,11 @@ describe('<TribeDetailPage />', () => {
       }),
     );
     const secondRender = render(
-      <TribeDetailPage onMembershipUpdated={jest.fn()} user={{ _id: 'u1' }} />,
+      <TribeDetailPage
+        circle="hitchhikers"
+        onMembershipUpdated={jest.fn()}
+        user={{ _id: 'u1' }}
+      />,
     );
     secondRender.unmount();
     rejectCircle(new Error('late failure'));

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 const getMockMapStateHook = () =>
   global.__mockMapStateHookMock || (global.__mockMapStateHookMock = jest.fn());

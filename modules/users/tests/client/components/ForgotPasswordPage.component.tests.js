@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';

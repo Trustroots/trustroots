@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import JoinButton from './JoinButton';
 import { getCircleBackgroundStyle } from '../utils';
@@ -30,9 +29,8 @@ function circleWikiUrl(tribe) {
   )}`;
 }
 
-export default function TribeDetailPage({ user, onMembershipUpdated }) {
+export default function TribeDetailPage({ circle, user, onMembershipUpdated }) {
   const { t } = useTranslation('circles');
-  const { circle } = getCurrentRouteParams();
   const [tribe, setTribe] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -108,6 +106,8 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
   const countInfo =
     tribe.count === 0
       ? t('No members yet')
+      : tribe.count === 1
+      ? t('One member')
       : t('{{count, number}} members', { count: tribe.count });
   const wikiUrl = circleWikiUrl(tribe);
 
@@ -126,8 +126,14 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
             </div>
           </div>
           <div className="row">
-            <div className="col-xs-10 col-sm-offset-1 col-sm-7 col-md-6 col-lg-5">
-              <p className="lead tribe-pre">{t('Circle')}</p>
+            <div
+              className={`${
+                user ? 'col-xs-10' : 'col-xs-12'
+              } col-sm-offset-1 col-sm-7 col-md-6 col-lg-5`}
+            >
+              <p className="lead tribe-pre">
+                {user ? t('Circle') : t('Trustroots circle')}
+              </p>
               <h2 className="font-brand-regular tribe-title">{tribe.label}</h2>
               <span className="tribe-meta">{countInfo}</span>
               {tribe.description && (
@@ -138,6 +144,18 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
               )}
               <br />
               <br />
+              {!user && (
+                <p className="lead tribe-intro">
+                  {t(
+                    "Trustroots is a travellers' community for sharing, hosting and getting people together.",
+                  )}
+                  <br />
+                  <br />
+                  {t(
+                    'Join to meet, host and get hosted by this and other communities.',
+                  )}
+                </p>
+              )}
               {user ? (
                 <>
                   <JoinButton
@@ -165,6 +183,14 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
                   {t('Join {{label}} on Trustroots', { label: tribe.label })}
                 </a>
               )}
+              {!user && (
+                <a
+                  className="btn btn-lg btn-link tribe-readmore"
+                  href={`/?circle=${tribe.slug}`}
+                >
+                  <i className="icon-right"></i> {t('How does it work?')}
+                </a>
+              )}
               {wikiUrl && (
                 <a
                   className="btn btn-lg btn-link tribe-readmore"
@@ -174,6 +200,13 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
                 >
                   {t('Circle Wiki')}
                 </a>
+              )}
+              {user && (
+                <p className="lead tribe-intro">
+                  {t(
+                    'Trustroots is built on communities. Share this page within your community and invite them to join!',
+                  )}
+                </p>
               )}
             </div>
           </div>
@@ -194,6 +227,7 @@ export default function TribeDetailPage({ user, onMembershipUpdated }) {
 }
 
 TribeDetailPage.propTypes = {
+  circle: PropTypes.string.isRequired,
   onMembershipUpdated: PropTypes.func.isRequired,
   user: PropTypes.object,
 };

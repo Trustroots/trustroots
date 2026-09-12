@@ -82,6 +82,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expect(hostResponse.request().postDataJSON().description).toBe(
       nextDescription,
     );
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${berlin.username}/overview$`),
+    );
     await page.request.put(hostResponse.url(), {
       data: { description: originalDescription },
     });
@@ -499,24 +502,25 @@ test.describe.serial('search offers and circles feature coverage', () => {
         .toBeGreaterThan(scrollBeforeSwipe);
 
       await memberPage.goto('/circles/hitchhikers');
-      const overview = memberPage.locator('.tribe-header-info');
-      await expect(overview).toBeVisible();
-      await expect(overview).toHaveCSS('overflow-y', 'auto');
-      await expect(overview).toHaveCSS('touch-action', 'pan-y');
-      const isOverviewScrollable = await overview.evaluate(
+      const scrollingOverview = memberPage.locator('.tribe-header-info');
+      await expect(scrollingOverview).toBeVisible();
+      await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
+      await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
+      const isOverviewScrollable = await scrollingOverview.evaluate(
         element => element.scrollHeight > element.clientHeight,
       );
       if (isOverviewScrollable) {
-        await overview.evaluate(element => {
+        await scrollingOverview.evaluate(element => {
           element.scrollTop = element.scrollHeight;
         });
         await expect
-          .poll(() => overview.evaluate(element => element.scrollTop))
+          .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
           .toBeGreaterThan(0);
       }
 
-      const overviewJoinButton = memberPage.locator('button.tribe-join');
-      await expect(overviewJoinButton).toHaveAttribute(
+      const scrollingOverviewJoinButton =
+        memberPage.locator('button.tribe-join');
+      await expect(scrollingOverviewJoinButton).toHaveAttribute(
         'aria-label',
         /Join \(/i,
       );
@@ -527,19 +531,45 @@ test.describe.serial('search offers and circles feature coverage', () => {
             .includes(`/api/users/memberships/${hitchhikers._id}`) &&
           response.request().method() === 'POST',
       );
-      await overviewJoinButton.click();
+      await scrollingOverviewJoinButton.click();
       expect((await joinResponse).ok()).toBeTruthy();
-      await expect(overviewJoinButton).toHaveClass(/btn-active/);
-      await expect(overviewJoinButton).toHaveAttribute(
+      await expect(scrollingOverviewJoinButton).toHaveClass(/btn-active/);
+      await expect(scrollingOverviewJoinButton).toHaveAttribute(
         'aria-label',
         /Leave circle/i,
       );
-      await expect(overviewJoinButton).toContainText("You're a member");
-      await expect(overviewJoinButton).toHaveClass(/btn-primary/);
-      await expect(overviewJoinButton).not.toHaveCSS(
+      await expect(scrollingOverviewJoinButton).toContainText(
+        "You're a member",
+      );
+      await expect(scrollingOverviewJoinButton).toHaveClass(/btn-primary/);
+      await expect(scrollingOverviewJoinButton).not.toHaveCSS(
         'background-color',
         'rgb(255, 255, 255)',
       );
+      await memberPage.goto('/circles/hitchhikers');
+
+      await expect(scrollingOverview).toBeVisible();
+      await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
+      await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
+      await expect
+        .poll(() =>
+          scrollingOverview.evaluate(
+            element => element.scrollHeight > element.clientHeight,
+          ),
+        )
+        .toBe(true);
+      await scrollingOverview.evaluate(element => {
+        element.scrollTop = element.scrollHeight;
+      });
+      await expect
+        .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
+        .toBeGreaterThan(0);
+
+      await expect(
+        memberPage.getByRole('button', {
+          name: 'Leave circle',
+        }),
+      ).toContainText("You're a member");
 
       const leave = await memberPage.request.delete(
         `/api/users/memberships/${hitchhikers._id}`,

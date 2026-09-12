@@ -6,7 +6,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfileEditPhoto from '@/modules/users/client/components/ProfileEditPhoto.component';
@@ -90,37 +90,40 @@ describe('ProfileEditPhoto', () => {
     expect(usersApi.uploadAvatar).not.toHaveBeenCalled();
   });
 
-  it('uploads a valid image and updates the profile', async () => {
-    usersApi.uploadAvatar.mockResolvedValue({});
-    usersApi.update.mockResolvedValue({
-      ...user,
-      avatarSource: 'local',
-      avatarUploaded: true,
-    });
+  it.each(['image/png', ''])(
+    'uploads a valid image with MIME %s and updates the profile',
+    async type => {
+      usersApi.uploadAvatar.mockResolvedValue({});
+      usersApi.update.mockResolvedValue({
+        ...user,
+        avatarSource: 'local',
+        avatarUploaded: true,
+      });
 
-    const fileReaderMock = {
-      readAsDataURL: jest.fn(),
-      onloadend: null,
-      result: 'data:image/png;base64,abc',
-    };
-    jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+      const fileReaderMock = {
+        readAsDataURL: jest.fn(),
+        onloadend: null,
+        result: 'data:image/png;base64,abc',
+      };
+      jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
 
-    renderPage();
+      renderPage();
 
-    const input = document.querySelector('input[type="file"]');
-    fireEvent.change(input, {
-      target: {
-        files: [new File(['data'], 'photo.png', { type: 'image/png' })],
-      },
-    });
+      const input = document.querySelector('input[type="file"]');
+      fireEvent.change(input, {
+        target: {
+          files: [new File(['data'], 'photo.png', { type })],
+        },
+      });
 
-    fileReaderMock.onloadend();
+      fileReaderMock.onloadend();
 
-    await waitFor(() => {
-      expect(usersApi.uploadAvatar).toHaveBeenCalled();
-    });
-    expect(await screen.findByText('Profile photo updated.')).toBeVisible();
-  });
+      await waitFor(() => {
+        expect(usersApi.uploadAvatar).toHaveBeenCalled();
+      });
+      expect(await screen.findByText('Profile photo updated.')).toBeVisible();
+    },
+  );
 
   it('shows a preview and progress while an image uploads', async () => {
     let resolveUpload;

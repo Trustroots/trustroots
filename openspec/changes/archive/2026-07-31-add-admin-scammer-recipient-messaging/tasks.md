@@ -1,0 +1,4 @@
+- [x] Add recipient lookup and bulk-send APIs with admin policy and audit log.
+- [x] Add `/admin/messages` preview and send controls.
+- [x] Add unit, route, and component regression coverage.
+- [x] Update the admin moderation living specification.

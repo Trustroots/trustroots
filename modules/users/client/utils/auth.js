@@ -40,6 +40,8 @@ export function getUsernameValidationError({
   errors = {},
   usernameMinlength = 3,
   usernameMaxlength = 34,
+  patternMessage = 'Invalid username.',
+  usernameMessage = 'This username is already in use.',
 }) {
   if (!isDirty || isValid) {
     return '';
@@ -58,11 +60,11 @@ export function getUsernameValidationError({
   }
 
   if (errors.pattern) {
-    return 'Invalid username.';
+    return patternMessage;
   }
 
   if (errors.username) {
-    return 'This username is already in use.';
+    return usernameMessage;
   }
 
   return 'Invalid username.';

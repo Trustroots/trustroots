@@ -6,7 +6,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import SignupPage from '@/modules/users/client/components/SignupPage.component';
@@ -393,7 +393,38 @@ describe('SignupPage', () => {
 
     fireEvent.change(usernameInput, { target: { value: '---' } });
     fireEvent.blur(usernameInput);
-    expect(await screen.findByText('Invalid username.')).toBeVisible();
+    expect(
+      await screen.findByText(
+        'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+      ),
+    ).toBeVisible();
+    fireEvent.change(usernameInput, { target: { value: 'sample_member' } });
+    expect(
+      screen.getByText(
+        'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+      ),
+    ).toBeVisible();
+  });
+
+  it('shows the server explanation for a reserved username', async () => {
+    jest.useFakeTimers();
+    authApi.validateSignup.mockResolvedValue({
+      valid: false,
+      message: 'This name is reserved.',
+    });
+    try {
+      renderPage();
+      fireEvent.change(screen.getByLabelText('Username'), {
+        target: { value: 'sample-service' },
+      });
+      fireEvent.blur(screen.getByLabelText('Username'));
+      await act(async () => {
+        jest.advanceTimersByTime(1000);
+      });
+      expect(await screen.findByText('This name is reserved.')).toBeVisible();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('checks username availability after debounce', async () => {

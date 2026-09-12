@@ -12,6 +12,10 @@ const randomColor = require('randomcolor');
 const speakingurl = require('speakingurl');
 const validator = require('validator');
 const Schema = mongoose.Schema;
+const sanitizeHtml = require('sanitize-html');
+const {
+  sanitizeOptions,
+} = require('../../../core/server/services/text.server.service');
 
 /**
  * Return random dark hex color without leading `#`
@@ -127,6 +131,7 @@ const TribeSchema = new Schema({
   description: {
     type: String,
     trim: true,
+    get: value => value && sanitizeHtml(value, sanitizeOptions),
   },
 });
 

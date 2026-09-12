@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import {
   createAppRouter,
@@ -539,4 +539,18 @@ describe('React route ownership', () => {
       detail.getByRole('button', { name: 'Update detail membership' }),
     );
   });
+});
+
+it.each([
+  '/circles/%ZZ',
+  '/circles/sample%2Fextra',
+  '/circles/Hitchhikers',
+  '/circles/sample_circle',
+  '/circles/:circle',
+])('keeps invalid circle path %s on a React not-found page', path => {
+  expect(findRoute(path).path).toBe('/not-found');
+});
+
+it('does not partially match extra circle path segments', () => {
+  expect(findRoute('/circles/sample/extra')).toBeUndefined();
 });

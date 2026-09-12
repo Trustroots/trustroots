@@ -18,9 +18,12 @@ import {
 } from '@/modules/users/client/utils/auth';
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 
-const USERNAME_PATTERN = /^(?=.*[0-9A-Za-z])[0-9A-Za-z.\-_]{3,34}$/;
-const USERNAME_MINLENGTH = 3;
-const USERNAME_MAXLENGTH = 34;
+import {
+  SIGNUP_USERNAME_REGEX as USERNAME_PATTERN,
+  USERNAME_MIN_LENGTH as USERNAME_MINLENGTH,
+  USERNAME_MAX_LENGTH as USERNAME_MAXLENGTH,
+  SIGNUP_USERNAME_FORMAT_MESSAGE,
+} from '@/modules/users/client/config/username.client.constants';
 
 function formatMemberCount(count) {
   if (count === 0) {
@@ -112,6 +115,8 @@ export default function SignupPage() {
   const [usernameDirty, setUsernameDirty] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(true);
   const [usernamePending, setUsernamePending] = useState(false);
+  const [usernameValidationMessage, setUsernameValidationMessage] =
+    useState('');
 
   useEffect(() => {
     if (user && step === 1) {
@@ -170,6 +175,7 @@ export default function SignupPage() {
     let isMounted = true;
     const timeoutId = window.setTimeout(async () => {
       setUsernamePending(true);
+      setUsernameValidationMessage('');
 
       try {
         const result = await authApi.validateSignup({
@@ -178,6 +184,7 @@ export default function SignupPage() {
 
         if (isMounted) {
           setUsernameAvailable(result?.valid !== false);
+          setUsernameValidationMessage(result?.message || '');
         }
       } catch {
         if (isMounted) {
@@ -207,6 +214,8 @@ export default function SignupPage() {
   }, [credentials.username, usernameAvailable, usernameDirty, usernamePending]);
 
   const usernameErrorMessage = getUsernameValidationError({
+    patternMessage: SIGNUP_USERNAME_FORMAT_MESSAGE,
+    usernameMessage: usernameValidationMessage || undefined,
     errors: usernameErrors,
     isDirty: usernameDirty,
     isValid: Object.keys(usernameErrors).length === 0,
@@ -546,7 +555,11 @@ export default function SignupPage() {
                     disabled={!isStepOneValid || isLoading}
                     onClick={handleSubmitSignup}
                   >
-                    {isStepOneValid ? 'Next' : 'Please fill in the form'}
+                    {usernamePending
+                      ? 'Checking username…'
+                      : isStepOneValid
+                      ? 'Next'
+                      : 'Please fill in the form'}
                   </button>
                   <br />
                   <br />

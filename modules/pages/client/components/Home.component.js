@@ -78,17 +78,22 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
-export default function Home({ user, photoCredits, build }) {
+export default function Home({
+  user,
+  photoCredits,
+  build,
+  routeParams = getCurrentRouteParams(),
+}) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
-  const { circle: circleRouteParam, tribe: tribeRouteParam } =
-    getCurrentRouteParams();
+  const { circle: circleRouteParam, tribe: tribeRouteParam } = routeParams;
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
   const memberCount = new Intl.NumberFormat().format(140000);
 
   // TODO get header height instead of magic number 56
+  // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
   const headerHeight = 56;
 
   const boardHeight =
@@ -513,6 +518,7 @@ export default function Home({ user, photoCredits, build }) {
 }
 
 Home.propTypes = {
+  routeParams: PropTypes.object,
   user: userType,
   isNativeMobileApp: PropTypes.bool,
   photoCredits: PropTypes.object,
