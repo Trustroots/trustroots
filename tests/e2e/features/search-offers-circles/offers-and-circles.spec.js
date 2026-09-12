@@ -311,7 +311,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
           response.url().endsWith(`/api/offers/${aliceOffer._id}`) &&
           response.request().method() === 'PUT',
       );
-      await hostPage.locator('button[type="submit"].hidden-xs').click();
+      await hostPage.getByRole('button', { name: 'Save and Exit' }).click();
       expect((await saved).ok()).toBeTruthy();
 
       const withoutSharedCircle = await request.get(
