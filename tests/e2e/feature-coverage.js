@@ -1252,6 +1252,8 @@ const features = [
     requiredScenarios: [
       'Photo edit page is reachable.',
       'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
       'Invalid upload shows an error.',
       'Avatar endpoint returns uploaded or fallback image.',
     ],

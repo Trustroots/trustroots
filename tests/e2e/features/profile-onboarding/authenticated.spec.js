@@ -306,6 +306,8 @@ test.describe('authenticated member flows', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-photo', [
       'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
     ]);
 
     const validAvatarPath = path.join(
@@ -324,11 +326,32 @@ test.describe('authenticated member flows', () => {
       const fileInput = page.locator('#profile-edit-avatar-file');
       await fileInput.waitFor({ state: 'attached' });
 
+      // A narrow viewport exposes both the file and camera controls.
+      await page.setViewportSize({ width: 375, height: 812 });
+      for (const id of [
+        'profile-edit-avatar-file',
+        'profile-edit-avatar-camera',
+      ]) {
+        const input = page.locator(`#${id}`);
+        const label = page.locator('label').filter({ has: input });
+        await input.focus();
+        await page.keyboard.press('Tab');
+        await page.keyboard.press('Shift+Tab');
+        await expect(input).toBeFocused();
+        await expect(label).toHaveCSS('outline-style', 'solid');
+        await expect(label).toHaveCSS('outline-width', '3px');
+        await expect(label).toHaveCSS('outline-offset', '3px');
+      }
+
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') && response.ok(),
       );
-      await fileInput.setInputFiles(validAvatarPath);
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        page.locator('label').filter({ has: fileInput }).click(),
+      ]);
+      await fileChooser.setFiles(validAvatarPath);
       await uploadResponse;
 
       await expect(

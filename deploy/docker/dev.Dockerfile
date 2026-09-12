@@ -51,5 +51,5 @@ RUN --mount=type=cache,target=/root/.npm \
 
 RUN mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
   && chmod 777 "$PLAYWRIGHT_BROWSERS_PATH" \
-  && npx playwright install chromium \
+  && npx playwright install --with-deps chromium firefox \
   && chmod -R 777 "$PLAYWRIGHT_BROWSERS_PATH"
