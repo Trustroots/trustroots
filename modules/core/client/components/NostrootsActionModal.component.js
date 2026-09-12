@@ -1,12 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+import { getUser } from '../services/angular-compat';
+import NostrootsOnboarding from './NostrootsOnboarding.component';
 
 /**
  * Action-gate modal shown when a user tries to perform an action that requires
  * Nostroots (e.g. replying to a community note). Prompts the user to open the
- * Nostroots web app or dismiss.
+ * Nostroots onboarding or use an existing browser/store alternative.
  */
-export default function NostrootsActionModal({ isOpen, onClose, plusCode }) {
+export default function NostrootsActionModal({
+  isOpen,
+  onClose,
+  plusCode,
+  source = 'community-notes',
+}) {
+  const { t } = useTranslation('core');
   const ctaRef = useRef(null);
 
   const webAppUrl = plusCode
@@ -53,37 +62,37 @@ export default function NostrootsActionModal({ isOpen, onClose, plusCode }) {
           className="nostroots-modal-close"
           onClick={onClose}
           type="button"
-          aria-label="Close"
+          aria-label={t('Close')}
         >
           &times;
         </button>
 
         <h2 className="nostroots-modal-title" id="nostroots-modal-title">
-          Get Nostroots
+          {t('Get Nostroots')}
         </h2>
 
-        <p className="nostroots-modal-body">
-          Post notes on a map, share travel tips, and connect with travelers.
-          Your Trustroots account works on Nostroots.
-        </p>
+        <NostrootsOnboarding
+          username={getUser()?.username}
+          source={source}
+          linkRef={ctaRef}
+        />
 
         <div className="nostroots-modal-actions">
           <a
-            ref={ctaRef}
             href="https://apps.apple.com/us/app/nostroots/id6755037304"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-primary btn-block nostroots-modal-btn"
+            className="btn btn-default btn-block nostroots-modal-btn"
           >
-            Download for iOS
+            {t('Download for iOS')}
           </a>
           <a
             href="https://play.google.com/store/apps/details?id=org.trustroots.nostroots"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-primary btn-block nostroots-modal-btn"
+            className="btn btn-default btn-block nostroots-modal-btn"
           >
-            Download for Android
+            {t('Download for Android')}
           </a>
           <a
             href={webAppUrl}
@@ -91,7 +100,7 @@ export default function NostrootsActionModal({ isOpen, onClose, plusCode }) {
             rel="noopener noreferrer"
             className="btn btn-default btn-block nostroots-modal-btn"
           >
-            Open web app
+            {t('Open web app')}
           </a>
         </div>
 
@@ -100,7 +109,7 @@ export default function NostrootsActionModal({ isOpen, onClose, plusCode }) {
           onClick={onClose}
           type="button"
         >
-          Not now
+          {t('Not now')}
         </button>
       </div>
     </div>
@@ -111,4 +120,5 @@ NostrootsActionModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   plusCode: PropTypes.string,
+  source: PropTypes.oneOf(['community-notes', 'profile-notes']),
 };

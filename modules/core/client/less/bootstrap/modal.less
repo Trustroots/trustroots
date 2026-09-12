@@ -51,11 +51,12 @@
   border-radius: 8px;
   padding: 28px 24px 20px;
   max-width: 340px;
+  max-height: calc(100vh - 32px);
   width: 90%;
   text-align: center;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
   animation: nostroots-modal-in 0.25s ease-out;
-  overflow: hidden;
+  overflow-y: auto;
 
   // Green accent bar at top
   &::before {
@@ -109,6 +110,24 @@
   color: @gray;
   line-height: 1.5;
   margin: 0 0 20px;
+}
+
+.nostroots-onboarding {
+  margin: 16px 0;
+}
+
+.nostroots-onboarding-qr {
+  margin-top: 12px;
+  text-align: center;
+
+  img {
+    display: block;
+    margin: 0 auto;
+  }
+}
+
+.nostroots-onboarding-help {
+  margin-top: 12px;
 }
 
 .nostroots-modal-actions {

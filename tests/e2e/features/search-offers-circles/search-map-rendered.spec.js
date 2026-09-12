@@ -700,6 +700,19 @@ test.describe('rendered search map feature coverage', () => {
 
     const dialog = page.getByRole('dialog', { name: 'Get Nostroots' });
     await expect(dialog).toBeVisible();
+    const onboarding = dialog.getByRole('link', {
+      name: 'Continue in Nostroots',
+    });
+    await expect(onboarding).toHaveAttribute(
+      'href',
+      `https://nos.trustroots.org/open/onboarding?username=${encodeURIComponent(
+        berlin.username,
+      )}`,
+    );
+    await expect(onboarding).toHaveAttribute(
+      'data-umami-event-source',
+      'community-notes',
+    );
     await expect(
       dialog.getByRole('link', { name: 'Download for iOS' }),
     ).toBeVisible();

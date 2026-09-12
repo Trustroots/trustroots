@@ -2,6 +2,15 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
+import { getUser } from '@/modules/core/client/services/angular-compat';
+
+jest.mock('@/modules/core/client/services/angular-compat', () => ({
+  getUser: jest.fn(() => null),
+}));
+
+jest.mock('react-i18next', () => ({
+  useTranslation: () => ({ t: key => key }),
+}));
 
 describe('NostrootsActionModal', () => {
   const onClose = jest.fn();
@@ -103,12 +112,42 @@ describe('NostrootsActionModal', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('mentions that Trustroots account works on Nostroots', () => {
+  it('explains that onboarding does not automatically sign the member in', () => {
     const { getByText } = render(
       <NostrootsActionModal isOpen={true} onClose={onClose} />,
     );
     expect(
-      getByText(/Your Trustroots account works on Nostroots/),
+      getByText(/It does not sign you in automatically/),
     ).toBeInTheDocument();
+  });
+
+  it('focuses the onboarding link and uses the current viewer from authentication', () => {
+    getUser.mockReturnValueOnce({
+      username: 'sampleviewer',
+      nostrNpub: 'npub-unused',
+    });
+    const { getByRole } = render(
+      <NostrootsActionModal
+        isOpen={true}
+        onClose={onClose}
+        source="profile-notes"
+      />,
+    );
+    const link = getByRole('link', { name: 'Continue in Nostroots' });
+    expect(link).toHaveFocus();
+    expect(link).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/open/onboarding?username=sampleviewer',
+    );
+    expect(link).toHaveAttribute('data-umami-event-source', 'profile-notes');
+  });
+
+  it('offers generic onboarding to a signed-out visitor', () => {
+    const { getByRole } = render(
+      <NostrootsActionModal isOpen={true} onClose={onClose} />,
+    );
+    expect(
+      getByRole('link', { name: 'Continue in Nostroots' }),
+    ).toHaveAttribute('href', 'https://nos.trustroots.org/open/onboarding');
   });
 });
