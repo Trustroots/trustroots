@@ -129,13 +129,30 @@
 }
 
 .admin-acquisition-stories-table {
+  th:first-child,
   th:nth-child(2),
   th:nth-child(3),
+  td:first-child,
   td:nth-child(2),
   td:nth-child(3) {
     width: 1%;
     white-space: nowrap;
   }
+}
+
+.admin-acquisition-stories-member {
+  display: flex;
+  align-items: center;
+
+  .avatar {
+    margin-right: 8px;
+  }
+}
+
+.admin-acquisition-stories-sort {
+  padding: 0;
+  color: inherit;
+  font-weight: inherit;
 }
 
 .admin-action,

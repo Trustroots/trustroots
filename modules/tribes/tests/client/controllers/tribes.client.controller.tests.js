@@ -19,14 +19,10 @@ describe('TribeController', function () {
     const Authentication = {
       user: { roles: ['user'] },
     };
-    const Facebook = {
-      isActive: true,
-    };
     const vm = $controller('TribeController as vm', {
       $scope: $rootScope.$new(),
       Authentication,
       $state,
-      Facebook,
       tribe: {
         _id: 'circle-id',
         slug: 'circle',
@@ -35,7 +31,6 @@ describe('TribeController', function () {
 
     vm.goBack();
     expect($state.go).toHaveBeenCalledWith('circles.list');
-    expect(vm.facebookIsActibe).toBe(true);
     expect(vm.circleWikiUrl({ slug: 'punks' })).toBe(
       'https://wiki.trustroots.org/en/Punks',
     );

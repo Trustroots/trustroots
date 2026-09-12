@@ -52,6 +52,14 @@ describe('<Navigation />', () => {
     expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
     expect(wikiLink).toHaveAttribute('target', '_blank');
     expect(wikiLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
+      'href',
+      '/statistics',
+    );
+    expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
   });
 
   it('invokes onSignout when sign out link is clicked', () => {

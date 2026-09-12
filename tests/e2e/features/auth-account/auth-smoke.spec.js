@@ -4,9 +4,11 @@ const {
   createUser,
   registerViaApi,
   signOut,
+  signInViaApi,
   signUp,
 } = require('../../support/helpers');
 
+const { updateUserByUsername } = require('../../support/db');
 const user = createUser();
 
 async function signInExisting(page, usernameOrEmail) {
@@ -28,6 +30,8 @@ test.describe.serial('authentication smoke', () => {
     annotateFeature(testInfo, 'public.home', [
       'Homepage loads for visitors.',
       'Sign in and sign up entry points are visible.',
+      'Homepage footer links to public statistics.',
+      'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
     ]);
 
@@ -36,6 +40,12 @@ test.describe.serial('authentication smoke', () => {
     await expect(page).toHaveTitle(/Trustroots/);
     await expect(page.locator('a[href="/signup"]').first()).toBeVisible();
     await expect(page.locator('a[href="/signin"]').first()).toBeVisible();
+    await expect(
+      page.locator('.home-footer-pages a[href="/statistics"]'),
+    ).toHaveText('Statistics');
+    await expect(
+      page.locator('.home-footer-pages a[href="/safety"]'),
+    ).toHaveText('Safety');
   });
 
   test('signup submits a unique user through the UI', async ({
@@ -74,6 +84,52 @@ test.describe.serial('authentication smoke', () => {
     });
 
     await signUp(page, signupUser);
+  });
+
+  test('username policy preserves apostrophes and legacy member identities', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+      'Signup succeeds for a unique user.',
+    ]);
+    const member = createUser({ firstName: 'Amina', lastName: "O'Vale" });
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    for (const username of ['sample_member', 'SampleMember', '123456']) {
+      await page.locator('#username').fill(username);
+      await expect(
+        page.getByRole('button', { name: 'Please fill in the form' }),
+      ).toBeDisabled();
+      const rejected = await request.post('/api/auth/signup', {
+        data: { ...member, username },
+      });
+      expect(rejected.status()).toBe(400);
+    }
+    await signUp(page, member);
+    const legacyUsername = `legacy.${member.username}`.slice(0, 34);
+    await updateUserByUsername(member.username, {
+      $set: { username: legacyUsername, public: true },
+      $unset: { emailTemporary: 1, emailToken: 1 },
+    });
+    await signInViaApi(page, request, { ...member, username: legacyUsername });
+    await page.goto('/profile/edit/account');
+    const updated = await page.request.put('/api/users', {
+      data: { username: legacyUsername, lastName: "D'Vale" },
+    });
+    expect(updated.ok()).toBeTruthy();
+    expect(await updated.json()).toMatchObject({
+      username: legacyUsername,
+      lastName: "D'Vale",
+    });
+    const invalidChange = await page.request.put('/api/users', {
+      data: { username: 'another_member' },
+    });
+    expect(invalidChange.status()).toBe(400);
   });
 
   test('signed out user can sign in with username', async ({

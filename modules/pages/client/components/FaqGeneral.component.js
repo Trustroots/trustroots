@@ -39,14 +39,15 @@ export default function FaqGeneral() {
             '"We want a world that encourages trust, adventure and intercultural connections."',
           )}
         </em>
-        <a href="/foundation">{t('Read more')}</a>.
       </div>
 
       <div className="faq-question" id="is-there-mobile-app">
         <h3>{t('Is there a mobile app?')}</h3>
-        {t(
-          'No. There used to be an android app, but it is no longer maintained and not available.',
-        )}
+        <Trans t={t} ns="pages">
+          Trustroots itself does not currently have a mobile app, but we have
+          new features that are available through the{' '}
+          <a href="https://nos.trustroots.org/">Nostroots mobile app</a>.
+        </Trans>
         <br />
         <br />
         <Trans t={t} ns="pages">
@@ -105,10 +106,11 @@ export default function FaqGeneral() {
         )}
       </div>
 
-      <div className="faq-question" id="why-is-there-facebook-connection">
-        <h3>{t('Why is there Facebook connection?')}</h3>
+      <div className="faq-question" id="what-happened-to-facebook-connections">
+        <span id="why-is-there-facebook-connection" aria-hidden="true" />
+        <h3>{t('What happened to Facebook connections?')}</h3>
         {t(
-          'So that people who have their data, photos and connections on Facebook can release their information to Trustroots. Using Facebook from Trustroots is optional.',
+          'New Facebook connections are no longer supported. Members who connected Facebook in the past can continue using their stored Facebook profile image or disconnect the legacy connection from their account settings.',
         )}{' '}
         <Trans t={t} ns="pages">
           <a href="https://ideas.trustroots.org/2014/12/29/life-outside-big-blue-box/">
@@ -121,7 +123,14 @@ export default function FaqGeneral() {
       <div className="faq-question" id="why-is-there-no-forum">
         <h3>{t('Why is there no forum?')}</h3>
         {t(
-          'The practical answer: it takes time to set up a forum and even more time to keep it spam-free. The less practical answer: In our long-term and short-term experience forum activity is not necessarily the best way to get to more real life interactions. In the long term we do want to provide a way to communicate on the site, but this will probably look more like the quick and easy way you can interact on Facebook or Diaspora than a full fledged forum.',
+          'A forum takes significant time to set up and even more time to keep welcoming and spam-free. In our experience, traditional forum activity also does not always lead to more real-life interactions.',
+        )}
+        <br />
+        <br />
+        {t('For community conversations, try ')}
+        <a href="https://nos.trustroots.org/">Nostroots</a>
+        {t(
+          '. It is not a traditional forum: it is a decentralised social app built on Nostr.',
         )}
         <br />
         <br />
@@ -165,9 +174,7 @@ export default function FaqGeneral() {
           <a href="https://github.com/Trustroots/trustroots/issues">
             report bugs at GitHub
           </a>
-          , reach out via <a href="https://twitter.com/trustroots">Twitter</a>{' '}
-          or <a href="https://www.facebook.com/trustroots.org/">Facebook</a> and
-          to directly contact individuals, see <a href="/team">the team </a>{' '}
+          . To contact individuals directly, see <a href="/team">the team</a>{' '}
           page.
         </Trans>
       </div>

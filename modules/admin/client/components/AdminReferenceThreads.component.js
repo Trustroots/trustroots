@@ -54,7 +54,7 @@ export default function AdminReferenceThreads() {
         {topNegativeRecipients.length > 0 && (
           <div className="panel panel-default">
             <div className="panel-body">
-              <h4>Top score</h4>
+              <h4>Top score from the last year</h4>
               <ol className="list-inline">
                 {topNegativeRecipients.map(({ count, user }) => {
                   const userId = user?._id ?? user;

@@ -26,6 +26,7 @@ const ROLE_DEFINITIONS = {
   'shadowbanned-member':
     'Authenticated user with the shadowban role, used to verify hidden member-facing behavior.',
   admin: 'Authenticated user with the admin role.',
+  'welcome-team': 'Authenticated user with limited acquisition viewing access.',
   browser:
     'Browser/platform-originated request, such as security reporting telemetry.',
   'external-client':
@@ -146,6 +147,8 @@ const features = [
     requiredScenarios: [
       'Homepage loads for visitors.',
       'Sign in and sign up entry points are visible.',
+      'Homepage footer links to public statistics.',
+      'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
     ],
     relatedSpecs: [
@@ -193,6 +196,24 @@ const features = [
     requiredScenarios: ['Rules page loads with the expected title/content.'],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /rules loads'),
+    ],
+  },
+  {
+    id: 'public.safety',
+    area: AREA.publicCore,
+    status: STATUS.active,
+    description:
+      'Practical safety guidance is available to hosts, travellers, and visitors.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [clientRoute('safety', '/safety', source.pagesClient)],
+      apiRoutes: [],
+    },
+    requiredScenarios: [
+      'Safety page loads with precautions, reporting, and emergency guidance.',
+    ],
+    relatedSpecs: [
+      spec('public-pages.spec.js', 'public marketing page /safety loads'),
     ],
   },
   {
@@ -451,6 +472,8 @@ const features = [
     requiredScenarios: [
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
       'Sign out action clears the session.',
     ],
     relatedSpecs: [
@@ -533,18 +556,33 @@ const features = [
       clientRoutes: [
         clientRoute('statistics', '/statistics', source.statisticsClient),
       ],
-      apiRoutes: [apiRoute('GET', '/api/statistics', source.statisticsServer)],
+      apiRoutes: [
+        apiRoute('GET', '/api/statistics', source.statisticsServer),
+        apiRoute(
+          'GET',
+          '/api/experiences/suggestion',
+          source.experiencesServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Statistics page loads for visitors.',
       'Statistics page loads for signed-in members.',
       'Public statistics API returns deterministic connection and message-interaction data.',
+      'Visitors do not see an experience-writing encouragement.',
+      'Signed-in members without an eligible contact see a general experience-writing encouragement.',
+      'Signed-in members can be encouraged to write an experience for an eligible confirmed contact.',
+      'The personalised encouragement opens the suggested contact experience form.',
     ],
     relatedSpecs: [
       spec('seeded-content.spec.js', 'statistics page loads for visitors'),
       spec(
         'authenticated.spec.js',
         'statistics page loads for a signed in member',
+      ),
+      spec(
+        'authenticated.spec.js',
+        'statistics suggests an eligible contact and opens their experience form',
       ),
     ],
   },
@@ -1032,6 +1070,37 @@ const features = [
     ],
   },
   {
+    id: 'account.data-export',
+    area: AREA.authAccount,
+    status: STATUS.active,
+    description:
+      'Authenticated members can download their profile, contacts, and hosting offers in one versioned JSON file.',
+    roles: ['member'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'profile-edit.account',
+          '/profile/edit/account',
+          source.usersClient,
+          {
+            requiresAuth: true,
+          },
+        ),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/users/export', source.usersServer)],
+    },
+    requiredScenarios: [
+      'The combined export is an attachment with the documented filename.',
+      'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+    ],
+    relatedSpecs: [
+      spec(
+        'authenticated.spec.js',
+        'member can download their combined data export',
+      ),
+    ],
+  },
+  {
     id: 'account.profile-removal',
     area: AREA.authAccount,
     status: STATUS.active,
@@ -1060,7 +1129,7 @@ const features = [
     area: AREA.authAccount,
     status: STATUS.active,
     description:
-      'Members can connect and disconnect Facebook and GitHub OAuth accounts via local stubs.',
+      'Members can disconnect legacy Facebook, GitHub, and Twitter provider data; new social OAuth connections are unavailable.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1074,18 +1143,13 @@ const features = [
         ),
       ],
       apiRoutes: [
-        apiRoute('GET', '/api/auth/facebook', source.usersAuthServer),
-        apiRoute('PUT', '/api/auth/facebook', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/facebook/callback', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/github', source.usersAuthServer),
-        apiRoute('GET', '/api/auth/github/callback', source.usersAuthServer),
         apiRoute('DELETE', '/api/users/accounts/:provider', source.usersServer),
       ],
     },
     requiredScenarios: [
-      'Each OAuth provider can start and complete a stubbed callback flow.',
-      'Connected OAuth provider can be disconnected.',
-      'OAuth callback errors show user-facing error state.',
+      'Stored OAuth provider data can be disconnected.',
+      'Social OAuth providers are not offered as new connections.',
+      'Legacy social connections are shown below Save with delete controls.',
     ],
     relatedSpecs: [],
   },
@@ -1512,6 +1576,7 @@ const features = [
       'Circle filter query resolves the selected circle.',
       'Search map renders with deterministic offline style.',
       'Route fixture offers populate the rendered map source.',
+      'Later camera commands recenter the raster map after a place search.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
     ],
@@ -1521,6 +1586,10 @@ const features = [
       spec(
         'search-map-rendered.spec.js',
         'search map renders with offline style and fixture offers',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'raster fallback stays visible after selecting a city',
       ),
       spec(
         'search-map-rendered.spec.js',
@@ -1585,12 +1654,17 @@ const features = [
       'Host offer edit page loads.',
       'Member can create/update a host offer.',
       'Host offer visibility appears in profile/search.',
+      'Host can limit search visibility to members sharing a circle.',
       'Member can remove or disable a host offer.',
     ],
     relatedSpecs: [
       spec(
         'member.spec.js',
         'host offer edit page loads for a confirmed member',
+      ),
+      spec(
+        'offers-and-circles.spec.js',
+        'hosts can limit search visibility to members in their circles',
       ),
     ],
   },
@@ -1720,6 +1794,36 @@ const features = [
       spec(
         'seeded-content.spec.js',
         'circle detail page loads for a seeded tribe',
+      ),
+    ],
+  },
+  {
+    id: 'circles.member-only',
+    area: AREA.searchOffersCircles,
+    status: STATUS.active,
+    description:
+      'The Naturists circle is discoverable only by signed-in members.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [
+        clientRoute('circles.circle', '/circles/:circle', source.tribesClient, {
+          conditionalAuth: 'circle=naturists',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/tribes', source.tribesServer),
+        apiRoute('GET', '/api/tribes/:tribe', source.tribesServer),
+      ],
+    },
+    requiredScenarios: [
+      'Visitor cannot discover or open the Naturists circle.',
+      'Signed-in member can discover and open the Naturists circle.',
+    ],
+    relatedSpecs: [
+      spec('seeded-content.spec.js', 'Naturists circle requires sign-in'),
+      spec(
+        'offers-and-circles.spec.js',
+        'signed-in members can open the Naturists circle',
       ),
     ],
   },
@@ -1996,6 +2100,8 @@ const features = [
       'Shadowbanned profile is hidden from members.',
       'Shadow-hidden messages are not visible to regular recipients.',
       'Admin tools can still inspect shadow-hidden content.',
+      'Shadowbanned viewers cannot see external profile links or contact details.',
+      'Shadowbanned viewers cannot see contact details in other members offers.',
     ],
     relatedSpecs: [
       spec(
@@ -2101,6 +2207,7 @@ const features = [
     requiredScenarios: [
       'Profile action links to a new message thread.',
       'New thread empty state is visible.',
+      'New thread empty state links to safety guidance.',
       'Sending an opening message creates the conversation.',
     ],
     relatedSpecs: [
@@ -2432,6 +2539,10 @@ const features = [
     requiredScenarios: [
       'Admin dashboard loads for admin.',
       'Regular member is denied access to admin tools.',
+      'Guest direct loads of React-owned admin pages redirect to sign in.',
+      'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
+      'Dashboard shows ten most recent negative thread votes.',
+      'Dashboard shows ten most recent negative experiences.',
     ],
     relatedSpecs: [
       spec(
@@ -2469,15 +2580,16 @@ const features = [
     id: 'admin.acquisition-stories',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description: 'Admins can query acquisition stories.',
-    roles: ['admin'],
+    description:
+      'Admins and Welcome team members can query acquisition stories.',
+    roles: ['admin', 'welcome-team'],
     references: {
       clientRoutes: [
         clientRoute(
           'admin-acquisition-stories',
           '/admin/acquisition-stories',
           source.adminClient,
-          { requiresAuth: true, requiresRole: 'admin' },
+          { requiresAuth: true, requiresRole: ['admin', 'welcome-team'] },
         ),
       ],
       apiRoutes: [
@@ -2485,8 +2597,11 @@ const features = [
       ],
     },
     requiredScenarios: [
+      'Welcome team can view stories without other administrator access.',
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
+      'Story rows show available member and hosting locations.',
+      'Story rows show matching restricted accounts.',
     ],
     relatedSpecs: [],
   },
@@ -2494,15 +2609,16 @@ const features = [
     id: 'admin.acquisition-analysis',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description: 'Admins can view acquisition story analysis.',
-    roles: ['admin'],
+    description:
+      'Admins and Welcome team members can view acquisition story analysis.',
+    roles: ['admin', 'welcome-team'],
     references: {
       clientRoutes: [
         clientRoute(
           'admin-acquisition-stories-analysis',
           '/admin/acquisition-stories/analysis',
           source.adminClient,
-          { requiresAuth: true, requiresRole: 'admin' },
+          { requiresAuth: true, requiresRole: ['admin', 'welcome-team'] },
         ),
       ],
       apiRoutes: [
@@ -2514,6 +2630,7 @@ const features = [
       ],
     },
     requiredScenarios: [
+      'Welcome team can view analysis.',
       'Acquisition story analysis page loads.',
       'Analysis API returns deterministic analysis.',
     ],
@@ -2582,12 +2699,21 @@ const features = [
           { requiresAuth: true, requiresRole: 'admin' },
         ),
       ],
-      apiRoutes: [apiRoute('POST', '/api/admin/users', source.adminServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/users', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/users/by-last-ip-address',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Admin search finds a confirmed member.',
       'Admin search finds a shadowbanned member.',
       'Search handles no-result state.',
+      'Admin can sort member search results by name.',
+      'Admin can inspect members sharing an exact current IP address.',
     ],
     relatedSpecs: [
       spec(
@@ -2597,6 +2723,10 @@ const features = [
       spec(
         'admin-search.spec.js',
         'admin search finds the shadowbanned member',
+      ),
+      spec(
+        'admin-search.spec.js',
+        'admin can inspect members sharing an exact current IP address',
       ),
     ],
   },
@@ -2621,6 +2751,7 @@ const features = [
     },
     requiredScenarios: [
       'Admin can list members in a selected role.',
+      'Admin can paginate a role list.',
       'Role list respects deterministic seeded users.',
     ],
     relatedSpecs: [
@@ -2628,6 +2759,7 @@ const features = [
         'admin-search.spec.js',
         'admin can list members in the shadowban role',
       ),
+      spec('admin-search.spec.js', 'admin can paginate a role list'),
     ],
   },
   {
@@ -2648,6 +2780,8 @@ const features = [
     requiredScenarios: [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
+      'Report card shows the current role inventory.',
+      'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ],
     relatedSpecs: [
@@ -2699,6 +2833,7 @@ const features = [
       ],
     },
     requiredScenarios: [
+      'Administrator grants and revokes Welcome team membership.',
       'Admin can apply a moderation role change.',
       'Role change is recorded in audit log.',
       'Permission errors are shown for invalid role changes.',
@@ -2734,8 +2869,7 @@ const features = [
     id: 'admin.newsletter-page',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description:
-      'Admins can open the newsletter admin page when still supported.',
+    description: 'Admins can build audiences and check recipient files.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -2753,15 +2887,17 @@ const features = [
     },
     requiredScenarios: [
       'Newsletter admin page loads.',
-      'Unavailable download actions degrade safely because subscriber APIs are disabled.',
+      'Newsletter page includes the recipient upload splitting tool.',
+      'Newsletter page includes full and circle subscriber export tools.',
+      'Newsletter page includes the targeted audience builder.',
     ],
     relatedSpecs: [spec('admin-pages.spec.js', 'admin newsletter page loads')],
   },
   {
-    id: 'admin.newsletter-downloads',
+    id: 'admin.newsletter-audiences',
     area: AREA.adminModeration,
-    status: STATUS.excluded,
-    description: 'Disabled newsletter subscriber download APIs.',
+    status: STATUS.active,
+    description: 'Targeted newsletter audience builder and CSV export.',
     roles: ['admin'],
     references: {
       clientRoutes: [
@@ -2777,23 +2913,77 @@ const features = [
       ],
       apiRoutes: [
         apiRoute(
+          'POST',
+          '/api/admin/newsletter-subscribers/audience',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Admin can combine selected location sources with selected circles.',
+      'Admin can preview and export the eligible targeted audience.',
+      'Audience counts refresh automatically after valid filters change.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can build a location and circle newsletter audience',
+      ),
+    ],
+  },
+  {
+    id: 'admin.newsletter-downloads',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Newsletter recipient-file split and CSV download flow.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-newsletter',
+          '/admin/newsletter',
+          source.adminClient,
+          {
+            requiresAuth: true,
+            requiresRole: 'admin',
+          },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'POST',
+          '/api/admin/newsletter-subscribers/split',
+          source.adminServer,
+        ),
+        apiRoute(
           'GET',
           '/api/admin/newsletter-subscribers',
           source.adminServer,
-          { disabledInSource: true },
         ),
         apiRoute(
           'GET',
           '/api/admin/newsletter-subscribers/circle',
           source.adminServer,
-          { disabledInSource: true },
         ),
       ],
     },
-    exclusionReason:
-      'Routes are commented out in the server route module and intentionally disabled.',
-    requiredScenarios: [],
-    relatedSpecs: [],
+    requiredScenarios: [
+      'Admin can upload a newsletter NDJSON file and split recipients by subscription status.',
+      'Split downloads preserve the uploaded recipient-list format.',
+      'Admin can export all eligible subscribers as CSV.',
+      'Admin can export eligible subscribers for a specific circle.',
+      'Restricted-role members are excluded from eligible newsletter exports.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can split newsletter recipients from uploaded NDJSON',
+      ),
+      spec(
+        'admin-newsletter-api.spec.js',
+        'admin can export all and circle subscriber CSVs',
+      ),
+    ],
   },
   {
     id: 'integration.sparkpost-webhook',

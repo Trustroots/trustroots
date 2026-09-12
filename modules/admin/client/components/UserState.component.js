@@ -41,7 +41,7 @@ export default function UserState({ user }) {
 
             return (
               <span className={classes} key={role}>
-                {role}
+                {role === 'welcome-team' ? 'Welcome team' : role}
               </span>
             );
           })}

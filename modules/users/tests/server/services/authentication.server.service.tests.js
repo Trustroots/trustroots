@@ -94,6 +94,11 @@ describe('Service: authentication', function () {
   });
 
   describe('isNameFormatValid', function () {
+    it('accepts straight and curly apostrophes', function () {
+      authenticationService.isNameFormatValid("O'Vale").should.be.true();
+      authenticationService.isNameFormatValid('O’Vale').should.be.true();
+    });
+
     it('accepts international names with common name punctuation', function () {
       authenticationService
         .isNameFormatValid('🌻 Jean-Luc O’Connor')

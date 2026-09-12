@@ -30,6 +30,16 @@ let _unConfirmedUser;
  * User routes tests
  */
 describe('User profile CRUD tests', function () {
+  it('preserves apostrophes when updating profile names', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .put('/api/users')
+      .send({ lastName: "O'Vale" })
+      .expect(200);
+    response.body.lastName.should.equal("O'Vale");
+    (await User.findById(user._id)).lastName.should.equal("O'Vale");
+  });
+
   before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
@@ -451,10 +461,14 @@ describe('User profile CRUD tests', function () {
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function (signinErr, signinRes) {
           if (signinErr) {
             return done(signinErr);
           }
+
+          const signinSessionCookie = signinRes.headers['set-cookie'].find(
+            cookie => cookie.startsWith('connect.sid='),
+          );
 
           agent
             .put('/api/users')
@@ -466,6 +480,15 @@ describe('User profile CRUD tests', function () {
               }
 
               userInfoRes.body.nostrNpub.should.equal(validNpub);
+
+              const updateSessionCookie = (
+                userInfoRes.headers['set-cookie'] || []
+              ).find(cookie => cookie.startsWith('connect.sid='));
+              if (updateSessionCookie) {
+                updateSessionCookie
+                  .split(';')[0]
+                  .should.equal(signinSessionCookie.split(';')[0]);
+              }
 
               User.findById(user._id, function (findErr, userFindRes) {
                 should.not.exist(findErr);

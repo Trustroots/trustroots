@@ -5,7 +5,12 @@ const {
   useElementScreenshot,
 } = require('../../support/test');
 
-const { SEEDED_ADMIN, signInViaApi } = require('../../support/helpers');
+const {
+  SEEDED_ADMIN,
+  SEEDED_MEMBERS,
+  signOut,
+  signInViaApi,
+} = require('../../support/helpers');
 
 async function gotoAdminPage(page, path, expectedUrl) {
   let lastError;
@@ -36,6 +41,8 @@ test.describe('admin moderation page flows', () => {
     annotateFeature(testInfo, 'admin.dashboard', [
       'Admin dashboard loads for admin.',
       'Admin footer uses the shared footer layout.',
+      'Dashboard shows ten most recent negative thread votes.',
+      'Dashboard shows ten most recent negative experiences.',
     ]);
 
     await gotoAdminPage(page, '/admin', /\/admin$/);
@@ -45,6 +52,24 @@ test.describe('admin moderation page flows', () => {
       page.getByRole('heading', { name: 'Admin Dashboard' }),
     ).toBeVisible();
     await expect(page.getByLabel('Name, username or email')).toBeVisible();
+    await expect(
+      page.getByRole('heading', {
+        name: 'Last 10 Negative Thread Votes',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Last 10 Negative Experiences' }),
+    ).toBeVisible();
+
+    const dashboard = await page.request.get('/api/admin/dashboard');
+    expect(dashboard.ok()).toBeTruthy();
+    const dashboardData = await dashboard.json();
+    expect(dashboardData.threadVotes).toHaveLength(1);
+    expect(
+      dashboardData.threadVotes.every(vote => vote.reference === 'no'),
+    ).toBe(true);
+    expect(dashboardData.negativeExperiences).toHaveLength(1);
+    expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
 
     const footer = page.locator('#tr-footer');
     await expect(footer).toBeVisible();
@@ -102,13 +127,17 @@ test.describe('admin moderation page flows', () => {
     await gotoAdminPage(page, '/admin/threads', /\/admin\/threads/);
 
     await expect(page).toHaveTitle(/Admin - Threads - Trustroots/);
-    await expect(page.getByRole('button', { name: /^query$/i })).toBeVisible();
+    await expect(
+      page.getByRole('textbox', { name: 'Member username or ID' }),
+    ).toBeVisible();
   });
 
   test('admin newsletter page loads', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.newsletter-page', [
       'Newsletter admin page loads.',
-      'Unavailable download actions degrade safely because subscriber APIs are disabled.',
+      'Newsletter page includes the recipient upload splitting tool.',
+      'Newsletter page includes full and circle subscriber export tools.',
+      'Newsletter page includes the targeted audience builder.',
     ]);
 
     await gotoAdminPage(page, '/admin/newsletter', /\/admin\/newsletter/);
@@ -117,5 +146,44 @@ test.describe('admin moderation page flows', () => {
     await expect(
       page.getByRole('heading', { name: /newsletter subscribers/i }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Export all subscribers CSV' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('Circle ID')).toBeVisible();
+    await expect(
+      page.getByLabel('Recipient file (CSV, JSONL, or NDJSON)'),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Count recipients' }),
+    ).toBeVisible();
+  });
+});
+
+test.describe('admin React route access boundaries', () => {
+  test('guest direct admin load redirects to sign in', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Guest direct loads of React-owned admin pages redirect to sign in.',
+    ]);
+
+    await signOut(page);
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveURL(/\/signin$/);
+  });
+
+  test('non-admin direct admin load redirects to volunteering', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
+    ]);
+
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.goto('/admin', { waitUntil: 'domcontentloaded' });
+
+    await expect(page).toHaveURL(/\/volunteering$/);
   });
 });

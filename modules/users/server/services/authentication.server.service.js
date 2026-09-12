@@ -2,7 +2,7 @@ const config = require('../../../../config/config');
 // Emoji sequences can combine pictographs, modifiers, joiners and selectors.
 // eslint-disable-next-line no-misleading-character-class
 const nameRegex = new RegExp(
-  '^(?=.*\\p{L})[\\p{L}\\p{M} ._’\\-\\p{Extended_Pictographic}\\p{Emoji_Modifier}\\u200D\\uFE0F]*$',
+  "^(?=.*\\p{L})[\\p{L}\\p{M} ._'’\\-\\p{Extended_Pictographic}\\p{Emoji_Modifier}\\u200D\\uFE0F]*$",
   'u',
 );
 const usernameRegex = /^(?=.*[a-z])[a-z0-9]{3,34}$/;

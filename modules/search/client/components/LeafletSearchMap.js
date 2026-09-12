@@ -7,11 +7,9 @@ import Supercluster from 'supercluster';
 import './leaflet-search-map.less';
 
 // Internal dependencies
+import { getRasterMapTiles } from '@/modules/core/client/utils/map';
 import { CLUSTER_MAX_ZOOM, MIN_ZOOM } from './constants';
 
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const offerColours = {
   'host-maybe': '#f2ae43',
   'host-yes': '#58ba58',
@@ -82,6 +80,7 @@ function addClusteredMarkers({
 
     if (point.properties.cluster) {
       const marker = L.marker([latitude, longitude], {
+        bubblingMouseEvents: false,
         icon: clusterIcon(point.properties.point_count_abbreviated, colour),
         keyboard: true,
         title: `${point.properties.point_count} results`,
@@ -102,6 +101,7 @@ function addClusteredMarkers({
     }
 
     const marker = L.circleMarker([latitude, longitude], {
+      bubblingMouseEvents: false,
       color: '#fff',
       fillColor: pointColour(point),
       fillOpacity: 1,
@@ -120,6 +120,7 @@ function addClusteredMarkers({
  * Search-map renderer used where a WebGL map cannot be created.
  */
 export default function LeafletSearchMap({
+  bounds,
   communityNotes,
   offers,
   onCommunityNoteClick,
@@ -154,10 +155,8 @@ export default function LeafletSearchMap({
     const offerGroup = L.layerGroup().addTo(map);
     const communityNoteGroup = L.layerGroup().addTo(map);
 
-    L.tileLayer(OSM_TILE_URL, {
-      attribution: OSM_ATTRIBUTION,
-      maxZoom: 19,
-    }).addTo(map);
+    const tiles = getRasterMapTiles();
+    L.tileLayer(tiles.url, tiles.options).addTo(map);
 
     const onMoveEnd = () => callbacksRef.current.onMapChange(getMapState(map));
     map.on('click', () => callbacksRef.current.onMapClick());
@@ -166,7 +165,18 @@ export default function LeafletSearchMap({
     groupsRef.current = { communityNoteGroup, offerGroup };
     onMoveEnd();
 
+    // The search pane changes size after the mobile controls are laid out.
+    // Leaflet otherwise keeps the narrow initial viewport and leaves unfilled
+    // space beside the requested tiles on iOS.
+    const invalidateSize = () => map.invalidateSize({ pan: false });
+    const initialResize = window.setTimeout(invalidateSize);
+    const settledResize = window.setTimeout(invalidateSize, 250);
+    window.addEventListener('resize', invalidateSize);
+
     return () => {
+      window.clearTimeout(initialResize);
+      window.clearTimeout(settledResize);
+      window.removeEventListener('resize', invalidateSize);
       map.remove();
       groupsRef.current = null;
       mapRef.current = null;
@@ -180,6 +190,13 @@ export default function LeafletSearchMap({
       return;
     }
 
+    // A selected place owns the camera until its bounds are cleared. Without
+    // this guard, a render carrying the old persisted viewport can undo
+    // fitBounds before Leaflet's moveend publishes the fitted viewport.
+    if (bounds?.northEast && bounds?.southWest) {
+      return;
+    }
+
     const centre = map.getCenter();
     if (
       centre.lat !== viewport.latitude ||
@@ -188,7 +205,54 @@ export default function LeafletSearchMap({
     ) {
       map.setView([viewport.latitude, viewport.longitude], viewport.zoom);
     }
-  }, [viewport]);
+  }, [bounds, viewport]);
+
+  // Leaflet needs to fit external search bounds itself. Deriving a viewport
+  // through the WebGL map utility leaves the raster map with stale dimensions
+  // after the mobile place-search panel has closed.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !bounds?.northEast || !bounds?.southWest) {
+      return;
+    }
+
+    const fitSelectedBounds = () => {
+      map.invalidateSize({ pan: false });
+      map.fitBounds(
+        [
+          [bounds.southWest.lat, bounds.southWest.lng],
+          [bounds.northEast.lat, bounds.northEast.lng],
+        ],
+        { padding: [40, 40] },
+      );
+    };
+
+    const container = containerRef.current;
+
+    // Fit immediately, then again after Angular has hidden the mobile place
+    // panel and the map container has completed its layout transition.
+    fitSelectedBounds();
+    const nextLayoutFit = window.setTimeout(fitSelectedBounds);
+    const settledLayoutFit = window.setTimeout(fitSelectedBounds, 250);
+
+    const cancelDeferredFits = () => {
+      window.clearTimeout(nextLayoutFit);
+      window.clearTimeout(settledLayoutFit);
+    };
+
+    // Once someone starts moving or zooming the map, their camera choice wins
+    // over the delayed mobile-layout correction below.
+    container.addEventListener('pointerdown', cancelDeferredFits);
+    container.addEventListener('touchstart', cancelDeferredFits);
+    container.addEventListener('wheel', cancelDeferredFits);
+
+    return () => {
+      cancelDeferredFits();
+      container.removeEventListener('pointerdown', cancelDeferredFits);
+      container.removeEventListener('touchstart', cancelDeferredFits);
+      container.removeEventListener('wheel', cancelDeferredFits);
+    };
+  }, [bounds]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -217,7 +281,7 @@ export default function LeafletSearchMap({
       index: communityNoteIndex,
       map,
       onPointClick: point => callbacksRef.current.onCommunityNoteClick(point),
-      pointColour: point => (point.properties.verified ? '#1565C0' : '#1976D2'),
+      pointColour: () => '#1565C0',
       viewport,
     });
   }, [communityNotes, offers, viewport]);
@@ -232,6 +296,16 @@ export default function LeafletSearchMap({
 }
 
 LeafletSearchMap.propTypes = {
+  bounds: PropTypes.shape({
+    northEast: PropTypes.shape({
+      lat: PropTypes.number.isRequired,
+      lng: PropTypes.number.isRequired,
+    }).isRequired,
+    southWest: PropTypes.shape({
+      lat: PropTypes.number.isRequired,
+      lng: PropTypes.number.isRequired,
+    }).isRequired,
+  }),
   communityNotes: PropTypes.shape({
     features: PropTypes.array.isRequired,
   }).isRequired,

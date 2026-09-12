@@ -380,7 +380,9 @@ describe('Message server services unit tests', function () {
       const { MessageStat, service } = loadMessageStatService();
       MessageStat.find.returns({
         sort: () => ({
-          exec: callback => callback(error),
+          populate: () => ({
+            exec: callback => callback(error),
+          }),
         }),
       });
 

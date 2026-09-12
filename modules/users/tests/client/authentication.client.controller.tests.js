@@ -11,7 +11,6 @@ describe('AuthenticationController', function () {
   let $rootScope;
   let Authentication;
   let $analytics;
-  let Facebook;
   let push;
   let trNativeAppBridge;
   let messageCenterService;
@@ -33,9 +32,6 @@ describe('AuthenticationController', function () {
         },
       },
     };
-    Facebook = {
-      init: jasmine.createSpy('Facebook.init'),
-    };
     push = {
       init: jasmine.createSpy('push.init'),
     };
@@ -50,7 +46,6 @@ describe('AuthenticationController', function () {
 
     angular.mock.module(function ($provide) {
       $provide.value('$analytics', $analytics);
-      $provide.value('Facebook', Facebook);
       $provide.value('push', push);
       $provide.value('trNativeAppBridge', trNativeAppBridge);
       $provide.value('messageCenterService', messageCenterService);
@@ -90,7 +85,6 @@ describe('AuthenticationController', function () {
         appSettings,
         $stateParams: {},
         $analytics,
-        Facebook,
         push,
         trNativeAppBridge,
         messageCenterService,
@@ -130,7 +124,6 @@ describe('AuthenticationController', function () {
         $httpBackend.flush();
 
         // Test $scope value
-        expect(Facebook.init).toHaveBeenCalled();
         expect(push.init).toHaveBeenCalled();
         expect(trNativeAppBridge.signalAuthenticated).toHaveBeenCalled();
         expect(Authentication.user).toEqual({ _id: 'Fred' });
@@ -144,7 +137,6 @@ describe('AuthenticationController', function () {
       });
 
       it('should fail to log in with nothing', function () {
-        const facebookInitCalls = Facebook.init.calls.count();
         const pushInitCalls = push.init.calls.count();
 
         // Test expected POST request
@@ -167,12 +159,10 @@ describe('AuthenticationController', function () {
           category: 'authentication',
           label: 'Login failed',
         });
-        expect(Facebook.init.calls.count()).toBe(facebookInitCalls);
         expect(push.init.calls.count()).toBe(pushInitCalls);
       });
 
       it('should use fallback message when signin response has no error', function () {
-        const facebookInitCalls = Facebook.init.calls.count();
         const pushInitCalls = push.init.calls.count();
 
         // Test expected POST request
@@ -193,7 +183,6 @@ describe('AuthenticationController', function () {
           category: 'authentication',
           label: 'Login failed',
         });
-        expect(Facebook.init.calls.count()).toBe(facebookInitCalls);
         expect(push.init.calls.count()).toBe(pushInitCalls);
       });
 
@@ -215,7 +204,6 @@ describe('AuthenticationController', function () {
               continue: true,
             },
             $analytics,
-            Facebook,
             push,
             trNativeAppBridge,
             messageCenterService,
@@ -250,7 +238,6 @@ describe('AuthenticationController', function () {
               continue: true,
             },
             $analytics,
-            Facebook,
             push,
             trNativeAppBridge,
             messageCenterService,
@@ -287,7 +274,6 @@ describe('AuthenticationController', function () {
           $scope,
           appSettings,
           $analytics,
-          Facebook,
           push,
           trNativeAppBridge,
           messageCenterService,

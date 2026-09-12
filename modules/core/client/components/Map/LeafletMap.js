@@ -3,9 +3,7 @@ import L from 'leaflet';
 import PropTypes from 'prop-types';
 import React, { useEffect, useRef } from 'react';
 
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+import { getRasterMapTiles } from '../../utils/map';
 
 /**
  * Small Leaflet renderer for maps that cannot use WebGL.
@@ -19,6 +17,7 @@ export default function LeafletMap({
   height = 320,
   location,
   marker,
+  onLocationChange,
   scrollZoom = true,
   width = '100%',
   zoom = 6,
@@ -26,6 +25,9 @@ export default function LeafletMap({
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const previousZoomRef = useRef(zoom);
+  const locationChangeRef = useRef(onLocationChange);
+  locationChangeRef.current = onLocationChange;
 
   useEffect(() => {
     const map = L.map(containerRef.current, {
@@ -33,12 +35,16 @@ export default function LeafletMap({
       zoomControl: true,
     }).setView(location, zoom);
 
-    L.tileLayer(OSM_TILE_URL, {
-      attribution: OSM_ATTRIBUTION,
-      maxZoom: 19,
-    }).addTo(map);
+    const tiles = getRasterMapTiles();
+    L.tileLayer(tiles.url, tiles.options).addTo(map);
 
     mapRef.current = map;
+    map.on('moveend', () => {
+      if (locationChangeRef.current) {
+        const centre = map.getCenter();
+        locationChangeRef.current([centre.lat, centre.lng]);
+      }
+    });
 
     return () => {
       map.remove();
@@ -56,10 +62,14 @@ export default function LeafletMap({
     if (
       current.lat !== location[0] ||
       current.lng !== location[1] ||
-      map.getZoom() !== zoom
+      previousZoomRef.current !== zoom
     ) {
-      map.setView(location, zoom);
+      map.setView(
+        location,
+        previousZoomRef.current !== zoom ? zoom : map.getZoom(),
+      );
     }
+    previousZoomRef.current = zoom;
   }, [location, zoom]);
 
   useEffect(() => {
@@ -95,6 +105,7 @@ export default function LeafletMap({
 }
 
 LeafletMap.propTypes = {
+  onLocationChange: PropTypes.func,
   ariaHidden: PropTypes.bool,
   className: PropTypes.string,
   height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),

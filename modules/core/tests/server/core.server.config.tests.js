@@ -112,11 +112,11 @@ describe('Configuration Tests:', function () {
         });
     });
 
-    it('should have user set to user object when authenticated and loading tribe page', function (done) {
+    it('should allow an authenticated user to load the Naturists circle', function (done) {
       // Create a new tribe
       const _tribe = {
-        slug: 'testers',
-        label: 'Testers',
+        slug: 'naturists',
+        label: 'Naturists',
         tribe: true,
       };
 
@@ -142,7 +142,7 @@ describe('Configuration Tests:', function () {
 
             // Get rendered layout
             agent
-              .get('/circles/testers')
+              .get('/circles/naturists')
               .expect('Content-Type', 'text/html; charset=utf-8')
               .expect(200)
               .end(function (err, res) {

@@ -22,6 +22,23 @@ registration details and SHALL explain invalid or unavailable details.
 - **WHEN** a person submits a username or email address that cannot be used
 - **THEN** the system reports that the registration details are invalid or unavailable
 
+### Requirement: Flagged signup alerts
+
+The system SHALL send a best-effort internal alert after a newly created
+account's identifying signup text matches a configured safety-review keyword.
+
+#### Scenario: Signup matches a keyword
+
+- **WHEN** a saved signup's first name, last name, display name, or username
+  contains a configured keyword case-insensitively
+- **THEN** the system sends an internal alert identifying the matched keywords
+  and member
+
+#### Scenario: Alert delivery fails
+
+- **WHEN** delivery of a flagged-signup alert fails
+- **THEN** the saved account's confirmation and login flow continues normally
+
 ### Requirement: Sign-in and protected access
 
 The system SHALL let account holders sign in using either their username or
@@ -57,6 +74,34 @@ access through valid password-reset details.
 - **WHEN** an account holder submits a valid password-reset token and matching new passwords
 - **THEN** the system updates their password
 - **AND** the account holder can sign in with the new password
+
+### Requirement: Welcome-sequence delivery
+
+The system SHALL not send welcome-sequence emails to suspended or shadowbanned
+members.
+
+#### Scenario: Restricted member is eligible for a welcome-sequence step
+
+- **WHEN** a suspended or shadowbanned member otherwise meets a
+  welcome-sequence job's timing and profile criteria
+- **THEN** the job does not select that member for email delivery
+
+### Requirement: Member data export
+
+The system SHALL let an authenticated member download an unsigned, versioned
+JSON file containing their profile, contacts, and hosting offers.
+
+#### Scenario: Member downloads their data
+
+- **WHEN** an authenticated member requests their data export
+- **THEN** the system returns a JSON attachment with format
+  `trustroots-data-export`, version `1`, an export timestamp, and `profile`,
+  `contacts`, and `hostingOffers` sections
+
+#### Scenario: Unauthenticated visitor requests an export
+
+- **WHEN** an unauthenticated visitor requests the data-export endpoint
+- **THEN** the system refuses the request
 
 ### Requirement: Sign-out
 
@@ -113,3 +158,37 @@ provider data and manage their push-notification registrations.
 
 - **WHEN** an authenticated account holder adds or removes a push registration
 - **THEN** the system persists the requested registration state
+
+### Requirement: Finish-signup reminder delivery
+
+The system SHALL not send finish-signup reminder emails to suspended or
+shadowbanned members.
+
+#### Scenario: Restricted member remains incomplete
+
+- **WHEN** a suspended or shadowbanned member otherwise meets a finish-signup
+  reminder job's timing and profile criteria
+- **THEN** the job does not select that member for email delivery
+
+### Requirement: New username policy preserves existing identities
+
+New signups and username changes SHALL accept only 3–34 lowercase ASCII letters and digits with at least one letter, excluding reserved names. Existing usernames SHALL remain usable for authentication, lookups and unrelated profile updates.
+
+#### Scenario: A member selects a new username
+
+- **WHEN** a signup or username change uses punctuation, uppercase letters, only digits or a reserved name
+- **THEN** the request is rejected with a validation message
+
+#### Scenario: An existing member retains a legacy username
+
+- **WHEN** a member with punctuation in their existing username signs in and updates their profile without changing that username
+- **THEN** authentication and the update succeed
+
+### Requirement: Member names retain ordinary punctuation
+
+Signup and profile updates SHALL accept straight and curly apostrophes alongside supported international letters, combining marks, spaces, full stops, underscores, hyphens and emoji decoration. Names SHALL contain a letter and remain subject to the existing length and spam restrictions.
+
+#### Scenario: An apostrophe is part of a member name
+
+- **WHEN** a member signs up or updates their name using a straight or curly apostrophe
+- **THEN** the name is accepted and preserved

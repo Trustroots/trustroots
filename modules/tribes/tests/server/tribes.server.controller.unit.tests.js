@@ -77,6 +77,48 @@ describe('Tribes controller unit tests', () => {
       res.body[0].slug.should.equal('beta');
     });
 
+    it('omits member-only tribes from anonymous catalogue responses', async () => {
+      await new Tribe({
+        label: 'Naturists',
+        slug: 'naturists',
+        public: true,
+      }).save();
+      await new Tribe({
+        label: 'Visible',
+        slug: 'visible',
+        public: true,
+      }).save();
+
+      const res = deferredResponse();
+      tribesController.listTribes(
+        { query: {}, protocol: 'https', originalUrl: '/api/tribes' },
+        res,
+      );
+      await res.waitForResponse();
+      res.body.map(tribe => tribe.slug).should.deepEqual(['visible']);
+    });
+
+    it('includes member-only tribes for authenticated members', async () => {
+      await new Tribe({
+        label: 'Naturists',
+        slug: 'naturists',
+        public: true,
+      }).save();
+
+      const res = deferredResponse();
+      tribesController.listTribes(
+        {
+          user: { roles: ['user'] },
+          query: {},
+          protocol: 'https',
+          originalUrl: '/api/tribes',
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.body.map(tribe => tribe.slug).should.deepEqual(['naturists']);
+    });
+
     it('sorts tribes alphabetically when requested', async () => {
       await new Tribe({
         label: 'Zulu',
@@ -170,6 +212,48 @@ describe('Tribes controller unit tests', () => {
   });
 
   describe('tribeBySlug', () => {
+    it('refuses member-only circle details to anonymous visitors', async () => {
+      const res = deferredResponse();
+      let nextCalled = false;
+
+      tribesController.tribeBySlug(
+        {},
+        res,
+        () => {
+          nextCalled = true;
+        },
+        'naturists',
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+      nextCalled.should.be.false();
+    });
+
+    it('attaches a member-only circle for an authenticated member', async () => {
+      const tribe = await new Tribe({
+        label: 'Naturists',
+        slug: 'naturists',
+        public: true,
+      }).save();
+      const res = deferredResponse();
+      let nextCalled = false;
+      const req = { user: { roles: ['user'] } };
+
+      await new Promise(resolve => {
+        tribesController.tribeBySlug(
+          req,
+          res,
+          () => {
+            nextCalled = true;
+            resolve();
+          },
+          'naturists',
+        );
+      });
+      nextCalled.should.be.true();
+      req.tribe._id.toString().should.equal(tribe._id.toString());
+    });
+
     it('attaches a tribe and calls next', async () => {
       const tribe = await new Tribe({
         label: 'Lookup',

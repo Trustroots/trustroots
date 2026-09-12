@@ -1,0 +1,214 @@
+name: Mobile screenshots
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - '.github/workflows/mobile-screenshots.yml'
+      - 'apps/android/**'
+      - 'apps/ios/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ios:
+    name: iOS screenshot test
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'screenshots')
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select and boot an iPhone simulator
+        id: simulator
+        run: |
+          device_id="$(xcrun simctl list devices available -j | ruby -rjson -e '
+            JSON.parse($stdin.read).fetch("devices").each_value do |devices|
+              iphone = devices.find { |device| device.fetch("name").start_with?("iPhone") }
+              if iphone
+                puts iphone.fetch("udid")
+                break
+              end
+            end
+          ')"
+          test -n "$device_id"
+          xcrun simctl boot "$device_id" 2>/dev/null || true
+          xcrun simctl bootstatus "$device_id" -b
+          echo "id=$device_id" >> "$GITHUB_OUTPUT"
+      - name: Build and launch iOS app
+        working-directory: apps/ios
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.id }}
+        run: |
+          xcodebuild \
+            -project Trustroots.xcodeproj \
+            -scheme Trustroots \
+            -destination "id=$DEVICE_ID" \
+            -derivedDataPath "$RUNNER_TEMP/TrustrootsDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+          app="$RUNNER_TEMP/TrustrootsDerivedData/Build/Products/Debug-iphonesimulator/Trustroots.app"
+          test -d "$app"
+          xcrun simctl install "$DEVICE_ID" "$app"
+          xcrun simctl launch "$DEVICE_ID" org.trustroots.ios
+      - name: Capture iOS screenshot
+        env:
+          DEVICE_ID: ${{ steps.simulator.outputs.id }}
+        run: |
+          sleep 3
+          mkdir -p tmp/mobile-screenshots
+          xcrun simctl io "$DEVICE_ID" screenshot tmp/mobile-screenshots/ios_sign_in.png
+          test -s tmp/mobile-screenshots/ios_sign_in.png
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mobile-screenshot-ios
+          path: tmp/mobile-screenshots/ios_sign_in.png
+
+  android:
+    name: Android screenshot test
+    if: >
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      contains(github.event.pull_request.labels.*.name, 'screenshots')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v5
+      - uses: android-actions/setup-android@v3
+      - name: Restore Android emulator image
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd
+            ~/.android/adb*
+          key: android-emulator-${{ runner.os }}-api36-x86_64-pixel6-v1
+      - name: Install Android build SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Build, launch and capture Android app
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          arch: x86_64
+          disable-animations: true
+          profile: pixel_6
+          script: |
+            test -f apps/android/gradlew
+            bash apps/android/gradlew -p apps/android assembleDebug
+            adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am force-stop org.trustroots.android.debug
+            launcher="$(adb shell cmd package resolve-activity --brief \
+              -a android.intent.action.MAIN \
+              -c android.intent.category.LAUNCHER \
+              org.trustroots.android.debug | tr -d '\r')"
+            test -n "$launcher"
+            adb shell am start -W -n "$launcher"
+            # Compose can render a blank first frame while Android restores the
+            # activity. Capture only after the launched activity has settled.
+            sleep 8
+            mkdir -p tmp/mobile-screenshots
+            adb exec-out screencap -p > tmp/mobile-screenshots/android_sign_in.png
+            test -s tmp/mobile-screenshots/android_sign_in.png
+      - uses: actions/upload-artifact@v7
+        with:
+          name: mobile-screenshot-android
+          path: tmp/mobile-screenshots/android_sign_in.png
+
+  publish:
+    name: Publish mobile screenshots
+    needs: [ios, android]
+    if: >
+      always() &&
+      needs.ios.result == 'success' &&
+      needs.android.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: mobile-screenshot-*
+          path: tmp/mobile-screenshots
+          merge-multiple: true
+      - name: Push screenshots to pr-screenshots branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_DIR: pr-${{ github.event.pull_request.number }}/${{ github.run_id }}
+        run: |
+          screenshots="$GITHUB_WORKSPACE/tmp/mobile-screenshots"
+          test -s "$screenshots/ios_sign_in.png"
+          test -s "$screenshots/android_sign_in.png"
+
+          pushdir="$(mktemp -d)"
+          cd "$pushdir"
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          if git fetch --depth=1 origin pr-screenshots:pr-screenshots 2>/dev/null; then
+            git checkout pr-screenshots
+          else
+            git checkout --orphan pr-screenshots
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+
+          mkdir -p "$RUN_DIR"
+          cp "$screenshots"/*.png "$RUN_DIR/"
+          git add "$RUN_DIR"
+          git commit -m "PR #${{ github.event.pull_request.number }} mobile screenshots (${{ github.run_id }})"
+          git push origin HEAD:pr-screenshots
+      - name: Upsert PR comment with mobile screenshots
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const marker = '<!-- mobile-screenshots -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const runId = context.runId;
+            const baseUrl = `https://raw.githubusercontent.com/${owner}/${repo}/pr-screenshots/pr-${issue_number}/${runId}`;
+            const body = [
+              marker,
+              '## Mobile screenshot tests',
+              '',
+              `Run: \`${context.serverUrl}/${owner}/${repo}/actions/runs/${runId}\``,
+              '',
+              '### iOS sign in',
+              '',
+              `![iOS sign in](${baseUrl}/ios_sign_in.png)`,
+              '',
+              '### Android sign in',
+              '',
+              `![Android sign in](${baseUrl}/android_sign_in.png)`,
+              '',
+            ].join('\n');
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+            });
+            const existing = comments.find(
+              comment => comment.body && comment.body.includes(marker),
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }

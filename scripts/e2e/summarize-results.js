@@ -7,13 +7,12 @@ const { summarizeFeatureCoverage } = require('./feature-coverage-summary');
 const { mergeRawCoverage } = require('./merge-js-coverage');
 
 const root = path.resolve(__dirname, '../..');
-const resultsPath = path.join(root, 'coverage/e2e/playwright-results.json');
+const resultsPath = process.env.TRUSTROOTS_E2E_RESULTS_PATH
+  ? path.resolve(process.env.TRUSTROOTS_E2E_RESULTS_PATH)
+  : path.join(root, 'coverage/e2e/playwright-results.json');
 const statusPath = process.env.TRUSTROOTS_E2E_STATUS_PATH
   ? path.resolve(process.env.TRUSTROOTS_E2E_STATUS_PATH)
   : path.join(root, 'coverage/e2e/status.json');
-const enforceFeatureCoverage =
-  process.env.TRUSTROOTS_E2E_ENFORCE_FEATURE_COVERAGE === 'true';
-
 const TERMINAL_FAILURES = new Set([
   'failed',
   'timedOut',
@@ -189,11 +188,20 @@ function formatMessage(metrics, fallbackMessage) {
     );
   }
 
-  if (enforceFeatureCoverage && metrics.missingScenarioCount > 0) {
+  if (metrics.missingScenarioCount > 0) {
     parts.push(`${metrics.missingScenarioCount} feature scenarios missing`);
   }
 
   return `${parts.join('; ')}.`;
+}
+
+function featureCoverageIncomplete(metrics) {
+  return Boolean(
+    metrics &&
+      (metrics.missingScenarioCount > 0 ||
+        (typeof metrics.featurePassCoverage === 'number' &&
+          metrics.featurePassCoverage < 100)),
+  );
 }
 
 function writeStatus(status, exitCode, message, metrics) {
@@ -217,8 +225,8 @@ function writeStatus(status, exitCode, message, metrics) {
 }
 
 async function run() {
-  const status = process.env.STATUS || 'unknown';
-  const exitCode = Number(process.env.EXIT_CODE || 0);
+  let status = process.env.STATUS || 'unknown';
+  let exitCode = Number(process.env.EXIT_CODE || 0);
   const message = process.env.MESSAGE || 'No status message was recorded.';
 
   await mergeRawCoverage();
@@ -234,12 +242,15 @@ async function run() {
     metrics.codeCoverage = codeCoverage;
   }
 
+  const incompleteFeatureCoverage = featureCoverageIncomplete(metrics);
+  if (incompleteFeatureCoverage && status === 'passed') {
+    status = 'failed';
+    exitCode = 1;
+  }
+
   writeStatus(status, exitCode, message, metrics);
 
-  if (
-    enforceFeatureCoverage &&
-    (metrics.missingScenarioCount > 0 || metrics.featurePassCoverage < 100)
-  ) {
+  if (incompleteFeatureCoverage) {
     throw new Error(
       `End-to-end feature coverage is below 100%: ${metrics.coveredScenarioCount}/${metrics.requiredScenarioCount} scenarios covered.`,
     );
@@ -256,4 +267,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { summarizeReport };
+module.exports = { featureCoverageIncomplete, summarizeReport };

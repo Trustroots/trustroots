@@ -111,6 +111,13 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/',
     );
+    expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
+      'href',
+      '/statistics',
+    );
+    screen.getAllByRole('link', { name: 'Safety' }).forEach(link => {
+      expect(link).toHaveAttribute('href', '/safety');
+    });
     const wikiLink = screen.getByRole('link', { name: 'Wiki' });
     expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
     expect(wikiLink).toHaveAttribute('target', '_blank');

@@ -218,10 +218,6 @@ module.exports = {
   },
   facebook: {
     page: '',
-    clientID: false,
-    clientSecret: false,
-    clientAccessToken: false,
-    callbackURL: '/api/auth/facebook/callback',
   },
   twitter: {
     username: '',
@@ -232,11 +228,6 @@ module.exports = {
   fcm: {
     senderId: '',
     serviceAccount: false,
-  },
-  github: {
-    clientID: '',
-    clientSecret: '',
-    callbackURL: '/api/auth/github/callback',
   },
   googleAnalytics: {
     enabled: false,
@@ -254,13 +245,6 @@ module.exports = {
       level: 'debug',
       program: 'production',
       inlineMeta: true,
-    },
-  },
-  sentry: {
-    enabled: false,
-    options: {
-      dsn: '',
-      // Note: integrations are defined directly at `Sentry.init()`, don't add them here.
     },
   },
   // Spam detection

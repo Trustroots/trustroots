@@ -123,6 +123,21 @@ describe('User signup and authentication CRUD tests', function () {
     });
   });
 
+  it('accepts straight apostrophes in signup names', async function () {
+    const response = await agent
+      .post('/api/auth/signup')
+      .send({
+        firstName: 'Amina',
+        lastName: "O'Vale",
+        email: 'amina@example.org',
+        username: 'aminavale',
+        password: 'TR-I$Aw3$0m4',
+        acquisitionStory: 'Test',
+      })
+      .expect(200);
+    response.body.lastName.should.equal("O'Vale");
+  });
+
   it('should reject signup with a code-like name', function (done) {
     agent
       .post('/api/auth/signup')

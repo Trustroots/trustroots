@@ -1,8 +1,10 @@
 // External dependencies
 import classnames from 'classnames';
 import React, { useEffect } from 'react';
+import { getUser } from '../../../core/client/services/angular-compat';
 
 export default function AdminHeader() {
+  const isAdmin = (getUser()?.roles || []).includes('admin');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
@@ -53,13 +55,20 @@ export default function AdminHeader() {
     <nav className="navbar navbar-white navbar-admin">
       <div className="container">
         <div className="navbar-header">
-          <a className="navbar-brand" href="/admin">
-            Admin
+          <a
+            className="navbar-brand"
+            href={isAdmin ? '/admin' : '/admin/acquisition-stories'}
+          >
+            {isAdmin ? 'Admin' : 'Welcome team'}
           </a>
         </div>
-        <ul className="nav navbar-nav">{pages.map(page => renderTab(page))}</ul>
+        <ul className="nav navbar-nav">
+          {pages
+            .filter(page => isAdmin || page.path === 'acquisition-stories')
+            .map(page => renderTab(page))}
+        </ul>
         <ul className="nav navbar-nav pull-right">
-          {renderTab({ path: 'audit-log', label: 'Audit log' })}
+          {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
         </ul>
       </div>
     </nav>

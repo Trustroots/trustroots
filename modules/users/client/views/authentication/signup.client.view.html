@@ -271,8 +271,8 @@
               type="button"
               class="btn btn-lg btn-primary"
               ng-click="signup.submitSignup()"
-              ng-disabled="userForm.$invalid"
-              ng-bind="(!userForm.$invalid ? 'Next': 'Please fill in the form')"
+              ng-disabled="userForm.$invalid || userForm.$pending || signup.isLoading"
+              ng-bind="userForm.$pending ? 'Checking username…' : (!userForm.$invalid ? 'Next' : 'Please fill in the form')"
             ></button>
             <br /><br />
           </div>

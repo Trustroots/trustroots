@@ -409,43 +409,29 @@ describe('API route registrations', () => {
     );
   });
 
-  it('registers authentication routes and OAuth passport middleware', () => {
-    const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+  it('registers local authentication routes without social OAuth', () => {
     const authentication = controller(
       [
         'confirmEmail',
-        'oauthCallback',
         'resendConfirmation',
         'signin',
         'signout',
         'signup',
         'signupValidation',
-        'updateFacebookOAuthToken',
         'validateEmailToken',
       ],
       'userAuthentication',
     );
-    authentication.oauthCallback = provider =>
-      handler(`userAuthentication.oauthCallback.${provider}`);
     const password = controller(
       ['forgot', 'reset', 'validateResetToken'],
       'userPassword',
     );
-    const passportAuthenticateCalls = [];
-    const passport = {
-      authenticate(provider, options) {
-        passportAuthenticateCalls.push({ provider, options });
-        return handler(`passport.authenticate.${provider}`);
-      },
-    };
 
     const { routes } = register(
       '../../../../modules/users/server/routes/auth.server.routes',
       {
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
-        '../policies/users.server.policy': policy,
-        passport,
       },
     );
 
@@ -479,31 +465,10 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/auth/signout').get, [
       authentication.signout,
     ]);
-    assertHandlers(routeByPath(routes, '/api/auth/facebook').get, [
-      passportAuthenticateCalls[0] &&
-        handler(
-          `passport.authenticate.${passportAuthenticateCalls[0].provider}`,
-        ),
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/facebook').put, [
-      authentication.updateFacebookOAuthToken,
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/facebook/callback').get, [
-      handler('userAuthentication.oauthCallback.facebook'),
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/github').get, [
-      handler('passport.authenticate.github'),
-    ]);
-    assertHandlers(routeByPath(routes, '/api/auth/github/callback').get, [
-      handler('userAuthentication.oauthCallback.github'),
-    ]);
-    routes
-      .filter(route => /facebook|github/.test(route.path))
-      .forEach(route => assertPolicy(route, policy));
-    assert.deepStrictEqual(passportAuthenticateCalls, [
-      { provider: 'facebook', options: { scope: ['public_profile', 'email'] } },
-      { provider: 'github', options: { scope: ['user:email'] } },
-    ]);
+    assert.equal(
+      routes.some(route => /\/api\/auth\/(facebook|github)/.test(route.path)),
+      false,
+    );
   });
 
   it('registers blocked-user routes', () => {
@@ -541,6 +506,16 @@ describe('API route registrations', () => {
     );
     const auditLog = controller(['list', 'record'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
+    const newsletter = controller(
+      [
+        'audience',
+        'list',
+        'listCircleMembers',
+        'splitSubscribers',
+        'uploadSubscribersCsv',
+      ],
+      'adminNewsletter',
+    );
     const notes = controller(['addNote', 'getNotes'], 'adminNotes');
     const referenceThreads = controller(['list'], 'adminReferenceThreads');
     const threads = controller(['getThreads'], 'adminThreads');
@@ -548,6 +523,7 @@ describe('API route registrations', () => {
       [
         'changeRole',
         'getUser',
+        'listUsersByLastIpAddress',
         'listUsersByRole',
         'searchUsers',
         'usernameToUserId',
@@ -562,6 +538,7 @@ describe('API route registrations', () => {
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
         '../controllers/admin.messages.server.controller': messages,
+        '../controllers/admin.newsletter.server.controller': newsletter,
         '../controllers/admin.notes.server.controller': notes,
         '../controllers/admin.reference-threads.server.controller':
           referenceThreads,
@@ -607,6 +584,10 @@ describe('API route registrations', () => {
       auditLog.record,
       users.listUsersByRole,
     ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/users/by-last-ip-address').post,
+      [auditLog.record, users.listUsersByLastIpAddress],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/user').post, [
       auditLog.record,
       users.getUser,
@@ -619,6 +600,26 @@ describe('API route registrations', () => {
       auditLog.record,
       referenceThreads.list,
     ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/split').post,
+      [
+        auditLog.record,
+        newsletter.uploadSubscribersCsv,
+        newsletter.splitSubscribers,
+      ],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers').get,
+      [auditLog.record, newsletter.list],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/audience').post,
+      [auditLog.record, newsletter.audience],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/circle').get,
+      [auditLog.record, newsletter.listCircleMembers],
+    );
     routes.forEach(route => assertPolicy(route, policy));
   });
 

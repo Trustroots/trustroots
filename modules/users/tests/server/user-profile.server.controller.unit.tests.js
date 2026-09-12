@@ -294,18 +294,16 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
     });
 
-    it('returns 400 when login fails after saving', async () => {
+    it('preserves the authenticated session when saving a profile', async () => {
+      const login = sinon.spy();
       const { res } = await runHandler(res =>
         profileController.update(
-          {
-            user: userDoc,
-            body: { tagline: 'Updated tagline' },
-            login: (user, cb) => cb(new Error('login failed')),
-          },
+          { user: userDoc, body: { tagline: 'Updated tagline' }, login },
           res,
         ),
       );
-      res.statusCode.should.equal(400);
+      res.statusCode.should.equal(200);
+      login.called.should.equal(false);
     });
 
     it('returns 400 when saving profile updates fails', async () => {
@@ -984,31 +982,6 @@ describe('Profile controller unit tests', () => {
     });
   });
 
-  describe('sanitizeProfile', () => {
-    it('creates member ids from unpopulated tribe ids', () => {
-      const userId = new mongoose.Types.ObjectId();
-      const tribeId = new mongoose.Types.ObjectId();
-      const profile = {
-        _id: userId,
-        member: [{ tribe: tribeId }],
-        toObject() {
-          return {
-            _id: userId,
-            created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
-            member: [{ tribe: tribeId }],
-            roles: [],
-          };
-        },
-      };
-
-      const sanitized = profileController.sanitizeProfile(profile, {
-        _id: userId,
-      });
-
-      sanitized.memberIds.should.deepEqual([tribeId.toString()]);
-    });
-  });
-
   describe('push registration', () => {
     it('removePushRegistration responds with 403 without a user', async () => {
       const { res } = await runHandler(res =>
@@ -1328,6 +1301,103 @@ describe('Profile controller unit tests', () => {
       (sanitized.roles === undefined).should.be.true();
     });
 
+    it('retains only the minimal public identity for legacy providers', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(saved._id);
+      userDoc.additionalProvidersData = {
+        facebook: {
+          id: 'fictional-facebook-id',
+          accessToken: 'fictional-access-token',
+          refreshToken: 'fictional-refresh-token',
+          accessTokenExpires: new Date(),
+          email: 'legacy-facebook@example.test',
+          _json: { name: 'Fictional Facebook Member' },
+        },
+        github: {
+          login: 'fictional-github-login',
+          accessToken: 'fictional-github-token',
+          id: 123,
+          email: 'legacy-github@example.test',
+        },
+        twitter: {
+          screen_name: 'fictional-twitter-member',
+          token: 'fictional-twitter-token',
+          tokenSecret: 'fictional-twitter-secret',
+          _json: { name: 'Fictional Twitter Member' },
+        },
+        unknown: { id: 'unknown-id', accessToken: 'unknown-token' },
+      };
+
+      const sanitized = profileController.sanitizeProfile(userDoc, userDoc);
+
+      sanitized.additionalProvidersData.should.deepEqual({
+        facebook: { id: 'fictional-facebook-id' },
+        github: { login: 'fictional-github-login' },
+        twitter: { screen_name: 'fictional-twitter-member' },
+      });
+    });
+
+    it('hides external contact details from shadowbanned viewers', async () => {
+      const [savedProfile, savedViewer] = await utils.saveUsers(
+        utils.generateUsers(2),
+      );
+      const profile = await User.findById(savedProfile._id);
+      const viewer = await User.findById(savedViewer._id);
+      profile.description =
+        '<p>Contact member@example.org, (555) 666-7777 or https://example.org/profile.</p>';
+      profile.extSitesBW = 'fictional-member';
+      profile.extSitesCS = 'fictional-member';
+      profile.extSitesCouchers = 'fictional-member';
+      profile.extSitesWS = 'fictional-member';
+      profile.nostrNpub =
+        'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq0l7z9';
+      profile.additionalProvidersData = {
+        facebook: { id: 'fictional-facebook-id' },
+        github: { login: 'fictional-github-login' },
+        twitter: { screen_name: 'fictional-twitter-member' },
+      };
+      viewer.roles = ['user', 'shadowban'];
+
+      const sanitized = profileController.sanitizeProfile(profile, viewer);
+
+      sanitized.description.should.equal('Contact ,  or .');
+      (sanitized.additionalProvidersData === undefined).should.be.true();
+      (sanitized.extSitesBW === undefined).should.be.true();
+      (sanitized.extSitesCS === undefined).should.be.true();
+      (sanitized.extSitesCouchers === undefined).should.be.true();
+      (sanitized.extSitesWS === undefined).should.be.true();
+      (sanitized.nostrNpub === undefined).should.be.true();
+    });
+
+    it('keeps external contact details on a shadowbanned member own profile', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const profile = await User.findById(saved._id);
+      profile.roles = ['user', 'shadowban'];
+      profile.description = '<p>Visit https://example.org/profile.</p>';
+      profile.extSitesBW = 'fictional-member';
+
+      const sanitized = profileController.sanitizeProfile(profile, profile);
+
+      sanitized.description.should.containEql('https://example.org/profile');
+      sanitized.extSitesBW.should.equal('fictional-member');
+    });
+
+    it('keeps external contact details for administrative viewers', async () => {
+      const [savedProfile, savedViewer] = await utils.saveUsers(
+        utils.generateUsers(2),
+      );
+      const profile = await User.findById(savedProfile._id);
+      const viewer = await User.findById(savedViewer._id);
+      profile.description = '<p>Visit https://example.org/profile.</p>';
+      profile.extSitesBW = 'fictional-member';
+      viewer.roles = ['user', 'admin', 'shadowban'];
+
+      const sanitized = profileController.sanitizeProfile(profile, viewer);
+
+      sanitized.description.should.containEql('https://example.org/profile');
+      sanitized.extSitesBW.should.equal('fictional-member');
+    });
+
     it('collects member tribe ids from unpopulated memberships', async () => {
       const tribe = await new Tribe({ label: 'ObjectId Tribe' }).save();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -1384,6 +1454,27 @@ describe('Profile controller unit tests', () => {
 
       sanitized.memberIds.should.deepEqual([]);
       sanitized.member.should.deepEqual([]);
+    });
+
+    it('treats matching string ids as the authenticated user', () => {
+      const userId = new mongoose.Types.ObjectId();
+      const profile = {
+        _id: userId,
+        toObject() {
+          return {
+            _id: userId,
+            created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+            member: [],
+            roles: [],
+          };
+        },
+      };
+
+      const sanitized = profileController.sanitizeProfile(profile, {
+        _id: userId.toString(),
+      });
+
+      sanitized.usernameUpdateAllowed.should.be.true();
     });
   });
 
@@ -1467,6 +1558,41 @@ describe('Profile controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.length.should.equal(1);
+    });
+
+    it('excludes suspended and shadowbanned users from the query', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const visibleDoc = await User.findById(viewer._id);
+      sinon.stub(User, 'find').callsFake(query => {
+        query.$and.should.containEql({
+          roles: { $nin: ['suspended', 'shadowban'] },
+        });
+        return {
+          select: () => ({
+            sort: () => ({
+              limit: () => ({
+                skip: () => ({
+                  exec: cb => cb(null, [visibleDoc]),
+                }),
+              }),
+            }),
+          }),
+        };
+      });
+
+      const { res } = await runHandler((res, next) =>
+        profileController.search(
+          {
+            query: { search: 'Findme' },
+            user: { _id: viewer._id, blocked: [] },
+            skip: 0,
+          },
+          res,
+          next,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
     });
 
     it('defaults blocked users to an empty list when searching', async () => {

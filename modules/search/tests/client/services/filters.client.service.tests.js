@@ -64,8 +64,37 @@ describe('FiltersService', function () {
       },
       communityNotes: true,
       tribes: ['cyclists'],
-      types: ['host'],
+      types: ['host', 'meet'],
     });
+    expect(locker.put).toHaveBeenCalledWith(
+      'search.filters.user-1',
+      FiltersService.get(),
+    );
+  });
+
+  it('normalizes empty visitor filters without mounting the sidebar', function () {
+    const { FiltersService, locker } = loadService({
+      cachedFilters: { types: [] },
+    });
+
+    expect(FiltersService.get('types')).toEqual(['meet']);
+    expect(locker.put).toHaveBeenCalledWith(
+      'search.filters',
+      FiltersService.get(),
+    );
+  });
+
+  it('normalizes externally set offer types', function () {
+    const { FiltersService } = loadService();
+
+    FiltersService.set('types', []);
+    expect(FiltersService.get('types')).toEqual(['meet']);
+    FiltersService.set('types', ['host']);
+    expect(FiltersService.get('types')).toEqual(['host', 'meet']);
+    FiltersService.set('types', [{ id: 'host' }]);
+    expect(FiltersService.get('types')).toEqual(['host', 'meet']);
+    FiltersService.set('types');
+    expect(FiltersService.get('types')).toEqual(['meet']);
   });
 
   it('persists filter changes to the authenticated user cache', function () {
