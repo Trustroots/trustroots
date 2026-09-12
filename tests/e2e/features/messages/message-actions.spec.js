@@ -4,9 +4,12 @@ const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
   createIsolatedContext,
+  createUser,
+  registerViaApi,
   fetchUserIdByUsername,
   signInViaApi,
 } = require('../../support/helpers');
+const { updateUserByUsername } = require('../../support/db');
 const {
   assertReplyComposerCaretAndComposition,
 } = require('../../support/message-reply-editor');
@@ -89,13 +92,24 @@ test.describe.serial('message action feature coverage', () => {
   });
 
   test('direct conversation links change the recipient and clear the previous draft', async ({
+    browser,
+    baseURL,
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.reply-send', [
       'Switching directly between conversation URLs clears the previous draft and targets the new recipient.',
     ]);
-    const recipient = SEEDED_MEMBERS[2];
+    const recipient = createUser();
+    const recipientContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(recipientContext.request, recipient);
+      await updateUserByUsername(recipient.username, {
+        $set: { public: true },
+      });
+    } finally {
+      await recipientContext.close();
+    }
     const recipientId = await fetchUserIdByUsername(
       request,
       recipient.username,
@@ -104,10 +118,11 @@ test.describe.serial('message action feature coverage', () => {
       request,
       portland.username,
     );
+    const conversationLabel = `Open conversation with ${recipient.username}`;
     const conversationLink = await page.request.post('/api/messages', {
       data: {
         userTo: originalRecipientId,
-        content: `<a href="/messages/${recipient.username}">Open the next conversation</a>`,
+        content: `<a href="/messages/${recipient.username}">${conversationLabel}</a>`,
       },
     });
     expect(conversationLink.ok()).toBeTruthy();
@@ -121,7 +136,7 @@ test.describe.serial('message action feature coverage', () => {
         response.ok(),
     );
     await page
-      .getByRole('link', { name: 'Open the next conversation' })
+      .getByRole('link', { name: conversationLabel, exact: true })
       .click();
     await loadedRecipient;
     await expect(editor).toBeVisible();

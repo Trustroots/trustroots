@@ -5,13 +5,17 @@ const {
   SEEDED_MEMBERS,
   SEEDED_OFFER,
   SEEDED_PROFILE_DESCRIPTION,
-  SEEDED_RELATIONSHIP_MEMBERS,
   SEEDED_SHADOW,
   EUROPE_OFFERS_QUERY,
   fetchUserIdByUsername,
+  createIsolatedContext,
+  createUser,
+  registerViaApi,
   signInViaApi,
   waitForTribesList,
 } = require('../../support/helpers');
+
+const { updateUserByUsername } = require('../../support/db');
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -473,6 +477,8 @@ test.describe('confirmed member flows', () => {
   });
 
   test('new message thread shows the empty conversation state', async ({
+    browser,
+    baseURL,
     page,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.new-conversation', [
@@ -481,9 +487,18 @@ test.describe('confirmed member flows', () => {
       'Sending an opening message creates the conversation.',
     ]);
 
-    const recipient = SEEDED_RELATIONSHIP_MEMBERS.alice;
+    const recipient = createUser();
+    const recipientContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(recipientContext.request, recipient);
+      await updateUserByUsername(recipient.username, {
+        $set: { public: true },
+      });
+    } finally {
+      await recipientContext.close();
+    }
 
-    await page.goto(`/messages/${recipient.username}?userId=${recipient.id}`);
+    await page.goto(`/messages/${recipient.username}`);
 
     await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
     await expect(
