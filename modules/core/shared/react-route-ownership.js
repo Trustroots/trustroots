@@ -17,6 +17,13 @@ const REACT_ROUTE_POLICIES = [
     footerHidden: true,
   },
   { path: '/confirm-email-invalid', title: 'Confirm email invalid' },
+  {
+    path: '/contact-confirm/:contactId',
+    title: 'Confirm contact',
+    requiresAuth: true,
+  },
+  { path: '/', footerHidden: true },
+  { path: '/safety', title: 'Safety' },
   { path: '/circles', title: 'Circles' },
   { path: '/circles/:circle', title: 'Circle', footerHidden: true },
   {
@@ -182,6 +189,12 @@ function getReactRoutePolicy(path) {
     route => route.path !== '/circles/:circle' && route.path === normalizedPath,
   );
   if (exact) return exact;
+
+  if (/^\/contact-confirm\/[^/]+$/.test(normalizedPath)) {
+    return REACT_ROUTE_POLICIES.find(
+      route => route.path === '/contact-confirm/:contactId',
+    );
+  }
 
   const circleMatch = /^\/circles\/([^/]+)$/.exec(normalizedPath);
   if (!circleMatch) return undefined;

@@ -155,6 +155,16 @@ jest.mock(
   '@/modules/users/client/components/ConfirmEmailInvalidPage.component',
   () => () => <main>ConfirmEmailInvalidPage</main>,
 );
+jest.mock(
+  '@/modules/contacts/client/components/ContactConfirmPage.component',
+  () => () => <main>ContactConfirmPage</main>,
+);
+jest.mock('@/modules/pages/client/components/HomeRoute', () => () => (
+  <main>HomeRoute</main>
+));
+jest.mock('@/modules/pages/client/components/Safety.component', () => () => (
+  <main>Safety</main>
+));
 
 /* eslint-enable react/display-name */
 

@@ -3,6 +3,9 @@ import ForgotPasswordPage from '@/modules/users/client/components/ForgotPassword
 import ResetPasswordSuccessPage from '@/modules/users/client/components/ResetPasswordSuccessPage.component';
 import ResetPasswordInvalidPage from '@/modules/users/client/components/ResetPasswordInvalidPage.component';
 import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
+import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
+import HomeRoute from '@/modules/pages/client/components/HomeRoute';
+import Safety from '@/modules/pages/client/components/Safety.component';
 import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import Welcome from '@/modules/users/client/components/Welcome.component';
@@ -58,6 +61,11 @@ function renderNavigation({ user }) {
   return React.createElement(Navigation, { user, onSignout: signout });
 }
 
+function renderContactConfirmation({ user }) {
+  const contactId = window.location.pathname.split('/')[2];
+  return React.createElement(ContactConfirmPage, { user, contactId });
+}
+
 const renderByPath = {
   '/password/forgot': () => (
     <ForgotPasswordPage
@@ -67,6 +75,9 @@ const renderByPath = {
   '/password/reset/success': () => <ResetPasswordSuccessPage />,
   '/password/reset/invalid': () => <ResetPasswordInvalidPage />,
   '/confirm-email-invalid': () => <ConfirmEmailInvalidPage />,
+  '/contact-confirm/:contactId': renderContactConfirmation,
+  '/': renderWithUser(HomeRoute),
+  '/safety': () => <Safety />,
   '/circles': renderWithUser(CirclesRoute),
   '/circles/:circle': renderCircle,
   '/welcome': () => <Welcome />,
