@@ -6,6 +6,12 @@ const ADMIN_ROUTE_DEFAULTS = {
 
 const REACT_ROUTE_POLICIES = [
   {
+    path: '/profile/:username/experiences/new',
+    title: 'Share your experience',
+    requiresAuth: true,
+  },
+  { path: '/contact-add/:userId', title: 'Add contact', requiresAuth: true },
+  {
     path: '/contact-confirm/:contactId',
     title: 'Confirm contact',
     requiresAuth: true,
@@ -181,6 +187,18 @@ function getReactRoutePolicy(path) {
   if (/^\/contact-confirm\/[^/]+$/.test(normalizedPath)) {
     return REACT_ROUTE_POLICIES.find(
       route => route.path === '/contact-confirm/:contactId',
+    );
+  }
+
+  if (/^\/contact-add\/[^/]+$/.test(normalizedPath)) {
+    return REACT_ROUTE_POLICIES.find(
+      route => route.path === '/contact-add/:userId',
+    );
+  }
+
+  if (/^\/profile\/[^/]+\/experiences\/new$/.test(normalizedPath)) {
+    return REACT_ROUTE_POLICIES.find(
+      route => route.path === '/profile/:username/experiences/new',
     );
   }
 

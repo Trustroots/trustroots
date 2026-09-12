@@ -34,11 +34,18 @@ describe('Contact Route Tests', function () {
         expect(mainstate.abstract).toBe(undefined);
       });
 
-      it('Should have templateUrl', function () {
-        expect(mainstate.templateUrl).toBe(
-          '/modules/contacts/views/add-contact.client.view.html',
+      it('loads the React contact form through its state entry point', inject(function (
+        $injector,
+      ) {
+        const $window = { location: { assign: jest.fn() } };
+        $injector.invoke(mainstate.onEnter, null, {
+          $window,
+          $stateParams: { userId: 'sample member' },
+        });
+        expect($window.location.assign).toHaveBeenCalledWith(
+          '/contact-add/sample%20member',
         );
-      });
+      }));
     });
 
     describe('Handle Trailing Slash', function () {

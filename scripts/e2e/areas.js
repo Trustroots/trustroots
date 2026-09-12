@@ -1,6 +1,7 @@
 const path = require('path');
 
 const AREA_BY_SPEC = {
+  'react-member-connections.spec.js': 'Public pages',
   'react-contact-confirmation.spec.js': 'Public pages',
   'react-home-safety.spec.js': 'Public pages',
   'circles-react.spec.js': 'Member flows',

@@ -1,4 +1,6 @@
 import React from 'react';
+import ExperienceCreatePage from '@/modules/experiences/client/components/ExperienceCreatePage';
+import ContactAddPage from '@/modules/contacts/client/components/ContactAddPage.component';
 import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import Safety from '@/modules/pages/client/components/Safety.component';
@@ -62,7 +64,19 @@ function renderContactConfirmation({ user }) {
   return React.createElement(ContactConfirmPage, { user, contactId });
 }
 
+function renderContactAdd({ user }) {
+  const userId = window.location.pathname.split('/')[2];
+  return React.createElement(ContactAddPage, { user, userId });
+}
+
+function renderExperienceCreate({ user }) {
+  const username = window.location.pathname.split('/')[2];
+  return React.createElement(ExperienceCreatePage, { user, username });
+}
+
 const renderByPath = {
+  '/profile/:username/experiences/new': renderExperienceCreate,
+  '/contact-add/:userId': renderContactAdd,
   '/contact-confirm/:contactId': renderContactConfirmation,
   '/': renderWithUser(HomeRoute),
   '/safety': () => <Safety />,

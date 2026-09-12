@@ -150,6 +150,16 @@ jest.mock('@/modules/pages/client/components/Safety.component', () => () => (
   <main>Safety</main>
 ));
 
+jest.mock(
+  '@/modules/contacts/client/components/ContactAddPage.component',
+  () => () => <main>ContactAddPage</main>,
+);
+
+jest.mock(
+  '@/modules/experiences/client/components/ExperienceCreatePage',
+  () => () => <main>ExperienceCreatePage</main>,
+);
+
 /* eslint-enable react/display-name */
 
 describe('React route ownership', () => {
@@ -256,4 +266,21 @@ describe('React route ownership', () => {
       unmount();
     });
   });
+});
+
+it('owns connection and experience-writing URLs while leaving profile history in Angular', () => {
+  expect(getReactRoutePolicy('/contact-add/sample-member/')).toMatchObject({
+    path: '/contact-add/:userId',
+    requiresAuth: true,
+  });
+  expect(
+    getReactRoutePolicy('/profile/sample-member/experiences/new'),
+  ).toMatchObject({
+    path: '/profile/:username/experiences/new',
+    requiresAuth: true,
+  });
+  expect(
+    getReactRoutePolicy('/profile/sample-member/experiences'),
+  ).toBeUndefined();
+  expect(getReactRoutePolicy('/contact-add/sample/extra')).toBeUndefined();
 });

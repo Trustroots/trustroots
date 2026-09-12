@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { update, fetch } from '@/modules/users/client/api/users.api';
+import { update, fetch, fetchMini } from '@/modules/users/client/api/users.api';
 
 jest.mock('axios');
 
@@ -25,4 +25,11 @@ describe('users api', () => {
     await expect(fetch('alice')).resolves.toBe(user);
     expect(axios.get).toHaveBeenCalledWith('/api/users/alice');
   });
+});
+
+it('fetches the minimal recipient by id', async () => {
+  const user = { _id: 'friend-1' };
+  axios.get.mockResolvedValue({ data: user });
+  await expect(fetchMini('friend-1')).resolves.toBe(user);
+  expect(axios.get).toHaveBeenCalledWith('/api/users/mini/friend-1');
 });
