@@ -218,7 +218,7 @@ function ProfileEditAccountController(
       },
       function (response) {
         vm.updatingUserSubscriptions = false;
-        messageCenterService.add('error', 'Error: ' + response.data.message);
+        messageCenterService.add('danger', 'Error: ' + response.data.message);
       },
     );
   }

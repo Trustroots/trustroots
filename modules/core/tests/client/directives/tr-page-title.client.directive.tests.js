@@ -8,13 +8,17 @@ describe('trPageTitle directive', function () {
   let $window;
 
   beforeEach(
-    angular.mock.module(AppConfig.appModuleName, function ($provide) {
-      $window = {
-        title: 'Trustroots',
-      };
+    angular.mock.module(
+      AppConfig.appModuleName,
+      function ($provide, $urlRouterProvider) {
+        $urlRouterProvider.deferIntercept();
+        $window = {
+          title: 'Trustroots',
+        };
 
-      $provide.value('$window', $window);
-    }),
+        $provide.value('$window', $window);
+      },
+    ),
   );
 
   beforeEach(inject(function (_$compile_, _$rootScope_, _$state_) {

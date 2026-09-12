@@ -155,6 +155,37 @@ The system SHALL render `/contact-confirm/:contactId` through the existing React
 - **THEN** the existing API behaviour and destination remain available
 - **AND** Angular-owned destinations load their own application root
 
+### Requirement: React recovery and outcome pages
+
+The system SHALL render `/password/forgot`, `/password/reset/success`, `/password/reset/invalid` and `/confirm-email-invalid` through the existing React application shell and preserve username prefill, recovery submission responses and links into existing authentication workflows.
+
+#### Scenario: Visitor opens a migrated page
+
+- **WHEN** an eligible visitor opens a migrated route
+- **THEN** the server renders the React root and assets
+- **AND** the page retains its existing content and access rules
+
+#### Scenario: Visitor continues to another workflow
+
+- **WHEN** the visitor follows an onward link or completes a page action
+- **THEN** the existing API behaviour and destination remain available
+- **AND** Angular-owned destinations load their own application root
+
+### Requirement: Angular compatibility during route extraction
+
+The system SHALL use consistent Angular core and companion packages while preserving the remaining Angular pages and their embedded React components during route extraction.
+
+#### Scenario: Member uses an Angular page
+
+- **WHEN** a member opens an existing Angular-owned workflow
+- **THEN** navigation, forms and embedded React components retain their existing behaviour
+
+#### Scenario: Subscription update fails
+
+- **WHEN** an account subscription update returns an error
+- **THEN** the existing message service displays the failure
+- **AND** the update indicator stops
+
 ### Requirement: React contact creation
 
 The system SHALL render `/contact-add/:userId` through the existing React application shell while preserving authentication, profile activation, editable contact messages and existing contact outcomes.

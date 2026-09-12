@@ -140,6 +140,22 @@ jest.mock(
 );
 
 jest.mock(
+  '@/modules/users/client/components/ForgotPasswordPage.component',
+  () => () => <main>ForgotPasswordPage</main>,
+);
+jest.mock(
+  '@/modules/users/client/components/ResetPasswordSuccessPage.component',
+  () => () => <main>ResetPasswordSuccessPage</main>,
+);
+jest.mock(
+  '@/modules/users/client/components/ResetPasswordInvalidPage.component',
+  () => () => <main>ResetPasswordInvalidPage</main>,
+);
+jest.mock(
+  '@/modules/users/client/components/ConfirmEmailInvalidPage.component',
+  () => () => <main>ConfirmEmailInvalidPage</main>,
+);
+jest.mock(
   '@/modules/contacts/client/components/ContactConfirmPage.component',
   () => () => <main>ContactConfirmPage</main>,
 );

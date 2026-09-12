@@ -5,6 +5,18 @@ const ADMIN_ROUTE_DEFAULTS = {
 };
 
 const REACT_ROUTE_POLICIES = [
+  { path: '/password/forgot', title: 'Reset password', footerHidden: true },
+  {
+    path: '/password/reset/success',
+    title: 'Reset password',
+    footerHidden: true,
+  },
+  {
+    path: '/password/reset/invalid',
+    title: 'Reset password',
+    footerHidden: true,
+  },
+  { path: '/confirm-email-invalid', title: 'Confirm email invalid' },
   {
     path: '/profile/:username/experiences/new',
     title: 'Share your experience',
