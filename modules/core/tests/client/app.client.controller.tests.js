@@ -216,6 +216,19 @@ describe('App Controller Tests', function () {
     expect($state.go).toHaveBeenCalledWith('volunteering');
   });
 
+  it.each(['admin', 'welcome-team'])(
+    'allows acquisition navigation for %s',
+    role => {
+      Authentication.user = { roles: [role] };
+      const event = $scope.$broadcast(
+        '$stateChangeStart',
+        { requiresRole: ['admin', 'welcome-team'] },
+        {},
+      );
+      expect(event.defaultPrevented).toBe(false);
+    },
+  );
+
   it('should allow users with required role to continue navigation', function () {
     Authentication.user = { roles: ['admin'] };
     const toState = { requiresRole: 'admin', name: 'admin' };

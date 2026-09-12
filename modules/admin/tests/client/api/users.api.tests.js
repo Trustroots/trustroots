@@ -77,6 +77,16 @@ describe('admin users api', () => {
     });
   });
 
+  it('passes explicit role removals to the API', async () => {
+    axios.post.mockResolvedValueOnce({ data: {} });
+    await setUserRole('member-id', 'welcome-team', 'remove');
+    expect(axios.post).toHaveBeenCalledWith('/api/admin/user/change-role', {
+      id: 'member-id',
+      role: 'welcome-team',
+      action: 'remove',
+    });
+  });
+
   it('changes a user role', async () => {
     const data = { _id: 'user-1', roles: ['admin'] };
     axios.post.mockResolvedValueOnce({ data });

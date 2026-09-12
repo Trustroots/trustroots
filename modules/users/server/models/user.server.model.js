@@ -258,6 +258,7 @@ const UserSchema = new Schema({
         type: String,
         enum: [
           'admin',
+          'welcome-team',
           'moderator',
           'shadowban',
           'suspended',

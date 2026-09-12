@@ -30,6 +30,108 @@ test.describe('admin role and audit feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('administrator can grant and revoke limited Welcome team access', async ({
+    page,
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.change-role', [
+      'Administrator grants and revokes Welcome team membership.',
+    ]);
+    annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'Welcome team can view stories without other administrator access.',
+    ]);
+    annotateFeature(testInfo, 'admin.acquisition-analysis', [
+      'Welcome team can view analysis.',
+    ]);
+    const member = createUser();
+    const memberContext = await browser.newContext({ baseURL });
+    try {
+      await registerViaApi(memberContext.request, member);
+      const target = await findUserByUsername(member.username);
+      const memberPage = await memberContext.newPage();
+      await signInViaApi(memberPage, memberContext.request, member);
+      expect(
+        (
+          await memberContext.request.post('/api/admin/acquisition-stories')
+        ).status(),
+      ).toBe(403);
+      expect(
+        (
+          await memberContext.request.post('/api/admin/user/change-role', {
+            data: { id: String(target._id), role: 'welcome-team' },
+          })
+        ).status(),
+      ).toBe(403);
+      await page.goto(`/admin/user?id=${target._id}`);
+      page.on('dialog', dialog => dialog.accept());
+      await page
+        .getByRole('button', { name: 'Add to Welcome team', exact: true })
+        .click();
+      await expect(
+        page.getByRole('button', {
+          name: 'Remove from Welcome team',
+          exact: true,
+        }),
+      ).toBeVisible();
+      await memberPage.goto('/admin/acquisition-stories');
+      await expect(
+        memberPage.getByRole('link', { name: 'Welcome team', exact: true }),
+      ).toBeVisible();
+      await expect(
+        memberPage
+          .locator('.navbar-admin')
+          .getByRole('link', { name: 'Messages', exact: true }),
+      ).toHaveCount(0);
+      await expect(memberPage.locator('a[href^="/admin/user"]')).toHaveCount(0);
+      expect(
+        (
+          await memberContext.request.post('/api/admin/acquisition-stories')
+        ).status(),
+      ).toBe(200);
+      await memberPage
+        .getByRole('link', { name: 'Analysis', exact: true })
+        .click();
+      await expect(memberPage).toHaveURL(
+        /\/admin\/acquisition-stories\/analysis/,
+      );
+      expect(
+        (
+          await memberContext.request.post(
+            '/api/admin/acquisition-stories/analysis',
+          )
+        ).status(),
+      ).toBe(200);
+      expect(
+        (await memberContext.request.get('/api/admin/dashboard')).status(),
+      ).toBe(403);
+      await memberPage.goto('/admin');
+      await expect(memberPage).toHaveURL(/\/volunteering/);
+      await page
+        .getByRole('button', { name: 'Remove from Welcome team', exact: true })
+        .click();
+      await expect(
+        page.getByRole('button', { name: 'Add to Welcome team', exact: true }),
+      ).toBeVisible();
+      expect(
+        (
+          await memberContext.request.post('/api/admin/acquisition-stories')
+        ).status(),
+      ).toBe(403);
+      expect(
+        (
+          await memberContext.request.post(
+            '/api/admin/acquisition-stories/analysis',
+          )
+        ).status(),
+      ).toBe(403);
+      await memberPage.goto('/admin/acquisition-stories');
+      await expect(memberPage).toHaveURL(/\/volunteering/);
+    } finally {
+      await memberContext.close();
+    }
+  });
+
   test('admin can change roles and audit invalid role errors', async ({
     browser,
     baseURL,

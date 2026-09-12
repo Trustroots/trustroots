@@ -55,7 +55,7 @@ test.describe('admin moderation inspection flows', () => {
     annotateFeature(testInfo, 'admin.user-report', [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
-      'Report card shows a read-only current role inventory.',
+      'Report card shows the current role inventory.',
       'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ]);
@@ -74,12 +74,21 @@ test.describe('admin moderation inspection flows', () => {
     await expect(
       page.getByRole('link', { name: 'Role management' }),
     ).toHaveAttribute('href', '#roles');
-    await expect(page.getByText('read-only')).toBeVisible();
+    const rolePanel = page.locator('.admin-user-roles');
     await expect(
-      page.getByText(
+      rolePanel.locator('dt').filter({ hasText: /^shadowban$/ }),
+    ).toBeVisible();
+    await expect(
+      rolePanel.getByText(
         'Member can use the site, but their profile and outreach are hidden from others.',
       ),
     ).toBeVisible();
+    await expect(
+      rolePanel.getByRole('button', {
+        name: 'Add to Welcome team',
+        exact: true,
+      }),
+    ).toBeEnabled();
     await expect(page.getByText('1 sent').first()).toBeVisible();
     await expect(
       page.getByRole('link', { name: 'Potential related accounts' }),

@@ -1,5 +1,6 @@
 // External dependencies
 import PropTypes from 'prop-types';
+import { getUser } from '../../../core/client/services/angular-compat';
 import React, { useMemo, useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -184,6 +185,9 @@ export default function AdminAcquisitionStories() {
                         />
                       </a>
                       <UserLink
+                        publicProfile={
+                          !(getUser()?.roles || []).includes('admin')
+                        }
                         user={{
                           _id: story._id,
                           displayName: story.displayName,
@@ -210,7 +214,12 @@ export default function AdminAcquisitionStories() {
                   <td>
                     {(story.restrictedMatches || []).map(match => (
                       <div key={match._id}>
-                        <UserLink user={match} />
+                        <UserLink
+                          user={match}
+                          publicProfile={
+                            !(getUser()?.roles || []).includes('admin')
+                          }
+                        />
                         <small className="text-muted">
                           {' '}
                           — {match.matchReasons.join(', ')}

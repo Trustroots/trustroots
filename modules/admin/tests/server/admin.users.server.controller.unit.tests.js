@@ -492,6 +492,50 @@ describe('Admin users controller unit tests', () => {
   });
 
   describe('changeRole', () => {
+    it('adds and removes welcome-team idempotently while preserving other roles and notes', async () => {
+      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      target.roles = ['user', 'volunteer'];
+      await target.save();
+      for (const action of ['add', 'add', 'remove', 'remove']) {
+        const res = mockResponse();
+        await adminUsers.changeRole(
+          {
+            body: { id: String(target._id), role: 'welcome-team', action },
+            user: admin,
+          },
+          res,
+        );
+        res.body.message.should.equal('Role changed.');
+        const updated = await User.findById(target._id);
+        Array.from(updated.roles).should.deepEqual(
+          action === 'add'
+            ? ['user', 'volunteer', 'welcome-team']
+            : ['user', 'volunteer'],
+        );
+      }
+      const notes = await mongoose
+        .model('AdminNote')
+        .find({ user: target._id });
+      notes.length.should.equal(4);
+      notes
+        .filter(note => note.note.includes('removed'))
+        .length.should.equal(2);
+    });
+
+    for (const body of [
+      { role: 'welcome-team', action: 'invalid' },
+      { role: 'welcome-team', action: null },
+      { role: 'volunteer', action: 'remove' },
+    ]) {
+      it(`rejects unsupported role action ${JSON.stringify(
+        body,
+      )}`, async () => {
+        const res = mockResponse();
+        await adminUsers.changeRole({ body }, res);
+        res.statusCode.should.equal(400);
+      });
+    }
+
     it('promotes a volunteer and removes volunteer-alumni', async () => {
       const users = await utils.saveUsers(utils.generateUsers(2));
       const admin = users[0];

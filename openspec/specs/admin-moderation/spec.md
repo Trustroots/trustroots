@@ -10,7 +10,8 @@ member activity, and access operational information.
 ### Requirement: Administrator-only access
 
 The system SHALL restrict administration tools and administration APIs to
-authorised administrators.
+authorised administrators, except that members with the `welcome-team` role
+SHALL also have access to acquisition stories and analysis and their APIs.
 
 #### Scenario: Administrator opens the dashboard
 
@@ -19,7 +20,7 @@ authorised administrators.
 
 #### Scenario: Regular member requests an administration API
 
-- **WHEN** a regular member requests an administration API
+- **WHEN** a regular member without an applicable administrative role requests an administration API
 - **THEN** the system denies access
 
 ### Requirement: Administration dashboard overview
@@ -345,15 +346,40 @@ acquisition stories. Matches SHALL NOT automatically change account state.
 - **AND** a story row has no qualifying restricted-account match
 - **THEN** the row is shown without a restricted-account lead
 
-### Requirement: Read-only member role inventory
+### Requirement: Member role inventory
 
-The system SHALL show authorised administrators a read-only inventory of a
-member's current roles and concise explanations of those roles as a foundation
-for future role management.
+The system SHALL show authorised administrators an inventory of a member's
+current roles and concise explanations of those roles alongside the Welcome
+team membership controls.
 
 #### Scenario: Administrator reviews member roles
 
 - **WHEN** an authorised administrator opens a member report
 - **THEN** the report lists the member's current roles
 - **AND** explains each recognised role
-- **AND** does not provide new role-removal controls
+- **AND** role-removal controls are limited to Welcome team membership
+
+### Requirement: Welcome team acquisition access
+
+The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, without granting other administrator permissions. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
+
+#### Scenario: Welcome team views acquisition pages
+
+- **WHEN** a welcome-team member opens either acquisition page or calls its API
+- **THEN** access is granted and existing data is returned
+- **AND** unrelated administrator pages and APIs remain forbidden
+
+### Requirement: Administrator manages Welcome team membership
+
+Administrators SHALL be able to grant and revoke `welcome-team` from member role management. The role-change API SHALL accept an optional action of add or remove, default to add, and permit removal only for welcome-team. Changes SHALL preserve other roles and create administrator notes.
+
+#### Scenario: Administrator grants and revokes membership
+
+- **WHEN** an administrator grants or revokes Welcome team membership
+- **THEN** the stored role and refreshed role inventory reflect the change
+- **AND** subsequent acquisition API access reflects the current roles
+
+#### Scenario: Member attempts to grant access
+
+- **WHEN** a non-administrator requests a role change
+- **THEN** the request is forbidden

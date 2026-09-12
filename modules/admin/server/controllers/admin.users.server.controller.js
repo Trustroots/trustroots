@@ -32,6 +32,7 @@ const DEFAULT_ADMIN_MEMBER_SORT = {
   direction: 'ascending',
 };
 const ADMIN_LISTABLE_ROLES = [
+  'welcome-team',
   'admin',
   'shadowban',
   'suspended',
@@ -39,6 +40,7 @@ const ADMIN_LISTABLE_ROLES = [
   'volunteer',
 ];
 const ADMIN_CHANGEABLE_ROLES = [
+  'welcome-team',
   'shadowban',
   'suspended',
   'volunteer-alumni',
@@ -498,7 +500,12 @@ exports.changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
 
-  if (!role || !ADMIN_CHANGEABLE_ROLES.includes(role)) {
+  const action = _.get(req, ['body', 'action'], 'add');
+  if (
+    !ADMIN_CHANGEABLE_ROLES.includes(role) ||
+    !['add', 'remove'].includes(action) ||
+    (action === 'remove' && role !== 'welcome-team')
+  ) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
@@ -520,7 +527,7 @@ exports.changeRole = async (req, res) => {
       { _id: userId },
       {
         ...additionalChangesForSuspended,
-        $addToSet: {
+        [action === 'remove' ? '$pull' : '$addToSet']: {
           roles: role,
         },
       },
@@ -533,7 +540,9 @@ exports.changeRole = async (req, res) => {
       });
     }
 
-    let roleChangeMessage = `Role "${role}" added.`;
+    let roleChangeMessage = `Role "${role}" ${
+      action === 'remove' ? 'removed' : 'added'
+    }.`;
 
     // If adding role 'volunteer-alumni', remove 'volunteer' role
     if (role === 'volunteer-alumni') {

@@ -42,7 +42,16 @@ describe('Admin policy unit tests', () => {
 
     mockAcl.allow.calledOnce.should.be.true();
     const policies = mockAcl.allow.firstCall.args[0];
-    policies.length.should.equal(1);
+    policies.length.should.equal(2);
+    const welcome = policies.shift();
+    welcome.roles.should.deepEqual(['welcome-team']);
+    welcome.allows.should.deepEqual([
+      { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+      {
+        resources: '/api/admin/acquisition-stories/analysis',
+        permissions: ['post'],
+      },
+    ]);
     policies[0].roles.should.deepEqual(['admin']);
     policies[0].allows
       .map(allow => allow.resources)
