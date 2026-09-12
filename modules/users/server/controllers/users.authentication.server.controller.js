@@ -66,13 +66,16 @@ exports.signup = function (req, res) {
       // Simple anti spam check on name input fields
       function (done) {
         const { firstName, lastName, username } = req.body;
-        if (
-          isNameSpam(firstName) ||
-          isNameSpam(lastName) ||
-          isNameSpam(username) ||
-          isUsernameInvalid(username)
-        ) {
+        if (isNameSpam(firstName) || isNameSpam(lastName)) {
           return done(new Error('Invalid signup attempt'));
+        }
+
+        if (isNameSpam(username) || isUsernameInvalid(username)) {
+          const err = new Error(
+            'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+          );
+          err.userFacing = true;
+          return done(err);
         }
 
         done();
@@ -175,7 +178,9 @@ exports.signup = function (req, res) {
         statService.stat(statsObject, function () {
           // Send error to the API
           res.status(400).send({
-            message: errorService.getErrorMessage(err),
+            message: err.userFacing
+              ? err.message
+              : errorService.getErrorMessage(err),
           });
         });
 

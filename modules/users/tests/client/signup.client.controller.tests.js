@@ -178,6 +178,14 @@ describe('SignupController', function () {
       expect(
         controller.getUsernameValidationError({
           $dirty: true,
+          $valid: false,
+          $error: { username: true },
+          $usernameValidationMessage: 'Username is not available.',
+        }),
+      ).toEqual('Username is not available.');
+      expect(
+        controller.getUsernameValidationError({
+          $dirty: true,
           $error: { required: true },
           $valid: false,
         }),
@@ -216,7 +224,9 @@ describe('SignupController', function () {
           $error: { pattern: true },
           $valid: false,
         }),
-      ).toBe('Invalid username.');
+      ).toBe(
+        'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+      );
       expect(
         controller.getUsernameValidationError({
           $dirty: true,
