@@ -34,7 +34,7 @@ describe('Admin Route Tests', function () {
       url: '/admin/acquisition-stories',
       template: '<admin-acquisition-stories></admin-acquisition-stories>',
       requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin', 'welcome-team'],
       footerVariant: 'admin',
       pageTitle: 'Admin - Acquisition stories',
     },
@@ -44,7 +44,7 @@ describe('Admin Route Tests', function () {
       template:
         '<admin-acquisition-stories-analysis></admin-acquisition-stories-analysis>',
       requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin', 'welcome-team'],
       footerVariant: 'admin',
       pageTitle: 'Admin - Acquisition stories analysis',
     },
@@ -77,7 +77,7 @@ describe('Admin Route Tests', function () {
     },
     {
       name: 'admin-user',
-      url: '/admin/user',
+      url: '/admin/user?id&ip&q',
       template: '<admin-user></admin-user>',
       requiresAuth: true,
       requiresRole: 'admin',
@@ -120,7 +120,7 @@ describe('Admin Route Tests', function () {
         expect(state.url).toBe(url);
         expect(state.template).toBe(template);
         expect(state.requiresAuth).toBe(requiresAuth);
-        expect(state.requiresRole).toBe(requiresRole);
+        expect(state.requiresRole).toEqual(requiresRole);
         expect(state.footerHidden).toBeUndefined();
         expect(state.footerVariant).toBe(footerVariant);
         expect(state.data).toMatchObject({ pageTitle });

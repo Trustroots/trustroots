@@ -30,6 +30,15 @@ enum TrustrootsBrowserRoute: Identifiable {
         }
     }
 
+    var isHome: Bool {
+        guard case .website(let path, _) = self else { return false }
+        if let absoluteURL = URL(string: path), absoluteURL.scheme != nil {
+            return absoluteURL.host == "www.trustroots.org" &&
+                (absoluteURL.path.isEmpty || absoluteURL.path == "/")
+        }
+        return path == "/"
+    }
+
     var url: URL {
         switch self {
         case .join:
@@ -49,33 +58,37 @@ enum TrustrootsBrowserRoute: Identifiable {
 
 struct TrustrootsBrowserView: View {
     let route: TrustrootsBrowserRoute
+    var showsNavigationBar = true
     let onClose: () -> Void
     @State private var externalURL: URL?
     @State private var nip07PermissionPrompt: NIP07PermissionPrompt?
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Button(action: onClose) {
-                    Label("Back", systemImage: "chevron.backward")
-                        .font(.subheadline.weight(.semibold))
+            if showsNavigationBar {
+                HStack {
+                    Button(action: onClose) {
+                        Label("Back", systemImage: "chevron.backward")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    Spacer()
+                    Text(route.title)
+                        .font(.headline)
+                        .lineLimit(1)
+                    Spacer()
+                    Color.clear.frame(width: 58, height: 1)
                 }
-                Spacer()
-                Text(route.title)
-                    .font(.headline)
-                    .lineLimit(1)
-                Spacer()
-                Color.clear.frame(width: 58, height: 1)
+                .padding(.horizontal)
+                .frame(height: 48)
+                .background(.bar)
             }
-            .padding(.horizontal)
-            .frame(height: 48)
-            .background(.bar)
 
             TrustrootsWebView(
                 url: route.url,
                 externalURL: $externalURL,
                 nip07PermissionPrompt: $nip07PermissionPrompt
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .alert(
             "Open external website?",
@@ -120,6 +133,11 @@ struct TrustrootsWebView: UIViewRepresentable {
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true
         ))
+        contentController.addUserScript(WKUserScript(
+            source: Self.embeddedBrowserStyle,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: true
+        ))
         contentController.add(context.coordinator, name: NIP07Bridge.scriptHandlerName)
         let configuration = WKWebViewConfiguration()
         configuration.userContentController = contentController
@@ -134,6 +152,22 @@ struct TrustrootsWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
+
+    private static let embeddedBrowserStyle = """
+        (() => {
+          if (location.hostname !== 'www.trustroots.org') return;
+          const style = document.createElement('style');
+          style.id = 'trustroots-ios-embedded-style';
+          style.textContent = `
+            #tr-header { display: none !important; }
+            .container-spacer { margin-top: 0 !important; }
+            .container-fullscreen.container-spacer { top: 0 !important; }
+            .home-intro .home-join,
+            #manifesto a[href^="/signup"] { display: none !important; }
+          `;
+          (document.head || document.documentElement).appendChild(style);
+        })();
+        """
 
     final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessageHandler {
         weak var webView: WKWebView?

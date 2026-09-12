@@ -5,7 +5,7 @@ enum TrustrootsPalette {
     static let darkGreen = Color(red: 10 / 255, green: 139 / 255, blue: 112 / 255)
     static let paleGreen = Color(red: 236 / 255, green: 249 / 255, blue: 245 / 255)
     static let hostYes = Color(red: 88 / 255, green: 186 / 255, blue: 88 / 255)
-    static let hostMaybe = Color(red: 242 / 255, green: 174 / 255, blue: 67 / 255)
+    static let hostMaybe = Color(red: 124 / 255, green: 92 / 255, blue: 191 / 255)
     static let communityNote = Color(red: 21 / 255, green: 101 / 255, blue: 192 / 255)
 }
 

@@ -32,8 +32,8 @@ implemented MVP areas and SHALL NOT provide administration or moderation tools.
 
 #### Scenario: Member uses a supported MVP area
 
-- **WHEN** an eligible member opens a supported account, profile, circle,
-  offer-search, offer-management, or messaging area in the iOS app
+- **WHEN** an eligible member opens a supported account, profile, member-search,
+  circle, offer-search, offer-management, or messaging area in the iOS app
 - **THEN** the app presents a native iOS interface for that area
 
 #### Scenario: Administrator needs administration tools
@@ -42,32 +42,86 @@ implemented MVP areas and SHALL NOT provide administration or moderation tools.
 - **THEN** the functionality remains available through the website
 - **AND** is not presented in the iOS app
 
-### Requirement: Stable native shell and API diagnostics
+### Requirement: Stable native shell
 
-The native navigation header SHALL remain anchored to the top edge while a
-destination is loading. The menu SHALL identify the configured API origin and
-report whether the mobile endpoint is available, rejecting authentication,
-missing, rate limited, returning a server error, or unreachable because of a
-recognisable network failure.
+The native primary navigation SHALL remain anchored to the bottom edge while a
+destination is loading. The menu SHALL present member actions without exposing
+developer API availability controls.
 
 #### Scenario: Profile begins loading
 
 - **WHEN** a member opens a profile before its content has loaded
-- **THEN** the navigation header remains at the top of the screen
-- **AND** the loading state occupies the content region below it
+- **THEN** the primary navigation remains at the bottom of the screen
+- **AND** the loading state occupies the content region above it
 
-#### Scenario: Member inspects API diagnostics
+#### Scenario: Content reaches the device cut-out
+
+- **WHEN** the member views a normal native destination
+- **THEN** the area around the Dynamic Island uses the Trustroots green brand
+  strip with the white tree mark immediately to the left of the cut-out
+- **AND** provides direct Profile and Account actions immediately to its right
+- **AND** selecting the tree mark opens the Trustroots home page
+- **WHEN** the member opens a circle detail
+- **THEN** the circle hero artwork replaces that strip and extends behind the
+  device cut-out
+- **AND** the darkened artwork includes circle information on the left and a
+  circular version of the artwork on the right
+- **AND** the island controls remain visible over the artwork
+- **WHEN** the member opens a profile
+- **THEN** the member photo header replaces the strip and extends behind the
+  device cut-out
+- **AND** the darkened photo includes member information on the left and a
+  circular profile photo on the right
+- **AND** the island controls remain visible over the photo
+
+#### Scenario: Member opens the native menu
 
 - **WHEN** the member opens the native menu
-- **THEN** the menu shows the exact configured API origin
-- **AND** checks the authenticated mobile endpoint
-- **AND** distinguishes HTTP, authentication, timeout, DNS, connection and TLS failures
+- **THEN** the menu does not show API origin, build or availability diagnostics
+- **AND** does not show an API availability check or refresh control
+- **AND** provides a Find members action that opens native member search
 
-#### Scenario: Developer selects a simulator API server
+### Requirement: Native member search
 
-- **WHEN** a debug Simulator build displays the sign-in screen
-- **THEN** the developer can switch between the loopback Mac API and the PR 2777 test API
-- **AND** the selected exact origin remains visible
+The native app SHALL let signed-in members find other available members through
+the existing protected member-search route without opening the built-in
+browser. The native results SHALL preserve the website route's visibility,
+blocking and role restrictions.
+
+#### Scenario: Member searches for another member
+
+- **WHEN** a signed-in member submits at least three characters in native
+  member search
+- **THEN** the app requests matching members from the existing
+  `/api/mobile/v0/members?search=` route
+- **AND** displays the returned members in a native list
+- **AND** selecting a result opens that member's native profile
+
+#### Scenario: Native member search has no matches
+
+- **WHEN** the protected member-search route returns no members
+- **THEN** the native screen explains that no members matched
+- **AND** remains ready for another search
+
+#### Scenario: Native member search input is incomplete
+
+- **WHEN** the member enters fewer than three characters
+- **THEN** the app does not submit a request
+- **AND** explains the minimum search length
+
+#### Scenario: Member uses the on-screen keyboard
+
+- **WHEN** the member enters a native member search
+- **THEN** the app provides visible Search and Done keyboard actions
+- **AND** does not move the primary navigation above the keyboard
+
+#### Scenario: Member filters a native list
+
+- **WHEN** the member focuses the Circles or Messages filter
+- **THEN** the filter remains directly above the on-screen keyboard
+- **AND** the primary navigation is hidden until the keyboard closes
+- **AND** the member can dismiss the keyboard with a visible Done action or by
+  dragging the list
 
 ### Requirement: Secure mobile authentication
 
@@ -143,13 +197,144 @@ enabled by default, and disabling a layer SHALL remove its annotations.
 
 - **WHEN** the member opens native search with default filters
 - **THEN** authorised host and meetup offers are requested
+- **AND** offers are limited to members seen within the past six months
 - **AND** verified Community Notes are loaded from the Trustroots Nostr relay
+
+#### Scenario: Member changes the recent-login filter
+
+- **WHEN** the member disables Logged in within 6 months
+- **THEN** the offer search uses the website-compatible 24-month window
+- **AND** the member can restore the default six-month window from the same
+  native filter sheet
 
 #### Scenario: Member disables a map layer
 
 - **WHEN** the member disables Hosts, Meetups or Community Notes
 - **THEN** annotations belonging to that layer are removed without affecting
   the other enabled layers
+
+#### Scenario: Member selects hosts in a dense area
+
+- **WHEN** the member repeatedly selects a clustered host annotation
+- **THEN** the map resolves the cluster into individually selectable hosts
+- **AND** does not keep regrouping nearby hosts at close zoom levels
+
+#### Scenario: Member selects a potential host
+
+- **WHEN** the member selects an individual host annotation
+- **THEN** a full-width card is anchored to the bottom of the map
+- **AND** the card prominently shows the member, hosting status, description
+  and guest capacity available from the existing offer response
+- **AND** the individual annotation uses a hosting-specific couch symbol
+
+#### Scenario: Member returns to search from a map profile
+
+- **WHEN** a member has opened a profile from a map host card
+- **AND** selects the active Search destination
+- **THEN** the profile is dismissed
+- **AND** the existing map remains underneath
+
+### Requirement: Native hosting information
+
+Native member profiles SHALL show the member's current accommodation offer
+using the established offer-by-user endpoint.
+
+#### Scenario: Member profile has a hosting offer
+
+- **WHEN** a member opens a profile with an accommodation offer
+- **THEN** the profile shows whether the member is hosting, may be hosting, or
+  is not currently hosting
+- **AND** shows the available description and guest capacity
+
+#### Scenario: Profile has many contacts or experiences
+
+- **WHEN** a profile has more than six contacts or experiences
+- **THEN** the first six are shown with a control to reveal the remainder
+- **AND** the experience section summarises recommendation, meeting and
+  hosting percentages from the loaded experiences
+
+### Requirement: Native profile activity and messaging
+
+Native member profiles SHALL display the existing public last-seen and reply
+statistics returned by the protected profile route. A signed-in member SHALL be
+able to open the existing native conversation with another member, or begin it
+by sending the first message, without leaving that profile for the website.
+
+#### Scenario: Profile has activity and reply statistics
+
+- **WHEN** a member opens a profile whose response includes `seen`,
+  `replyRate`, or `replyTime`
+- **THEN** the profile displays the available last-login, reply-rate and
+  typical-reply-time information
+- **AND** does not derive or request additional private activity data
+
+#### Scenario: Profile has no reply statistics
+
+- **WHEN** a member opens a profile whose reply statistics are empty
+- **THEN** the profile explains that reply data is not available yet
+- **AND** remains otherwise fully usable
+
+#### Scenario: Member opens messaging from another profile
+
+- **WHEN** a signed-in member selects the profile's conversation action
+- **THEN** the app opens the existing native conversation and displays its
+  history
+- **AND** if the conversation is empty, provides the composer that creates the
+  thread when the first message is sent
+
+#### Scenario: Member views their own profile
+
+- **WHEN** the signed-in member opens their own profile
+- **THEN** the app does not offer a conversation with themselves
+
+#### Scenario: Member returns to a circle
+
+- **WHEN** a member revisits a recently loaded circle during the same app
+  session
+- **THEN** the previously assembled contact, recommendation and active-member
+  groups appear without repeating the full lookup
+
+### Requirement: Native member safety actions
+
+Native member profiles SHALL let a signed-in member report or block another
+member through the established support and blocked-member routes without
+opening the website. The app SHALL clearly confirm blocking before changing the
+relationship and SHALL keep reporting and blocking as independent actions.
+
+#### Scenario: Member reports another member
+
+- **WHEN** a signed-in member selects Report member on another member's profile
+- **THEN** the app presents a native form identifying the reported member
+- **AND** submits the member's description through the existing `/api/mobile/v0/support`
+  route with the reported username
+- **AND** confirms that the report was sent
+
+#### Scenario: Member blocks another member
+
+- **WHEN** a signed-in member confirms Block member on another member's profile
+- **THEN** the app uses the existing `/api/mobile/v0/blocked-users/:username` route
+- **AND** indicates that the member is blocked
+- **AND** no longer offers to start or continue a conversation with that member
+
+#### Scenario: Member unblocks another member
+
+- **WHEN** a signed-in member confirms Unblock member on a blocked member's
+  profile
+- **THEN** the app removes the block through the existing blocked-member route
+- **AND** restores the permitted messaging action
+
+### Requirement: Configured member avatars
+
+Native member images SHALL use the existing authenticated avatar endpoint and
+SHALL support the avatar source selected by the member, including Gravatar.
+The app SHALL NOT forward its bearer token to a cross-origin avatar provider.
+
+#### Scenario: Member uses Gravatar
+
+- **WHEN** a native view displays a member whose configured avatar source is
+  Gravatar
+- **THEN** the app follows the existing avatar redirect and displays the image
+- **AND** removes the Trustroots bearer token from the cross-origin request
 
 ### Requirement: Offline read-only fallback
 
@@ -165,6 +350,8 @@ for an HTTP authorisation or validation failure.
 - **AND** a cached response exists for the same server, account and request
 - **THEN** the app renders the cached response
 - **AND** displays a persistent offline warning including when data was saved
+  only after cached-data use has continued beyond a short transient-failure
+  grace period
 
 #### Scenario: Another account signs in on the device
 
@@ -224,12 +411,39 @@ routes.
 - **WHEN** a member selects a supported deferred feature in the iOS app
 - **THEN** the app opens its allowlisted Trustroots route in the in-app browser
 
+#### Scenario: Trustroots website appears in the built-in browser
+
+- **WHEN** the built-in browser loads an allowlisted page on
+  `www.trustroots.org`
+- **THEN** it hides the website's `#tr-header` and its reserved spacing
+- **AND** shows an explicit Back control beside the Home control at the top of
+  the native shell
+- **AND** the normal website remains unchanged outside the app
+
 #### Scenario: Deferred feature requires website authentication
 
 - **WHEN** the website route requires a browser session that the member does
   not have
 - **THEN** the website requests sign-in without receiving the native app's
-  mobile access token
+  stored API session credential
+
+### Requirement: First-party native analytics
+
+The app SHALL send aggregate native screen pageviews to the existing
+self-hosted Trustroots Umami service without including member identity,
+credentials, advertising identifiers, or persistent device identifiers.
+Trustroots SHALL NOT use native analytics for advertising, behavioural
+profiling, advertising attribution, or sale.
+
+#### Scenario: Member opens a native destination
+
+- **WHEN** the member opens a native app destination
+- **THEN** the app sends an `/ios/`-prefixed pageview to the Trustroots Umami
+  endpoint using a cookie-free request
+- **AND** distinguishes native usage with the `ios.trustroots.org` hostname
+- **AND** does not include the member's identity or API session credential
+- **AND** does not use the pageview for advertising, behavioural profiling,
+  advertising attribution, or sale
 
 #### Scenario: Member follows an external link
 

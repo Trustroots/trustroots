@@ -47,6 +47,9 @@ exports.profile = function (profile, authenticatedUser) {
     locationFrom: profile.locationFrom || null,
     languages: profile.languages || [],
     created: profile.created || null,
+    seen: profile.seen || null,
+    replyRate: profile.replyRate || null,
+    replyTime: profile.replyTime || null,
     avatarUploaded: Boolean(profile.avatarUploaded),
     member: (profile.member || []).map(circleMembership).filter(Boolean),
   };

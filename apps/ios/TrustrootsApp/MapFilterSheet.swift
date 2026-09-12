@@ -4,6 +4,7 @@ struct MapFilterSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var showingHosts: Bool
     @Binding var showingCommunityNotes: Bool
+    @Binding var onlineInPastSixMonths: Bool
     let circles: [TrustrootsCircle]
     @Binding var selectedCircleIDs: Set<String>
 
@@ -14,6 +15,11 @@ struct MapFilterSheet: View {
                     Toggle("Hosts", isOn: $showingHosts)
                         .tint(TrustrootsPalette.green)
                     Toggle("Community Notes via Nostroots", isOn: $showingCommunityNotes)
+                        .tint(TrustrootsPalette.green)
+                }
+
+                Section("Members") {
+                    Toggle("Logged in within 6 months", isOn: $onlineInPastSixMonths)
                         .tint(TrustrootsPalette.green)
                 }
 
@@ -47,6 +53,7 @@ struct MapFilterSheet: View {
                     Button("Reset") {
                         showingHosts = true
                         showingCommunityNotes = true
+                        onlineInPastSixMonths = true
                         selectedCircleIDs.removeAll()
                     }
                 }

@@ -1,5 +1,14 @@
 import SwiftUI
 
+struct MessageThreadAccumulator {
+    private var loadedIDs = Set<String>()
+    private(set) var threads: [MessageThread] = []
+
+    mutating func append(_ page: [MessageThread]) {
+        threads.append(contentsOf: page.filter { loadedIDs.insert($0.id).inserted })
+    }
+}
+
 struct MessageInboxView: View {
     @ObservedObject var session: MemberSessionStore
     @State private var threads: [MessageThread] = []
@@ -30,13 +39,6 @@ struct MessageInboxView: View {
                         )
                     } else {
                         List {
-                            Section {
-                                TextField("Filter conversations", text: $filterText)
-                                    .textInputAutocapitalization(.never)
-                                    .autocorrectionDisabled()
-                            }
-                            .listRowInsets(EdgeInsets(top: 3, leading: 8, bottom: 3, trailing: 8))
-
                             if isSearchingThreadContent {
                                 HStack(spacing: 8) {
                                     ProgressView()
@@ -81,7 +83,11 @@ struct MessageInboxView: View {
                             }
                         }
                         .listStyle(.plain)
+                        .scrollDismissesKeyboard(.interactively)
                     }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                BottomFilterField(placeholder: "Filter conversations", text: $filterText)
             }
             .task { await loadInbox() }
             .task(id: filterText) { await loadThreadContentIfNeeded() }
@@ -112,7 +118,7 @@ struct MessageInboxView: View {
         do {
             let pageSize = 50
             var page = 1
-            var loadedThreadIDs = Set<String>()
+            var accumulator = MessageThreadAccumulator()
 
             while !Task.isCancelled {
                 let pageThreads = try await api.inbox(
@@ -120,8 +126,8 @@ struct MessageInboxView: View {
                     page: page,
                     limit: pageSize
                 )
-                let newThreads = pageThreads.filter { loadedThreadIDs.insert($0.id).inserted }
-                threads.append(contentsOf: newThreads)
+                accumulator.append(pageThreads)
+                threads = accumulator.threads
 
                 if !filterText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     await loadThreadContentIfNeeded()
@@ -195,7 +201,7 @@ private struct MessageThreadRow: View {
     }
 }
 
-private struct ConversationView: View {
+struct ConversationView: View {
     let otherMember: MiniMember
     @ObservedObject var session: MemberSessionStore
     @State private var messages: [DirectMessage] = []

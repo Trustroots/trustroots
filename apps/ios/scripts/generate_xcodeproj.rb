@@ -18,7 +18,7 @@ def configure_app_target(target)
     settings = config.build_settings
     settings["PRODUCT_NAME"] = "Trustroots"
     settings["PRODUCT_MODULE_NAME"] = "Trustroots"
-    settings["PRODUCT_BUNDLE_IDENTIFIER"] = "org.trustroots.ios"
+    settings["PRODUCT_BUNDLE_IDENTIFIER"] = "org.trustroots.trustrootsApp"
     settings["INFOPLIST_FILE"] = "TrustrootsApp/Info.plist"
     settings["SWIFT_VERSION"] = "5.0"
     settings["IPHONEOS_DEPLOYMENT_TARGET"] = IOS_VERSION

@@ -3,6 +3,7 @@
  */
 const _ = require('lodash');
 const mongoose = require('mongoose');
+const net = require('net');
 
 const errorService = require('../../../core/server/services/error.server.service');
 const log = require('../../../../config/lib/logger');
@@ -15,9 +16,23 @@ const ReferenceThread = mongoose.model('ReferenceThread');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 
-const SEARCH_USERS_LIMIT = 150;
+const ADMIN_MEMBER_PAGE_SIZE = 150;
+const POTENTIAL_MATCH_LIMIT = 25;
+const POTENTIAL_MATCH_MIN_IDENTIFIER_LENGTH = 4;
 const SEARCH_STRING_LIMIT = 3;
+const ADMIN_MEMBER_SORT_FIELDS = {
+  created: 'created',
+  displayName: 'displayName',
+  email: 'email',
+  lastIpAddress: 'lastIpAddress',
+  username: 'username',
+};
+const DEFAULT_ADMIN_MEMBER_SORT = {
+  column: 'username',
+  direction: 'ascending',
+};
 const ADMIN_LISTABLE_ROLES = [
+  'welcome-team',
   'admin',
   'shadowban',
   'suspended',
@@ -25,6 +40,7 @@ const ADMIN_LISTABLE_ROLES = [
   'volunteer',
 ];
 const ADMIN_CHANGEABLE_ROLES = [
+  'welcome-team',
   'shadowban',
   'suspended',
   'volunteer-alumni',
@@ -38,6 +54,7 @@ const USER_LIST_FIELDS = [
   'displayName',
   'email',
   'emailTemporary',
+  'lastIpAddress',
   'public',
   'removeProfileExpires',
   'removeProfileToken',
@@ -46,6 +63,8 @@ const USER_LIST_FIELDS = [
   'roles',
   'username',
 ];
+
+const POTENTIAL_MATCH_FIELDS = [...USER_LIST_FIELDS, 'acquisitionStory'];
 
 /**
  * Overwrite tokens from results as a security measure.
@@ -84,20 +103,212 @@ function obfuscateTokens(user) {
  * Import as a package once we support ESM modules
  */
 function escapeStringRegexp(string) {
-  if (typeof string !== 'string') {
-    throw new TypeError('Expected a string');
-  }
-
   // Escape characters with special meaning either inside or outside character sets.
   // Use a simple backslash escape when it’s always valid, and a `\xnn` escape when the simpler form would be disallowed by Unicode patterns’ stricter grammar.
   return string.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
 }
 
+function createMemberSearchRegexp(search) {
+  if (typeof search !== 'string') {
+    throw new TypeError('Expected a string');
+  }
+
+  const whitespaceTolerantSearch = search
+    .split(/\s+/)
+    .map(escapeStringRegexp)
+    .join('\\s*');
+
+  return new RegExp('.*' + whitespaceTolerantSearch + '.*', 'i');
+}
+
+function normalizeIdentifier(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function getEmailLocalPart(value) {
+  return value.split('@')[0];
+}
+
+function normalizeAcquisitionStory(value) {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function createFlexibleIdentifierRegexp(identifier, emailLocalPartOnly) {
+  const pattern = identifier
+    .split('')
+    .map(escapeStringRegexp)
+    .join('[\\s._+\\x2d]*');
+
+  return new RegExp(
+    emailLocalPartOnly ? `^[^@]*${pattern}[^@]*@` : pattern,
+    'i',
+  );
+}
+
+function getPotentialMatchSignals(user) {
+  const signals = [
+    { label: 'Username identifier', value: normalizeIdentifier(user.username) },
+    {
+      label: 'Email identifier',
+      value: normalizeIdentifier(getEmailLocalPart(user.email)),
+    },
+    {
+      label: 'Temporary email identifier',
+      value: normalizeIdentifier(getEmailLocalPart(user.emailTemporary)),
+    },
+  ].filter(
+    ({ value }, index, items) =>
+      value.length >= POTENTIAL_MATCH_MIN_IDENTIFIER_LENGTH &&
+      items.findIndex(item => item.value === value) === index,
+  );
+  const acquisitionStory = normalizeAcquisitionStory(user.acquisitionStory);
+
+  return {
+    acquisitionStory,
+    identifiers: signals,
+  };
+}
+
+function getPotentialMatchReasons(user, signals) {
+  const candidateIdentifiers = [
+    normalizeIdentifier(user.username),
+    normalizeIdentifier(getEmailLocalPart(user.email)),
+    normalizeIdentifier(getEmailLocalPart(user.emailTemporary)),
+  ];
+  const reasons = signals.identifiers
+    .filter(({ value }) =>
+      candidateIdentifiers.some(identifier => identifier.includes(value)),
+    )
+    .map(({ label }) => label);
+
+  if (
+    signals.acquisitionStory &&
+    normalizeAcquisitionStory(user.acquisitionStory) ===
+      signals.acquisitionStory
+  ) {
+    reasons.push('Acquisition story');
+  }
+
+  return reasons;
+}
+
+async function findPotentialMatches(user) {
+  const signals = getPotentialMatchSignals(user);
+  const querySignals = signals.identifiers.flatMap(({ value }) => [
+    { username: createFlexibleIdentifierRegexp(value, false) },
+    { email: createFlexibleIdentifierRegexp(value, true) },
+    { emailTemporary: createFlexibleIdentifierRegexp(value, true) },
+  ]);
+
+  if (signals.acquisitionStory) {
+    querySignals.push({
+      acquisitionStory: new RegExp(
+        `^\\s*${signals.acquisitionStory
+          .split(' ')
+          .map(escapeStringRegexp)
+          .join('\\s+')}\\s*$`,
+        'i',
+      ),
+    });
+  }
+
+  if (!querySignals.length) {
+    return [];
+  }
+
+  const matches = await User.find({
+    _id: { $ne: user._id },
+    $or: querySignals,
+  })
+    .select(POTENTIAL_MATCH_FIELDS)
+    .sort({ created: -1, _id: 1 })
+    .limit(POTENTIAL_MATCH_LIMIT)
+    .exec();
+
+  return matches.map(match => ({
+    ...obfuscateTokens(match),
+    matchReasons: getPotentialMatchReasons(match, signals),
+  }));
+}
+
+function getMemberListOptions(body) {
+  const page = _.get(body, ['page'], 1);
+  const sortColumn = _.get(
+    body,
+    ['sort', 'column'],
+    DEFAULT_ADMIN_MEMBER_SORT.column,
+  );
+  const sortDirection = _.get(
+    body,
+    ['sort', 'direction'],
+    DEFAULT_ADMIN_MEMBER_SORT.direction,
+  );
+
+  if (
+    !Number.isInteger(page) ||
+    page < 1 ||
+    !ADMIN_MEMBER_SORT_FIELDS[sortColumn] ||
+    !['ascending', 'descending'].includes(sortDirection)
+  ) {
+    return null;
+  }
+
+  return {
+    page,
+    sort: {
+      column: sortColumn,
+      direction: sortDirection,
+    },
+  };
+}
+
+async function sendMemberList(req, res, query) {
+  const options = getMemberListOptions(req.body);
+
+  if (!options) {
+    return res.status(400).send({
+      message: 'Invalid member-list options.',
+    });
+  }
+
+  try {
+    const total = await User.countDocuments(query).exec();
+    const totalPages = Math.ceil(total / ADMIN_MEMBER_PAGE_SIZE);
+    const page = Math.min(options.page, Math.max(totalPages, 1));
+    const sortValue = options.sort.direction === 'ascending' ? 1 : -1;
+    const users = await User.find(query)
+      .select(USER_LIST_FIELDS)
+      .sort({
+        [ADMIN_MEMBER_SORT_FIELDS[options.sort.column]]: sortValue,
+        _id: 1,
+      })
+      .skip((page - 1) * ADMIN_MEMBER_PAGE_SIZE)
+      .limit(ADMIN_MEMBER_PAGE_SIZE)
+      .exec();
+
+    return res.send({
+      users: users ? users.map(obfuscateTokens) : [],
+      pagination: {
+        page,
+        pageSize: ADMIN_MEMBER_PAGE_SIZE,
+        total,
+        totalPages,
+      },
+      sort: options.sort,
+    });
+  } catch (err) {
+    return res.status(400).send({
+      message: errorService.getErrorMessage(err),
+    });
+  }
+}
+
 /*
- * This middleware sends response with an array of found users
+ * This middleware sends a page of found users.
  */
 exports.searchUsers = (req, res) => {
-  const search = _.get(req, ['body', 'search']);
+  const query = _.get(req, ['body', 'search']);
+  const search = typeof query === 'string' ? _.trim(query) : query;
 
   // Validate the query string
   if (!search || search.length < SEARCH_STRING_LIMIT) {
@@ -106,37 +317,20 @@ exports.searchUsers = (req, res) => {
     });
   }
 
-  const regexpSearch = new RegExp(
-    '.*' + escapeStringRegexp(search) + '.*',
-    'i',
-  );
+  const regexpSearch = createMemberSearchRegexp(search);
 
-  User.find({
+  return sendMemberList(req, res, {
     $or: [
       { displayName: regexpSearch },
       { email: regexpSearch },
       { emailTemporary: regexpSearch },
       { username: regexpSearch },
     ],
-  })
-    .select(USER_LIST_FIELDS)
-    .sort('username displayName')
-    .limit(SEARCH_USERS_LIMIT)
-    .exec((err, users) => {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-
-      const result = users ? users.map(obfuscateTokens) : [];
-
-      return res.send(result);
-    });
+  });
 };
 
 /*
- * This middleware sends response with an array of found users
+ * This middleware sends a page of users with the selected role.
  */
 exports.listUsersByRole = (req, res) => {
   const role = _.get(req, ['body', 'role']);
@@ -148,23 +342,24 @@ exports.listUsersByRole = (req, res) => {
     });
   }
 
-  User.find({
+  return sendMemberList(req, res, {
     roles: { $in: [role] },
-  })
-    .select(USER_LIST_FIELDS)
-    .sort('username displayName')
-    .limit(SEARCH_USERS_LIMIT)
-    .exec((err, users) => {
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
+  });
+};
 
-      const result = users ? users.map(obfuscateTokens) : [];
+/*
+ * This middleware sends members whose current stored IP address exactly matches.
+ */
+exports.listUsersByLastIpAddress = (req, res) => {
+  const ipAddress = _.get(req, ['body', 'ipAddress']);
 
-      return res.send(result);
+  if (typeof ipAddress !== 'string' || !net.isIP(ipAddress)) {
+    return res.status(400).send({
+      message: 'Invalid IP address.',
     });
+  }
+
+  return sendMemberList(req, res, { lastIpAddress: ipAddress });
 };
 
 const handleAdminApiError = (res, err) => {
@@ -266,11 +461,19 @@ exports.getUser = async (req, res) => {
 
     const offers = await Offer.find({ user: userId });
 
+    const isRestricted = ['shadowban', 'suspended'].some(role =>
+      user.roles.includes(role),
+    );
+    const potentialMatches = isRestricted
+      ? await findPotentialMatches(user)
+      : [];
+
     res.send({
       contacts: contacts || [],
       messageFromCount,
       messageToCount,
       offers: offers || [],
+      potentialMatches,
       profile: obfuscateTokens(user),
       threadCount,
       threadReferencesSentNo,
@@ -287,6 +490,8 @@ exports.getUser = async (req, res) => {
   }
 };
 
+exports.findPotentialMatches = findPotentialMatches;
+
 /**
  * This middleware changes user roles by ID
  * Used for suspending users or setting them a "shadow ban"
@@ -295,7 +500,12 @@ exports.changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
 
-  if (!role || !ADMIN_CHANGEABLE_ROLES.includes(role)) {
+  const action = _.get(req, ['body', 'action'], 'add');
+  if (
+    !ADMIN_CHANGEABLE_ROLES.includes(role) ||
+    !['add', 'remove'].includes(action) ||
+    (action === 'remove' && role !== 'welcome-team')
+  ) {
     return res.status(400).send({
       message: 'Invalid role.',
     });
@@ -317,7 +527,7 @@ exports.changeRole = async (req, res) => {
       { _id: userId },
       {
         ...additionalChangesForSuspended,
-        $addToSet: {
+        [action === 'remove' ? '$pull' : '$addToSet']: {
           roles: role,
         },
       },
@@ -330,7 +540,9 @@ exports.changeRole = async (req, res) => {
       });
     }
 
-    let roleChangeMessage = `Role "${role}" added.`;
+    let roleChangeMessage = `Role "${role}" ${
+      action === 'remove' ? 'removed' : 'added'
+    }.`;
 
     // If adding role 'volunteer-alumni', remove 'volunteer' role
     if (role === 'volunteer-alumni') {

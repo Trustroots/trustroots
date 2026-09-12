@@ -8,7 +8,7 @@ class TrustrootsBrowserTest {
     @Test
     fun allowsTrustrootsHttpsPages() {
         assertTrue(isAllowedTrustrootsURL("https://www.trustroots.org/faq"))
-        assertTrue(isAllowedTrustrootsURL("https://pr2777.test.trustroots.org/password/forgot"))
+        assertTrue(isAllowedTrustrootsURL("https://community.trustroots.org/password/forgot"))
         assertTrue(isAllowedTrustrootsURL("https://trustroots.org/rules"))
         assertTrue(isAllowedTrustrootsURL("https://wiki.hitchwiki.org/places"))
     }

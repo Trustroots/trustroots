@@ -227,12 +227,57 @@ struct MiniMember: Decodable {
         case displayName
     }
 
+    init(id: String?, username: String?, displayName: String?) {
+        self.id = id
+        self.username = username
+        self.displayName = displayName
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(String.self, forKey: .mongoID)
             ?? container.decodeIfPresent(String.self, forKey: .id)
         username = try container.decodeIfPresent(String.self, forKey: .username)
         displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+    }
+}
+
+struct MemberSearchResult: Decodable, Identifiable {
+    let id: String?
+    let username: String
+    let displayName: String
+    let locationLiving: String?
+    let locationFrom: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case mongoID = "_id"
+        case username
+        case displayName
+        case locationLiving
+        case locationFrom
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(String.self, forKey: .mongoID)
+            ?? container.decodeIfPresent(String.self, forKey: .id)
+        username = try container.decode(String.self, forKey: .username)
+        displayName = try container.decodeIfPresent(String.self, forKey: .displayName) ?? username
+        locationLiving = try container.decodeIfPresent(String.self, forKey: .locationLiving)
+        locationFrom = try container.decodeIfPresent(String.self, forKey: .locationFrom)
+    }
+
+    var locationSummary: String? {
+        let living = locationLiving?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let living, !living.isEmpty {
+            return living
+        }
+        let from = locationFrom?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let from, !from.isEmpty {
+            return "From \(from)"
+        }
+        return nil
     }
 }
 
@@ -245,8 +290,11 @@ struct MemberProfile: Decodable {
     let locationLiving: String?
     let locationFrom: String?
     let languages: [String]?
+    let seen: Date?
     let created: Date?
     let avatarUploaded: Bool?
+    let replyRate: String?
+    let replyTime: String?
     let email: String?
     let emailTemporary: String?
     let newsletter: Bool?
@@ -262,8 +310,11 @@ struct MemberProfile: Decodable {
         case locationLiving
         case locationFrom
         case languages
+        case seen
         case created
         case avatarUploaded
+        case replyRate
+        case replyTime
         case email
         case emailTemporary
         case newsletter
@@ -281,8 +332,11 @@ struct MemberProfile: Decodable {
         locationLiving = try container.decodeIfPresent(String.self, forKey: .locationLiving)
         locationFrom = try container.decodeIfPresent(String.self, forKey: .locationFrom)
         languages = try container.decodeIfPresent([String].self, forKey: .languages)
+        seen = try container.decodeIfPresent(Date.self, forKey: .seen)
         created = try container.decodeIfPresent(Date.self, forKey: .created)
         avatarUploaded = try container.decodeIfPresent(Bool.self, forKey: .avatarUploaded)
+        replyRate = try container.decodeIfPresent(String.self, forKey: .replyRate)
+        replyTime = try container.decodeIfPresent(String.self, forKey: .replyTime)
         email = try container.decodeIfPresent(String.self, forKey: .email)
         emailTemporary = try container.decodeIfPresent(String.self, forKey: .emailTemporary)
         newsletter = try container.decodeIfPresent(Bool.self, forKey: .newsletter)
@@ -329,6 +383,22 @@ struct HostOffer: Decodable {
         case noOfferDescription
         case maxGuests
         case user
+    }
+}
+
+struct AccommodationOffer: Decodable, Identifiable {
+    let id: String
+    let status: String?
+    let description: String?
+    let noOfferDescription: String?
+    let maxGuests: Int?
+
+    enum CodingKeys: String, CodingKey {
+        case id = "_id"
+        case status
+        case description
+        case noOfferDescription
+        case maxGuests
     }
 }
 
@@ -822,7 +892,8 @@ final class TrustrootsAPI {
         serverURLString: String,
         in region: MKCoordinateRegion,
         types: [String] = ["host"],
-        tribeIDs: [String] = []
+        tribeIDs: [String] = [],
+        seenWithinMonths: Int = 6
     ) async throws -> [MapOffer] {
         let latitudeDelta = region.span.latitudeDelta / 2
         let longitudeDelta = region.span.longitudeDelta / 2
@@ -836,11 +907,31 @@ final class TrustrootsAPI {
                 URLQueryItem(name: "northEastLng", value: String(region.center.longitude + longitudeDelta)),
                 URLQueryItem(
                     name: "filters",
-                    value: "{\"types\":\(types.jsonArray),\"tribes\":\(tribeIDs.jsonArray)}"
+                    value: "{\"types\":\(types.jsonArray),\"tribes\":\(tribeIDs.jsonArray),"
+                        + "\"seen\":{\"months\":\(seenWithinMonths)}}"
                 ),
             ]
         )
         return response.features.filter { $0.coordinate != nil }
+    }
+
+    func avatar(serverURLString: String, memberID: String) async throws -> Data {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        let url = configuration.baseURL.appendingPathComponent("api/mobile/v0/members/\(memberID)/avatar")
+            .appending(queryItems: [URLQueryItem(name: "size", value: "128")])
+        var request = URLRequest(url: url)
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        authorise(&request)
+        let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TrustrootsAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw decodedError(from: data, statusCode: httpResponse.statusCode)
+        }
+        return data
     }
 
     func offer(serverURLString: String, offerID: String) async throws -> HostOffer {
@@ -854,6 +945,69 @@ final class TrustrootsAPI {
             path: "api/mobile/v0/profiles/\(username)"
         )
         return response.profile
+    }
+
+    func accommodationOffer(serverURLString: String, userID: String) async throws -> AccommodationOffer? {
+        let offers: [AccommodationOffer] = try await get(
+            serverURLString: serverURLString,
+            path: "api/mobile/v0/offers-by/\(userID)",
+            queryItems: [URLQueryItem(name: "types", value: "host")]
+        )
+        return offers.first
+    }
+
+    func searchMembers(
+        serverURLString: String,
+        query: String,
+        limit: Int = 50
+    ) async throws -> [MemberSearchResult] {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/mobile/v0/members",
+            queryItems: [
+                URLQueryItem(name: "search", value: query),
+                URLQueryItem(name: "limit", value: String(limit)),
+            ]
+        )
+    }
+
+    func blockedMembers(serverURLString: String) async throws -> [MiniMember] {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/mobile/v0/blocked-users"
+        )
+    }
+
+    func setMemberBlocked(
+        serverURLString: String,
+        username: String,
+        blocked: Bool
+    ) async throws {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        var request = URLRequest(
+            url: configuration.baseURL
+                .appendingPathComponent("api/mobile/v0/blocked-users")
+                .appendingPathComponent(username)
+        )
+        authorise(&request)
+        request.httpMethod = blocked ? "PUT" : "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        do {
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw TrustrootsAPIError.invalidResponse
+            }
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                throw decodedError(from: data, statusCode: httpResponse.statusCode)
+            }
+        } catch let error as TrustrootsAPIError {
+            throw error
+        } catch {
+            throw TrustrootsAPIError.requestFailed(error.localizedDescription)
+        }
     }
 
     func circles(serverURLString: String) async throws -> [TrustrootsCircle] {
@@ -965,7 +1119,11 @@ final class TrustrootsAPI {
         }
     }
 
-    func sendSupportMessage(serverURLString: String, message: String) async throws {
+    func sendSupportMessage(
+        serverURLString: String,
+        message: String,
+        reportMember: String? = nil
+    ) async throws {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
@@ -974,7 +1132,11 @@ final class TrustrootsAPI {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try encoder.encode(["message": message])
+        var body = ["message": message]
+        if let reportMember, !reportMember.isEmpty {
+            body["reportMember"] = reportMember
+        }
+        request.httpBody = try encoder.encode(body)
 
         do {
             let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)

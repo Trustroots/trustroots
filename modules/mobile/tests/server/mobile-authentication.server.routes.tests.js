@@ -222,6 +222,10 @@ describe('Mobile authentication API', function () {
 
   it('protects every remaining mobile member resource with bearer authentication', async function () {
     const protectedReads = [
+      '/api/mobile/v0/members?search=traveller',
+      `/api/mobile/v0/members/${member._id}/avatar`,
+      `/api/mobile/v0/offers-by/${member._id}`,
+      '/api/mobile/v0/blocked-users',
       '/api/mobile/v0/memberships',
       `/api/mobile/v0/contacts/${member._id}`,
       `/api/mobile/v0/experiences?userTo=${member._id}`,
@@ -236,6 +240,8 @@ describe('Mobile authentication API', function () {
     }
 
     const protectedWrites = [
+      { method: 'put', path: '/api/mobile/v0/blocked-users/traveller' },
+      { method: 'delete', path: '/api/mobile/v0/blocked-users/traveller' },
       { method: 'post', path: '/api/mobile/v0/messages-read' },
       { method: 'post', path: '/api/mobile/v0/experiences' },
       { method: 'post', path: '/api/mobile/v0/messages' },
@@ -363,6 +369,69 @@ describe('Mobile authentication API', function () {
       .get('/api/mobile/v0/messages')
       .set('Authorization', `Bearer ${signin.body.accessToken}`)
       .expect(403);
+  });
+
+  it('retains member search, hosting, avatars and blocking through bearer adapters', async function () {
+    const other = await new User({
+      username: 'search_traveller',
+      firstName: 'Search',
+      lastName: 'Traveller',
+      displayName: 'Search Traveller',
+      email: 'search.traveller@example.org',
+      password: 'strong-password',
+      provider: 'local',
+      public: true,
+      roles: ['user'],
+    }).save();
+    const offer = await new (mongoose.model('Offer'))({
+      user: other.id,
+      type: 'host',
+      status: 'yes',
+      location: [1, 1],
+      description: 'An example hosting offer.',
+    }).save();
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const authenticated = {
+      Authorization: `Bearer ${signin.body.accessToken}`,
+    };
+    const search = await request(app)
+      .get('/api/mobile/v0/members?search=Search')
+      .set(authenticated)
+      .expect(200);
+    search.body
+      .some(result => result.username === other.username)
+      .should.equal(true);
+    const hosting = await request(app)
+      .get(`/api/mobile/v0/offers-by/${other.id}?types=host`)
+      .set(authenticated)
+      .expect(200);
+    hosting.body.map(result => result._id).should.deepEqual([offer.id]);
+    await request(app)
+      .get(`/api/mobile/v0/members/${other.id}/avatar?size=128`)
+      .set(authenticated)
+      .expect(302);
+    await request(app)
+      .put(`/api/mobile/v0/blocked-users/${other.username}`)
+      .set(authenticated)
+      .expect(200);
+    const blocked = await request(app)
+      .get('/api/mobile/v0/blocked-users')
+      .set(authenticated)
+      .expect(200);
+    blocked.body.map(user => user.username).should.deepEqual([other.username]);
+    const hidden = await request(app)
+      .get('/api/mobile/v0/members?search=Search')
+      .set(authenticated)
+      .expect(200);
+    hidden.body.should.deepEqual([]);
+    await request(app)
+      .delete(`/api/mobile/v0/blocked-users/${other.username}`)
+      .set(authenticated)
+      .expect(200);
+    (await User.findById(member.id)).blocked.should.have.length(0);
   });
 
   it('keeps search unread and acknowledges only messages addressed to the reader', async function () {

@@ -297,19 +297,171 @@ function analyseStories(stories) {
  *
  * @return {[Promise]} List of stories
  */
-function getStories() {
+function getStories(limit) {
   return User.find(
     {
       acquisitionStory: { $exists: true, $ne: '' },
     },
-    '_id acquisitionStory created displayName locationFrom locationLiving member username',
+    '_id acquisitionStory created displayName email emailTemporary locationFrom locationLiving member username',
   )
     .sort('-created')
-    .limit(3000)
+    .limit(limit)
     .exec();
 }
 
-function storyForList(story, hostingLocation) {
+const RESTRICTED_MATCH_LIMIT = 10;
+const RESTRICTED_SOURCE_LIMIT = 1000;
+const MIN_IDENTIFIER_LENGTH = 4;
+const MIN_FUZZY_STORY_LENGTH = 12;
+const FUZZY_STORY_THRESHOLD = 0.82;
+const MATCH_BATCH_SIZE = 100;
+
+function normalizeIdentifier(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function emailLocalPart(value) {
+  return value.split('@')[0];
+}
+
+function normalizeStory(value) {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function getCharacterTrigrams(value) {
+  const trigrams = new Set();
+  for (let index = 0; index <= value.length - 3; index += 1) {
+    trigrams.add(value.slice(index, index + 3));
+  }
+  return trigrams;
+}
+
+function prepareStory(value) {
+  const text = normalizeStory(value);
+  return { text, trigrams: getCharacterTrigrams(text) };
+}
+
+function getPreparedStorySimilarity(first, second) {
+  if (
+    first.text.length < MIN_FUZZY_STORY_LENGTH ||
+    second.text.length < MIN_FUZZY_STORY_LENGTH
+  ) {
+    return 0;
+  }
+
+  const firstTrigrams = first.trigrams;
+  const secondTrigrams = second.trigrams;
+  let sharedCount = 0;
+  for (const trigram of firstTrigrams) {
+    if (secondTrigrams.has(trigram)) {
+      sharedCount += 1;
+    }
+  }
+
+  return (2 * sharedCount) / (firstTrigrams.size + secondTrigrams.size);
+}
+
+function getStorySimilarity(firstStory, secondStory) {
+  return getPreparedStorySimilarity(
+    prepareStory(firstStory),
+    prepareStory(secondStory),
+  );
+}
+
+function getRestrictedIdentifiers(user) {
+  return [
+    { label: 'Username identifier', value: normalizeIdentifier(user.username) },
+    {
+      label: 'Email identifier',
+      value: normalizeIdentifier(emailLocalPart(user.email)),
+    },
+    {
+      label: 'Temporary email identifier',
+      value: normalizeIdentifier(emailLocalPart(user.emailTemporary)),
+    },
+  ].filter(
+    ({ value }, index, identifiers) =>
+      value.length >= MIN_IDENTIFIER_LENGTH &&
+      identifiers.findIndex(identifier => identifier.value === value) === index,
+  );
+}
+
+function getRestrictedMatchReasons(story, restrictedUser) {
+  const reasons = restrictedUser.identifiers
+    .filter(({ value }) =>
+      story.identifiers.some(identifier => identifier.includes(value)),
+    )
+    .map(({ label }) => label);
+  const storyText = story.story.text;
+  const restrictedStoryText = restrictedUser.story.text;
+
+  if (storyText && storyText === restrictedStoryText) {
+    reasons.push('Acquisition story');
+  } else if (
+    // Even complete overlap cannot qualify if the trigram counts differ too
+    // much. Skip those candidates before computing their intersection.
+    (2 *
+      Math.min(story.story.trigrams.size, restrictedUser.story.trigrams.size)) /
+      (story.story.trigrams.size + restrictedUser.story.trigrams.size) >=
+      FUZZY_STORY_THRESHOLD &&
+    getPreparedStorySimilarity(story.story, restrictedUser.story) >=
+      FUZZY_STORY_THRESHOLD
+  ) {
+    reasons.push('Similar acquisition story');
+  }
+
+  return reasons;
+}
+
+async function getRestrictedMatches(story, restrictedUsers) {
+  const preparedStory = {
+    identifiers: [
+      normalizeIdentifier(story.username),
+      normalizeIdentifier(emailLocalPart(story.email)),
+      normalizeIdentifier(emailLocalPart(story.emailTemporary)),
+    ],
+    story: prepareStory(story.acquisitionStory),
+  };
+  const matches = [];
+  for (let index = 0; index < restrictedUsers.length; index += 1) {
+    // Yield to I/O even when none of the candidates match. A result limit alone
+    // does not bound the synchronous work for a list of 500 stories.
+    if (index % MATCH_BATCH_SIZE === 0) {
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    const candidate = restrictedUsers[index];
+    const { user } = candidate;
+    if (user._id.toString() === story._id.toString()) {
+      continue;
+    }
+    const matchReasons = getRestrictedMatchReasons(preparedStory, candidate);
+    if (matchReasons.length) {
+      matches.push({
+        _id: user._id,
+        displayName: user.displayName,
+        matchReasons,
+        roles: user.roles,
+        username: user.username,
+      });
+      if (matches.length === RESTRICTED_MATCH_LIMIT) {
+        break;
+      }
+    }
+  }
+  return matches;
+}
+
+function getRestrictedUsers() {
+  return User.find({ roles: { $in: ['shadowban', 'suspended'] } })
+    .select(
+      '_id acquisitionStory displayName email emailTemporary roles username',
+    )
+    .sort({ created: -1, _id: 1 })
+    .limit(RESTRICTED_SOURCE_LIMIT)
+    .exec();
+}
+
+function storyForList(story, hostingLocation, restrictedMatches) {
   return {
     _id: story._id,
     acquisitionStory: story.acquisitionStory,
@@ -319,17 +471,23 @@ function storyForList(story, hostingLocation) {
     hostingLocation,
     locationFrom: story.locationFrom,
     locationLiving: story.locationLiving,
+    restrictedMatches,
     username: story.username,
   };
 }
 
 exports.list = async (req, res) => {
-  const stories = await getStories();
+  const stories = await getStories(500);
   if (!stories || stories.length === 0) {
     return res.send([]);
   }
 
   const storyUserIds = stories.map(story => story._id);
+  const restrictedUsers = (await getRestrictedUsers()).map(user => ({
+    user,
+    identifiers: getRestrictedIdentifiers(user),
+    story: prepareStory(user.acquisitionStory),
+  }));
   const hostingOffers = await Offer.find({
     user: { $in: storyUserIds },
     type: 'host',
@@ -352,15 +510,23 @@ exports.list = async (req, res) => {
     {},
   );
 
-  return res.send(
-    stories.map(story =>
-      storyForList(story, hostingLocationsByUser[story._id.toString()] || null),
-    ),
-  );
+  const results = [];
+  for (const story of stories) {
+    results.push(
+      storyForList(
+        story,
+        hostingLocationsByUser[story._id.toString()] || null,
+        await getRestrictedMatches(story, restrictedUsers),
+      ),
+    );
+  }
+  return res.send(results);
 };
 
 exports.getAnalysis = async (req, res) => {
-  const stories = await getStories();
+  const stories = await getStories(3000);
   const analysis = analyseStories(stories);
   res.send(analysis);
 };
+
+exports.getStorySimilarity = getStorySimilarity;

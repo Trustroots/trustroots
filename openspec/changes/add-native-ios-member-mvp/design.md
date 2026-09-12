@@ -26,13 +26,16 @@ the two or depend on either key store for its initial TestFlight release.
 - Ship a useful, fully native iPhone member application.
 - Keep the website and its current browser-session authentication working
   without behavioural regressions.
-- Give iOS a documented, versioned, least-privilege API contract.
+- Provide a versioned bearer API that reuses the established domain policies.
 - Release the core application through TestFlight before beginning APNs work.
 
 **Non-Goals:**
 
 - An administrator or moderator app.
 - A hybrid wrapper or cross-platform implementation.
+- Advertising, advertising identifiers, advertising attribution, behavioural
+  profiling, or selling member or analytics data. Trustroots does not use
+  advertising and will not introduce it.
 - Offline creation, editing, or message delivery; the MVP may cache safe
   read-only data for responsive presentation.
 - iPad-specific layouts, Android, reference threads,
@@ -46,6 +49,11 @@ the two or depend on either key store for its initial TestFlight release.
 Create `apps/ios/Trustroots` as an Xcode project targeting a supported recent
 iOS release. Use SwiftUI for presentation, structured concurrency for network
 work, URLSession for transport, and Keychain Services for credentials.
+Use the existing production App Store Connect record and its
+`org.trustroots.trustrootsApp` bundle identifier so TestFlight builds and a
+later App Store release share one application identity. Use calendar versions
+in `YYYY.M.D` form for public iOS releases and a small monotonically increasing
+build counter for repeated uploads of the same dated release.
 
 Organise application features around Account, Profile, Circles, Search and
 Offers, and Messaging. Inject protocol-based API clients and persistence so
@@ -98,7 +106,17 @@ implemented in the app.
 
 Maintain an allowlist of Trustroots HTTPS URLs and open all other links in the
 system browser after user confirmation. Do not present administration or
-moderation routes from this fallback.
+moderation routes from this fallback. Hide the website's global `#tr-header`
+on `www.trustroots.org` inside the bounded browser because the native shell
+already provides navigation; do not change the header on the normal website.
+
+Send aggregate native screen pageviews directly to the existing self-hosted
+Umami `/api/send` endpoint. Use the dedicated production native-app website
+identifier, `/ios/`-prefixed paths, and an `ios.trustroots.org` hostname. Use
+an ephemeral cookie-free session and do not send the member identity, email,
+API bearer token, advertising identifier, or another persistent device
+identifier. Analytics are only for aggregate product understanding and must
+never be used for advertising, behavioural profiling, or sale.
 
 Model the browser's Nostr support on Nostroots: inject a narrowly scoped
 `window.nostr` NIP-07 bridge, identify the app with a dedicated user-agent,
@@ -143,10 +161,27 @@ challenge.
 ### Native visual language
 
 Use the audited Trustroots palette in native views: primary green `#12B591`,
-host yes `#58BA58`, host maybe `#F2AE43`, and meetup `#11B4DA`. Prefer system
+host yes `#58BA58`, host maybe violet `#7C5CBF`, and meetup `#11B4DA`. Prefer system
 surfaces for cards and use these colours deliberately for Trustroots actions,
 status and map annotations. Do not introduce generic SwiftUI `.teal` or
 unrelated default accents where a Trustroots colour is intended.
+
+Keep the four primary destinations in a persistent bottom navigation bar so
+content remains clear of the device camera area and is reachable one-handed.
+Hide that bar while the on-screen keyboard is presented, and place list
+filters in keyboard-aware bottom safe-area insets so the active input remains
+visible directly above the keyboard.
+
+Use the top device cut-out area as part of the visual shell: normal
+destinations show a green Trustroots brand strip with the white tree mark
+tightly to the left of the Dynamic Island and direct Profile and Account
+actions tightly to its right. The tree mark opens the Trustroots home page.
+Circle detail artwork and the profile photo header extend into that area
+instead, with the same island controls floating over the artwork. Both
+immersive headers use a darkened edge-to-edge cover, identifying text on the
+left, and the original circle artwork or member portrait as a crisp circular
+image on the right. Built-in browser routes replace the left-side home-only
+control with an explicit Back control beside Home.
 
 ### API scope
 
@@ -181,20 +216,25 @@ Repeated sign-in and refresh failures are throttled by network source and a
 one-way identity key. Expired and revoked sessions are removed by a MongoDB
 TTL index at the end of the 30-day refresh lifetime.
 
+Member search, blocking, configured avatars and member hosting details use
+bearer adapters under `/api/mobile/v0/members`, `/api/mobile/v0/blocked-users`,
+`/api/mobile/v0/members/:memberId/avatar` and `/api/mobile/v0/offers-by/:memberId`.
+These adapters reuse the authoritative website controllers and policies.
+Avatar redirects to another origin strip the bearer header.
+
 ### Website isolation
 
-Treat the mobile API and native projects as additive surfaces. Production must
-be able to deploy them without changing the rendered website, its assets,
-navigation, or Express-session authentication. Mobile-specific behaviour stays
-under `/api/mobile/v0`; native source and build outputs are not part of the web
-bundle. The bounded browser fallback deliberately consumes existing HTTPS
+Treat the native projects as additive consumers. Production can build and
+distribute them without changing the rendered website, its assets, navigation
+or Express-session authentication. Native source and build outputs are not
+part of the web bundle. The bounded browser fallback consumes existing HTTPS
 pages without requiring those pages to detect or accommodate the app.
 
 If mobile development uncovers a generally useful website fix, keep it
 independently reviewable and verify it with the existing web suites. Do not make
 an unrelated browser-client change a hidden prerequisite for a native feature.
-This reduces the production blast radius and allows the mobile API to be
-disabled without altering normal browser access.
+This reduces the production blast radius and keeps normal browser access as
+the canonical compatibility contract.
 
 ### Map presentation
 
@@ -210,6 +250,17 @@ treats an unvalidated event as a map location. Hosts, Meetups and Community
 Notes remain independently controllable; Meetups and Community Notes start
 enabled to make the community activity visible in a fresh installation.
 
+Stop clustering hosts once the visible area is sufficiently close for
+individual selection. Present a selected host in a strong, full-width card at
+the bottom of the map, including the accommodation status, description and
+guest capacity already returned by the offer endpoint.
+Use a couch symbol for an individual host and retain numbered circles for
+clusters.
+
+Cache the assembled circle-detail member groups briefly per account and circle.
+This avoids repeating the profile-membership and offer searches when a member
+returns to the same circle during normal navigation.
+
 ### Resilient read-only cache
 
 Cache successful authenticated GET responses in an account- and server-scoped
@@ -222,30 +273,28 @@ the previous account's cached responses.
 
 ### Photos
 
-Use PhotosPicker and multipart upload to a mobile endpoint with the existing
+Use PhotosPicker and multipart upload to the existing avatar endpoint with its
 server-side file validation and image-processing safeguards. The app requests
 photo-library access only when a member chooses a profile picture.
 
 ### Rollout and compatibility
 
-Deploy the mobile API and token storage before releasing the app through
-TestFlight. Keep the API versioned and support the released app version for a
-defined period. Server-side feature configuration can disable mobile sign-in
-without changing browser behaviour. APNs and Universal Links can be proposed
-as a later, independent change after the core app is validated.
+Exercise the versioned routes and native decoders against staging before
+releasing the app through TestFlight. APNs and Universal Links
+can be proposed later after the core app is validated.
 
 ## Risks / Trade-offs
 
-- [Token theft from a compromised device] → Store credentials in Keychain,
-  rotate refresh tokens, bind tokens to sessions, provide revocation, and
-  never log credentials.
-- [Different website and iOS authorisation behaviour] → Reuse policy services
-  and exercise the same visibility scenarios with server contract tests.
+- [Bearer-token theft from a compromised device] → Store the opaque
+  credential in Keychain, restrict transport to the configured HTTPS origin
+  and never log it.
+- [Existing response formats change] → Pin the consumed fields in native
+  contract tests and keep app releases coordinated with website deployment.
 - [In-app browser becomes an unbounded substitute for product work] → Limit it
   to an explicit allowlist and keep native screens as the default for all MVP
   journeys.
-- [A browser session differs from a native session] → Do not share mobile
-  tokens with the browser; explain when website sign-in is required.
+- [The embedded browser has an independent session] → Do not share the native
+  API credential with it; explain when website sign-in is required.
 - [Nostr private key is exposed to a website] → Keep the key in Keychain and
   expose only permissioned NIP-07 operations through a fixed origin allowlist.
 - [The shared-key change breaks Nostroots users] → Make the Keychain migration
@@ -259,15 +308,11 @@ as a later, independent change after the core app is validated.
 
 ## Migration Plan
 
-1. Add database indexes and a migration for hashed mobile sessions, if
-   separate storage is required.
-2. Deploy mobile endpoints and token revocation behind disabled configuration.
-3. Exercise security and API-contract checks in staging.
-4. Enable the feature for internal TestFlight users, then release
+1. Exercise security and API-contract checks against staging.
+2. Enable the feature for internal TestFlight users, then release
    incrementally through App Store Connect.
-5. If rollback is needed, disable new mobile session issuance and push sends;
-   existing browser access remains unaffected. Revoke issued mobile sessions
-   if a security issue requires it.
+3. If rollback is needed, withdraw the native build; existing browser access
+   remains unaffected.
 
 ## Open Questions
 
@@ -278,5 +323,5 @@ as a later, independent change after the core app is validated.
   browser allowlist beyond confirmation and recovery?
 - Should browser signing be available in the first TestFlight build using an
   app-local key, or arrive only with the shared-key migration?
-- What device-session listing and remote-revocation interface should follow
-  the initial 30-day refresh-token implementation?
+- Does release experience justify a separately versioned native API and
+  per-device session revocation?

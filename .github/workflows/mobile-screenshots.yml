@@ -53,7 +53,7 @@ jobs:
           app="$RUNNER_TEMP/TrustrootsDerivedData/Build/Products/Debug-iphonesimulator/Trustroots.app"
           test -d "$app"
           xcrun simctl install "$DEVICE_ID" "$app"
-          xcrun simctl launch "$DEVICE_ID" org.trustroots.ios
+          xcrun simctl launch "$DEVICE_ID" org.trustroots.trustrootsApp
       - name: Capture iOS screenshot
         env:
           DEVICE_ID: ${{ steps.simulator.outputs.id }}

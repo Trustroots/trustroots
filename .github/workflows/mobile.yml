@@ -9,6 +9,7 @@ on:
       - 'apps/ios/**'
       - 'modules/mobile/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
+      - 'openspec/changes/add-native-android-member-mvp/**'
   push:
     branches: [main]
     paths:
@@ -17,6 +18,7 @@ on:
       - 'apps/ios/**'
       - 'modules/mobile/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
+      - 'openspec/changes/add-native-android-member-mvp/**'
   workflow_dispatch:
 
 permissions:
@@ -32,9 +34,11 @@ jobs:
         with:
           node-version: 22
       - name: Validate mobile contract
-        run: >-
-          npm exec --yes --package=@fission-ai/openspec@1.6.0 --
-          openspec validate add-native-ios-member-mvp --strict
+        run: |
+          npm exec --yes --package=@fission-ai/openspec@1.6.0 -- \
+            openspec validate add-native-ios-member-mvp --strict
+          npm exec --yes --package=@fission-ai/openspec@1.6.0 -- \
+            openspec validate add-native-android-member-mvp --strict
 
   android:
     name: Android

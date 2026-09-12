@@ -55,13 +55,31 @@ final class OfflineAvailability: ObservableObject {
 
     @Published private(set) var isUsingSavedData = false
     @Published private(set) var savedAt: Date?
+    private var pendingSavedAt: Date?
+    private var pendingOfflineTask: Task<Void, Never>?
 
     func showSavedData(from date: Date) {
-        isUsingSavedData = true
-        savedAt = date
+        if isUsingSavedData {
+            savedAt = date
+            return
+        }
+
+        pendingSavedAt = date
+        guard pendingOfflineTask == nil else { return }
+        pendingOfflineTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            isUsingSavedData = true
+            savedAt = pendingSavedAt
+            pendingSavedAt = nil
+            pendingOfflineTask = nil
+        }
     }
 
     func showLiveData() {
+        pendingOfflineTask?.cancel()
+        pendingOfflineTask = nil
+        pendingSavedAt = nil
         isUsingSavedData = false
         savedAt = nil
     }

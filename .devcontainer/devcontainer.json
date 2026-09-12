@@ -16,6 +16,10 @@
       "label": "Express API/server",
       "onAutoForward": "ignore"
     },
+    "8025": {
+      "label": "Mailpit web UI",
+      "onAutoForward": "ignore"
+    },
     "27017": {
       "label": "MongoDB",
       "onAutoForward": "ignore"

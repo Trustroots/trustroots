@@ -23,9 +23,12 @@ export default function FaqTechnology() {
       <div className="faq-question" id="im-a-developer">
         <h3>{t("I'm a developer and I want to help!")}</h3>
         <Trans t={t} ns="pages">
-          Great! We&apsos;re only actively working on moving trustroots to
-          nostr. If that&apsos;s something you want to help with, check the{' '}
-          <a href="https://github.com/Trustroots/nostroots">nostroots</a> repo
+          Great! We&apos;re actively developing Trustroots again. For larger
+          product changes, we&apos;re focusing on Nostroots, our Nostr-based
+          project. Check the{' '}
+          <a href="https://github.com/Trustroots/nostroots">
+            Nostroots repository
+          </a>{' '}
           to get involved.
         </Trans>
       </div>
@@ -33,9 +36,10 @@ export default function FaqTechnology() {
       <div className="faq-question" id="are-you-planning-to-do-x-feature">
         <h3>{t('Are you planning to do X feature?')}</h3>
         <Trans t={t} ns="pages">
-          The main trustroots site is in maintenance mode since late 2022.
-          We&apos;re not adding new features. But we are working on moving the
-          whole platform over to nostr so that anyone can develop new features.
+          Trustroots is under active development again, and smaller improvements
+          and fixes are welcome here. Larger product changes are focused on{' '}
+          <a href="https://nos.trustroots.org/">Nostroots</a>, our Nostr-based
+          project.
         </Trans>
       </div>
 

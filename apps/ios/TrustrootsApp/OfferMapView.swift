@@ -14,6 +14,7 @@ struct OfferMapView: View {
     @State private var showingFilters = false
     @State private var showingHosts = true
     @State private var showingCommunityNotes = true
+    @State private var onlineInPastSixMonths = true
     @State private var circles: [TrustrootsCircle] = []
     @State private var selectedCircleIDs: Set<String> = []
     @State private var searchGeneration = 0
@@ -139,8 +140,6 @@ struct OfferMapView: View {
                     HostOfferCard(host: selectedHost, session: session) {
                         self.selectedHost = nil
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
                 } else if let selectedCommunityNote {
                     CommunityNoteCard(note: selectedCommunityNote) {
                         self.selectedCommunityNote = nil
@@ -164,6 +163,7 @@ struct OfferMapView: View {
                 MapFilterSheet(
                     showingHosts: $showingHosts,
                     showingCommunityNotes: $showingCommunityNotes,
+                    onlineInPastSixMonths: $onlineInPastSixMonths,
                     circles: circles,
                     selectedCircleIDs: $selectedCircleIDs
                 )
@@ -217,7 +217,8 @@ struct OfferMapView: View {
                 serverURLString: session.serverURLString,
                 in: region,
                 types: types,
-                tribeIDs: selectedCircleIDs.sorted()
+                tribeIDs: selectedCircleIDs.sorted(),
+                seenWithinMonths: onlineInPastSixMonths ? 6 : 24
             )
             guard generation == searchGeneration else { return }
             offers = fetchedOffers
@@ -276,53 +277,66 @@ private struct HostOfferCard: View {
     let dismiss: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            NavigationLink {
-                MemberProfileView(session: session, username: host.user.username)
-            } label: {
-                MemberAvatarView(
-                    memberID: host.user.id,
-                    displayName: host.user.displayName ?? host.user.username ?? "Trustroots member",
-                    serverURLString: session.serverURLString,
-                    size: 46
-                )
-            }
-
-            NavigationLink {
-                MemberProfileView(session: session, username: host.user.username)
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Potential host")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(TrustrootsPalette.green)
-                    Text(host.user.displayName ?? host.user.username ?? "Trustroots member")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                    if let description = (host.description ?? host.noOfferDescription)?.plainText,
-                       !description.isEmpty {
-                        Text(description)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 14) {
+                NavigationLink {
+                    MemberProfileView(session: session, username: host.user.username)
+                } label: {
+                    MemberAvatarView(
+                        memberID: host.user.id,
+                        displayName: host.user.displayName ?? host.user.username ?? "Trustroots member",
+                        serverURLString: session.serverURLString,
+                        size: 76
+                    )
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
+
+                NavigationLink {
+                    MemberProfileView(session: session, username: host.user.username)
+                } label: {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Potential host")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(TrustrootsPalette.darkGreen)
+                        Text(host.user.displayName ?? host.user.username ?? "Trustroots member")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.primary)
+                        if let username = host.user.username {
+                            Text("@\(username)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Button(action: dismiss) {
+                    Image(systemName: "xmark")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .padding(9)
+                        .background(Color.secondary.opacity(0.12))
+                        .clipShape(Circle())
+                }
+                .accessibilityLabel("Dismiss potential host")
             }
 
-            Button(action: dismiss) {
-                Image(systemName: "xmark")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .padding(8)
-                    .background(Color.secondary.opacity(0.12))
-                    .clipShape(Circle())
-            }
-            .accessibilityLabel("Dismiss potential host")
+            HostingDetailsView(
+                status: host.status,
+                description: host.description,
+                noOfferDescription: host.noOfferDescription,
+                maxGuests: host.maxGuests,
+                compact: true
+            )
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 18)
+        .padding(.top, 16)
+        .padding(.bottom, 14)
+        .background(Color(.systemBackground))
+        .overlay(alignment: .top) {
+            Divider()
+        }
+        .shadow(color: .black.opacity(0.18), radius: 12, y: -4)
     }
 }
 
@@ -339,12 +353,12 @@ private struct HostMapDot: View {
                     .font(.caption.weight(.bold))
                     .foregroundStyle(.white)
             } else {
-                Circle()
-                    .fill(.white)
-                    .frame(width: 7, height: 7)
+                Image(systemName: "sofa.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white)
             }
         }
-        .frame(width: count > 1 ? 42 : 22, height: count > 1 ? 42 : 22)
+        .frame(width: count > 1 ? 42 : 30, height: count > 1 ? 42 : 30)
         .overlay(Circle().stroke(.white, lineWidth: 3))
         .shadow(color: .black.opacity(0.3), radius: 4, y: 2)
         .contentShape(Circle())
@@ -482,8 +496,15 @@ private struct HostCluster: Identifiable {
     }
 
     static func group(_ offers: [MapOffer], in region: MKCoordinateRegion) -> [HostCluster] {
-        let latitudeCell = max(region.span.latitudeDelta / 8, 0.12)
-        let longitudeCell = max(region.span.longitudeDelta / 8, 0.12)
+        if max(region.span.latitudeDelta, region.span.longitudeDelta) <= 0.2 {
+            return offers.compactMap { offer in
+                guard let coordinate = offer.coordinate else { return nil }
+                return HostCluster(id: offer.id, offers: [offer], coordinate: coordinate)
+            }
+        }
+
+        let latitudeCell = region.span.latitudeDelta / 10
+        let longitudeCell = region.span.longitudeDelta / 10
         let buckets = Dictionary(grouping: offers.compactMap { offer -> (String, MapOffer)? in
             guard let coordinate = offer.coordinate else { return nil }
             let latitudeBucket = Int(floor((coordinate.latitude + 90) / latitudeCell))

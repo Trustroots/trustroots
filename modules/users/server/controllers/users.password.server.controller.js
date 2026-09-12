@@ -260,7 +260,7 @@ exports.reset = function (req, res) {
 
       // Return authenticated user
       function (user) {
-        return res.json(profileHandler.sanitizeProfile(user, user));
+        return res.json(profileHandler.sanitizeOwnProfile(user));
       },
     ],
     function (err) {

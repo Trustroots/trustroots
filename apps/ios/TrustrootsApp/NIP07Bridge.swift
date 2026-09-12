@@ -10,7 +10,7 @@ struct NIP07PermissionPrompt: Identifiable {
 
 final class NIP07PermissionStore {
     static let shared = NIP07PermissionStore()
-    private let key = "org.trustroots.ios.nip07.allowed-origins"
+    private let key = "org.trustroots.trustrootsApp.nip07.allowed-origins"
 
     func isAllowed(_ origin: String) -> Bool {
         Set(UserDefaults.standard.stringArray(forKey: key) ?? []).contains(origin)

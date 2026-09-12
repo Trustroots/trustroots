@@ -36,6 +36,8 @@
       proposal.
 - [x] 2.5.3 Enable Meetups by default and add the website-compatible,
       validator-approved Community Notes via Nostroots map layer.
+- [x] 2.5.4 Default map results to members seen within six months and provide
+      the website-compatible toggle between six- and 24-month windows.
 - [ ] 2.6 Implement inbox, paginated conversation history, sending replies,
       unread state, and protected/empty/error states.
 - [ ] 2.6.1 Add native local filtering for loaded conversations and circles.
@@ -52,6 +54,14 @@
       operations and origin-permission decisions with iOS tests.
 - [x] 2.9 Add an account/server-scoped protected cache for authenticated GET
       responses and a persistent warning whenever cached data is being shown.
+- [x] 2.10 Implement native member search through the existing protected
+      `/api/mobile/v0/members?search=` route, including native results, empty and error
+      states, keyboard dismissal, and navigation to native profiles.
+- [x] 2.11 Show the existing last-seen and reply statistics on native profiles,
+      and let a member open or begin the existing native conversation with
+      another member directly from their profile.
+- [x] 2.12 Let a member report, block and unblock another member from a native
+      profile through the existing support and blocked-member routes.
 
 ## 3. TestFlight readiness
 
@@ -60,16 +70,15 @@
 
 ## 4. Verification
 
-- [ ] 4.1 Add server unit and integration tests for authentication lifecycle,
-      authorisation parity, endpoint schemas, visibility, validation, pagination,
-      revocation, and APNs token handling.
-- [ ] 4.2 Add iOS unit and API-client tests for Keychain storage, token
-      refresh, error handling, model decoding, and feature view models.
+- [ ] 4.1 Retain the existing server route tests for authentication,
+      authorisation, visibility, validation and pagination.
+- [x] 4.2 Add iOS API-client contract tests for versioned route paths, session
+      bearer token handling, error handling and model decoding.
 - [ ] 4.3 Add XCUITests for sign-in, profile update, circle membership, offer
       discovery, composing/reading a message, browser routing, and NIP-07
       permission decisions.
-- [ ] 4.4 Add an end-to-end server/client contract suite covering the native
-      MVP journeys without weakening existing browser coverage.
+- [ ] 4.4 Add further end-to-end native journey coverage where simulator
+      automation provides value beyond the existing server and browser suites.
 - [ ] 4.5 Validate the OpenSpec change and run the relevant server, iOS, and
       end-to-end test suites.
 

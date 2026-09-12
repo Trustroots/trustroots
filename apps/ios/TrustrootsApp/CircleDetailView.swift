@@ -2,6 +2,7 @@ import MapKit
 import SwiftUI
 
 struct CircleDetailView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var session: MemberSessionStore
     let circle: TrustrootsCircle
 
@@ -18,79 +19,103 @@ struct CircleDetailView: View {
             VStack(alignment: .leading, spacing: 18) {
                 circleSummary
 
-                if isLoading && contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
-                    ProgressView("Finding circle members…")
-                        .frame(maxWidth: .infinity, minHeight: 180)
-                } else {
-                    if !contacts.isEmpty {
-                        memberSection(
-                            title: "Your contacts in this circle",
-                            subtitle: "People you already know on Trustroots",
-                            members: contacts
-                        )
+                VStack(alignment: .leading, spacing: 18) {
+                    if isLoading && contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
+                        ProgressView("Finding circle members…")
+                            .frame(maxWidth: .infinity, minHeight: 180)
+                    } else {
+                        if !contacts.isEmpty {
+                            memberSection(
+                                title: "Your contacts in this circle",
+                                subtitle: "People you already know on Trustroots",
+                                members: contacts
+                            )
+                        }
+
+                        if !positiveExperienceMembers.isEmpty {
+                            memberSection(
+                                title: "People who recommend you",
+                                subtitle: "Members of this circle who left you a positive experience",
+                                members: positiveExperienceMembers
+                            )
+                        }
+
+                        if !otherMembers.isEmpty {
+                            memberSection(
+                                title: "Other active members",
+                                subtitle: "A small selection of members with current offers",
+                                members: otherMembers
+                            )
+                        }
+
+                        if contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
+                            ContentUnavailableView(
+                                "No members to show yet",
+                                systemImage: "person.2",
+                                description: Text("Try again later to discover people in this circle.")
+                            )
+                        }
                     }
 
-                    if !positiveExperienceMembers.isEmpty {
-                        memberSection(
-                            title: "People who recommend you",
-                            subtitle: "Members of this circle who left you a positive experience",
-                            members: positiveExperienceMembers
-                        )
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
 
-                    if !otherMembers.isEmpty {
-                        memberSection(
-                            title: "Other active members",
-                            subtitle: "A small selection of members with current offers",
-                            members: otherMembers
+                    Button {
+                        NotificationCenter.default.post(
+                            name: .trustrootsOpenWebsite,
+                            object: TrustrootsWebsiteLink(
+                                url: URL(string: "https://wiki.trustroots.org")!,
+                                title: "Trustroots Wiki"
+                            )
                         )
-                    }
-
-                    if contacts.isEmpty && positiveExperienceMembers.isEmpty && otherMembers.isEmpty {
-                        ContentUnavailableView(
-                            "No members to show yet",
-                            systemImage: "person.2",
-                            description: Text("Try again later to discover people in this circle.")
-                        )
+                    } label: {
+                        Label("Explore this community on the Trustroots Wiki", systemImage: "book.closed")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(TrustrootsPalette.darkGreen)
+                            .frame(maxWidth: .infinity)
+                            .padding(12)
+                            .background(TrustrootsPalette.paleGreen)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     }
                 }
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
-
-                Button {
-                    NotificationCenter.default.post(
-                        name: .trustrootsOpenWebsite,
-                        object: TrustrootsWebsiteLink(
-                            url: URL(string: "https://wiki.trustroots.org")!,
-                            title: "Trustroots Wiki"
-                        )
-                    )
-                } label: {
-                    Label("Explore this community on the Trustroots Wiki", systemImage: "book.closed")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(TrustrootsPalette.darkGreen)
-                        .frame(maxWidth: .infinity)
-                        .padding(12)
-                        .background(TrustrootsPalette.paleGreen)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
             }
-            .padding(16)
         }
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
+        .ignoresSafeArea(edges: .top)
+        .toolbar(.hidden, for: .navigationBar)
+        .onAppear {
+            NotificationCenter.default.post(name: .trustrootsCircleDetailVisibility, object: true)
+        }
+        .onDisappear {
+            NotificationCenter.default.post(name: .trustrootsCircleDetailVisibility, object: false)
+        }
         .task { await loadMembers() }
     }
 
     private var circleSummary: some View {
         CircleHero(circle: circle, serverURLString: session.serverURLString)
             .frame(maxWidth: .infinity)
-            .frame(height: 230)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .frame(height: 300)
+            .overlay(alignment: .topLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.backward")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 46, height: 46)
+                        .background(.ultraThickMaterial)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+                }
+                .accessibilityLabel("Back")
+                .padding(.leading, 16)
+                .padding(.top, 54)
+            }
     }
 
     private func memberSection(title: String, subtitle: String, members: [MiniMember]) -> some View {
@@ -147,6 +172,14 @@ struct CircleDetailView: View {
 
     private func loadMembers() async {
         guard !isLoading, let ownUsername = session.member?.username else { return }
+        let cacheKey = "\(session.serverURLString)|\(ownUsername)|\(circle.id)"
+        if let cached = await CircleMemberCache.shared.snapshot(for: cacheKey) {
+            contacts = cached.contacts
+            positiveExperienceMembers = cached.positiveExperienceMembers
+            otherMembers = cached.otherMembers
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
@@ -170,6 +203,14 @@ struct CircleDetailView: View {
                 positiveExperienceMembers = await members(in: positiveCandidates)
             }
             otherMembers = try await activeMembers()
+            await CircleMemberCache.shared.store(
+                CircleMemberSnapshot(
+                    contacts: contacts,
+                    positiveExperienceMembers: positiveExperienceMembers,
+                    otherMembers: otherMembers
+                ),
+                for: cacheKey
+            )
         } catch {
             errorMessage = "Some circle members could not be loaded."
         }
@@ -227,51 +268,107 @@ struct CircleDetailView: View {
     }
 }
 
+private struct CircleMemberSnapshot {
+    let contacts: [MiniMember]
+    let positiveExperienceMembers: [MiniMember]
+    let otherMembers: [MiniMember]
+}
+
+private actor CircleMemberCache {
+    static let shared = CircleMemberCache()
+
+    private struct Entry {
+        let snapshot: CircleMemberSnapshot
+        let savedAt: Date
+    }
+
+    private var entries: [String: Entry] = [:]
+    private let lifetime: TimeInterval = 15 * 60
+
+    func snapshot(for key: String) -> CircleMemberSnapshot? {
+        guard let entry = entries[key],
+              Date().timeIntervalSince(entry.savedAt) < lifetime else {
+            entries.removeValue(forKey: key)
+            return nil
+        }
+        return entry.snapshot
+    }
+
+    func store(_ snapshot: CircleMemberSnapshot, for key: String) {
+        entries[key] = Entry(snapshot: snapshot, savedAt: .now)
+    }
+}
+
 private struct CircleHero: View {
     let circle: TrustrootsCircle
     let serverURLString: String
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            if circle.image,
-               let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString),
-               let url = URL(string: "\(configuration.normalizedURLString)/uploads-circle/\(circle.slug)/742x496.jpg") {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    default:
-                        TrustrootsPalette.darkGreen
-                    }
-                }
-            } else {
-                LinearGradient(
-                    colors: [TrustrootsPalette.green, TrustrootsPalette.darkGreen],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
+            artwork
 
             LinearGradient(
-                colors: [.black.opacity(0.05), .black.opacity(0.78)],
+                colors: [.black.opacity(0.28), .black.opacity(0.76)],
                 startPoint: .top,
                 endPoint: .bottom
             )
 
-            VStack(alignment: .leading, spacing: 5) {
-                Text(circle.label)
-                    .font(.title2.bold())
-                Text("\(circle.count) members")
-                    .font(.subheadline.weight(.semibold))
-                if let description = circle.description?.plainText, !description.isEmpty {
-                    Text(description)
-                        .font(.subheadline)
-                        .lineLimit(4)
+            HStack(alignment: .bottom, spacing: 18) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(circle.label)
+                        .font(.title2.bold())
+                    Text("\(circle.count) members")
+                        .font(.subheadline.weight(.semibold))
+                    if let description = circle.description?.plainText, !description.isEmpty {
+                        Text(description)
+                            .font(.subheadline)
+                            .lineLimit(3)
+                    }
                 }
+                Spacer(minLength: 0)
+                artwork
+                    .frame(width: 112, height: 112)
+                    .clipShape(Circle())
+                    .overlay {
+                        Circle().stroke(.white.opacity(0.9), lineWidth: 2)
+                    }
+                    .shadow(color: .black.opacity(0.3), radius: 8, y: 3)
             }
             .foregroundStyle(.white)
             .shadow(color: .black.opacity(0.7), radius: 2, y: 1)
-            .padding(16)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var artwork: some View {
+        if circle.image,
+           let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString),
+           let url = URL(string: "\(configuration.normalizedURLString)/uploads-circle/\(circle.slug)/742x496.jpg") {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                default:
+                    circleFallback
+                }
+            }
+        } else {
+            circleFallback
+        }
+    }
+
+    private var circleFallback: some View {
+        LinearGradient(
+            colors: [TrustrootsPalette.green, TrustrootsPalette.darkGreen],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .overlay {
+            Text(circle.label.prefix(1).uppercased())
+                .font(.system(size: 44, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
         }
     }
 }

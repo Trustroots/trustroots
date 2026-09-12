@@ -13,6 +13,52 @@ const {
 } = require('../../support/helpers');
 
 test.describe('mobile bearer message regressions', () => {
+  test('main profile features remain available through bearer routes', async ({
+    baseURL,
+  }) => {
+    const client = await playwrightRequest.newContext({
+      baseURL,
+      storageState: { cookies: [], origins: [] },
+    });
+    try {
+      const member = SEEDED_MEMBERS[0];
+      const signin = await client.post('/api/mobile/v0/auth/signin', {
+        data: { username: member.username, password: member.password },
+      });
+      expect(signin.status()).toBe(200);
+      const headers = {
+        Authorization: `Bearer ${(await signin.json()).accessToken}`,
+      };
+      const search = await client.get('/api/mobile/v0/members', {
+        headers,
+        params: { search: SEEDED_MEMBERS[1].firstName },
+      });
+      expect(search.status()).toBe(200);
+      expect(
+        (await search.json()).some(
+          result => result.username === SEEDED_MEMBERS[1].username,
+        ),
+      ).toBe(true);
+      const offers = await client.get(
+        `/api/mobile/v0/offers-by/${member.id}?types=host`,
+        { headers },
+      );
+      expect(offers.status()).toBe(200);
+      expect((await offers.json()).length).toBeGreaterThan(0);
+      const avatar = await client.get(
+        `/api/mobile/v0/members/${member.id}/avatar?size=128`,
+        { headers, maxRedirects: 0 },
+      );
+      expect(avatar.status()).toBe(302);
+      const blocked = await client.get('/api/mobile/v0/blocked-users', {
+        headers,
+      });
+      expect(blocked.status()).toBe(200);
+      expect(blocked.headers()['set-cookie']).toBeUndefined();
+    } finally {
+      await client.dispose();
+    }
+  });
   test('search preserves unread state and reading acknowledges only received messages', async ({
     baseURL,
   }, testInfo) => {

@@ -73,3 +73,7 @@ secure, explicit mobile session contract needed by a native application.
   mobile refresh tokens.
 - Mobile-specific server behaviour is isolated under `/api/mobile/v0`, and the
   native projects do not become part of the website bundle.
+
+The merge with the current native clients retains their profile activity,
+member search, configured avatars, hosting details, reporting and blocking
+features through policy-protected bearer adapters.

@@ -22,15 +22,6 @@ struct CirclesView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 6) {
-                            TextField("Filter circles", text: $filterText)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 10)
-                                .background(Color(.secondarySystemBackground))
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                .padding(.horizontal, 8)
-
                             LazyVStack(spacing: 0) {
                                 ForEach(filteredCircles.sorted { lhs, rhs in
                                 memberCircleIDs.contains(lhs.id) && !memberCircleIDs.contains(rhs.id)
@@ -68,7 +59,11 @@ struct CirclesView: View {
                             }
                     }
                     }
+                    .scrollDismissesKeyboard(.interactively)
                 }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                BottomFilterField(placeholder: "Filter circles", text: $filterText)
             }
             .task { await loadCircles() }
         }

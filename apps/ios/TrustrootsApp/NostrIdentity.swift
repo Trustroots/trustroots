@@ -62,7 +62,7 @@ final class NostrIdentityManager: ObservableObject {
 }
 
 private final class NostrKeyStore {
-    private let service = "org.trustroots.ios.nostr"
+    private let service = "org.trustroots.trustrootsApp.nostr"
     private let account = "nip07.private-key.hex"
     private var simulatorFallbackKey: String { "\(service).\(account).simulator-fallback" }
 

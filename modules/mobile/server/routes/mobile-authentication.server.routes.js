@@ -15,8 +15,64 @@ const usersPolicy = require('../../../users/server/policies/users.server.policy'
 const contactsPolicy = require('../../../contacts/server/policies/contacts.server.policy');
 const experiencesPolicy = require('../../../experiences/server/policies/experiences.server.policy');
 const messagesPolicy = require('../../../messages/server/policies/messages.server.policy');
+const userBlock = require('../../../users/server/controllers/users.block.server.controller');
+const userAvatar = require('../../../users/server/controllers/users.avatar.server.controller');
 
 module.exports = function (app) {
+  app
+    .route('/api/mobile/v0/members')
+    .get(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/users'),
+      userProfile.search,
+    );
+  app.route('/api/mobile/v0/members/:mobileAvatarId/avatar').get(
+    mobileAuthentication.authenticate,
+    mobileAuthentication.prepareResource,
+    function (req, res, next) {
+      return userAvatar.userForAvatarByUserId(
+        req,
+        res,
+        next,
+        req.params.mobileAvatarId,
+      );
+    },
+    resourcePolicy(usersPolicy.isAllowed, '/api/users/:avatarUserId/avatar'),
+    userAvatar.getAvatar,
+  );
+  app.route('/api/mobile/v0/offers-by/:mobileOfferUserId').get(
+    mobileAuthentication.authenticate,
+    mobileAuthentication.prepareResource,
+    resourcePolicy(offersPolicy.isAllowed, '/api/offers-by/:offerUserId'),
+    function (req, res, next) {
+      return offers.offersByUserId(
+        req,
+        res,
+        next,
+        req.params.mobileOfferUserId,
+      );
+    },
+    offers.listOffersByUser,
+  );
+  app
+    .route('/api/mobile/v0/blocked-users')
+    .get(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+      resourcePolicy(usersPolicy.isAllowed, '/api/blocked-users'),
+      userBlock.getBlockedUsers,
+    );
+  app
+    .route('/api/mobile/v0/blocked-users/:profileUsername')
+    .all(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+      mobileAuthentication.loadProfile,
+      resourcePolicy(usersPolicy.isAllowed, '/api/blocked-users/:username'),
+    )
+    .put(userBlock.blockUser)
+    .delete(userBlock.unblockUser);
   app.route('/api/mobile/v0/status').get(mobileAuthentication.status);
   app
     .route('/api/mobile/v0/auth/signin')
