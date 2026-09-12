@@ -371,6 +371,89 @@ describe('Admin User CRUD tests', () => {
         // These should have been obfuscated
         should(body.profile.removeProfileToken).equal('(Hidden from admins.)');
         should(body.profile.resetPasswordToken).equal('(Hidden from admins.)');
+        body.potentialMatches.should.deepEqual([]);
+      });
+
+      it('shows bounded identity and acquisition-story leads for restricted members', async () => {
+        userRegular.roles = ['user', 'shadowban'];
+        userRegular.emailTemporary = 'pending-clue@example.com';
+        userRegular.acquisitionStory =
+          'A fictional travel club introduced me to Trustroots.';
+        await userRegular.save();
+
+        const possibleMatches = [
+          new User({
+            displayName: 'Username Lead',
+            email: 'different@example.test',
+            firstName: 'Username',
+            lastName: 'Lead',
+            password: 'Password123!',
+            provider: 'local',
+            roles: ['user'],
+            username: 'user_regular_copy',
+          }),
+          new User({
+            displayName: 'Email Lead',
+            email: 'new.regular+account@example.test',
+            firstName: 'Email',
+            lastName: 'Lead',
+            password: 'Password123!',
+            provider: 'local',
+            roles: ['user'],
+            username: 'different-member',
+          }),
+          new User({
+            displayName: 'Temporary Email Lead',
+            email: 'pending.clue+copy@example.test',
+            firstName: 'Temporary',
+            lastName: 'Lead',
+            password: 'Password123!',
+            provider: 'local',
+            roles: ['user'],
+            username: 'another-member',
+          }),
+          new User({
+            acquisitionStory:
+              '  A FICTIONAL TRAVEL CLUB introduced me to Trustroots.  ',
+            displayName: 'Story Lead',
+            email: 'story@example.test',
+            firstName: 'Story',
+            lastName: 'Lead',
+            password: 'Password123!',
+            provider: 'local',
+            roles: ['user'],
+            username: 'story-member',
+          }),
+        ];
+        await Promise.all(possibleMatches.map(user => user.save()));
+        await utils.signIn(credentialsAdmin, agent);
+
+        const { body } = await agent
+          .post('/api/admin/user')
+          .send({ id: userRegularId })
+          .expect(200);
+
+        body.potentialMatches.should.have.length(4);
+        const usernameLead = body.potentialMatches.find(
+          user => user.username === 'user_regular_copy',
+        );
+        usernameLead.matchReasons.should.containEql('Username identifier');
+        usernameLead.matchReasons.should.containEql('Email identifier');
+        const emailLead = body.potentialMatches.find(
+          user => user.username === 'different-member',
+        );
+        emailLead.matchReasons.should.deepEqual(['Email identifier']);
+        const temporaryEmailLead = body.potentialMatches.find(
+          user => user.username === 'another-member',
+        );
+        temporaryEmailLead.matchReasons.should.deepEqual([
+          'Temporary email identifier',
+        ]);
+        const storyLead = body.potentialMatches.find(
+          user => user.username === 'story-member',
+        );
+        storyLead.matchReasons.should.deepEqual(['Acquisition story']);
+        storyLead.acquisitionStory.should.match(/fictional travel club/i);
       });
 
       it('missing id should return no users', async () => {

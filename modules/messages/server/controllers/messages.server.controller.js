@@ -554,9 +554,13 @@ exports.send = async function (req, res) {
       // Here we create or update the related MessageStat document in mongodb
       // It serves to count the user's reply rate and reply time
       function (message, done) {
-        messageStatService.updateMessageStat(message, function () {
-          // do nothing
-        });
+        // Messages hidden from their recipient must not lower reply rates or
+        // contribute reply-time data.
+        if (!message.shadowHidden) {
+          messageStatService.updateMessageStat(message, function () {
+            // do nothing
+          });
+        }
 
         return done(null, message);
       },

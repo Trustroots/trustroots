@@ -477,6 +477,20 @@ describe('Admin users controller unit tests', () => {
     });
   });
 
+  describe('findPotentialMatches', () => {
+    it('returns no leads when every available identifier is too short', async () => {
+      const matches = await adminUsers.findPotentialMatches({
+        _id: new mongoose.Types.ObjectId(),
+        acquisitionStory: '',
+        email: 'a@example.test',
+        emailTemporary: '',
+        username: 'abc',
+      });
+
+      matches.should.deepEqual([]);
+    });
+  });
+
   describe('changeRole', () => {
     it('promotes a volunteer and removes volunteer-alumni', async () => {
       const users = await utils.saveUsers(utils.generateUsers(2));
