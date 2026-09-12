@@ -6,6 +6,7 @@ const {
   EUROPE_OFFERS_QUERY,
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  createIsolatedContext,
   createUser,
   fetchUserIdByUsername,
   registerViaApi,
@@ -355,8 +356,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expect(hitchhikers).toBeTruthy();
 
     const throwaway = createUser();
-    const context = await browser.newContext({
-      baseURL,
+    const context = await createIsolatedContext(browser, baseURL, {
       hasTouch: true,
       isMobile: true,
       viewport: { width: 375, height: 500 },
