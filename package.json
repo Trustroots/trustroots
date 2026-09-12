@@ -82,6 +82,7 @@
     "test:server:codex": "TRUSTROOTS_SKIP_LOCAL_CONFIG=true ./scripts/codex/test-server.sh",
     "test:server:files": "node ./scripts/test-server-files.js",
     "test:codex": "npm run test:client && npm run test:server:codex",
+    "test:server:files": "node ./scripts/test-server-files.js",
     "test:server:watch": "npm run check-environment && NODE_ENV=test gulp test:server:watch",
     "test:server": "NODE_ENV=test gulp test:server",
     "test": "npm run check-environment && npm run lint && npm run test:client && npm run test:server",

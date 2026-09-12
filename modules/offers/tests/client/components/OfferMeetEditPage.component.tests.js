@@ -40,6 +40,33 @@ describe('OfferMeetEditPage', () => {
     getCurrentRouteParams.mockReturnValue({});
   });
 
+  it('keeps an empty expiry editable and prevents saving until it is valid', async () => {
+    offersApi.createOffer.mockResolvedValue({});
+    render(<OfferMeetEditPage user={{ _id: 'member-1' }} />);
+    const expiry = await screen.findByLabelText(
+      'How long should this be visible?',
+    );
+    fireEvent.change(screen.getByPlaceholderText('Write here...'), {
+      target: { value: 'Meet for a walk.' },
+    });
+    fireEvent.change(expiry, { target: { value: '' } });
+    expect(expiry).toHaveValue('');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Please choose a valid expiry date.',
+    );
+    fireEvent.submit(document.querySelector('form'));
+    expect(offersApi.createOffer).not.toHaveBeenCalled();
+    const date = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    fireEvent.change(expiry, { target: { value: date } });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.submit(document.querySelector('form'));
+    await waitFor(() =>
+      expect(offersApi.createOffer).toHaveBeenCalledWith(
+        expect.objectContaining({ validUntil: new Date(date).toISOString() }),
+      ),
+    );
+  });
+
   it('renders a new meet offer form', async () => {
     render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
 

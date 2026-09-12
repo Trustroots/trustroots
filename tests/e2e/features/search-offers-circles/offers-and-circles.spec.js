@@ -87,6 +87,14 @@ test.describe.serial('search offers and circles feature coverage', () => {
     });
 
     await page.goto('/offer/meet/add');
+    const expiry = page.getByLabel('How long should this be visible?');
+    const originalExpiry = await expiry.inputValue();
+    await expiry.fill('');
+    await expect(page.getByRole('alert')).toHaveText(
+      'Please choose a valid expiry date.',
+    );
+    await expiry.fill(originalExpiry);
+    await expect(page.getByRole('alert')).toHaveCount(0);
     await page
       .getByPlaceholder('Write here...')
       .fill('A walk with fellow members.');

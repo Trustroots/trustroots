@@ -220,6 +220,18 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
     });
 
+    it('preserves the authenticated session when saving a profile', async () => {
+      const login = sinon.spy();
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { tagline: 'Updated tagline' }, login },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      login.called.should.equal(false);
+    });
+
     it('returns 400 when saving profile updates fails', async () => {
       sinon.stub(userDoc, 'save').callsFake(cb => cb(new Error('save failed')));
 

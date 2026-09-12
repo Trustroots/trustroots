@@ -51,7 +51,10 @@ export default function OfferMeetEditPage() {
         const data = await getOffer(offerId);
 
         if (isMounted) {
-          setOffer(data);
+          setOffer({
+            ...data,
+            validUntil: data.validUntil || defaultValidUntil(),
+          });
         }
       } catch {
         if (isMounted) {
@@ -76,6 +79,10 @@ export default function OfferMeetEditPage() {
     [offer?.description],
   );
 
+  const hasValidExpiry =
+    Boolean(offer?.validUntil) &&
+    Number.isFinite(new Date(offer.validUntil).getTime());
+
   if (isLoading || !offer) {
     return (
       <div className="text-center text-muted">
@@ -87,7 +94,7 @@ export default function OfferMeetEditPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (isSaving || descriptionLength < MIN_DESCRIPTION) {
+    if (isSaving || descriptionLength < MIN_DESCRIPTION || !hasValidExpiry) {
       return;
     }
 
@@ -97,7 +104,7 @@ export default function OfferMeetEditPage() {
       type: 'meet',
       description: offer.description,
       location: offer.location,
-      validUntil: offer.validUntil,
+      validUntil: new Date(offer.validUntil).toISOString(),
     };
 
     try {
@@ -127,7 +134,9 @@ export default function OfferMeetEditPage() {
         {!isNewOffer && (
           <button
             className="btn btn-lg btn-inverse-primary pull-right"
-            disabled={isSaving || descriptionLength < MIN_DESCRIPTION}
+            disabled={
+              isSaving || descriptionLength < MIN_DESCRIPTION || !hasValidExpiry
+            }
             type="submit"
           >
             Save and Exit
@@ -193,25 +202,26 @@ export default function OfferMeetEditPage() {
                       onChange={({ target: { value } }) =>
                         setOffer(current => ({
                           ...current,
-                          validUntil: new Date(value).toISOString(),
+                          validUntil: value,
                         }))
                       }
                       type="date"
-                      value={
-                        /* istanbul ignore next -- persisted meet offers always have an expiry. */
-                        (offer.validUntil || defaultValidUntil()).slice(0, 10)
-                      }
+                      value={(offer.validUntil || '').slice(0, 10)}
                     />
+                    {!hasValidExpiry && (
+                      <p role="alert">Please choose a valid expiry date.</p>
+                    )}
                     <br />
                     <br />
                     <p className="lead">
                       Visible through{' '}
-                      {new Date(offer.validUntil).toLocaleDateString(
-                        undefined,
-                        {
-                          dateStyle: 'medium',
-                        },
-                      )}
+                      {hasValidExpiry &&
+                        new Date(offer.validUntil).toLocaleDateString(
+                          undefined,
+                          {
+                            dateStyle: 'medium',
+                          },
+                        )}
                     </p>
                     <small className="text-muted">
                       You can set visibility at most one month ahead.
@@ -264,7 +274,7 @@ export default function OfferMeetEditPage() {
             <button
               aria-label="Finish editing and save"
               className="btn btn-action btn-primary"
-              disabled={isSaving}
+              disabled={isSaving || !hasValidExpiry}
               type="submit"
             >
               Finish
