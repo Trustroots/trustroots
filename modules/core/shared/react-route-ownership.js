@@ -8,6 +8,24 @@ const REACT_ROUTE_POLICIES = [
   { path: '/circles', title: 'Circles' },
   { path: '/circles/:circle', title: 'Circle', footerHidden: true },
   {
+    path: '/welcome',
+    title: 'Welcome',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/navigation',
+    title: 'Navigation',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/search/members',
+    title: 'Search members',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
     path: '/about',
     redirectTo: '/',
   },

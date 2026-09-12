@@ -1,5 +1,9 @@
 import React from 'react';
 import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
+import Navigation from '@/modules/pages/client/components/Navigation.component';
+import Welcome from '@/modules/users/client/components/Welcome.component';
+import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import { signout } from './shell-helpers';
 
 import {
   getReactRoutePolicy,
@@ -46,9 +50,16 @@ function renderCircle({ user, params }) {
   return React.createElement(CirclesRoute, { user, circle: params.circle });
 }
 
+function renderNavigation({ user }) {
+  return React.createElement(Navigation, { user, onSignout: signout });
+}
+
 const renderByPath = {
   '/circles': renderWithUser(CirclesRoute),
   '/circles/:circle': renderCircle,
+  '/welcome': () => <Welcome />,
+  '/navigation': renderNavigation,
+  '/search/members': () => <SearchUsers />,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (
