@@ -22,6 +22,21 @@ jest.mock('@/modules/core/client/components/TimeAgo', () => {
   return MockTimeAgo;
 });
 
+const cryptoDescriptor = Object.getOwnPropertyDescriptor(window, 'crypto');
+beforeAll(() => {
+  Object.defineProperty(window, 'crypto', {
+    configurable: true,
+    value: {
+      getRandomValues: bytes => require('crypto').randomFillSync(bytes),
+    },
+  });
+});
+afterAll(() => {
+  if (cryptoDescriptor)
+    Object.defineProperty(window, 'crypto', cryptoDescriptor);
+  else delete window.crypto;
+});
+
 afterEach(() => {
   jest.resetAllMocks();
   window.history.pushState({}, '', '/');
@@ -43,6 +58,38 @@ const bob = {
 };
 
 describe('<AdminMessages />', () => {
+  it('reuses the warning request ID after a failed send', async () => {
+    messagesApi.getScammerRecipients.mockResolvedValue({
+      scammer: { username: 'samplemember' },
+      recipients: [
+        {
+          _id: 'recipient-1',
+          username: 'recipient',
+          displayName: 'Sample Member',
+        },
+      ],
+    });
+    messagesApi.sendScammerWarning
+      .mockRejectedValueOnce(new Error('Connection lost'))
+      .mockResolvedValueOnce({ sent: 1 });
+    render(<AdminMessages />);
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'samplemember' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Send warning to all' }),
+    );
+    await screen.findByText('Could not send the warning.');
+    const firstCall = messagesApi.sendScammerWarning.mock.calls[0];
+    expect(firstCall[2]).toMatch(/^[0-9a-f]{32}$/);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Send warning to all' }),
+    );
+    await screen.findByText('Sent 1 warning message(s).');
+    expect(messagesApi.sendScammerWarning.mock.calls[1]).toEqual(firstCall);
+  });
+
   it('previews scammer recipients and sends the warning', async () => {
     messagesApi.getScammerRecipients.mockResolvedValueOnce({
       scammer: { username: 'reported-member' },
@@ -74,6 +121,7 @@ describe('<AdminMessages />', () => {
       expect(messagesApi.sendScammerWarning).toHaveBeenCalledWith(
         'reported-member',
         'Please ignore the earlier message.',
+        expect.any(String),
       ),
     );
     await waitFor(() =>

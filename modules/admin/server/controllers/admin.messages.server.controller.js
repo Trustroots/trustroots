@@ -2,6 +2,7 @@
  * Module dependencies.
  */
 const _ = require('lodash');
+const crypto = require('crypto');
 const errorService = require('../../../core/server/services/error.server.service');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
@@ -71,37 +72,77 @@ exports.sendScammerWarning = async (req, res) => {
       _.get(req, ['body', 'username']),
       req.user && req.user._id,
     );
-    const messages = recipients.map(recipient => ({
-      content: cleanContent,
-      userFrom: req.user._id,
-      userTo: recipient._id,
-      read: false,
-      shadowHidden: false,
-      notified: false,
-    }));
-    const savedMessages = messages.length
-      ? await Message.insertMany(messages)
-      : [];
+    const requestId = _.get(req, ['body', 'requestId']);
+    if (typeof requestId !== 'string' || !/^[a-f0-9]{32}$/.test(requestId)) {
+      return res
+        .status(400)
+        .send({ message: 'A valid warning request ID is required.' });
+    }
+    // The primary key makes retries atomic even on a standalone MongoDB server.
+    // Keep each recipient's original content, timestamp and read state on retry.
+    const savedMessages = await Promise.all(
+      recipients.map(recipient => {
+        const id = crypto
+          .createHash('sha256')
+          .update(
+            JSON.stringify([
+              String(req.user._id),
+              String(scammer._id),
+              requestId,
+              String(recipient._id),
+            ]),
+          )
+          .digest('hex')
+          .slice(0, 24);
+        return Message.findOneAndUpdate(
+          { _id: id },
+          {
+            $setOnInsert: {
+              content: cleanContent,
+              userFrom: req.user._id,
+              userTo: recipient._id,
+              read: false,
+              shadowHidden: false,
+            },
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true },
+        ).exec();
+      }),
+    );
     if (savedMessages.length) {
       await Thread.bulkWrite(
-        savedMessages.map(message => ({
-          updateOne: {
-            filter: {
-              $or: [
-                { userTo: message.userTo, userFrom: message.userFrom },
-                { userTo: message.userFrom, userFrom: message.userTo },
-              ],
+        savedMessages.flatMap(message => {
+          const pair = {
+            $or: [
+              { userTo: message.userTo, userFrom: message.userFrom },
+              { userTo: message.userFrom, userFrom: message.userTo },
+            ],
+          };
+          const latest = {
+            updated: message.created,
+            userFrom: message.userFrom,
+            userTo: message.userTo,
+            message: message._id,
+            read: message.read,
+          };
+          return [
+            {
+              updateOne: {
+                filter: pair,
+                update: { $setOnInsert: latest },
+                upsert: true,
+              },
             },
-            update: {
-              updated: Date.now(),
-              userFrom: message.userFrom,
-              userTo: message.userTo,
-              message: message._id,
-              read: false,
+            // Repair an older thread after a partial failure, without marking a
+            // read warning unread again or replacing a newer conversation message.
+            {
+              updateOne: {
+                filter: { ...pair, updated: { $lt: message.created } },
+                update: { $set: latest },
+              },
             },
-            upsert: true,
-          },
-        })),
+          ];
+        }),
       );
     }
     return res.send({

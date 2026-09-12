@@ -12,10 +12,11 @@ export async function getScammerRecipients(username) {
   return data;
 }
 
-export async function sendScammerWarning(username, content) {
+export async function sendScammerWarning(username, content, requestId) {
   const { data } = await axios.post('/api/admin/messages/scammer-warning', {
     username,
     content,
+    requestId,
   });
   return data;
 }

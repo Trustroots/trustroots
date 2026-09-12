@@ -2,12 +2,14 @@ const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_ADMIN,
+  createUser,
+  registerViaApi,
   SEEDED_MEMBERS,
   SEEDED_SHADOW,
   SEEDED_SHADOW_MESSAGE,
   signInViaApi,
 } = require('../../support/helpers');
-const { findUserByUsername } = require('../../support/db');
+const { findUserByUsername, withE2eDb } = require('../../support/db');
 
 test.describe('admin moderation inspection flows', () => {
   test.beforeEach(async ({ page, request }) => {
@@ -73,6 +75,58 @@ test.describe('admin moderation inspection flows', () => {
     await expect(
       page.getByRole('button', { name: 'Send warning to all' }),
     ).toBeVisible();
+  });
+
+  test('admin retries a warning after losing the response without duplicate delivery', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.messages', [
+      'Admin can preview recipients contacted by a reported member.',
+    ]);
+    const sender = createUser();
+    const recipient = createUser();
+    await registerViaApi(request, sender);
+    await registerViaApi(request, recipient);
+    const senderDoc = await findUserByUsername(sender.username);
+    const recipientDoc = await findUserByUsername(recipient.username);
+    await withE2eDb(db =>
+      db.collection('messages').insertOne({
+        userFrom: senderDoc._id,
+        userTo: recipientDoc._id,
+        content: 'Earlier message',
+        created: new Date(),
+        read: true,
+        notificationCount: 0,
+      }),
+    );
+    await signInViaApi(page, request, SEEDED_ADMIN);
+    const requestIds = [];
+    await page.route('**/api/admin/messages/scammer-warning', async route => {
+      requestIds.push(route.request().postDataJSON().requestId);
+      if (requestIds.length === 1) {
+        const response = await route.fetch();
+        expect(response.ok()).toBeTruthy();
+        await route.abort('failed');
+      } else {
+        await route.continue();
+      }
+    });
+    await page.goto('/admin/messages');
+    await page.getByLabel('Scammer username').fill(sender.username);
+    await page.getByRole('button', { name: 'Show recipients' }).click();
+    await page.getByRole('button', { name: 'Send warning to all' }).click();
+    await expect(page.getByText('Could not send the warning.')).toBeVisible();
+    await page.getByRole('button', { name: 'Send warning to all' }).click();
+    await expect(page.getByText('Sent 1 warning message(s).')).toBeVisible();
+    expect(requestIds[1]).toBe(requestIds[0]);
+    const admin = await findUserByUsername(SEEDED_ADMIN.username);
+    const count = await withE2eDb(db =>
+      db
+        .collection('messages')
+        .countDocuments({ userFrom: admin._id, userTo: recipientDoc._id }),
+    );
+    expect(count).toBe(1);
   });
 
   test('admin user report card shows message counts for a shadowbanned member', async ({

@@ -40,11 +40,15 @@ describe('admin messages api', () => {
     axios.post.mockResolvedValueOnce({ data });
 
     await expect(
-      sendScammerWarning('scammer', 'Please ignore this'),
+      sendScammerWarning('scammer', 'Please ignore this', 'request-1'),
     ).resolves.toBe(data);
     expect(axios.post).toHaveBeenCalledWith(
       '/api/admin/messages/scammer-warning',
-      { username: 'scammer', content: 'Please ignore this' },
+      {
+        username: 'scammer',
+        content: 'Please ignore this',
+        requestId: 'request-1',
+      },
     );
   });
 });

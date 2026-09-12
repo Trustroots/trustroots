@@ -1,3 +1,4 @@
+const sinon = require('sinon');
 const request = require('supertest');
 const mongoose = require('mongoose');
 const Message = mongoose.model('Message');
@@ -6,7 +7,7 @@ const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 const express = require('../../../../config/lib/express');
 const utils = require('../../../../testutils/server/data.server.testutil');
-require('should');
+const should = require('should');
 
 /**
  * Globals
@@ -224,6 +225,7 @@ describe('Admin Message CRUD tests', () => {
         .post('/api/admin/messages/scammer-warning')
         .send({
           username: userRegular1.username,
+          requestId: '11111111111141118111111111111111',
           content: '<p>Ignore this scam.</p><script>unsafe()</script>',
         })
         .expect(200);
@@ -240,12 +242,77 @@ describe('Admin Message CRUD tests', () => {
       thread.read.should.equal(false);
     });
 
+    it('repairs a partial delivery without duplicating messages or resetting read state', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const payload = {
+        username: userRegular1.username,
+        content: 'Please ignore the earlier message.',
+        requestId: '22222222222242228222222222222222',
+      };
+      const bulkWrite = sinon
+        .stub(Thread, 'bulkWrite')
+        .rejects(new Error('Temporary thread write failure'));
+      try {
+        await agent
+          .post('/api/admin/messages/scammer-warning')
+          .send(payload)
+          .expect(400);
+      } finally {
+        bulkWrite.restore();
+      }
+      const filter = { userFrom: userAdmin._id, userTo: userRegular2Id };
+      (await Message.countDocuments(filter)).should.equal(1);
+      await agent
+        .post('/api/admin/messages/scammer-warning')
+        .send(payload)
+        .expect(200);
+      const message = await Message.findOne(filter);
+      (await Message.countDocuments(filter)).should.equal(1);
+      const thread = await Thread.findOne({ message: message._id });
+      should.exist(thread);
+      await Message.updateOne({ _id: message._id }, { $set: { read: true } });
+      await Thread.updateOne({ _id: thread._id }, { $set: { read: true } });
+      await agent
+        .post('/api/admin/messages/scammer-warning')
+        .send(payload)
+        .expect(200);
+      (await Message.findById(message._id)).read.should.equal(true);
+      (await Thread.findById(thread._id)).read.should.equal(true);
+      (await Message.countDocuments(filter)).should.equal(1);
+      await agent
+        .post('/api/admin/messages/scammer-warning')
+        .send({ ...payload, requestId: '33333333333343338333333333333333' })
+        .expect(200);
+      (await Message.countDocuments(filter)).should.equal(2);
+    });
+
+    it('requires a valid request ID before saving warning messages', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      for (const requestId of [undefined, 'invalid']) {
+        await agent
+          .post('/api/admin/messages/scammer-warning')
+          .send({
+            username: userRegular1.username,
+            content: 'Safety warning',
+            requestId,
+          })
+          .expect(400);
+      }
+      (await Message.countDocuments({ userFrom: userAdmin._id })).should.equal(
+        0,
+      );
+    });
+
     it('reports zero deliveries when the member contacted nobody', async () => {
       await utils.signIn(credentialsAdmin, agent);
 
       const { body } = await agent
         .post('/api/admin/messages/scammer-warning')
-        .send({ username: userAdmin.username, content: 'Safety warning' })
+        .send({
+          username: userAdmin.username,
+          content: 'Safety warning',
+          requestId: '11111111111141118111111111111111',
+        })
         .expect(200);
 
       body.sent.should.equal(0);
@@ -270,6 +337,7 @@ describe('Admin Message CRUD tests', () => {
         .post('/api/admin/messages/scammer-warning')
         .send({
           username: userRegular1.username,
+          requestId: '11111111111141118111111111111111',
           content: '<script>x</script>',
         })
         .expect(400);

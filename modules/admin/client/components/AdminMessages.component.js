@@ -1,5 +1,5 @@
 // External dependencies
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 // Internal dependencies
 import {
@@ -31,6 +31,7 @@ export default function AdminMessages() {
   const [referenceThreads, setReferenceThreads] = useState([]);
   const [member1, setMember1] = useState(initialMember1);
   const [member2, setMember2] = useState(initialMember2);
+  const warningAttempt = useRef(null);
   const [scammerUsername, setScammerUsername] = useState('');
   const [scammerRecipients, setScammerRecipients] = useState(null);
   const [scammerError, setScammerError] = useState('');
@@ -99,11 +100,28 @@ export default function AdminMessages() {
     setScammerError('');
     setWarningSent(null);
     setIsSendingWarning(true);
+    const username = scammerRecipients.scammer.username;
+    if (
+      !warningAttempt.current ||
+      warningAttempt.current.username !== username ||
+      warningAttempt.current.content !== warningContent
+    ) {
+      warningAttempt.current = {
+        username,
+        content: warningContent,
+        requestId: Array.from(
+          window.crypto.getRandomValues(new Uint8Array(16)),
+          byte => byte.toString(16).padStart(2, '0'),
+        ).join(''),
+      };
+    }
     try {
       const result = await sendScammerWarning(
         scammerRecipients.scammer.username,
         warningContent,
+        warningAttempt.current.requestId,
       );
+      warningAttempt.current = null;
       setWarningSent(result.sent);
       setScammerRecipients(null);
     } catch (error) {
@@ -144,7 +162,11 @@ export default function AdminMessages() {
               />{' '}
               <button
                 className="btn btn-default"
-                disabled={!scammerUsername.trim() || isLoadingRecipients}
+                disabled={
+                  !scammerUsername.trim() ||
+                  isLoadingRecipients ||
+                  isSendingWarning
+                }
                 type="submit"
               >
                 {isLoadingRecipients ? 'Looking up…' : 'Show recipients'}
@@ -169,6 +191,7 @@ export default function AdminMessages() {
                   <>
                     <textarea
                       aria-label="Warning message"
+                      disabled={isSendingWarning}
                       className="form-control"
                       onChange={({ target: { value } }) =>
                         setWarningContent(value)

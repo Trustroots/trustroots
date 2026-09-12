@@ -165,6 +165,13 @@ contacted by a member username and send one warning message to all of them.
   thread
 - **AND** the notification email is sent from Trustroots Support
 
+#### Scenario: Administrator retries a partially completed warning
+
+- **WHEN** warning delivery fails or its response is lost and the administrator retries the same warning request
+- **THEN** the request reuses its message identifiers and repairs missing or older thread state without duplicating messages
+- **AND** retries preserve read state and newer conversation messages
+- **AND** a new deliberate warning uses a new request identifier
+
 #### Scenario: Regular member requests a scammer warning
 
 - **WHEN** a regular member requests the lookup or send endpoint
