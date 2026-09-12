@@ -1321,7 +1321,8 @@ exports.addPushRegistration = function (req, res) {
     User.schema.path('pushRegistration').schema.path('platform').enumValues ||
     [];
 
-  if (!platform || validPlatforms.indexOf(platform) === -1) {
+  // Mobile registration is retired; retain the schema enum for historical data.
+  if (platform !== 'web' || validPlatforms.indexOf(platform) === -1) {
     return res.status(400).send({
       message: 'Platform is invalid or missing.',
     });
