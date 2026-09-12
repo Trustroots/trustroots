@@ -1,5 +1,4 @@
 import contactAddTemplateUrl from '@/modules/contacts/client/views/add-contact.client.view.html';
-import contactConfirmTemplateUrl from '@/modules/contacts/client/views/confirm-contact.client.view.html';
 
 angular.module('contacts').config(ContactsRoutes);
 
@@ -33,20 +32,13 @@ function ContactsRoutes($stateProvider) {
     })
     .state('contactConfirm', {
       url: '/contact-confirm/:contactId',
-      templateUrl: contactConfirmTemplateUrl,
       requiresAuth: true,
-      controller: 'ContactConfirmController',
-      controllerAs: 'contactConfirm',
-      resolve: {
-        // A string value resolves to a service
-        Contact: 'Contact',
-
-        contact(Contact, $stateParams) {
-          return Contact.get({ contactId: $stateParams.contactId });
-        },
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        $window.location.assign(
+          `/contact-confirm/${encodeURIComponent($stateParams.contactId)}`,
+        );
       },
-      data: {
-        pageTitle: 'Confirm contact',
-      },
+      data: { pageTitle: 'Confirm contact' },
     });
 }

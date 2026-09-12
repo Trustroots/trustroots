@@ -1,9 +1,9 @@
 import React from 'react';
+import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
 
 import {
   getReactRoutePolicy,
   REACT_ROUTE_POLICIES,
-  normalizePath,
 } from '@/modules/core/shared/react-route-ownership';
 import Admin from '@/modules/admin/client/components/Admin.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
@@ -42,7 +42,13 @@ function renderStatistics({ user }) {
   return React.createElement(Statistics, { isAuthenticated: Boolean(user) });
 }
 
+function renderContactConfirmation({ user }) {
+  const contactId = window.location.pathname.split('/')[2];
+  return React.createElement(ContactConfirmPage, { user, contactId });
+}
+
 const renderByPath = {
+  '/contact-confirm/:contactId': renderContactConfirmation,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (
@@ -80,9 +86,8 @@ export const routes = REACT_ROUTE_POLICIES.map(route => ({
 }));
 
 export function findRoute(path) {
-  const normalizedPath = normalizePath(path);
-
-  return routes.find(route => route.path === normalizedPath);
+  const policy = getReactRoutePolicy(path);
+  return routes.find(route => route.path === policy?.path);
 }
 
 export function isReactRoute(path) {

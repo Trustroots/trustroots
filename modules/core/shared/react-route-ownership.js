@@ -6,6 +6,11 @@ const ADMIN_ROUTE_DEFAULTS = {
 
 const REACT_ROUTE_POLICIES = [
   {
+    path: '/contact-confirm/:contactId',
+    title: 'Confirm contact',
+    requiresAuth: true,
+  },
+  {
     path: '/about',
     redirectTo: '/',
   },
@@ -146,7 +151,16 @@ function normalizePath(path) {
 function getReactRoutePolicy(path) {
   const normalizedPath = normalizePath(path);
 
-  return REACT_ROUTE_POLICIES.find(route => route.path === normalizedPath);
+  const exact = REACT_ROUTE_POLICIES.find(
+    route => route.path === normalizedPath,
+  );
+  if (exact) return exact;
+  if (/^\/contact-confirm\/[^/]+$/.test(normalizedPath)) {
+    return REACT_ROUTE_POLICIES.find(
+      route => route.path === '/contact-confirm/:contactId',
+    );
+  }
+  return undefined;
 }
 
 function isReactOwnedPath(path) {

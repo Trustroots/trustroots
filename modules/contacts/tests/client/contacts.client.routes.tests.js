@@ -81,32 +81,17 @@ describe('Contact Route Tests', function () {
         expect(mainstate.abstract).toBe(undefined);
       });
 
-      it('Should have templateUrl', function () {
-        expect(mainstate.templateUrl).toBe(
-          '/modules/contacts/views/confirm-contact.client.view.html',
-        );
-      });
-    });
-
-    describe('Handle Trailing Slash', function () {
-      beforeEach(inject(function ($state, $rootScope) {
-        // Test expected GET request
-        $httpBackend.when('GET', '/api/contact/123').respond(200, '');
-        $httpBackend.expectGET('/api/contact/123');
-
-        $state.go('contactConfirm', { contactId: '123' });
-        $rootScope.$digest();
-      }));
-
-      it('Should remove trailing slash', inject(function (
-        $state,
-        $location,
-        $rootScope,
+      it('loads the React page through its state entry point', inject(function (
+        $injector,
       ) {
-        $location.path('/contact-confirm/123/');
-        $rootScope.$digest();
-
-        expect($location.path()).toBe('/contact-confirm/123');
+        const $window = { location: { assign: jest.fn() } };
+        $injector.invoke(mainstate.onEnter, null, {
+          $window,
+          $stateParams: { contactId: 'sample request' },
+        });
+        expect($window.location.assign).toHaveBeenCalledWith(
+          '/contact-confirm/sample%20request',
+        );
       }));
     });
   });

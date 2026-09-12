@@ -117,6 +117,12 @@ jest.mock(
   '@/modules/pages/client/components/Volunteering.component',
   () => () => <main>Volunteering</main>,
 );
+
+jest.mock(
+  '@/modules/contacts/client/components/ContactConfirmPage.component',
+  () => () => <main>ContactConfirmPage</main>,
+);
+
 /* eslint-enable react/display-name */
 
 describe('React route ownership', () => {
