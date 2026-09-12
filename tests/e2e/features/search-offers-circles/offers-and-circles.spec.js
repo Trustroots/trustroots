@@ -57,6 +57,121 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await signInViaApi(page, request, berlin);
   });
 
+  test('mobile offer editors expose working save controls', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/offer/host');
+    await page.getByRole('tab', { name: 'Description' }).click();
+    const description = page.getByLabel(
+      'Tell about your home and hosting possibilities',
+      { exact: false },
+    );
+    await expect(description).toBeVisible();
+    const originalDescription = await description.inputValue();
+    const nextDescription = 'A spare room for visiting members.';
+    await description.fill(nextDescription);
+    const savedHost = page.waitForResponse(
+      response =>
+        response.url().includes('/api/offers/') &&
+        response.request().method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Save and Exit' }).click();
+    const hostResponse = await savedHost;
+    expect(hostResponse.ok()).toBeTruthy();
+    expect(hostResponse.request().postDataJSON().description).toBe(
+      nextDescription,
+    );
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${berlin.username}/overview$`),
+    );
+    await page.request.put(hostResponse.url(), {
+      data: { description: originalDescription },
+    });
+
+    await page.goto('/offer/meet/add');
+    const expiry = page.getByLabel('How long should this be visible?');
+    const originalExpiry = await expiry.inputValue();
+    await expiry.fill('');
+    await expect(page.getByRole('alert')).toHaveText(
+      'Please choose a valid expiry date.',
+    );
+    await expiry.fill(originalExpiry);
+    await expect(page.getByRole('alert')).toHaveCount(0);
+    await page
+      .getByPlaceholder('Write here...')
+      .fill('A walk with fellow members.');
+    await page.getByRole('button', { name: 'Next section' }).click();
+    const savedMeet = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/offers') &&
+        response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Finish editing and save' }).click();
+    const meetResponse = await savedMeet;
+    expect(meetResponse.ok()).toBeTruthy();
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [meeting] = await findOffersByUser(memberId, {
+      type: 'meet',
+      description: 'A walk with fellow members.',
+    });
+    await page.request.delete(`/api/offers/${meeting._id}`);
+  });
+
+  test('hosting location follows place searches and map dragging', async ({
+    page,
+  }) => {
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
+    await page.goto('/offer/host');
+    await page.getByRole('tab', { name: 'Location' }).click();
+    await page.evaluate(() => {
+      window.settings.mapbox = { publicKey: 'test-geocoding-token' };
+    });
+    await page.route('https://api.mapbox.com/geocoding/**', route =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            { id: 'place.example', text: 'Example town', center: [-7, 35] },
+          ],
+        }),
+      }),
+    );
+    await page
+      .getByLabel('Search places', { exact: true })
+      .fill('Example town');
+    await page.getByRole('option', { name: 'Example town' }).click();
+    const map = page
+      .locator('.offer-map .mapboxgl-canvas, .offer-map .leaflet-container')
+      .first();
+    await expect(map).toBeVisible();
+    const box = await map.boundingBox();
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 100, box.y + box.height / 2, {
+      steps: 10,
+    });
+    // Stop before releasing to avoid map inertia changing the final centre.
+    await page.waitForTimeout(200);
+    await page.mouse.up();
+    const saved = page.waitForResponse(
+      response =>
+        response.url().includes('/api/offers/') &&
+        response.request().method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Save and Exit' }).click();
+    const response = await saved;
+    await page.request.put(response.url(), {
+      data: { location: originalOffer.location },
+    });
+    expect(response.ok()).toBeTruthy();
+    const [latitude, longitude] = response.request().postDataJSON().location;
+    expect(latitude).toBeCloseTo(35, 1);
+    expect(longitude).toBeCloseTo(-7, 1);
+    expect(Math.abs(longitude + 7)).toBeGreaterThan(0.001);
+  });
+
   test('map search resolves bounding boxes, offers, and circle filters', async ({
     page,
     request,
@@ -207,7 +322,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
           response.url().endsWith(`/api/offers/${aliceOffer._id}`) &&
           response.request().method() === 'PUT',
       );
-      await hostPage.locator('button[type="submit"].hidden-xs').click();
+      await hostPage.getByRole('button', { name: 'Save and Exit' }).click();
       expect((await saved).ok()).toBeTruthy();
 
       const withoutSharedCircle = await request.get(
@@ -379,12 +494,36 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(hitchhikersLink).toBeVisible();
       await expect(circleGrid).toHaveCSS('overflow', 'visible');
       await expect(hitchhikersLink).toHaveCSS('touch-action', 'pan-y');
+
       const scrollBeforeSwipe = await memberPage.evaluate(() => window.scrollY);
       await swipeUpFrom(memberPage, hitchhikersLink);
       await expect
         .poll(() => memberPage.evaluate(() => window.scrollY))
         .toBeGreaterThan(scrollBeforeSwipe);
 
+      await memberPage.goto('/circles/hitchhikers');
+      const scrollingOverview = memberPage.locator('.tribe-header-info');
+      await expect(scrollingOverview).toBeVisible();
+      await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
+      await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
+      const isOverviewScrollable = await scrollingOverview.evaluate(
+        element => element.scrollHeight > element.clientHeight,
+      );
+      if (isOverviewScrollable) {
+        await scrollingOverview.evaluate(element => {
+          element.scrollTop = element.scrollHeight;
+        });
+        await expect
+          .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
+          .toBeGreaterThan(0);
+      }
+
+      const scrollingOverviewJoinButton =
+        memberPage.locator('button.tribe-join');
+      await expect(scrollingOverviewJoinButton).toHaveAttribute(
+        'aria-label',
+        /Join \(/i,
+      );
       const joinResponse = memberPage.waitForResponse(
         response =>
           response
@@ -392,31 +531,38 @@ test.describe.serial('search offers and circles feature coverage', () => {
             .includes(`/api/users/memberships/${hitchhikers._id}`) &&
           response.request().method() === 'POST',
       );
-      await hitchhikersCard
-        .getByRole('button', { name: 'Join (Hitchhikers)' })
-        .click();
+      await scrollingOverviewJoinButton.click();
       expect((await joinResponse).ok()).toBeTruthy();
-      await expect(
-        hitchhikersCard.getByRole('button', { name: 'Leave circle' }),
-      ).toContainText('Joined');
-
+      await expect(scrollingOverviewJoinButton).toHaveClass(/btn-active/);
+      await expect(scrollingOverviewJoinButton).toHaveAttribute(
+        'aria-label',
+        /Leave circle/i,
+      );
+      await expect(scrollingOverviewJoinButton).toContainText(
+        "You're a member",
+      );
+      await expect(scrollingOverviewJoinButton).toHaveClass(/btn-primary/);
+      await expect(scrollingOverviewJoinButton).not.toHaveCSS(
+        'background-color',
+        'rgb(255, 255, 255)',
+      );
       await memberPage.goto('/circles/hitchhikers');
-      const overview = memberPage.locator('.tribe-header-info');
-      await expect(overview).toBeVisible();
-      await expect(overview).toHaveCSS('overflow-y', 'auto');
-      await expect(overview).toHaveCSS('touch-action', 'pan-y');
+
+      await expect(scrollingOverview).toBeVisible();
+      await expect(scrollingOverview).toHaveCSS('overflow-y', 'auto');
+      await expect(scrollingOverview).toHaveCSS('touch-action', 'pan-y');
       await expect
         .poll(() =>
-          overview.evaluate(
+          scrollingOverview.evaluate(
             element => element.scrollHeight > element.clientHeight,
           ),
         )
         .toBe(true);
-      await overview.evaluate(element => {
+      await scrollingOverview.evaluate(element => {
         element.scrollTop = element.scrollHeight;
       });
       await expect
-        .poll(() => overview.evaluate(element => element.scrollTop))
+        .poll(() => scrollingOverview.evaluate(element => element.scrollTop))
         .toBeGreaterThan(0);
 
       await expect(

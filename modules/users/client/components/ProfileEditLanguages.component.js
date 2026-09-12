@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';
 
 const queryClient = new QueryClient();
@@ -15,10 +15,9 @@ export default function ProfileEditLanguages({
 }) {
   const { t } = useTranslation('users');
 
-  // Wrapper to `onChangeLanguages` which is passed from Angular controller
-  // We add additional Angular broadcast here in order to communicate to higher-up Angular controller
+  // Keep the parent profile form in sync with language changes.
   const onChange = languages => {
-    $broadcast('userChanged');
+    broadcastClientEvent('userChanged');
     if (onChangeLanguages) {
       onChangeLanguages(languages);
     }

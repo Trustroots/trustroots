@@ -2,7 +2,10 @@
  * PollMessagesCount service used for automatically polling for unread message counter
  */
 
-import { $on, getUser } from '@/modules/core/client/services/angular-compat';
+import {
+  onClientEvent,
+  getCurrentUser,
+} from '@/modules/core/client/services/client-runtime';
 import createSubscribable from '@/modules/core/client/utils/subscribable';
 import { unreadCount } from '@/modules/messages/client/api/messages.api';
 import { watch as watchVisibility } from '@/modules/messages/client/services/visibility.client.service';
@@ -38,15 +41,15 @@ export function enable() {
   if (enabled) return;
   enabled = true;
 
-  $on('userUpdated', () => {
-    if (getUser()) {
+  onClientEvent('userUpdated', () => {
+    if (getCurrentUser()) {
       start();
     } else {
       stop();
     }
   });
 
-  if (getUser()) {
+  if (getCurrentUser()) {
     start();
   }
 }
@@ -101,7 +104,7 @@ function setPollingInterval(interval) {
 }
 
 export async function update() {
-  const user = getUser();
+  const user = getCurrentUser();
   if (!user || !user.public) return;
   const newCount = await unreadCount();
   if (newCount === count) return;

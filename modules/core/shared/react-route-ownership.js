@@ -1,3 +1,10 @@
+const {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} = require('@tanstack/react-router');
+
 const ADMIN_ROUTE_DEFAULTS = {
   footerVariant: 'admin',
   requiresAuth: true,
@@ -5,47 +12,15 @@ const ADMIN_ROUTE_DEFAULTS = {
 };
 
 const REACT_ROUTE_POLICIES = [
-  { path: '/password/forgot', title: 'Reset password', footerHidden: true },
   {
-    path: '/password/reset/success',
-    title: 'Reset password',
-    footerHidden: true,
-  },
-  {
-    path: '/password/reset/invalid',
-    title: 'Reset password',
-    footerHidden: true,
-  },
-  { path: '/confirm-email-invalid', title: 'Confirm email invalid' },
-  {
-    path: '/contact-confirm/:contactId',
-    title: 'Confirm contact',
-    requiresAuth: true,
-  },
-  { path: '/', footerHidden: true },
-  { path: '/safety', title: 'Safety' },
-  { path: '/circles', title: 'Circles' },
-  { path: '/circles/:circle', title: 'Circle', footerHidden: true },
-  {
-    path: '/welcome',
-    title: 'Welcome',
-    requiresAuth: true,
-    footerHidden: true,
-  },
-  {
-    path: '/navigation',
-    title: 'Navigation',
-    requiresAuth: true,
-    footerHidden: true,
-  },
-  {
-    path: '/search/members',
-    title: 'Search members',
-    requiresAuth: true,
+    path: '/',
+    title: 'Home',
     footerHidden: true,
   },
   {
     path: '/about',
+    title: 'About',
+    footerHidden: true,
     redirectTo: '/',
   },
   {
@@ -89,8 +64,16 @@ const REACT_ROUTE_POLICIES = [
     title: 'Media',
   },
   {
+    path: '/navigation',
+    title: 'Navigation',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
     path: '/not-found',
     title: 'Not found',
+    footerHidden: true,
+    headerHidden: true,
   },
   {
     path: '/privacy',
@@ -99,6 +82,10 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/rules',
     title: 'Rules',
+  },
+  {
+    path: '/safety',
+    title: 'Safety',
   },
   {
     path: '/statistics',
@@ -115,6 +102,209 @@ const REACT_ROUTE_POLICIES = [
   {
     path: '/volunteering',
     title: 'Volunteering',
+  },
+  {
+    path: '/welcome',
+    title: 'Welcome',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/circles',
+    title: 'Circles',
+  },
+  {
+    path: '/circles/:circle',
+    title: 'Circle',
+    footerHidden: true,
+    requiresAuthParams: {
+      circle: ['naturists'],
+    },
+  },
+  {
+    path: '/messages',
+    title: 'Messages',
+    requiresAuth: true,
+  },
+  {
+    path: '/messages/:username',
+    title: 'Messages',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/search',
+    title: 'Search',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/search/members',
+    title: 'Search members',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/profile/:username/experiences/new',
+    title: 'Share your experience',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/experiences',
+    title: 'Experiences',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/accommodation',
+    title: 'Profile accommodation',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/about',
+    title: 'Profile',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/overview',
+    title: 'Profile overview',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/contacts',
+    title: 'Profile contacts',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/tribes',
+    title: 'Profile tribes',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username',
+    title: 'Profile',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/edit/locations',
+    title: 'Edit your locations',
+    requiresAuth: true,
+  },
+  {
+    path: '/profile/edit/photo',
+    title: 'Edit profile photo',
+    requiresAuth: true,
+  },
+  {
+    path: '/profile/edit/networks',
+    title: 'Edit Profile networks',
+    requiresAuth: true,
+  },
+  {
+    path: '/profile/edit/account',
+    title: 'Account',
+    requiresAuth: true,
+  },
+  {
+    path: '/profile/edit',
+    title: 'Edit profile',
+    requiresAuth: true,
+  },
+  {
+    path: '/contact-add/:userId',
+    title: 'Add contact',
+    requiresAuth: true,
+  },
+  {
+    path: '/contact-confirm/:contactId',
+    title: 'Confirm contact',
+    requiresAuth: true,
+  },
+  {
+    path: '/offer',
+    title: 'Host travellers',
+    requiresAuth: true,
+  },
+  {
+    path: '/offer/host',
+    title: 'Host travellers',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/offer/meet',
+    title: 'Meet',
+    requiresAuth: true,
+  },
+  {
+    path: '/offer/meet/add',
+    title: 'Add meeting offer',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/offer/meet/:offerId',
+    title: 'Edit meeting offer',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/signin',
+    title: 'Sign in',
+    headerHidden: true,
+    footerHidden: true,
+  },
+  {
+    path: '/signup',
+    title: 'Sign up',
+    headerHidden: true,
+    footerHidden: true,
+  },
+  {
+    path: '/confirm-email/:token',
+    title: 'Confirm email',
+  },
+  {
+    path: '/confirm-email-invalid',
+    title: 'Confirm email invalid',
+  },
+  {
+    path: '/password/forgot',
+    title: 'Reset password',
+    footerHidden: true,
+  },
+  {
+    path: '/password/reset/invalid',
+    title: 'Reset password',
+    footerHidden: true,
+  },
+  {
+    path: '/password/reset/success',
+    title: 'Reset password',
+    footerHidden: true,
+  },
+  {
+    path: '/password/reset/:token',
+    title: 'Reset password',
+    footerHidden: true,
+  },
+  {
+    path: '/remove/:token',
+    title: 'Remove profile',
+    requiresAuth: true,
+    headerHidden: true,
+    footerHidden: true,
+  },
+  {
+    path: '/profile-signup',
+    title: 'Trustroots profile',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
@@ -172,6 +362,33 @@ const REACT_ROUTE_POLICIES = [
 
 const REACT_OWNED_PATHS = REACT_ROUTE_POLICIES.map(route => route.path);
 
+function toTanStackPath(path) {
+  return path
+    .split('/')
+    .map(segment =>
+      segment.startsWith(':') ? `$${segment.slice(1)}` : segment,
+    )
+    .join('/');
+}
+
+const policyRootRoute = createRootRoute();
+const policyRouteEntries = REACT_ROUTE_POLICIES.map(policy => ({
+  policy,
+  route: createRoute({
+    getParentRoute: () => policyRootRoute,
+    path: toTanStackPath(policy.path),
+  }),
+}));
+const policyRouter = createRouter({
+  history: createMemoryHistory({ initialEntries: ['/'] }),
+  routeTree: policyRootRoute.addChildren(
+    policyRouteEntries.map(({ route }) => route),
+  ),
+});
+const policyByRouteId = new Map(
+  policyRouteEntries.map(({ policy, route }) => [route.id, policy]),
+);
+
 function normalizePath(path) {
   const parsedPath = (path || '/').split('?')[0].split('#')[0] || '/';
 
@@ -182,43 +399,40 @@ function normalizePath(path) {
   return parsedPath;
 }
 
-function getReactRoutePolicy(path) {
+function matchReactRoute(path) {
   const normalizedPath = normalizePath(path);
-
-  const exact = REACT_ROUTE_POLICIES.find(
-    route => route.path !== '/circles/:circle' && route.path === normalizedPath,
-  );
-  if (exact) return exact;
-
-  if (/^\/contact-confirm\/[^/]+$/.test(normalizedPath)) {
-    return REACT_ROUTE_POLICIES.find(
-      route => route.path === '/contact-confirm/:contactId',
-    );
-  }
-
   const circleMatch = /^\/circles\/([^/]+)$/.exec(normalizedPath);
-  if (!circleMatch) return undefined;
-
-  const notFound = REACT_ROUTE_POLICIES.find(
-    route => route.path === '/not-found',
-  );
-
-  let circle;
-  try {
-    circle = decodeURIComponent(circleMatch[1]);
-  } catch {
-    return notFound;
+  if (normalizedPath.startsWith('/circles/') && !circleMatch) {
+    return null;
   }
-  if (!/^[a-z0-9-]+$/.test(circle)) return notFound;
+  if (circleMatch) {
+    let circle;
+    try {
+      circle = decodeURIComponent(circleMatch[1]);
+    } catch {
+      circle = '';
+    }
+    if (!/^[a-z0-9-]+$/.test(circle)) {
+      return {
+        params: {},
+        policy: REACT_ROUTE_POLICIES.find(route => route.path === '/not-found'),
+      };
+    }
+  }
+  const matches = policyRouter.matchRoutes(normalizedPath);
+  const match = matches?.[matches.length - 1];
+  const policy = match && policyByRouteId.get(match.routeId);
 
-  const policy = REACT_ROUTE_POLICIES.find(
-    route => route.path === '/circles/:circle',
-  );
-  return {
-    ...policy,
-    params: { circle },
-    requiresAuth: circle === 'naturists',
-  };
+  return policy
+    ? {
+        params: match.params,
+        policy,
+      }
+    : null;
+}
+
+function getReactRoutePolicy(path) {
+  return matchReactRoute(path)?.policy ?? null;
 }
 
 function isReactOwnedPath(path) {
@@ -232,12 +446,36 @@ function userHasRequiredRole(user, requiredRole) {
   );
 }
 
-function getReactRouteAccessRedirect(route, user) {
+function routeRequiresAuth(route, path) {
+  if (!route) {
+    return false;
+  }
+
+  if (route.requiresAuth || route.requiresRole) {
+    return true;
+  }
+
+  if (!route.requiresAuthParams) {
+    return false;
+  }
+
+  const params = matchReactRoute(path)?.params || {};
+
+  return Object.entries(route.requiresAuthParams).some(([param, values]) =>
+    values.includes(params[param]),
+  );
+}
+
+function getReactRouteAccessRedirect(route, user, returnTo) {
   if (!route) {
     return null;
   }
 
-  if ((route.requiresAuth || route.requiresRole) && !user) {
+  if (routeRequiresAuth(route, returnTo) && !user) {
+    if (returnTo) {
+      return `/signin?continue=true&returnTo=${encodeURIComponent(returnTo)}`;
+    }
+
     return '/signin';
   }
 
@@ -251,9 +489,12 @@ function getReactRouteAccessRedirect(route, user) {
 module.exports = {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
+  matchReactRoute,
   REACT_ROUTE_POLICIES,
   REACT_OWNED_PATHS,
   isReactOwnedPath,
   normalizePath,
+  routeRequiresAuth,
+  toTanStackPath,
   userHasRequiredRole,
 };

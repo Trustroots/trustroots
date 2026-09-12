@@ -11,7 +11,7 @@ test('member entry pages require sign-in', async ({ page }, testInfo) => {
     '/search/members?search=sample',
   ]) {
     await page.goto(path);
-    await expect(page).toHaveURL(/\/signin$/);
+    await expect(page).toHaveURL(/\/signin(?:\?|$)/);
   }
 });
 
@@ -31,7 +31,8 @@ test('welcome and navigation preserve member workflows and sign-out', async ({
   ).toBeVisible();
   await page.getByRole('link', { name: 'Fill your profile' }).click();
   await expect(page).toHaveURL(/\/profile\/edit$/);
-  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   await page.goto('/navigation');
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
@@ -47,7 +48,7 @@ test('welcome and navigation preserve member workflows and sign-out', async ({
     .getByRole('link', { name: 'Sign out' })
     .click();
   await page.goto('/navigation');
-  await expect(page).toHaveURL(/\/signin$/);
+  await expect(page).toHaveURL(/\/signin(?:\?|$)/);
 });
 
 test('member search supports deep links, empty results and profile navigation', async ({
@@ -72,7 +73,8 @@ test('member search supports deep links, empty results and profile navigation', 
     .locator(`#tr-main h4 a[href="/profile/${member.username}"]`)
     .click();
   await expect(page).toHaveURL(new RegExp(`/profile/${member.username}$`));
-  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   await page.goto('/search/members');
   await search.fill('sample-no-matching-member-57291');
   await page

@@ -4,9 +4,12 @@ const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
   createIsolatedContext,
+  createUser,
+  registerViaApi,
   fetchUserIdByUsername,
   signInViaApi,
 } = require('../../support/helpers');
+const { updateUserByUsername } = require('../../support/db');
 const {
   assertReplyComposerCaretAndComposition,
 } = require('../../support/message-reply-editor');
@@ -86,6 +89,70 @@ test.describe.serial('message action feature coverage', () => {
     await sendReply;
 
     await expect(page.getByText(replyText)).toBeVisible();
+  });
+
+  test('direct conversation links change the recipient and clear the previous draft', async ({
+    browser,
+    baseURL,
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Switching directly between conversation URLs clears the previous draft and targets the new recipient.',
+    ]);
+    const recipient = createUser();
+    const recipientContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(recipientContext.request, recipient);
+      await updateUserByUsername(recipient.username, {
+        $set: { public: true },
+      });
+    } finally {
+      await recipientContext.close();
+    }
+    const recipientId = await fetchUserIdByUsername(
+      request,
+      recipient.username,
+    );
+    const originalRecipientId = await fetchUserIdByUsername(
+      request,
+      portland.username,
+    );
+    const conversationLabel = `Open conversation with ${recipient.username}`;
+    const conversationLink = await page.request.post('/api/messages', {
+      data: {
+        userTo: originalRecipientId,
+        content: `<a href="/messages/${recipient.username}">${conversationLabel}</a>`,
+      },
+    });
+    expect(conversationLink.ok()).toBeTruthy();
+    await page.goto(`/messages/${portland.username}`);
+    const editor = page.locator('#message-reply-content');
+    await expect(editor).toBeVisible();
+    await editor.fill('A draft for the first conversation');
+    const loadedRecipient = page.waitForResponse(
+      response =>
+        response.url().endsWith(`/api/users/${recipient.username}`) &&
+        response.ok(),
+    );
+    await page
+      .getByRole('link', { name: conversationLabel, exact: true })
+      .click();
+    await loadedRecipient;
+    await expect(editor).toBeVisible();
+    await expect(editor).toHaveText('');
+    const content = `A fictional conversation-switch reply ${Date.now()}`;
+    await editor.fill(content);
+    const sent = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/messages') &&
+        response.request().method() === 'POST',
+    );
+    await page.locator('#messageReplySubmit').click();
+    const response = await sent;
+    expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON().userTo).toBe(recipientId);
+    await expect(page.getByText(content)).toBeVisible();
   });
 
   test('reply composer preserves a multiline caret and composed characters', async ({

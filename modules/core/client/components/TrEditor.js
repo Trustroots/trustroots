@@ -1,13 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import MediumEditor from 'react-medium-editor';
+import MediumEditor from 'medium-editor';
 import PropTypes from 'prop-types';
-import React, {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
 
 const baseOptions = {
@@ -166,15 +160,6 @@ const baseOptions = {
   },
 };
 
-// react-medium-editor restores its selection every time it renders. Keeping the
-// editor out of React's update path while the member is typing prevents that
-// restoration from moving a caret in multi-line text or interrupting a native
-// input composition (for example, a dead key or compose key sequence).
-// ref forwarding through React.memo only works here because MediumEditor is a
-// class component; it would silently break if the library switched to a
-// function component without forwardRef.
-const StableMediumEditor = React.memo(MediumEditor);
-
 // medium-editor can give us a <br> at the end that we don't want
 function removeTrailingBr(value) {
   return value.replace(/<br><\/p>$/, '</p>');
@@ -187,76 +172,67 @@ export default function TrEditor({
   placeholder,
   text,
 }) {
-  const ref = useRef(null);
+  const editorElementRef = useRef();
+  const mediumRef = useRef();
   const onChangeRef = useRef(onChange);
   const onCtrlEnterRef = useRef(onCtrlEnter);
-  const latestEditorText = useRef(text);
-  const initialText = useRef(text);
-  const isApplyingExternalText = useRef(false);
+  const latestEditorText = useRef(null);
   const { t } = useTranslation('core');
 
-  useLayoutEffect(() => {
-    onChangeRef.current = onChange;
-    onCtrlEnterRef.current = onCtrlEnter;
-  });
+  onChangeRef.current = onChange;
+  onCtrlEnterRef.current = onCtrlEnter;
+
+  const options = {
+    // https://github.com/yabwe/medium-editor#placeholder-options
+    placeholder: {
+      hideOnClick: true,
+      text: placeholder ? placeholder : t('Type your text'),
+    },
+    ...baseOptions,
+  };
+  const optionsRef = useRef(options);
 
   useEffect(() => {
-    // Input emitted by MediumEditor has already changed its own DOM. Passing
-    // that same text back into react-medium-editor makes it save and restore
-    // the selection, which corrupts multi-line cursor positions and IME input.
-    if (text !== latestEditorText.current) {
-      latestEditorText.current = text;
-      // The React wrapper ignores the next text prop after editableInput, and
-      // cannot reset to its initial value reliably. Use MediumEditor's public
-      // API for external changes while keeping the wrapper's props stable.
-      isApplyingExternalText.current = true;
-      try {
-        ref.current.medium.setContent(text);
-      } finally {
-        isApplyingExternalText.current = false;
-      }
-    }
-  }, [text]);
+    const medium = new MediumEditor(
+      editorElementRef.current,
+      optionsRef.current,
+    );
+    const handleInput = () => {
+      const value = removeTrailingBr(editorElementRef.current.innerHTML);
+      latestEditorText.current = value;
+      onChangeRef.current(value);
+    };
+    const handleEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
 
-  useEffect(() => {
-    const { medium } = ref.current;
-    const onEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
-    medium.subscribe('editableKeydownEnter', onEnter);
+    mediumRef.current = medium;
+    medium.subscribe('editableInput', handleInput);
+    medium.subscribe('editableKeydownEnter', handleEnter);
+
     return () => {
-      medium.unsubscribe('editableKeydownEnter', onEnter);
+      medium.unsubscribe('editableInput', handleInput);
+      medium.unsubscribe('editableKeydownEnter', handleEnter);
+      medium.destroy();
+      mediumRef.current = null;
     };
   }, []);
 
-  const options = useMemo(
-    () => ({
-      // https://github.com/yabwe/medium-editor#placeholder-options
-      placeholder: {
-        hideOnClick: true,
-        text: placeholder ? placeholder : t('Type your text'),
-      },
-      ...baseOptions,
-    }),
-    [placeholder, t],
-  );
+  useLayoutEffect(() => {
+    if (text === latestEditorText.current) {
+      return;
+    }
 
-  const handleChange = useCallback(value => {
-    // setContent emits editableInput too; external changes are not user input.
-    if (isApplyingExternalText.current) return;
-    const normalisedValue = removeTrailingBr(value);
-    latestEditorText.current = normalisedValue;
-    onChangeRef.current(normalisedValue);
-  }, []);
+    latestEditorText.current = text;
+    const element = editorElementRef.current;
+    if (element.innerHTML === text) {
+      return;
+    }
 
-  return (
-    <StableMediumEditor
-      ref={ref}
-      id={id}
-      text={initialText.current}
-      options={options}
-      className="tr-editor"
-      onChange={handleChange}
-    />
-  );
+    mediumRef.current?.saveSelection();
+    element.innerHTML = text;
+    mediumRef.current?.restoreSelection();
+  }, [text]);
+
+  return <div className="tr-editor" id={id} ref={editorElementRef} />;
 }
 
 TrEditor.defaultProps = {

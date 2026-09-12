@@ -16,7 +16,8 @@ test('homepage keeps circle landing links and photo credits in React', async ({
     .getByRole('link', { name: 'Join Trustroots now', exact: true })
     .click();
   await expect(page).toHaveURL(/\/signup\?tribe=cyclists$/);
-  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
 });
 
 test('about redirects to the homepage and the information page uses React', async ({

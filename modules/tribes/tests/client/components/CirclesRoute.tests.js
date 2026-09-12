@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import { useAuth } from '@/modules/core/client/react-app/auth';

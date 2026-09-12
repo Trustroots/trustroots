@@ -1,9 +1,12 @@
 import axios from 'axios';
 
 import {
+  createOffer,
+  deleteOffer,
   getOffers,
   getOffer,
   queryOffers,
+  updateOffer,
 } from '@/modules/offers/client/api/offers.api';
 
 jest.mock('axios');
@@ -61,5 +64,32 @@ describe('offers api', () => {
 
     await expect(queryOffers()).resolves.toEqual([]);
     expect(axios.get).toHaveBeenCalledWith('/api/offers?');
+  });
+
+  it('creates an offer', async () => {
+    const offer = { _id: 'offer-1', type: 'meet' };
+    axios.post.mockResolvedValueOnce({ data: offer });
+
+    await expect(createOffer({ type: 'meet' })).resolves.toBe(offer);
+    expect(axios.post).toHaveBeenCalledWith('/api/offers', { type: 'meet' });
+  });
+
+  it('updates an offer', async () => {
+    const offer = { _id: 'offer-1', type: 'host' };
+    axios.put.mockResolvedValueOnce({ data: offer });
+
+    await expect(updateOffer('offer-1', { status: 'yes' })).resolves.toBe(
+      offer,
+    );
+    expect(axios.put).toHaveBeenCalledWith('/api/offers/offer-1', {
+      status: 'yes',
+    });
+  });
+
+  it('deletes an offer', async () => {
+    axios.delete.mockResolvedValueOnce({ data: { ok: true } });
+
+    await expect(deleteOffer('offer-1')).resolves.toEqual({ ok: true });
+    expect(axios.delete).toHaveBeenCalledWith('/api/offers/offer-1');
   });
 });

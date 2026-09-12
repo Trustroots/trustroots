@@ -6,7 +6,7 @@ import {
   waitForElementToBeRemoved,
   screen,
 } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
 
@@ -52,7 +52,7 @@ describe('<CreateExperience />', () => {
     experiencesApi.readMine.mockResolvedValueOnce([]);
     render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
     await waitFor(() =>
-      expect(experiencesApi.readMine).toBeCalledWith({
+      expect(experiencesApi.readMine).toHaveBeenCalledWith({
         userWith: userTo._id,
       }),
     );
@@ -71,7 +71,7 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(experiencesApi.readMine).toBeCalledWith({
+    expect(experiencesApi.readMine).toHaveBeenCalledWith({
       userWith: userTo._id,
     });
   });
@@ -89,7 +89,7 @@ describe('<CreateExperience />', () => {
     expect(queryByRole('heading')).toHaveTextContent(
       `You already shared your experience with them`,
     );
-    expect(experiencesApi.readMine).toBeCalledWith({
+    expect(experiencesApi.readMine).toHaveBeenCalledWith({
       userWith: userTo._id,
     });
   });

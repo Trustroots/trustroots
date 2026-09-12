@@ -15,7 +15,10 @@ describe('Extracted React route responses', function () {
     await agent
       .get('/contact-confirm/665000000000000000000090')
       .expect(302)
-      .expect('Location', '/signin');
+      .expect(
+        'Location',
+        '/signin?continue=true&returnTo=%2Fcontact-confirm%2F665000000000000000000090',
+      );
   });
   it('renders the React root for the extracted pages', async () => {
     const credentials = {

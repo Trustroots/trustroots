@@ -2,13 +2,15 @@ import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
-import ActivateProfileNotice from '@/modules/users/client/components/Activate';
+import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
-export default function ContactConfirmPage({ user, contactId }) {
+export default function ContactConfirmPage({ user }) {
   const { t } = useTranslation('contacts');
+  const { contactId } = getCurrentRouteParams();
   const [contact, setContact] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -198,6 +200,5 @@ export default function ContactConfirmPage({ user, contactId }) {
 }
 
 ContactConfirmPage.propTypes = {
-  contactId: PropTypes.string,
   user: PropTypes.object.isRequired,
 };

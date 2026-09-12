@@ -8,7 +8,6 @@ const languagesArray = require('../../../../config/languages/languages-array.jso
 const {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
-  isReactOwnedPath,
 } = require('../../shared/react-route-ownership');
 
 /**
@@ -48,18 +47,16 @@ exports.renderIndex = function (req, res) {
   const accessRedirect = getReactRouteAccessRedirect(
     reactRoutePolicy,
     renderVars.user,
+    req.originalUrl,
   );
+  const redirect = reactRoutePolicy?.redirectTo || accessRedirect;
 
-  if (accessRedirect) {
-    return res.redirect(accessRedirect);
+  if (redirect) {
+    return res.redirect(redirect);
   }
 
-  res.render(
-    isReactOwnedPath(req.path)
-      ? 'react-index.server.view.html'
-      : 'index.server.view.html',
-    renderVars,
-  );
+  // All SPA routes use the React shell; unknown paths render React NotFound.
+  res.render('react-index.server.view.html', renderVars);
 };
 
 /**

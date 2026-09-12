@@ -34,6 +34,7 @@ module.exports = {
     checkCompatibility: false,
   },
   maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
+  host: process.env.TRUSTROOTS_E2E_HOST || 'localhost',
   port: Number(process.env.PORT) || 3001,
   // Subset of `default.js` illegalStrings for route tests. The full production
   // list lives in default.js; extend this when adding reserved names that need

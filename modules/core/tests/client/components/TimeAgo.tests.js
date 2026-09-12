@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import { render, act } from '@testing-library/react';
 import fakeTimers from '@sinonjs/fake-timers';
 import React from 'react';

@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  getUser: () => global.window.user,
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentUser: () => global.window.user,
 }));
 
 afterEach(() => {

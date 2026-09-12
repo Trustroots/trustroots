@@ -1,6 +1,6 @@
 // External dependencies
 import PropTypes from 'prop-types';
-import { getUser } from '../../../core/client/services/angular-compat';
+import { getCurrentUser } from '../../../core/client/services/client-runtime';
 import React, { useMemo, useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -186,7 +186,7 @@ export default function AdminAcquisitionStories() {
                       </a>
                       <UserLink
                         publicProfile={
-                          !(getUser()?.roles || []).includes('admin')
+                          !(getCurrentUser()?.roles || []).includes('admin')
                         }
                         user={{
                           _id: story._id,
@@ -217,7 +217,7 @@ export default function AdminAcquisitionStories() {
                         <UserLink
                           user={match}
                           publicProfile={
-                            !(getUser()?.roles || []).includes('admin')
+                            !(getCurrentUser()?.roles || []).includes('admin')
                           }
                         />
                         <small className="text-muted">

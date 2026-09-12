@@ -40,25 +40,29 @@ export default function ReferenceThread({ userToId }) {
     }
   };
 
-  useEffect(async () => {
-    try {
-      const reference = await get(userToId);
-      if (reference) {
-        setIsAsking(false);
-        setReferenceThread(reference);
+  useEffect(() => {
+    const loadReference = async () => {
+      try {
+        const reference = await get(userToId);
+        if (reference) {
+          setIsAsking(false);
+          setReferenceThread(reference);
+        }
+      } catch (error) {
+        if (error.response?.status === 404) {
+          setAllowCreatingReference(
+            error.response?.data?.allowCreatingReference ?? false,
+          );
+        } else {
+          // Unknown error
+          setAllowCreatingReference(false);
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setAllowCreatingReference(
-          error.response?.data?.allowCreatingReference ?? false,
-        );
-      } else {
-        // Unknown error
-        setAllowCreatingReference(false);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    };
+
+    loadReference();
   }, []);
 
   // Don't allow when there were no messages from other person yet
