@@ -15,6 +15,9 @@ import {
 } from '@/modules/core/shared/react-route-ownership';
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
+jest.mock('@/modules/tribes/client/components/CirclesRoute', () => () => (
+  <main>Circle route</main>
+));
 jest.mock('@/modules/pages/client/components/Navigation.component', () => ({
   __esModule: true,
   default: ({ user, onSignout }) => (
@@ -206,6 +209,24 @@ describe('React route ownership', () => {
     expect(findRoute('/profile/alice')).toBe(undefined);
   });
 
+  it('resolves circle slugs and their access rules', () => {
+    expect(findRoute('/circles/hitchhikers')).toMatchObject({
+      path: '/circles/:circle',
+      params: { circle: 'hitchhikers' },
+      requiresAuth: false,
+    });
+    expect(findRoute('/circles/naturists').requiresAuth).toBe(true);
+  });
+
+  it.each([
+    '/circles/Hitchhikers',
+    '/circles/sample_circle',
+    '/circles/:circle',
+  ])('renders the not-found page for %s without returning to Angular', path => {
+    expect(isReactRoute(path)).toBe(true);
+    expect(findRoute(path).path).toBe('/not-found');
+  });
+
   it('renders every React-owned route', () => {
     const user = { username: 'alice' };
 
@@ -215,7 +236,9 @@ describe('React route ownership', () => {
         return;
       }
 
-      const { container, unmount } = render(route.render({ user }));
+      const { container, unmount } = render(
+        route.render({ user, params: { circle: 'sample-circle' } }),
+      );
 
       expect(container.firstChild).toBeTruthy();
       unmount();

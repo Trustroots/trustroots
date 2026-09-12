@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import AppHeader from '@/modules/core/client/components/AppHeader.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
@@ -18,7 +18,7 @@ export default function ReactApp({ navigate = defaultNavigate }) {
   const { build } = useSettings();
   const { user } = useAuth();
   const currentPath = useCurrentPath();
-  const route = findRoute(currentPath);
+  const route = useMemo(() => findRoute(currentPath), [currentPath]);
   const accessRedirect = getReactRouteAccessRedirect(route, user);
   const routeRedirect = accessRedirect || route?.redirectTo;
 
@@ -46,7 +46,7 @@ export default function ReactApp({ navigate = defaultNavigate }) {
         {!route?.headerHidden && <AppHeader onSignout={signout} user={user} />}
         <article className="content" id="tr-main" role="main" tabIndex="-1">
           {routeRedirect ? null : route ? (
-            route.render({ user })
+            route.render({ user, params: route.params })
           ) : (
             <NotFoundPage />
           )}

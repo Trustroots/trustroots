@@ -80,11 +80,46 @@ describe('<JoinButton />', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Join (Hitchhikers)' }));
 
-    await waitFor(() => expect(join).toHaveBeenCalledWith('tribe-1'));
+    expect(
+      await screen.findByRole('button', { name: 'Leave circle' }),
+    ).toHaveClass('btn-active');
+    expect(join).toHaveBeenCalledWith('tribe-1');
     expect(onUpdated).toHaveBeenCalledWith(updatedMembership);
-    expect(screen.getByRole('button', { name: 'Leave circle' })).toHaveClass(
-      'btn-active',
+  });
+
+  it('supports a large iconless presentation', () => {
+    render(
+      <JoinButton
+        className="btn btn-lg btn-default"
+        icon={false}
+        tribe={tribe}
+        user={{ _id: 'user-1', memberIds: ['tribe-1'] }}
+        onUpdated={jest.fn()}
+      />,
     );
+
+    const button = screen.getByRole('button', { name: 'Leave circle' });
+    expect(button).toHaveClass('btn-lg');
+    expect(button.querySelector('i')).not.toBeInTheDocument();
+  });
+
+  it('supports distinct active styling and membership copy', () => {
+    render(
+      <JoinButton
+        activeClassName="btn btn-lg btn-primary btn-action"
+        className="btn btn-lg btn-default"
+        icon={false}
+        memberLabel="You're a member"
+        tribe={tribe}
+        user={{ _id: 'user-1', memberIds: ['tribe-1'] }}
+        onUpdated={jest.fn()}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: 'Leave circle' });
+    expect(button).toHaveTextContent("You're a member");
+    expect(button).toHaveClass('btn-active', 'btn-primary', 'btn-action');
+    expect(button).not.toHaveClass('btn-default');
   });
 
   it('does not start a second join while the first request is pending', async () => {
@@ -162,10 +197,10 @@ describe('<JoinButton />', () => {
       }),
     );
 
-    await waitFor(() => expect(leave).toHaveBeenCalledWith('tribe-1'));
-    expect(onUpdated).toHaveBeenCalledWith(updatedMembership);
     expect(
-      screen.getByRole('button', { name: 'Join (Hitchhikers)' }),
+      await screen.findByRole('button', { name: 'Join (Hitchhikers)' }),
     ).not.toHaveClass('btn-active');
+    expect(leave).toHaveBeenCalledWith('tribe-1');
+    expect(onUpdated).toHaveBeenCalledWith(updatedMembership);
   });
 });

@@ -68,6 +68,9 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     dest: config.uploadTmpDir || os.tmpdir(),
     limits: {
       fileSize: config.maxUploadSize, // max file size in bytes
+      files: 1,
+      fields: 10,
+      parts: 11,
     },
     // Filter Multer uploads based on mime Type
     // Note: A proper "magic byte" check is still required after this
@@ -140,8 +143,12 @@ module.exports.uploadFile = (validMimeTypes, uploadField, req, res, next) => {
     // @link https://www.npmjs.com/package/mmmagic
     detectMimeType(req.file.path, (err, result) => {
       if (err || !validMimeTypes.includes(result)) {
-        return res.status(415).send({
-          message: errorService.getErrorMessageByKey('unsupported-media-type'),
+        return fs.unlink(req.file.path, () => {
+          res.status(415).send({
+            message: errorService.getErrorMessageByKey(
+              'unsupported-media-type',
+            ),
+          });
         });
       }
 
