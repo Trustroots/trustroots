@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const should = require('should');
+const sinon = require('sinon');
 
 const cleanup = require('../../../server/services/historical-spam-cleanup.server.service');
 
@@ -66,7 +67,10 @@ describe('Service: historical spam cleanup', () => {
     sequence = 0;
   });
 
-  afterEach(removeCreatedData);
+  afterEach(async () => {
+    sinon.restore();
+    await removeCreatedData();
+  });
 
   it('dry-runs eligible campaign accounts and retains protected accounts', async () => {
     const eligible = await createCandidate();
@@ -179,5 +183,43 @@ describe('Service: historical spam cleanup', () => {
     });
     should.not.exist(await User.findById(eligible._id));
     should.exist(await User.findById(manualSuspension._id));
+  });
+
+  it('uses safe defaults when there are no candidates', async () => {
+    const result = await cleanup.run();
+    result.should.eql({ candidates: 0, eligible: 0, protected: 0, deleted: 0 });
+  });
+
+  for (const [deletionResult, expectedCount] of [
+    [{ n: 1 }, 1],
+    [{}, 0],
+  ]) {
+    it(`handles deletion results without deletedCount (${expectedCount})`, async () => {
+      await createCandidate();
+      const deletion = sinon.stub(User, 'deleteMany').resolves(deletionResult);
+      const result = await cleanup.run({ deleteAccounts: true, batchSize: 1 });
+      result.should.eql({
+        candidates: 1,
+        eligible: 1,
+        protected: 0,
+        deleted: expectedCount,
+      });
+      sinon.assert.calledOnce(deletion);
+    });
+  }
+
+  it('retains a candidate protected by a note between the two activity checks', async () => {
+    const candidate = await createCandidate();
+    const findNotes = sinon.stub(AdminNote, 'find');
+    const notes = results => ({
+      select: () => ({ lean: async () => results }),
+    });
+    findNotes.onFirstCall().returns(notes([]));
+    findNotes.onSecondCall().returns(notes([{ user: candidate._id }]));
+    const deletion = sinon.spy(User, 'deleteMany');
+    const result = await cleanup.run({ deleteAccounts: true });
+    result.should.eql({ candidates: 1, eligible: 0, protected: 1, deleted: 0 });
+    sinon.assert.notCalled(deletion);
+    should.exist(await User.findById(candidate._id));
   });
 });

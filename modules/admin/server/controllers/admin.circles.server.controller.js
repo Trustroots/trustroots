@@ -27,8 +27,8 @@ function circleData(body, existing) {
     label: body.label,
     color: body.color,
     public: parseBoolean(body.public, existing ? existing.public : true),
-    attribution: body.attribution,
-    attribution_url: body.attribution_url,
+    attribution: body.attribution || undefined,
+    attribution_url: body.attribution_url || undefined,
     description: body.description,
   };
 }
