@@ -10,7 +10,7 @@ import UserLink from './UserLink.component';
 /**
  * Lists notes about user and allows writing notes about them
  */
-export default function AdminNotes({ id }) {
+export default function AdminNotes({ id, refreshToken }) {
   const [isFetching, setIsFetching] = useState(false);
   const [notes, setNotes] = useState([]);
   const [newNote, setNewNote] = useState('');
@@ -30,7 +30,7 @@ export default function AdminNotes({ id }) {
 
   useEffect(() => {
     fetchNotes();
-  }, []);
+  }, [id, refreshToken]);
 
   const addNote = async () => {
     try {
@@ -91,4 +91,5 @@ export default function AdminNotes({ id }) {
 
 AdminNotes.propTypes = {
   id: PropTypes.string.isRequired,
+  refreshToken: PropTypes.number,
 };

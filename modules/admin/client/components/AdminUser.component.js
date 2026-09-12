@@ -138,6 +138,7 @@ export default class AdminUser extends Component {
       hideObviousSpamUsers: true,
       isSettingUserRole: false,
       isSearching: false,
+      notesRevision: 0,
       matchingUsersIpAddress: null,
       matchingUsersPagination: null,
       matchingUsersSort: DEFAULT_MEMBER_LIST_SORT,
@@ -229,6 +230,9 @@ export default class AdminUser extends Component {
               } else {
                 await setUserRole(id, role);
               }
+              this.setState(({ notesRevision }) => ({
+                notesRevision: notesRevision + 1,
+              }));
               const user = await getUser(id);
               this.setState({ user });
             } catch (error) {
@@ -712,7 +716,7 @@ export default class AdminUser extends Component {
                 </>
               )}
 
-              <AdminNotes id={userId} />
+              <AdminNotes id={userId} refreshToken={this.state.notesRevision} />
 
               {isRestricted && (
                 <>
