@@ -1,7 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import MediumEditor from 'react-medium-editor';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
 
 const baseOptions = {
@@ -160,6 +166,15 @@ const baseOptions = {
   },
 };
 
+// react-medium-editor restores its selection every time it renders. Keeping the
+// editor out of React's update path while the member is typing prevents that
+// restoration from moving a caret in multi-line text or interrupting a native
+// input composition (for example, a dead key or compose key sequence).
+// ref forwarding through React.memo only works here because MediumEditor is a
+// class component; it would silently break if the library switched to a
+// function component without forwardRef.
+const StableMediumEditor = React.memo(MediumEditor);
+
 // medium-editor can give us a <br> at the end that we don't want
 function removeTrailingBr(value) {
   return value.replace(/<br><\/p>$/, '</p>');
@@ -172,37 +187,74 @@ export default function TrEditor({
   placeholder,
   text,
 }) {
-  const ref = React.createRef();
+  const ref = useRef(null);
+  const onChangeRef = useRef(onChange);
+  const onCtrlEnterRef = useRef(onCtrlEnter);
+  const latestEditorText = useRef(text);
+  const initialText = useRef(text);
+  const isApplyingExternalText = useRef(false);
   const { t } = useTranslation('core');
+
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+    onCtrlEnterRef.current = onCtrlEnter;
+  });
+
+  useEffect(() => {
+    // Input emitted by MediumEditor has already changed its own DOM. Passing
+    // that same text back into react-medium-editor makes it save and restore
+    // the selection, which corrupts multi-line cursor positions and IME input.
+    if (text !== latestEditorText.current) {
+      latestEditorText.current = text;
+      // The React wrapper ignores the next text prop after editableInput, and
+      // cannot reset to its initial value reliably. Use MediumEditor's public
+      // API for external changes while keeping the wrapper's props stable.
+      isApplyingExternalText.current = true;
+      try {
+        ref.current.medium.setContent(text);
+      } finally {
+        isApplyingExternalText.current = false;
+      }
+    }
+  }, [text]);
 
   useEffect(() => {
     const { medium } = ref.current;
-    const onEnter = event => event.ctrlKey && onCtrlEnter(event);
+    const onEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
     medium.subscribe('editableKeydownEnter', onEnter);
     return () => {
-      // the onCtrlEnter that gets passed through will change quite a lot as it
-      // probably gets redefined over and over with different bound state
-      // this means it'll actually subscribe/unsubscribe per keypress...
-      // seems a bit much, but that's how these react hooks work!
       medium.unsubscribe('editableKeydownEnter', onEnter);
     };
-  }, [onCtrlEnter]);
+  }, []);
 
-  const options = {
-    // https://github.com/yabwe/medium-editor#placeholder-options
-    placeholder: {
-      hideOnClick: true,
-      text: placeholder ? placeholder : t('Type your text'),
-    },
-    ...baseOptions,
-  };
+  const options = useMemo(
+    () => ({
+      // https://github.com/yabwe/medium-editor#placeholder-options
+      placeholder: {
+        hideOnClick: true,
+        text: placeholder ? placeholder : t('Type your text'),
+      },
+      ...baseOptions,
+    }),
+    [placeholder, t],
+  );
 
-  const editorProps = { id, text, options, className: 'tr-editor' };
+  const handleChange = useCallback(value => {
+    // setContent emits editableInput too; external changes are not user input.
+    if (isApplyingExternalText.current) return;
+    const normalisedValue = removeTrailingBr(value);
+    latestEditorText.current = normalisedValue;
+    onChangeRef.current(normalisedValue);
+  }, []);
+
   return (
-    <MediumEditor
+    <StableMediumEditor
       ref={ref}
-      onChange={value => onChange(removeTrailingBr(value))}
-      {...editorProps}
+      id={id}
+      text={initialText.current}
+      options={options}
+      className="tr-editor"
+      onChange={handleChange}
     />
   );
 }

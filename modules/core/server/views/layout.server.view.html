@@ -17,12 +17,7 @@
     <meta name="fragment" content="!" />
     {% for cssFile in cssFiles %}
     <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
-    {% endfor %} {# Sentry DSN - make sure this is above scripts #} {% if
-    sentry.enabled === true %}
-    <script nonce="{{ nonce }}">
-      window.SENTRY_DSN = '{{ sentry.options.dsn }}';
-    </script>
-    {% endif %} {% if env === 'development' or env === 'test' %} {# in dev/test
+    {% endfor %} {% if env === 'development' or env === 'test' %} {# in dev/test
     load js in head, as it also contains CSS, so we prevent flash of unstyled
     page #} {% for jsFile in jsFiles %}
     <script

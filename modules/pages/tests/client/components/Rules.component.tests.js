@@ -28,9 +28,13 @@ describe('<Rules />', () => {
     expect(
       screen.getByText(/Be friendly and know when to stop messaging someone\./),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'safety' })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
     expect(screen.getByRole('link', { name: 'privacy' })).toHaveAttribute(
       'href',
-      'privacy',
+      '/privacy',
     );
   });
 });

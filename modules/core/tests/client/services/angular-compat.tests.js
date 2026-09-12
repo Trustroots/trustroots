@@ -14,26 +14,23 @@ const mockRootScope = {
   $on: jest.fn(),
 };
 
-jest.mock('angular', () => ({
-  __esModule: true,
-  default: {
-    element: jest.fn(() => {
-      return {
-        injector: jest.fn(() => ({
-          get: mockAngularGet,
-        })),
-      };
-    }),
-  },
-}));
-
 describe('angular-compat service', () => {
   const analytics = { eventTrack: jest.fn() };
   const state = { go: jest.fn() };
   const stateParams = { tribe: 'nomads' };
   const authentication = { user: { _id: 'user-1' } };
+  const originalAngular = window.angular;
 
   beforeEach(() => {
+    window.angular = {
+      element: jest.fn(() => {
+        return {
+          injector: jest.fn(() => ({
+            get: mockAngularGet,
+          })),
+        };
+      }),
+    };
     mockAngularGet.mockReset();
     mockRootScope.$broadcast.mockReset();
     mockRootScope.$on.mockReset();
@@ -59,6 +56,10 @@ describe('angular-compat service', () => {
       }
       return undefined;
     });
+  });
+
+  afterEach(() => {
+    window.angular = originalAngular;
   });
 
   it('forwards broadcasts to root scope', () => {
@@ -93,5 +94,76 @@ describe('angular-compat service', () => {
 
   it('returns cached authentication user', () => {
     expect(getUser()).toBe(authentication.user);
+  });
+
+  it('falls back to browser events when Angular is not bootstrapped', () => {
+    const listener = jest.fn();
+    window.angular = undefined;
+
+    const unsubscribe = $on('fallback-event', listener);
+    $broadcast('fallback-event', { id: 'fallback' });
+
+    expect(listener).toHaveBeenCalledWith(null, { id: 'fallback' });
+
+    listener.mockReset();
+    window.dispatchEvent(new CustomEvent('tr:fallback-event'));
+    expect(listener).toHaveBeenCalledWith(null);
+
+    unsubscribe();
+  });
+
+  it('returns null helpers when Angular has no injector', () => {
+    window.angular = {
+      element: jest.fn(() => ({
+        injector: jest.fn(() => null),
+      })),
+    };
+
+    expect($broadcast('ignored')).toBeUndefined();
+    expect(eventTrack('ignored')).toBeUndefined();
+    expect(go('ignored')).toBeUndefined();
+    expect(getRouteParams()).toEqual({});
+  });
+
+  it('returns empty route params when Angular state params are unavailable', () => {
+    window.angular = {
+      element: jest.fn(() => ({
+        injector: jest.fn(() => ({
+          get: jest.fn(() => undefined),
+        })),
+      })),
+    };
+
+    expect(getRouteParams()).toEqual({});
+  });
+
+  it('falls back to window.user when authentication is unavailable', () => {
+    window.user = { _id: 'window-user' };
+    window.angular = undefined;
+
+    expect(getUser()).toEqual({ _id: 'window-user' });
+
+    delete window.user;
+  });
+
+  it('falls back to window.user when authentication has no user', () => {
+    window.user = { _id: 'window-user' };
+    mockAngularGet.mockImplementation(name => {
+      if (name === 'Authentication') {
+        return {};
+      }
+      return undefined;
+    });
+
+    expect(getUser()).toEqual({ _id: 'window-user' });
+
+    delete window.user;
+  });
+
+  it('returns null when no authenticated user is available', () => {
+    window.angular = undefined;
+    window.user = null;
+
+    expect(getUser()).toBeNull();
   });
 });

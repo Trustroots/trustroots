@@ -81,6 +81,7 @@
     "test:selenium": "python ./scripts/selenium/test.py",
     "test:server:codex": "TRUSTROOTS_SKIP_LOCAL_CONFIG=true ./scripts/codex/test-server.sh",
     "test:codex": "npm run test:client && npm run test:server:codex",
+    "test:server:files": "node ./scripts/test-server-files.js",
     "test:server:watch": "npm run check-environment && NODE_ENV=test gulp test:server:watch",
     "test:server": "NODE_ENV=test gulp test:server",
     "test": "npm run check-environment && npm run lint && npm run test:client && npm run test:server",
@@ -91,10 +92,6 @@
     "prepare": "husky install"
   },
   "dependencies": {
-    "@sentry/browser": "6.19.7",
-    "@sentry/integrations": "6.19.7",
-    "@sentry/node": "6.19.7",
-    "@sentry/tracing": "6.19.7",
     "acl": "0.4.11",
     "agenda": "1.0.3",
     "akismet-api": "5.3.0",

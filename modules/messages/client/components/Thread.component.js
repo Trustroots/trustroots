@@ -40,6 +40,8 @@ const ThreadContainer = styled.div`
   top: 44px;
   bottom: 0;
   width: 100%;
+  min-height: 0;
+  overflow: hidden;
   @media (min-width: 768px) {
     width: 505px;
     bottom: 12px;
@@ -73,6 +75,19 @@ function YouHaveNotBeenTalkingYet() {
       <h4>{t("You haven't been talking yet.")}</h4>
       <Flashcard />
     </div>
+  );
+}
+
+function SafetyReminder() {
+  const { t } = useTranslation('messages');
+  return (
+    <p className="text-muted text-center">
+      {t('Before meeting someone new, read our ')}
+      <a href="/safety">{t('safety tips')}</a>
+      {t(' and ')}
+      <a href="/rules">{t('community rules')}</a>
+      {t('.')}
+    </p>
   );
 }
 
@@ -339,6 +354,7 @@ export default function Thread({ user, profileMinimumLength }) {
                   onFetchMore={fetchMoreData}
                 />
               )}
+              {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showQuickReply && (
                 <QuickReply
                   onSend={content => sendMessage(content)}

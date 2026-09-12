@@ -49,7 +49,7 @@ describe('Admin dashboard controller unit tests', () => {
     sinon.restore();
   });
 
-  it('returns top messengers and recent thread votes', async () => {
+  it('returns top messengers and recent negative thread votes', async () => {
     const messengerId = new mongoose.Types.ObjectId();
     const messenger = {
       _id: messengerId,
@@ -118,7 +118,7 @@ describe('Admin dashboard controller unit tests', () => {
     });
     sinon.assert.calledOnceWithExactly(negativeExperienceSort, '-created');
     sinon.assert.calledOnceWithExactly(negativeExperienceLimit, 10);
-    sinon.assert.calledOnceWithExactly(findThreadVotes, {});
+    sinon.assert.calledOnceWithExactly(findThreadVotes, { reference: 'no' });
   });
 
   it('uses empty dashboard lists when dashboard queries return null', async () => {

@@ -166,6 +166,29 @@ describe('Message CRUD tests', function () {
       });
   });
 
+  it('should hide all messages from a blocked member', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent.post('/api/messages').send(message).expect(200);
+
+    userTo.blocked = [userFromId];
+    await userTo.save();
+
+    await agent
+      .post('/api/auth/signin')
+      .send({ username: 'username2', password: 'password123' })
+      .expect(200);
+
+    const [threadResponse, inboxResponse, unreadResponse] = await Promise.all([
+      agent.get('/api/messages/' + userFromId).expect(200),
+      agent.get('/api/messages').expect(200),
+      agent.get('/api/messages-count').expect(200),
+    ]);
+
+    threadResponse.body.should.be.empty();
+    inboxResponse.body.should.be.empty();
+    unreadResponse.body.unread.should.equal(0);
+  });
+
   it('should be able to send and read own messages when with role "shadowban"', function (done) {
     userFrom.roles = ['user', 'shadowban'];
 
@@ -985,19 +1008,26 @@ describe('Message CRUD tests', function () {
 
                   users.length.should.equal(2);
 
-                  users[0]._id.should.equal(userFromId.toString());
-                  users[0].username.should.equal(userFrom.username);
-                  should.exist(users[0].emailHash);
-                  should.exist(users[0].displayName);
-                  should.exist(users[0].avatarUploaded);
-                  should.exist(users[0].avatarSource);
+                  const syncedUserFrom = users.find(
+                    user => user._id === userFromId.toString(),
+                  );
+                  const syncedUserTo = users.find(
+                    user => user._id === userToId.toString(),
+                  );
 
-                  users[1]._id.should.equal(userToId.toString());
-                  users[1].username.should.equal(userTo.username);
-                  should.exist(users[1].emailHash);
-                  should.exist(users[1].displayName);
-                  should.exist(users[1].avatarUploaded);
-                  should.exist(users[1].avatarSource);
+                  should.exist(syncedUserFrom);
+                  syncedUserFrom.username.should.equal(userFrom.username);
+                  should.exist(syncedUserFrom.emailHash);
+                  should.exist(syncedUserFrom.displayName);
+                  should.exist(syncedUserFrom.avatarUploaded);
+                  should.exist(syncedUserFrom.avatarSource);
+
+                  should.exist(syncedUserTo);
+                  syncedUserTo.username.should.equal(userTo.username);
+                  should.exist(syncedUserTo.emailHash);
+                  should.exist(syncedUserTo.displayName);
+                  should.exist(syncedUserTo.avatarUploaded);
+                  should.exist(syncedUserTo.avatarSource);
 
                   // Call the assertion callback
                   return done(syncReadErr);

@@ -6,6 +6,9 @@ const {
   fetchUserIdByUsername,
   signInViaApi,
 } = require('../../support/helpers');
+const {
+  assertReplyComposerCaretAndComposition,
+} = require('../../support/message-reply-editor');
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -82,6 +85,22 @@ test.describe.serial('message action feature coverage', () => {
     await sendReply;
 
     await expect(page.getByText(replyText)).toBeVisible();
+  });
+
+  test('reply composer preserves a multiline caret and composed characters', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Editing an earlier line does not move or reorder the reply text.',
+      'Reply text retains characters entered through an input composition.',
+    ]);
+
+    const portlandId = await fetchUserIdByUsername(request, portland.username);
+    await assertReplyComposerCaretAndComposition(
+      page,
+      `/messages/${portland.username}?userId=${portlandId}`,
+    );
   });
 
   test('members can start conversations and read/sync unread messages', async ({

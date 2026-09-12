@@ -21,19 +21,6 @@ const buildMetadata = require('./build-metadata');
 const path = require('path');
 const paginate = require('express-paginate');
 const uuid = require('uuid');
-const Sentry = require('@sentry/node');
-
-module.exports.initSentryRequestHandler = function (app) {
-  if (config.sentry.enabled) {
-    app.use(Sentry.Handlers.requestHandler());
-  }
-};
-
-module.exports.initSentryErrorHandler = function (app) {
-  if (config.sentry.enabled) {
-    app.use(Sentry.Handlers.errorHandler());
-  }
-};
 
 /**
  * Initialize local variables
@@ -47,7 +34,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.googlePage = config.google.page;
   app.locals.googleAnalytics = config.googleAnalytics;
   app.locals.umami = config.umami;
-  app.locals.sentry = config.sentry;
   app.locals.env =
     ['development', 'test', 'production'].indexOf(process.env.NODE_ENV) > -1
       ? process.env.NODE_ENV
@@ -72,9 +58,13 @@ module.exports.initLocalVariables = function (app) {
   ) {
     app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = ['assets/main.css'];
+    app.locals.reactJsFiles = ['assets/react-main.js'];
+    app.locals.reactCssFiles = ['assets/react-main.css'];
   } else {
     app.locals.jsFiles = ['assets/main.js'];
     app.locals.cssFiles = []; // style is bundled with javascript
+    app.locals.reactJsFiles = ['assets/react-main.js'];
+    app.locals.reactCssFiles = []; // style is bundled with javascript
   }
 
   // Get latest git commit metadata for asset cache busting and support/debug UI.
@@ -325,7 +315,6 @@ module.exports.initHelmetHeaders = function (app) {
           'https://stats.g.doubleclick.net',
           'https://1p.trustroots.org', // Umami analytics
           'fcm.googleapis.com',
-          'https://sentry.io',
         ],
 
         // Allows control over Flash and other plugins.
@@ -468,9 +457,6 @@ module.exports.init = function (connection) {
   // Initialize express app
   const app = express();
 
-  // Initialize sentry request handler, must be first
-  this.initSentryRequestHandler(app);
-
   // Initialize local variables
   this.initLocalVariables(app);
 
@@ -500,9 +486,6 @@ module.exports.init = function (connection) {
 
   // Initialize modules server routes
   this.initModulesServerRoutes(app);
-
-  // Initialize sentry error handler, must be after routes, but before error handlers
-  this.initSentryErrorHandler(app);
 
   // Initialize error routes
   this.initErrorRoutes(app);

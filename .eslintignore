@@ -1,5 +1,27 @@
 # https://eslint.org/docs/user-guide/configuring#eslintignore
 
+node_modules/
+coverage/
+coverage-report/
+.nyc_output/
+playwright-report/
+test-results/
+tests/e2e/.auth/
+tmp/
+logs/
+log/
+*.log
+eslint_report.json
+build/
+public/lib/
+public/dist/
+public/assets/
+public/push-messaging-sw.js
+uploads/
+public/uploads-profile/
+public/uploads-circle/
+modules/users/client/img/profile/uploads
+
 bin/admin
 deploy
 migrations/archived
