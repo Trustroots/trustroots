@@ -3,7 +3,6 @@ import {
   createRoute,
   createRouter,
   useParams,
-  useRouteContext,
   useSearch,
 } from '@tanstack/react-router';
 import React from 'react';
@@ -230,6 +229,7 @@ const renderByPath = {
   '/profile/:username/experiences/new': renderWithUser(ProfilePage),
   '/profile/:username/experiences': renderWithUser(ProfilePage),
   '/profile/:username/accommodation': renderWithUser(ProfilePage),
+  '/profile/:username/about': renderWithUser(ProfilePage),
   '/profile/:username/overview': renderWithUser(ProfilePage),
   '/profile/:username/contacts': renderWithUser(ProfilePage),
   '/profile/:username/tribes': renderWithUser(ProfilePage),
@@ -264,12 +264,18 @@ export const routes = REACT_ROUTE_POLICIES.map(route => ({
 
 function createClientRouteComponent(clientRoute) {
   function ClientRouteComponent() {
-    const { user } = useRouteContext({ from: '__root__' });
+    const { user } = useAuth();
     const params = useParams({ strict: false });
     const search = useSearch({ strict: false });
+    const remountSearch = { ...search };
+
+    // Selecting an offer updates the URL without resetting the map viewport.
+    if (clientRoute.path === '/search') {
+      delete remountSearch.offer;
+    }
 
     return (
-      <React.Fragment key={JSON.stringify(search)}>
+      <React.Fragment key={JSON.stringify({ params, search: remountSearch })}>
         {clientRoute.render({ params, user })}
       </React.Fragment>
     );
@@ -314,10 +320,8 @@ export function createAppRouter() {
   return createRouter({
     context: {
       navigateOverride: undefined,
-      user: null,
     },
     defaultPreload: 'intent',
-    defaultRemountDeps: ({ search }) => search,
     parseSearch: parseLegacySearch,
     routeTree,
     stringifySearch: stringifyLegacySearch,

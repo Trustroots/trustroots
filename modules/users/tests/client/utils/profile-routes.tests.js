@@ -111,6 +111,22 @@ describe('profile-routes', () => {
       );
     });
 
+    it('keeps explicit mobile About views open while defaulting root visits to Overview', () => {
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: 390,
+      });
+      expect(getProfileViewTab('/profile/member-one/about', 'member-one')).toBe(
+        'about',
+      );
+      expect(
+        getMobileProfileRedirect('/profile/member-one/about', 'member-one'),
+      ).toBe(null);
+      expect(
+        getMobileProfileRedirect('/profile/member-one/', 'member-one'),
+      ).toBe('/profile/member-one/overview');
+    });
+
     it('redirects desktop overview and accommodation views to about', () => {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,

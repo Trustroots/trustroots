@@ -197,7 +197,26 @@ export default function SearchPage({ user }) {
           }
         }
       }
+    }
 
+    initialiseFromUrl();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    // A pin click already supplies the offer and must preserve the viewport.
+    if (routeParams.offer === offer?._id) {
+      return;
+    }
+
+    let isMounted = true;
+    setOffer(false);
+    setIsLoadingOffer(false);
+
+    async function loadOfferFromUrl() {
       if (routeParams.offer && routeParams.offer.length === 24) {
         setIsLoadingOffer(true);
         openSidebar('results');
@@ -221,12 +240,12 @@ export default function SearchPage({ user }) {
       }
     }
 
-    initialiseFromUrl();
+    loadOfferFromUrl();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [routeParams.offer]);
 
   return (
     <section className={`search${isSidebarOpen ? ' is-sidebar-open' : ''}`}>

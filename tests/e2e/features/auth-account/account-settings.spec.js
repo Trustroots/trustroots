@@ -141,6 +141,20 @@ test.describe.serial('account settings feature coverage', () => {
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
     await expect(page.getByLabel('Username', { exact: true })).toBeEnabled();
+
+    const nextUsername = createUser().username;
+    await page.getByLabel('Username', { exact: true }).fill(nextUsername);
+    await page
+      .getByRole('button', { name: 'Change username', exact: true })
+      .click();
+    await expect(
+      page.getByText('Username updated.', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'View profile', exact: true }),
+    ).toHaveAttribute('href', `/profile/${nextUsername}`);
+    await page.getByRole('link', { name: 'View profile', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/profile/${nextUsername}$`));
   });
 
   test('new members who sign in through the UI cannot change username yet', async ({

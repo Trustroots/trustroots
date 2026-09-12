@@ -88,6 +88,58 @@ test.describe.serial('message action feature coverage', () => {
     await expect(page.getByText(replyText)).toBeVisible();
   });
 
+  test('direct conversation links change the recipient and clear the previous draft', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Switching directly between conversation URLs clears the previous draft and targets the new recipient.',
+    ]);
+    const recipient = SEEDED_MEMBERS[2];
+    const recipientId = await fetchUserIdByUsername(
+      request,
+      recipient.username,
+    );
+    const originalRecipientId = await fetchUserIdByUsername(
+      request,
+      portland.username,
+    );
+    const conversationLink = await page.request.post('/api/messages', {
+      data: {
+        userTo: originalRecipientId,
+        content: `<a href="/messages/${recipient.username}">Open the next conversation</a>`,
+      },
+    });
+    expect(conversationLink.ok()).toBeTruthy();
+    await page.goto(`/messages/${portland.username}`);
+    const editor = page.locator('#message-reply-content');
+    await expect(editor).toBeVisible();
+    await editor.fill('A draft for the first conversation');
+    const loadedRecipient = page.waitForResponse(
+      response =>
+        response.url().endsWith(`/api/users/${recipient.username}`) &&
+        response.ok(),
+    );
+    await page
+      .getByRole('link', { name: 'Open the next conversation' })
+      .click();
+    await loadedRecipient;
+    await expect(editor).toBeVisible();
+    await expect(editor).toHaveText('');
+    const content = `A fictional conversation-switch reply ${Date.now()}`;
+    await editor.fill(content);
+    const sent = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/messages') &&
+        response.request().method() === 'POST',
+    );
+    await page.locator('#messageReplySubmit').click();
+    const response = await sent;
+    expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON().userTo).toBe(recipientId);
+    await expect(page.getByText(content)).toBeVisible();
+  });
+
   test('reply composer preserves a multiline caret and composed characters', async ({
     page,
     request,

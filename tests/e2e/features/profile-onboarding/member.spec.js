@@ -106,6 +106,30 @@ test.describe('confirmed member flows', () => {
     ).toBeVisible();
   });
 
+  test('mobile members can read About after landing on Overview', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Mobile Overview defaults do not prevent selecting and reloading About.',
+    ]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/profile/${portland.username}`);
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${portland.username}/overview$`),
+    );
+    await page.getByRole('tab', { name: 'About', exact: true }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${portland.username}/about$`),
+    );
+    await expect(
+      page.getByText(SEEDED_PROFILE_DESCRIPTION).first(),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByText(SEEDED_PROFILE_DESCRIPTION).first(),
+    ).toBeVisible();
+  });
+
   test('third seeded host profile is visible to signed-in members', async ({
     page,
   }, testInfo) => {

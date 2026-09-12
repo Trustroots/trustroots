@@ -34,7 +34,7 @@ export default function BottomNavigationSmall({
     {
       key: 'about',
       label: t('About'),
-      link: `/profile/${username}`,
+      link: `/profile/${username}/about`,
     },
     {
       key: 'accommodation',

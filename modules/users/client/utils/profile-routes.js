@@ -97,7 +97,7 @@ export function getMobileProfileRedirect(pathname, username) {
   const prefix = `/profile/${encodeURIComponent(username)}`;
 
   if (isMobileProfileViewport()) {
-    if (tab === 'about') {
+    if (pathname === prefix || pathname === `${prefix}/`) {
       return `${prefix}/overview`;
     }
 

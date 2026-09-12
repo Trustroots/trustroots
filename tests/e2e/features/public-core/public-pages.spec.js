@@ -3,6 +3,33 @@ const { annotateFeature, test, expect } = require('../../support/test');
 const { createUser, waitForTribesList } = require('../../support/helpers');
 
 test.describe('public pages and unauthenticated flows', () => {
+  test('RTL pages load the generated stylesheet from a nested route', async ({
+    page,
+    context,
+    baseURL,
+  }, testInfo) => {
+    test.skip(
+      process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'true',
+      'RTL CSS is emitted by the production build.',
+    );
+    annotateFeature(testInfo, 'public.languages-api', [
+      'RTL languages load the stylesheet emitted by the production build.',
+    ]);
+    await context.addCookies([{ name: 'i18n', value: 'ar', url: baseURL }]);
+    const stylesheet = page.waitForResponse(
+      response =>
+        new URL(response.url()).pathname === '/assets/react-main.rtl.css',
+    );
+    await page.goto('/password/forgot');
+    expect((await stylesheet).ok()).toBeTruthy();
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    await expect
+      .poll(() =>
+        page.locator('#rtl-style').evaluate(link => Boolean(link.sheet)),
+      )
+      .toBe(true);
+  });
+
   test('sign in and sign up pages link to each other', async ({
     page,
   }, testInfo) => {

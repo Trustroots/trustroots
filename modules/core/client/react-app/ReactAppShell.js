@@ -13,6 +13,7 @@ import {
   getReactRoutePolicy,
   isReactOwnedPath,
 } from '@/modules/core/shared/react-route-ownership';
+import { useAuth } from './auth';
 import { useAppConfig, useSettings } from './AppProviders';
 import ReactFooter from './ReactFooter';
 import { getClientNavigationTarget, signout } from './shell-helpers';
@@ -20,7 +21,8 @@ import { getClientNavigationTarget, signout } from './shell-helpers';
 export default function ReactAppShell() {
   const { title } = useAppConfig();
   const { build } = useSettings();
-  const { navigateOverride, user } = useRouteContext({ from: '__root__' });
+  const { navigateOverride } = useRouteContext({ from: '__root__' });
+  const { user } = useAuth();
   const locationHref = useRouterState({
     select: state => state.location.href,
   });

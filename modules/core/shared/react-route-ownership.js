@@ -163,6 +163,12 @@ const REACT_ROUTE_POLICIES = [
     noScrollingTop: true,
   },
   {
+    path: '/profile/:username/about',
+    title: 'Profile',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
     path: '/profile/:username/overview',
     title: 'Profile overview',
     requiresAuth: true,

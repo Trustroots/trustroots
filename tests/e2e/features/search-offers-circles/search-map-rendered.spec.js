@@ -313,6 +313,10 @@ test.describe('rendered search map feature coverage', () => {
     // verify that the fallback requests its offer details.
     const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
     await expect(hostMarker).toBeVisible();
+    const originalMap = await page
+      .locator('[data-testid="leaflet-search-map"]')
+      .elementHandle();
+
     const offerRequest = page.waitForRequest(
       '**/api/offers/665100000000000000000001**',
     );
@@ -321,6 +325,13 @@ test.describe('rendered search map feature coverage', () => {
     await hostMarker.dispatchEvent('click');
     expect((await offerRequest).url()).toContain(
       '/api/offers/665100000000000000000001',
+    );
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await expect(
+      page.locator('.search-sidebar-container.is-offer-open'),
+    ).toBeVisible();
+    expect(await originalMap.evaluate(element => element.isConnected)).toBe(
+      true,
     );
   });
 
