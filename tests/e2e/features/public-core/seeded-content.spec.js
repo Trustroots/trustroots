@@ -59,11 +59,11 @@ test.describe('seeded content and public API flows', () => {
     expect(response.ok()).toBeTruthy();
     const publicStatistics = await response.json();
     expect(publicStatistics.experiences).toEqual({
-      total: 2,
+      total: 3,
       recommended: 1,
-      notRecommended: 0,
-      recent: { total: 2, recommended: 1, notRecommended: 0 },
-      realLifeConnections: { total: 2, recent: 2 },
+      notRecommended: 1,
+      recent: { total: 3, recommended: 1, notRecommended: 1 },
+      realLifeConnections: { total: 1, recent: 1 },
     });
     expect(publicStatistics.messageInteractions).toEqual({
       total: 1,
@@ -119,6 +119,32 @@ test.describe('seeded content and public API flows', () => {
     );
     await expect(wikiLink).toHaveAttribute('target', '_blank');
     await expect(wikiLink).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
+  test('Naturists circle requires sign-in', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'circles.member-only', [
+      'Visitor cannot discover or open the Naturists circle.',
+    ]);
+
+    const catalogueResponse = await request.get('/api/tribes', {
+      params: { limit: 150 },
+    });
+    expect(catalogueResponse.ok()).toBeTruthy();
+    expect(
+      (await catalogueResponse.json()).some(
+        circle => circle.slug === 'naturists',
+      ),
+    ).toBe(false);
+
+    const detailResponse = await request.get('/api/tribes/naturists');
+    expect(detailResponse.status()).toBe(403);
+
+    await page.goto('/circles/naturists');
+    await expect(page).toHaveURL(/\/signin(\?|$)/);
+    await expect(page.locator('#username')).toBeVisible();
   });
 
   test('circle detail remains touch-scrollable on a phone-sized viewport', async ({

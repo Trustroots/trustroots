@@ -2,6 +2,7 @@ Sitemap: https://www.trustroots.org/sitemap.xml
 User-agent: *
 Disallow: /?_escaped_fragment_=/profile/
 Disallow: /profile/
+Disallow: /circles/naturists
 Disallow: /modules/users/client/img/profile/uploads/
 Disallow: /uploads-profile/
 Disallow: /api/users/

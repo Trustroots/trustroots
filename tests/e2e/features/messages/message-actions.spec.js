@@ -3,9 +3,13 @@ const { annotateFeature, expect, test } = require('../../support/test');
 const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  createIsolatedContext,
   fetchUserIdByUsername,
   signInViaApi,
 } = require('../../support/helpers');
+const {
+  assertReplyComposerCaretAndComposition,
+} = require('../../support/message-reply-editor');
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -84,6 +88,22 @@ test.describe.serial('message action feature coverage', () => {
     await expect(page.getByText(replyText)).toBeVisible();
   });
 
+  test('reply composer preserves a multiline caret and composed characters', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Editing an earlier line does not move or reorder the reply text.',
+      'Reply text retains characters entered through an input composition.',
+    ]);
+
+    const portlandId = await fetchUserIdByUsername(request, portland.username);
+    await assertReplyComposerCaretAndComposition(
+      page,
+      `/messages/${portland.username}?userId=${portlandId}`,
+    );
+  });
+
   test('members can start conversations and read/sync unread messages', async ({
     browser,
     baseURL,
@@ -106,7 +126,7 @@ test.describe.serial('message action feature coverage', () => {
 
     const berlinId = await fetchUserIdByUsername(request, berlin.username);
     const aliceId = await fetchUserIdByUsername(request, alice.username);
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

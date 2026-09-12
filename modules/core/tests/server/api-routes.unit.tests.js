@@ -506,6 +506,16 @@ describe('API route registrations', () => {
     );
     const auditLog = controller(['list', 'record'], 'adminAuditLog');
     const messages = controller(['getMessages'], 'adminMessages');
+    const newsletter = controller(
+      [
+        'audience',
+        'list',
+        'listCircleMembers',
+        'splitSubscribers',
+        'uploadSubscribersCsv',
+      ],
+      'adminNewsletter',
+    );
     const notes = controller(['addNote', 'getNotes'], 'adminNotes');
     const referenceThreads = controller(['list'], 'adminReferenceThreads');
     const circles = controller(
@@ -517,6 +527,7 @@ describe('API route registrations', () => {
       [
         'changeRole',
         'getUser',
+        'listUsersByLastIpAddress',
         'listUsersByRole',
         'searchUsers',
         'usernameToUserId',
@@ -531,6 +542,7 @@ describe('API route registrations', () => {
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
         '../controllers/admin.messages.server.controller': messages,
+        '../controllers/admin.newsletter.server.controller': newsletter,
         '../controllers/admin.notes.server.controller': notes,
         '../controllers/admin.reference-threads.server.controller':
           referenceThreads,
@@ -577,6 +589,10 @@ describe('API route registrations', () => {
       auditLog.record,
       users.listUsersByRole,
     ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/users/by-last-ip-address').post,
+      [auditLog.record, users.listUsersByLastIpAddress],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/user').post, [
       auditLog.record,
       users.getUser,
@@ -605,6 +621,26 @@ describe('API route registrations', () => {
       circles.processImageUpload,
       circles.update,
     ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/split').post,
+      [
+        auditLog.record,
+        newsletter.uploadSubscribersCsv,
+        newsletter.splitSubscribers,
+      ],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers').get,
+      [auditLog.record, newsletter.list],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/audience').post,
+      [auditLog.record, newsletter.audience],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/newsletter-subscribers/circle').get,
+      [auditLog.record, newsletter.listCircleMembers],
+    );
     routes.forEach(route => assertPolicy(route, policy));
   });
 

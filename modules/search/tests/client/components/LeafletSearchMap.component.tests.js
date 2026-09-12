@@ -312,7 +312,7 @@ describe('<LeafletSearchMap />', () => {
     expect(mockLayerGroups[1].clearLayers).toHaveBeenCalledTimes(1);
   });
 
-  it('uses fallback colours for unknown offers and unverified notes', () => {
+  it('uses fallback colours for unknown offers and Community Notes', () => {
     mockClusterResults.push(
       [point('offer-1', { offer: 'unknown' })],
       [point('note-1', { verified: false })],
@@ -324,7 +324,7 @@ describe('<LeafletSearchMap />', () => {
     });
 
     expect(mockCircleMarkers[0].options.fillColor).toBe('#ccc');
-    expect(mockCircleMarkers[1].options.fillColor).toBe('#1976D2');
+    expect(mockCircleMarkers[1].options.fillColor).toBe('#1565C0');
     expect(() => mockCircleMarkers[0].handlers.click({})).not.toThrow();
   });
 });

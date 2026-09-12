@@ -70,6 +70,10 @@ describe('<Home />', () => {
       'href',
       '/statistics',
     );
+    expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
   });
 
   it('uses compact board height on small screens', async () => {

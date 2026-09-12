@@ -22,6 +22,7 @@ describe('<SiteFooter />', () => {
     [
       ['Volunteering', 'https://team.trustroots.org/'],
       ['Rules', '/rules'],
+      ['Safety', '/safety'],
       ['FAQ', '/faq'],
       ['Wiki', 'https://wiki.trustroots.org/'],
       ['Privacy', '/privacy'],

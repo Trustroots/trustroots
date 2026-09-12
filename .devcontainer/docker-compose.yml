@@ -15,9 +15,14 @@ services:
       # Named volume keeps the image's linux-correct node_modules, shadowing
       # whatever is on the host. Seeded from the image on first creation.
       - node_modules:/home/app/trustroots/node_modules
+      # Use container service names without loading a developer's host config.
+      - ./local.js:/home/app/trustroots/config/env/local.js:ro
     depends_on:
       - mongodb
-      - maildev
+      - mailpit
+    networks:
+      - default
+      - mailpit
     ports:
       # Keep the dev server private by default. Set
       # TRUSTROOTS_DEV_WEBPACK_BIND_ADDRESS=0.0.0.0 before rebuilding the
@@ -31,16 +36,30 @@ services:
       - NODE_ENV=development
       - TRUSTROOTS_NODE_INSPECT_HOST=0.0.0.0
       - DB_1_PORT_27017_TCP_ADDR=mongodb
-      - TRUSTROOTS_SKIP_LOCAL_CONFIG=true
       - TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true
       - TRUSTROOTS_FILE_MAGIC_FALLBACK=true
       - TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test
       - TRUSTROOTS_CODEX_MONGO_URI=mongodb://mongodb:27017/trustroots-test
 
-  maildev:
-    image: soulteary/maildev
+  mailpit:
+    image: axllent/mailpit:v1.30.6@sha256:7f33095f80e901f6ad08028f06ca284aa58fe84942be5496008d041d3b9f4d4d
+    user: '65534:65534'
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      MP_DATABASE: /tmp/mailpit.db
+      MP_DISABLE_VERSION_CHECK: 'true'
+      MP_BLOCK_REMOTE_CSS_AND_FONTS: 'true'
+      MP_MAX_MESSAGE_SIZE: '10'
     ports:
-      - '127.0.0.1:${TRUSTROOTS_DEV_MAILDEV_HOST_PORT:-11080}:1080'
+      - '127.0.0.1:${TRUSTROOTS_DEV_MAILPIT_HOST_PORT:-11080}:8025'
+    networks:
+      - mailpit
 
   mongodb:
     image: mongo:4.4
@@ -52,6 +71,10 @@ services:
       - mongodb:/data/db
     ports:
       - '127.0.0.1:${TRUSTROOTS_DEV_MONGODB_HOST_PORT:-37017}:27017'
+
+networks:
+  mailpit:
+    internal: true
 
 volumes:
   mongodb:

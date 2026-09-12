@@ -53,6 +53,10 @@ exports.invokeRolesPolicies = function () {
           permissions: ['get', 'put', 'delete'],
         },
         {
+          resources: '/api/users/export',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/users/remove/:token',
           permissions: ['delete'],
         },

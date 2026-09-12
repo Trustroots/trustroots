@@ -28,7 +28,8 @@ export default function Rules() {
             </div>
             <p>
               <Trans t={t} ns="pages">
-                See also our page about <a href="privacy">privacy</a>.
+                See also our pages about <a href="/safety">safety</a> and{' '}
+                <a href="/privacy">privacy</a>.
               </Trans>
             </p>
             <p className="lead">

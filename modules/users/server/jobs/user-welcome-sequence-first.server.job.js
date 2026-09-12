@@ -1,7 +1,7 @@
 /**
  * Onboarding/welcome sequence email for new members: 1/3 (first one)
  *
- * Ignores users with `suspended` role.
+ * Ignores users with `suspended` or `shadowban` roles.
  *
  * Keeps count of onboarding emails at user's model.
  */
@@ -45,12 +45,8 @@ module.exports = function (job, agendaDone) {
           // the first welcome sequence email
           welcomeSequenceSent: { $lt: emailConfirmedTimeAgo },
 
-          // Exlude users with `suspended` role
-          roles: {
-            $not: {
-              $eq: 'suspended',
-            },
-          },
+          // Exclude users with restricted roles.
+          roles: { $nin: ['suspended', 'shadowban'] },
         })
           // Limit stops any crazy amounts of emails being processed at once
           // the rest would be processed in next round.

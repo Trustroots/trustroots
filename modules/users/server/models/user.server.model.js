@@ -258,6 +258,7 @@ const UserSchema = new Schema({
         type: String,
         enum: [
           'admin',
+          'welcome-team',
           'moderator',
           'shadowban',
           'suspended',
@@ -272,6 +273,11 @@ const UserSchema = new Schema({
   /* The last time the user was logged in; collected from July 2017 onwards */
   seen: {
     type: Date,
+  },
+  // The current client IP address from authenticated activity; no history is kept.
+  lastIpAddress: {
+    type: String,
+    index: true,
   },
   updated: {
     type: Date,

@@ -6,6 +6,7 @@ const errorService = require('../../../core/server/services/error.server.service
 const emailService = require('../../../core/server/services/email.server.service');
 const userProfile = require('./users.profile.server.controller');
 const authenticationService = require('../services/authentication.server.service');
+const signupSafety = require('../services/signup-safety.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');
 const log = require('../../../../config/lib/logger');
 const passport = require('passport');
@@ -123,6 +124,21 @@ exports.signup = function (req, res) {
 
       // Send email
       function (user, done) {
+        const matchedKeywords = signupSafety.matchSignupProfile(user);
+        if (matchedKeywords.length) {
+          emailService.sendFlaggedSignupAlert(
+            user,
+            matchedKeywords,
+            function (err) {
+              if (err) {
+                log('error', 'Flagged signup alert delivery failed.', {
+                  error: err,
+                });
+              }
+            },
+          );
+        }
+
         emailService.sendSignupEmailConfirmation(user, function (err) {
           done(err, user);
         });
@@ -132,7 +148,7 @@ exports.signup = function (req, res) {
       function (user, done) {
         req.login(user, function (err) {
           // Remove sensitive data befor sending user
-          user = userProfile.sanitizeProfile(user);
+          user = userProfile.sanitizeOwnProfile(user);
 
           done(err, user);
         });
@@ -345,7 +361,7 @@ exports.signin = function (req, res, next) {
       statsObject.tags.status = 'success';
       statService.stat(statsObject, function () {
         // Remove sensitive data before sending out
-        user = userProfile.sanitizeProfile(user);
+        user = userProfile.sanitizeOwnProfile(user);
         res.json(user);
       });
     });
@@ -412,7 +428,7 @@ exports.removeOAuthProvider = function (req, res) {
         }
 
         // Remove sensitive data before sending out
-        user = userProfile.sanitizeProfile(user);
+        user = userProfile.sanitizeOwnProfile(user);
         res.json(user);
       });
     }
@@ -515,7 +531,7 @@ exports.confirmEmail = function (req, res) {
       function (result, user) {
         // Return authenticated user
         // Remove sensitive data befor sending user
-        result.user = userProfile.sanitizeProfile(user);
+        result.user = userProfile.sanitizeOwnProfile(user);
 
         return res.json(result);
       },

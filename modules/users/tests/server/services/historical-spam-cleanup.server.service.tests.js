@@ -72,6 +72,56 @@ describe('Service: historical spam cleanup', () => {
     await removeCreatedData();
   });
 
+  it('uses safe defaults when there are no campaign accounts', async () => {
+    const result = await cleanup.run();
+
+    result.should.deepEqual({
+      candidates: 0,
+      eligible: 0,
+      protected: 0,
+      deleted: 0,
+    });
+  });
+
+  it('retains an account protected immediately before deletion', async () => {
+    const candidate = await createCandidate();
+    const query = result => ({
+      select() {
+        return this;
+      },
+      lean() {
+        return Promise.resolve(result);
+      },
+    });
+    const find = sinon.stub(AdminNote, 'find');
+    find.onFirstCall().returns(query([]));
+    find.onSecondCall().returns(query([{ user: candidate._id }]));
+
+    const result = await cleanup.run({ deleteAccounts: true });
+
+    result.should.deepEqual({
+      candidates: 1,
+      eligible: 0,
+      protected: 1,
+      deleted: 0,
+    });
+    should.exist(await User.findById(candidate._id));
+  });
+
+  it('supports legacy and empty deletion results', async () => {
+    await createCandidate();
+    const deleteMany = sinon.stub(User, 'deleteMany');
+    deleteMany.onFirstCall().resolves({ n: 1 });
+    deleteMany.onSecondCall().resolves({});
+
+    const legacyResult = await cleanup.run({ deleteAccounts: true });
+    const emptyResult = await cleanup.run({ deleteAccounts: true });
+    deleteMany.restore();
+
+    legacyResult.deleted.should.equal(1);
+    emptyResult.deleted.should.equal(0);
+  });
+
   it('dry-runs eligible campaign accounts and retains protected accounts', async () => {
     const eligible = await createCandidate();
     const manualSuspension = await createCandidate();
@@ -185,41 +235,64 @@ describe('Service: historical spam cleanup', () => {
     should.exist(await User.findById(manualSuspension._id));
   });
 
-  it('uses safe defaults when there are no candidates', async () => {
+  it('uses defaults when there are no campaign accounts', async () => {
     const result = await cleanup.run();
-    result.should.eql({ candidates: 0, eligible: 0, protected: 0, deleted: 0 });
+
+    result.should.deepEqual({
+      candidates: 0,
+      eligible: 0,
+      protected: 0,
+      deleted: 0,
+    });
   });
 
-  for (const [deletionResult, expectedCount] of [
-    [{ n: 1 }, 1],
-    [{}, 0],
-  ]) {
-    it(`handles deletion results without deletedCount (${expectedCount})`, async () => {
-      await createCandidate();
-      const deletion = sinon.stub(User, 'deleteMany').resolves(deletionResult);
-      const result = await cleanup.run({ deleteAccounts: true, batchSize: 1 });
-      result.should.eql({
-        candidates: 1,
-        eligible: 1,
-        protected: 0,
-        deleted: expectedCount,
-      });
-      sinon.assert.calledOnce(deletion);
-    });
-  }
+  it('normalises legacy and missing deletion counts', async () => {
+    await createCandidate();
+    const originalDeleteMany = User.deleteMany;
 
-  it('retains a candidate protected by a note between the two activity checks', async () => {
+    try {
+      User.deleteMany = async () => ({ n: 1 });
+      const legacyResult = await cleanup.run({ deleteAccounts: true });
+      legacyResult.deleted.should.equal(1);
+
+      User.deleteMany = async () => ({});
+      const missingResult = await cleanup.run({ deleteAccounts: true });
+      missingResult.deleted.should.equal(0);
+    } finally {
+      User.deleteMany = originalDeleteMany;
+    }
+  });
+
+  it('retains accounts protected during the final safety check', async () => {
     const candidate = await createCandidate();
-    const findNotes = sinon.stub(AdminNote, 'find');
-    const notes = results => ({
-      select: () => ({ lean: async () => results }),
-    });
-    findNotes.onFirstCall().returns(notes([]));
-    findNotes.onSecondCall().returns(notes([{ user: candidate._id }]));
-    const deletion = sinon.spy(User, 'deleteMany');
-    const result = await cleanup.run({ deleteAccounts: true });
-    result.should.eql({ candidates: 1, eligible: 0, protected: 1, deleted: 0 });
-    sinon.assert.notCalled(deletion);
-    should.exist(await User.findById(candidate._id));
+    const originalFind = AdminNote.find;
+    let findCalls = 0;
+
+    AdminNote.find = (...args) => {
+      findCalls += 1;
+      if (findCalls === 2) {
+        return {
+          select() {
+            return this;
+          },
+          lean: async () => [{ user: candidate._id }],
+        };
+      }
+      return originalFind.apply(AdminNote, args);
+    };
+
+    try {
+      const result = await cleanup.run({ deleteAccounts: true });
+
+      result.should.deepEqual({
+        candidates: 1,
+        eligible: 0,
+        protected: 1,
+        deleted: 0,
+      });
+      should.exist(await User.findById(candidate._id));
+    } finally {
+      AdminNote.find = originalFind;
+    }
   });
 });

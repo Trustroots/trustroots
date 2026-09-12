@@ -64,10 +64,19 @@ function parseFiltersString(filtersString) {
 /**
  * Sanitize offer fields
  */
-function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
+function sanitizeOffer(offer, authenticatedUser, alwaysFuzzyLocation) {
   // offer is a Mongo document, turn it into regular JS object
   // so that we can modify it on the fly
   offer = offer.toObject();
+
+  const offerUserId = offer.user._id || offer.user;
+  const isOwnOffer =
+    authenticatedUser && authenticatedUser._id.equals(offerUserId);
+  const authenticatedRoles = authenticatedUser?.roles || [];
+  const hideContactDetails =
+    !isOwnOffer &&
+    authenticatedRoles.includes('shadowban') &&
+    !authenticatedRoles.includes('admin');
 
   // Sanitize each outgoing offer's contents
   // Offers are already sanitized when they go into the database,
@@ -78,20 +87,28 @@ function sanitizeOffer(offer, authenticatedUserId, alwaysFuzzyLocation) {
       offer.description,
       textService.sanitizeOptions,
     );
+    if (hideContactDetails) {
+      offer.description = textService.stripContactDetails(offer.description);
+    }
   }
   if (!_.isUndefined(offer.noOfferDescription)) {
     offer.noOfferDescription = sanitizeHtml(
       offer.noOfferDescription,
       textService.sanitizeOptions,
     );
+    if (hideContactDetails) {
+      offer.noOfferDescription = textService.stripContactDetails(
+        offer.noOfferDescription,
+      );
+    }
   }
 
   // Make sure we return accurate location only for offer owner,
   // others will see pre generated fuzzy location
   if (
     alwaysFuzzyLocation ||
-    !authenticatedUserId ||
-    !authenticatedUserId.equals(offer.user._id || offer.user)
+    !authenticatedUser ||
+    !authenticatedUser._id.equals(offerUserId)
   ) {
     offer.location = offer.locationFuzzy;
   }
@@ -726,7 +743,7 @@ exports.getOffer = function (req, res) {
 
       function (offer) {
         // Sanitize offer before returning it
-        offer = sanitizeOffer(offer, req.user._id);
+        offer = sanitizeOffer(offer, req.user);
 
         res.json(offer);
       },
@@ -819,7 +836,7 @@ exports.offersByUserId = function (req, res, next, userId) {
 
     // Sanitize offers
     req.offers = _.map(offers, function (offer) {
-      return sanitizeOffer(offer, req.user._id);
+      return sanitizeOffer(offer, req.user);
     });
 
     next();

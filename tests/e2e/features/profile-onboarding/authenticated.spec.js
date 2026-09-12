@@ -4,6 +4,8 @@ const { annotateFeature, test, expect } = require('../../support/test');
 const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
+  SEEDED_SHADOW,
+  createIsolatedContext,
   createUser,
   registerViaApi,
   signInViaApi,
@@ -106,6 +108,58 @@ test.describe('authenticated member flows', () => {
     ).toBeVisible();
   });
 
+  test('search members hides shadowbanned profiles', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'safety.shadowban-hiding', [
+      'Shadowbanned members are hidden from public member search.',
+    ]);
+
+    await page.goto('/search/members');
+    // MongoDB text search treats hyphens as negation operators, so use the
+    // unique display name rather than the fixture's hyphenated username.
+    await page
+      .locator('#search-users-form input')
+      .fill(SEEDED_SHADOW.firstName);
+    const searchResponse = page.waitForResponse(
+      response =>
+        response.url().includes('/api/users?search=') &&
+        response.request().method() === 'GET' &&
+        response.ok(),
+    );
+    await page.locator('#search-users-form button[type="submit"]').click();
+    await searchResponse;
+
+    await expect(
+      page.getByText('No members found by this name.'),
+    ).toBeVisible();
+  });
+
+  test('member can download their combined data export', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.data-export', [
+      'The combined export is an attachment with the documented filename.',
+      'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+    ]);
+
+    const response = await page.request.get('/api/users/export');
+
+    expect(response.ok()).toBe(true);
+    expect(response.headers()['content-disposition']).toContain(
+      'attachment; filename="trustroots-data.json"',
+    );
+    const data = await response.json();
+    expect(data).toMatchObject({
+      format: 'trustroots-data-export',
+      version: 1,
+      profile: expect.any(Object),
+      contacts: expect.any(Array),
+      hostingOffers: expect.any(Array),
+    });
+    expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
+  });
+
   test('inbox prompts an unconfirmed member to activate their profile', async ({
     browser,
     baseURL,
@@ -115,7 +169,7 @@ test.describe('authenticated member flows', () => {
       'Restricted message actions are unavailable until confirmation.',
     ]);
 
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -172,7 +226,7 @@ test.describe('authenticated member flows', () => {
     // Own profile is tied to the session user. Use an isolated context so the
     // viewed username always matches the signed-in member, even when other
     // specs mutate the shared authenticated storage state.
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -377,7 +431,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/avatar.png',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -419,7 +473,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -462,7 +516,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/avatar.png',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -510,6 +564,7 @@ test.describe('authenticated member flows', () => {
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
       'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
       'Sign out action clears the session.',
     ]);
 
@@ -537,12 +592,17 @@ test.describe('authenticated member flows', () => {
     await expect(page.locator('.list-group a[href="/statistics"]')).toHaveText(
       'Statistics',
     );
+    await expect(page.locator('.list-group a[href="/safety"]')).toHaveText(
+      'Safety',
+    );
   });
 
   test('member can sign out', async ({ browser, baseURL }, testInfo) => {
     annotateFeature(testInfo, 'public.navigation', [
       'Member navigation page loads.',
       'Navigation lists the expected member shortcuts.',
+      'Navigation links to public statistics.',
+      'Navigation links to safety guidance.',
       'Sign out action clears the session.',
     ]);
 
@@ -554,7 +614,7 @@ test.describe('authenticated member flows', () => {
     // Sign out tears down the session, so run it against a throwaway account in
     // an isolated context. That keeps the shared authenticated session intact
     // for the other tests in this file when they run in parallel.
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

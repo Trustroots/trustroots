@@ -51,6 +51,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           <DropMenuItem href="/faq">
             {t('Frequently Asked Questions')}
           </DropMenuItem>
+          <DropMenuItem href="/safety">{t('Safety')}</DropMenuItem>
           <DropMenuItem href="/faq/bugs-and-features">
             {t('Report a bug')}
           </DropMenuItem>
@@ -177,6 +178,10 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
               {
                 href: '/rules',
                 label: t('Rules'),
+              },
+              {
+                href: '/safety',
+                label: t('Safety'),
               },
               {
                 href: '/statistics',

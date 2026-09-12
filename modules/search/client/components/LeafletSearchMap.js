@@ -281,7 +281,7 @@ export default function LeafletSearchMap({
       index: communityNoteIndex,
       map,
       onPointClick: point => callbacksRef.current.onCommunityNoteClick(point),
-      pointColour: point => (point.properties.verified ? '#1565C0' : '#1976D2'),
+      pointColour: () => '#1565C0',
       viewport,
     });
   }, [communityNotes, offers, viewport]);
