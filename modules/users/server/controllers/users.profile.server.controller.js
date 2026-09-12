@@ -277,17 +277,7 @@ exports.update = function (req, res) {
         }
 
         user.save(function (err) {
-          if (!err) {
-            req.login(user, function (err) {
-              if (err) {
-                done(err);
-              } else {
-                done(null, token, user);
-              }
-            });
-          } else {
-            done(err, token, user);
-          }
+          done(err, token, user);
         });
       },
 
