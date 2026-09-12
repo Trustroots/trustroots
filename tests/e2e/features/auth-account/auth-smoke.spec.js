@@ -84,6 +84,43 @@ test.describe.serial('authentication smoke', () => {
     await signUp(page, signupUser);
   });
 
+  test('signup rejects reserved service names', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    const member = createUser();
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    const validationResponse = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/auth/signup/validate') &&
+        response.request().postDataJSON().username === 'nostr',
+    );
+    await page.locator('#username').fill('nostr');
+    await page.locator('#username').blur();
+    expect(await (await validationResponse).json()).toMatchObject({
+      valid: false,
+      message: 'Username is not available.',
+    });
+    await expect(page.locator('#username')).toHaveClass(/ng-invalid-username/);
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    const rejected = await request.post('/api/auth/signup', {
+      data: { ...member, username: 'nostr' },
+    });
+    expect(rejected.status()).toBe(400);
+    await page.locator('#username').fill(member.username);
+    await page.locator('#username').blur();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
+
   test('signup explains underscores and waits for username validation', async ({
     page,
     request,
