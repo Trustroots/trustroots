@@ -12,7 +12,6 @@ const Header = styled.section.attrs({
   className: 'board tribe-image tribe-header',
 })`
   &&& {
-    position: relative;
     ${({ tribe }) => tribe && getCircleBackgroundStyle(tribe, '1400x900')}
   }
 `;
