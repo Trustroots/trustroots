@@ -215,6 +215,32 @@ describe('file-upload.service unit tests', () => {
     });
   });
 
+  for (const [description, bytes, expectedStatus] of [
+    ['a valid image', Buffer.from([0xff, 0xd8, 0xff, 0x00]), 200],
+    ['disguised non-image content', Buffer.from('not an image'), 415],
+  ]) {
+    it(`validates ${description} by its bytes when the browser omits the MIME type`, done => {
+      const filePath = writeTempFile(bytes);
+      const { uploadFile } = loadUploadFileWithFileFilter(
+        { mimetype: 'application/octet-stream' },
+        { path: filePath },
+      );
+      const res = mockResponse();
+      const finish = () => {
+        try {
+          res.statusCode.should.equal(expectedStatus);
+          done();
+        } catch (err) {
+          done(err);
+        } finally {
+          fs.unlinkSync(filePath);
+        }
+      };
+      res.send = finish;
+      uploadFile(validMimeTypes, uploadField, {}, res, finish);
+    });
+  }
+
   it('rejects requests without an uploaded file', done => {
     const uploadFile = loadUploadFileWithStubbedMulter(null);
     const res = mockResponse(() => {

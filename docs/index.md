@@ -26,9 +26,7 @@ Here are some ideas:
   - for example, it would be cool to have circle descriptions directly on the wiki, so that all trustroots users will add information
   - develop ideas that are hidden in there, such as [Rural Hospitality](https://wiki.trustroots.org/en/Rural_hospitality)
 
-
 [Contact us if you want to help](https://www.trustroots.org/support).
-
 
 ### Decentralized social networking
 
