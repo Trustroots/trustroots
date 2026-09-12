@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import Map from '@/modules/core/client/components/Map';
@@ -10,12 +10,14 @@ jest.mock('@/modules/core/client/utils/map', () => ({
   isWebGLSupported: () => mockIsWebGLSupported(),
 }));
 
+const mockMapGL = jest.fn();
 const mockMapStyleControl = jest.fn();
 jest.mock('react-map-gl', () => {
   const React = require('react');
   return {
     __esModule: true,
     default: function MockMapGL(props) {
+      mockMapGL(props);
       return <div data-testid="react-map">{props.children}</div>;
     },
   };
@@ -96,4 +98,34 @@ describe('<Map />', () => {
       }),
     );
   });
+});
+
+it('synchronises panning and external place searches while retaining zoom', () => {
+  mockIsWebGLSupported.mockReturnValue(true);
+  const onLocationChange = jest.fn();
+  const { rerender } = render(
+    <Map location={[50, 10]} onLocationChange={onLocationChange} />,
+  );
+  act(() =>
+    mockMapGL.mock.calls
+      .slice(-1)[0][0]
+      .onViewportChange({ latitude: 51, longitude: 11, zoom: 15 }),
+  );
+  expect(onLocationChange).toHaveBeenCalledWith([51, 11]);
+  rerender(<Map location={[52, 12]} onLocationChange={onLocationChange} />);
+  expect(mockMapGL.mock.calls.slice(-1)[0][0]).toEqual(
+    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 15 }),
+  );
+});
+it('allows maps to pan without a location callback', () => {
+  mockIsWebGLSupported.mockReturnValue(true);
+  render(<Map />);
+  act(() =>
+    mockMapGL.mock.calls
+      .slice(-1)[0][0]
+      .onViewportChange({ latitude: 51, longitude: 11, zoom: 15 }),
+  );
+  expect(mockMapGL.mock.calls.slice(-1)[0][0]).toEqual(
+    expect.objectContaining({ latitude: 51, longitude: 11, zoom: 15 }),
+  );
 });

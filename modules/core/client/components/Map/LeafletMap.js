@@ -17,6 +17,7 @@ export default function LeafletMap({
   height = 320,
   location,
   marker,
+  onLocationChange,
   scrollZoom = true,
   width = '100%',
   zoom = 6,
@@ -24,6 +25,9 @@ export default function LeafletMap({
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markerRef = useRef(null);
+  const previousZoomRef = useRef(zoom);
+  const locationChangeRef = useRef(onLocationChange);
+  locationChangeRef.current = onLocationChange;
 
   useEffect(() => {
     const map = L.map(containerRef.current, {
@@ -35,6 +39,12 @@ export default function LeafletMap({
     L.tileLayer(tiles.url, tiles.options).addTo(map);
 
     mapRef.current = map;
+    map.on('moveend', () => {
+      if (locationChangeRef.current) {
+        const centre = map.getCenter();
+        locationChangeRef.current([centre.lat, centre.lng]);
+      }
+    });
 
     return () => {
       map.remove();
@@ -52,10 +62,14 @@ export default function LeafletMap({
     if (
       current.lat !== location[0] ||
       current.lng !== location[1] ||
-      map.getZoom() !== zoom
+      previousZoomRef.current !== zoom
     ) {
-      map.setView(location, zoom);
+      map.setView(
+        location,
+        previousZoomRef.current !== zoom ? zoom : map.getZoom(),
+      );
     }
+    previousZoomRef.current = zoom;
   }, [location, zoom]);
 
   useEffect(() => {
@@ -91,6 +105,7 @@ export default function LeafletMap({
 }
 
 LeafletMap.propTypes = {
+  onLocationChange: PropTypes.func,
   ariaHidden: PropTypes.bool,
   className: PropTypes.string,
   height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
