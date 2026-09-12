@@ -840,18 +840,26 @@ function isUsernameUpdateAllowed(user) {
   return moment().isSameOrAfter(allowedDate);
 }
 
-/**
- * Sanitize profile before sending it to frontend
- * - Ensures certain fields are removed before publishing
- * - Collects tribe id's into one simple array
- * - Removes tribe references that don't exist anymore (i.e. they are removed from `tribes` table but reference ID remains in the user's table)
- * - Sanitize description in case
- *
- * @param {Object} profile - User profile to sanitize
- * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
- * @return {Object} Sanitized profile.
- */
-exports.sanitizeProfile = function (profile, authenticatedUser) {
+// Some responses sanitize another member's public profile, while authenticated
+// user responses need own-account fields such as usernameUpdateAllowed.
+function sameUser(profile, authenticatedUser) {
+  if (
+    !profile ||
+    !authenticatedUser ||
+    !profile._id ||
+    !authenticatedUser._id
+  ) {
+    return false;
+  }
+
+  if (authenticatedUser._id.equals) {
+    return authenticatedUser._id.equals(profile._id);
+  }
+
+  return authenticatedUser._id.toString() === profile._id.toString();
+}
+
+function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
   if (!profile) {
     return;
   }
@@ -859,8 +867,6 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   // Destruct Mongoose object to regular object so that we can manipulate it
   profile = profile.toObject();
 
-  const isOwnProfile =
-    authenticatedUser && authenticatedUser._id.equals(profile._id);
   const authenticatedRoles = authenticatedUser?.roles || [];
   const hideExternalContactDetails =
     !isOwnProfile &&
@@ -971,6 +977,29 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.__v;
 
   return profile;
+}
+
+/**
+ * Sanitize profile before sending it to frontend
+ * - Ensures certain fields are removed before publishing
+ * - Collects tribe id's into one simple array
+ * - Removes tribe references that don't exist anymore (i.e. they are removed from `tribes` table but reference ID remains in the user's table)
+ * - Sanitize description in case
+ *
+ * @param {Object} profile - User profile to sanitize
+ * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
+ * @return {Object} Sanitized profile.
+ */
+exports.sanitizeProfile = function (profile, authenticatedUser) {
+  return sanitizeProfile(
+    profile,
+    sameUser(profile, authenticatedUser),
+    authenticatedUser,
+  );
+};
+
+exports.sanitizeOwnProfile = function (profile) {
+  return sanitizeProfile(profile, true, profile);
 };
 
 /**
@@ -1268,7 +1297,7 @@ exports.removePushRegistration = function (req, res) {
     } else {
       return res.send({
         message: 'Removed registration.',
-        user: exports.sanitizeProfile(user, user),
+        user: exports.sanitizeOwnProfile(user),
       });
     }
   });
@@ -1396,7 +1425,7 @@ exports.addPushRegistration = function (req, res) {
           }
           return res.send({
             message: 'Saved registration.',
-            user: exports.sanitizeProfile(user, user),
+            user: exports.sanitizeOwnProfile(user),
           });
         });
       }
