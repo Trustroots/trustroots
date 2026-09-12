@@ -314,13 +314,13 @@ test.describe.serial('nostr npub on the profile networks form', () => {
 });
 
 test.describe('nostr community notes badge on the profile view', () => {
-  test('uses the viewer identity on another profile and omits identity after signing out', async ({
+  test('uses the viewer identity on another profile and keeps signed-out profile access gated', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-networks', [
       'Profile note onboarding uses the viewer rather than the author.',
-      'Signed-out onboarding carries no username.',
+      'Signed-out visitors still need to sign in before viewing profiles.',
     ]);
     const author = SEEDED_MEMBERS[0];
     const viewer = SEEDED_MEMBERS[1];
@@ -350,7 +350,7 @@ test.describe('nostr community notes badge on the profile view', () => {
       await page
         .getByRole('button', { name: /See all notes on Nostroots/ })
         .click();
-      let dialog = page.getByRole('dialog', { name: 'Get Nostroots' });
+      const dialog = page.getByRole('dialog', { name: 'Get Nostroots' });
       await expect(
         dialog.getByRole('link', { name: 'Continue in Nostroots' }),
       ).toHaveAttribute(
@@ -365,13 +365,10 @@ test.describe('nostr community notes badge on the profile view', () => {
 
       await page.context().clearCookies();
       await page.goto(`/profile/${author.username}`);
-      await page
-        .getByRole('button', { name: /See all notes on Nostroots/ })
-        .click();
-      dialog = page.getByRole('dialog', { name: 'Get Nostroots' });
+      await expect(page).toHaveURL(/\/signin/);
       await expect(
-        dialog.getByRole('link', { name: 'Continue in Nostroots' }),
-      ).toHaveAttribute('href', 'https://nos.trustroots.org/open/onboarding');
+        page.getByRole('link', { name: 'Continue in Nostroots' }),
+      ).toHaveCount(0);
     } finally {
       await signInViaApi(page, request, author);
       const restore = await page.request.put('/api/users', {
