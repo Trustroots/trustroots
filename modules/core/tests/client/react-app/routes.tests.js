@@ -15,6 +15,24 @@ import {
 } from '@/modules/core/shared/react-route-ownership';
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
+jest.mock('@/modules/pages/client/components/Navigation.component', () => ({
+  __esModule: true,
+  default: ({ user, onSignout }) => (
+    <main>
+      <p>{user.username}</p>
+      <a href="/api/auth/signout" onClick={onSignout}>
+        Sign out
+      </a>
+    </main>
+  ),
+}));
+jest.mock('@/modules/users/client/components/Welcome.component', () => () => (
+  <main>Welcome</main>
+));
+jest.mock(
+  '@/modules/search/client/components/SearchUsers.component',
+  () => () => <main>Search members</main>,
+);
 jest.mock('@/modules/admin/client/components/Admin.component', () => () => (
   <main>Admin</main>
 ));

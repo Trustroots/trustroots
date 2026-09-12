@@ -46,6 +46,7 @@ const rules = {
 };
 
 module.exports = {
+  root: true,
   extends: ['eslint:recommended', 'plugin:import/errors', 'prettier'],
   rules,
   plugins: ['angular', 'react', 'import', 'prettier'],
