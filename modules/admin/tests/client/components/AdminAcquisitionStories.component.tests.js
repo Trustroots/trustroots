@@ -5,6 +5,10 @@ import '@testing-library/jest-dom/extend-expect';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import * as acquisitionStoriesApi from '@/modules/admin/client/api/acquisition-stories.api';
 
+jest.mock('@/modules/core/client/services/angular-compat', () => ({
+  getUser: () => global.window.user,
+}));
+
 jest.mock('@/modules/admin/client/api/acquisition-stories.api');
 jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
   const React = require('react');
@@ -14,11 +18,44 @@ jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
   };
 });
 
+beforeEach(() => {
+  window.user = { roles: ['admin'] };
+});
+
 afterEach(() => {
+  delete window.user;
   jest.clearAllMocks();
 });
 
 describe('<AdminAcquisitionStories />', () => {
+  it.each([{ roles: ['welcome-team'] }, {}, null])(
+    'uses public member links for a non-administrator %j',
+    async user => {
+      window.user = user;
+      acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+        {
+          _id: 'member-id',
+          username: 'river',
+          acquisitionStory: 'Friends',
+          restrictedMatches: [
+            {
+              _id: 'match-id',
+              username: 'forest',
+              matchReasons: ['Acquisition story'],
+            },
+          ],
+        },
+      ]);
+      render(<AdminAcquisitionStories />);
+      expect(
+        await screen.findByRole('link', { name: 'river', exact: true }),
+      ).toHaveAttribute('href', '/profile/river');
+      expect(
+        screen.getByRole('link', { name: 'forest', exact: true }),
+      ).toHaveAttribute('href', '/profile/forest');
+    },
+  );
+
   it('loads and renders acquisition stories with member links', async () => {
     acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
@@ -30,6 +67,15 @@ describe('<AdminAcquisitionStories />', () => {
         hostingLocation: [52.37, 4.9],
         locationFrom: 'Fictional origin',
         locationLiving: 'Fictional home',
+        restrictedMatches: [
+          {
+            _id: '222222222222222222222222',
+            displayName: 'Restricted Example',
+            matchReasons: ['Acquisition story'],
+            roles: ['user', 'shadowban'],
+            username: 'restricted',
+          },
+        ],
         username: 'alice',
       },
     ]);
@@ -62,6 +108,12 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getByText('Living: Fictional home')).toBeInTheDocument();
     expect(screen.getByText('From: Fictional origin')).toBeInTheDocument();
     expect(screen.getByText('Hosting: 52.370, 4.900')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'restricted (Restricted Example)',
+      }),
+    ).toHaveAttribute('href', '/admin/user?id=222222222222222222222222');
+    expect(screen.getByText(/— Acquisition story/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Stories' }).closest('li'),
     ).toHaveClass('active');

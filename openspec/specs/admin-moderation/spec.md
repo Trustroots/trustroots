@@ -10,7 +10,8 @@ member activity, and access operational information.
 ### Requirement: Administrator-only access
 
 The system SHALL restrict administration tools and administration APIs to
-authorised administrators.
+authorised administrators, except that members with the `welcome-team` role
+SHALL also have access to acquisition stories and analysis and their APIs.
 
 #### Scenario: Administrator opens the dashboard
 
@@ -19,7 +20,7 @@ authorised administrators.
 
 #### Scenario: Regular member requests an administration API
 
-- **WHEN** a regular member requests an administration API
+- **WHEN** a regular member without an applicable administrative role requests an administration API
 - **THEN** the system denies access
 
 ### Requirement: Administration dashboard overview
@@ -293,3 +294,92 @@ authorised administrators in member-search results and member reports.
 
 - **WHEN** a regular member requests the administrator IP-address lookup
 - **THEN** the system denies access
+
+### Requirement: Potential accounts related to restricted members
+
+The system SHALL help authorised administrators investigate a suspended or
+shadowbanned member by showing a bounded set of other accounts with a similar
+username or email local-part, or an identical normalised acquisition story.
+The system SHALL identify the signal that caused each possible match and SHALL
+NOT automatically change an account because of a match.
+
+#### Scenario: Administrator opens a restricted member report
+
+- **WHEN** an authorised administrator opens a suspended or shadowbanned
+  member report
+- **THEN** the report shows the member's acquisition story when available
+- **AND** shows a bounded set of possible related accounts
+- **AND** identifies whether each account matched the username, email
+  local-part, or acquisition story
+
+#### Scenario: Administrator opens an unrestricted member report
+
+- **WHEN** an authorised administrator opens a member report for an account
+  without the suspended or shadowban role
+- **THEN** the report does not perform or display restricted-member matching
+
+#### Scenario: Possible account match is found
+
+- **WHEN** another account matches one or more restricted-member signals
+- **THEN** the administrator can open that account's member report
+- **AND** neither account's roles or other state are changed automatically
+
+### Requirement: Restricted-account signals in acquisition stories
+
+The system SHALL compare acquisition-story rows with a bounded set of
+suspended and shadowbanned accounts and show possible matches to authorised
+administrators. Match signals SHALL include similar normalised identifiers,
+identical normalised acquisition stories, and conservatively similar
+acquisition stories. Matches SHALL NOT automatically change account state.
+
+#### Scenario: Acquisition story resembles a restricted account
+
+- **WHEN** an authorised administrator opens the acquisition-stories view
+- **AND** a story row resembles a suspended or shadowbanned account
+- **THEN** the row identifies the matching restricted account
+- **AND** labels the identifier, exact-story, or similar-story signal
+- **AND** links to the restricted account's member report
+
+#### Scenario: Acquisition story has no restricted-account signal
+
+- **WHEN** an authorised administrator opens the acquisition-stories view
+- **AND** a story row has no qualifying restricted-account match
+- **THEN** the row is shown without a restricted-account lead
+
+### Requirement: Member role inventory
+
+The system SHALL show authorised administrators an inventory of a member's
+current roles and concise explanations of those roles alongside the Welcome
+team membership controls.
+
+#### Scenario: Administrator reviews member roles
+
+- **WHEN** an authorised administrator opens a member report
+- **THEN** the report lists the member's current roles
+- **AND** explains each recognised role
+- **AND** role-removal controls are limited to Welcome team membership
+
+### Requirement: Welcome team acquisition access
+
+The system SHALL allow members with the `welcome-team` role to view acquisition stories and analysis, including all existing acquisition data, without granting other administrator permissions. The interface SHALL display the role as Welcome team and show only accessible navigation and member links.
+
+#### Scenario: Welcome team views acquisition pages
+
+- **WHEN** a welcome-team member opens either acquisition page or calls its API
+- **THEN** access is granted and existing data is returned
+- **AND** unrelated administrator pages and APIs remain forbidden
+
+### Requirement: Administrator manages Welcome team membership
+
+Administrators SHALL be able to grant and revoke `welcome-team` from member role management. The role-change API SHALL accept an optional action of add or remove, default to add, and permit removal only for welcome-team. Changes SHALL preserve other roles and create administrator notes.
+
+#### Scenario: Administrator grants and revokes membership
+
+- **WHEN** an administrator grants or revokes Welcome team membership
+- **THEN** the stored role and refreshed role inventory reflect the change
+- **AND** subsequent acquisition API access reflects the current roles
+
+#### Scenario: Member attempts to grant access
+
+- **WHEN** a non-administrator requests a role change
+- **THEN** the request is forbidden

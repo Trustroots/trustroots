@@ -5,6 +5,7 @@ const {
   SEEDED_MEMBERS,
   SEEDED_RELATIONSHIP_MEMBERS,
   SEEDED_SHADOW,
+  createIsolatedContext,
   createUser,
   registerViaApi,
   signInViaApi,
@@ -180,7 +181,7 @@ test.describe('authenticated member flows', () => {
       'Restricted message actions are unavailable until confirmation.',
     ]);
 
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -237,7 +238,7 @@ test.describe('authenticated member flows', () => {
     // Own profile is tied to the session user. Use an isolated context so the
     // viewed username always matches the signed-in member, even when other
     // specs mutate the shared authenticated storage state.
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -442,7 +443,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/avatar.png',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -484,7 +485,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/test-actually-pdf-looks-like-jpg.jpg',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -527,7 +528,7 @@ test.describe('authenticated member flows', () => {
       __dirname,
       '../../../../modules/users/tests/server/img/avatar.png',
     );
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {
@@ -625,7 +626,7 @@ test.describe('authenticated member flows', () => {
     // Sign out tears down the session, so run it against a throwaway account in
     // an isolated context. That keeps the shared authenticated session intact
     // for the other tests in this file when they run in parallel.
-    const context = await browser.newContext({ baseURL });
+    const context = await createIsolatedContext(browser, baseURL);
     const page = await context.newPage();
 
     try {

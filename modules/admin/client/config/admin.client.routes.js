@@ -32,7 +32,7 @@ function AdminRoutes($stateProvider) {
       // it should be lowercase, with dashes
       // This is the bridge towards (and from) React
       template: '<admin-acquisition-stories></admin-acquisition-stories>',
-      requiresRole: 'admin',
+      requiresRole: ['admin', 'welcome-team'],
       requiresAuth: true,
       footerVariant: 'admin',
       data: {
@@ -46,7 +46,7 @@ function AdminRoutes($stateProvider) {
       // This is the bridge towards (and from) React
       template:
         '<admin-acquisition-stories-analysis></admin-acquisition-stories-analysis>',
-      requiresRole: 'admin',
+      requiresRole: ['admin', 'welcome-team'],
       requiresAuth: true,
       footerVariant: 'admin',
       data: {

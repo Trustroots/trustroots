@@ -26,6 +26,7 @@ const ROLE_DEFINITIONS = {
   'shadowbanned-member':
     'Authenticated user with the shadowban role, used to verify hidden member-facing behavior.',
   admin: 'Authenticated user with the admin role.',
+  'welcome-team': 'Authenticated user with limited acquisition viewing access.',
   browser:
     'Browser/platform-originated request, such as security reporting telemetry.',
   'external-client':
@@ -1654,12 +1655,17 @@ const features = [
       'Host offer edit page loads.',
       'Member can create/update a host offer.',
       'Host offer visibility appears in profile/search.',
+      'Host can limit search visibility to members sharing a circle.',
       'Member can remove or disable a host offer.',
     ],
     relatedSpecs: [
       spec(
         'member.spec.js',
         'host offer edit page loads for a confirmed member',
+      ),
+      spec(
+        'offers-and-circles.spec.js',
+        'hosts can limit search visibility to members in their circles',
       ),
     ],
   },
@@ -2575,15 +2581,16 @@ const features = [
     id: 'admin.acquisition-stories',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description: 'Admins can query acquisition stories.',
-    roles: ['admin'],
+    description:
+      'Admins and Welcome team members can query acquisition stories.',
+    roles: ['admin', 'welcome-team'],
     references: {
       clientRoutes: [
         clientRoute(
           'admin-acquisition-stories',
           '/admin/acquisition-stories',
           source.adminClient,
-          { requiresAuth: true, requiresRole: 'admin' },
+          { requiresAuth: true, requiresRole: ['admin', 'welcome-team'] },
         ),
       ],
       apiRoutes: [
@@ -2591,9 +2598,11 @@ const features = [
       ],
     },
     requiredScenarios: [
+      'Welcome team can view stories without other administrator access.',
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
       'Story rows show available member and hosting locations.',
+      'Story rows show matching restricted accounts.',
     ],
     relatedSpecs: [],
   },
@@ -2601,15 +2610,16 @@ const features = [
     id: 'admin.acquisition-analysis',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description: 'Admins can view acquisition story analysis.',
-    roles: ['admin'],
+    description:
+      'Admins and Welcome team members can view acquisition story analysis.',
+    roles: ['admin', 'welcome-team'],
     references: {
       clientRoutes: [
         clientRoute(
           'admin-acquisition-stories-analysis',
           '/admin/acquisition-stories/analysis',
           source.adminClient,
-          { requiresAuth: true, requiresRole: 'admin' },
+          { requiresAuth: true, requiresRole: ['admin', 'welcome-team'] },
         ),
       ],
       apiRoutes: [
@@ -2621,6 +2631,7 @@ const features = [
       ],
     },
     requiredScenarios: [
+      'Welcome team can view analysis.',
       'Acquisition story analysis page loads.',
       'Analysis API returns deterministic analysis.',
     ],
@@ -2770,6 +2781,8 @@ const features = [
     requiredScenarios: [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
+      'Report card shows the current role inventory.',
+      'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ],
     relatedSpecs: [
@@ -2821,6 +2834,7 @@ const features = [
       ],
     },
     requiredScenarios: [
+      'Administrator grants and revokes Welcome team membership.',
       'Admin can apply a moderation role change.',
       'Role change is recorded in audit log.',
       'Permission errors are shown for invalid role changes.',

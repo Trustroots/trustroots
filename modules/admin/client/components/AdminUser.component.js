@@ -32,6 +32,18 @@ const DEFAULT_MEMBER_LIST_SORT = {
   direction: 'ascending',
 };
 
+const ROLE_DESCRIPTIONS = {
+  'welcome-team': 'Can view acquisition stories and analysis.',
+  admin: 'Full access to administration and moderation tools.',
+  moderator: 'Legacy moderation role retained for historical accounts.',
+  shadowban:
+    'Member can use the site, but their profile and outreach are hidden from others.',
+  suspended: 'Member access is blocked until an administrator intervenes.',
+  user: 'Standard Trustroots member access.',
+  volunteer: 'Current Trustroots volunteer.',
+  'volunteer-alumni': 'Former Trustroots volunteer.',
+};
+
 function formatDate(value) {
   if (!value) {
     return null;
@@ -126,6 +138,7 @@ export default class AdminUser extends Component {
       hideObviousSpamUsers: true,
       isSettingUserRole: false,
       isSearching: false,
+      notesRevision: 0,
       matchingUsersIpAddress: null,
       matchingUsersPagination: null,
       matchingUsersSort: DEFAULT_MEMBER_LIST_SORT,
@@ -197,17 +210,38 @@ export default class AdminUser extends Component {
     });
   }
 
-  handleUserRoleChange(role) {
+  handleUserRoleChange(role, action) {
     const id = get(this, ['state', 'user', 'profile', '_id']);
     if (id) {
       const username = get(this, ['state', 'user', 'profile', 'username']);
-      if (window.confirm(`Set ${username} role to ${role}?`)) {
-        this.setState({ isSettingUserRole: true }, async () => {
-          await setUserRole(id, role);
-          // Get fresh user profile
-          this.getUserById(id);
-          this.setState({ isSettingUserRole: false });
-        });
+      if (
+        window.confirm(
+          action === 'remove'
+            ? `Remove ${username} from Welcome team?`
+            : `Set ${username} role to ${role}?`,
+        )
+      ) {
+        this.setState(
+          { isSettingUserRole: true, roleChangeError: false },
+          async () => {
+            try {
+              if (action) {
+                await setUserRole(id, role, action);
+              } else {
+                await setUserRole(id, role);
+              }
+              this.setState(({ notesRevision }) => ({
+                notesRevision: notesRevision + 1,
+              }));
+              const user = await getUser(id);
+              this.setState({ user });
+            } catch (error) {
+              this.setState({ roleChangeError: true });
+            } finally {
+              this.setState({ isSettingUserRole: false });
+            }
+          },
+        );
       }
     }
   }
@@ -305,6 +339,10 @@ export default class AdminUser extends Component {
     } = this.state;
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
+    const isRestricted = get(user, ['profile', 'roles'], []).some(role =>
+      ['shadowban', 'suspended'].includes(role),
+    );
+    const potentialMatches = get(user, ['potentialMatches'], []);
     const visibleMatchingUsers = hideObviousSpamUsers
       ? matchingUsers.filter(user => !isObviousSpamUser(user))
       : matchingUsers;
@@ -337,6 +375,7 @@ export default class AdminUser extends Component {
           ],
           ['Email', user.profile.email],
           ['Temporary email', user.profile.emailTemporary],
+          ['Acquisition story', user.profile.acquisitionStory],
           [
             'Roles',
             user.profile.roles && user.profile.roles.length
@@ -530,6 +569,51 @@ export default class AdminUser extends Component {
                 </div>
               </div>
 
+              <h4 id="roles">
+                <a href="#roles">Role management</a>{' '}
+              </h4>
+              <div className="panel panel-default admin-user-roles">
+                <div className="panel-body">
+                  <p className="text-muted">
+                    Welcome team members can view acquisition stories and
+                    analysis.
+                  </p>
+                  {this.state.roleChangeError && (
+                    <p role="alert">
+                      Could not change the role. Please try again.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="btn btn-default"
+                    disabled={isSettingUserRole}
+                    onClick={() =>
+                      this.handleUserRoleChange(
+                        'welcome-team',
+                        this.hasRole('welcome-team') ? 'remove' : 'add',
+                      )
+                    }
+                  >
+                    {this.hasRole('welcome-team')
+                      ? 'Remove from Welcome team'
+                      : 'Add to Welcome team'}
+                  </button>
+                  <dl>
+                    {user.profile.roles.map(role => (
+                      <React.Fragment key={role}>
+                        <dt>
+                          {role === 'welcome-team' ? 'Welcome team' : role}
+                        </dt>
+                        <dd>
+                          {ROLE_DESCRIPTIONS[role] ||
+                            'Role stored on this member.'}
+                        </dd>
+                      </React.Fragment>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+
               <h4 id="stats">
                 <a href="#stats">Stats</a>
               </h4>
@@ -632,7 +716,57 @@ export default class AdminUser extends Component {
                 </>
               )}
 
-              <AdminNotes id={userId} />
+              <AdminNotes id={userId} refreshToken={this.state.notesRevision} />
+
+              {isRestricted && (
+                <>
+                  <h4 id="potential-matches">
+                    <a href="#potential-matches">Potential related accounts</a>
+                  </h4>
+                  <div className="panel panel-warning">
+                    <div className="panel-body">
+                      <p className="text-muted">
+                        Investigation leads only. Matches do not change account
+                        state automatically.
+                      </p>
+                      <table className="table table-condensed table-striped">
+                        <thead>
+                          <tr>
+                            <th>Member</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Matched on</th>
+                            <th>Acquisition story</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {potentialMatches.map(match => (
+                            <tr key={match._id}>
+                              <td>
+                                <a href={`/admin/user?id=${match._id}`}>
+                                  {match.displayName || match.username}
+                                </a>
+                                <div className="text-muted">
+                                  @{match.username}
+                                </div>
+                              </td>
+                              <td>{match.email}</td>
+                              <td>{match.roles.join(', ')}</td>
+                              <td>{match.matchReasons.join(', ')}</td>
+                              <td>{match.acquisitionStory}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {!potentialMatches.length && (
+                        <p>
+                          <em>No potential related accounts found.</em>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <h4 id="profile">
                 <a href="#profile">Profile</a>

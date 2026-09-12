@@ -103,6 +103,7 @@ const MEMBERS = [
     email: 'e2e-seeded-shadow@example.test',
     firstName: 'Shadow',
     lastName: 'Spammer',
+    acquisitionStory: 'I found Trustroots through hitchhiking friends online.',
     roles: ['user', 'shadowban'],
     tribes: [],
   },

@@ -2,7 +2,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function UserLink({ user }) {
+export default function UserLink({ user, publicProfile = false }) {
   if (!user || !user._id) {
     return <em>Unknown</em>;
   }
@@ -12,9 +12,17 @@ export default function UserLink({ user }) {
     username && displayName
       ? `${username} (${displayName})`
       : username || displayName || 'Unknown member';
+  if (publicProfile) {
+    return username ? (
+      <a href={`/profile/${username}`}>{label}</a>
+    ) : (
+      <span>{label}</span>
+    );
+  }
   return <a href={`/admin/user?id=${_id}`}>{label}</a>;
 }
 
 UserLink.propTypes = {
   user: PropTypes.object.isRequired,
+  publicProfile: PropTypes.bool,
 };

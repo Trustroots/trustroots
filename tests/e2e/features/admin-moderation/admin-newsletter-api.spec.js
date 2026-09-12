@@ -3,9 +3,15 @@ const { annotateFeature, expect, test } = require('../../support/test');
 const {
   SEEDED_ADMIN,
   SEEDED_MEMBERS,
+  createUser,
   fetchUserIdByUsername,
+  registerViaApi,
   signInViaApi,
 } = require('../../support/helpers');
+const {
+  findUserByUsername,
+  updateUserByUsername,
+} = require('../../support/db');
 
 test.describe('admin newsletter API feature coverage', () => {
   test.beforeEach(async ({ page, request }) => {
@@ -108,12 +114,22 @@ test.describe('admin newsletter API feature coverage', () => {
 
     await setNewsletterPreference(page, request, SEEDED_MEMBERS[0], true);
     await setNewsletterPreference(page, request, SEEDED_MEMBERS[1], false);
-    await setNewsletterPreference(page, request, SEEDED_MEMBERS[2], true);
+    const restrictedMember = createUser();
+    await registerViaApi(request, restrictedMember);
+    const circleMember = await findUserByUsername(SEEDED_MEMBERS[0].username);
+    await updateUserByUsername(restrictedMember.username, {
+      $set: {
+        public: true,
+        newsletter: true,
+        member: circleMember.member,
+      },
+      $unset: { emailTemporary: 1, emailToken: 1 },
+    });
     await signInViaApi(page, request, SEEDED_ADMIN);
 
     const shadowbanTargetId = await fetchUserIdByUsername(
       request,
-      SEEDED_MEMBERS[2].username,
+      restrictedMember.username,
     );
     const shadowbanResponse = await request.post(
       '/api/admin/user/change-role',
@@ -129,7 +145,7 @@ test.describe('admin newsletter API feature coverage', () => {
     const allExportText = await allExport.text();
     expect(allExportText).toContain(SEEDED_MEMBERS[0].email);
     expect(allExportText).not.toContain(SEEDED_MEMBERS[1].email);
-    expect(allExportText).not.toContain(SEEDED_MEMBERS[2].email);
+    expect(allExportText).not.toContain(restrictedMember.email);
 
     const member0Id = await fetchUserIdByUsername(
       request,
@@ -151,7 +167,7 @@ test.describe('admin newsletter API feature coverage', () => {
     const circleExportText = await circleExport.text();
     expect(circleExportText).toContain(SEEDED_MEMBERS[0].email);
     expect(circleExportText).not.toContain(SEEDED_MEMBERS[1].email);
-    expect(circleExportText).not.toContain(SEEDED_MEMBERS[2].email);
+    expect(circleExportText).not.toContain(restrictedMember.email);
   });
 
   test('admin can build a location and circle newsletter audience', async ({
