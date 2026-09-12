@@ -6,6 +6,24 @@ const ADMIN_ROUTE_DEFAULTS = {
 
 const REACT_ROUTE_POLICIES = [
   {
+    path: '/welcome',
+    title: 'Welcome',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/navigation',
+    title: 'Navigation',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
+    path: '/search/members',
+    title: 'Search members',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
     path: '/about',
     redirectTo: '/',
   },

@@ -1,4 +1,8 @@
 import React from 'react';
+import Navigation from '@/modules/pages/client/components/Navigation.component';
+import Welcome from '@/modules/users/client/components/Welcome.component';
+import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import { signout } from './shell-helpers';
 
 import {
   getReactRoutePolicy,
@@ -42,7 +46,14 @@ function renderStatistics({ user }) {
   return React.createElement(Statistics, { isAuthenticated: Boolean(user) });
 }
 
+function renderNavigation({ user }) {
+  return React.createElement(Navigation, { user, onSignout: signout });
+}
+
 const renderByPath = {
+  '/welcome': () => <Welcome />,
+  '/navigation': renderNavigation,
+  '/search/members': () => <SearchUsers />,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (
