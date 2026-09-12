@@ -10,6 +10,8 @@ const REACT_ROUTE_POLICIES = [
     title: 'Confirm contact',
     requiresAuth: true,
   },
+  { path: '/', footerHidden: true },
+  { path: '/safety', title: 'Safety' },
   { path: '/circles', title: 'Circles' },
   { path: '/circles/:circle', title: 'Circle', footerHidden: true },
   {

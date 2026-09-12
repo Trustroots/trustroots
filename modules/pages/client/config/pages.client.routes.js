@@ -26,7 +26,10 @@ function PagesRoutes($stateProvider) {
     })
     .state('safety', {
       url: '/safety',
-      template: '<safety />',
+      /* @ngInject */
+      onEnter($window) {
+        $window.location.assign('/safety');
+      },
       data: {
         pageTitle: 'Safety',
       },
@@ -144,13 +147,15 @@ function PagesRoutes($stateProvider) {
   if (window.location.search.search('_escaped_fragment_') === -1) {
     $stateProvider.state('home', {
       url: '/?tribe?circle',
-      template: `
-        <home
-          user="app.user"
-          isNativeMobileApp="app.isNativeMobileApp"
-          photoCredits="app.photoCredits"
-          build="app.appSettings.build"
-        />`,
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        const params = new URLSearchParams();
+        for (const key of ['circle', 'tribe']) {
+          if ($stateParams[key]) params.set(key, $stateParams[key]);
+        }
+        const query = params.toString();
+        $window.location.assign(query ? `/?${query}` : '/');
+      },
       footerHidden: true,
     });
   } else {

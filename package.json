@@ -260,7 +260,7 @@
     "nodemon": "2.0.22",
     "nyc": "15.1.0",
     "parse-link-header": "2.0.0",
-    "postcss": "8.5.19",
+    "postcss": "8.5.23",
     "postcss-loader": "4.3.0",
     "prettier": "2.6.2",
     "promise": "8.1.0",

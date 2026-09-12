@@ -1,5 +1,7 @@
 import React from 'react';
 import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
+import HomeRoute from '@/modules/pages/client/components/HomeRoute';
+import Safety from '@/modules/pages/client/components/Safety.component';
 import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import Welcome from '@/modules/users/client/components/Welcome.component';
@@ -62,6 +64,8 @@ function renderContactConfirmation({ user }) {
 
 const renderByPath = {
   '/contact-confirm/:contactId': renderContactConfirmation,
+  '/': renderWithUser(HomeRoute),
+  '/safety': () => <Safety />,
   '/circles': renderWithUser(CirclesRoute),
   '/circles/:circle': renderCircle,
   '/welcome': () => <Welcome />,
