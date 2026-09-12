@@ -7,14 +7,15 @@ import * as authApi from '@/modules/users/client/api/auth.api';
 
 export default function RemoveProfilePage() {
   const { token } = getCurrentRouteParams();
-  const [state, setState] = useState('loading');
+  const [state, setState] = useState('review');
 
   useEffect(() => {
+    if (state !== 'loading') {
+      return undefined;
+    }
     let isMounted = true;
 
     async function removeProfile() {
-      setState('loading');
-
       try {
         await authApi.removeProfile(token);
 
@@ -33,7 +34,7 @@ export default function RemoveProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [token]);
+  }, [token, state]);
 
   return (
     <Board className="container container-fullscreen" names="bokeh">
@@ -60,6 +61,28 @@ export default function RemoveProfilePage() {
           <br />
           <br />
 
+          {(state === 'review' || state === 'loading') && (
+            <div>
+              <h3>Delete your account?</h3>
+              <p className="lead">
+                This will permanently delete your Trustroots profile and cannot
+                be undone.
+              </p>
+              <button
+                className="btn btn-danger"
+                type="button"
+                disabled={state === 'loading'}
+                onClick={() => setState('loading')}
+              >
+                Permanently delete my account
+              </button>
+              <br />
+              <br />
+              <a href="/profile/edit/account#remove">
+                Cancel and keep my account
+              </a>
+            </div>
+          )}
           {state === 'loading' && <LoadingIndicator />}
 
           {state === 'success' && (

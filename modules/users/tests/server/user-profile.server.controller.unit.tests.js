@@ -896,31 +896,6 @@ describe('Profile controller unit tests', () => {
     });
   });
 
-  describe('sanitizeProfile', () => {
-    it('creates member ids from unpopulated tribe ids', () => {
-      const userId = new mongoose.Types.ObjectId();
-      const tribeId = new mongoose.Types.ObjectId();
-      const profile = {
-        _id: userId,
-        member: [{ tribe: tribeId }],
-        toObject() {
-          return {
-            _id: userId,
-            created: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
-            member: [{ tribe: tribeId }],
-            roles: [],
-          };
-        },
-      };
-
-      const sanitized = profileController.sanitizeProfile(profile, {
-        _id: userId,
-      });
-
-      sanitized.memberIds.should.deepEqual([tribeId.toString()]);
-    });
-  });
-
   describe('push registration', () => {
     it('removePushRegistration responds with 403 without a user', async () => {
       const { res } = await runHandler(res =>

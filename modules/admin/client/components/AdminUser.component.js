@@ -32,6 +32,17 @@ const DEFAULT_MEMBER_LIST_SORT = {
   direction: 'ascending',
 };
 
+const ROLE_DESCRIPTIONS = {
+  admin: 'Full access to administration and moderation tools.',
+  moderator: 'Legacy moderation role retained for historical accounts.',
+  shadowban:
+    'Member can use the site, but their profile and outreach are hidden from others.',
+  suspended: 'Member access is blocked until an administrator intervenes.',
+  user: 'Standard Trustroots member access.',
+  volunteer: 'Current Trustroots volunteer.',
+  'volunteer-alumni': 'Former Trustroots volunteer.',
+};
+
 function formatDate(value) {
   if (!value) {
     return null;
@@ -305,6 +316,10 @@ export default class AdminUser extends Component {
     } = this.state;
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
+    const isRestricted = get(user, ['profile', 'roles'], []).some(role =>
+      ['shadowban', 'suspended'].includes(role),
+    );
+    const potentialMatches = get(user, ['potentialMatches'], []);
     const visibleMatchingUsers = hideObviousSpamUsers
       ? matchingUsers.filter(user => !isObviousSpamUser(user))
       : matchingUsers;
@@ -337,6 +352,7 @@ export default class AdminUser extends Component {
           ],
           ['Email', user.profile.email],
           ['Temporary email', user.profile.emailTemporary],
+          ['Acquisition story', user.profile.acquisitionStory],
           [
             'Roles',
             user.profile.roles && user.profile.roles.length
@@ -530,6 +546,30 @@ export default class AdminUser extends Component {
                 </div>
               </div>
 
+              <h4 id="roles">
+                <a href="#roles">Role management</a>{' '}
+                <small className="text-muted">read-only</small>
+              </h4>
+              <div className="panel panel-default admin-user-roles">
+                <div className="panel-body">
+                  <p className="text-muted">
+                    Current role inventory. Role editing will be added here in a
+                    future change; existing moderation actions remain above.
+                  </p>
+                  <dl>
+                    {user.profile.roles.map(role => (
+                      <React.Fragment key={role}>
+                        <dt>{role}</dt>
+                        <dd>
+                          {ROLE_DESCRIPTIONS[role] ||
+                            'Role stored on this member.'}
+                        </dd>
+                      </React.Fragment>
+                    ))}
+                  </dl>
+                </div>
+              </div>
+
               <h4 id="stats">
                 <a href="#stats">Stats</a>
               </h4>
@@ -633,6 +673,56 @@ export default class AdminUser extends Component {
               )}
 
               <AdminNotes id={userId} />
+
+              {isRestricted && (
+                <>
+                  <h4 id="potential-matches">
+                    <a href="#potential-matches">Potential related accounts</a>
+                  </h4>
+                  <div className="panel panel-warning">
+                    <div className="panel-body">
+                      <p className="text-muted">
+                        Investigation leads only. Matches do not change account
+                        state automatically.
+                      </p>
+                      <table className="table table-condensed table-striped">
+                        <thead>
+                          <tr>
+                            <th>Member</th>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Matched on</th>
+                            <th>Acquisition story</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {potentialMatches.map(match => (
+                            <tr key={match._id}>
+                              <td>
+                                <a href={`/admin/user?id=${match._id}`}>
+                                  {match.displayName || match.username}
+                                </a>
+                                <div className="text-muted">
+                                  @{match.username}
+                                </div>
+                              </td>
+                              <td>{match.email}</td>
+                              <td>{match.roles.join(', ')}</td>
+                              <td>{match.matchReasons.join(', ')}</td>
+                              <td>{match.acquisitionStory}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {!potentialMatches.length && (
+                        <p>
+                          <em>No potential related accounts found.</em>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <h4 id="profile">
                 <a href="#profile">Profile</a>

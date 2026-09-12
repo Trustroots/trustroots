@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
 
 import RemoveProfilePage from '@/modules/users/client/components/RemoveProfilePage.component';
@@ -27,6 +27,9 @@ describe('RemoveProfilePage', () => {
     authApi.removeProfile.mockResolvedValue({ message: 'Removed.' });
 
     render(<RemoveProfilePage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Permanently delete my account' }),
+    );
 
     expect(screen.getByTestId('loading-indicator')).toBeInTheDocument();
 
@@ -40,6 +43,9 @@ describe('RemoveProfilePage', () => {
     authApi.removeProfile.mockRejectedValue(new Error('Failed.'));
 
     render(<RemoveProfilePage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Permanently delete my account' }),
+    );
 
     expect(
       await screen.findByText('Your profile was not removed.'),
@@ -58,6 +64,9 @@ describe('RemoveProfilePage', () => {
     );
 
     const { unmount } = render(<RemoveProfilePage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Permanently delete my account' }),
+    );
     unmount();
     resolveRemoval({ message: 'Removed.' });
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -72,8 +81,21 @@ describe('RemoveProfilePage', () => {
     );
 
     const { unmount } = render(<RemoveProfilePage />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Permanently delete my account' }),
+    );
     unmount();
     rejectRemoval(new Error('late failure'));
     await new Promise(resolve => setTimeout(resolve, 0));
   });
+});
+
+it('requires explicit confirmation before removing an account', () => {
+  jest.clearAllMocks();
+  render(<RemoveProfilePage />);
+  expect(screen.getByText('Delete your account?')).toBeVisible();
+  expect(authApi.removeProfile).not.toHaveBeenCalled();
+  expect(
+    screen.getByRole('link', { name: 'Cancel and keep my account' }),
+  ).toHaveAttribute('href', '/profile/edit/account#remove');
 });

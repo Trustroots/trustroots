@@ -111,12 +111,84 @@ test.describe.serial('account settings feature coverage', () => {
     expect((await valid.json()).tagline).toBe(tagline);
   });
 
+  test('older members who sign in through the UI can change username', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.details-update', [
+      'Account edit page is reachable.',
+      'Valid account details update persists.',
+      'Invalid account details show validation errors.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await updateUserByUsername(user.username, {
+      $set: { created: new Date('2020-05-27T19:23:44.733Z') },
+      $unset: { usernameUpdated: '' },
+    });
+
+    await signIn(page, user);
+
+    const profileResponse = await page.request.get(
+      `/api/users/${user.username}`,
+    );
+    expect(profileResponse.ok()).toBeTruthy();
+    const profile = await profileResponse.json();
+    expect(profile.usernameUpdateAllowed).toBe(true);
+
+    await page.evaluate(`
+      const injector = window.angular.element(document.body).injector();
+      injector.get('$state').go('profile-edit.account');
+      injector.get('$rootScope').$applyAsync();
+    `);
+
+    await expect(page).toHaveURL(/\/profile\/edit\/account/);
+    await expect(
+      page.locator('form[name="settingsUsernameForm"] input[name="username"]'),
+    ).toBeEnabled();
+  });
+
+  test('new members who sign in through the UI cannot change username yet', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.details-update', [
+      'Account edit page is reachable.',
+      'Valid account details update persists.',
+      'Invalid account details show validation errors.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signIn(page, user);
+
+    const profileResponse = await page.request.get(
+      `/api/users/${user.username}`,
+    );
+    expect(profileResponse.ok()).toBeTruthy();
+    const profile = await profileResponse.json();
+    expect(profile.usernameUpdateAllowed).toBe(false);
+
+    await page.evaluate(`
+      const injector = window.angular.element(document.body).injector();
+      injector.get('$state').go('profile-edit.account');
+      injector.get('$rootScope').$applyAsync();
+    `);
+
+    await expect(page).toHaveURL(/\/profile\/edit\/account/);
+    await expect(
+      page.locator('form[name="settingsUsernameForm"] input[name="username"]'),
+    ).toBeDisabled();
+  });
+
   test('members can request and confirm profile removal', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'account.profile-removal', [
       'Removal request sends a deterministic confirmation email/stub.',
+      'Opening a valid removal link preserves the profile.',
       'Valid removal token removes the profile.',
       'Invalid removal token is rejected.',
     ]);
@@ -135,10 +207,24 @@ test.describe.serial('account settings feature coverage', () => {
     const removeProfileToken = storedUser.removeProfileToken;
     expect(removeProfileToken).toBeTruthy();
 
-    const removed = await page.request.delete(
-      `/api/users/remove/${removeProfileToken}`,
+    await page.goto(`/remove/${removeProfileToken}`);
+    const removeButton = page.getByRole('button', {
+      name: 'Permanently delete my account',
+    });
+    await expect(removeButton).toBeVisible();
+
+    const userBeforeConfirmation = await findUserByUsername(user.username);
+    expect(userBeforeConfirmation).not.toBeNull();
+
+    const removed = page.waitForResponse(
+      response =>
+        response.url().includes(`/api/users/remove/${removeProfileToken}`) &&
+        response.request().method() === 'DELETE',
     );
-    expect(removed.ok()).toBeTruthy();
+    await removeButton.click();
+    expect((await removed).ok()).toBeTruthy();
+
+    await expect(page.getByText('Your profile was removed.')).toBeVisible();
 
     const deletedUser = await findUserByUsername(user.username);
     expect(deletedUser).toBeNull();

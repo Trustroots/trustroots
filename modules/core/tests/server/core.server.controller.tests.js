@@ -4,7 +4,7 @@ const languagesArray = require('../../../../config/languages/languages-array.jso
 
 require('should');
 
-const sanitizeProfile = user => ({
+const sanitizeOwnProfile = user => ({
   sanitized: true,
   username: user.username,
 });
@@ -12,7 +12,7 @@ const coreController = proxyquire(
   '../../server/controllers/core.server.controller',
   {
     '../../../users/server/controllers/users.profile.server.controller': {
-      sanitizeProfile,
+      sanitizeOwnProfile,
     },
   },
 );

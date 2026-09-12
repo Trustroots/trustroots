@@ -1653,12 +1653,17 @@ const features = [
       'Host offer edit page loads.',
       'Member can create/update a host offer.',
       'Host offer visibility appears in profile/search.',
+      'Host can limit search visibility to members sharing a circle.',
       'Member can remove or disable a host offer.',
     ],
     relatedSpecs: [
       spec(
         'member.spec.js',
         'host offer edit page loads for a confirmed member',
+      ),
+      spec(
+        'offers-and-circles.spec.js',
+        'hosts can limit search visibility to members in their circles',
       ),
     ],
   },
@@ -2593,6 +2598,7 @@ const features = [
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
       'Story rows show available member and hosting locations.',
+      'Story rows show matching restricted accounts.',
     ],
     relatedSpecs: [],
   },
@@ -2769,6 +2775,8 @@ const features = [
     requiredScenarios: [
       'Admin user report card loads for a member id.',
       'Report card includes role and message counts.',
+      'Report card shows a read-only current role inventory.',
+      'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
     ],
     relatedSpecs: [

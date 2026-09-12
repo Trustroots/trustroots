@@ -154,6 +154,7 @@ export default function AdminAcquisitionStories() {
                   onSort={sortBy}
                   sort={sort}
                 />
+                <th>Restricted matches</th>
               </tr>
             </thead>
             <tbody>
@@ -206,6 +207,17 @@ export default function AdminAcquisitionStories() {
                     )}
                   </td>
                   <td>{story.acquisitionStory}</td>
+                  <td>
+                    {(story.restrictedMatches || []).map(match => (
+                      <div key={match._id}>
+                        <UserLink user={match} />
+                        <small className="text-muted">
+                          {' '}
+                          — {match.matchReasons.join(', ')}
+                        </small>
+                      </div>
+                    ))}
+                  </td>
                 </tr>
               ))}
             </tbody>
