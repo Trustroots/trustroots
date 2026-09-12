@@ -1,4 +1,8 @@
 import React from 'react';
+import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
+import ResetPasswordSuccessPage from '@/modules/users/client/components/ResetPasswordSuccessPage.component';
+import ResetPasswordInvalidPage from '@/modules/users/client/components/ResetPasswordInvalidPage.component';
+import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
 import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import Safety from '@/modules/pages/client/components/Safety.component';
@@ -63,6 +67,14 @@ function renderContactConfirmation({ user }) {
 }
 
 const renderByPath = {
+  '/password/forgot': () => (
+    <ForgotPasswordPage
+      userhandle={new URLSearchParams(window.location.search).get('userhandle')}
+    />
+  ),
+  '/password/reset/success': () => <ResetPasswordSuccessPage />,
+  '/password/reset/invalid': () => <ResetPasswordInvalidPage />,
+  '/confirm-email-invalid': () => <ConfirmEmailInvalidPage />,
   '/contact-confirm/:contactId': renderContactConfirmation,
   '/': renderWithUser(HomeRoute),
   '/safety': () => <Safety />,
