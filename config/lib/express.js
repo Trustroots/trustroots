@@ -21,6 +21,8 @@ const buildMetadata = require('./build-metadata');
 const path = require('path');
 const paginate = require('express-paginate');
 const uuid = require('uuid');
+const qs = require('qs');
+const jsonForScript = require('../../modules/core/server/services/json-for-script.server.service');
 
 /**
  * Initialize local variables
@@ -164,11 +166,13 @@ module.exports.initMiddleware = function (app) {
 module.exports.initViewEngine = function (app) {
   // Set Nunjucks as the template engine
   // https://mozilla.github.io/nunjucks/
-  nunjucks.configure('./modules/core/server/views', {
+  const templates = nunjucks.configure('./modules/core/server/views', {
     express: app,
     watch: false,
     noCache: true,
   });
+
+  templates.addFilter('jsonForScript', jsonForScript);
 
   // app.engine('nunjucks', nunjucks);
   app.set('view engine', 'html');
@@ -456,6 +460,7 @@ module.exports.initErrorRoutes = function (app) {
 module.exports.init = function (connection) {
   // Initialize express app
   const app = express();
+  app.set('query parser', query => qs.parse(query));
 
   // Initialize local variables
   this.initLocalVariables(app);

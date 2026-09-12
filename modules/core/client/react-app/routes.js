@@ -1,9 +1,9 @@
 import React from 'react';
+import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
 
 import {
   getReactRoutePolicy,
   REACT_ROUTE_POLICIES,
-  normalizePath,
 } from '@/modules/core/shared/react-route-ownership';
 import Admin from '@/modules/admin/client/components/Admin.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
@@ -42,7 +42,13 @@ function renderStatistics({ user }) {
   return React.createElement(Statistics, { isAuthenticated: Boolean(user) });
 }
 
+function renderCircle({ user, params }) {
+  return React.createElement(CirclesRoute, { user, circle: params.circle });
+}
+
 const renderByPath = {
+  '/circles': renderWithUser(CirclesRoute),
+  '/circles/:circle': renderCircle,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (
@@ -80,9 +86,12 @@ export const routes = REACT_ROUTE_POLICIES.map(route => ({
 }));
 
 export function findRoute(path) {
-  const normalizedPath = normalizePath(path);
-
-  return routes.find(route => route.path === normalizedPath);
+  const policy = getReactRoutePolicy(path);
+  if (!policy) return undefined;
+  const route = routes.find(route => route.path === policy.path);
+  return policy.params
+    ? { ...route, params: policy.params, requiresAuth: policy.requiresAuth }
+    : route;
 }
 
 export function isReactRoute(path) {

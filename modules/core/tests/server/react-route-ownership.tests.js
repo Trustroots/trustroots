@@ -76,3 +76,33 @@ describe('React route ownership', function () {
     isReactOwnedPath('/profile/alice').should.be.false();
   });
 });
+
+describe('Circle route ownership', () => {
+  it('selects circle pages without claiming other workflows', () => {
+    getReactRoutePolicy('/circles/').path.should.equal('/circles');
+    getReactRoutePolicy(
+      '/circles/sample-circle/?from=profile',
+    ).params.circle.should.equal('sample-circle');
+    getReactRoutePolicy('/circles/%73ample-circle').params.circle.should.equal(
+      'sample-circle',
+    );
+    for (const path of [
+      '/circles/sample/extra',
+      '/circles/%ZZ',
+      '/circles/sample%2Fextra',
+    ]) {
+      should(getReactRoutePolicy(path)).be.undefined();
+    }
+  });
+  it('preserves member-only circle access', () => {
+    const route = getReactRoutePolicy('/circles/naturists');
+    getReactRouteAccessRedirect(route, null).should.equal('/signin');
+    should(getReactRouteAccessRedirect(route, { roles: ['user'] })).be.null();
+    should(
+      getReactRouteAccessRedirect(
+        getReactRoutePolicy('/circles/sample-circle'),
+        null,
+      ),
+    ).be.null();
+  });
+});
