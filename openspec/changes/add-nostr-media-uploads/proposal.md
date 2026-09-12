@@ -16,7 +16,7 @@ depend on a particular application deployment. Trustroots needs a small,
 controlled media service that can support ordinary uploads today and
 Nostr-compatible sharing later.
 
-## Proposal
+## What Changes
 
 - Run one Trustroots-controlled Blossom-compatible media server.
 - Store uploaded member media as content-addressed blobs.
@@ -27,6 +27,27 @@ Nostr-compatible sharing later.
 - Keep the existing Trustroots upload flow working while the Nostr path is
   introduced incrementally.
 - Allow Trustroots to moderate and remove media hosted by its own server.
+- Separate removal of an individual image reference from deletion of an unused
+  blob and from a moderation takedown affecting all references to that blob.
+
+## Capabilities
+
+### New Capabilities
+
+- `member-media`: Persistent image storage, compatible media references,
+  ownership-aware removal, and moderation of hosted blobs.
+
+### Modified Capabilities
+
+None. Existing profile-photo behaviour is retained during rollout.
+
+## Impact
+
+The eventual implementation affects user avatar uploads, circle image uploads,
+their media records and serving routes, Nostr publication, and deployment
+storage. The proposed requirements are in `specs/member-media/spec.md`.
+This PR adds documentation only; implementation and its tests remain future
+work.
 
 ## Scope
 
