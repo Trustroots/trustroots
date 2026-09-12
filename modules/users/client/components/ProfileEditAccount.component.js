@@ -203,6 +203,7 @@ export default function ProfileEditAccount({ user }) {
                   <input
                     type="text"
                     id="username"
+                    disabled={draftUser.usernameUpdateAllowed === false}
                     className="form-control"
                     value={draftUser.username || ''}
                     onChange={event =>
@@ -219,7 +220,11 @@ export default function ProfileEditAccount({ user }) {
               </div>
               <div className="form-group">
                 <div className="col-sm-push-3 col-sm-9">
-                  <button type="submit" className="btn btn-primary">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={draftUser.usernameUpdateAllowed === false}
+                  >
                     {t('Change username')}
                   </button>
                 </div>

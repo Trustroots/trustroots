@@ -324,3 +324,19 @@ describe('ProfileEditAccount', () => {
     expect(usersApi.removeProfile).not.toHaveBeenCalled();
   });
 });
+
+it.each([true, false])(
+  'respects username-change eligibility (%s)',
+  usernameUpdateAllowed => {
+    renderPage({ usernameUpdateAllowed });
+    const input = screen.getByLabelText('Username');
+    const button = screen.getByRole('button', { name: 'Change username' });
+    if (usernameUpdateAllowed) {
+      expect(input).toBeEnabled();
+      expect(button).toBeEnabled();
+    } else {
+      expect(input).toBeDisabled();
+      expect(button).toBeDisabled();
+    }
+  },
+);

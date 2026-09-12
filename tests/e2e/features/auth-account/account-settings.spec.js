@@ -137,16 +137,10 @@ test.describe.serial('account settings feature coverage', () => {
     const profile = await profileResponse.json();
     expect(profile.usernameUpdateAllowed).toBe(true);
 
-    await page.evaluate(`
-      const injector = window.angular.element(document.body).injector();
-      injector.get('$state').go('profile-edit.account');
-      injector.get('$rootScope').$applyAsync();
-    `);
+    await page.goto('/profile/edit/account');
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
-    await expect(
-      page.locator('form[name="settingsUsernameForm"] input[name="username"]'),
-    ).toBeEnabled();
+    await expect(page.getByLabel('Username', { exact: true })).toBeEnabled();
   });
 
   test('new members who sign in through the UI cannot change username yet', async ({
@@ -170,16 +164,10 @@ test.describe.serial('account settings feature coverage', () => {
     const profile = await profileResponse.json();
     expect(profile.usernameUpdateAllowed).toBe(false);
 
-    await page.evaluate(`
-      const injector = window.angular.element(document.body).injector();
-      injector.get('$state').go('profile-edit.account');
-      injector.get('$rootScope').$applyAsync();
-    `);
+    await page.goto('/profile/edit/account');
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
-    await expect(
-      page.locator('form[name="settingsUsernameForm"] input[name="username"]'),
-    ).toBeDisabled();
+    await expect(page.getByLabel('Username', { exact: true })).toBeDisabled();
   });
 
   test('members can request and confirm profile removal', async ({
