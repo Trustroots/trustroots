@@ -3,11 +3,15 @@ import ForgotPasswordPage from '@/modules/users/client/components/ForgotPassword
 import ResetPasswordSuccessPage from '@/modules/users/client/components/ResetPasswordSuccessPage.component';
 import ResetPasswordInvalidPage from '@/modules/users/client/components/ResetPasswordInvalidPage.component';
 import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
+import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
+import Navigation from '@/modules/pages/client/components/Navigation.component';
+import Welcome from '@/modules/users/client/components/Welcome.component';
+import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import { signout } from './shell-helpers';
 
 import {
   getReactRoutePolicy,
   REACT_ROUTE_POLICIES,
-  normalizePath,
 } from '@/modules/core/shared/react-route-ownership';
 import Admin from '@/modules/admin/client/components/Admin.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
@@ -46,6 +50,14 @@ function renderStatistics({ user }) {
   return React.createElement(Statistics, { isAuthenticated: Boolean(user) });
 }
 
+function renderCircle({ user, params }) {
+  return React.createElement(CirclesRoute, { user, circle: params.circle });
+}
+
+function renderNavigation({ user }) {
+  return React.createElement(Navigation, { user, onSignout: signout });
+}
+
 const renderByPath = {
   '/password/forgot': () => (
     <ForgotPasswordPage
@@ -55,6 +67,11 @@ const renderByPath = {
   '/password/reset/success': () => <ResetPasswordSuccessPage />,
   '/password/reset/invalid': () => <ResetPasswordInvalidPage />,
   '/confirm-email-invalid': () => <ConfirmEmailInvalidPage />,
+  '/circles': renderWithUser(CirclesRoute),
+  '/circles/:circle': renderCircle,
+  '/welcome': () => <Welcome />,
+  '/navigation': renderNavigation,
+  '/search/members': () => <SearchUsers />,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (
@@ -92,9 +109,12 @@ export const routes = REACT_ROUTE_POLICIES.map(route => ({
 }));
 
 export function findRoute(path) {
-  const normalizedPath = normalizePath(path);
-
-  return routes.find(route => route.path === normalizedPath);
+  const policy = getReactRoutePolicy(path);
+  if (!policy) return undefined;
+  const route = routes.find(route => route.path === policy.path);
+  return policy.params
+    ? { ...route, params: policy.params, requiresAuth: policy.requiresAuth }
+    : route;
 }
 
 export function isReactRoute(path) {

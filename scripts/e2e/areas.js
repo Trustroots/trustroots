@@ -2,6 +2,8 @@ const path = require('path');
 
 const AREA_BY_SPEC = {
   'react-recovery-pages.spec.js': 'Public pages',
+  'circles-react.spec.js': 'Member flows',
+  'member-entry-react.spec.js': 'Member flows',
   'auth-smoke.spec.js': 'Authentication',
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',

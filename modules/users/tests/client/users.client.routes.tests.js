@@ -319,7 +319,6 @@ describe('Users Route Tests', function () {
       {
         name: 'welcome',
         url: '/welcome',
-        template: '<welcome />',
         requiresAuth: true,
         footerHidden: true,
         pageTitle: 'Welcome',

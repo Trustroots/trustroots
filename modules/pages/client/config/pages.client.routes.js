@@ -7,12 +7,10 @@ function PagesRoutes($stateProvider) {
   $stateProvider
     .state('navigation', {
       url: '/navigation',
-      template: `
-        <navigation
-          user="app.user"
-          isNativeMobileApp="app.isNativeMobileApp"
-          onSignout="app.signout"
-        />`,
+      /* @ngInject */
+      onEnter($window) {
+        $window.location.assign('/navigation');
+      },
       requiresAuth: true,
       footerHidden: true,
       data: {
