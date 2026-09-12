@@ -372,7 +372,7 @@ describe('ProfileEditAccountController', function () {
           false,
         );
         expect(messageCenterService.add).toHaveBeenCalledWith(
-          'error',
+          'danger',
           'Error: Subscription update failed.',
         );
       });
