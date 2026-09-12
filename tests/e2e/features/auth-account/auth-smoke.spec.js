@@ -86,6 +86,57 @@ test.describe.serial('authentication smoke', () => {
     await signUp(page, signupUser);
   });
 
+  test('signup explains underscores and waits for username validation', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    const member = createUser();
+    let releaseValidation;
+    const validationGate = new Promise(resolve => {
+      releaseValidation = resolve;
+    });
+    await page.route('**/api/auth/signup/validate', async route => {
+      await validationGate;
+      await route.continue();
+    });
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    await page.locator('#username').fill('sample_member');
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    await page.locator('#username').blur();
+    await expect(
+      page
+        .getByText(
+          'Use 3-34 lowercase letters and numbers, including at least one letter.',
+        )
+        .first(),
+    ).toBeVisible();
+    const rejected = await request.post('/api/auth/signup', {
+      data: { ...member, username: 'sample_member' },
+    });
+    expect(rejected.status()).toBe(400);
+    expect((await rejected.json()).message).toContain(
+      'Use 3-34 lowercase letters and numbers, including at least one letter.',
+    );
+    await page.locator('#username').fill(member.username);
+    try {
+      await expect(
+        page.getByRole('button', { name: 'Checking username…' }),
+      ).toBeDisabled();
+    } finally {
+      releaseValidation();
+    }
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
+
   test('username policy preserves apostrophes and legacy member identities', async ({
     page,
     request,

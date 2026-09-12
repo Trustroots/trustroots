@@ -377,6 +377,55 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('keeps name-spam errors separate from username advice', async () => {
+      const controller = loadSignupController();
+      const res = deferredResponse();
+      controller.signup(
+        {
+          body: {
+            firstName: 'Amina',
+            lastName: 'spam/name',
+            username: 'samplemember',
+            email: 'sample-member@example.org',
+            password: 'password123',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Snap! Something went wrong. If this keeps happening, please contact us.',
+      );
+    });
+
+    it('keeps internal signup errors private', async () => {
+      const controller = loadSignupController();
+      sinon
+        .stub(crypto, 'randomBytes')
+        .callsFake((size, callback) =>
+          callback(new Error('Internal secret detail')),
+        );
+      const res = deferredResponse();
+      controller.signup(
+        {
+          body: {
+            firstName: 'Amina',
+            lastName: 'Vale',
+            username: 'samplemember',
+            email: 'sample-member@example.org',
+            password: 'password123',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Snap! Something went wrong. If this keeps happening, please contact us.',
+      );
+    });
+
     it('creates a user and logs them in', async () => {
       const controller = loadSignupController();
       const res = deferredResponse();
