@@ -77,6 +77,7 @@ export default function ProfileNostrBadge({
       <NostrootsActionModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
+        source="profile-notes"
       />
     </div>
   );

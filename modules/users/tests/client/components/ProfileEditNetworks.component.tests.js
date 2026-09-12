@@ -53,6 +53,20 @@ describe('ProfileEditNetworks', () => {
     delete window.nostr;
   });
 
+  it('offers personalised Nostroots onboarding from network settings', () => {
+    renderPage();
+
+    expect(
+      screen.getByRole('link', { name: 'Continue in Nostroots' }),
+    ).toHaveAttribute(
+      'href',
+      'https://nos.trustroots.org/open/onboarding?username=ada',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Continue in Nostroots' }),
+    ).toHaveAttribute('data-umami-event-source', 'network-settings');
+  });
+
   it('saves hospitality network changes and shows related links', async () => {
     usersApi.update.mockResolvedValue({
       ...user,
