@@ -27,6 +27,10 @@ RUN apt-get -qq update && apt-get -q install -y \
 # Pin npm to v7 to satisfy `engines` in package.json (`npm >=6 <8`).
 RUN npm -g i npm@latest-7
 
+# npm 7's bundled node-gyp predates Bookworm's Python 3.11 support.
+RUN npm explore npm/node_modules/@npmcli/run-script -g -- \
+  npm_config_global=false npm install --omit=dev --no-package-lock node-gyp@9.4.1
+
 WORKDIR /home/app/trustroots
 
 COPY package*.json ./
