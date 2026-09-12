@@ -1,5 +1,10 @@
 import React from 'react';
 import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
+import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
+import Navigation from '@/modules/pages/client/components/Navigation.component';
+import Welcome from '@/modules/users/client/components/Welcome.component';
+import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import { signout } from './shell-helpers';
 
 import {
   getReactRoutePolicy,
@@ -42,6 +47,14 @@ function renderStatistics({ user }) {
   return React.createElement(Statistics, { isAuthenticated: Boolean(user) });
 }
 
+function renderCircle({ user, params }) {
+  return React.createElement(CirclesRoute, { user, circle: params.circle });
+}
+
+function renderNavigation({ user }) {
+  return React.createElement(Navigation, { user, onSignout: signout });
+}
+
 function renderContactConfirmation({ user }) {
   const contactId = window.location.pathname.split('/')[2];
   return React.createElement(ContactConfirmPage, { user, contactId });
@@ -49,6 +62,11 @@ function renderContactConfirmation({ user }) {
 
 const renderByPath = {
   '/contact-confirm/:contactId': renderContactConfirmation,
+  '/circles': renderWithUser(CirclesRoute),
+  '/circles/:circle': renderCircle,
+  '/welcome': () => <Welcome />,
+  '/navigation': renderNavigation,
+  '/search/members': () => <SearchUsers />,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (
@@ -87,7 +105,11 @@ export const routes = REACT_ROUTE_POLICIES.map(route => ({
 
 export function findRoute(path) {
   const policy = getReactRoutePolicy(path);
-  return routes.find(route => route.path === policy?.path);
+  if (!policy) return undefined;
+  const route = routes.find(route => route.path === policy.path);
+  return policy.params
+    ? { ...route, params: policy.params, requiresAuth: policy.requiresAuth }
+    : route;
 }
 
 export function isReactRoute(path) {

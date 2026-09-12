@@ -206,10 +206,13 @@ describe('file-upload.service unit tests', () => {
         const options = getMulterOptions();
         options.dest.should.equal(os.tmpdir());
         options.limits.fileSize.should.be.a.Number();
-        fs.unlinkSync(filePath);
+        options.limits.files.should.equal(1);
+        options.limits.fields.should.equal(10);
+        options.limits.parts.should.equal(11);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
@@ -233,13 +236,26 @@ describe('file-upload.service unit tests', () => {
         } catch (err) {
           done(err);
         } finally {
-          fs.unlinkSync(filePath);
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         }
       };
       res.send = finish;
       uploadFile(validMimeTypes, uploadField, {}, res, finish);
     });
   }
+
+  it('removes temporary files after content validation declines an upload', done => {
+    const filePath = writeTempFile(Buffer.from('Sample text document'));
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(415);
+      fs.existsSync(filePath).should.equal(false);
+      done();
+    });
+    uploadFile(validMimeTypes, uploadField, {}, res, () =>
+      done(new Error('Unexpected accepted file')),
+    );
+  });
 
   it('rejects requests without an uploaded file', done => {
     const uploadFile = loadUploadFileWithStubbedMulter(null);
@@ -263,10 +279,10 @@ describe('file-upload.service unit tests', () => {
         res.body.message.should.equal(
           errorService.getErrorMessageByKey('unsupported-media-type'),
         );
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
@@ -294,7 +310,7 @@ describe('file-upload.service unit tests', () => {
 
       uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
         try {
-          fs.unlinkSync(filePath);
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
           index += 1;
           if (index < samples.length) {
             runNext();
@@ -302,7 +318,7 @@ describe('file-upload.service unit tests', () => {
             done();
           }
         } catch (err) {
-          fs.unlinkSync(filePath);
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
           done(err);
         }
       });
@@ -336,10 +352,10 @@ describe('file-upload.service unit tests', () => {
 
     uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
       try {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
@@ -370,10 +386,10 @@ describe('file-upload.service unit tests', () => {
     const res = mockResponse(() => {
       try {
         res.statusCode.should.equal(415);
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
@@ -389,10 +405,10 @@ describe('file-upload.service unit tests', () => {
     const res = mockResponse(() => {
       try {
         res.statusCode.should.equal(415);
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });

@@ -7,10 +7,6 @@ AppConfig.registerModule('tribes', ['core']);
 // config
 require('@/modules/tribes/client/config/tribes.client.routes');
 
-// controllers
-require('@/modules/tribes/client/controllers/tribe.client.controller');
-require('@/modules/tribes/client/controllers/tribes-list.client.controller');
-
 // directives
 require('@/modules/tribes/client/directives/tr-tribe-badge.client.directive');
 require('@/modules/tribes/client/directives/tr-tribe-join-button.client.directive');
