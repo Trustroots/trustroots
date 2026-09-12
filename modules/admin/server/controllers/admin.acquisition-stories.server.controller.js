@@ -314,6 +314,7 @@ const RESTRICTED_SOURCE_LIMIT = 1000;
 const MIN_IDENTIFIER_LENGTH = 4;
 const MIN_FUZZY_STORY_LENGTH = 12;
 const FUZZY_STORY_THRESHOLD = 0.82;
+const MATCH_BATCH_SIZE = 100;
 
 function normalizeIdentifier(value) {
   return value.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -335,23 +336,36 @@ function getCharacterTrigrams(value) {
   return trigrams;
 }
 
-function getStorySimilarity(firstStory, secondStory) {
-  const first = normalizeStory(firstStory);
-  const second = normalizeStory(secondStory);
+function prepareStory(value) {
+  const text = normalizeStory(value);
+  return { text, trigrams: getCharacterTrigrams(text) };
+}
+
+function getPreparedStorySimilarity(first, second) {
   if (
-    first.length < MIN_FUZZY_STORY_LENGTH ||
-    second.length < MIN_FUZZY_STORY_LENGTH
+    first.text.length < MIN_FUZZY_STORY_LENGTH ||
+    second.text.length < MIN_FUZZY_STORY_LENGTH
   ) {
     return 0;
   }
 
-  const firstTrigrams = getCharacterTrigrams(first);
-  const secondTrigrams = getCharacterTrigrams(second);
-  const sharedCount = [...firstTrigrams].filter(trigram =>
-    secondTrigrams.has(trigram),
-  ).length;
+  const firstTrigrams = first.trigrams;
+  const secondTrigrams = second.trigrams;
+  let sharedCount = 0;
+  for (const trigram of firstTrigrams) {
+    if (secondTrigrams.has(trigram)) {
+      sharedCount += 1;
+    }
+  }
 
   return (2 * sharedCount) / (firstTrigrams.size + secondTrigrams.size);
+}
+
+function getStorySimilarity(firstStory, secondStory) {
+  return getPreparedStorySimilarity(
+    prepareStory(firstStory),
+    prepareStory(secondStory),
+  );
 }
 
 function getRestrictedIdentifiers(user) {
@@ -373,26 +387,25 @@ function getRestrictedIdentifiers(user) {
 }
 
 function getRestrictedMatchReasons(story, restrictedUser) {
-  const storyIdentifiers = [
-    normalizeIdentifier(story.username),
-    normalizeIdentifier(emailLocalPart(story.email)),
-    normalizeIdentifier(emailLocalPart(story.emailTemporary)),
-  ];
-  const reasons = getRestrictedIdentifiers(restrictedUser)
+  const reasons = restrictedUser.identifiers
     .filter(({ value }) =>
-      storyIdentifiers.some(identifier => identifier.includes(value)),
+      story.identifiers.some(identifier => identifier.includes(value)),
     )
     .map(({ label }) => label);
-  const storyText = normalizeStory(story.acquisitionStory);
-  const restrictedStoryText = normalizeStory(restrictedUser.acquisitionStory);
+  const storyText = story.story.text;
+  const restrictedStoryText = restrictedUser.story.text;
 
   if (storyText && storyText === restrictedStoryText) {
     reasons.push('Acquisition story');
   } else if (
-    getStorySimilarity(
-      story.acquisitionStory,
-      restrictedUser.acquisitionStory,
-    ) >= FUZZY_STORY_THRESHOLD
+    // Even complete overlap cannot qualify if the trigram counts differ too
+    // much. Skip those candidates before computing their intersection.
+    (2 *
+      Math.min(story.story.trigrams.size, restrictedUser.story.trigrams.size)) /
+      (story.story.trigrams.size + restrictedUser.story.trigrams.size) >=
+      FUZZY_STORY_THRESHOLD &&
+    getPreparedStorySimilarity(story.story, restrictedUser.story) >=
+      FUZZY_STORY_THRESHOLD
   ) {
     reasons.push('Similar acquisition story');
   }
@@ -400,22 +413,42 @@ function getRestrictedMatchReasons(story, restrictedUser) {
   return reasons;
 }
 
-function getRestrictedMatches(story, restrictedUsers) {
-  return restrictedUsers
-    .filter(user => user._id.toString() !== story._id.toString())
-    .map(user => ({
-      user,
-      matchReasons: getRestrictedMatchReasons(story, user),
-    }))
-    .filter(({ matchReasons }) => matchReasons.length)
-    .slice(0, RESTRICTED_MATCH_LIMIT)
-    .map(({ user, matchReasons }) => ({
-      _id: user._id,
-      displayName: user.displayName,
-      matchReasons,
-      roles: user.roles,
-      username: user.username,
-    }));
+async function getRestrictedMatches(story, restrictedUsers) {
+  const preparedStory = {
+    identifiers: [
+      normalizeIdentifier(story.username),
+      normalizeIdentifier(emailLocalPart(story.email)),
+      normalizeIdentifier(emailLocalPart(story.emailTemporary)),
+    ],
+    story: prepareStory(story.acquisitionStory),
+  };
+  const matches = [];
+  for (let index = 0; index < restrictedUsers.length; index += 1) {
+    // Yield to I/O even when none of the candidates match. A result limit alone
+    // does not bound the synchronous work for a list of 3,000 stories.
+    if (index % MATCH_BATCH_SIZE === 0) {
+      await new Promise(resolve => setImmediate(resolve));
+    }
+    const candidate = restrictedUsers[index];
+    const { user } = candidate;
+    if (user._id.toString() === story._id.toString()) {
+      continue;
+    }
+    const matchReasons = getRestrictedMatchReasons(preparedStory, candidate);
+    if (matchReasons.length) {
+      matches.push({
+        _id: user._id,
+        displayName: user.displayName,
+        matchReasons,
+        roles: user.roles,
+        username: user.username,
+      });
+      if (matches.length === RESTRICTED_MATCH_LIMIT) {
+        break;
+      }
+    }
+  }
+  return matches;
 }
 
 function getRestrictedUsers() {
@@ -450,7 +483,11 @@ exports.list = async (req, res) => {
   }
 
   const storyUserIds = stories.map(story => story._id);
-  const restrictedUsers = await getRestrictedUsers();
+  const restrictedUsers = (await getRestrictedUsers()).map(user => ({
+    user,
+    identifiers: getRestrictedIdentifiers(user),
+    story: prepareStory(user.acquisitionStory),
+  }));
   const hostingOffers = await Offer.find({
     user: { $in: storyUserIds },
     type: 'host',
@@ -473,15 +510,17 @@ exports.list = async (req, res) => {
     {},
   );
 
-  return res.send(
-    stories.map(story =>
+  const results = [];
+  for (const story of stories) {
+    results.push(
       storyForList(
         story,
         hostingLocationsByUser[story._id.toString()] || null,
-        getRestrictedMatches(story, restrictedUsers),
+        await getRestrictedMatches(story, restrictedUsers),
       ),
-    ),
-  );
+    );
+  }
+  return res.send(results);
 };
 
 exports.getAnalysis = async (req, res) => {
