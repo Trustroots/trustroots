@@ -139,6 +139,10 @@ jest.mock(
   () => () => <main>Volunteering</main>,
 );
 
+jest.mock(
+  '@/modules/contacts/client/components/ContactConfirmPage.component',
+  () => () => <main>ContactConfirmPage</main>,
+);
 jest.mock('@/modules/pages/client/components/HomeRoute', () => () => (
   <main>HomeRoute</main>
 ));

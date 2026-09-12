@@ -1,4 +1,5 @@
 import React from 'react';
+import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import Safety from '@/modules/pages/client/components/Safety.component';
 import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
@@ -56,7 +57,13 @@ function renderNavigation({ user }) {
   return React.createElement(Navigation, { user, onSignout: signout });
 }
 
+function renderContactConfirmation({ user }) {
+  const contactId = window.location.pathname.split('/')[2];
+  return React.createElement(ContactConfirmPage, { user, contactId });
+}
+
 const renderByPath = {
+  '/contact-confirm/:contactId': renderContactConfirmation,
   '/': renderWithUser(HomeRoute),
   '/safety': () => <Safety />,
   '/circles': renderWithUser(CirclesRoute),
