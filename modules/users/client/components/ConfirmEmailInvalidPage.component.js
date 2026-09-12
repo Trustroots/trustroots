@@ -69,3 +69,5 @@ export default function ConfirmEmailInvalidPage() {
     </section>
   );
 }
+
+ConfirmEmailInvalidPage.propTypes = {};

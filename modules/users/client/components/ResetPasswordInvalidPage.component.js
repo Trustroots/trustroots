@@ -44,3 +44,5 @@ export default function ResetPasswordInvalidPage() {
     </Board>
   );
 }
+
+ResetPasswordInvalidPage.propTypes = {};

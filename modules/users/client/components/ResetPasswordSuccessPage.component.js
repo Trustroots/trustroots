@@ -43,3 +43,5 @@ export default function ResetPasswordSuccessPage() {
     </Board>
   );
 }
+
+ResetPasswordSuccessPage.propTypes = {};

@@ -14,6 +14,8 @@ test('recovery prefill submits through the existing API', async ({ page }) => {
 });
 
 test('outcome pages retain their onward links', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/password/reset/invalid');
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await page
@@ -27,4 +29,6 @@ test('outcome pages retain their onward links', async ({ page }) => {
   await page.getByRole('link', { name: /login first/i }).click();
   await expect(page).toHaveURL(/\/signin$/);
   await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+  await expect(page.locator('#username')).toBeVisible();
+  expect(pageErrors).toEqual([]);
 });
