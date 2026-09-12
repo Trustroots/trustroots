@@ -37,9 +37,13 @@ export default function FaqBugsAndFeatures() {
       <div className="faq-question" id="where-can-i-suggest">
         <h3>{t('Where can I suggest an improvement or new feature?')}</h3>
         <Trans t={t} ns="pages">
-          Trustroots is currently in maintenance mode. We are unable to accept
-          any feature requests at the current time. If this changes in the
-          future, we will update.
+          Trustroots is under active development again. Small improvements and
+          fixes are welcome in our{' '}
+          <a href="https://github.com/Trustroots/trustroots/issues">
+            GitHub issues
+          </a>
+          . Larger product changes are focused on{' '}
+          <a href="https://nos.trustroots.org/">Nostroots</a>.
         </Trans>
       </div>
     </Faq>

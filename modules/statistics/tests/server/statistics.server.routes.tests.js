@@ -39,7 +39,7 @@ function assertStats(stats) {
     recommended: 2,
     notRecommended: 2,
     recent: { total: 4, recommended: 2, notRecommended: 1 },
-    realLifeConnections: { total: 3, recent: 2 },
+    realLifeConnections: { total: 2, recent: 2 },
   });
 
   stats.messageInteractions.should.deepEqual({

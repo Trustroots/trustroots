@@ -52,5 +52,10 @@ describe('<Privacy />', () => {
       'https://www.sparkpost.com/',
     );
     expect(screen.queryByText(/Google Firebase/)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /The most recent IP address used during authenticated activity/,
+      ),
+    ).toBeInTheDocument();
   });
 });

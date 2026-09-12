@@ -90,12 +90,12 @@ describe('CommunityNotesSidebar', () => {
     expect(screen.getByText('9F2X+3Q')).toBeInTheDocument();
   });
 
-  it('renders notes sorted newest first', () => {
+  it('renders notes with the newest message lowest', () => {
     render(<CommunityNotesSidebar notes={NOTES} plusCode="9F2X+3Q" />);
 
     const contents = screen.getAllByText(/note at this spot/);
-    expect(contents[0]).toHaveTextContent('Newer note at this spot');
-    expect(contents[1]).toHaveTextContent('Older note at this spot');
+    expect(contents[0]).toHaveTextContent('Older note at this spot');
+    expect(contents[1]).toHaveTextContent('Newer note at this spot');
   });
 
   it('resolves author usernames and links to profiles', async () => {

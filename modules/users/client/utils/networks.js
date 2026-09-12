@@ -49,7 +49,7 @@ export function getNetworkName(network) {
     case 'facebook':
       return 'Facebook';
     case 'github':
-      return 'Github';
+      return 'GitHub';
     case 'nostr':
       return 'Nostroots';
     case 'twitter':

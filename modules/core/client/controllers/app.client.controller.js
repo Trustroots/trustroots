@@ -242,7 +242,9 @@ function AppController(
         // Check if user has the required role
         else if (
           Authentication.user &&
-          !(Authentication.user.roles || []).includes(toState.requiresRole)
+          ![]
+            .concat(toState.requiresRole)
+            .some(role => (Authentication.user.roles || []).includes(role))
         ) {
           event.preventDefault();
           $window.alert(
@@ -252,8 +254,15 @@ function AppController(
         }
       }
 
+      const requiresAuthForParams =
+        angular.isFunction(toState.requiresAuthFor) &&
+        toState.requiresAuthFor(toParams);
+
       // Redirect to login page if no user
-      if (toState.requiresAuth && !Authentication.user) {
+      if (
+        (toState.requiresAuth || requiresAuthForParams) &&
+        !Authentication.user
+      ) {
         // Cancel stateChange
         event.preventDefault();
 

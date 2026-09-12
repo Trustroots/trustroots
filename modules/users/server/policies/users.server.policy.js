@@ -36,10 +36,6 @@ exports.invokeRolesPolicies = function () {
           permissions: [],
         },
         {
-          resources: '/api/auth/accounts',
-          permissions: [],
-        },
-        {
           resources: '/api/users/memberships',
           permissions: [],
         },
@@ -55,6 +51,10 @@ exports.invokeRolesPolicies = function () {
         {
           resources: '/api/users',
           permissions: ['get', 'put', 'delete'],
+        },
+        {
+          resources: '/api/users/export',
+          permissions: ['get'],
         },
         {
           resources: '/api/users/remove/:token',
@@ -79,26 +79,6 @@ exports.invokeRolesPolicies = function () {
         {
           resources: '/api/users/password',
           permissions: ['post'],
-        },
-        {
-          resources: '/api/auth/accounts',
-          permissions: ['get', 'post', 'delete'],
-        },
-        {
-          resources: '/api/auth/facebook',
-          permissions: ['get', 'put'],
-        },
-        {
-          resources: '/api/auth/facebook/callback',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/auth/github',
-          permissions: ['get'],
-        },
-        {
-          resources: '/api/auth/github/callback',
-          permissions: ['get'],
         },
         {
           resources: '/api/users/memberships',

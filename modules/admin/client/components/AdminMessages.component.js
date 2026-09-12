@@ -1,5 +1,5 @@
 // External dependencies
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 // Internal dependencies
 import { getMessages } from '../api/messages.api';
@@ -28,13 +28,12 @@ export default function AdminMessages() {
   const [member1, setMember1] = useState(initialMember1);
   const [member2, setMember2] = useState(initialMember2);
 
-  async function onSubmit(event) {
-    event.preventDefault();
-    if (member1 && member2) {
-      const userId1 = await resolveExactMemberId(member1, searchUsers, [
+  const runQuery = useCallback(async (member1Value, member2Value) => {
+    if (member1Value && member2Value) {
+      const userId1 = await resolveExactMemberId(member1Value, searchUsers, [
         'username',
       ]);
-      const userId2 = await resolveExactMemberId(member2, searchUsers, [
+      const userId2 = await resolveExactMemberId(member2Value, searchUsers, [
         'username',
       ]);
       if (!userId1 || !userId2) {
@@ -51,6 +50,17 @@ export default function AdminMessages() {
       );
       setQueried(true);
     }
+  }, []);
+
+  useEffect(() => {
+    if (initialMember1 && initialMember2) {
+      void runQuery(initialMember1, initialMember2);
+    }
+  }, [initialMember1, initialMember2, runQuery]);
+
+  function onSubmit(event) {
+    event.preventDefault();
+    void runQuery(member1, member2);
   }
 
   return (

@@ -277,17 +277,7 @@ exports.update = function (req, res) {
         }
 
         user.save(function (err) {
-          if (!err) {
-            req.login(user, function (err) {
-              if (err) {
-                done(err);
-              } else {
-                done(null, token, user);
-              }
-            });
-          } else {
-            done(err, token, user);
-          }
+          done(err, token, user);
         });
       },
 
@@ -840,18 +830,26 @@ function isUsernameUpdateAllowed(user) {
   return moment().isSameOrAfter(allowedDate);
 }
 
-/**
- * Sanitize profile before sending it to frontend
- * - Ensures certain fields are removed before publishing
- * - Collects tribe id's into one simple array
- * - Removes tribe references that don't exist anymore (i.e. they are removed from `tribes` table but reference ID remains in the user's table)
- * - Sanitize description in case
- *
- * @param {Object} profile - User profile to sanitize
- * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
- * @return {Object} Sanitized profile.
- */
-exports.sanitizeProfile = function (profile, authenticatedUser) {
+// Some responses sanitize another member's public profile, while authenticated
+// user responses need own-account fields such as usernameUpdateAllowed.
+function sameUser(profile, authenticatedUser) {
+  if (
+    !profile ||
+    !authenticatedUser ||
+    !profile._id ||
+    !authenticatedUser._id
+  ) {
+    return false;
+  }
+
+  if (authenticatedUser._id.equals) {
+    return authenticatedUser._id.equals(profile._id);
+  }
+
+  return authenticatedUser._id.toString() === profile._id.toString();
+}
+
+function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
   if (!profile) {
     return;
   }
@@ -859,12 +857,24 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   // Destruct Mongoose object to regular object so that we can manipulate it
   profile = profile.toObject();
 
+  const authenticatedRoles = authenticatedUser?.roles || [];
+  const hideExternalContactDetails =
+    !isOwnProfile &&
+    authenticatedRoles.includes('shadowban') &&
+    !authenticatedRoles.includes('admin');
+
   // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
-  if (profile.description)
+  if (profile.description) {
     profile.description = sanitizeHtml(
       profile.description,
       textService.sanitizeOptions,
     );
+    if (hideExternalContactDetails) {
+      profile.description = textService.stripContactDetails(
+        profile.description,
+      );
+    }
+  }
 
   // Remove tribes without reference object (= they've been deleted from `tribes` table)
   if (profile.member && profile.member.length > 0) {
@@ -881,9 +891,6 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
       profile.memberIds.push(tribeId.toString());
     });
   }
-
-  const isOwnProfile =
-    authenticatedUser && authenticatedUser._id.equals(profile._id);
 
   if (isOwnProfile) {
     // Is user allowed to update their username?
@@ -918,6 +925,36 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.salt;
   delete profile.roles;
 
+  // Legacy social connections are still shown so members can remove them.
+  // Only the identifiers needed for those rows and existing public links may
+  // reach the client; provider payloads can also contain credentials and PII.
+  if (hideExternalContactDetails) {
+    delete profile.additionalProvidersData;
+    delete profile.extSitesBW;
+    delete profile.extSitesCS;
+    delete profile.extSitesCouchers;
+    delete profile.extSitesWS;
+    delete profile.nostrNpub;
+  } else if (_.isObject(profile.additionalProvidersData)) {
+    const providerIdentityFields = {
+      facebook: ['id'],
+      github: ['login'],
+      twitter: ['screen_name'],
+    };
+    const sanitizedProviders = {};
+
+    _.forEach(providerIdentityFields, function (fields, provider) {
+      if (_.has(profile.additionalProvidersData, provider)) {
+        sanitizedProviders[provider] = _.pick(
+          profile.additionalProvidersData[provider],
+          fields,
+        );
+      }
+    });
+
+    profile.additionalProvidersData = sanitizedProviders;
+  }
+
   // This information is not sensitive, but isn't needed at frontend
   delete profile.publicReminderCount;
   delete profile.publicReminderSent;
@@ -930,6 +967,29 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.__v;
 
   return profile;
+}
+
+/**
+ * Sanitize profile before sending it to frontend
+ * - Ensures certain fields are removed before publishing
+ * - Collects tribe id's into one simple array
+ * - Removes tribe references that don't exist anymore (i.e. they are removed from `tribes` table but reference ID remains in the user's table)
+ * - Sanitize description in case
+ *
+ * @param {Object} profile - User profile to sanitize
+ * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
+ * @return {Object} Sanitized profile.
+ */
+exports.sanitizeProfile = function (profile, authenticatedUser) {
+  return sanitizeProfile(
+    profile,
+    sameUser(profile, authenticatedUser),
+    authenticatedUser,
+  );
+};
+
+exports.sanitizeOwnProfile = function (profile) {
+  return sanitizeProfile(profile, true, profile);
 };
 
 /**
@@ -1227,7 +1287,7 @@ exports.removePushRegistration = function (req, res) {
     } else {
       return res.send({
         message: 'Removed registration.',
-        user: exports.sanitizeProfile(user, user),
+        user: exports.sanitizeOwnProfile(user),
       });
     }
   });
@@ -1355,7 +1415,7 @@ exports.addPushRegistration = function (req, res) {
           }
           return res.send({
             message: 'Saved registration.',
-            user: exports.sanitizeProfile(user, user),
+            user: exports.sanitizeOwnProfile(user),
           });
         });
       }
@@ -1410,6 +1470,7 @@ exports.search = function (req, res, next) {
       $and: [
         { public: true }, // only public users
         { _id: { $nin: blocked } }, // remove ones that I blocked
+        { roles: { $nin: ['suspended', 'shadowban'] } },
         {
           $text: {
             $search: req.query.search,

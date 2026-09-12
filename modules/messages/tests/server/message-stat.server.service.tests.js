@@ -119,6 +119,53 @@ describe('Count Message Statistics of User', function () {
 
   afterEach(utils.clearDatabase);
 
+  [
+    {
+      label: 'unanswered messages from deleted senders',
+      deletedUsers: [7],
+      expectedRate: 6 / 11,
+      expectedTime: 2 * DAY,
+    },
+    {
+      label: 'answered messages from deleted senders',
+      deletedUsers: [1],
+      expectedRate: 5 / 11,
+      expectedTime: 2 * DAY,
+    },
+    {
+      label: 'deleted senders before choosing the last ten messages',
+      deletedUsers: [7, 8, 9],
+      expectedRate: 7 / 10,
+      expectedTime: (6 * 2 * DAY + DAY) / 7,
+    },
+    {
+      label: 'all senders deleted',
+      deletedUsers: Array.from({ length: 28 }, (_, i) => i + 1),
+      expectedRate: null,
+      expectedTime: null,
+    },
+  ].forEach(({ label, deletedUsers, expectedRate, expectedTime }) => {
+    it('should exclude ' + label, async function () {
+      await User.deleteMany({
+        _id: { $in: deletedUsers.map(index => users[index]._id) },
+      });
+
+      const stats = await new Promise((resolve, reject) => {
+        messageStatService.readMessageStatsOfUser(
+          users[0]._id,
+          NOW,
+          (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          },
+        );
+      });
+
+      should(stats).have.property('replyRate', expectedRate);
+      should(stats).have.property('replyTime', expectedTime);
+    });
+  });
+
   it('[< 10 messages in last 90 days] should use 90 days', function (done) {
     messageStatService.readMessageStatsOfUser(
       users[0]._id,

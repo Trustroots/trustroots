@@ -8,6 +8,7 @@ describe('Users Route Tests', function () {
   let $state;
   let $rootScope;
   let $q;
+  let $templateCache;
   let Authentication;
   let $injector;
 
@@ -21,12 +22,14 @@ describe('Users Route Tests', function () {
     _$state_,
     _$rootScope_,
     _$q_,
+    _$templateCache_,
     _Authentication_,
     _$injector_,
   ) {
     $state = _$state_;
     $rootScope = _$rootScope_;
     $q = _$q_;
+    $templateCache = _$templateCache_;
     Authentication = _Authentication_;
     $injector = _$injector_;
   }));
@@ -40,6 +43,17 @@ describe('Users Route Tests', function () {
   }
 
   describe('Route config', function () {
+    it('puts linked Nostroots settings before hospitality networks', function () {
+      const template = $templateCache.get(
+        '/modules/users/views/profile/profile-edit-networks.client.view.html',
+      );
+
+      expect(template).toContain('href=https://nos.trustroots.org');
+      expect(template.indexOf('Nostroots')).toBeLessThan(
+        template.indexOf('Other hospitality networks'),
+      );
+    });
+
     it('should set confirm-email route details', function () {
       const state = $state.get('confirm-email');
 

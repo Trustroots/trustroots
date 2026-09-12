@@ -71,6 +71,12 @@ describe('profile onboarding components', () => {
   it('builds profile data download links for the current member', () => {
     render(<DownloadProfile userId="user-1" username="alice" />);
 
+    expect(
+      screen.getByRole('link', { name: 'Download all data' }),
+    ).toHaveAttribute('href', '/api/users/export');
+    expect(
+      screen.getByRole('link', { name: 'Download all data' }),
+    ).toHaveAttribute('download', 'trustroots-data.json');
     expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute(
       'href',
       '/api/users/alice',

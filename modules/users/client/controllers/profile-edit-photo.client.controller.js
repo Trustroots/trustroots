@@ -81,19 +81,22 @@ function ProfileEditPhotoController(
           updateUserProfile();
         })
         .error(function (data, status) {
+          const responseStatus = Number.isInteger(status)
+            ? status
+            : Number(data && data.status);
           // Default error
           let saveAvatarErr = 'Oops! Something went wrong. Try again later.';
 
-          if (status === 422) {
+          if (responseStatus === 422) {
             // Could not process file
             saveAvatarErr = 'Sorry, we could not process this file.';
-          } else if (status === 413) {
+          } else if (responseStatus === 413) {
             // File too large
             saveAvatarErr =
               'Whoops, your file is too big. Please keep it up to ' +
               bytesToSize(appSettings.maxUploadSize) +
               '.';
-          } else if (status === 415) {
+          } else if (responseStatus === 415) {
             // Unsupported media type
             saveAvatarErr = 'Sorry, we do not support this type of file.';
           }

@@ -16,12 +16,14 @@ function RemoveProfileController(
   vm.removeProfile = removeProfile;
   vm.resendConfirmation = resendConfirmation;
   vm.resendConfirmationLoading = false;
-  vm.state = 'loading';
-
-  removeProfile();
+  vm.state = 'review';
 
   // Remove user profile
   function removeProfile() {
+    if (vm.state === 'loading') {
+      return;
+    }
+
     vm.state = 'loading';
 
     Users.deleteWithToken($stateParams.token)

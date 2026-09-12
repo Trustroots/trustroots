@@ -14,30 +14,29 @@ exports.invalidateSuspendedSessions = function (req, res, next) {
     _.isArray(req.user.roles) &&
     req.user.roles.indexOf('suspended') > -1
   ) {
-    // Passport method for logging out user
-    req.logout();
+    // Passport 0.6+ requires logout errors to be handled asynchronously.
+    return req.logout(function (err) {
+      if (err) {
+        return next(err);
+      }
 
-    // Express session middleware way of removing the session
-    // https://github.com/expressjs/session#sessiondestroycallback
-    return req.session.destroy(function () {
-      // A short one-liner
-      const suspendedMessage = errorService.getErrorMessageByKey('suspended');
+      // Express session middleware way of removing the session
+      // https://github.com/expressjs/session#sessiondestroycallback
+      return req.session.destroy(function () {
+        const suspendedMessage = errorService.getErrorMessageByKey('suspended');
 
-      // Do content negotiation and return a message
-      // https://expressjs.com/en/api.html#res.format
-      res.status(403).format({
-        // For HTML calls send "suspended" html view
-        'text/html'() {
-          res.render('suspended.server.view.html', {
-            message: suspendedMessage,
-          });
-        },
-        // For API calls send "suspended" json message
-        'application/json'() {
-          res.json({
-            message: suspendedMessage,
-          });
-        },
+        res.status(403).format({
+          'text/html'() {
+            res.render('suspended.server.view.html', {
+              message: suspendedMessage,
+            });
+          },
+          'application/json'() {
+            res.json({
+              message: suspendedMessage,
+            });
+          },
+        });
       });
     });
   }

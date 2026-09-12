@@ -14,6 +14,16 @@ const aclInstance = new acl(new acl.memoryBackend());
 exports.invokeRolesPolicies = () => {
   aclInstance.allow([
     {
+      roles: ['welcome-team'],
+      allows: [
+        { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+        {
+          resources: '/api/admin/acquisition-stories/analysis',
+          permissions: ['post'],
+        },
+      ],
+    },
+    {
       roles: ['admin'],
       allows: [
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
@@ -30,16 +40,27 @@ exports.invokeRolesPolicies = () => {
         { resources: '/api/admin/user/change-role', permissions: ['post'] },
         { resources: '/api/admin/users', permissions: ['post'] },
         { resources: '/api/admin/users/by-role', permissions: ['post'] },
+        {
+          resources: '/api/admin/users/by-last-ip-address',
+          permissions: ['post'],
+        },
         { resources: '/api/admin/reference-threads', permissions: ['get'] },
-        // #egW6Qq Disable email download
-        // {
-        //   resources: '/api/admin/newsletter-subscribers',
-        //   permissions: ['get'],
-        // },
-        // {
-        //   resources: '/api/admin/newsletter-subscribers/circle',
-        //   permissions: ['get'],
-        // },
+        {
+          resources: '/api/admin/newsletter-subscribers',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/newsletter-subscribers/circle',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/newsletter-subscribers/audience',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/newsletter-subscribers/split',
+          permissions: ['post'],
+        },
       ],
     },
   ]);

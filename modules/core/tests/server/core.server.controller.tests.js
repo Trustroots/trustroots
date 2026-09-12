@@ -4,7 +4,7 @@ const languagesArray = require('../../../../config/languages/languages-array.jso
 
 require('should');
 
-const sanitizeProfile = user => ({
+const sanitizeOwnProfile = user => ({
   sanitized: true,
   username: user.username,
 });
@@ -12,7 +12,7 @@ const coreController = proxyquire(
   '../../server/controllers/core.server.controller',
   {
     '../../../users/server/controllers/users.profile.server.controller': {
-      sanitizeProfile,
+      sanitizeOwnProfile,
     },
   },
 );
@@ -76,6 +76,18 @@ describe('Controller: core', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/' }, res);
       (res.renderVars.invite === undefined).should.be.true();
+    });
+
+    it('renders the React index for React-owned paths', function () {
+      const res = mockResponse();
+      coreController.renderIndex({ path: '/support' }, res);
+      res.rendered.should.equal('react-index.server.view.html');
+    });
+
+    it('renders the Angular index for Angular-owned paths', function () {
+      const res = mockResponse();
+      coreController.renderIndex({ path: '/profile/alice' }, res);
+      res.rendered.should.equal('index.server.view.html');
     });
 
     it('exposes a sanitized user profile when signed in', function () {

@@ -23,13 +23,15 @@ apps. Set `TRUSTROOTS_DEV_*_HOST_PORT` before rebuilding to customize.
 | --------------------- | -------------: | ----------------: |
 | Webpack dev server    |         `3000` |           `13000` |
 | Express API/server    |         `3001` |           `13001` |
-| MailDev web UI        |         `1080` |           `11080` |
+| Mailpit web UI        |         `8025` |           `11080` |
 | MongoDB               |        `27017` |           `37017` |
 | LiveReload            |        `35729` |           `45729` |
 | Node server inspector |         `5858` |           `15858` |
 | Node worker inspector |         `5859` |           `15859` |
 
-MongoDB is available inside the app container at `mongodb:27017`.
+MongoDB is available inside the app container at `mongodb:27017`. Mailpit's
+SMTP service is available at `mailpit:1025`; its web UI is bound to the host's
+loopback interface at http://localhost:11080.
 
 ## Testing on a phone
 

@@ -30,17 +30,7 @@ describe('NostrService', () => {
   });
 
   describe('getNostrEventAuthorPubkey()', () => {
-    it('returns the original author from kind 30398 reposts', () => {
-      expect(
-        getNostrEventAuthorPubkey({
-          kind: 30398,
-          pubkey: 'validation-server-pubkey',
-          tags: [['p', 'original-author-pubkey']],
-        }),
-      ).toBe('original-author-pubkey');
-    });
-
-    it('falls back to event pubkey for direct events', () => {
+    it('returns the event author', () => {
       expect(
         getNostrEventAuthorPubkey({
           kind: 30397,
@@ -48,16 +38,6 @@ describe('NostrService', () => {
           tags: [],
         }),
       ).toBe('direct-author-pubkey');
-    });
-
-    it('falls back to event pubkey for validated events without author tags', () => {
-      expect(
-        getNostrEventAuthorPubkey({
-          kind: 30398,
-          pubkey: 'validation-server-pubkey',
-          tags: [['p']],
-        }),
-      ).toBe('validation-server-pubkey');
     });
 
     it('returns undefined when event data is missing', () => {
@@ -185,7 +165,7 @@ describe('NostrService', () => {
   });
 
   describe('subscribeMapNotes()', () => {
-    it('subscribes with correct filters for verified notes', async () => {
+    it('subscribes with correct filters for original notes', async () => {
       const mockSub = { close: jest.fn() };
       await service.connect();
       Relay._lastInstance.subscribe.mockReturnValue(mockSub);
@@ -197,10 +177,7 @@ describe('NostrService', () => {
       expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
         [
           {
-            kinds: [30398],
-            authors: [
-              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
-            ],
+            kinds: [30397],
             limit: 500,
           },
         ],
@@ -224,6 +201,23 @@ describe('NostrService', () => {
       await expect(service.subscribeMapNotes(jest.fn())).resolves.toBe(mockSub);
     });
 
+    it('forwards map subscription lifecycle callbacks', async () => {
+      const mockSub = { close: jest.fn() };
+      const onClose = jest.fn();
+      const onEose = jest.fn();
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.oneose();
+        callbacks.onclose('relay connection closed');
+        return mockSub;
+      });
+
+      await service.subscribeMapNotes(jest.fn(), 25, { onClose, onEose });
+
+      expect(onEose).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledWith('relay connection closed');
+    });
+
     it('allows callers to override the historical map note limit', async () => {
       const mockSub = { close: jest.fn() };
       await service.connect();
@@ -234,10 +228,7 @@ describe('NostrService', () => {
       expect(Relay._lastInstance.subscribe).toHaveBeenCalledWith(
         [
           {
-            kinds: [30398],
-            authors: [
-              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
-            ],
+            kinds: [30397],
             limit: 25,
           },
         ],
@@ -281,54 +272,6 @@ describe('NostrService', () => {
   });
 
   describe('fetchUserNotes()', () => {
-    it('handles validated events without tags', async () => {
-      await service.connect();
-      const relay = Relay._lastInstance;
-      const validatedNote = {
-        id: 'validated-note',
-        kind: 30398,
-        created_at: 101,
-      };
-
-      relay.subscribe.mockImplementation((filters, callbacks) => {
-        callbacks.onevent(validatedNote);
-        callbacks.oneose();
-        return { close: jest.fn() };
-      });
-
-      await expect(service.fetchUserNotes('aabbcc')).resolves.toEqual([
-        validatedNote,
-      ]);
-    });
-
-    it('keeps the validated copy when it references an original note', async () => {
-      await service.connect();
-      const relay = Relay._lastInstance;
-      const originalNote = {
-        id: 'original-note',
-        kind: 30397,
-        created_at: 100,
-        tags: [],
-      };
-      const validatedNote = {
-        id: 'validated-note',
-        kind: 30398,
-        created_at: 101,
-        tags: [['e', originalNote.id]],
-      };
-
-      relay.subscribe.mockImplementation((filters, callbacks) => {
-        callbacks.onevent(originalNote);
-        callbacks.onevent(validatedNote);
-        callbacks.oneose();
-        return { close: jest.fn() };
-      });
-
-      await expect(service.fetchUserNotes('aabbcc')).resolves.toEqual([
-        validatedNote,
-      ]);
-    });
-
     it('resolves with events sorted by created_at desc', async () => {
       await service.connect();
       const relay = Relay._lastInstance;
@@ -353,17 +296,7 @@ describe('NostrService', () => {
       expect(sub.close).toHaveBeenCalled();
 
       expect(relay.subscribe).toHaveBeenCalledWith(
-        [
-          { kinds: [30397], authors: ['aabbcc'], limit: 3 },
-          {
-            kinds: [30398],
-            authors: [
-              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
-            ],
-            '#p': ['aabbcc'],
-            limit: 3,
-          },
-        ],
+        [{ kinds: [30397], authors: ['aabbcc'], limit: 3 }],
         expect.objectContaining({
           onevent: expect.any(Function),
           oneose: expect.any(Function),
@@ -389,17 +322,7 @@ describe('NostrService', () => {
       await service.fetchUserNotes('aabbcc');
 
       expect(relay.subscribe).toHaveBeenCalledWith(
-        [
-          { kinds: [30397], authors: ['aabbcc'], limit: 3 },
-          {
-            kinds: [30398],
-            authors: [
-              'f5bc71692fc08ea52c0d1c8bcfb87579584106b5feb4ea542b1b8a95612f257b',
-            ],
-            '#p': ['aabbcc'],
-            limit: 3,
-          },
-        ],
+        [{ kinds: [30397], authors: ['aabbcc'], limit: 3 }],
         expect.any(Object),
       );
     });
@@ -568,6 +491,115 @@ describe('NostrService', () => {
       await Promise.resolve();
 
       expect(sub.close).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('filterCommunityNotesByAuthorVisibility()', () => {
+    const originalFetch = global.fetch;
+
+    beforeEach(() => {
+      global.fetch = jest.fn();
+    });
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    it('keeps eligible and unlinked authors but hides known ineligible authors', async () => {
+      const visiblePubkey = 'aa'.repeat(32);
+      const hiddenPubkey = 'bb'.repeat(32);
+      const unlinkedPubkey = 'cc'.repeat(32);
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            linkedPubkeys: [visiblePubkey, hiddenPubkey],
+            pubkeys: [visiblePubkey],
+          }),
+      });
+
+      await expect(
+        service.filterCommunityNotesByAuthorVisibility([
+          { id: 'visible', authorPubkey: visiblePubkey },
+          { id: 'visible-by-pubkey', pubkey: visiblePubkey },
+          { id: 'hidden', authorPubkey: hiddenPubkey },
+          { id: 'unlinked', authorPubkey: unlinkedPubkey },
+          { id: 'missing-author' },
+        ]),
+      ).resolves.toEqual([
+        { id: 'visible', authorPubkey: visiblePubkey },
+        { id: 'visible-by-pubkey', pubkey: visiblePubkey },
+        { id: 'unlinked', authorPubkey: unlinkedPubkey },
+      ]);
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/nostr/author-visibility?pubkey=' +
+          visiblePubkey +
+          '&pubkey=' +
+          hiddenPubkey +
+          '&pubkey=' +
+          unlinkedPubkey,
+      );
+    });
+
+    it('retries visibility checks after a transient API failure', async () => {
+      const pubkey = 'aa'.repeat(32);
+      const notes = [{ id: 'note', authorPubkey: pubkey }];
+      global.fetch.mockRejectedValueOnce(new Error('service unavailable'));
+      await expect(
+        service.filterCommunityNotesByAuthorVisibility(notes),
+      ).resolves.toEqual(notes);
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ linkedPubkeys: [pubkey], pubkeys: [] }),
+      });
+
+      await expect(
+        service.filterCommunityNotesByAuthorVisibility(notes),
+      ).resolves.toEqual([]);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('batches uncached authors and reuses fresh visibility results', async () => {
+      const notes = Array.from({ length: 101 }, (_, index) => ({
+        id: `note-${index}`,
+        authorPubkey: index.toString(16).padStart(64, '0'),
+      }));
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            linkedPubkeys: notes.map(note => note.authorPubkey),
+            pubkeys: [],
+          }),
+      });
+
+      await expect(
+        service.filterCommunityNotesByAuthorVisibility(notes),
+      ).resolves.toEqual([]);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+
+      await expect(
+        service.filterCommunityNotesByAuthorVisibility([notes[0]]),
+      ).resolves.toEqual([]);
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('keeps notes visible when the API response is unsuccessful or invalid', async () => {
+      const pubkey = 'cc'.repeat(32);
+      const notes = [{ id: 'note', authorPubkey: pubkey }];
+      global.fetch.mockResolvedValueOnce({ ok: false });
+
+      await expect(
+        service.filterCommunityNotesByAuthorVisibility(notes),
+      ).resolves.toEqual(notes);
+
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ linkedPubkeys: [], pubkeys: null }),
+      });
+      await expect(
+        service.filterCommunityNotesByAuthorVisibility(notes),
+      ).resolves.toEqual(notes);
     });
   });
 });
