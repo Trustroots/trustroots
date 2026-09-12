@@ -44,18 +44,30 @@ exports.getNewError = function (key, status) {
 };
 
 /**
+ * First Mongoose validation path message from `err.errors`, if any.
+ * @param {Error} err
+ * @returns {string|false}
+ */
+function getMongoosePathMessage(err) {
+  let message = false;
+  if (!err.errors) {
+    return false;
+  }
+  for (const errName in err.errors) {
+    if (err.errors[errName].message) {
+      message = err.errors[errName].message;
+    }
+  }
+  return message;
+}
+
+/**
  * Get the error message from error object
  * @param err Error
  * @return String Error message
  */
 exports.getErrorMessage = function (err) {
-  let message = false;
-
-  for (const errName in err.errors) {
-    if (err.errors[errName].message) message = err.errors[errName].message;
-  }
-
-  return message || defaultErrorMessage;
+  return getMongoosePathMessage(err) || defaultErrorMessage;
 };
 
 /**

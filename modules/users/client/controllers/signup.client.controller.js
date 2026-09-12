@@ -1,10 +1,10 @@
 import rulesModalTemplateUrl from '@/modules/users/client/views/authentication/rules-modal.client.view.html';
 import shuffle from 'lodash/shuffle';
 import {
-  SIGNUP_USERNAME_FORMAT_MESSAGE as USERNAME_FORMAT_MESSAGE,
+  USERNAME_FORMAT_MESSAGE,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
-  SIGNUP_USERNAME_REGEX as USERNAME_REGEX,
+  USERNAME_REGEX,
 } from '@/modules/users/client/config/username.client.constants';
 
 angular.module('users').controller('SignupController', SignupController);

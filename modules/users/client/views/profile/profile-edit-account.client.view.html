@@ -302,6 +302,13 @@
             </p>
             <p
               class="help-block"
+              ng-show="profileEditAccount.hasLegacyUsername()"
+            >
+              Your current username can stay, but if you change it, {{
+              profileEditAccount.usernameHint | lowercase }}.
+            </p>
+            <p
+              class="help-block"
               ng-show="profileEditAccount.usernameError"
               ng-bind="profileEditAccount.usernameError"
             ></p>

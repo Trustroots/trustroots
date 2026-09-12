@@ -30,6 +30,16 @@ let _unConfirmedUser;
  * User routes tests
  */
 describe('User profile CRUD tests', function () {
+  it('preserves apostrophes when updating profile names', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .put('/api/users')
+      .send({ lastName: "O'Vale" })
+      .expect(200);
+    response.body.lastName.should.equal("O'Vale");
+    (await User.findById(user._id)).lastName.should.equal("O'Vale");
+  });
+
   before(function (done) {
     // Get application
     app = express.init(mongoose.connection);
@@ -188,6 +198,31 @@ describe('User profile CRUD tests', function () {
             .get('/api/users/' + user2.username)
             .expect(200)
             .end(done);
+        });
+    });
+  });
+
+  it('should keep existing legacy usernames resolvable by profile lookup', function (done) {
+    user2.update({ $set: { username: 'legacy-name' } }, function (err) {
+      should.not.exist(err);
+
+      agent
+        .post('/api/auth/signin')
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          should.not.exist(signinErr);
+
+          agent
+            .get('/api/users/legacy-name')
+            .expect(200)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+              res.body.username.should.equal('legacy-name');
+              done();
+            });
         });
     });
   });
@@ -1121,6 +1156,17 @@ describe('User profile CRUD tests', function () {
   });
 
   describe('Username change', function () {
+    function makeUsernameChangeAllowed(done) {
+      const threeMonthsAgo = moment(user.created)
+        .subtract(3, 'months')
+        .toDate();
+      user.update({ $set: { created: threeMonthsAgo } }, done);
+    }
+
+    function signIn(done) {
+      agent.post('/api/auth/signin').send(credentials).expect(200).end(done);
+    }
+
     it('should not let a new user to change username', function (done) {
       agent
         .post('/api/auth/signin')
@@ -1131,7 +1177,7 @@ describe('User profile CRUD tests', function () {
             return done(err);
           }
           const user2 = _user;
-          user2.username = _user.username + '01';
+          user2.username = 'trusername01';
           delete user2.email;
           agent
             .put('/api/users')
@@ -1149,11 +1195,74 @@ describe('User profile CRUD tests', function () {
         });
     });
 
+    it('should reject username changes with invalid formats', function (done) {
+      const invalidUsernames = [
+        'Uppercase',
+        '123',
+        'has-hyphen',
+        'has.dot',
+        'has_underscore',
+        'has space',
+      ];
+
+      makeUsernameChangeAllowed(function (err) {
+        should.not.exist(err);
+        signIn(function (err) {
+          if (err) {
+            return done(err);
+          }
+
+          function testNext() {
+            const username = invalidUsernames.shift();
+            if (!username) {
+              return done();
+            }
+
+            agent
+              .put('/api/users')
+              .send({ username })
+              .expect(400)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.message.should.equal(
+                  'Use 3-34 lowercase letters and numbers, including at least one letter.',
+                );
+                testNext();
+              });
+          }
+
+          testNext();
+        });
+      });
+    });
+
+    it('should reject username changes to reserved usernames', function (done) {
+      makeUsernameChangeAllowed(function (err) {
+        should.not.exist(err);
+        signIn(function (err) {
+          if (err) {
+            return done(err);
+          }
+
+          agent
+            .put('/api/users')
+            .send({ username: 'nostr' })
+            .expect(400)
+            .end(function (err, res) {
+              if (err) {
+                return done(err);
+              }
+              res.body.message.should.equal('Username is not available.');
+              done();
+            });
+        });
+      });
+    });
+
     it('should allow changing username for users created 3 months ago who never changed their username', function (done) {
-      const threeMonthsAgo = moment(user.created)
-        .subtract(3, 'months')
-        .toDate();
-      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
+      makeUsernameChangeAllowed(function (err) {
         should.not.exist(err);
         agent
           .post('/api/auth/signin')
@@ -1164,7 +1273,7 @@ describe('User profile CRUD tests', function () {
               return done(err);
             }
             const user2 = _user;
-            user2.username = _user.username + '01';
+            user2.username = 'trusername01';
             delete user2.email;
             agent
               .put('/api/users')
@@ -1181,11 +1290,95 @@ describe('User profile CRUD tests', function () {
       });
     });
 
+    it('should allow an existing legacy username to save unrelated profile fields', function (done) {
+      makeUsernameChangeAllowed(function (err) {
+        should.not.exist(err);
+        user.update({ $set: { username: 'legacy-name' } }, function (err) {
+          should.not.exist(err);
+          credentials.username = 'legacy-name';
+
+          signIn(function (err) {
+            if (err) {
+              return done(err);
+            }
+
+            agent
+              .put('/api/users')
+              .send({ firstName: 'Legacy' })
+              .expect(200)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.username.should.equal('legacy-name');
+                res.body.firstName.should.equal('Legacy');
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    it('should reject changing an existing legacy username to another invalid username', function (done) {
+      makeUsernameChangeAllowed(function (err) {
+        should.not.exist(err);
+        user.update({ $set: { username: 'legacy-name' } }, function (err) {
+          should.not.exist(err);
+          credentials.username = 'legacy-name';
+
+          signIn(function (err) {
+            if (err) {
+              return done(err);
+            }
+
+            agent
+              .put('/api/users')
+              .send({ username: 'another-name' })
+              .expect(400)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.message.should.equal(
+                  'Use 3-34 lowercase letters and numbers, including at least one letter.',
+                );
+                done();
+              });
+          });
+        });
+      });
+    });
+
+    it('should allow changing an existing legacy username to a valid username', function (done) {
+      makeUsernameChangeAllowed(function (err) {
+        should.not.exist(err);
+        user.update({ $set: { username: 'legacy-name' } }, function (err) {
+          should.not.exist(err);
+          credentials.username = 'legacy-name';
+
+          signIn(function (err) {
+            if (err) {
+              return done(err);
+            }
+
+            agent
+              .put('/api/users')
+              .send({ username: 'newname123' })
+              .expect(200)
+              .end(function (err, res) {
+                if (err) {
+                  return done(err);
+                }
+                res.body.username.should.equal('newname123');
+                done();
+              });
+          });
+        });
+      });
+    });
+
     it('should not be able to change username if username was changed within previous 3 months', function (done) {
-      const threeMonthsAgo = moment(user.created)
-        .subtract(3, 'months')
-        .toDate();
-      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
+      makeUsernameChangeAllowed(function (err) {
         should.not.exist(err);
         agent
           .post('/api/auth/signin')
@@ -1196,7 +1389,7 @@ describe('User profile CRUD tests', function () {
               return done(err);
             }
             const user2 = _user;
-            user2.username = _user.username + '01';
+            user2.username = 'trusername01';
             delete user2.email;
             // First username change
             // First we're setting usernameUpdate
@@ -1210,7 +1403,7 @@ describe('User profile CRUD tests', function () {
                   return done(err);
                 }
                 res.body.username.should.equal(user2.username);
-                user2.username = _user.username + '02';
+                user2.username = 'trusername02';
                 // Second username change for the same user
                 // Then we're testing that previous usernameUpdate prevents further changes
                 // This should fail
@@ -1232,10 +1425,7 @@ describe('User profile CRUD tests', function () {
     });
 
     it('should be able to change username if username was changed more than 3 months ago', function (done) {
-      const threeMonthsAgo = moment(user.created)
-        .subtract(3, 'months')
-        .toDate();
-      user.update({ $set: { created: threeMonthsAgo } }, function (err) {
+      makeUsernameChangeAllowed(function (err) {
         should.not.exist(err);
         agent
           .post('/api/auth/signin')
@@ -1247,7 +1437,7 @@ describe('User profile CRUD tests', function () {
             }
             // First change
             const user2 = _user;
-            user2.username = _user.username + '01';
+            user2.username = 'trusername01';
             delete user2.email;
             agent
               .put('/api/users')
@@ -1272,7 +1462,7 @@ describe('User profile CRUD tests', function () {
                         return done(err);
                       }
                       // Second time changing it
-                      user2.username = _user.username + '02';
+                      user2.username = 'trusername02';
                       agent
                         .put('/api/users')
                         .send(user2)

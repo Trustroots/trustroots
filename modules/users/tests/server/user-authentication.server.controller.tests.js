@@ -384,7 +384,7 @@ describe('Authentication controller OAuth unit tests', () => {
         {
           body: {
             firstName: 'Amina',
-            lastName: 'spam_name',
+            lastName: 'spam/name',
             username: 'samplemember',
             email: 'sample-member@example.org',
             password: 'password123',

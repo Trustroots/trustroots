@@ -3,7 +3,6 @@
  */
 const should = require('should');
 const mongoose = require('mongoose');
-const config = require('../../../../config/config');
 const utils = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
@@ -138,6 +137,20 @@ describe('User Model Unit Tests:', function () {
       });
     });
 
+    it('should reject an invalid temporary email address', function (done) {
+      const _user = new User(user);
+
+      _user.emailTemporary =
+        "sample@email.tst'||dbms_pipe.receive_message(chr(98)||chr(98)||chr(98),15)||'";
+      _user.save(function (err) {
+        should.exist(err);
+        err.errors.emailTemporary.message.should.equal(
+          'Please enter a valid email address.',
+        );
+        done();
+      });
+    });
+
     it('should confirm that saving user model doesnt change the password', function (done) {
       const _user = new User(user);
 
@@ -209,86 +222,40 @@ describe('User Model Unit Tests:', function () {
   });
 
   describe('Username Validation', function () {
-    it('should show error to save username beginning with .', function (done) {
-      const _user = new User(user);
+    let usernameValidationCounter = 0;
 
-      _user.username = '.login';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
+    function getUser(username) {
+      return new User({
+        firstName: 'Full',
+        lastName: 'Name',
+        displayName: 'Full Name',
+        email: username + '@example.org',
+        username,
+        password: 'password123',
+        provider: 'local',
       });
-    });
+    }
 
-    it('should be able to show an error when try to save with not allowed username', function (done) {
-      const _user = new User(user);
+    it('should allow direct saves with legacy usernames for imports and existing records', function (done) {
+      const _user = getUser('legacy-name');
 
-      _user.username =
-        config.illegalStrings[
-          Math.floor(Math.random() * config.illegalStrings.length)
-        ];
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
-    });
-
-    it('should show error to save username end with .', function (done) {
-      const _user = new User(user);
-
-      _user.username = 'login.';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
-    });
-
-    it('should show error to save username with ..', function (done) {
-      const _user = new User(user);
-
-      _user.username = 'log..in';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
-    });
-
-    it('should show error to save username shorter than 3 character', function (done) {
-      const _user = new User(user);
-
-      _user.username = 'lo';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
-    });
-
-    it('should show error saving a username without at least one alphanumeric character', function (done) {
-      const _user = new User(user);
-
-      _user.username = '-_-';
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
-    });
-
-    it('should show error saving a username longer than 34 characters', function (done) {
-      const _user = new User(user);
-
-      _user.username = 'l'.repeat(35);
-      _user.save(function (err) {
-        should.exist(err);
-        done();
-      });
-    });
-
-    it('should save username with dot', function (done) {
-      const _user = new User(user);
-
-      _user.username = 'log.in';
       _user.save(function (err) {
         should.not.exist(err);
         done();
+      });
+    });
+
+    it('should allow direct username changes for legacy records and imports', function (done) {
+      usernameValidationCounter += 1;
+      const _user = getUser('validuser');
+
+      _user.save(function (err) {
+        should.not.exist(err);
+        _user.username = 'legacy-name-' + usernameValidationCounter;
+        _user.save(function (err) {
+          should.not.exist(err);
+          done();
+        });
       });
     });
   });

@@ -31,10 +31,13 @@ function ProfileEditAccountController(
   vm.changeUserPassword = changeUserPassword;
   vm.user = Authentication.user;
   vm.getUsernameValidationError = getUsernameValidationError;
+  vm.hasLegacyUsername = hasLegacyUsername;
   vm.usernameMinlength = USERNAME_MIN_LENGTH;
   vm.usernameMaxlength = USERNAME_MAX_LENGTH;
   vm.usernamePattern = USERNAME_REGEX;
   vm.usernameHint = USERNAME_FORMAT_MESSAGE;
+
+  const initialUsername = vm.user && vm.user.username;
 
   // Related to profile removal
   vm.removeProfileConfirm = false;
@@ -97,6 +100,10 @@ function ProfileEditAccountController(
     }
 
     return 'Invalid username.';
+  }
+
+  function hasLegacyUsername() {
+    return Boolean(initialUsername && !USERNAME_REGEX.test(initialUsername));
   }
 
   // Activate controller
