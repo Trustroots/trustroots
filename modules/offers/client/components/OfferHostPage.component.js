@@ -150,8 +150,7 @@ export default function OfferHostPage({ user }) {
     <section className="offers-edit">
       <form autoComplete="off" noValidate onSubmit={handleSubmit}>
         <button
-          aria-hidden="true"
-          className="btn btn-lg btn-inverse-primary pull-right hidden-xs"
+          className="btn btn-lg btn-inverse-primary pull-right"
           disabled={isSaving || isDescriptionTooShort}
           title={
             isDescriptionTooShort ? 'Write longer description first' : undefined

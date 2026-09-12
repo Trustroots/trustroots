@@ -51,6 +51,7 @@ export default function OfferLocationEditor({
           }}
           height={320}
           location={location}
+          onLocationChange={onLocationChange}
           onClick={event => {
             if (event?.lngLat) {
               onLocationChange([event.lngLat[1], event.lngLat[0]]);

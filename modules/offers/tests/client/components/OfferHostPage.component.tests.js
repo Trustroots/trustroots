@@ -72,7 +72,7 @@ describe('OfferHostPage', () => {
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Welcome to my home.' },
     });
-    fireEvent.submit(document.querySelector('form'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save and Exit' }));
 
     await waitFor(() => {
       expect(offersApi.createOffer).toHaveBeenCalledWith(

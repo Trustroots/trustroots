@@ -59,7 +59,9 @@ describe('OfferMeetEditPage', () => {
     });
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     expect(await screen.findByTestId('location-editor')).toBeInTheDocument();
-    fireEvent.submit(document.querySelector('form'));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Finish editing and save' }),
+    );
 
     await waitFor(() => {
       expect(offersApi.createOffer).toHaveBeenCalledWith(

@@ -126,8 +126,7 @@ export default function OfferMeetEditPage() {
       <form autoComplete="off" noValidate onSubmit={handleSubmit}>
         {!isNewOffer && (
           <button
-            aria-hidden="true"
-            className="btn btn-lg btn-inverse-primary pull-right hidden-xs"
+            className="btn btn-lg btn-inverse-primary pull-right"
             disabled={isSaving || descriptionLength < MIN_DESCRIPTION}
             type="submit"
           >
@@ -237,7 +236,7 @@ export default function OfferMeetEditPage() {
           </Tab>
         </Tabs>
 
-        <div className="text-center hidden-xs">
+        <div className="text-center">
           <br />
           {activeTab > 0 && (
             <button
