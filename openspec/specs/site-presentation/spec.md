@@ -53,9 +53,9 @@ community media repository and its downloadable assets.
 
 ### Requirement: Incremental React page shell
 
-The system SHALL render administration and read-only public pages with the
-React application shell while retaining the Angular application for
-stateful member workflows during the transition.
+The system SHALL render administration, read-only public pages and circle
+pages with the React application shell while retaining Angular for the
+remaining member workflows during the transition.
 
 #### Scenario: Visitor opens a React-owned public page
 
@@ -81,8 +81,13 @@ stateful member workflows during the transition.
 
 #### Scenario: Visitor opens an Angular-owned member workflow
 
-- **WHEN** a visitor opens a profile, circle, search, offer, message, or authentication route
+- **WHEN** a visitor opens a profile, search, offer, message, or authentication route
 - **THEN** the server continues to render the Angular application root and assets
+
+#### Scenario: Visitor opens a circle page
+
+- **WHEN** a visitor opens the catalogue or an accessible circle detail page
+- **THEN** the server renders the React application root and assets
 
 #### Scenario: Visitor opens the legacy about route
 
