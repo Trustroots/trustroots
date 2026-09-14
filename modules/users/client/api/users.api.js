@@ -19,3 +19,8 @@ export async function fetch(username) {
   const { data: user } = await axios.get(`/api/users/${username}`);
   return user;
 }
+
+export async function fetchMini(userId) {
+  const { data } = await axios.get(`/api/users/mini/${userId}`);
+  return data;
+}

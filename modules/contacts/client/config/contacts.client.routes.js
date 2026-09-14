@@ -1,5 +1,3 @@
-import contactAddTemplateUrl from '@/modules/contacts/client/views/add-contact.client.view.html';
-
 angular.module('contacts').config(ContactsRoutes);
 
 /* @ngInject */
@@ -7,24 +5,12 @@ function ContactsRoutes($stateProvider) {
   $stateProvider
     .state('contactAdd', {
       url: '/contact-add/:userId',
-      templateUrl: contactAddTemplateUrl,
       requiresAuth: true,
-      controller: 'ContactAddController',
-      controllerAs: 'contactAdd',
-      resolve: {
-        // A string value resolves to a service
-        ContactByService: 'ContactByService',
-        UsersMini: 'UsersMini',
-
-        existingContact(ContactByService, $stateParams) {
-          return ContactByService.get({ userId: $stateParams.userId });
-        },
-
-        friend(UsersMini, $stateParams) {
-          return UsersMini.get({
-            userId: $stateParams.userId,
-          });
-        },
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        $window.location.assign(
+          `/contact-add/${encodeURIComponent($stateParams.userId)}`,
+        );
       },
       data: {
         pageTitle: 'Add contact',

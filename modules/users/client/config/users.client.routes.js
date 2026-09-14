@@ -382,8 +382,14 @@ function UsersRoutes($stateProvider) {
     })
     .state('profile.experiences.new', {
       url: '/new',
-      template:
-        '<create-experience ng-if="app.appSettings.referencesEnabled" userTo="profileCtrl.profile" userFrom="app.user"></create-experience>',
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        $window.location.assign(
+          `/profile/${encodeURIComponent(
+            $stateParams.username,
+          )}/experiences/new`,
+        );
+      },
       requiresAuth: true,
       noScrollingTop: true,
       data: {
