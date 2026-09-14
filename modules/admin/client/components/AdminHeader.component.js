@@ -48,7 +48,7 @@ export default function AdminHeader() {
     <li
       key={path}
       className={classnames({
-        active: currentPath === path || currentPath.startsWith(`${path}/`),
+        active: currentPath === path,
       })}
     >
       <a href={`/admin/${path}`}>{label}</a>

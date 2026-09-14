@@ -60,13 +60,16 @@ describe('<AdminHeader />', () => {
     ).not.toHaveClass('active');
   });
 
-  it('marks nested admin pages as active', () => {
+  it('marks the most specific nested admin page as active', () => {
     window.history.pushState({}, '', '/admin/acquisition-stories/analysis');
 
     render(<AdminHeader />);
 
     expect(
       screen.getByRole('link', { name: 'Acquisition stories' }).closest('li'),
+    ).not.toHaveClass('active');
+    expect(
+      screen.getByRole('link', { name: 'Analysis' }).closest('li'),
     ).toHaveClass('active');
   });
 
