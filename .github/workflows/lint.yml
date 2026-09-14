@@ -33,7 +33,6 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 16
-          cache: npm
       - name: Pin npm to v7
         run: npm i -g npm@7
       - name: Reconfigure git to use HTTP authentication

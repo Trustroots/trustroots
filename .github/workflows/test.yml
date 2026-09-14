@@ -53,11 +53,6 @@ jobs:
         with:
           context: .
           file: production.Dockerfile
-          cache-from: type=gha,scope=production
-          # PR caches are only reusable by the PR merge ref and quickly fill
-          # the repository cache. Let every run read main's cache, but only
-          # refresh it after main changes.
-          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=production' || '' }}
           push: false
 
   build-dev-image:
@@ -86,8 +81,6 @@ jobs:
           context: .
           file: deploy/docker/dev.Dockerfile
           tags: ${{ steps.image.outputs.image-ref }}
-          cache-from: type=gha,scope=dev
-          cache-to: ${{ github.event_name == 'push' && 'type=gha,mode=max,scope=dev' || '' }}
           push: true
 
   client:
@@ -121,7 +114,6 @@ jobs:
           context: .
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
-          cache-from: type=gha,scope=dev
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
@@ -219,7 +211,6 @@ jobs:
           context: .
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
-          cache-from: type=gha,scope=dev
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
@@ -327,7 +318,6 @@ jobs:
           context: .
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
-          cache-from: type=gha,scope=dev
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js

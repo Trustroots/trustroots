@@ -105,7 +105,6 @@ jobs:
           context: .
           file: deploy/docker/dev.Dockerfile
           tags: trustroots-dev:ci
-          cache-from: type=gha,scope=dev
           load: true
 
       - name: Prepare compose local config

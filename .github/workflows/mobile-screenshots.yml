@@ -85,14 +85,9 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v5
-      - uses: android-actions/setup-android@v3
-      - name: Restore Android emulator image
-        uses: actions/cache@v4
         with:
-          path: |
-            ~/.android/avd
-            ~/.android/adb*
-          key: android-emulator-${{ runner.os }}-api36-x86_64-pixel6-v1
+          cache-disabled: true
+      - uses: android-actions/setup-android@v3
       - name: Install Android build SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
       - name: Build, launch and capture Android app
