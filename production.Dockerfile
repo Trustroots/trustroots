@@ -1,4 +1,5 @@
-FROM phusion/passenger-nodejs:2.3.1 as builder
+FROM phusion/passenger-nodejs:3.1.10 AS builder
+RUN node -e "if (process.versions.node.split('.')[0] !== '24') process.exit(1)"
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get
@@ -15,7 +16,7 @@ RUN rm -f /etc/apt/sources.list.d/passenger.list \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN npm install -g npm@latest-7
+RUN npm install -g npm@11.19.0
 
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
@@ -47,7 +48,8 @@ RUN npm run build
 # Create the production container
 # ------------------------------------------------------------------------------
 
-FROM phusion/passenger-nodejs:2.3.1
+FROM phusion/passenger-nodejs:3.1.10
+RUN node -e "if (process.versions.node.split('.')[0] !== '24') process.exit(1)"
 
 ARG TRUSTROOTS_BUILD_COMMIT
 ARG TRUSTROOTS_BUILD_COMMITTED_AT
