@@ -91,6 +91,7 @@ test.describe('admin role and audit feature coverage', () => {
         ).status(),
       ).toBe(200);
       await memberPage
+        .locator('.navbar-admin')
         .getByRole('link', { name: 'Analysis', exact: true })
         .click();
       await expect(memberPage).toHaveURL(
