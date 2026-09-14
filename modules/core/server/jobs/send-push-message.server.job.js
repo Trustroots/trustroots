@@ -1,7 +1,5 @@
 /* eslint-disable no-unreachable */
-const async = require('async');
 const firebaseMessaging = require('../../../../config/lib/firebase-messaging');
-const exponentNotifications = require('../../../../config/lib/exponent-notifications');
 const mongoose = require('mongoose');
 const User = mongoose.model('User');
 const log = require('../../../../config/lib/logger');
@@ -44,21 +42,19 @@ module.exports = function (job, done) {
     return done();
   }
 
-  // tokens for Firebase and Exponent
+  // Browser tokens for Firebase
   const firebaseTokens = [];
-  const exponentTokens = [];
 
   // Sort push tokens by cloud service
   pushServices.forEach(function (pushService) {
     switch (String(pushService.platform)) {
-      case 'ios':
-      case 'android':
       case 'web':
-        // tokens with platforms 'web', 'android' and 'ios' belong to Firebase
         firebaseTokens.push(pushService.token);
         break;
+      case 'ios':
+      case 'android':
       case 'expo':
-        exponentTokens.push(pushService.token);
+        // Historical mobile targets belong to the retired application.
         break;
       default:
         log(
@@ -109,20 +105,7 @@ module.exports = function (job, done) {
       });
   });
 
-  // push to Exponent
-  const exponentPushPromise = exponentNotifications.sendToDevice(
-    exponentTokens,
-    notification,
-  );
-
-  // Wait for all push services to finish
-  // `Promise.all` is rejected if any of the elements are rejected:
-  // Thus we use `async.reflect()`, which wraps the async function in another
-  // function that always completes with a result object, even when it errors.
-  Promise.all([
-    async.reflect(firebasePushPromise),
-    async.reflect(exponentPushPromise),
-  ])
+  firebasePushPromise
     .then(function () {
       process.nextTick(function () {
         log('info', 'Successfully finished `send push message` job', {
