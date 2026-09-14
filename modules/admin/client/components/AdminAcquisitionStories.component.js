@@ -120,7 +120,7 @@ export default function AdminAcquisitionStories() {
       <AdminHeader />
       <div className="container admin-acquisition-stories-page">
         <h2>Acquisition stories</h2>
-        <p>Based on latest 3000 stories</p>
+        <p>Based on latest 500 stories</p>
 
         <AdminAcquisitionStoriesMenu active="stories" />
 

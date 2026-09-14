@@ -28,10 +28,18 @@ describe('<AdminHeader />', () => {
       expect(
         screen.getByRole('link', { name: 'Welcome team' }),
       ).toHaveAttribute('href', '/admin/acquisition-stories');
-      expect(screen.getAllByRole('link')).toHaveLength(2);
+      expect(screen.getAllByRole('link')).toHaveLength(3);
       expect(
         screen.queryByRole('link', { name: 'Audit log' }),
       ).not.toBeInTheDocument();
+
+      expect(
+        screen.getByRole('link', { name: 'Acquisition stories' }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Analysis' })).toHaveAttribute(
+        'href',
+        '/admin/acquisition-stories/analysis',
+      );
     },
   );
 

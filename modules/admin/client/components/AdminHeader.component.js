@@ -35,6 +35,10 @@ export default function AdminHeader() {
       label: 'Acquisition stories',
     },
     {
+      path: 'acquisition-stories/analysis',
+      label: 'Analysis',
+    },
+    {
       path: 'newsletter',
       label: 'Newsletter',
     },
@@ -64,7 +68,12 @@ export default function AdminHeader() {
         </div>
         <ul className="nav navbar-nav">
           {pages
-            .filter(page => isAdmin || page.path === 'acquisition-stories')
+            .filter(
+              page =>
+                isAdmin ||
+                page.path === 'acquisition-stories' ||
+                page.path === 'acquisition-stories/analysis',
+            )
             .map(page => renderTab(page))}
         </ul>
         <ul className="nav navbar-nav pull-right">
