@@ -545,10 +545,8 @@ describe('Contact CRUD tests', function () {
       beforeEach(function () {
         // Set the agenda.now() function to fail
         originalNow = agenda.now;
-        agenda.now = function (type, data, callback) {
-          process.nextTick(function () {
-            callback(new Error('fail!'));
-          });
+        agenda.now = function () {
+          return Promise.reject(new Error('fail!'));
         };
       });
 

@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const MongoClient = require('mongodb').MongoClient;
 const sinon = require('sinon');
 require('should');
 
@@ -24,14 +25,12 @@ describe('Worker tests', function () {
     // Stub out all of agendas functionality as we are not testing agenda
 
     sinon.stub(agenda, 'start').callsFake(function () {});
+    sinon.stub(agenda, 'stop').resolves();
 
-    // Pass through agenda.on('ready')
     // Save handler for agenda.on('fail')
 
     sinon.stub(agenda, 'on').callsFake(function (name, fn) {
-      if (name === 'ready') {
-        process.nextTick(fn);
-      } else if (name === 'fail') {
+      if (name === 'fail') {
         failHandler = fn;
       }
     });
@@ -168,6 +167,11 @@ describe('Worker tests', function () {
     jobNames.should.containEql('welcome sequence third');
   });
 
+  it('defines [publish expired experiences] job', function () {
+    const jobNames = _.map(definedJobs, 'name');
+    jobNames.should.containEql('publish expired experiences');
+  });
+
   it('defines right number of repeating jobs', function () {
     scheduledJobs.length.should.equal(8);
   });
@@ -176,6 +180,91 @@ describe('Worker tests', function () {
     const jobNames = _.map(definedJobs, 'name');
     scheduledJobs.forEach(function (job) {
       job.name.should.be.oneOf(jobNames);
+    });
+  });
+
+  it('unlocks unfinished Agenda jobs through the direct MongoDB connection', function (done) {
+    const updateMany = sinon
+      .stub()
+      .callsFake(function (filter, update, callback) {
+        filter.should.deepEqual({
+          lockedAt: { $exists: true },
+          lastFinishedAt: { $exists: false },
+        });
+        update.$unset.should.deepEqual({
+          lockedAt: '',
+          lastModifiedBy: '',
+          lastRunAt: '',
+        });
+        update.$set.nextRunAt.should.be.instanceof(Date);
+        callback(null, { modifiedCount: 2 });
+      });
+    const close = sinon.stub().callsFake(function (callback) {
+      callback();
+    });
+
+    sinon.stub(MongoClient, 'connect').callsFake(function (uri, callback) {
+      callback(null, {
+        close,
+        db() {
+          return {
+            collection(name) {
+              name.should.equal('agendaJobs');
+              return { updateMany };
+            },
+          };
+        },
+      });
+    });
+
+    worker.unlockAgendaJobs(function (err) {
+      if (err) return done(err);
+      updateMany.calledOnce.should.equal(true);
+      close.calledOnce.should.equal(true);
+      done();
+    });
+  });
+
+  it('reports MongoDB connection failures while unlocking jobs', function (done) {
+    const connectionError = new Error('connection failed');
+    sinon.stub(console, 'error');
+    sinon.stub(MongoClient, 'connect').callsFake(function (uri, callback) {
+      callback(connectionError);
+    });
+
+    worker.unlockAgendaJobs(function (err) {
+      err.should.equal(connectionError);
+      done();
+    });
+  });
+
+  it('closes MongoDB and reports update failures while unlocking jobs', function (done) {
+    const updateError = new Error('update failed');
+    const close = sinon.stub().callsFake(function (callback) {
+      callback();
+    });
+    sinon.stub(console, 'error');
+    sinon.stub(MongoClient, 'connect').callsFake(function (uri, callback) {
+      callback(null, {
+        close,
+        db() {
+          return {
+            collection() {
+              return {
+                updateMany(filter, update, updateCallback) {
+                  updateCallback(updateError);
+                },
+              };
+            },
+          };
+        },
+      });
+    });
+
+    worker.unlockAgendaJobs(function (err) {
+      err.should.equal(updateError);
+      close.calledOnce.should.equal(true);
+      done();
     });
   });
 });

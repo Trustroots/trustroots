@@ -10,9 +10,9 @@ function loadPushService(configOverrides) {
   const url = (config.https ? 'https' : 'http') + '://' + config.domain;
   const jobs = [];
   const agenda = {
-    now(type, data, callback) {
+    now(type, data) {
       jobs.push(JSON.parse(JSON.stringify({ type, data })));
-      process.nextTick(callback);
+      return Promise.resolve({ attrs: { name: type } });
     },
   };
 
