@@ -141,6 +141,7 @@ test.describe('authenticated member flows', () => {
     annotateFeature(testInfo, 'account.data-export', [
       'The combined export is an attachment with the documented filename.',
       'The export has format and version metadata plus profile, contacts, and hosting offer sections.',
+      'Two exports of unchanged data attest the same content, because the request timestamp is not signed.',
     ]);
 
     const response = await page.request.get('/api/users/export');
@@ -152,12 +153,23 @@ test.describe('authenticated member flows', () => {
     const data = await response.json();
     expect(data).toMatchObject({
       format: 'trustroots-data-export',
-      version: 1,
+      version: 2,
       profile: expect.any(Object),
       contacts: expect.any(Array),
       hostingOffers: expect.any(Array),
     });
     expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
+
+    // The signed part of the file must not vary between downloads, otherwise
+    // the signature attests something other than the member's data.
+    const second = await (await page.request.get('/api/users/export')).json();
+
+    expect(second.exportedAt).toEqual(expect.any(String));
+    expect({ ...second, exportedAt: null, signature: null }).toEqual({
+      ...data,
+      exportedAt: null,
+      signature: null,
+    });
   });
 
   test('inbox prompts an unconfirmed member to activate their profile', async ({
