@@ -16,29 +16,26 @@ class MobileApiClientTest {
     }
 
     @Test
-    fun parsesExistingSignInMemberPayload() {
-        val member = mobileMemberFrom(
+    fun parsesMobileSession() {
+        val session = mobileSessionFrom(
             JSONObject(
-                """{"username":"river-otter","displayName":"River Otter","public":true}""",
+                """
+                {
+                  "accessToken": "access-token",
+                  "refreshToken": "refresh-token",
+                  "member": {
+                    "username": "river-otter",
+                    "displayName": "River Otter"
+                  }
+                }
+                """.trimIndent(),
             ),
         )
 
-        assertEquals("river-otter", member.username)
-        assertEquals("River Otter", member.displayName)
-    }
-
-    @Test
-    fun selectsMemberSessionFromMultipleResponseCookies() {
-        val sessionCookie = sessionCookieFrom(
-            mapOf(
-                "set-cookie" to listOf(
-                    "_passenger_route=route-value; Path=/; Secure",
-                    "connect.sid=session-value; Path=/; HttpOnly",
-                ),
-            ),
-        )
-
-        assertEquals("connect.sid=session-value", sessionCookie)
+        assertEquals("access-token", session.accessToken)
+        assertEquals("refresh-token", session.refreshToken)
+        assertEquals("river-otter", session.member.username)
+        assertEquals("River Otter", session.member.displayName)
     }
 
     @Test

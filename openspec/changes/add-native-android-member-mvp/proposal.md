@@ -5,16 +5,16 @@ on iPhone. Android members need a first-class application for profiles,
 circles, map search and conversations without making the website the primary
 interface.
 
-The Android application can share the existing policy-protected JSON API and
-product scope used by the iOS MVP, while using Android-native interface,
-security and lifecycle patterns.
+The Android application can share the versioned mobile API and product scope
+defined for the iOS MVP, while using Android-native interface, security and
+lifecycle patterns.
 
 ## What Changes
 
 - Add a native Kotlin and Jetpack Compose Android application.
-- Reuse the existing website-session and member routes used by the native iOS
-  application.
-- Store the signed session cookie using Android Keystore-backed storage.
+- Reuse the versioned mobile member API and the same member-facing MVP scope as
+  the native iOS application.
+- Store mobile credentials using Android Keystore-backed storage.
 - Provide native profile, circle, map, messaging, experience and account
   interfaces, with an embedded WebView fallback for explicitly deferred
   Trustroots website flows.
@@ -29,10 +29,14 @@ security and lifecycle patterns.
 - `native-android-member-app`: a native Android application for the defined
   Trustroots member MVP.
 
+### Modified Capabilities
+
+- `mobile-member-api`: Android and iOS clients use the same versioned mobile
+  authentication and member resources.
+
 ## Impact
 
 - Adds a Gradle/Kotlin Android project under `apps/android`.
 - Adds Android unit, integration and Compose UI tests as features are built.
 - Adds no administrator or moderation interface.
-- Adds no Android-specific server routes and does not change browser or iOS
-  behaviour.
+- Does not change existing browser or iOS behaviour.

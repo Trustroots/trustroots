@@ -10,17 +10,24 @@ final class MemberSessionStore: ObservableObject {
     @Published var serverURLString: String
 
     private let api: TrustrootsAPI
-    private let credentialStore: SessionCredentialStore
+    private let credentialStore: MobileCredentialStore
 
     init(
         api: TrustrootsAPI = TrustrootsAPI(),
         serverURLString: String? = nil,
-        credentialStore: SessionCredentialStore = SessionCredentialStore()
+        credentialStore: MobileCredentialStore = MobileCredentialStore()
     ) {
         self.api = api
         self.credentialStore = credentialStore
+        let persistedServerURL = UserDefaults.standard.string(forKey: "trustroots.apiServerURL")
+        let retiredDevelopmentServers = [
+            "http://127.0.0.1:3001",
+            "https://cat.trustroots.org",
+        ]
         self.serverURLString = serverURLString
-            ?? TrustrootsAPIConfiguration.productionURLString
+            ?? (persistedServerURL.map(retiredDevelopmentServers.contains) == true
+                ? TrustrootsAPIConfiguration.buildDefaultURLString
+                : persistedServerURL ?? TrustrootsAPIConfiguration.buildDefaultURLString)
         let storedCredentials = credentialStore.load()
         self.member = storedCredentials == nil ? nil : Self.loadPersistedMember()
         updateCacheScope()
@@ -38,16 +45,17 @@ final class MemberSessionStore: ObservableObject {
         defer { isSigningIn = false }
 
         do {
-            let websiteSession = try await api.signIn(
+            let mobileSession = try await api.signIn(
                 serverURLString: serverURLString,
                 usernameOrEmail: usernameOrEmail,
                 password: password
             )
-            guard credentialStore.save(websiteSession.credentials) else {
+            guard credentialStore.save(mobileSession.credentials) else {
                 throw TrustrootsAPIError.serverMessage("Secure credential storage is unavailable.")
             }
-            member = websiteSession.member
-            if let encodedMember = try? JSONEncoder().encode(websiteSession.member) {
+            member = mobileSession.member
+            UserDefaults.standard.set(serverURLString, forKey: "trustroots.apiServerURL")
+            if let encodedMember = try? JSONEncoder().encode(mobileSession.member) {
                 UserDefaults.standard.set(encodedMember, forKey: Self.persistedMemberKey)
             }
             updateCacheScope()

@@ -4,7 +4,7 @@ plugins {
 }
 
 val configuredApiURL = providers.gradleProperty("trustrootsApiUrl")
-    .orElse("https://www.trustroots.org")
+    .orElse("https://pr2777.test.trustroots.org")
 
 android {
     namespace = "org.trustroots.android"

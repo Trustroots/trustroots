@@ -1,13 +1,22 @@
-## 1. Existing API integration and security
+## 1. API foundation and security
 
-- [x] 1.1 Use the existing `/api/auth/signin` and `/api/auth/signout` session
-      flow without adding native-specific server routes.
-- [x] 1.2 Store the signed session cookie in the iOS Keychain and attach it only
-      to requests for the configured Trustroots API origin.
-- [x] 1.3 Use existing policy-protected profile, circle, offer, contact,
-      experience, message, account and support routes.
-- [x] 1.4 Keep the native URL session isolated from shared browser cookie
-      storage so the allowlisted website fallback has an independent session.
+- [ ] 1.1 Define and version the mobile API schemas, error model, pagination,
+      and compatibility policy.
+- [ ] 1.2 Add mobile registration, sign-in, access-token refresh, sign-out,
+      session listing/revocation, and server-side token rotation/revocation.
+- [ ] 1.3 Add authenticated mobile representations and routes for current
+      member/profile/photo, circles/membership, offers/search, messaging,
+      contacts, experiences, account settings and support.
+- [ ] 1.3.1 Migrate every native iOS member-data request from legacy `/api/*`
+      routes to an equivalent purpose-built `/api/mobile/v0` bearer route;
+      do not retain cookie-backed fallbacks for native resources.
+- [ ] 1.3.2 Deliver the migration in independently testable resource groups:
+      circles and offers; contacts and experiences; messages; then account,
+      profile mutations and support.
+- [ ] 1.4 Add required indexes and a safe migration for mobile sessions.
+- [ ] 1.5 Prove that mobile sign-in does not issue a browser-session cookie and
+      that deploying the additive mobile routes leaves existing browser auth
+      and rendered website behaviour unchanged.
 
 ## 2. Native iOS application
 
@@ -46,7 +55,7 @@
 - [x] 2.9 Add an account/server-scoped protected cache for authenticated GET
       responses and a persistent warning whenever cached data is being shown.
 - [x] 2.10 Implement native member search through the existing protected
-      `/api/users?search=` route, including native results, empty and error
+      `/api/mobile/v0/members?search=` route, including native results, empty and error
       states, keyboard dismissal, and navigation to native profiles.
 - [x] 2.11 Show the existing last-seen and reply statistics on native profiles,
       and let a member open or begin the existing native conversation with
@@ -63,8 +72,8 @@
 
 - [ ] 4.1 Retain the existing server route tests for authentication,
       authorisation, visibility, validation and pagination.
-- [x] 4.2 Add iOS API-client contract tests for existing route paths, session
-      cookie handling, error handling and model decoding.
+- [x] 4.2 Add iOS API-client contract tests for versioned route paths, session
+      bearer token handling, error handling and model decoding.
 - [ ] 4.3 Add XCUITests for sign-in, profile update, circle membership, offer
       discovery, composing/reading a message, browser routing, and NIP-07
       permission decisions.

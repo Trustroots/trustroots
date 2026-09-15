@@ -7,6 +7,7 @@ on:
       - '.github/workflows/mobile.yml'
       - 'apps/android/**'
       - 'apps/ios/**'
+      - 'modules/mobile/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
       - 'openspec/changes/add-native-android-member-mvp/**'
   push:
@@ -15,6 +16,7 @@ on:
       - '.github/workflows/mobile.yml'
       - 'apps/android/**'
       - 'apps/ios/**'
+      - 'modules/mobile/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
       - 'openspec/changes/add-native-android-member-mvp/**'
   workflow_dispatch:

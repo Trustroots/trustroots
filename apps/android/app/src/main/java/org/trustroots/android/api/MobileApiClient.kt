@@ -11,8 +11,9 @@ data class MobileMember(
     val displayName: String,
 )
 
-data class MemberSession(
-    val cookieHeader: String,
+data class MobileSession(
+    val accessToken: String,
+    val refreshToken: String,
     val member: MobileMember,
 )
 
@@ -26,64 +27,67 @@ class MobileApiException(
 
 class MobileApiClient(baseURL: String) {
     private val baseURL = secureApiBaseURL(baseURL)
-    suspend fun signIn(usernameOrEmail: String, password: String): Result<MemberSession> =
+    suspend fun signIn(usernameOrEmail: String, password: String): Result<MobileSession> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val request = JSONObject()
                     .put("username", usernameOrEmail)
                     .put("password", password)
                     .toString()
-                val response = jsonRequest(
-                        path = "/api/auth/signin",
+                mobileSessionFrom(
+                    jsonRequest(
+                        path = "/api/mobile/v0/auth/signin",
                         method = "POST",
                         body = request,
                         rejectedMessage = "Sign-in was not accepted.",
-                    )
-                MemberSession(
-                    cookieHeader = requireNotNull(response.sessionCookie) {
-                        "Trustroots did not return a member session."
-                    },
-                    member = mobileMemberFrom(response.body),
+                    ),
                 )
             }
         }
 
-    suspend fun currentMember(session: MemberSession): Result<MobileMember> =
+    suspend fun refresh(refreshToken: String): Result<MobileSession> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val response = jsonRequest(
-                    path = "/api/users/${session.member.username}",
-                    method = "GET",
-                    sessionCookie = session.cookieHeader,
+                    path = "/api/mobile/v0/auth/refresh",
+                    method = "POST",
+                    body = JSONObject().put("refreshToken", refreshToken).toString(),
                 )
-                mobileMemberFrom(response.body)
+                mobileSessionFrom(response)
             }
         }
 
-    suspend fun signOut(session: MemberSession): Result<Unit> =
+    suspend fun currentMember(accessToken: String): Result<MobileMember> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val response = jsonRequest(
+                    path = "/api/mobile/v0/me",
+                    method = "GET",
+                    accessToken = accessToken,
+                )
+                mobileMemberFrom(response.getJSONObject("member"))
+            }
+        }
+
+    suspend fun signOut(accessToken: String): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
                 jsonRequest(
-                    path = "/api/auth/signout",
-                    method = "GET",
-                    sessionCookie = session.cookieHeader,
+                    path = "/api/mobile/v0/auth/signout",
+                    method = "POST",
+                    accessToken = accessToken,
                 )
                 Unit
             }
         }
 
-    private data class JsonResponse(
-        val body: JSONObject,
-        val sessionCookie: String?,
-    )
-
     private fun jsonRequest(
         path: String,
         method: String,
         body: String? = null,
-        sessionCookie: String? = null,
+        accessToken: String? = null,
         rejectedMessage: String = "The request was not accepted.",
-    ): JsonResponse {
+    ): JSONObject {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
         val connection = endpoint.openConnection() as HttpURLConnection
         try {
@@ -92,7 +96,7 @@ class MobileApiClient(baseURL: String) {
             connection.readTimeout = 15_000
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("User-Agent", "TrustrootsAndroid/0.1")
-            sessionCookie?.let { connection.setRequestProperty("Cookie", it) }
+            accessToken?.let { connection.setRequestProperty("Authorization", "Bearer $it") }
             body?.let {
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "application/json")
@@ -112,24 +116,13 @@ class MobileApiClient(baseURL: String) {
                     message = message.ifBlank { rejectedMessage },
                 )
             }
-            return JsonResponse(
-                body = if (responseBody.isBlank()) JSONObject() else JSONObject(responseBody),
-                sessionCookie = sessionCookieFrom(connection.headerFields),
-            )
+            return if (responseBody.isBlank()) JSONObject() else JSONObject(responseBody)
         } finally {
             connection.disconnect()
         }
     }
 
 }
-
-internal fun sessionCookieFrom(headers: Map<String?, List<String>>): String? =
-    headers.entries
-        .asSequence()
-        .filter { (name) -> name.equals("Set-Cookie", ignoreCase = true) }
-        .flatMap { (_, values) -> values.asSequence() }
-        .map { it.substringBefore(';') }
-        .firstOrNull { it.startsWith("connect.sid=") }
 
 internal fun secureApiBaseURL(value: String): String {
     val url = URL(value.trim())
@@ -148,6 +141,12 @@ internal fun secureApiBaseURL(value: String): String {
     }
     return value.trim().trimEnd('/')
 }
+
+internal fun mobileSessionFrom(response: JSONObject) = MobileSession(
+    accessToken = response.getString("accessToken"),
+    refreshToken = response.getString("refreshToken"),
+    member = mobileMemberFrom(response.getJSONObject("member")),
+)
 
 internal fun mobileMemberFrom(member: JSONObject): MobileMember {
     val username = member.getString("username")

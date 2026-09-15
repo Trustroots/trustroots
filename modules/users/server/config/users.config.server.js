@@ -35,7 +35,13 @@ module.exports = function (app) {
 
   // Add passport's middleware
   app.use(passport.initialize());
-  app.use(passport.session());
+  const browserPassportSession = passport.session();
+  app.use(function browserPassportSessionOnly(req, res, next) {
+    if (/^\/api\/mobile\/v0(?:\/|$)/.test(req.path)) {
+      return next();
+    }
+    return browserPassportSession(req, res, next);
+  });
 
   // Handle logging out suspended users
   app.use(usersSuspended.invalidateSuspendedSessions);

@@ -1,10 +1,10 @@
 ## Context
 
 Trustroots is a Node/Express and MongoDB application with an AngularJS/React
-browser client. Its existing JSON endpoints authenticate through an Express
-session cookie and already apply the domain policies needed by the native MVP.
-The native app can treat the signed cookie as an opaque credential without
-sharing it with its embedded browser.
+browser client. Its protected endpoints authenticate through Express sessions
+stored in a cookie. That approach is not an appropriate primary authentication
+contract for a native iOS app: the app must not depend on browser cookies or
+embed the website in a web view.
 
 The MVP is a native iPhone application, written in Swift and SwiftUI. It
 reuses the Trustroots domain model and server-side authorisation rules, but
@@ -26,7 +26,7 @@ the two or depend on either key store for its initial TestFlight release.
 - Ship a useful, fully native iPhone member application.
 - Keep the website and its current browser-session authentication working
   without behavioural regressions.
-- Reuse the established policy-protected API while the native MVP is validated.
+- Provide a versioned bearer API that reuses the established domain policies.
 - Release the core application through TestFlight before beginning APNs work.
 
 **Non-Goals:**
@@ -60,23 +60,34 @@ Offers, and Messaging. Inject protocol-based API clients and persistence so
 unit tests do not need network access. Use XCTest for unit/API-contract tests
 and XCUITest for the essential user journeys.
 
-### Existing-session authentication
+### Mobile authentication
 
-Use `/api/auth/signin` and capture the signed `connect.sid` cookie returned by
-the established website-session flow. Store the opaque name/value pair only in
-Keychain with this-device-only protection, then attach it explicitly to
-requests for the configured Trustroots origin. Disable URLSession's shared
-cookie storage so the credential is not implicitly exposed to the `WKWebView`.
+Introduce pre-release `/api/mobile/v0` routes rather than adapting browser
+cookies. Successful mobile registration or sign-in returns a short-lived
+access token and a rotating refresh token. The app stores both only in the
+Keychain; the access token is sent as a Bearer token. Refresh tokens are
+hashed server-side, scoped to a device session, revocable individually, and
+rotated on every refresh. Signing out revokes the active mobile session.
 
-Use the existing protected `/api/*` routes directly. Their policy middleware
-remains the authority for confirmation, suspension, privacy, visibility and
-mutation permissions. Signing out calls `/api/auth/signout` and deletes the
-Keychain credential and account-scoped offline cache.
+Access tokens expire after 15 minutes and refresh tokens after 30 days. The
+native client refreshes proactively when possible and, after a 401, may rotate
+and retry the original request exactly once. A rejected refresh clears the
+credential pair and returns to sign-in with an explicit expired-session
+message. HTTP 403 remains an authorisation result and is not treated as an
+expired token by the bearer client.
 
-This deliberately accepts the website session's current lifetime and
-revocation semantics for the MVP. A versioned bearer contract remains a
-possible follow-on, but it should be proposed after native usage demonstrates
-which representations and lifecycle controls are actually required.
+This automatic retry applies only to documented `/api/mobile/v0` bearer
+resources. Screens that still use a legacy browser route are explicitly draft
+and must not infer that a cookie-route rejection invalidates a mobile bearer
+session; each is migrated only when its versioned representation is available.
+Concurrent bearer requests for the same server share a single refresh
+operation, preventing a rotating refresh token from invalidating a second
+request that observed the same expired access token.
+
+The server reuses existing password validation, account eligibility,
+confirmation, suspension, and authorisation rules. It must apply the same
+privacy and visibility rules as the browser routes, rather than trusting a
+client-supplied member identifier.
 
 ### Account recovery
 
@@ -103,7 +114,7 @@ Send aggregate native screen pageviews directly to the existing self-hosted
 Umami `/api/send` endpoint. Use the dedicated production native-app website
 identifier, `/ios/`-prefixed paths, and an `ios.trustroots.org` hostname. Use
 an ephemeral cookie-free session and do not send the member identity, email,
-API session cookie, advertising identifier, or another persistent device
+API bearer token, advertising identifier, or another persistent device
 identifier. Analytics are only for aggregate product understanding and must
 never be used for advertising, behavioural profiling, or sale.
 
@@ -172,28 +183,44 @@ left, and the original circle artwork or member portrait as a crisp circular
 image on the right. Built-in browser routes replace the left-side home-only
 control with an explicit Back control beside Home.
 
-### Existing API scope
+### API scope
 
-The client maps native journeys to the established routes for authentication,
-profiles and photos, circles and memberships, offers, contacts, experiences,
-messages, account settings and support. Native contract tests pin the paths,
-cookie header and response decoding used by the app. Existing server and
-browser tests remain responsible for policy and mutation behaviour.
+The initial mobile API covers only the MVP journeys:
 
-Member profiles obtain accommodation details from the existing
-`/api/offers-by/:userId` route; no profile or offer API shape is extended.
-Member images use the established authenticated
-`/api/users/:userId/avatar` redirect so local, Gravatar and other configured
-avatar sources behave like the website. The native session cookie is removed
-before following any cross-origin image redirect.
+- sign-up, sign-in, refresh, and sign-out;
+- current-member data and profile/photo read/update;
+- circle catalogue/detail and membership read/join/leave;
+- offer search by map bounds/location and circle, offer detail, and the
+  current member's create/update/remove flows;
+- inbox, thread history with pagination, sending replies, marking messages as
+  read, unread count/synchronisation, and conversation-linked experience
+  discovery and creation.
+
+Responses use dedicated mobile representations and pagination metadata, not
+raw database documents. API schemas, errors, and compatibility policy are
+published alongside the server implementation.
+
+Stable representations are introduced incrementally. A resource is not marked
+complete until its native screen uses the versioned representation with bearer
+authentication; legacy cookie payloads are an implementation reference, not a
+mobile compatibility contract. Every protected error response includes a
+stable machine-readable code alongside its member-facing message.
 
 Public MapKit/Mapbox tiles, validator-approved Nostr relay subscriptions and
-pages in the bounded website fallback do not carry the stored API session
-credential.
+pages in the bounded website fallback do not carry the mobile bearer token.
 
-The native app uses the production Trustroots HTTPS API origin. Debug and
-release builds do not expose an API-origin selector or permit clear-text
-transport.
+Native API base URLs require HTTPS. The sole transport exception is an HTTP
+loopback address in a debug Simulator build, allowing the Simulator to reach
+the developer's Mac without making remote clear-text transport configurable.
+Repeated sign-in and refresh failures are throttled by network source and a
+one-way identity key. Expired and revoked sessions are removed by a MongoDB
+TTL index at the end of the 30-day refresh lifetime.
+
+Member search, blocking, configured avatars and member hosting details use
+bearer adapters under `/api/mobile/v0/members`, `/api/mobile/v0/blocked-users`,
+`/api/mobile/v0/members/:memberId/avatar` and `/api/mobile/v0/offers-by/:memberId`.
+These adapters reuse the authoritative website controllers and policies.
+Avatar redirects to another origin strip the bearer header.
 
 ### Website isolation
 
@@ -252,13 +279,13 @@ photo-library access only when a member chooses a profile picture.
 
 ### Rollout and compatibility
 
-Exercise the existing routes and native decoders against staging before
-releasing the app through TestFlight. API versioning, APNs and Universal Links
+Exercise the versioned routes and native decoders against staging before
+releasing the app through TestFlight. APNs and Universal Links
 can be proposed later after the core app is validated.
 
 ## Risks / Trade-offs
 
-- [Session-cookie theft from a compromised device] → Store the opaque
+- [Bearer-token theft from a compromised device] → Store the opaque
   credential in Keychain, restrict transport to the configured HTTPS origin
   and never log it.
 - [Existing response formats change] → Pin the consumed fields in native

@@ -1,5 +1,5 @@
-import MapKit
 import XCTest
+import MapKit
 @testable import Trustroots
 
 final class TrustrootsTests: XCTestCase {
@@ -74,20 +74,6 @@ final class TrustrootsTests: XCTestCase {
         )
     }
 
-    func testBrowserHomeRouteDoesNotBehaveLikeAChildPage() {
-        XCTAssertTrue(TrustrootsBrowserRoute.website(path: "/", title: "Trustroots").isHome)
-        XCTAssertTrue(
-            TrustrootsBrowserRoute.website(
-                path: "https://www.trustroots.org/",
-                title: "Trustroots"
-            ).isHome
-        )
-        XCTAssertFalse(
-            TrustrootsBrowserRoute.website(path: "/about", title: "About Trustroots").isHome
-        )
-        XCTAssertFalse(TrustrootsBrowserRoute.join.isHome)
-    }
-
     func testBrowserKeepsTrustrootsSubdomainsInApp() throws {
         XCTAssertTrue(
             TrustrootsWebView.Coordinator.isTrustrootsURL(
@@ -114,12 +100,13 @@ final class TrustrootsTests: XCTestCase {
         )
     }
 
-    func testAppDefaultsToTheProductionAPI() {
+    func testLocalAPIConfigurationAcceptsTheDefaultDevelopmentServer() {
         let configuration = TrustrootsAPIConfiguration(
-            baseURLString: TrustrootsAPIConfiguration.buildDefaultURLString
+            baseURLString: TrustrootsAPIConfiguration.localDefaultURLString
         )
 
-        XCTAssertEqual(configuration?.baseURL.absoluteString, "https://www.trustroots.org")
+        XCTAssertEqual(configuration?.baseURL.host, "127.0.0.1")
+        XCTAssertEqual(configuration?.baseURL.port, 13001)
     }
 
     func testAPIConfigurationRejectsMissingOrUnsupportedURLs() {
@@ -138,10 +125,10 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertNotNil(TrustrootsAPIConfiguration(baseURLString: "https://api.example.org"))
     }
 
-    func testAPIConfigurationRejectsClearTextLoopbackOrigins() {
-        XCTAssertNil(TrustrootsAPIConfiguration(baseURLString: "http://localhost:13001"))
-        XCTAssertNil(TrustrootsAPIConfiguration(baseURLString: "http://127.0.0.1:13001"))
-        XCTAssertNil(TrustrootsAPIConfiguration(baseURLString: "http://[::1]:13001"))
+    func testAPIConfigurationAcceptsEveryDebugSimulatorLoopbackForm() {
+        XCTAssertNotNil(TrustrootsAPIConfiguration(baseURLString: "http://localhost:13001"))
+        XCTAssertNotNil(TrustrootsAPIConfiguration(baseURLString: "http://127.0.0.1:13001"))
+        XCTAssertNotNil(TrustrootsAPIConfiguration(baseURLString: "http://[::1]:13001"))
     }
 
     func testSignedInMemberRoundTripsForSessionRestoration() throws {
@@ -163,25 +150,24 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(restoredMember.newsletter, true)
     }
 
-    func testNativeURLSessionKeepsTheWebsiteSessionOutOfSharedCookieStorage() {
-        XCTAssertFalse(URLSession.trustroots.configuration.httpShouldSetCookies)
-        XCTAssertEqual(URLSession.trustroots.configuration.httpCookieAcceptPolicy, .never)
-        XCTAssertNil(URLSession.trustroots.configuration.httpCookieStorage)
-    }
-
-    func testInboxAccumulatorDoesNotDuplicateThreadsWhenInboxReloads() throws {
+    func testMobileSessionDecodesBearerCredentialsAndMember() throws {
         let payload = Data(
-            #"[{"_id":"thread-1","message":{"excerpt":"Hello"},"read":true,"updated":"2026-07-29T12:00:00Z","userFrom":{"_id":"member-1","username":"first"},"userTo":{"_id":"member-2","username":"second"}}]"#.utf8
+            #"{"accessToken":"access","refreshToken":"refresh","accessTokenExpiresAt":"2026-07-16T11:00:00Z","member":{"username":"traveller","displayName":"A Traveller","public":true,"email":"traveller@example.test","newsletter":true}}"#.utf8
         )
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let page = try decoder.decode([MessageThread].self, from: payload)
-        var accumulator = MessageThreadAccumulator()
 
-        accumulator.append(page)
-        accumulator.append(page)
+        let mobileSession = try decoder.decode(MobileSessionResponse.self, from: payload)
 
-        XCTAssertEqual(accumulator.threads.map(\.id), ["thread-1"])
+        XCTAssertEqual(mobileSession.credentials, MobileCredentials(accessToken: "access", refreshToken: "refresh"))
+        XCTAssertEqual(mobileSession.member.email, "traveller@example.test")
+        XCTAssertEqual(mobileSession.member.newsletter, true)
+    }
+
+    func testNativeURLSessionDoesNotPersistBrowserCookies() {
+        XCTAssertFalse(URLSession.trustroots.configuration.httpShouldSetCookies)
+        XCTAssertEqual(URLSession.trustroots.configuration.httpCookieAcceptPolicy, .never)
+        XCTAssertNil(URLSession.trustroots.configuration.httpCookieStorage)
     }
 
     func testMapOfferUsesGeoJSONLongitudeThenLatitudeCoordinates() {
@@ -192,56 +178,6 @@ final class TrustrootsTests: XCTestCase {
 
         XCTAssertEqual(offer.coordinate?.latitude, 38.7223)
         XCTAssertEqual(offer.coordinate?.longitude, -9.1393)
-    }
-
-    func testOfferSearchDefaultsToMembersSeenWithinSixMonths() async throws {
-        let credentialStore = InMemorySessionCredentialStore()
-        XCTAssertTrue(credentialStore.save(
-            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
-        ))
-
-        var recordedRequest: URLRequest?
-        APIURLProtocol.handler = { request in
-            recordedRequest = request
-            let response = HTTPURLResponse(
-                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
-            )!
-            return (response, Data(#"{"features":[]}"#.utf8))
-        }
-        defer { APIURLProtocol.handler = nil }
-
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [APIURLProtocol.self]
-        let api = TrustrootsAPI(
-            session: URLSession(configuration: configuration),
-            credentialStore: credentialStore
-        )
-
-        _ = try await api.searchOffers(
-            serverURLString: "https://api.example.test",
-            in: MKCoordinateRegion(
-                center: CLLocationCoordinate2D(latitude: 38.72, longitude: -9.14),
-                span: MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
-            )
-        )
-
-        let filtersValue = URLComponents(
-            url: try XCTUnwrap(recordedRequest?.url),
-            resolvingAgainstBaseURL: false
-        )?.queryItems?.first(where: { $0.name == "filters" })?.value
-        let filtersData = try XCTUnwrap(filtersValue?.data(using: .utf8))
-        let filters = try JSONSerialization.jsonObject(with: filtersData) as? [String: Any]
-        let seen = filters?["seen"] as? [String: Any]
-
-        XCTAssertEqual(recordedRequest?.url?.path, "/api/offers")
-        XCTAssertEqual(seen?["months"] as? Int, 6)
-    }
-
-    func testAboutRouteUsesTheDedicatedWebsitePage() {
-        XCTAssertEqual(
-            TrustrootsBrowserRoute.website(path: "/about", title: "About Trustroots").url.path,
-            "/about"
-        )
     }
 
     func testNostrKeyCodecGeneratesAndAcceptsPrivateKeyHex() throws {
@@ -305,14 +241,323 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertNil(OpenLocationCodeDecoder.coordinate(for: "not-a-plus-code"))
     }
 
-    func testExistingProfileRouteUsesStoredSessionCookie() async throws {
-        let credentialStore = InMemorySessionCredentialStore()
+    func testMobileBearerRequestRefreshesOnceAndRetriesWithTheRotatedToken() async throws {
+        let credentialStore = InMemoryMobileCredentialStore()
         XCTAssertTrue(credentialStore.save(
-            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+            MobileCredentials(accessToken: "expired-access", refreshToken: "valid-refresh")
+        ))
+
+        var requests: [(path: String, authorization: String?)] = []
+        MobileAPIURLProtocol.handler = { request in
+            requests.append((request.url?.path ?? "", request.value(forHTTPHeaderField: "Authorization")))
+
+            let response: HTTPURLResponse
+            let body: Data
+            switch request.url?.path {
+            case "/api/mobile/v0/me":
+                if request.value(forHTTPHeaderField: "Authorization") == "Bearer expired-access" {
+                    response = HTTPURLResponse(
+                        url: request.url!, statusCode: 401, httpVersion: nil, headerFields: nil
+                    )!
+                    body = Data(#"{"code":"authentication_required"}"#.utf8)
+                } else {
+                    response = HTTPURLResponse(
+                        url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+                    )!
+                    body = Data(#"{"member":{"username":"traveller","displayName":"A Traveller","public":true}}"#.utf8)
+                }
+            case "/api/mobile/v0/auth/refresh":
+                response = HTTPURLResponse(
+                    url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+                )!
+                body = Data(#"{"accessToken":"rotated-access","refreshToken":"rotated-refresh","accessTokenExpiresAt":"2026-07-16T11:00:00Z","member":{"username":"traveller","displayName":"A Traveller","public":true}}"#.utf8)
+            default:
+                response = HTTPURLResponse(
+                    url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil
+                )!
+                body = Data()
+            }
+            return (response, body)
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        let api = TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore
+        )
+
+        let member = try await api.currentMember(serverURLString: "https://api.example.test")
+
+        XCTAssertEqual(member.username, "traveller")
+        let recordedRequests = requests
+        XCTAssertEqual(recordedRequests.map(\.path), [
+            "/api/mobile/v0/me",
+            "/api/mobile/v0/auth/refresh",
+            "/api/mobile/v0/me",
+        ])
+        XCTAssertEqual(recordedRequests[0].authorization, "Bearer expired-access")
+        XCTAssertNil(recordedRequests[1].authorization)
+        XCTAssertEqual(recordedRequests[2].authorization, "Bearer rotated-access")
+        XCTAssertEqual(
+            credentialStore.load(),
+            MobileCredentials(accessToken: "rotated-access", refreshToken: "rotated-refresh")
+        )
+    }
+
+    func testEveryBearerMutationRetriesItsOriginalMethodAndBodyAfterRefresh() async throws {
+        let server = "https://api.example.test"
+        let operations: [(String, String, (TrustrootsAPI) async throws -> Void)] = [
+            ("/messages", "POST", { api in
+                _ = try await api.sendMessage(serverURLString: server, memberID: "recipient", content: "An example reply.")
+            }),
+            ("/profile", "PUT", { api in
+                _ = try await api.updateProfile(serverURLString: server, displayName: "A Traveller", tagline: "Hello", description: "An example profile.", locationLiving: "", locationFrom: "", languages: ["eng"])
+            }),
+            ("/account", "PUT", { api in
+                _ = try await api.updateAccount(serverURLString: server, email: "traveller@example.test", newsletter: false)
+            }),
+            ("/account/password", "POST", { api in
+                try await api.changePassword(serverURLString: server, currentPassword: "old-password", newPassword: "new-password", verifyPassword: "new-password")
+            }),
+            ("/support", "POST", { api in
+                try await api.sendSupportMessage(serverURLString: server, message: "An example support request.")
+            }),
+            ("/memberships/circle", "POST", { api in
+                try await api.setCircleMembership(serverURLString: server, circleID: "circle", isMember: false)
+            }),
+            ("/memberships/circle", "DELETE", { api in
+                try await api.setCircleMembership(serverURLString: server, circleID: "circle", isMember: true)
+            }),
+            ("/experiences", "POST", { api in
+                _ = try await api.createExperience(serverURLString: server, memberID: "recipient", met: true, hosted: false, wasGuest: false, recommendation: "yes", feedback: "An example experience.")
+            }),
+            ("/messages-read", "POST", { api in
+                try await api.markMessagesRead(serverURLString: server, messageIDs: ["111111111111111111111111"])
+            }),
+            ("/auth/signout", "POST", { api in
+                await api.signOut(serverURLString: server)
+            }),
+        ]
+        defer { MobileAPIURLProtocol.handler = nil }
+        for (path, method, operation) in operations {
+            let store = InMemoryMobileCredentialStore()
+            store.save(MobileCredentials(accessToken: "expired-access", refreshToken: "valid-refresh"))
+            let api = makeMobileAPI(store: store)
+            var requests: [URLRequest] = []
+            var bodies: [Data?] = []
+            MobileAPIURLProtocol.handler = { request in
+                requests.append(request)
+                bodies.append(Self.body(of: request))
+                if request.url!.path.hasSuffix("/auth/refresh") {
+                    return self.mobileResponse(request, status: 200, body: self.rotatedSessionJSON)
+                }
+                if request.value(forHTTPHeaderField: "Authorization") == "Bearer expired-access" {
+                    return self.mobileResponse(request, status: 401)
+                }
+                // A response that satisfies each of the resource-specific decoders.
+                return self.mobileResponse(request, status: 200, body: #"{"_id":"example","username":"traveller","content":"An example reply.","userFrom":{"username":"traveller"}}"#)
+            }
+
+            try await operation(api)
+
+            XCTAssertEqual(requests.map { $0.url!.path }, ["/api/mobile/v0\(path)", "/api/mobile/v0/auth/refresh", "/api/mobile/v0\(path)"], path)
+            XCTAssertEqual(requests.first?.httpMethod, method, path)
+            XCTAssertEqual(requests.last?.httpMethod, method, path)
+            XCTAssertEqual(bodies.first!, bodies.last!, path)
+            XCTAssertEqual(requests.last?.value(forHTTPHeaderField: "Authorization"), "Bearer rotated-access", path)
+        }
+    }
+
+    func testMutationDoesNotRetryAgainWhenRotatedAccessIsRejected() async throws {
+        let store = InMemoryMobileCredentialStore()
+        store.save(MobileCredentials(accessToken: "expired-access", refreshToken: "valid-refresh"))
+        var paths: [String] = []
+        MobileAPIURLProtocol.handler = { request in
+            paths.append(request.url!.path)
+            if request.url!.path.hasSuffix("/auth/refresh") {
+                return self.mobileResponse(request, status: 200, body: self.rotatedSessionJSON)
+            }
+            return self.mobileResponse(request, status: 401)
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+        do {
+            try await makeMobileAPI(store: store).sendSupportMessage(serverURLString: "https://api.example.test", message: "An example request.")
+            XCTFail("Expected authentication rejection")
+        } catch {
+            XCTAssertEqual(error as? TrustrootsAPIError, .authenticationRequired)
+        }
+        XCTAssertEqual(paths, ["/api/mobile/v0/support", "/api/mobile/v0/auth/refresh", "/api/mobile/v0/support"])
+    }
+
+    func testRejectedRefreshDoesNotReplayMutation() async throws {
+        let store = InMemoryMobileCredentialStore()
+        store.save(MobileCredentials(accessToken: "expired-access", refreshToken: "invalid-refresh"))
+        var paths: [String] = []
+        MobileAPIURLProtocol.handler = { request in
+            paths.append(request.url!.path)
+            return self.mobileResponse(request, status: 401)
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+        do {
+            try await makeMobileAPI(store: store).sendSupportMessage(serverURLString: "https://api.example.test", message: "An example request.")
+            XCTFail("Expected authentication rejection")
+        } catch {
+            XCTAssertEqual(error as? TrustrootsAPIError, .authenticationRequired)
+        }
+        XCTAssertEqual(paths, ["/api/mobile/v0/support", "/api/mobile/v0/auth/refresh"])
+    }
+
+    func testForbiddenMutationDoesNotRotateOrReplay() async throws {
+        let store = InMemoryMobileCredentialStore()
+        store.save(MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh"))
+        var requestCount = 0
+        MobileAPIURLProtocol.handler = { request in
+            requestCount += 1
+            return self.mobileResponse(request, status: 403)
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+        do {
+            try await makeMobileAPI(store: store).sendSupportMessage(serverURLString: "https://api.example.test", message: "An example request.")
+            XCTFail("Expected policy rejection")
+        } catch {}
+        XCTAssertEqual(requestCount, 1)
+        XCTAssertEqual(store.load()?.refreshToken, "valid-refresh")
+    }
+
+    func testLateExpiredResponseUsesCredentialsAlreadyRotatedByAnotherRequest() async throws {
+        let store = InMemoryMobileCredentialStore()
+        store.save(MobileCredentials(accessToken: "expired-access", refreshToken: "valid-refresh"))
+        var requestCount = 0
+        MobileAPIURLProtocol.handler = { request in
+            requestCount += 1
+            XCTAssertEqual(request.url!.path, "/api/mobile/v0/support")
+            if requestCount == 1 {
+                store.save(MobileCredentials(accessToken: "rotated-access", refreshToken: "rotated-refresh"))
+                return self.mobileResponse(request, status: 401)
+            }
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer rotated-access")
+            return self.mobileResponse(request, status: 200)
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+        try await makeMobileAPI(store: store).sendSupportMessage(serverURLString: "https://api.example.test", message: "An example request.")
+        XCTAssertEqual(requestCount, 2)
+    }
+
+    func testSearchRequestsReadOnlyContentAndAcknowledgementsUseBearerPOST() async throws {
+        let store = InMemoryMobileCredentialStore()
+        store.save(MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh"))
+        let api = makeMobileAPI(store: store)
+        var requests: [URLRequest] = []
+        MobileAPIURLProtocol.handler = { request in
+            requests.append(request)
+            XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer valid-access")
+            if request.httpMethod == "POST" {
+                let body = try! JSONSerialization.jsonObject(with: Self.body(of: request)!) as! [String: [String]]
+                XCTAssertEqual(body["messageIds"], ["111111111111111111111111"])
+                return self.mobileResponse(request, status: 200)
+            }
+            return self.mobileResponse(request, status: 200, body: "[]")
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+        _ = try await api.conversation(serverURLString: "https://api.example.test", memberID: "recipient", markRead: false)
+        XCTAssertTrue(requests[0].url!.query!.contains("markRead=false"))
+        XCTAssertEqual(requests.count, 1)
+        try await api.markMessagesRead(serverURLString: "https://api.example.test", messageIDs: [])
+        XCTAssertEqual(requests.count, 1)
+        try await api.markMessagesRead(serverURLString: "https://api.example.test", messageIDs: ["111111111111111111111111"])
+        XCTAssertEqual(requests.last?.url!.path, "/api/mobile/v0/messages-read")
+        XCTAssertEqual(requests.last?.httpMethod, "POST")
+    }
+
+    func testBrowserHomeRouteDoesNotBehaveLikeAChildPage() {
+        XCTAssertTrue(TrustrootsBrowserRoute.website(path: "/", title: "Trustroots").isHome)
+        XCTAssertTrue(
+            TrustrootsBrowserRoute.website(
+                path: "https://www.trustroots.org/",
+                title: "Trustroots"
+            ).isHome
+        )
+        XCTAssertFalse(
+            TrustrootsBrowserRoute.website(path: "/about", title: "About Trustroots").isHome
+        )
+        XCTAssertFalse(TrustrootsBrowserRoute.join.isHome)
+    }
+
+    func testInboxAccumulatorDoesNotDuplicateThreadsWhenInboxReloads() throws {
+        let payload = Data(
+            #"[{"_id":"thread-1","message":{"excerpt":"Hello"},"read":true,"updated":"2026-07-29T12:00:00Z","userFrom":{"_id":"member-1","username":"first"},"userTo":{"_id":"member-2","username":"second"}}]"#.utf8
+        )
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let page = try decoder.decode([MessageThread].self, from: payload)
+        var accumulator = MessageThreadAccumulator()
+
+        accumulator.append(page)
+        accumulator.append(page)
+
+        XCTAssertEqual(accumulator.threads.map(\.id), ["thread-1"])
+    }
+
+    func testOfferSearchDefaultsToMembersSeenWithinSixMonths() async throws {
+        let credentialStore = InMemoryMobileCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh")
         ))
 
         var recordedRequest: URLRequest?
-        APIURLProtocol.handler = { request in
+        MobileAPIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"features":[]}"#.utf8))
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        let api = TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: credentialStore
+        )
+
+        _ = try await api.searchOffers(
+            serverURLString: "https://api.example.test",
+            in: MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 38.72, longitude: -9.14),
+                span: MKCoordinateSpan(latitudeDelta: 1, longitudeDelta: 1)
+            )
+        )
+
+        let filtersValue = URLComponents(
+            url: try XCTUnwrap(recordedRequest?.url),
+            resolvingAgainstBaseURL: false
+        )?.queryItems?.first(where: { $0.name == "filters" })?.value
+        let filtersData = try XCTUnwrap(filtersValue?.data(using: .utf8))
+        let filters = try JSONSerialization.jsonObject(with: filtersData) as? [String: Any]
+        let seen = filters?["seen"] as? [String: Any]
+
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/offers")
+        XCTAssertEqual(seen?["months"] as? Int, 6)
+    }
+
+    func testAboutRouteUsesTheDedicatedWebsitePage() {
+        XCTAssertEqual(
+            TrustrootsBrowserRoute.website(path: "/about", title: "About Trustroots").url.path,
+            "/about"
+        )
+    }
+
+    func testBearerProfileRetainsMainActivityFields() async throws {
+        let credentialStore = InMemoryMobileCredentialStore()
+        XCTAssertTrue(credentialStore.save(
+            MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh")
+        ))
+
+        var recordedRequest: URLRequest?
+        MobileAPIURLProtocol.handler = { request in
             recordedRequest = request
             let response = HTTPURLResponse(
                 url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
@@ -320,14 +565,14 @@ final class TrustrootsTests: XCTestCase {
             return (
                 response,
                 Data(
-                    #"{"username":"traveller","displayName":"A Traveller","public":true,"seen":"2026-07-29T12:00:00Z","replyRate":"82%","replyTime":"4 hours"}"#.utf8
+                    #"{"profile":{"username":"traveller","displayName":"A Traveller","public":true,"seen":"2026-07-29T12:00:00Z","replyRate":"82%","replyTime":"4 hours"}}"#.utf8
                 )
             )
         }
-        defer { APIURLProtocol.handler = nil }
+        defer { MobileAPIURLProtocol.handler = nil }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [APIURLProtocol.self]
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
         let api = TrustrootsAPI(
             session: URLSession(configuration: configuration),
             credentialStore: credentialStore
@@ -342,19 +587,19 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertNotNil(member.seen)
         XCTAssertEqual(member.replyRate, "82%")
         XCTAssertEqual(member.replyTime, "4 hours")
-        XCTAssertEqual(recordedRequest?.url?.path, "/api/users/traveller")
-        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
-        XCTAssertNil(recordedRequest?.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/profiles/traveller")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer valid-access")
+        XCTAssertNil(recordedRequest?.value(forHTTPHeaderField: "Cookie"))
     }
 
-    func testMemberSearchUsesExistingProtectedRouteAndDecodesNativeResults() async throws {
-        let credentialStore = InMemorySessionCredentialStore()
+    func testMemberSearchUsesMobileProtectedRouteAndDecodesNativeResults() async throws {
+        let credentialStore = InMemoryMobileCredentialStore()
         XCTAssertTrue(credentialStore.save(
-            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+            MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh")
         ))
 
         var recordedRequest: URLRequest?
-        APIURLProtocol.handler = { request in
+        MobileAPIURLProtocol.handler = { request in
             recordedRequest = request
             let response = HTTPURLResponse(
                 url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
@@ -366,10 +611,10 @@ final class TrustrootsTests: XCTestCase {
                 )
             )
         }
-        defer { APIURLProtocol.handler = nil }
+        defer { MobileAPIURLProtocol.handler = nil }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [APIURLProtocol.self]
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
         let api = TrustrootsAPI(
             session: URLSession(configuration: configuration),
             credentialStore: credentialStore
@@ -380,7 +625,7 @@ final class TrustrootsTests: XCTestCase {
             query: "alex"
         )
 
-        XCTAssertEqual(recordedRequest?.url?.path, "/api/users")
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/members")
         XCTAssertEqual(
             URLComponents(url: try XCTUnwrap(recordedRequest?.url), resolvingAgainstBaseURL: false)?
                 .queryItems?
@@ -388,32 +633,32 @@ final class TrustrootsTests: XCTestCase {
                 .value,
             "alex"
         )
-        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer valid-access")
         XCTAssertEqual(members.first?.username, "alex")
         XCTAssertEqual(members.first?.displayName, "Alex Traveller")
         XCTAssertEqual(members.first?.locationSummary, "Lisbon")
     }
 
-    func testMemberReportUsesExistingSupportRouteWithReportedUsername() async throws {
-        let credentialStore = InMemorySessionCredentialStore()
+    func testMemberReportUsesMobileSupportRouteWithReportedUsername() async throws {
+        let credentialStore = InMemoryMobileCredentialStore()
         XCTAssertTrue(credentialStore.save(
-            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+            MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh")
         ))
 
         var recordedRequest: URLRequest?
         var recordedBody: Data?
-        APIURLProtocol.handler = { request in
+        MobileAPIURLProtocol.handler = { request in
             recordedRequest = request
-            recordedBody = request.bodyData
+            recordedBody = Self.body(of: request)
             let response = HTTPURLResponse(
                 url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
             )!
             return (response, Data(#"{"message":"Support request sent."}"#.utf8))
         }
-        defer { APIURLProtocol.handler = nil }
+        defer { MobileAPIURLProtocol.handler = nil }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [APIURLProtocol.self]
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
         let api = TrustrootsAPI(
             session: URLSession(configuration: configuration),
             credentialStore: credentialStore
@@ -429,31 +674,31 @@ final class TrustrootsTests: XCTestCase {
             [String: String].self,
             from: try XCTUnwrap(recordedBody)
         )
-        XCTAssertEqual(recordedRequest?.url?.path, "/api/support")
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/support")
         XCTAssertEqual(recordedRequest?.httpMethod, "POST")
-        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer valid-access")
         XCTAssertEqual(body["reportMember"], "reported-member")
         XCTAssertEqual(body["message"], "This profile contains abusive content.")
     }
 
-    func testMemberBlockUsesExistingBlockedMemberRoute() async throws {
-        let credentialStore = InMemorySessionCredentialStore()
+    func testMemberBlockUsesMobileBlockedMemberRoute() async throws {
+        let credentialStore = InMemoryMobileCredentialStore()
         XCTAssertTrue(credentialStore.save(
-            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+            MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh")
         ))
 
         var recordedRequest: URLRequest?
-        APIURLProtocol.handler = { request in
+        MobileAPIURLProtocol.handler = { request in
             recordedRequest = request
             let response = HTTPURLResponse(
                 url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
             )!
             return (response, Data("Member added to block list.".utf8))
         }
-        defer { APIURLProtocol.handler = nil }
+        defer { MobileAPIURLProtocol.handler = nil }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [APIURLProtocol.self]
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
         let api = TrustrootsAPI(
             session: URLSession(configuration: configuration),
             credentialStore: credentialStore
@@ -465,19 +710,19 @@ final class TrustrootsTests: XCTestCase {
             blocked: true
         )
 
-        XCTAssertEqual(recordedRequest?.url?.path, "/api/blocked-users/reported-member")
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/blocked-users/reported-member")
         XCTAssertEqual(recordedRequest?.httpMethod, "PUT")
-        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Cookie"), "connect.sid=signed-session")
+        XCTAssertEqual(recordedRequest?.value(forHTTPHeaderField: "Authorization"), "Bearer valid-access")
     }
 
-    func testAccommodationUsesExistingOfferByUserRoute() async throws {
-        let credentialStore = InMemorySessionCredentialStore()
+    func testAccommodationUsesMobileOfferByUserRoute() async throws {
+        let credentialStore = InMemoryMobileCredentialStore()
         XCTAssertTrue(credentialStore.save(
-            SessionCredentials(cookieHeader: "connect.sid=signed-session", username: "traveller")
+            MobileCredentials(accessToken: "valid-access", refreshToken: "valid-refresh")
         ))
 
         var recordedRequest: URLRequest?
-        APIURLProtocol.handler = { request in
+        MobileAPIURLProtocol.handler = { request in
             recordedRequest = request
             let response = HTTPURLResponse(
                 url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
@@ -487,10 +732,10 @@ final class TrustrootsTests: XCTestCase {
                 Data(#"[{"_id":"offer-1","status":"yes","description":"A sofa","maxGuests":2}]"#.utf8)
             )
         }
-        defer { APIURLProtocol.handler = nil }
+        defer { MobileAPIURLProtocol.handler = nil }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [APIURLProtocol.self]
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
         let api = TrustrootsAPI(
             session: URLSession(configuration: configuration),
             credentialStore: credentialStore
@@ -501,50 +746,91 @@ final class TrustrootsTests: XCTestCase {
             userID: "member-1"
         )
 
-        XCTAssertEqual(recordedRequest?.url?.path, "/api/offers-by/member-1")
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/mobile/v0/offers-by/member-1")
         XCTAssertEqual(recordedRequest?.url?.query, "types=host")
         XCTAssertEqual(offer?.status, "yes")
         XCTAssertEqual(offer?.maxGuests, 2)
     }
 
-    func testSignInUsesExistingRouteAndCapturesSessionCookie() async throws {
-        var recordedRequest: URLRequest?
-        APIURLProtocol.handler = { request in
-            recordedRequest = request
-            let response = HTTPURLResponse(
-                url: request.url!,
-                statusCode: 200,
-                httpVersion: nil,
-                headerFields: [
-                    "Set-Cookie": "connect.sid=s%3Atest.signature; Path=/; Expires=Wed, 26 Aug 2026 12:00:00 GMT; HttpOnly"
-                ]
-            )!
-            return (
-                response,
-                Data(#"{"username":"traveller","displayName":"A Traveller","public":true,"email":"traveller@example.test","newsletter":true}"#.utf8)
-            )
+    private var rotatedSessionJSON: String {
+        #"{"accessToken":"rotated-access","refreshToken":"rotated-refresh","accessTokenExpiresAt":"2026-07-16T11:00:00Z","member":{"username":"traveller","displayName":"A Traveller","public":true}}"#
+    }
+
+    private func mobileResponse(_ request: URLRequest, status: Int, body: String = "{}") -> (HTTPURLResponse, Data) {
+        (HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!, Data(body.utf8))
+    }
+
+    private func makeMobileAPI(store: MobileCredentialStoring) -> TrustrootsAPI {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
+        return TrustrootsAPI(
+            session: URLSession(configuration: configuration),
+            credentialStore: store,
+            notificationCenter: NotificationCenter()
+        )
+    }
+
+    private static func body(of request: URLRequest) -> Data? {
+        if let data = request.httpBody { return data }
+        guard let stream = request.httpBodyStream else { return nil }
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 1024)
+        while stream.hasBytesAvailable {
+            let count = stream.read(&buffer, maxLength: buffer.count)
+            guard count > 0 else { break }
+            data.append(contentsOf: buffer.prefix(count))
         }
-        defer { APIURLProtocol.handler = nil }
+        return data
+    }
+
+    func testSignInExplainsWhenTheSelectedServerLacksTheMobileAPI() async {
+        MobileAPIURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data())
+        }
+        defer { MobileAPIURLProtocol.handler = nil }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [APIURLProtocol.self]
+        configuration.protocolClasses = [MobileAPIURLProtocol.self]
         let api = TrustrootsAPI(session: URLSession(configuration: configuration))
 
-        let websiteSession = try await api.signIn(
-            serverURLString: "https://api.example.test",
-            usernameOrEmail: "traveller",
-            password: "password"
-        )
-
-        XCTAssertEqual(recordedRequest?.url?.path, "/api/auth/signin")
-        XCTAssertEqual(websiteSession.member.email, "traveller@example.test")
-        XCTAssertEqual(
-            websiteSession.credentials,
-            SessionCredentials(
-                cookieHeader: "connect.sid=s%3Atest.signature",
-                username: "traveller"
+        do {
+            _ = try await api.signIn(
+                serverURLString: "https://api.example.test",
+                usernameOrEmail: "traveller",
+                password: "password"
             )
-        )
+            XCTFail("Expected sign-in to fail")
+        } catch {
+            XCTAssertEqual(
+                error.localizedDescription,
+                "This API server has not been updated for the mobile app yet. It is missing /api/mobile/v0."
+            )
+        }
+    }
+
+    func testConcurrentMobileRefreshesShareOneRotation() async throws {
+        let coordinator = MobileRefreshCoordinator()
+        let counter = RefreshOperationCounter()
+
+        async let first = coordinator.refresh(serverURLString: "https://api.example.test") {
+            await counter.rotate()
+        }
+        async let second = coordinator.refresh(serverURLString: "https://api.example.test") {
+            await counter.rotate()
+        }
+        let credentials = try await [first, second]
+
+        XCTAssertEqual(credentials, [
+            MobileCredentials(accessToken: "rotated-access", refreshToken: "rotated-refresh"),
+            MobileCredentials(accessToken: "rotated-access", refreshToken: "rotated-refresh"),
+        ])
+        let calls = await counter.calls
+        XCTAssertEqual(calls, 1)
     }
 
     func testOfflineResponseCacheIsScopedAndRetainsTimestamp() async throws {
@@ -574,7 +860,7 @@ final class TrustrootsTests: XCTestCase {
     }
 }
 
-private final class APIURLProtocol: URLProtocol {
+private final class MobileAPIURLProtocol: URLProtocol {
     static var handler: ((URLRequest) -> (HTTPURLResponse, Data))?
 
     override class func canInit(with request: URLRequest) -> Bool {
@@ -587,7 +873,7 @@ private final class APIURLProtocol: URLProtocol {
 
     override func startLoading() {
         guard let handler = Self.handler else {
-            fatalError("API test handler was not configured")
+            fatalError("Mobile API test handler was not configured")
         }
         let (response, data) = handler(request)
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -598,15 +884,15 @@ private final class APIURLProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
-private final class InMemorySessionCredentialStore: SessionCredentialStoring {
-    private var credentials: SessionCredentials?
+private final class InMemoryMobileCredentialStore: MobileCredentialStoring {
+    private var credentials: MobileCredentials?
 
-    func load() -> SessionCredentials? {
+    func load() -> MobileCredentials? {
         credentials
     }
 
     @discardableResult
-    func save(_ credentials: SessionCredentials) -> Bool {
+    func save(_ credentials: MobileCredentials) -> Bool {
         self.credentials = credentials
         return true
     }
@@ -616,28 +902,12 @@ private final class InMemorySessionCredentialStore: SessionCredentialStoring {
     }
 }
 
-private extension URLRequest {
-    var bodyData: Data? {
-        if let httpBody {
-            return httpBody
-        }
-        guard let stream = httpBodyStream else {
-            return nil
-        }
+private actor RefreshOperationCounter {
+    private(set) var calls = 0
 
-        stream.open()
-        defer { stream.close() }
-        var data = Data()
-        var buffer = [UInt8](repeating: 0, count: 1_024)
-        while true {
-            let count = stream.read(&buffer, maxLength: buffer.count)
-            if count < 0 {
-                return nil
-            }
-            if count == 0 {
-                return data
-            }
-            data.append(buffer, count: count)
-        }
+    func rotate() async -> MobileCredentials {
+        calls += 1
+        try? await Task.sleep(for: .milliseconds(25))
+        return MobileCredentials(accessToken: "rotated-access", refreshToken: "rotated-refresh")
     }
 }

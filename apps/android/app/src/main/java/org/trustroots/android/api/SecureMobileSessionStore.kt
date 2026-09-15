@@ -15,9 +15,10 @@ import org.json.JSONObject
 class SecureMobileSessionStore(context: Context) {
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
 
-    fun save(session: MemberSession) {
+    fun save(session: MobileSession) {
         val payload = JSONObject()
-            .put("cookieHeader", session.cookieHeader)
+            .put("accessToken", session.accessToken)
+            .put("refreshToken", session.refreshToken)
             .put("username", session.member.username)
             .put("displayName", session.member.displayName)
             .toString()
@@ -30,7 +31,7 @@ class SecureMobileSessionStore(context: Context) {
             .apply()
     }
 
-    fun load(): MemberSession? = runCatching {
+    fun load(): MobileSession? = runCatching {
         val payload = preferences.getString(PAYLOAD_KEY, null) ?: return null
         val iv = preferences.getString(IV_KEY, null) ?: return null
         val cipher = Cipher.getInstance(TRANSFORMATION)
@@ -41,8 +42,9 @@ class SecureMobileSessionStore(context: Context) {
         )
         val decoded = cipher.doFinal(Base64.decode(payload, Base64.NO_WRAP))
         val session = JSONObject(String(decoded, StandardCharsets.UTF_8))
-        MemberSession(
-            cookieHeader = session.getString("cookieHeader"),
+        MobileSession(
+            accessToken = session.getString("accessToken"),
+            refreshToken = session.getString("refreshToken"),
             member = MobileMember(
                 username = session.getString("username"),
                 displayName = session.getString("displayName"),
