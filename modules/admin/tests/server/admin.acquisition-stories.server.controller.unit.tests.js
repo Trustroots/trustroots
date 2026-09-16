@@ -118,17 +118,17 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[1].public = false;
       users[2].acquisitionStory = '';
 
-      await utils.saveUsers(users);
+      const [visibleUser, hiddenUser] = await utils.saveUsers(users);
 
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
       res.body.length.should.equal(2);
       const visibleStory = res.body.find(
-        story => story.username === users[0].username,
+        story => story.username === visibleUser.username,
       );
       const hiddenStory = res.body.find(
-        story => story.username === users[1].username,
+        story => story.username === hiddenUser.username,
       );
       visibleStory.acquisitionStory.should.equal('Found via couch surfing');
       visibleStory.circleCount.should.equal(1);
