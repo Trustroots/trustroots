@@ -9,6 +9,7 @@ import AdminAcquisitionStoriesMenu from './AdminAcquisitionStoriesMenu';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import HoverTooltip from '@/modules/core/client/components/Tooltip';
 
 function formatDate(value) {
   if (!value) {
@@ -42,22 +43,29 @@ const storySortValues = {
     return Number.isNaN(timestamp) ? 0 : timestamp;
   },
   member: story => String(story.username).toLowerCase(),
+  public: story => (story.public === true ? 1 : 0),
 };
 
-function SortableHeader({ column, label, onSort, sort }) {
+function SortableHeader({ column, label, onSort, sort, tooltip }) {
   const isActive = sort.column === column;
   const direction = isActive ? sort.direction : 'none';
 
   return (
     <th aria-sort={direction}>
-      <button
-        className="btn btn-link admin-acquisition-stories-sort"
-        onClick={() => onSort(column)}
-        type="button"
+      <HoverTooltip
+        id={`acquisition-stories-${column}-heading`}
+        placement="bottom"
+        tooltip={tooltip}
       >
-        {label}
-        {isActive && (sort.direction === 'ascending' ? ' ▲' : ' ▼')}
-      </button>
+        <button
+          className="btn btn-link admin-acquisition-stories-sort"
+          onClick={() => onSort(column)}
+          type="button"
+        >
+          {label}
+          {isActive && (sort.direction === 'ascending' ? ' ▲' : ' ▼')}
+        </button>
+      </HoverTooltip>
     </th>
   );
 }
@@ -70,6 +78,34 @@ SortableHeader.propTypes = {
     column: PropTypes.string.isRequired,
     direction: PropTypes.oneOf(['ascending', 'descending']).isRequired,
   }).isRequired,
+  tooltip: PropTypes.string.isRequired,
+};
+
+function StaticHeader({ label, tooltip }) {
+  return (
+    <th>
+      <HoverTooltip
+        id={`acquisition-stories-${label
+          .toLowerCase()
+          .replace(/\s+/g, '-')}-heading`}
+        placement="bottom"
+        tooltip={tooltip}
+      >
+        <span
+          aria-label={`${label}: ${tooltip}`}
+          className="admin-acquisition-stories-header-help"
+          tabIndex={0}
+        >
+          {label}
+        </span>
+      </HoverTooltip>
+    </th>
+  );
+}
+
+StaticHeader.propTypes = {
+  label: PropTypes.string.isRequired,
+  tooltip: PropTypes.string.isRequired,
 };
 
 export default function AdminAcquisitionStories() {
@@ -135,27 +171,44 @@ export default function AdminAcquisitionStories() {
                   label="Date"
                   onSort={sortBy}
                   sort={sort}
+                  tooltip="Date the member signed up"
                 />
                 <SortableHeader
                   column="member"
                   label="Member"
                   onSort={sortBy}
                   sort={sort}
+                  tooltip="The member's name and username"
                 />
                 <SortableHeader
                   column="circleCount"
                   label="Circles"
                   onSort={sortBy}
                   sort={sort}
+                  tooltip="Number of circles the member has joined"
                 />
-                <th>Location</th>
+                <StaticHeader
+                  label="Location"
+                  tooltip="Living, origin, and latest hosting-offer locations"
+                />
                 <SortableHeader
                   column="acquisitionStory"
                   label="Story"
                   onSort={sortBy}
                   sort={sort}
+                  tooltip="How the member heard about Trustroots during signup"
                 />
-                <th>Restricted matches</th>
+                <SortableHeader
+                  column="public"
+                  label="Profile visible"
+                  onSort={sortBy}
+                  sort={sort}
+                  tooltip="Whether the member's profile is visible to other members"
+                />
+                <StaticHeader
+                  label="Restricted matches"
+                  tooltip="Suspended or shadowbanned accounts with a matching username or email identifier"
+                />
               </tr>
             </thead>
             <tbody>
@@ -211,6 +264,7 @@ export default function AdminAcquisitionStories() {
                     )}
                   </td>
                   <td>{story.acquisitionStory}</td>
+                  <td>{story.public === true ? 'Visible' : 'Hidden'}</td>
                   <td>
                     {(story.restrictedMatches || []).map(match => (
                       <div key={match._id}>

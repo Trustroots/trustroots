@@ -302,7 +302,7 @@ function getStories(limit) {
     {
       acquisitionStory: { $exists: true, $ne: '' },
     },
-    '_id acquisitionStory created displayName email emailTemporary locationFrom locationLiving member username',
+    '_id acquisitionStory created displayName email emailTemporary locationFrom locationLiving member public username',
   )
     .sort('-created')
     .limit(limit)
@@ -312,8 +312,6 @@ function getStories(limit) {
 const RESTRICTED_MATCH_LIMIT = 10;
 const RESTRICTED_SOURCE_LIMIT = 1000;
 const MIN_IDENTIFIER_LENGTH = 4;
-const MIN_FUZZY_STORY_LENGTH = 12;
-const FUZZY_STORY_THRESHOLD = 0.82;
 const MATCH_BATCH_SIZE = 100;
 
 function normalizeIdentifier(value) {
@@ -322,50 +320,6 @@ function normalizeIdentifier(value) {
 
 function emailLocalPart(value) {
   return value.split('@')[0];
-}
-
-function normalizeStory(value) {
-  return value.trim().replace(/\s+/g, ' ').toLowerCase();
-}
-
-function getCharacterTrigrams(value) {
-  const trigrams = new Set();
-  for (let index = 0; index <= value.length - 3; index += 1) {
-    trigrams.add(value.slice(index, index + 3));
-  }
-  return trigrams;
-}
-
-function prepareStory(value) {
-  const text = normalizeStory(value);
-  return { text, trigrams: getCharacterTrigrams(text) };
-}
-
-function getPreparedStorySimilarity(first, second) {
-  if (
-    first.text.length < MIN_FUZZY_STORY_LENGTH ||
-    second.text.length < MIN_FUZZY_STORY_LENGTH
-  ) {
-    return 0;
-  }
-
-  const firstTrigrams = first.trigrams;
-  const secondTrigrams = second.trigrams;
-  let sharedCount = 0;
-  for (const trigram of firstTrigrams) {
-    if (secondTrigrams.has(trigram)) {
-      sharedCount += 1;
-    }
-  }
-
-  return (2 * sharedCount) / (firstTrigrams.size + secondTrigrams.size);
-}
-
-function getStorySimilarity(firstStory, secondStory) {
-  return getPreparedStorySimilarity(
-    prepareStory(firstStory),
-    prepareStory(secondStory),
-  );
 }
 
 function getRestrictedIdentifiers(user) {
@@ -387,30 +341,11 @@ function getRestrictedIdentifiers(user) {
 }
 
 function getRestrictedMatchReasons(story, restrictedUser) {
-  const reasons = restrictedUser.identifiers
+  return restrictedUser.identifiers
     .filter(({ value }) =>
       story.identifiers.some(identifier => identifier.includes(value)),
     )
     .map(({ label }) => label);
-  const storyText = story.story.text;
-  const restrictedStoryText = restrictedUser.story.text;
-
-  if (storyText && storyText === restrictedStoryText) {
-    reasons.push('Acquisition story');
-  } else if (
-    // Even complete overlap cannot qualify if the trigram counts differ too
-    // much. Skip those candidates before computing their intersection.
-    (2 *
-      Math.min(story.story.trigrams.size, restrictedUser.story.trigrams.size)) /
-      (story.story.trigrams.size + restrictedUser.story.trigrams.size) >=
-      FUZZY_STORY_THRESHOLD &&
-    getPreparedStorySimilarity(story.story, restrictedUser.story) >=
-      FUZZY_STORY_THRESHOLD
-  ) {
-    reasons.push('Similar acquisition story');
-  }
-
-  return reasons;
 }
 
 async function getRestrictedMatches(story, restrictedUsers) {
@@ -420,7 +355,6 @@ async function getRestrictedMatches(story, restrictedUsers) {
       normalizeIdentifier(emailLocalPart(story.email)),
       normalizeIdentifier(emailLocalPart(story.emailTemporary)),
     ],
-    story: prepareStory(story.acquisitionStory),
   };
   const matches = [];
   for (let index = 0; index < restrictedUsers.length; index += 1) {
@@ -453,9 +387,7 @@ async function getRestrictedMatches(story, restrictedUsers) {
 
 function getRestrictedUsers() {
   return User.find({ roles: { $in: ['shadowban', 'suspended'] } })
-    .select(
-      '_id acquisitionStory displayName email emailTemporary roles username',
-    )
+    .select('_id displayName email emailTemporary roles username')
     .sort({ created: -1, _id: 1 })
     .limit(RESTRICTED_SOURCE_LIMIT)
     .exec();
@@ -471,6 +403,7 @@ function storyForList(story, hostingLocation, restrictedMatches) {
     hostingLocation,
     locationFrom: story.locationFrom,
     locationLiving: story.locationLiving,
+    public: story.public === true,
     restrictedMatches,
     username: story.username,
   };
@@ -486,7 +419,6 @@ exports.list = async (req, res) => {
   const restrictedUsers = (await getRestrictedUsers()).map(user => ({
     user,
     identifiers: getRestrictedIdentifiers(user),
-    story: prepareStory(user.acquisitionStory),
   }));
   const hostingOffers = await Offer.find({
     user: { $in: storyUserIds },
@@ -528,5 +460,3 @@ exports.getAnalysis = async (req, res) => {
   const analysis = analyseStories(stories);
   res.send(analysis);
 };
-
-exports.getStorySimilarity = getStorySimilarity;
