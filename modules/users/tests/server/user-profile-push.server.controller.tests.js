@@ -383,6 +383,40 @@ describe('Profile controller push/membership unit tests', () => {
       res.body.message.should.equal('Failed to fetch user, please try again.');
     });
 
+    it('preserves profile saves with historical mobile registrations', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const user = await User.findById(saved._id);
+      user.pushRegistration = ['android', 'ios', 'expo'].map(platform => ({
+        platform,
+        token: `historical-${platform}-token`,
+      }));
+      await user.save();
+      const reloaded = await User.findById(saved._id);
+      reloaded.displayName = 'Anonymous Member';
+      await reloaded.save();
+      reloaded.pushRegistration.length.should.equal(3);
+    });
+
+    ['android', 'ios', 'expo'].forEach(platform => {
+      it(`rejects retired ${platform} registrations without writing or notifying`, async () => {
+        const notify = sinon.spy();
+        const controller = loadControllerWithPush(notify);
+        const update = sinon.stub(User, 'findByIdAndUpdate');
+        const res = deferredResponse();
+        controller.addPushRegistration(
+          {
+            user: { _id: 'anonymous-member' },
+            body: { token: 'anonymous-token', platform },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        update.called.should.equal(false);
+        notify.called.should.equal(false);
+      });
+    });
+
     it('still succeeds when the notification fails', async () => {
       const controller = loadControllerWithPush((user, platform, cb) =>
         cb(new Error('push failed')),
@@ -393,7 +427,7 @@ describe('Profile controller push/membership unit tests', () => {
       controller.addPushRegistration(
         {
           user: { _id: saved._id },
-          body: { token: 'token-3', platform: 'android', deviceId: 'device-1' },
+          body: { token: 'token-3', platform: 'web', deviceId: 'device-1' },
         },
         res,
       );

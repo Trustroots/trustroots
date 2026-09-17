@@ -1009,7 +1009,7 @@ describe('Profile controller unit tests', () => {
             user: userDoc,
             body: {
               token: 'new-device-token',
-              platform: 'android',
+              platform: 'web',
               doNotNotify: true,
             },
           },

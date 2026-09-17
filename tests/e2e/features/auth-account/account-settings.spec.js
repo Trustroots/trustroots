@@ -346,6 +346,30 @@ test.describe.serial('account settings feature coverage', () => {
     expect(storedUser.additionalProvidersData || {}).toEqual({});
   });
 
+  test('retired mobile push registrations are rejected', async ({
+    page,
+    request,
+  }) => {
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    for (const platform of ['android', 'ios', 'expo']) {
+      const response = await page.request.post(
+        '/api/users/push/registrations',
+        {
+          data: {
+            token: `retired-${platform}-token`,
+            platform,
+            deviceId: 'retired-device',
+          },
+        },
+      );
+      expect(response.status()).toBe(400);
+    }
+    const stored = await findUserByUsername(user.username);
+    expect(stored.pushRegistration || []).toEqual([]);
+  });
+
   test('members can add and remove push registrations', async ({
     page,
     request,

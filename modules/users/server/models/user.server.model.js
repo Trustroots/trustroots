@@ -84,7 +84,7 @@ const UserPushRegistrationSchema = new Schema(
   {
     platform: {
       type: String,
-      // android, ios, web → Firebase; expo → Exponent
+      // Keep historical mobile values valid; new registrations accept web only.
       enum: ['android', 'ios', 'web', 'expo'],
       required: true,
     },
