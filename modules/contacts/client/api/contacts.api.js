@@ -23,3 +23,18 @@ export async function confirm(contactId) {
   });
   return data;
 }
+
+export async function getByUserId(userId) {
+  try {
+    const { data } = await axios.get(`/api/contact-by/${userId}`);
+    return data;
+  } catch (error) {
+    if (error.response?.status === 404) return null;
+    throw error;
+  }
+}
+
+export async function create({ friendUserId, message }) {
+  const { data } = await axios.post('/api/contact', { friendUserId, message });
+  return data;
+}
