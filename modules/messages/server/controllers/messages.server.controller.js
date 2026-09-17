@@ -323,7 +323,11 @@ exports.send = async function (req, res) {
   }
 
   // Throttle
-  const shouldThrottle = await shouldThottleUser(req.user._id);
+  const isExemptFromThrottle = req.user.roles.some(role =>
+    ['welcome-team', 'admin'].includes(role),
+  );
+  const shouldThrottle =
+    !isExemptFromThrottle && (await shouldThottleUser(req.user._id));
   if (shouldThrottle) {
     // Record thottle hit in stats
     statService.stat(
