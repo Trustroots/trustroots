@@ -5,10 +5,9 @@ experience is native Profile, Discover, Messages, and More navigation. A
 bounded `WKWebView` fallback opens selected Trustroots website routes that are
 not yet implemented natively.
 
-The project is generated with no signing configuration so it can be built in
-continuous integration and on a simulator. Configure the real bundle
-identifier, Apple Developer Team, signing, and App Store settings before a
-TestFlight release.
+The project uses the existing `org.trustroots.trustrootsApp` bundle identifier.
+Configure the Apple Developer Team and signing before a TestFlight release.
+Simulator builds and continuous integration do not require signing.
 
 ## Generate and build
 
@@ -18,6 +17,7 @@ xcodebuild -project Trustroots.xcodeproj -scheme Trustroots -sdk iphonesimulator
 xcodebuild -project Trustroots.xcodeproj -scheme TrustrootsTests -sdk iphonesimulator test
 ```
 
-The app uses the existing Trustroots JSON routes with a signed website-session
-cookie stored in Keychain. The native URL session does not share that
-credential with the bounded browser used for confirmation and recovery flows.
+The app uses `/api/mobile/v0` with rotating bearer credentials stored in
+Keychain. It retains native member search, profiles, hosting details, safety
+actions and configured avatars. Its bounded browser has an independent
+website session for confirmation and recovery flows.

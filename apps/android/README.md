@@ -1,18 +1,18 @@
 # Trustroots for Android
 
 This is the native Kotlin and Jetpack Compose sibling of the Trustroots iOS
-member app. It intentionally shares the existing policy-protected Trustroots
-JSON routes with iOS while keeping its UI and lifecycle Android-native.
+member app. It intentionally shares the versioned mobile API contract while
+keeping its UI and lifecycle Android-native.
 
 ## Open in Android Studio
 
 Open `apps/android`, select a JDK 17 runtime and install Android SDK 37 when
-prompted. The debug build uses `https://www.trustroots.org` by default.
+prompted. The debug build uses `https://pr2777.test.trustroots.org` by default.
 
 To use another API server:
 
 ```sh
-./gradlew installDebug -PtrustrootsApiUrl=https://www.trustroots.org
+./gradlew installDebug -PtrustrootsApiUrl=https://pr2777.test.trustroots.org
 ```
 
 For an API running on the development Mac, use the Android emulator host alias:
@@ -33,5 +33,4 @@ device appearance setting. With Android Studio's bundled JDK selected, run:
 ```
 
 The debug APK is written to `app/build/outputs/apk/debug/app-debug.apk`. The
-sign-in screen shows its build date; the signed-in menu also shows the exact API
-server in use.
+sign-in screen shows both its build date and the exact API server in use.

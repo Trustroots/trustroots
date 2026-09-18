@@ -45,6 +45,12 @@ WebGL-only Mapbox source/layer API out of the fallback.
 Using a newer Mapbox GL release was rejected because Mapbox GL still requires
 WebGL. A static image would not preserve navigation or result selection.
 
+When a configured Mapbox token selects Mapbox raster tiles, the Leaflet layer
+listens once for `tileerror`. Its first provider error removes that layer and
+adds the existing OpenStreetMap raster layer to the same map. This preserves
+the current viewport, result markers, and event handlers while avoiding a
+blank map when a configured token or Mapbox service fails at runtime.
+
 ### Cluster fallback points with Supercluster
 
 The fallback will index the existing GeoJSON result collections using

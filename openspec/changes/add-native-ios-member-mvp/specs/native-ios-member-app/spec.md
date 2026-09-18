@@ -7,22 +7,22 @@ the core member journeys, while keeping administrative work on the website.
 
 ## ADDED Requirements
 
-### Requirement: Production native API transport
+### Requirement: Secure native API transport
 
-The application SHALL use the production Trustroots HTTPS API origin and SHALL
-NOT present an API-origin selector or permit clear-text API transport.
+The application SHALL use HTTPS for every configurable API server outside a
+debug iOS Simulator. A debug Simulator MAY use unencrypted HTTP only for the
+loopback hosts `localhost`, `127.0.0.1`, and `::1` so it can reach a developer
+server on the same Mac.
 
-#### Scenario: Member opens the native app
+#### Scenario: Member or persisted setting supplies remote HTTP
 
-- **WHEN** the member opens a debug or release build
-- **THEN** the application uses the production Trustroots HTTPS API origin
-- **AND** does not offer a server switch
-- **AND** does not display the API origin on the sign-in screen
-
-#### Scenario: API configuration uses clear-text HTTP
-
-- **WHEN** an API server URL uses HTTP
+- **WHEN** an API server URL uses HTTP with a non-loopback host
 - **THEN** the application rejects the configuration before making a request
+
+#### Scenario: Debug Simulator reaches the Mac development server
+
+- **WHEN** a debug Simulator build uses HTTP with an allowed loopback host
+- **THEN** the application accepts the development API configuration
 
 ### Requirement: Native member application
 
@@ -93,7 +93,7 @@ blocking and role restrictions.
 - **WHEN** a signed-in member submits at least three characters in native
   member search
 - **THEN** the app requests matching members from the existing
-  `/api/users?search=` route
+  `/api/mobile/v0/members?search=` route
 - **AND** displays the returned members in a native list
 - **AND** selecting a result opens that member's native profile
 
@@ -123,29 +123,28 @@ blocking and role restrictions.
 - **AND** the member can dismiss the keyboard with a visible Done action or by
   dragging the list
 
-### Requirement: Secure existing-session authentication
+### Requirement: Secure mobile authentication
 
-The iOS app SHALL authenticate through the existing Trustroots sign-in route
-and use the resulting signed website-session cookie with the established
-policy-protected JSON routes. The app SHALL store that credential only in the
-iOS Keychain and SHALL keep it out of shared browser cookie storage.
+The system SHALL authenticate the iOS app through versioned mobile API
+endpoints using short-lived access tokens and rotating, revocable refresh
+tokens. The app SHALL store mobile credentials only in the iOS Keychain.
 
 #### Scenario: Member signs in on iOS
 
 - **WHEN** a member submits valid credentials in the iOS app
-- **THEN** the app securely stores the signed session credential
-- **AND** can access authorised existing member endpoints
+- **THEN** the app receives a mobile session and can access authorised
+  member-only mobile endpoints
 
 #### Scenario: Member signs out on iOS
 
 - **WHEN** a member signs out of the iOS app
-- **THEN** the app calls the existing sign-out route
-- **AND** removes its stored session credential
+- **THEN** the active mobile session is revoked
+- **AND** the app removes its stored mobile credentials
 
-#### Scenario: Suspended or ineligible member uses a protected endpoint
+#### Scenario: Suspended or ineligible member uses a mobile endpoint
 
 - **WHEN** a suspended or otherwise ineligible member requests a protected
-  existing endpoint
+  mobile endpoint
 - **THEN** the system denies access under the same eligibility rules as the
   website
 
@@ -306,14 +305,14 @@ relationship and SHALL keep reporting and blocking as independent actions.
 
 - **WHEN** a signed-in member selects Report member on another member's profile
 - **THEN** the app presents a native form identifying the reported member
-- **AND** submits the member's description through the existing `/api/support`
+- **AND** submits the member's description through the existing `/api/mobile/v0/support`
   route with the reported username
 - **AND** confirms that the report was sent
 
 #### Scenario: Member blocks another member
 
 - **WHEN** a signed-in member confirms Block member on another member's profile
-- **THEN** the app uses the existing `/api/blocked-users/:username` route
+- **THEN** the app uses the existing `/api/mobile/v0/blocked-users/:username` route
 - **AND** indicates that the member is blocked
 - **AND** no longer offers to start or continue a conversation with that member
 
@@ -328,14 +327,14 @@ relationship and SHALL keep reporting and blocking as independent actions.
 
 Native member images SHALL use the existing authenticated avatar endpoint and
 SHALL support the avatar source selected by the member, including Gravatar.
-The app SHALL NOT forward its session cookie to a cross-origin avatar provider.
+The app SHALL NOT forward its bearer token to a cross-origin avatar provider.
 
 #### Scenario: Member uses Gravatar
 
 - **WHEN** a native view displays a member whose configured avatar source is
   Gravatar
 - **THEN** the app follows the existing avatar redirect and displays the image
-- **AND** removes the Trustroots session cookie from the cross-origin request
+- **AND** removes the Trustroots bearer token from the cross-origin request
 
 ### Requirement: Offline read-only fallback
 
