@@ -207,6 +207,50 @@ describe('Messages controller unit tests', () => {
       }
     });
 
+    for (const role of ['welcome-team', 'admin']) {
+      it(`exempts ${role} from throttling while retaining recipient validation`, async () => {
+        sender.roles = ['user', role];
+        const distinct = sinon
+          .stub(Message, 'distinct')
+          .resolves(
+            Array.from(
+              { length: config.limits.messagesToIndividualsThrottle.count + 1 },
+              () => new mongoose.Types.ObjectId(),
+            ),
+          );
+        const res = deferredResponse();
+        await messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: new mongoose.Types.ObjectId().toString(),
+              content: 'Welcome to the community.',
+            },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(404);
+        distinct.called.should.equal(false);
+
+        sender.roles = ['user'];
+        const revokedResponse = deferredResponse();
+        await messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: new mongoose.Types.ObjectId().toString(),
+              content: 'Welcome to the community.',
+            },
+          },
+          revokedResponse,
+        );
+        await revokedResponse.waitForResponse();
+        revokedResponse.statusCode.should.equal(429);
+        distinct.calledOnce.should.equal(true);
+      });
+    }
+
     it('sends a message successfully', async () => {
       const senderDoc = await User.findById(sender._id);
       senderDoc.description =
