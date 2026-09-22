@@ -24,3 +24,5 @@
       checks
 - [ ] 3.4 Validate on an iPhone without WebGL and a normal-Safari control
       case
+- [ ] 3.5 Add and verify one-shot Mapbox-raster to OpenStreetMap runtime
+      failover coverage

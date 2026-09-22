@@ -5,6 +5,9 @@ struct SignInView: View {
     @State private var usernameOrEmail = ""
     @State private var password = ""
     @State private var browserRoute: TrustrootsBrowserRoute?
+    @State private var apiStatus: MobileAPIStatus?
+
+    private let api = TrustrootsAPI()
 
     private let trustrootsGreen = Color(red: 0.07, green: 0.71, blue: 0.57)
     private let trustrootsBrown = Color(red: 0.36, green: 0.23, blue: 0.08)
@@ -124,6 +127,29 @@ struct SignInView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                             .disabled(session.isSigningIn)
 
+#if DEBUG && targetEnvironment(simulator)
+                            Picker("API server", selection: $session.serverURLString) {
+                                Text("Local API")
+                                    .tag(TrustrootsAPIConfiguration.localDefaultURLString)
+                                Text("PR 2777")
+                                    .tag(TrustrootsAPIConfiguration.catTestURLString)
+                            }
+                            .pickerStyle(.segmented)
+                            .disabled(session.isSigningIn)
+#endif
+
+                            Text("API: \(serverHost)")
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.72)
+                                .textSelection(.enabled)
+                            if let apiStatus {
+                                Text("API build: \(apiStatus.buildVersion)")
+                                    .font(.caption2.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
                             Text("iOS build: \(TrustrootsBuildInfo.formatted())")
                                 .font(.caption2.monospaced())
                                 .foregroundStyle(.secondary)
@@ -142,6 +168,18 @@ struct SignInView: View {
                 .toolbar(.hidden, for: .navigationBar)
             }
         }
+        .task(id: session.serverURLString) {
+            apiStatus = try? await api.status(serverURLString: session.serverURLString)
+        }
+    }
+
+    private var normalizedServerURL: String {
+        TrustrootsAPIConfiguration(baseURLString: session.serverURLString)?.normalizedURLString
+            ?? session.serverURLString
+    }
+
+    private var serverHost: String {
+        URL(string: normalizedServerURL)?.host ?? normalizedServerURL
     }
 
 }

@@ -2,7 +2,7 @@
 
 - [x] 1.1 Create the Gradle, Kotlin and Jetpack Compose application project.
 - [x] 1.2 Add build-time API server configuration and Trustroots design tokens.
-- [x] 1.3 Add the existing API client, session model and Keystore-backed cookie
+- [x] 1.3 Add the mobile API client, session model and Keystore-backed token
       storage.
 - [x] 1.4 Add native sign-in and application navigation shells.
 
@@ -23,7 +23,7 @@
 
 ## 4. Verification and distribution
 
-- [x] 4.1 Add API-client contract and session-storage unit tests.
+- [ ] 4.1 Add API-client and session-storage unit tests.
 - [ ] 4.2 Add Compose UI tests for the core member journeys.
 - [x] 4.3 Validate the OpenSpec change and run Android lint and tests.
 - [ ] 4.4 Add internal-testing release documentation and privacy metadata.

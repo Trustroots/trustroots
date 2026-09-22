@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -40,6 +41,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,15 +58,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import java.text.DateFormat
 import java.text.SimpleDateFormat
+import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
 import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
-import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileSession
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
@@ -77,6 +79,24 @@ fun TrustrootsApp() {
     val sessionStore = remember { SecureMobileSessionStore(context.applicationContext) }
     var session by remember { mutableStateOf(sessionStore.load()) }
     var signedOutMessage by remember { mutableStateOf<String?>(null) }
+    val api = remember { MobileApiClient(BuildConfig.API_BASE_URL) }
+    LaunchedEffect(Unit) {
+        session?.let { storedSession ->
+            api.refresh(storedSession.refreshToken)
+                .onSuccess { refreshedSession ->
+                    sessionStore.save(refreshedSession)
+                    session = refreshedSession
+                }
+                .onFailure { error ->
+                    if ((error as? MobileApiException)?.isAuthenticationFailure == true) {
+                        sessionStore.clear()
+                        session = null
+                        signedOutMessage =
+                            "Your session expired or is no longer valid. Please sign in again."
+                    }
+                }
+        }
+    }
     if (session == null) {
         SignInScreen(
             initialMessage = signedOutMessage,
@@ -89,6 +109,10 @@ fun TrustrootsApp() {
     } else {
         MemberShell(
             session = requireNotNull(session),
+            onSessionUpdated = {
+                sessionStore.save(it)
+                session = it
+            },
             onSignedOut = {
                 sessionStore.clear()
                 session = null
@@ -106,7 +130,7 @@ fun TrustrootsApp() {
 @Composable
 private fun SignInScreen(
     initialMessage: String?,
-    onSignedIn: (MemberSession) -> Unit,
+    onSignedIn: (MobileSession) -> Unit,
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -262,7 +286,8 @@ private enum class MenuPage {
 
 @Composable
 private fun MemberShell(
-    session: MemberSession,
+    session: MobileSession,
+    onSessionUpdated: (MobileSession) -> Unit,
     onSignedOut: () -> Unit,
     onSessionInvalidated: () -> Unit,
 ) {
@@ -333,13 +358,31 @@ private fun MemberShell(
                         onCheckAccount = {
                             scope.launch {
                                 isAccountActionRunning = true
-                                api.currentMember(session)
+                                api.currentMember(session.accessToken)
                                     .onSuccess { accountMessage = "Signed in as ${it.displayName}." }
                                     .onFailure {
                                         if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
                                             onSessionInvalidated()
                                         } else {
                                             accountMessage = it.message ?: "Could not refresh account."
+                                        }
+                                    }
+                                isAccountActionRunning = false
+                            }
+                        },
+                        onRefreshSession = {
+                            scope.launch {
+                                isAccountActionRunning = true
+                                api.refresh(session.refreshToken)
+                                    .onSuccess {
+                                        onSessionUpdated(it)
+                                        accountMessage = "Session refreshed."
+                                    }
+                                    .onFailure {
+                                        if ((it as? MobileApiException)?.isAuthenticationFailure == true) {
+                                            onSessionInvalidated()
+                                        } else {
+                                            accountMessage = it.message ?: "Could not refresh session."
                                         }
                                     }
                                 isAccountActionRunning = false
@@ -354,7 +397,7 @@ private fun MemberShell(
                         onSignedOut = {
                             scope.launch {
                                 isAccountActionRunning = true
-                                api.signOut(session)
+                                api.signOut(session.accessToken)
                                 onSignedOut()
                             }
                         },
@@ -369,7 +412,7 @@ private fun MemberShell(
 
 @Composable
 private fun MenuScreen(
-    session: MemberSession,
+    session: MobileSession,
     openProfile: () -> Unit,
     openAccount: () -> Unit,
     openBrowser: (BrowserRoute) -> Unit,
@@ -468,7 +511,7 @@ private fun MenuLink(
 }
 
 @Composable
-private fun ProfileScreen(session: MemberSession, onBack: () -> Unit) {
+private fun ProfileScreen(session: MobileSession, onBack: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -505,11 +548,12 @@ private fun ProfileScreen(session: MemberSession, onBack: () -> Unit) {
 
 @Composable
 private fun AccountScreen(
-    session: MemberSession,
+    session: MobileSession,
     accountMessage: String?,
     isActionRunning: Boolean,
     onBack: () -> Unit,
     onCheckAccount: () -> Unit,
+    onRefreshSession: () -> Unit,
     onResetPassword: () -> Unit,
     onSignedOut: () -> Unit,
 ) {
@@ -531,6 +575,11 @@ private fun AccountScreen(
             enabled = !isActionRunning,
             modifier = Modifier.padding(top = 20.dp),
         ) { Text("Check account") }
+        Button(
+            onClick = onRefreshSession,
+            enabled = !isActionRunning,
+            modifier = Modifier.padding(top = 8.dp),
+        ) { Text("Refresh session") }
         TextButton(onClick = onResetPassword) { Text("Forgot your password?") }
         accountMessage?.let {
             Text(
@@ -545,13 +594,13 @@ private fun AccountScreen(
 }
 
 @Composable
-private fun PlaceholderScreen(destination: Destination, session: MemberSession) {
+private fun PlaceholderScreen(destination: Destination, session: MobileSession) {
     Column(Modifier.padding(20.dp)) {
         Text(destination.label, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(10.dp))
         Text("Signed in as ${session.member.displayName} (@${session.member.username}).")
         Text(
-            "This native Android area is ready to use the existing Trustroots API.",
+            "This native Android area is ready for the shared mobile API implementation.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 6.dp),
         )

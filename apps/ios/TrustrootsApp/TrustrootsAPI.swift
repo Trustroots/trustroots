@@ -4,22 +4,51 @@ import Security
 import SwiftUI
 
 struct TrustrootsAPIConfiguration: Equatable {
+    static let localDefaultURLString = "http://127.0.0.1:13001"
+    static let catTestURLString = "https://pr2777.test.trustroots.org"
     static let productionURLString = "https://www.trustroots.org"
-    static let buildDefaultURLString = productionURLString
+
+    static var buildDefaultURLString: String {
+#if DEBUG
+#if targetEnvironment(simulator)
+        localDefaultURLString
+#else
+        catTestURLString
+#endif
+#else
+        productionURLString
+#endif
+    }
 
     let baseURL: URL
+
+    private static var permitsInsecureLoopback: Bool {
+#if DEBUG && targetEnvironment(simulator)
+        true
+#else
+        false
+#endif
+    }
+
+    private static func isLoopback(host: String) -> Bool {
+        ["localhost", "127.0.0.1", "::1"].contains(host.lowercased())
+    }
 
     init?(baseURLString: String) {
         let trimmed = baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed),
               let scheme = url.scheme?.lowercased(),
-              url.host != nil,
+              let host = url.host,
               url.user == nil,
               url.password == nil,
               url.query == nil,
               url.fragment == nil,
               url.path.isEmpty || url.path == "/",
-              scheme == "https" else {
+              scheme == "https" || (
+                scheme == "http"
+                    && Self.permitsInsecureLoopback
+                    && Self.isLoopback(host: host)
+              ) else {
             return nil
         }
         self.baseURL = url
@@ -75,35 +104,48 @@ struct SignedInMember: Codable, Equatable {
     }
 }
 
-struct SessionCredentials: Codable, Equatable {
-    let cookieHeader: String
-    let username: String
+struct MobileAPIStatus: Decodable, Equatable {
+    let contractVersion: String
+    let buildVersion: String
+    let startedAt: Date
+    let revision: String?
 }
 
-struct SessionResponse {
-    let credentials: SessionCredentials
+struct MobileCredentials: Codable, Equatable {
+    let accessToken: String
+    let refreshToken: String
+}
+
+struct MobileSessionResponse: Decodable {
+    let accessToken: String
+    let refreshToken: String
+    let accessTokenExpiresAt: Date
     let member: SignedInMember
+
+    var credentials: MobileCredentials {
+        MobileCredentials(accessToken: accessToken, refreshToken: refreshToken)
+    }
 }
 
-protocol SessionCredentialStoring: AnyObject {
-    func load() -> SessionCredentials?
-    @discardableResult func save(_ credentials: SessionCredentials) -> Bool
+protocol MobileCredentialStoring: AnyObject {
+    func load() -> MobileCredentials?
+    @discardableResult func save(_ credentials: MobileCredentials) -> Bool
     func delete()
 }
 
-final class SessionCredentialStore: SessionCredentialStoring {
+final class MobileCredentialStore: MobileCredentialStoring {
     private let service: String
     private let account: String
 
     init(
-        service: String = "org.trustroots.trustrootsApp.website-session",
-        account: String = "session-cookie"
+        service: String = "org.trustroots.ios.mobile-session",
+        account: String = "bearer-tokens"
     ) {
         self.service = service
         self.account = account
     }
 
-    func load() -> SessionCredentials? {
+    func load() -> MobileCredentials? {
         var query = lookup
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -112,11 +154,11 @@ final class SessionCredentialStore: SessionCredentialStoring {
               let data = result as? Data else {
             return nil
         }
-        return try? JSONDecoder().decode(SessionCredentials.self, from: data)
+        return try? JSONDecoder().decode(MobileCredentials.self, from: data)
     }
 
     @discardableResult
-    func save(_ credentials: SessionCredentials) -> Bool {
+    func save(_ credentials: MobileCredentials) -> Bool {
         guard let data = try? JSONEncoder().encode(credentials) else { return false }
         if SecItemCopyMatching(lookup as CFDictionary, nil) == errSecSuccess {
             return SecItemUpdate(
@@ -558,8 +600,8 @@ struct APIServerDiagnostic: Equatable {
 
     static let checking = APIServerDiagnostic(
         state: .checking,
-        title: "Checking Trustroots API…",
-        detail: "Testing the existing authenticated website API.",
+        title: "Checking mobile API…",
+        detail: "Testing the authenticated mobile endpoint.",
         statusCode: nil
     )
 
@@ -596,7 +638,7 @@ struct APIServerDiagnostic: Equatable {
         let suffix = "HTTP \(statusCode)"
         switch statusCode {
         case 200..<300:
-            return .init(state: .available, title: "Trustroots API available", detail: suffix, statusCode: statusCode)
+            return .init(state: .available, title: "Mobile API available", detail: suffix, statusCode: statusCode)
         case 401, 403:
             let reason = message.map { "Server message: \($0). " } ?? ""
             return .init(
@@ -608,8 +650,8 @@ struct APIServerDiagnostic: Equatable {
         case 404:
             return .init(
                 state: .endpointMissing,
-                title: "Member API not found",
-                detail: "The server is reachable, but the existing member profile endpoint is unavailable (\(suffix)).",
+                title: "Mobile API not found",
+                detail: "The server is reachable, but /api/mobile/v0/me is unavailable (\(suffix)).",
                 statusCode: statusCode
             )
         case 429:
@@ -673,7 +715,8 @@ struct APIServerDiagnostic: Equatable {
 
 final class TrustrootsAPI {
     private let session: URLSession
-    private let credentialStore: SessionCredentialStoring
+    private let credentialStore: MobileCredentialStoring
+    private let notificationCenter: NotificationCenter
     private let decoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .custom { decoder in
@@ -694,22 +737,24 @@ final class TrustrootsAPI {
 
     init(
         session: URLSession = .trustroots,
-        credentialStore: SessionCredentialStoring = SessionCredentialStore()
+        credentialStore: MobileCredentialStoring = MobileCredentialStore(),
+        notificationCenter: NotificationCenter = .default
     ) {
         self.session = session
         self.credentialStore = credentialStore
+        self.notificationCenter = notificationCenter
     }
 
     func signIn(
         serverURLString: String,
         usernameOrEmail: String,
         password: String
-    ) async throws -> SessionResponse {
+    ) async throws -> MobileSessionResponse {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
 
-        let endpoint = configuration.baseURL.appendingPathComponent("api/auth/signin")
+        let endpoint = configuration.baseURL.appendingPathComponent("api/mobile/v0/auth/signin")
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -728,22 +773,7 @@ final class TrustrootsAPI {
                 throw decodedError(from: data, statusCode: httpResponse.statusCode, isSignIn: true)
             }
             do {
-                let member = try decoder.decode(SignedInMember.self, from: data)
-                guard let cookieHeader = sessionCookieHeader(
-                    from: httpResponse,
-                    for: endpoint
-                ) else {
-                    throw TrustrootsAPIError.invalidResponse
-                }
-                return SessionResponse(
-                    credentials: SessionCredentials(
-                        cookieHeader: cookieHeader,
-                        username: member.username
-                    ),
-                    member: member
-                )
-            } catch let error as TrustrootsAPIError {
-                throw error
+                return try decoder.decode(MobileSessionResponse.self, from: data)
             } catch {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -754,25 +784,79 @@ final class TrustrootsAPI {
         }
     }
 
-    func currentMember(serverURLString: String) async throws -> SignedInMember {
-        guard let username = credentialStore.load()?.username else {
-            throw TrustrootsAPIError.authenticationRequired
+    func status(serverURLString: String) async throws -> MobileAPIStatus {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
         }
-        return try await get(
+        let endpoint = configuration.baseURL.appendingPathComponent("api/mobile/v0/status")
+        var request = URLRequest(url: endpoint)
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        request.timeoutInterval = 8
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw TrustrootsAPIError.invalidResponse
+            }
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                throw decodedError(from: data, statusCode: httpResponse.statusCode, isSignIn: true)
+            }
+            return try decoder.decode(MobileAPIStatus.self, from: data)
+        } catch let error as TrustrootsAPIError {
+            throw error
+        } catch is DecodingError {
+            throw TrustrootsAPIError.invalidResponse
+        } catch {
+            throw TrustrootsAPIError.requestFailed(error.localizedDescription)
+        }
+    }
+
+    func refresh(serverURLString: String, refreshToken: String) async throws -> MobileSessionResponse {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        let endpoint = configuration.baseURL.appendingPathComponent("api/mobile/v0/auth/refresh")
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try encoder.encode(["refreshToken": refreshToken])
+
+        do {
+            let (data, response) = try await session.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw TrustrootsAPIError.invalidResponse
+            }
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                throw decodedError(from: data, statusCode: httpResponse.statusCode)
+            }
+            return try decoder.decode(MobileSessionResponse.self, from: data)
+        } catch let error as TrustrootsAPIError {
+            throw error
+        } catch {
+            throw TrustrootsAPIError.requestFailed(error.localizedDescription)
+        }
+    }
+
+    func currentMember(serverURLString: String) async throws -> SignedInMember {
+        struct CurrentMemberResponse: Decodable { let member: SignedInMember }
+        let response: CurrentMemberResponse = try await get(
             serverURLString: serverURLString,
-            path: "api/users/\(username)"
+            path: "api/mobile/v0/me"
         )
+        return response.member
     }
 
     func signOut(serverURLString: String) async {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             return
         }
-        let endpoint = configuration.baseURL.appendingPathComponent("api/auth/signout")
+        let endpoint = configuration.baseURL.appendingPathComponent("api/mobile/v0/auth/signout")
         var request = URLRequest(url: endpoint)
-        request.httpMethod = "GET"
+        request.httpMethod = "POST"
         authorise(&request)
-        _ = try? await session.data(for: request)
+        _ = try? await authenticatedData(for: request, serverURLString: serverURLString)
         credentialStore.delete()
     }
 
@@ -784,10 +868,7 @@ final class TrustrootsAPI {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             return .invalidConfiguration
         }
-        guard let username = credentialStore.load()?.username else {
-            return .response(statusCode: 403, message: "No stored member session.")
-        }
-        let endpoint = configuration.baseURL.appendingPathComponent("api/users/\(username)")
+        let endpoint = configuration.baseURL.appendingPathComponent("api/mobile/v0/me")
         var request = URLRequest(url: endpoint)
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 8
@@ -818,7 +899,7 @@ final class TrustrootsAPI {
         let longitudeDelta = region.span.longitudeDelta / 2
         let response: OfferFeatureCollection = try await get(
             serverURLString: serverURLString,
-            path: "api/offers",
+            path: "api/mobile/v0/offers",
             queryItems: [
                 URLQueryItem(name: "southWestLat", value: String(region.center.latitude - latitudeDelta)),
                 URLQueryItem(name: "southWestLng", value: String(region.center.longitude - longitudeDelta)),
@@ -834,24 +915,45 @@ final class TrustrootsAPI {
         return response.features.filter { $0.coordinate != nil }
     }
 
+    func avatar(serverURLString: String, memberID: String) async throws -> Data {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        let url = configuration.baseURL.appendingPathComponent("api/mobile/v0/members/\(memberID)/avatar")
+            .appending(queryItems: [URLQueryItem(name: "size", value: "128")])
+        var request = URLRequest(url: url)
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        authorise(&request)
+        let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TrustrootsAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw decodedError(from: data, statusCode: httpResponse.statusCode)
+        }
+        return data
+    }
+
     func offer(serverURLString: String, offerID: String) async throws -> HostOffer {
-        try await get(serverURLString: serverURLString, path: "api/offers/\(offerID)")
+        try await get(serverURLString: serverURLString, path: "api/mobile/v0/offers/\(offerID)")
+    }
+
+    func profile(serverURLString: String, username: String) async throws -> MemberProfile {
+        struct ProfileResponse: Decodable { let profile: MemberProfile }
+        let response: ProfileResponse = try await get(
+            serverURLString: serverURLString,
+            path: "api/mobile/v0/profiles/\(username)"
+        )
+        return response.profile
     }
 
     func accommodationOffer(serverURLString: String, userID: String) async throws -> AccommodationOffer? {
         let offers: [AccommodationOffer] = try await get(
             serverURLString: serverURLString,
-            path: "api/offers-by/\(userID)",
+            path: "api/mobile/v0/offers-by/\(userID)",
             queryItems: [URLQueryItem(name: "types", value: "host")]
         )
         return offers.first
-    }
-
-    func profile(serverURLString: String, username: String) async throws -> MemberProfile {
-        try await get(
-            serverURLString: serverURLString,
-            path: "api/users/\(username)"
-        )
     }
 
     func searchMembers(
@@ -861,7 +963,7 @@ final class TrustrootsAPI {
     ) async throws -> [MemberSearchResult] {
         try await get(
             serverURLString: serverURLString,
-            path: "api/users",
+            path: "api/mobile/v0/members",
             queryItems: [
                 URLQueryItem(name: "search", value: query),
                 URLQueryItem(name: "limit", value: String(limit)),
@@ -869,26 +971,65 @@ final class TrustrootsAPI {
         )
     }
 
+    func blockedMembers(serverURLString: String) async throws -> [MiniMember] {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/mobile/v0/blocked-users"
+        )
+    }
+
+    func setMemberBlocked(
+        serverURLString: String,
+        username: String,
+        blocked: Bool
+    ) async throws {
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        var request = URLRequest(
+            url: configuration.baseURL
+                .appendingPathComponent("api/mobile/v0/blocked-users")
+                .appendingPathComponent(username)
+        )
+        authorise(&request)
+        request.httpMethod = blocked ? "PUT" : "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        do {
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw TrustrootsAPIError.invalidResponse
+            }
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                throw decodedError(from: data, statusCode: httpResponse.statusCode)
+            }
+        } catch let error as TrustrootsAPIError {
+            throw error
+        } catch {
+            throw TrustrootsAPIError.requestFailed(error.localizedDescription)
+        }
+    }
+
     func circles(serverURLString: String) async throws -> [TrustrootsCircle] {
         try await get(
             serverURLString: serverURLString,
-            path: "api/tribes",
+            path: "api/mobile/v0/circles",
             queryItems: [URLQueryItem(name: "limit", value: "150")]
         )
     }
 
     func circleMemberships(serverURLString: String) async throws -> [CircleMembership] {
-        try await get(serverURLString: serverURLString, path: "api/users/memberships")
+        try await get(serverURLString: serverURLString, path: "api/mobile/v0/memberships")
     }
 
     func contacts(serverURLString: String, userID: String) async throws -> [TrustrootsContact] {
-        try await get(serverURLString: serverURLString, path: "api/contacts/\(userID)")
+        try await get(serverURLString: serverURLString, path: "api/mobile/v0/contacts/\(userID)")
     }
 
     func experiences(serverURLString: String, userID: String) async throws -> [MemberExperience] {
         try await get(
             serverURLString: serverURLString,
-            path: "api/experiences",
+            path: "api/mobile/v0/experiences",
             queryItems: [URLQueryItem(name: "userTo", value: userID)]
         )
     }
@@ -901,18 +1042,16 @@ final class TrustrootsAPI {
             throw TrustrootsAPIError.invalidServerURL
         }
         let components = URLComponents(
-            url: configuration.baseURL.appendingPathComponent("api/my-experience"),
+            url: configuration.baseURL.appendingPathComponent("api/mobile/v0/experiences/with/\(memberID)"),
             resolvingAgainstBaseURL: false
         )
-        var mutableComponents = components
-        mutableComponents?.queryItems = [URLQueryItem(name: "userWith", value: memberID)]
-        guard let url = mutableComponents?.url else { throw TrustrootsAPIError.invalidResponse }
+        guard let url = components?.url else { throw TrustrootsAPIError.invalidResponse }
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         authorise(&request)
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -952,7 +1091,7 @@ final class TrustrootsAPI {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
-        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/experiences"))
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/mobile/v0/experiences"))
         authorise(&request)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -965,7 +1104,7 @@ final class TrustrootsAPI {
         ))
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -988,7 +1127,7 @@ final class TrustrootsAPI {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
-        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/support"))
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/mobile/v0/support"))
         authorise(&request)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1000,46 +1139,7 @@ final class TrustrootsAPI {
         request.httpBody = try encoder.encode(body)
 
         do {
-            let (data, response) = try await session.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw TrustrootsAPIError.invalidResponse
-            }
-            guard (200..<300).contains(httpResponse.statusCode) else {
-                throw decodedError(from: data, statusCode: httpResponse.statusCode)
-            }
-        } catch let error as TrustrootsAPIError {
-            throw error
-        } catch {
-            throw TrustrootsAPIError.requestFailed(error.localizedDescription)
-        }
-    }
-
-    func blockedMembers(serverURLString: String) async throws -> [MiniMember] {
-        try await get(
-            serverURLString: serverURLString,
-            path: "api/blocked-users"
-        )
-    }
-
-    func setMemberBlocked(
-        serverURLString: String,
-        username: String,
-        blocked: Bool
-    ) async throws {
-        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
-            throw TrustrootsAPIError.invalidServerURL
-        }
-        var request = URLRequest(
-            url: configuration.baseURL
-                .appendingPathComponent("api/blocked-users")
-                .appendingPathComponent(username)
-        )
-        authorise(&request)
-        request.httpMethod = blocked ? "PUT" : "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1066,7 +1166,7 @@ final class TrustrootsAPI {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
-        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/users"))
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/mobile/v0/account"))
         authorise(&request)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1074,7 +1174,7 @@ final class TrustrootsAPI {
         request.httpBody = try encoder.encode(AccountUpdate(email: email, newsletter: newsletter))
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1110,7 +1210,7 @@ final class TrustrootsAPI {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
-        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/users"))
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/mobile/v0/profile"))
         authorise(&request)
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1127,7 +1227,7 @@ final class TrustrootsAPI {
         )
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1157,7 +1257,7 @@ final class TrustrootsAPI {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
-        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/users/password"))
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/mobile/v0/account/password"))
         authorise(&request)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -1171,7 +1271,7 @@ final class TrustrootsAPI {
         )
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1194,14 +1294,14 @@ final class TrustrootsAPI {
             throw TrustrootsAPIError.invalidServerURL
         }
         var request = URLRequest(
-            url: configuration.baseURL.appendingPathComponent("api/users/memberships/\(circleID)")
+            url: configuration.baseURL.appendingPathComponent("api/mobile/v0/memberships/\(circleID)")
         )
         authorise(&request)
         request.httpMethod = isMember ? "DELETE" : "POST"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1222,7 +1322,7 @@ final class TrustrootsAPI {
     ) async throws -> [MessageThread] {
         try await get(
             serverURLString: serverURLString,
-            path: "api/messages",
+            path: "api/mobile/v0/messages",
             queryItems: [
                 URLQueryItem(name: "page", value: String(page)),
                 URLQueryItem(name: "limit", value: String(limit)),
@@ -1230,12 +1330,38 @@ final class TrustrootsAPI {
         )
     }
 
-    func conversation(serverURLString: String, memberID: String) async throws -> [DirectMessage] {
+    func conversation(
+        serverURLString: String,
+        memberID: String,
+        markRead: Bool = true
+    ) async throws -> [DirectMessage] {
         try await get(
             serverURLString: serverURLString,
-            path: "api/messages/\(memberID)",
-            queryItems: [URLQueryItem(name: "limit", value: "30")]
+            path: "api/mobile/v0/messages/\(memberID)",
+            queryItems: [
+                URLQueryItem(name: "limit", value: "30"),
+                URLQueryItem(name: "markRead", value: String(markRead)),
+            ]
         )
+    }
+
+    func markMessagesRead(serverURLString: String, messageIDs: [String]) async throws {
+        guard !messageIDs.isEmpty else { return }
+        guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
+            throw TrustrootsAPIError.invalidServerURL
+        }
+        var request = URLRequest(url: configuration.baseURL.appendingPathComponent("api/mobile/v0/messages-read"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try encoder.encode(["messageIds": messageIDs])
+        authorise(&request)
+        let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TrustrootsAPIError.invalidResponse
+        }
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw decodedError(from: data, statusCode: httpResponse.statusCode)
+        }
     }
 
     func sendMessage(
@@ -1246,7 +1372,7 @@ final class TrustrootsAPI {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
         }
-        let endpoint = configuration.baseURL.appendingPathComponent("api/messages")
+        let endpoint = configuration.baseURL.appendingPathComponent("api/mobile/v0/messages")
         var request = URLRequest(url: endpoint)
         authorise(&request)
         request.httpMethod = "POST"
@@ -1258,7 +1384,7 @@ final class TrustrootsAPI {
         ])
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1300,7 +1426,7 @@ final class TrustrootsAPI {
         authorise(&request)
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await authenticatedData(for: request, serverURLString: serverURLString)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw TrustrootsAPIError.invalidResponse
             }
@@ -1332,7 +1458,12 @@ final class TrustrootsAPI {
         statusCode: Int,
         isSignIn: Bool = false
     ) -> TrustrootsAPIError {
-        if !isSignIn && statusCode == 401 {
+        if isSignIn && statusCode == 404 {
+            return .serverMessage(
+                "This API server has not been updated for the mobile app yet. It is missing /api/mobile/v0."
+            )
+        }
+        if !isSignIn && (statusCode == 401 || statusCode == 403) {
             return .authenticationRequired
         }
         struct ErrorResponse: Decodable {
@@ -1343,29 +1474,95 @@ final class TrustrootsAPI {
     }
 
     private func authorise(_ request: inout URLRequest) {
-        guard let cookieHeader = credentialStore.load()?.cookieHeader else { return }
-        request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
+        guard let accessToken = credentialStore.load()?.accessToken else { return }
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
     }
 
-    private func sessionCookieHeader(
-        from response: HTTPURLResponse,
-        for url: URL
-    ) -> String? {
-        HTTPCookie.cookies(
-            withResponseHeaderFields: response.allHeaderFields.reduce(into: [:]) { fields, entry in
-                guard let key = entry.key as? String, let value = entry.value as? String else { return }
-                fields[key] = value
-            },
-            for: url
-        )
-        .first(where: { $0.name == "connect.sid" })
-        .map { "\($0.name)=\($0.value)" }
+    private func authenticatedData(
+        for request: URLRequest,
+        serverURLString: String
+    ) async throws -> (Data, URLResponse) {
+        let result = try await session.data(for: request)
+        guard (result.1 as? HTTPURLResponse)?.statusCode == 401 else { return result }
+
+        do {
+            try await refreshCredentialsForRetry(
+                serverURLString: serverURLString,
+                rejectedAuthorization: request.value(forHTTPHeaderField: "Authorization")
+            )
+            var retry = request
+            authorise(&retry)
+            let retriedResult = try await session.data(for: retry)
+            guard (retriedResult.1 as? HTTPURLResponse)?.statusCode != 401 else {
+                throw TrustrootsAPIError.authenticationRequired
+            }
+            return retriedResult
+        } catch TrustrootsAPIError.authenticationRequired {
+            notificationCenter.post(name: .trustrootsAuthenticationRequired, object: nil)
+            throw TrustrootsAPIError.authenticationRequired
+        }
+    }
+
+    private func refreshCredentialsForRetry(
+        serverURLString: String,
+        rejectedAuthorization: String?
+    ) async throws {
+        guard let rejectedCredentials = credentialStore.load() else {
+            throw TrustrootsAPIError.authenticationRequired
+        }
+        // Another request may have completed its rotation before this 401 arrived.
+        if rejectedAuthorization != "Bearer \(rejectedCredentials.accessToken)" { return }
+        _ = try await MobileRefreshCoordinator.shared.refresh(
+            serverURLString: serverURLString
+        ) { [self] in
+            guard let currentCredentials = credentialStore.load() else {
+                throw TrustrootsAPIError.authenticationRequired
+            }
+            if currentCredentials.refreshToken != rejectedCredentials.refreshToken {
+                return currentCredentials
+            }
+
+            let mobileSession = try await refresh(
+                serverURLString: serverURLString,
+                refreshToken: rejectedCredentials.refreshToken
+            )
+            guard credentialStore.load()?.refreshToken == rejectedCredentials.refreshToken else {
+                guard let currentCredentials = credentialStore.load() else {
+                    throw TrustrootsAPIError.authenticationRequired
+                }
+                return currentCredentials
+            }
+            guard credentialStore.save(mobileSession.credentials) else {
+                throw TrustrootsAPIError.serverMessage("Secure credential storage is unavailable.")
+            }
+            return mobileSession.credentials
+        }
+    }
+}
+
+actor MobileRefreshCoordinator {
+    static let shared = MobileRefreshCoordinator()
+
+    private var refreshTasks: [String: Task<MobileCredentials, Error>] = [:]
+
+    func refresh(
+        serverURLString: String,
+        operation: @escaping @Sendable () async throws -> MobileCredentials
+    ) async throws -> MobileCredentials {
+        if let existing = refreshTasks[serverURLString] {
+            return try await existing.value
+        }
+
+        let task = Task { try await operation() }
+        refreshTasks[serverURLString] = task
+        defer { refreshTasks[serverURLString] = nil }
+        return try await task.value
     }
 }
 
 extension Notification.Name {
     static let trustrootsAuthenticationRequired = Notification.Name(
-        "org.trustroots.trustrootsApp.authentication-required"
+        "org.trustroots.ios.authentication-required"
     )
 }
 
