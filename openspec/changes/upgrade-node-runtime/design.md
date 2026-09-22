@@ -42,6 +42,16 @@ clean installation; avoid forcing an unrelated Agenda/driver upgrade.
 
 ## Remaining work
 
+### Strict dependency resolution
+
+Retain npm's peer validation. Use connect-mongo 4.4.1 with its MongoDB 3 driver
+updated to the application's 3.6.11 patch version. Replace the obsolete
+react-medium-editor wrapper with a direct React integration of the existing
+medium-editor dependency, preserving input composition, selection, external
+resets, placeholders and keyboard callbacks. Verify these behaviours with unit
+and browser tests. Update native build dependencies for Node 24 without
+changing upload detection or processing behaviour.
+
 - Prove clean installation without bypassing peer validation or native scripts.
 - Verify mmmagic, canvas and sharp installation and behaviour on Node 24.
 - Resolve Firebase runtime compatibility after the browser-push decision (#2829).
