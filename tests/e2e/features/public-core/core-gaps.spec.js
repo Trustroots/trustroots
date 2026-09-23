@@ -62,8 +62,13 @@ test.describe('public core manifest gap coverage', () => {
     ]);
 
     await page.goto('/support?report=e2e-seeded-shadow');
-    await expect(page.getByText('Reporting member')).toBeVisible();
+    await expect(page.getByText('Reported member')).toBeVisible();
     await expect(page.getByText('e2e-seeded-shadow')).toBeVisible();
+    await expect(
+      page.getByText(
+        'This message goes to Trustroots support, not to the member.',
+      ),
+    ).toBeVisible();
 
     await page.locator('#message').fill('E2E support report from UI coverage.');
     await page.locator('#username').fill('guest-support-ui');

@@ -487,10 +487,10 @@ describe('Service: email', function () {
       should.exist(jobs[0].data.text);
       jobs[0].data.text.should.containEql('test-support-message');
       jobs[0].data.text.should.containEql(
-        'Reporting member: ' + supportRequest.reportMember,
+        'Reported member: ' + supportRequest.reportMember,
       );
       jobs[0].data.text.should.containEql(
-        'Username: ' + supportRequest.username,
+        'From username: ' + supportRequest.username,
       );
       jobs[0].data.text.should.containEql('Email: ' + supportRequest.email);
       jobs[0].data.text.should.containEql(

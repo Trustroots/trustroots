@@ -51,7 +51,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
       - name: Test, lint and build debug APK

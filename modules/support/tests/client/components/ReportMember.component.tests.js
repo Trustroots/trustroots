@@ -20,6 +20,6 @@ describe('<ReportMember />', () => {
 
     expect(link).toHaveAttribute('href', '/support?report=alice');
     expect(link).toHaveClass('support-link');
-    expect(link).toHaveTextContent('Report member');
+    expect(link).toHaveTextContent('Report member to support');
   });
 });
