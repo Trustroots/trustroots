@@ -57,7 +57,12 @@ done
 
 # Check the executable of the actual application/worker process, not PATH's node.
 for container in "$web" "$worker"; do
-  docker exec "$container" node -e '
+  # /proc executable links require the target process UID in unprivileged Docker.
+  process_user=root
+  if [ "$container" = "$web" ]; then
+    process_user=app
+  fi
+  docker exec --user "$process_user" "$container" node -e '
     const fs = require("fs");
     const cp = require("child_process");
     const matches = fs.readdirSync("/proc").filter(p => /^\d+$/.test(p)).filter(p => {
