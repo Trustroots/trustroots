@@ -65,4 +65,47 @@ describe('<ProfileOverview />', () => {
       expect(screen.queryByTestId('avatar-512')).not.toBeInTheDocument(),
     );
   });
+
+  it('links the owner’s placeholder avatar to photo editing', () => {
+    render(
+      <ProfileOverview
+        profile={{
+          ...profile,
+          avatarSource: 'gravatar',
+          avatarUploaded: false,
+        }}
+        isSelf
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'Edit profile photo' }),
+    ).toHaveAttribute('href', '/profile/edit/photo');
+  });
+
+  it('links the selected placeholder after a previous upload', () => {
+    render(
+      <ProfileOverview profile={{ ...profile, avatarUploaded: true }} isSelf />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'Edit profile photo' }),
+    ).toHaveAttribute('href', '/profile/edit/photo');
+  });
+
+  it('keeps an uploaded profile photo expandable for its owner', async () => {
+    render(
+      <ProfileOverview
+        profile={{ ...profile, avatarSource: 'local', avatarUploaded: true }}
+        isSelf
+      />,
+    );
+
+    expect(
+      screen.queryByRole('link', { name: 'Edit profile photo' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('avatar-256'));
+    expect(await screen.findByTestId('avatar-512')).toBeInTheDocument();
+  });
 });
