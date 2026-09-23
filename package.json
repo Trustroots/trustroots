@@ -38,7 +38,7 @@
     "i18n": "npm run i18n:extract && npm run i18n:fix-weblate",
     "install-dependencies": "node ./bin/install-deps.js",
     "lint:watch": "esw --cache --watch --quiet .",
-    "lint": "eslint .",
+    "lint": "eslint --ext .js,.mjs .",
     "lint:report": "eslint --output-file ./eslint_report.json --format json .",
     "migrate-down": "migrate down",
     "migrate": "migrate up",
@@ -302,7 +302,7 @@
   },
   "license": "AGPL",
   "lint-staged": {
-    "*.js": [
+    "*.{js,mjs}": [
       "npm run reformat-files",
       "eslint"
     ],

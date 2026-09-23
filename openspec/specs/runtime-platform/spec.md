@@ -3,9 +3,7 @@
 ## Purpose
 
 Define the supported JavaScript runtime platform and the verification required to keep development, automation, and production environments aligned.
-
 ## Requirements
-
 ### Requirement: Supported JavaScript runtime
 
 The project SHALL require the Node.js 24 release line and npm 11 for development, dependency installation, automated tests, builds, and production execution.
@@ -75,3 +73,18 @@ The project SHALL start its server and worker and run server tests through npm s
 
 - **WHEN** a developer invokes the server test command or its watch variant
 - **THEN** database preparation, index creation, test execution, and cleanup occur without loading Gulp
+
+### Requirement: Incremental server ESM interoperability
+
+Server modules migrated to native ESM SHALL remain available to existing
+CommonJS server consumers until those consumers are migrated.
+
+#### Scenario: Existing consumer loads a migrated service
+
+- **WHEN** a CommonJS server module loads a migrated service through its existing path
+- **THEN** it receives the same callable exports and configuration values
+
+#### Scenario: ESM consumer loads a migrated service
+
+- **WHEN** an ESM server module imports the migrated service
+- **THEN** it can use named exports without a CommonJS namespace adapter

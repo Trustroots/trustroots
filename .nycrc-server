@@ -1,6 +1,6 @@
 {
   "all": true,
-  "include": ["modules/*/server/**/*.js"],
+  "include": ["modules/*/server/**/*.js", "modules/*/server/**/*.mjs"],
   "exclude": [
     "modules/*/tests/**",
     "deploy/docker/data/**",
