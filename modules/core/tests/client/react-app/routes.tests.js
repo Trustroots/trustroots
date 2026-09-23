@@ -178,6 +178,16 @@ jest.mock('@/modules/pages/client/components/Safety.component', () => () => (
   <main>Safety</main>
 ));
 
+jest.mock(
+  '@/modules/contacts/client/components/ContactAddPage.component',
+  () => () => <main>ContactAddPage</main>,
+);
+
+jest.mock(
+  '@/modules/experiences/client/components/ExperienceCreatePage',
+  () => () => <main>ExperienceCreatePage</main>,
+);
+
 /* eslint-enable react/display-name */
 
 describe('React route ownership', () => {
@@ -246,11 +256,10 @@ describe('React route ownership', () => {
 
   it('does not claim Angular-owned paths', () => {
     expect(isReactRoute('/profile/edit')).toBe(false);
-    expect(isReactRoute('/profile/alice/experiences/new')).toBe(false);
     expect(findRoute('/profile/edit')).toBe(undefined);
   });
 
-  it('routes profile views without claiming editors or experience writing', () => {
+  it('routes profile views without claiming editors', () => {
     const profile = findRoute('/profile/alice/contacts?from=search');
     expect(profile).toMatchObject({
       path: '/profile/:username/contacts',
@@ -344,4 +353,24 @@ describe('React route ownership', () => {
       unmount();
     });
   });
+});
+
+it('owns connection and experience-writing URLs alongside profile history', () => {
+  expect(getReactRoutePolicy('/contact-add/sample-member/')).toMatchObject({
+    path: '/contact-add/:userId',
+    requiresAuth: true,
+  });
+  expect(
+    getReactRoutePolicy('/profile/sample-member/experiences/new'),
+  ).toMatchObject({
+    path: '/profile/:username/experiences/new',
+    requiresAuth: true,
+  });
+  expect(
+    getReactRoutePolicy('/profile/sample-member/experiences'),
+  ).toMatchObject({
+    path: '/profile/:username/experiences',
+    requiresAuth: true,
+  });
+  expect(getReactRoutePolicy('/contact-add/sample/extra')).toBeUndefined();
 });

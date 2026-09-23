@@ -74,7 +74,6 @@ describe('React route ownership', function () {
 
   it('does not claim Angular-owned routes', function () {
     isReactOwnedPath('/profile/edit').should.be.false();
-    isReactOwnedPath('/profile/alice/experiences/new').should.be.false();
   });
 });
 
@@ -100,12 +99,12 @@ describe('Profile route ownership', () => {
     );
   });
 
-  it('does not select editors or experience writing', () => {
+  it('does not select profile editors', () => {
     should(getReactRoutePolicy('/profile/edit')).be.undefined();
     should(getReactRoutePolicy('/profile/edit/photo')).be.undefined();
-    should(
-      getReactRoutePolicy('/profile/alice/experiences/new'),
-    ).be.undefined();
+    getReactRoutePolicy('/profile/alice/experiences/new').path.should.equal(
+      '/profile/:username/experiences/new',
+    );
     for (const path of ['/profile/%ZZ', '/profile/%2F', '/profile/:username']) {
       getReactRoutePolicy(path).path.should.equal('/not-found');
     }

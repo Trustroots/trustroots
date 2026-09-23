@@ -42,6 +42,17 @@ describe('Users Route Tests', function () {
     return $injector.invoke(state.resolve[name], null, locals);
   }
 
+  it('forwards the experience-writing state into the React page', () => {
+    const $window = { location: { assign: jest.fn() } };
+    $injector.invoke($state.get('profile.experiences.new').onEnter, null, {
+      $window,
+      $stateParams: { username: 'sample member' },
+    });
+    expect($window.location.assign).toHaveBeenCalledWith(
+      '/profile/sample%20member/experiences/new',
+    );
+  });
+
   describe('Route config', function () {
     it('puts linked Nostroots settings before hospitality networks', function () {
       const template = $templateCache.get(
