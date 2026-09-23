@@ -8,7 +8,11 @@ module.exports = function uniqueValidation(schema) {
     if (typeof schemaType.options.unique === 'string') {
       messages[path] = schemaType.options.unique;
       schemaType.options.unique = true;
-      schema.tree[path].unique = true;
+      // Nested paths are absent from schema.tree; schemaType.options is enough
+      // for Mongoose to register the unique index.
+      if (schema.tree[path]) {
+        schema.tree[path].unique = true;
+      }
     }
   });
 
@@ -32,7 +36,11 @@ module.exports = function uniqueValidation(schema) {
     next(validationError);
   }
 
+  // Custom messages on schema.index({ ... }, { unique: 'message' }) are not
+  // supported; this adapter reads messages from individual schema paths.
   schema.post('save', handleDuplicate);
+  schema.post('update', handleDuplicate);
   schema.post('updateOne', handleDuplicate);
+  schema.post('updateMany', handleDuplicate);
   schema.post('findOneAndUpdate', handleDuplicate);
 };

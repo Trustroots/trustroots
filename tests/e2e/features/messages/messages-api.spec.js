@@ -34,22 +34,12 @@ test.describe('seeded message API flows', () => {
     expect(response.ok()).toBeTruthy();
     const message = await response.json();
 
-    try {
-      expect(message.userFrom.username).toBe(SEEDED_MEMBERS[0].username);
-      expect(message.userTo.username).toBe(SEEDED_MEMBERS[1].username);
-      const persisted = await withE2eDb(db =>
-        db.collection('messages').findOne({ _id: new ObjectId(message._id) }),
-      );
-      expect(persisted.content).toBe(content);
-    } finally {
-      if (message._id) {
-        await withE2eDb(db =>
-          db
-            .collection('messages')
-            .deleteOne({ _id: new ObjectId(message._id) }),
-        );
-      }
-    }
+    expect(message.userFrom.username).toBe(SEEDED_MEMBERS[0].username);
+    expect(message.userTo.username).toBe(SEEDED_MEMBERS[1].username);
+    const persisted = await withE2eDb(db =>
+      db.collection('messages').findOne({ _id: new ObjectId(message._id) }),
+    );
+    expect(persisted.content).toBe(content);
   });
 
   for (const role of ['welcome-team', 'admin']) {
