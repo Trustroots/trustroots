@@ -87,7 +87,7 @@ describe('Controller: core', function () {
 
     it('renders the Angular index for Angular-owned paths', function () {
       const res = mockResponse();
-      coreController.renderIndex({ path: '/profile/alice' }, res);
+      coreController.renderIndex({ path: '/signin' }, res);
       res.rendered.should.equal('index.server.view.html');
     });
 

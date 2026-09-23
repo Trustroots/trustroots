@@ -367,7 +367,7 @@ describe('Core CRUD tests', function () {
     });
 
     it('keeps rendering Angular assets and root for Angular-owned pages', function (done) {
-      agent.get('/profile/alice').end(function (err, res) {
+      agent.get('/signin').end(function (err, res) {
         should.not.exist(err);
         res.text.should.containEql('data-ui-view');
         res.text.should.containEql('assets/main.js');

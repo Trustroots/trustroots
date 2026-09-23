@@ -19,7 +19,7 @@ describe('<BottomNavigationSmall />', () => {
     );
     expect(screen.getByRole('tab', { name: 'About' })).toHaveAttribute(
       'href',
-      '/profile/alice',
+      '/profile/alice/about',
     );
     expect(screen.getByRole('tab', { name: 'Hosting' })).toHaveAttribute(
       'href',

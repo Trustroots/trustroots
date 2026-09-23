@@ -12,8 +12,23 @@ export async function getContactsCommon(id) {
   return data;
 }
 
+export async function getByUserId(userId) {
+  try {
+    const { data } = await axios.get(`/api/contact-by/${userId}`);
+    return data;
+  } catch (error) {
+    if (error.response?.status === 404) return null;
+    throw error;
+  }
+}
+
 export async function getByContactId(contactId) {
   const { data } = await axios.get(`/api/contact/${contactId}`);
+  return data;
+}
+
+export async function list(listUserId) {
+  const { data } = await axios.get(`/api/contacts/${listUserId}`);
   return data;
 }
 

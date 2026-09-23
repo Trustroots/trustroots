@@ -45,6 +45,48 @@ const REACT_ROUTE_POLICIES = [
     footerHidden: true,
   },
   {
+    path: '/profile/:username',
+    title: 'Profile',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/about',
+    title: 'Profile',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/overview',
+    title: 'Profile overview',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/accommodation',
+    title: 'Profile accommodation',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/contacts',
+    title: 'Profile contacts',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/tribes',
+    title: 'Profile tribes',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
+    path: '/profile/:username/experiences',
+    title: 'Experiences',
+    requiresAuth: true,
+    noScrollingTop: true,
+  },
+  {
     path: '/about',
     redirectTo: '/',
   },
@@ -186,7 +228,10 @@ function getReactRoutePolicy(path) {
   const normalizedPath = normalizePath(path);
 
   const exact = REACT_ROUTE_POLICIES.find(
-    route => route.path !== '/circles/:circle' && route.path === normalizedPath,
+    route =>
+      route.path !== '/circles/:circle' &&
+      !route.path.startsWith('/profile/:username') &&
+      route.path === normalizedPath,
   );
   if (exact) return exact;
 
@@ -194,6 +239,29 @@ function getReactRoutePolicy(path) {
     return REACT_ROUTE_POLICIES.find(
       route => route.path === '/contact-confirm/:contactId',
     );
+  }
+
+  const profileMatch =
+    /^\/profile\/([^/]+)(?:\/(about|overview|accommodation|contacts|tribes|experiences))?$/.exec(
+      normalizedPath,
+    );
+  if (profileMatch && profileMatch[1] !== 'edit') {
+    let username;
+    try {
+      username = decodeURIComponent(profileMatch[1]);
+    } catch {
+      return REACT_ROUTE_POLICIES.find(route => route.path === '/not-found');
+    }
+    if (!username || username.includes('/') || username === ':username') {
+      return REACT_ROUTE_POLICIES.find(route => route.path === '/not-found');
+    }
+    const suffix = profileMatch[2] ? `/${profileMatch[2]}` : '';
+    return {
+      ...REACT_ROUTE_POLICIES.find(
+        route => route.path === `/profile/:username${suffix}`,
+      ),
+      params: { username },
+    };
   }
 
   const circleMatch = /^\/circles\/([^/]+)$/.exec(normalizedPath);
