@@ -331,6 +331,88 @@ describe('Search', () => {
     expect(mockMapProps.width).toBe('100%');
   });
 
+  it('zooms the map on a Firefox trackpad pinch without zooming the page', () => {
+    renderSearchMap();
+    const pinch = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      ctrlKey: true,
+      deltaY: -50,
+    });
+
+    act(() => screen.getByTestId('react-map-gl').dispatchEvent(pinch));
+
+    expect(pinch.defaultPrevented).toBe(true);
+    expect(mockMapProps.zoom).toBe(2.5);
+    expect(mockSetPersistentMapLocation).toHaveBeenCalledWith(
+      expect.objectContaining({ zoom: 2.5 }),
+    );
+
+    act(() =>
+      screen.getByTestId('react-map-gl').dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaMode: 1,
+          deltaY: -1,
+        }),
+      ),
+    );
+    expect(mockMapProps.zoom).toBe(2.9);
+  });
+
+  it('leaves ordinary wheel input to the map and clamps pinch zoom', () => {
+    renderSearchMap();
+    const map = screen.getByTestId('react-map-gl');
+    const wheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaY: -50,
+    });
+
+    act(() => map.dispatchEvent(wheel));
+    expect(wheel.defaultPrevented).toBe(false);
+    expect(mockMapProps.zoom).toBe(2);
+
+    act(() =>
+      map.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaY: -5000,
+        }),
+      ),
+    );
+    expect(mockMapProps.zoom).toBe(20);
+
+    mockSetPersistentMapLocation.mockClear();
+    act(() =>
+      map.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaY: -5000,
+        }),
+      ),
+    );
+    expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
+
+    act(() =>
+      map.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaY: 5000,
+        }),
+      ),
+    );
+    expect(mockMapProps.zoom).toBe(0);
+  });
+
   it('uses the default map location when persisted coordinates are missing', () => {
     mockPersistentMapLocation = {
       zoom: 2,

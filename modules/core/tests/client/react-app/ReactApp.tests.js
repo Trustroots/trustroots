@@ -596,6 +596,36 @@ describe('<ReactApp />', () => {
     }
   });
 
+  it('preserves the loaded profile when switching tabs through the router', async () => {
+    usersApi.fetch.mockResolvedValue({
+      _id: 'member-one',
+      username: 'member-one',
+      description: 'A fictional member description',
+      member: [],
+    });
+    renderApp('/profile/member-one', {
+      user: { _id: 'member-one', username: 'member-one', public: true },
+    });
+    await screen.findByText('A fictional member description');
+
+    fireEvent.click(
+      document.querySelector(
+        '.profile-tabs a[href="/profile/member-one/contacts"]',
+      ),
+    );
+    await waitFor(() =>
+      expect(window.location.pathname).toBe('/profile/member-one/contacts'),
+    );
+    expect(screen.queryByText('Wait a moment…')).not.toBeInTheDocument();
+    expect(usersApi.fetch).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(
+      document.querySelector('.profile-tabs a[href="/profile/member-one"]'),
+    );
+    await screen.findByText('A fictional member description');
+    expect(usersApi.fetch).toHaveBeenCalledTimes(1);
+  });
+
   it('updates the current page and header immediately when user state changes', async () => {
     renderApp('/support', { user: { username: 'member-before' } });
     await screen.findByText('Support route member-before');
