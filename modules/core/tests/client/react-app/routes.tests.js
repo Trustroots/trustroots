@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
 
 import {
   findRoute,
@@ -18,6 +19,10 @@ import {
 jest.mock('@/modules/tribes/client/components/CirclesRoute', () => () => (
   <main>Circle route</main>
 ));
+jest.mock('@/modules/users/client/components/ProfilePage.component', () => ({
+  __esModule: true,
+  default: ({ username }) => <main>Profile route {username}</main>,
+}));
 jest.mock('@/modules/pages/client/components/Navigation.component', () => ({
   __esModule: true,
   default: ({ user, onSignout }) => (
@@ -233,8 +238,41 @@ describe('React route ownership', () => {
   });
 
   it('does not claim Angular-owned paths', () => {
-    expect(isReactRoute('/profile/alice')).toBe(false);
-    expect(findRoute('/profile/alice')).toBe(undefined);
+    expect(isReactRoute('/profile/edit')).toBe(false);
+    expect(isReactRoute('/profile/alice/experiences/new')).toBe(false);
+    expect(findRoute('/profile/edit')).toBe(undefined);
+  });
+
+  it('routes profile views without claiming editors or experience writing', () => {
+    const profile = findRoute('/profile/alice/contacts?from=search');
+    expect(profile).toMatchObject({
+      path: '/profile/:username/contacts',
+      params: { username: 'alice' },
+      requiresAuth: true,
+      noScrollingTop: true,
+    });
+    expect(getReactRouteAccessRedirect(profile, null)).toBe('/signin');
+    expect(getReactRouteAccessRedirect(profile, { username: 'bob' })).toBe(
+      null,
+    );
+    expect(
+      render(
+        profile.render({ user: { username: 'bob' }, params: profile.params }),
+      ).container,
+    ).toHaveTextContent(/Profile route alice/);
+    for (const path of [
+      '/profile/alice',
+      '/profile/alice/about',
+      '/profile/alice/overview',
+      '/profile/alice/accommodation',
+      '/profile/alice/tribes',
+      '/profile/alice/experiences',
+    ]) {
+      expect(isReactRoute(path)).toBe(true);
+    }
+    for (const path of ['/profile/%ZZ', '/profile/%2F', '/profile/:username']) {
+      expect(findRoute(path).path).toBe('/not-found');
+    }
   });
 
   it('resolves circle slugs and their access rules', () => {
