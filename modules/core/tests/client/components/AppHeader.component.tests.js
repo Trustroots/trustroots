@@ -85,4 +85,28 @@ describe('<AppHeader />', () => {
       '/messages alice',
     );
   });
+
+  it('updates menu state from the React route without waiting for popstate', () => {
+    const user = {
+      _id: 'user-1',
+      displayName: 'Alice Example',
+      username: 'alice',
+    };
+    const onSignout = jest.fn();
+    const { rerender } = render(
+      <AppHeader
+        currentPath="/profile/alice"
+        onSignout={onSignout}
+        user={user}
+      />,
+    );
+
+    rerender(
+      <AppHeader currentPath="/messages" onSignout={onSignout} user={user} />,
+    );
+
+    expect(screen.getByTestId('logged-in-navigation')).toHaveTextContent(
+      '/messages alice',
+    );
+  });
 });

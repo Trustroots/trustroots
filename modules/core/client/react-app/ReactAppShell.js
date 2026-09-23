@@ -85,7 +85,13 @@ export default function ReactAppShell() {
   return (
     <>
       <div id="tr-wrap">
-        {!route?.headerHidden && <AppHeader onSignout={signout} user={user} />}
+        {!route?.headerHidden && (
+          <AppHeader
+            currentPath={location.pathname}
+            onSignout={signout}
+            user={user}
+          />
+        )}
         <article className="content" id="tr-main" role="main" tabIndex="-1">
           {redirect || route?.path === '/not-found' ? (
             <NotFoundPage />

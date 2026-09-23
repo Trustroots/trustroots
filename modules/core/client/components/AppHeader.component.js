@@ -10,9 +10,14 @@ import { userType } from '@/modules/users/client/users.prop-types';
 import NavigationLoggedIn from './NavigationLoggedIn';
 import NavigationLoggedOut from './NavigationLoggedOut';
 
-export default function AppHeader({ onSignout, user }) {
+export default function AppHeader({
+  currentPath: routedPath,
+  onSignout,
+  user,
+}) {
   const { t } = useTranslation('core');
-  const currentPath = useCurrentPath();
+  const browserPath = useCurrentPath();
+  const currentPath = routedPath || browserPath;
 
   return (
     <Navbar className="hidden-print" id="tr-header" fixedTop>
@@ -36,6 +41,7 @@ export default function AppHeader({ onSignout, user }) {
 }
 
 AppHeader.propTypes = {
+  currentPath: PropTypes.string,
   onSignout: PropTypes.func.isRequired,
   user: userType,
 };

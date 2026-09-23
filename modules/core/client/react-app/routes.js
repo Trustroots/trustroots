@@ -3,6 +3,7 @@ import {
   createRoute,
   createRouter,
   useParams,
+  useRouterState,
   useSearch,
 } from '@tanstack/react-router';
 import React from 'react';
@@ -82,6 +83,10 @@ function renderWithUser(Component) {
   return function renderRoute({ user }) {
     return React.createElement(Component, { user });
   };
+}
+
+function renderProfile({ currentPath, user }) {
+  return <ProfilePage currentPath={currentPath} user={user} />;
 }
 
 function renderStatistics({ user }) {
@@ -224,7 +229,7 @@ const renderByPath = {
   '/profile/:username/overview': renderWithUser(ProfilePage),
   '/profile/:username/contacts': renderWithUser(ProfilePage),
   '/profile/:username/tribes': renderWithUser(ProfilePage),
-  '/profile/:username': renderWithUser(ProfilePage),
+  '/profile/:username': renderProfile,
   '/profile/edit/locations': renderWithUser(ProfileEditLocations),
   '/profile/edit/photo': renderWithUser(ProfileEditPhoto),
   '/profile/edit/networks': renderWithUser(ProfileEditNetworks),
@@ -258,6 +263,9 @@ function createClientRouteComponent(clientRoute) {
     const { user } = useAuth();
     const params = useParams({ strict: false });
     const search = useSearch({ strict: false });
+    const currentPath = useRouterState({
+      select: state => state.location.pathname,
+    });
     const remountSearch = { ...search };
 
     // Selecting an offer updates the URL without resetting the map viewport.
@@ -267,7 +275,7 @@ function createClientRouteComponent(clientRoute) {
 
     return (
       <React.Fragment key={JSON.stringify({ params, search: remountSearch })}>
-        {clientRoute.render({ params, user })}
+        {clientRoute.render({ currentPath, params, user })}
       </React.Fragment>
     );
   }
@@ -280,15 +288,40 @@ export const rootRoute = createRootRoute({
   notFoundComponent: NotFoundPage,
 });
 
-const clientRoutes = routes.map(clientRoute =>
-  createRoute({
-    component: createClientRouteComponent(clientRoute),
-    getParentRoute: () => rootRoute,
-    path: toTanStackPath(clientRoute.path),
-  }),
-);
+const profilePath = '/profile/:username';
+const profileRouteConfig = routes.find(route => route.path === profilePath);
+const profileRoute = createRoute({
+  component: createClientRouteComponent(profileRouteConfig),
+  getParentRoute: () => rootRoute,
+  path: toTanStackPath(profilePath),
+});
 
-export const routeTree = rootRoute.addChildren(clientRoutes);
+const profileTabRoutes = routes
+  .filter(route => route.path.startsWith(`${profilePath}/`))
+  .map(route =>
+    createRoute({
+      getParentRoute: () => profileRoute,
+      path: toTanStackPath(route.path.slice(profilePath.length + 1)),
+    }),
+  );
+
+const clientRoutes = routes
+  .filter(
+    route =>
+      route.path !== profilePath && !route.path.startsWith(`${profilePath}/`),
+  )
+  .map(clientRoute =>
+    createRoute({
+      component: createClientRouteComponent(clientRoute),
+      getParentRoute: () => rootRoute,
+      path: toTanStackPath(clientRoute.path),
+    }),
+  );
+
+export const routeTree = rootRoute.addChildren([
+  ...clientRoutes,
+  profileRoute.addChildren(profileTabRoutes),
+]);
 
 export function parseLegacySearch(search) {
   return Object.fromEntries(new URLSearchParams(search));

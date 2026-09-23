@@ -404,6 +404,23 @@ describe('React route ownership', () => {
     });
   });
 
+  it('keeps the same profile route mounted across profile tabs', () => {
+    const router = createAppRouter();
+    const profileMatches = router.matchRoutes('/profile/alice');
+    for (const suffix of [
+      'about',
+      'accommodation',
+      'contacts',
+      'experiences',
+      'experiences/new',
+      'overview',
+      'tribes',
+    ]) {
+      const matches = router.matchRoutes(`/profile/alice/${suffix}`);
+      expect(matches.at(-2).routeId).toBe(profileMatches.at(-1).routeId);
+    }
+  });
+
   it('keeps the shared route policy aligned with owned paths', () => {
     expect(REACT_ROUTE_POLICIES.map(route => route.path).sort()).toEqual(
       [...REACT_OWNED_PATHS].sort(),
