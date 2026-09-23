@@ -9,24 +9,18 @@
  * $filter('plainTextLength')('myString')
  *
  * Usage via JS import:
- * import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
+ * import plainTextLength from '@/modules/core/client/utils/plain-text-length';
  * plainTextLength('mystring')
  *
  * @link https://docs.angularjs.org/api/ng/filter/filter
  * @link http://stackoverflow.com/a/17315483/1984644
  */
+import plainTextLength from '../utils/plain-text-length';
+
 angular.module('core').filter('plainTextLength', plainTextLengthFilter);
 
 function plainTextLengthFilter() {
   return plainTextLength;
 }
 
-// Allow it to be used via direct import too
-export default function plainTextLength(string) {
-  return string && angular.isString(string)
-    ? String(string)
-        .replace(/&nbsp;/g, ' ')
-        .replace(/<[^>]+>/gm, '')
-        .trim().length
-    : 0;
-}
+export default plainTextLength;

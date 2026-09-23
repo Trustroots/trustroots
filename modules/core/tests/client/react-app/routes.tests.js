@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
 
 import {
   findRoute,
@@ -18,6 +19,13 @@ import {
 jest.mock('@/modules/tribes/client/components/CirclesRoute', () => () => (
   <main>Circle route</main>
 ));
+jest.mock('@/modules/messages/client/components/Inbox.component', () => () => (
+  <main>Inbox route</main>
+));
+jest.mock('@/modules/messages/client/components/Thread.component', () => ({
+  __esModule: true,
+  default: ({ username }) => <main>Thread route {username}</main>,
+}));
 jest.mock('@/modules/pages/client/components/Navigation.component', () => ({
   __esModule: true,
   default: ({ user, onSignout }) => (
@@ -245,6 +253,33 @@ describe('React route ownership', () => {
     });
     expect(findRoute('/circles/naturists').requiresAuth).toBe(true);
   });
+
+  it('routes authenticated members to the React inbox and thread', () => {
+    const inbox = findRoute('/messages');
+    const thread = findRoute('/messages/alice?userId=member-1');
+
+    expect(inbox).toMatchObject({ path: '/messages', requiresAuth: true });
+    expect(thread).toMatchObject({
+      path: '/messages/:username',
+      params: { username: 'alice' },
+      requiresAuth: true,
+      footerHidden: true,
+    });
+    expect(getReactRouteAccessRedirect(thread, null)).toBe('/signin');
+    expect(getReactRouteAccessRedirect(thread, { username: 'bob' })).toBe(null);
+    expect(
+      render(
+        thread.render({ user: { username: 'bob' }, params: thread.params }),
+      ).container,
+    ).toHaveTextContent('Thread route alice');
+  });
+
+  it.each(['/messages/%ZZ', '/messages/%2F', '/messages/:username'])(
+    'keeps malformed messaging paths out of the thread for %s',
+    path => {
+      expect(findRoute(path).path).toBe('/not-found');
+    },
+  );
 
   it.each([
     '/circles/Hitchhikers',

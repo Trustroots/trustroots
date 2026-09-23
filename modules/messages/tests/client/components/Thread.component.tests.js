@@ -18,6 +18,7 @@ import {
   generateMessage,
 } from '@/testutils/client/data.client.testutil';
 import * as angularCompat from '@/modules/core/client/services/angular-compat';
+import { defaultNavigate } from '@/modules/core/client/react-app/shell-helpers';
 
 const api = {
   users: usersAPI,
@@ -32,6 +33,9 @@ jest.mock(
 jest.mock('@/modules/core/client/services/angular-compat', () => ({
   getRouteParams: jest.fn(),
   go: jest.fn(),
+}));
+jest.mock('@/modules/core/client/react-app/shell-helpers', () => ({
+  defaultNavigate: jest.fn(),
 }));
 let mockIsExtraSmall = true;
 jest.mock('react-responsive', () => ({
@@ -239,6 +243,57 @@ describe('<Thread>', () => {
     expect(
       screen.queryByText(/You haven't been talking yet/),
     ).not.toBeInTheDocument();
+  });
+
+  it('uses the React route username and redirects an own-account thread', async () => {
+    render(
+      <Thread user={me} profileMinimumLength={0} username={me.username} />,
+    );
+
+    await waitFor(() =>
+      expect(defaultNavigate).toHaveBeenCalledWith('/messages'),
+    );
+    expect(angularCompat.go).not.toHaveBeenCalled();
+    expect(api.users.fetch).not.toHaveBeenCalled();
+  });
+
+  it('loads a React-owned thread without Angular route parameters', async () => {
+    angularCompat.getRouteParams.mockReturnValue({});
+    render(
+      <Thread
+        user={me}
+        profileMinimumLength={0}
+        username={otherUser.username}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(api.users.fetch).toHaveBeenCalledWith(otherUser.username),
+    );
+    expect(angularCompat.getRouteParams).not.toHaveBeenCalled();
+  });
+
+  it('uses the query ID for a removed member on a React-owned thread', async () => {
+    window.history.replaceState(
+      {},
+      '',
+      `/messages/${otherUser.username}?userId=${otherUser._id}`,
+    );
+    api.users.fetch.mockRejectedValueOnce({ response: { status: 404 } });
+    api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
+
+    render(
+      <Thread
+        user={me}
+        profileMinimumLength={0}
+        username={otherUser.username}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(api.messages.fetchMessages).toHaveBeenCalledWith(otherUser._id),
+    );
+    window.history.replaceState({}, '', '/');
   });
 
   it('shows a safety warning above messages', async () => {

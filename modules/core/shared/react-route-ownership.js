@@ -45,6 +45,17 @@ const REACT_ROUTE_POLICIES = [
     footerHidden: true,
   },
   {
+    path: '/messages',
+    title: 'Messages',
+    requiresAuth: true,
+  },
+  {
+    path: '/messages/:username',
+    title: 'Messages',
+    requiresAuth: true,
+    footerHidden: true,
+  },
+  {
     path: '/about',
     redirectTo: '/',
   },
@@ -186,7 +197,9 @@ function getReactRoutePolicy(path) {
   const normalizedPath = normalizePath(path);
 
   const exact = REACT_ROUTE_POLICIES.find(
-    route => route.path !== '/circles/:circle' && route.path === normalizedPath,
+    route =>
+      !['/circles/:circle', '/messages/:username'].includes(route.path) &&
+      route.path === normalizedPath,
   );
   if (exact) return exact;
 
@@ -194,6 +207,25 @@ function getReactRoutePolicy(path) {
     return REACT_ROUTE_POLICIES.find(
       route => route.path === '/contact-confirm/:contactId',
     );
+  }
+
+  const messageMatch = /^\/messages\/([^/]+)$/.exec(normalizedPath);
+  if (messageMatch) {
+    let username;
+    try {
+      username = decodeURIComponent(messageMatch[1]);
+    } catch {
+      return REACT_ROUTE_POLICIES.find(route => route.path === '/not-found');
+    }
+    if (!username || username.includes('/') || username === ':username') {
+      return REACT_ROUTE_POLICIES.find(route => route.path === '/not-found');
+    }
+    return {
+      ...REACT_ROUTE_POLICIES.find(
+        route => route.path === '/messages/:username',
+      ),
+      params: { username },
+    };
   }
 
   const circleMatch = /^\/circles\/([^/]+)$/.exec(normalizedPath);

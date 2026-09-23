@@ -6,7 +6,10 @@ function MessagesRoutes($stateProvider) {
   $stateProvider
     .state('inbox', {
       url: '/messages',
-      template: '<inbox user="app.user"></inbox>',
+      /* @ngInject */
+      onEnter($window) {
+        $window.location.assign('/messages');
+      },
       requiresAuth: true,
       data: {
         pageTitle: 'Messages',
@@ -14,8 +17,17 @@ function MessagesRoutes($stateProvider) {
     })
     .state('messageThread', {
       url: '/messages/:username?userId',
-      template:
-        '<thread user="app.user" profileMinimumLength="app.appSettings.profileMinimumLength"></thread>',
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        const url = new URL(
+          `/messages/${encodeURIComponent($stateParams.username)}`,
+          $window.location.origin,
+        );
+        if ($stateParams.userId) {
+          url.searchParams.set('userId', $stateParams.userId);
+        }
+        $window.location.assign(`${url.pathname}${url.search}`);
+      },
       requiresAuth: true,
       footerHidden: true,
       data: {

@@ -10,6 +10,8 @@ import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import Welcome from '@/modules/users/client/components/Welcome.component';
 import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import Inbox from '@/modules/messages/client/components/Inbox.component';
+import Thread from '@/modules/messages/client/components/Thread.component';
 import { signout } from './shell-helpers';
 
 import {
@@ -66,6 +68,14 @@ function renderContactConfirmation({ user }) {
   return React.createElement(ContactConfirmPage, { user, contactId });
 }
 
+function renderMessageThread({ user, params }) {
+  return React.createElement(Thread, {
+    user,
+    username: params.username,
+    profileMinimumLength: window.settings?.profileMinimumLength || 140,
+  });
+}
+
 const renderByPath = {
   '/password/forgot': () => (
     <ForgotPasswordPage
@@ -83,6 +93,8 @@ const renderByPath = {
   '/welcome': () => <Welcome />,
   '/navigation': renderNavigation,
   '/search/members': () => <SearchUsers />,
+  '/messages': renderWithUser(Inbox),
+  '/messages/:username': renderMessageThread,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (

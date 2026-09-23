@@ -5,6 +5,9 @@ import ReactDOM from 'react-dom';
 import '@/config/client/i18n';
 import ReactApp from '@/modules/core/client/react-app/ReactApp';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { enable as enableUnreadMessageCountPolling } from '@/modules/messages/client/services/unread-message-count.client.service';
+import { enable as enableVisibilityWatching } from '@/modules/messages/client/services/visibility.client.service';
+import { enable as enableFaviconUpdater } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
 
 import './main.less';
 
@@ -15,6 +18,9 @@ function importAll(r) {
 }
 
 function render() {
+  enableVisibilityWatching();
+  enableFaviconUpdater();
+  enableUnreadMessageCountPolling();
   ReactDOM.render(
     React.createElement(
       AppProviders,
