@@ -255,8 +255,8 @@ export default function ProfilePage({ user: authUser, username }) {
         const [loadedContact, loadedContacts] = await Promise.all([
           viewingOwnProfile || !authUser?._id
             ? Promise.resolve(null)
-            : contactsApi.getByUserId(loadedProfile._id),
-          contactsApi.list(loadedProfile._id),
+            : contactsApi.getByUserId(loadedProfile._id).catch(() => null),
+          contactsApi.list(loadedProfile._id).catch(() => []),
         ]);
 
         if (!isMounted) {

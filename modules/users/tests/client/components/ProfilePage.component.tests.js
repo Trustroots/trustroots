@@ -507,6 +507,15 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Memberships list')).toBeVisible();
   });
 
+  it('keeps a profile visible when contact details are unavailable', async () => {
+    contactsApi.getByUserId.mockRejectedValue(new Error('Contact unavailable'));
+    contactsApi.list.mockRejectedValue(new Error('Contact list unavailable'));
+    renderPage();
+
+    expect(await screen.findByText('About Bob Example')).toBeVisible();
+    expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
+  });
+
   it('uses default settings and hides disabled experience tabs', async () => {
     renderPage(authUser, '/profile/bob/experiences', {});
 
