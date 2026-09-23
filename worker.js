@@ -47,6 +47,7 @@ async.waterfall(
         '[Worker] Error while initializing the background job worker.',
         err,
       );
+      process.exit(1); // eslint-disable-line no-process-exit
     }
   },
 );

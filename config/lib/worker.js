@@ -69,18 +69,19 @@ exports.start = function (options, callback) {
     require('../../modules/experiences/server/jobs/experiences-publish.server.job'),
   );
 
-  const startPromise = Promise.all([
-    agenda.every('5 minutes', 'check unread messages'),
-    agenda.every('24 hours', 'daily statistics'),
-    agenda.every('30 minutes', 'send signup reminders'),
-    agenda.every('30 minutes', 'reactivate hosts'),
-    agenda.every('15 minutes', 'welcome sequence first'),
-    agenda.every('60 minutes', 'welcome sequence second'),
-    agenda.every('60 minutes', 'welcome sequence third'),
-    agenda.every('23 minutes', 'publish expired experiences'),
-  ])
+  const startPromise = agenda
+    .start()
     .then(function () {
-      return agenda.start();
+      return Promise.all([
+        agenda.every('5 minutes', 'check unread messages'),
+        agenda.every('24 hours', 'daily statistics'),
+        agenda.every('30 minutes', 'send signup reminders'),
+        agenda.every('30 minutes', 'reactivate hosts'),
+        agenda.every('15 minutes', 'welcome sequence first'),
+        agenda.every('60 minutes', 'welcome sequence second'),
+        agenda.every('60 minutes', 'welcome sequence third'),
+        agenda.every('23 minutes', 'publish expired experiences'),
+      ]);
     })
     .then(function () {
       if (process.env.NODE_ENV !== 'test') {
@@ -143,7 +144,9 @@ exports.start = function (options, callback) {
         job.attrs.nextRunAt.toISOString(),
       );
 
-      job.save();
+      Promise.resolve(job.save()).catch(function (saveError) {
+        console.error('[Worker] Failed to save job retry', saveError);
+      });
     }
 
     const statsObject = {

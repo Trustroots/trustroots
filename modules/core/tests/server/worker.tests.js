@@ -24,7 +24,7 @@ describe('Worker tests', function () {
 
     // Stub out all of agendas functionality as we are not testing agenda
 
-    sinon.stub(agenda, 'start').callsFake(function () {});
+    sinon.stub(agenda, 'start').resolves();
     sinon.stub(agenda, 'stop').resolves();
 
     // Save handler for agenda.on('fail')
@@ -43,6 +43,7 @@ describe('Worker tests', function () {
 
     sinon.stub(agenda, 'every').callsFake(function (repeat, name) {
       scheduledJobs.push({ repeat, name });
+      return Promise.resolve();
     });
 
     // Allow for easily maths for nextRunAt calculations
@@ -112,6 +113,26 @@ describe('Worker tests', function () {
     mock.verify();
   });
 
+  it('logs a failed retry save without rejecting the worker', async function () {
+    const saveError = new Error('save failed');
+    const log = sinon.stub(console, 'error');
+    const job = {
+      attrs: {
+        _id: 'jobid',
+        name: 'jobname',
+        failCount: 0,
+      },
+      save: sinon.stub().rejects(saveError),
+    };
+
+    failHandler(new Error('ECONNRESET'), job);
+    await Promise.resolve();
+
+    log
+      .calledWith('[Worker] Failed to save job retry', saveError)
+      .should.equal(true);
+  });
+
   it('will not retry when max retries is reached', function () {
     const job = {
       attrs: {
@@ -174,6 +195,10 @@ describe('Worker tests', function () {
 
   it('defines right number of repeating jobs', function () {
     scheduledJobs.length.should.equal(8);
+  });
+
+  it('starts Agenda before scheduling recurring jobs', function () {
+    agenda.start.calledBefore(agenda.every).should.equal(true);
   });
 
   it('only schedules defined jobs', function () {
