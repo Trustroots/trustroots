@@ -72,7 +72,7 @@ test('member search supports deep links, empty results and profile navigation', 
     .locator(`#tr-main h4 a[href="/profile/${member.username}"]`)
     .click();
   await expect(page).toHaveURL(new RegExp(`/profile/${member.username}$`));
-  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+  await expect(page.locator('#tr-react-root .profile-view')).toBeVisible();
   await page.goto('/search/members');
   await search.fill('sample-no-matching-member-57291');
   await page
