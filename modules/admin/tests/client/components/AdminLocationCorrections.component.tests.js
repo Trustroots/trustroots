@@ -55,6 +55,10 @@ describe('AdminLocationCorrections', () => {
     expect(
       screen.getByText('Exact former default location'),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'View offer' })).toHaveAttribute(
+      'href',
+      '/search?offer=offer-1',
+    );
     fireEvent.change(screen.getByLabelText('Message from your account'), {
       target: { value: 'Please check your hosting location.' },
     });

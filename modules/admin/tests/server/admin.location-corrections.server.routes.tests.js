@@ -8,6 +8,7 @@ require('should');
 
 const Offer = mongoose.model('Offer');
 const Message = mongoose.model('Message');
+const MessageStat = mongoose.model('MessageStat');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
 const app = express.init(mongoose.connection);
@@ -202,6 +203,12 @@ describe('Welcome team location corrections', () => {
     );
     (await Thread.countDocuments({ message: message._id })).should.equal(1);
     (
+      await MessageStat.countDocuments({
+        firstMessageUserFrom: team._id,
+        firstMessageUserTo: member._id,
+      })
+    ).should.equal(1);
+    (
       await teamAgent.get('/api/admin/location-corrections').expect(200)
     ).body.should.have.length(0);
 
@@ -212,6 +219,12 @@ describe('Welcome team location corrections', () => {
     retry.body.sent.should.be.false();
     (
       await Message.countDocuments({ locationCorrectionKey: candidate.key })
+    ).should.equal(1);
+    (
+      await MessageStat.countDocuments({
+        firstMessageUserFrom: team._id,
+        firstMessageUserTo: member._id,
+      })
     ).should.equal(1);
 
     offer.location = nearby;

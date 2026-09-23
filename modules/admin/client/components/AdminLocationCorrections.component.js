@@ -161,7 +161,8 @@ export default function AdminLocationCorrections() {
                 {selected.offers.map(offer => (
                   <li key={offer._id}>
                     {offer.type === 'host' ? 'Hosting' : 'Meeting'} offer at{' '}
-                    {offer.location.join(', ')}
+                    {offer.location.join(', ')} ·{' '}
+                    <a href={`/search?offer=${offer._id}`}>View offer</a>
                   </li>
                 ))}
               </ul>

@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const config = require('../../../../config/config');
 const textService = require('../../../core/server/services/text.server.service');
+const messageToStatsService = require('../../../messages/server/services/message-to-stats.server.service');
+const messageStatService = require('../../../messages/server/services/message-stat.server.service');
 const userRolesService = require('../../../users/server/services/user-roles.server.service');
 
 const Offer = mongoose.model('Offer');
@@ -277,6 +279,12 @@ exports.send = async (req, res) => {
       message = await Message.findById(messageId).exec();
     }
     await updateThread(message);
+    if (inserted) {
+      messageToStatsService.save(message, () => {});
+      await new Promise(resolve =>
+        messageStatService.updateMessageStat(message, resolve),
+      );
+    }
     return res.send({ sent: inserted, messageId: message._id });
   } catch {
     return res
