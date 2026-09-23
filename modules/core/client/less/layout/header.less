@@ -7,6 +7,13 @@
 #tr-header {
   .font-brand-regular();
   color: @navbar-default-color;
+  background: @navbar-default-bg;
+  min-height: @navbar-height;
+  padding: 0;
+
+  > .container {
+    min-height: @navbar-height;
+  }
 
   .navbar {
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
@@ -17,6 +24,8 @@
   }
 
   .navbar-nav {
+    flex-direction: row;
+    align-items: center;
     margin-top: 0;
     margin-bottom: 0;
   }
@@ -29,6 +38,19 @@
 
     a {
       text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
+    }
+
+    > li > a,
+    > .dropdown > .dropdown-toggle {
+      display: block;
+      padding: 10px 12px;
+      color: @navbar-default-link-color;
+      text-decoration: none;
+    }
+
+    > .dropdown > .dropdown-toggle {
+      background: transparent;
+      border: 0;
     }
 
     .dropdown-header {
