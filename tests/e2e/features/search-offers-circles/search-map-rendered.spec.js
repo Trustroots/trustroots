@@ -700,7 +700,7 @@ test.describe('rendered search map feature coverage', () => {
 
     const sidebar = page.locator('.search-sidebar-container');
     await expect(sidebar).toBeVisible();
-    await sidebar.locator('.nav-tabs > li').nth(1).locator('a').click();
+    await sidebar.getByRole('tab', { name: 'Results' }).click();
     await expect(
       sidebar
         .locator('.search-sidebar-results')
