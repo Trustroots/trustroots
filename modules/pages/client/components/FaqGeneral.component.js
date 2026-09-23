@@ -186,9 +186,9 @@ export default function FaqGeneral() {
         <h3>{t('How do I report a member that violates the rules?')}</h3>
         <Trans t={t} ns="pages">
           If you navigate to the profile of a user, you will find a link that
-          says &quot;Report member&quot; that will lead you to a report form.
-          Also, at any point, you can <a href="/support">contact us</a> with
-          your report.
+          says &quot;Report member to support&quot; that will lead you to a
+          report form. Also, at any point, you can{' '}
+          <a href="/support">contact us</a> with your report.
         </Trans>
       </div>
     </Faq>
