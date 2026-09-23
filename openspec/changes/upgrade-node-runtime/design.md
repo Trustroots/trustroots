@@ -1,68 +1,71 @@
 ## Extraction boundary
 
-This draft changes runtime declarations and deployment/build environments while
-retaining the hybrid Angular/React frontend, Agenda 1.0.3, MongoDB driver 3.6.11
-and MongoDB server 4.4. It is independent of #2769 and the mobile push cleanup.
+This change standardises Node 24.21.0 and npm 11.19.0 while retaining the hybrid
+Angular/React frontend, Agenda 1.0.3, MongoDB driver 3.6.11 and MongoDB server 4.4.
+It is independent of #2769 and the mobile push cleanup.
 
-## Initial compatibility evidence
+## Dependency compatibility
 
-An official, checksum-verified Node 24.21.0 distribution runs with npm 11.19.0.
-A trial dependency resolution with Webpack 4.47.0 failed before installation:
+Strict npm peer validation is retained. The initial dependency conflicts have
+been resolved:
 
-- connect-mongo 4.6.0 declares a MongoDB driver ^4.1.0 peer, while the application
-  directly uses 3.6.11.
-- eslint-webpack-plugin 3.1.1 declares Webpack ^5.0.0 while the hybrid build uses 4.
+- Webpack 4.47.0 supports the existing build on Node 24. eslint-webpack-plugin
+  2.7.0 supports Webpack 4 and ESLint 8; eslint-plugin-react 7.27.1 and
+  eslint-watch 8.0.0 support ESLint 8.
+- connect-mongo is pinned to 4.4.1 because 4.6.0 requires MongoDB driver 4.
+  Its scoped override uses the application's MongoDB 3.6.11 dependency.
+  Revisit this pin with the separate database/Agenda upgrade.
+- The React 15-only react-medium-editor wrapper is replaced by a direct React
+  integration of medium-editor, retaining composition, selection, external
+  resets, placeholders, keyboard callbacks and unmount cleanup.
+- canvas 3.2.0 and the nan override support native installation on Node 24.
+- Compatible dependency maintenance updates are included in the lockfile.
 
-## Build-tool compatibility follow-up
+The initial diagnostic lockfile was generated with legacy peer resolution and
+scripts disabled. Subsequent updates use strict npm 11 resolution, and Linux CI
+uses normal `npm ci`, including installation scripts. The development CI image
+also rebuilds sharp and mmmagic from source.
 
-The branch now uses Webpack 4.47.0, eslint-webpack-plugin 2.7.0 (which supports
-Webpack 4 and ESLint 8), eslint-plugin-react 7.27.1 and eslint-watch 8.0.0 (which
-support ESLint 8). Application dependencies, including the session store, remain
-unchanged.
+`.npmrc` explicitly retains lockfile format 2 to avoid unrelated format churn.
+The current lockfile was refreshed with Node 24.21.0 and npm 11.19.0, without
+`--legacy-peer-deps`; dependency resolution and `npm ci --dry-run` pass.
+A format 3 migration is deferred as a separate maintenance task. Disabling
+scripts for local lockfile generation does not establish native compatibility;
+Linux image builds and suites provide that evidence.
 
-Verified on macOS arm64 with Node 24.21.0 and npm 11.19.0:
+## Verification evidence
 
-- Diagnostic installation with `npm install --ignore-scripts --legacy-peer-deps --no-audit --no-fund`; the version 2 lockfile was regenerated with this command.
-  This deliberately bypasses native build scripts and legacy peer conflicts, so
-  it is not evidence of a successful normal installation. CI policy is unchanged.
-- `npm run build:webpack`: Angular and React production bundles, extracted CSS
-  and RTL CSS pass, with asset-size warnings.
-- `npm run build:webpack-service-worker`: production service-worker bundle passes.
-- `NODE_ENV=development npm run webpack`: both development bundles pass.
-- All three builds ran without `--openssl-legacy-provider`.
-- `npm run lint` passes.
-- `npm run test:coverage:client:ci`: 274 suites and 1,560 tests pass; statements,
-  branches, functions and lines each retain 100% coverage.
+At revision `2cbb5a9e7`, CI run 35780874096 passed development and production image
+builds, client and server suites with 100% coverage, and all 214 end-to-end tests.
+This does not verify actual Passenger application or production worker startup.
+The subsequent dependency refresh at `f8a252a4c` has passed both image builds,
+lint and the server check; client and browser checks were still running when
+documented.
 
-Strict npm 11 resolution still fails on connect-mongo 4.6.0's MongoDB ^4.1.0 peer.
-A temporary trial of connect-mongo 4.4.1 also exposed react-medium-editor 1.8.1's
-React/React DOM 15 peer constraints against the application's React 17. That
-session-store downgrade was reverted. Resolve these explicitly before claiming
-clean installation; avoid forcing an unrelated Agenda/driver upgrade.
+Earlier macOS arm64 checks with Node 24.21.0 and npm 11.19.0 passed development
+and production frontend bundles, the service-worker bundle, lint and client
+coverage. All three bundle builds ran without `--openssl-legacy-provider`.
+Native installation on macOS arm64 still needs separate verification.
+
+The end-to-end workflow supplies build metadata from the runner because Git
+inside the container can reject the mounted checkout's ownership. Without that
+metadata, the public footer lacks the commit link. This avoids relying on the
+container's Git fallback to populate the footer.
 
 ## Remaining work
 
-### Strict dependency resolution
-
-Retain npm's peer validation. Use connect-mongo 4.4.1 with its MongoDB 3 driver
-updated to the application's 3.6.11 patch version. Replace the obsolete
-react-medium-editor wrapper with a direct React integration of the existing
-medium-editor dependency, preserving input composition, selection, external
-resets, placeholders and keyboard callbacks. Verify these behaviours with unit
-and browser tests. Update native build dependencies for Node 24 without
-changing upload detection or processing behaviour.
-
-- Prove clean installation without bypassing peer validation or native scripts.
-- Verify mmmagic, canvas and sharp installation and behaviour on Node 24.
+- Verify native installation and behaviour on macOS arm64.
 - Resolve Firebase runtime compatibility after the browser-push decision (#2829).
-  The push delivery job is currently unconditionally disabled; do not re-enable it
-  as a runtime compatibility change. Worker tests are currently excluded and need
-  to be restored and verified.
-- Remove legacy OpenSSL workarounds only after both builds succeed without them.
-- Verify actual Passenger application/worker startup and the Node version in the
-  production image. The local Docker daemon was unavailable during the initial
-  investigation; no successful container build is claimed.
-- Run full coverage, browser and deployment checks before marking ready.
+  Push delivery remains unconditionally disabled. Worker tests are excluded in
+  gulpfile.js; restore and verify them after resolving this boundary.
+- Remove legacy OpenSSL workarounds from end-to-end scripts only after verifying
+  those scripts without them.
+- Verify actual Passenger application and production worker startup, including
+  the Node version used by both processes.
+- Require full coverage and browser checks on the final revision before readiness.
+- Consider lockfile format 3 in a separate maintenance change.
+- Complete deployment verification, then archive this proposal and update the
+  living runtime specification.
 
 There is no database migration. Rollback deploys the previous application and
 worker images together.

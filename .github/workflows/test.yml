@@ -331,6 +331,8 @@ jobs:
       - name: Test end-to-end smoke suite
         working-directory: deploy/docker
         run: |
+          # Read metadata on the runner: container Git can reject the mounted
+          # checkout ownership, leaving the footer without its commit link.
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
