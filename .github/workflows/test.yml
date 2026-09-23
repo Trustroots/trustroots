@@ -4,12 +4,6 @@ on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened]
-    paths-ignore:
-      - '**/*.md'
-      - 'apps/android/**'
-      - 'apps/ios/**'
-      - 'docs/**'
-      - 'openspec/**'
   push:
     branches: [main]
   workflow_dispatch:
