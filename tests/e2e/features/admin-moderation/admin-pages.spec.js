@@ -84,10 +84,9 @@ test.describe('admin moderation page flows', () => {
       ['Privacy', '/privacy'],
       ['Contact', '/contact'],
     ]) {
-      await expect(footer.getByRole('link', { name })).toHaveAttribute(
-        'href',
-        href,
-      );
+      await expect(
+        footer.getByRole('link', { name, exact: true }),
+      ).toHaveAttribute('href', href);
     }
     await expect(
       footer.getByRole('link', { name: 'Trustroots Foundation' }),
