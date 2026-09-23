@@ -163,7 +163,6 @@ module.exports = {
         'modules/*/tests/client/**/*.{ts,tsx}',
       ],
       parser: '@typescript-eslint/parser',
-      plugins: ['@typescript-eslint'],
       extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
       parserOptions: {
         ecmaVersion: 2018,
