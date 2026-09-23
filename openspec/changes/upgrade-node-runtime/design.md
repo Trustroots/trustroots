@@ -6,15 +6,20 @@ It is independent of #2769 and the mobile push cleanup.
 
 ## Dependency compatibility
 
-Strict npm peer validation is retained. The initial dependency conflicts have
-been resolved:
+npm peer validation remains enabled, with a scoped MongoDB peer override for
+the existing production session-store combination:
 
 - Webpack 4.47.0 supports the existing build on Node 24. eslint-webpack-plugin
   2.7.0 supports Webpack 4 and ESLint 8; eslint-plugin-react 7.27.1 and
   eslint-watch 8.0.0 support ESLint 8.
-- connect-mongo is pinned to 4.4.1 because 4.6.0 requires MongoDB driver 4.
-  Its scoped override uses the application's MongoDB 3.6.11 dependency.
-  Revisit this pin with the separate database/Agenda upgrade.
+- connect-mongo remains at the production version 4.6.0. Its declared MongoDB
+  peer range is ^4.1.0, but Trustroots supplies its existing driver-3 client.
+  The scoped override explicitly resolves that peer to the application's
+  MongoDB 3.6.11 dependency, preserving the combination reported working in
+  production. This is an intentional exception to upstream's declared support
+  range, not evidence of upstream driver-3 support. Revisit it with the separate
+  database/Agenda upgrade; do not downgrade the session store for this runtime
+  migration.
 - The React 15-only react-medium-editor wrapper is replaced by a direct React
   integration of medium-editor, retaining composition, selection, external
   resets, placeholders, keyboard callbacks and unmount cleanup.
