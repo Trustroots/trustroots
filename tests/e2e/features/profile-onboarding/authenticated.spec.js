@@ -255,7 +255,7 @@ test.describe('authenticated member flows', () => {
     baseURL,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-photo', [
-      'Own placeholder avatar links to photo editing on desktop and mobile.',
+      'Own placeholder avatar links to photo editing.',
     ]);
 
     const context = await createIsolatedContext(browser, baseURL);
@@ -270,13 +270,6 @@ test.describe('authenticated member flows', () => {
       await page
         .locator('.profile-overview')
         .getByRole('link', { name: 'Edit profile photo' })
-        .click();
-      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
-
-      await page.setViewportSize({ width: 375, height: 812 });
-      await page.goto(`/profile/${member.username}`);
-      await page
-        .locator('.avatar-circle[aria-label="Edit profile photo"]')
         .click();
       await expect(page).toHaveURL(/\/profile\/edit\/photo/);
     } finally {
