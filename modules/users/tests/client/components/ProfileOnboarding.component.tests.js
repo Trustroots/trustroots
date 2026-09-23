@@ -159,6 +159,23 @@ describe('profile onboarding components', () => {
     expect(avatarButton).toHaveClass('profile-avatar-lg');
   });
 
+  it('links the owner’s mobile placeholder avatar to photo editing', () => {
+    render(
+      <AvatarNameMobile
+        profile={{ avatarSource: 'none', displayName: 'Alice Example' }}
+        isSelf
+      />,
+    );
+
+    const avatarLink = screen.getByRole('link', {
+      name: 'Edit profile photo',
+    });
+    expect(avatarLink).toHaveAttribute('href', '/profile/edit/photo');
+
+    fireEvent.click(avatarLink);
+    expect(avatarLink).not.toHaveClass('profile-avatar-lg');
+  });
+
   it('renders mobile avatar identity without optional display fields', () => {
     render(
       <AvatarNameMobile
