@@ -258,8 +258,8 @@ export default function ProfilePage({ user: authUser }) {
         const [loadedContact, loadedContacts] = await Promise.all([
           viewingOwnProfile || !authUser?._id
             ? Promise.resolve(null)
-            : contactsApi.getByUserId(loadedProfile._id),
-          contactsApi.list(loadedProfile._id),
+            : contactsApi.getByUserId(loadedProfile._id).catch(() => null),
+          contactsApi.list(loadedProfile._id).catch(() => []),
         ]);
 
         if (!isMounted) {
@@ -307,7 +307,7 @@ export default function ProfilePage({ user: authUser }) {
         return (
           <>
             <AvatarNameMobile profile={profile} />
-            <ProfileOverview profile={profile} />
+            <ProfileOverview profile={profile} isSelf={isSelf} />
             {!isSelf && (
               <div className="profile-flags">
                 <ReportMember
@@ -469,7 +469,7 @@ export default function ProfilePage({ user: authUser }) {
               ) : (
                 <>
                   <div className="col-sm-3 hidden-xs">
-                    <ProfileOverview profile={profile} />
+                    <ProfileOverview profile={profile} isSelf={isSelf} />
                     {!isSelf && (
                       <div className="profile-flags">
                         <ReportMember
