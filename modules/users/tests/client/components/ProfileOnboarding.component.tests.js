@@ -159,6 +159,40 @@ describe('profile onboarding components', () => {
     expect(avatarButton).toHaveClass('profile-avatar-lg');
   });
 
+  it('links the owner’s mobile placeholder avatar to photo editing', () => {
+    render(
+      <AvatarNameMobile
+        profile={{
+          avatarSource: 'gravatar',
+          avatarUploaded: false,
+          displayName: 'Alice Example',
+        }}
+        isSelf
+      />,
+    );
+
+    const avatarLink = screen.getByRole('link', {
+      name: 'Edit profile photo',
+    });
+    expect(avatarLink).toHaveAttribute('href', '/profile/edit/photo');
+
+    fireEvent.click(avatarLink);
+    expect(avatarLink).not.toHaveClass('profile-avatar-lg');
+  });
+
+  it('links the selected mobile placeholder after a previous upload', () => {
+    render(
+      <AvatarNameMobile
+        profile={{ avatarSource: 'none', avatarUploaded: true }}
+        isSelf
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'Edit profile photo' }),
+    ).toHaveAttribute('href', '/profile/edit/photo');
+  });
+
   it('renders mobile avatar identity without optional display fields', () => {
     render(
       <AvatarNameMobile
