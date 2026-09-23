@@ -37,7 +37,11 @@ export default function LanguageSelect({
         return resolve([]);
       }
 
-      const res = matchSorter(data, inputValue, { keys: ['label'] });
+      const res = matchSorter(
+        data.filter(language => !language.deprecated),
+        inputValue,
+        { keys: ['label'] },
+      );
       resolve(res);
     });
 
