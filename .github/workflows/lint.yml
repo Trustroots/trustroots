@@ -27,6 +27,7 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
+          cache: npm
       - name: Pin npm to v11
         run: npm i -g npm@11.19.0
       - name: Reconfigure git to use HTTP authentication
@@ -48,6 +49,11 @@ jobs:
 
             sleep 30
           done
+      - name: Lint
+        # See https://eslint.org/docs/user-guide/command-line-interface#options
+        run: npm run lint:report
+        # Continue to the next step even if this fails
+        continue-on-error: true
       - name: Run ESLint with reviewdog
         uses: reviewdog/action-eslint@v1.34.0
         with:
@@ -56,3 +62,8 @@ jobs:
           filter_mode: file # annotate all issues in changed files (mirrors old only-pr-files)
           fail_level: error # fail the check on ESLint errors (warnings still reported)
           eslint_flags: '.'
+      - name: Upload ESLint report
+        uses: actions/upload-artifact@v7
+        with:
+          name: eslint_report.json
+          path: eslint_report.json

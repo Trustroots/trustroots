@@ -10,6 +10,9 @@ import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentRouteParams: jest.fn(() => ({ username: 'bob' })),
+}));
 jest.mock(
   '@/modules/users/client/components/TopNavigationSmall.component',
   () => ({
@@ -135,6 +138,13 @@ jest.mock(
   }),
 );
 jest.mock(
+  '@/modules/experiences/client/components/CreateExperience.component',
+  () => ({
+    __esModule: true,
+    default: () => <div>New experience form</div>,
+  }),
+);
+jest.mock(
   '@/modules/users/client/components/BlockedMemberBanner.component',
   () => ({
     __esModule: true,
@@ -175,7 +185,7 @@ function renderPage(
         user,
       }}
     >
-      <ProfilePage user={user} username={path.split('/')[2]} />
+      <ProfilePage user={user} />
     </AppProviders>,
   );
 }
@@ -321,10 +331,26 @@ describe('ProfilePage', () => {
           user: authUser,
         }}
       >
-        <ProfilePage user={authUser} username="bob" />
+        <ProfilePage user={authUser} />
       </AppProviders>,
     );
     expect(await screen.findByText('Experiences list')).toBeVisible();
+
+    window.history.pushState({}, '', '/profile/bob/experiences/new');
+    render(
+      <AppProviders
+        bootstrapData={{
+          env: 'test',
+          isNativeMobileApp: false,
+          settings: { profileMinimumLength: 140, referencesEnabled: true },
+          title: 'Trustroots',
+          user: authUser,
+        }}
+      >
+        <ProfilePage user={authUser} />
+      </AppProviders>,
+    );
+    expect(await screen.findByText('New experience form')).toBeVisible();
   });
 
   it('shows contacts in common and tribes in common on the about tab', async () => {
@@ -517,10 +543,16 @@ describe('ProfilePage', () => {
   });
 
   it('uses default settings and hides disabled experience tabs', async () => {
-    renderPage(authUser, '/profile/bob/experiences', {});
+    const firstRender = renderPage(authUser, '/profile/bob/experiences', {});
 
     expect(await screen.findByTestId('profile-tabs')).toBeInTheDocument();
     expect(screen.queryByText('Experiences list')).not.toBeInTheDocument();
+    firstRender.unmount();
+
+    renderPage(authUser, '/profile/bob/experiences/new', {});
+
+    expect(await screen.findByTestId('profile-tabs')).toBeInTheDocument();
+    expect(screen.queryByText('New experience form')).not.toBeInTheDocument();
   });
 
   it('ignores membership callbacks without an updated user', async () => {

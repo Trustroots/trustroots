@@ -1,9 +1,9 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 
 jest.mock('@/modules/pages/client/components/Home.component', () => ({
   __esModule: true,
@@ -29,15 +29,19 @@ it('passes landing queries and bootstrap data and tracks all displayed photos', 
     '"isNativeMobileApp":true',
   );
   act(() => {
-    $broadcast('photoCreditsUpdated', { first: { name: 'First Artist' } });
-    $broadcast('photoCreditsUpdated', { second: { name: 'Second Artist' } });
+    broadcastClientEvent('photoCreditsUpdated', {
+      first: { name: 'First Artist' },
+    });
+    broadcastClientEvent('photoCreditsUpdated', {
+      second: { name: 'Second Artist' },
+    });
   });
   expect(screen.getByRole('status')).toHaveTextContent('First Artist');
   expect(screen.getByRole('status')).toHaveTextContent('Second Artist');
-  act(() => $broadcast('photoCreditsRemoved', { first: {} }));
+  act(() => broadcastClientEvent('photoCreditsRemoved', { first: {} }));
   expect(screen.getByRole('status')).not.toHaveTextContent('First Artist');
   expect(screen.getByRole('status')).toHaveTextContent('Second Artist');
   unmount();
-  act(() => $broadcast('photoCreditsUpdated', { third: {} }));
+  act(() => broadcastClientEvent('photoCreditsUpdated', { third: {} }));
   window.history.replaceState({}, '', '/');
 });

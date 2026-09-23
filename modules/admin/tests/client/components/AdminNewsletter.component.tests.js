@@ -6,7 +6,7 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import * as newsletterApi from '@/modules/admin/client/api/newsletter.api';

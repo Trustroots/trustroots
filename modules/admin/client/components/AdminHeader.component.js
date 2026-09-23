@@ -1,10 +1,10 @@
 // External dependencies
 import classnames from 'classnames';
 import React, { useEffect } from 'react';
-import { getUser } from '../../../core/client/services/angular-compat';
+import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
-  const isAdmin = (getUser()?.roles || []).includes('admin');
+  const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {

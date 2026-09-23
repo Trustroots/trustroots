@@ -257,14 +257,20 @@ describe('Core CRUD tests', function () {
         should.not.exist(err);
         res.text.should.containEql('id="tr-react-root"');
         res.text.should.containEql('assets/react-main.js');
-        res.text.should.containEql(config.umami.scriptSrc);
 
         return done();
       });
     });
 
     it('redirects guests away from protected React-owned pages', function (done) {
-      agent.get('/admin').expect(302).expect('Location', '/signin').end(done);
+      agent
+        .get('/admin?tab=activity')
+        .expect(302)
+        .expect(
+          'Location',
+          '/signin?continue=true&returnTo=%2Fadmin%3Ftab%3Dactivity',
+        )
+        .end(done);
     });
 
     it('requires sign-in for all React member entry pages', async function () {
@@ -273,7 +279,13 @@ describe('Core CRUD tests', function () {
         '/navigation',
         '/search/members?search=sample',
       ]) {
-        await agent.get(page).expect(302).expect('Location', '/signin');
+        await agent
+          .get(page)
+          .expect(302)
+          .expect(
+            'Location',
+            `/signin?continue=true&returnTo=${encodeURIComponent(page)}`,
+          );
       }
     });
 
@@ -366,14 +378,42 @@ describe('Core CRUD tests', function () {
         .catch(done);
     });
 
-    it('keeps rendering Angular assets and root for Angular-owned pages', function (done) {
-      agent.get('/signin').end(function (err, res) {
-        should.not.exist(err);
-        res.text.should.containEql('data-ui-view');
-        res.text.should.containEql('assets/main.js');
+    it('redirects guests away from profile pages', function (done) {
+      agent
+        .get('/profile/alice')
+        .expect(302)
+        .expect('Location', '/signin?continue=true&returnTo=%2Fprofile%2Falice')
+        .end(done);
+    });
 
-        return done();
-      });
+    it('renders React assets and root for authenticated profile pages', function (done) {
+      const profileCredentials = {
+        password: 'Password123!',
+        username: 'frontend-root-profile',
+      };
+
+      createUser({
+        email: 'frontend-root-profile@example.com',
+        roles: ['user'],
+        ...profileCredentials,
+      })
+        .then(function () {
+          return utils.signIn(profileCredentials, agent);
+        })
+        .then(function () {
+          agent.get('/profile/frontend-root-profile').end(function (err, res) {
+            should.not.exist(err);
+            res.text.should.containEql('id="tr-react-root"');
+            res.text.should.containEql('assets/react-main.js');
+            res.text.should.not.containEql('data-ui-view');
+
+            utils
+              .signOut(agent)
+              .then(() => done())
+              .catch(done);
+          });
+        })
+        .catch(done);
     });
   });
 

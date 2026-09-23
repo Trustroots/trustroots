@@ -1,12 +1,15 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 
 jest.mock('@/modules/contacts/client/api/contacts.api');
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentRouteParams: jest.fn(() => ({ contactId: 'contact-1' })),
+}));
 jest.mock('@/modules/users/client/components/Avatar.component', () => {
   const React = require('react');
   const PropTypes = require('prop-types');
@@ -45,20 +48,17 @@ const pendingContact = {
 };
 
 describe('ContactConfirmPage', () => {
-  let contactId;
   beforeEach(() => {
     jest.clearAllMocks();
-    contactId = 'contact-1';
+    const {
+      getCurrentRouteParams,
+    } = require('@/modules/core/client/services/client-runtime');
+    getCurrentRouteParams.mockReturnValue({ contactId: 'contact-1' });
     contactsApi.getByContactId.mockResolvedValue(pendingContact);
   });
 
   it('shows activation notice for non-public members', () => {
-    render(
-      <ContactConfirmPage
-        contactId={contactId}
-        user={{ ...user, public: false }}
-      />,
-    );
+    render(<ContactConfirmPage user={{ ...user, public: false }} />);
 
     expect(
       screen.getByText(/activate your profile by confirming your email/i),
@@ -67,7 +67,7 @@ describe('ContactConfirmPage', () => {
 
   it('renders the confirm contact form and confirms the request', async () => {
     contactsApi.confirm.mockResolvedValue({});
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     expect(await screen.findByText('Confirm contact')).toBeVisible();
     expect((await screen.findAllByText('Bob Example')).length).toBeGreaterThan(
@@ -87,7 +87,7 @@ describe('ContactConfirmPage', () => {
       ...pendingContact,
       confirmed: true,
     });
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     expect(
       await screen.findByText('You two are already connected. Great!'),
@@ -99,7 +99,7 @@ describe('ContactConfirmPage', () => {
       ...pendingContact,
       userTo: { _id: 'someone-else', displayName: 'Someone Else' },
     });
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     expect(
       await screen.findByText(
@@ -110,7 +110,7 @@ describe('ContactConfirmPage', () => {
 
   it('reports a missing contact request', async () => {
     contactsApi.getByContactId.mockRejectedValue({ response: { status: 404 } });
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     expect(
       await screen.findByText(/Could not find contact request/),
@@ -118,9 +118,12 @@ describe('ContactConfirmPage', () => {
   });
 
   it('shows an error when the contact id is missing from the route', async () => {
-    contactId = '';
+    const {
+      getCurrentRouteParams,
+    } = require('@/modules/core/client/services/client-runtime');
+    getCurrentRouteParams.mockReturnValue({ contactId: '' });
 
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     expect(
       await screen.findByText('Something went wrong. Try again.'),
@@ -131,7 +134,7 @@ describe('ContactConfirmPage', () => {
     contactsApi.confirm.mockRejectedValue({
       response: { data: { message: 'Unable to confirm contact.' } },
     });
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Confirm contact' }),
@@ -142,7 +145,7 @@ describe('ContactConfirmPage', () => {
 
   it('uses the generic message when confirmation failure has no response', async () => {
     contactsApi.confirm.mockRejectedValue(new Error('offline'));
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Confirm contact' }),
@@ -155,7 +158,7 @@ describe('ContactConfirmPage', () => {
 
   it('reports generic load failures', async () => {
     contactsApi.getByContactId.mockRejectedValue(new Error('network'));
-    render(<ContactConfirmPage contactId={contactId} user={user} />);
+    render(<ContactConfirmPage user={user} />);
 
     expect(
       await screen.findByText('Something went wrong. Try again.'),
@@ -170,9 +173,7 @@ describe('ContactConfirmPage', () => {
       }),
     );
 
-    const { unmount } = render(
-      <ContactConfirmPage contactId={contactId} user={user} />,
-    );
+    const { unmount } = render(<ContactConfirmPage user={user} />);
     unmount();
     resolveContact(pendingContact);
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -186,9 +187,7 @@ describe('ContactConfirmPage', () => {
       }),
     );
 
-    const { unmount } = render(
-      <ContactConfirmPage contactId={contactId} user={user} />,
-    );
+    const { unmount } = render(<ContactConfirmPage user={user} />);
     unmount();
     rejectContact(new Error('late failure'));
     await new Promise(resolve => setTimeout(resolve, 0));

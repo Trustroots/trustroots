@@ -21,12 +21,14 @@ import {
   getProfileViewTab,
   getProfileViewTabStateName,
 } from '../utils/profile-routes';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/AppProviders';
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
+import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
@@ -177,10 +179,11 @@ ProfileDesktopActions.propTypes = {
   referencesEnabled: PropTypes.bool.isRequired,
 };
 
-export default function ProfilePage({ user: authUser, username }) {
+export default function ProfilePage({ user: authUser }) {
   const { t } = useTranslation('users');
   const { setUser } = useAuth();
   const currentPath = useCurrentPath();
+  const { username } = getCurrentRouteParams();
   const { profileMinimumLength = 140, referencesEnabled = false } =
     useSettings();
 
@@ -346,6 +349,10 @@ export default function ProfilePage({ user: authUser, username }) {
       case 'experiences':
         return referencesEnabled ? (
           <ListExperiences authenticatedUser={authUser} profile={profile} />
+        ) : null;
+      case 'experiences-new':
+        return referencesEnabled ? (
+          <CreateExperience userFrom={authUser} userTo={profile} />
         ) : null;
       case 'about':
       default:
@@ -521,6 +528,7 @@ export default function ProfilePage({ user: authUser, username }) {
                     <div className="row">
                       <div className="col-xs-12">
                         <ProfileTabs
+                          activePathName={activePathName}
                           contactsCount={contacts.length || 0}
                           initialPathName={activePathName}
                           isExperiencesEnabled={referencesEnabled}
@@ -557,5 +565,4 @@ export default function ProfilePage({ user: authUser, username }) {
 
 ProfilePage.propTypes = {
   user: PropTypes.object.isRequired,
-  username: PropTypes.string.isRequired,
 };

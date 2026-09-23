@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 import {
-  remove,
-  create,
-  getByUserId,
-  getByContactId,
   confirm,
+  create,
+  getByContactId,
+  getByUserId,
   getContactsCommon,
   list,
+  remove,
 } from '@/modules/contacts/client/api/contacts.api';
 
 jest.mock('axios');
@@ -32,60 +32,63 @@ describe('contacts api', () => {
     expect(axios.get).toHaveBeenCalledWith('/api/contacts/user-1/common');
   });
 
-  it('fetches a contact by user and treats a missing contact as empty', async () => {
-    const contact = { _id: 'contact-1' };
-    axios.get.mockResolvedValueOnce({ data: contact });
-    await expect(getByUserId('user-1')).resolves.toBe(contact);
-    expect(axios.get).toHaveBeenCalledWith('/api/contact-by/user-1');
-
+  it('returns null when a contact by user id is missing', async () => {
     axios.get.mockRejectedValueOnce({ response: { status: 404 } });
-    await expect(getByUserId('user-2')).resolves.toBeNull();
+
+    await expect(getByUserId('missing-user')).resolves.toBeNull();
   });
 
-  it('propagates other contact lookup errors', async () => {
-    const error = new Error('Request failed');
+  it('rethrows unexpected errors when fetching by user id', async () => {
+    const error = { response: { status: 500 } };
     axios.get.mockRejectedValueOnce(error);
+
     await expect(getByUserId('user-1')).rejects.toBe(error);
   });
 
-  it('lists a member’s contacts', async () => {
+  it('fetches an existing contact by user id', async () => {
+    const contact = { _id: 'contact-1', confirmed: true };
+    axios.get.mockResolvedValueOnce({ data: contact });
+
+    await expect(getByUserId('user-2')).resolves.toBe(contact);
+    expect(axios.get).toHaveBeenCalledWith('/api/contact-by/user-2');
+  });
+
+  it('fetches a contact by contact id', async () => {
+    const contact = { _id: 'contact-1' };
+    axios.get.mockResolvedValueOnce({ data: contact });
+
+    await expect(getByContactId('contact-1')).resolves.toBe(contact);
+    expect(axios.get).toHaveBeenCalledWith('/api/contact/contact-1');
+  });
+
+  it('lists contacts for a user', async () => {
     const contacts = [{ _id: 'contact-1' }];
     axios.get.mockResolvedValueOnce({ data: contacts });
+
     await expect(list('user-1')).resolves.toBe(contacts);
     expect(axios.get).toHaveBeenCalledWith('/api/contacts/user-1');
   });
-});
 
-it('loads and confirms a contact using its existing endpoints', async () => {
-  axios.get.mockResolvedValue({ data: { _id: 'sample-contact' } });
-  await expect(getByContactId('sample-contact')).resolves.toEqual({
-    _id: 'sample-contact',
+  it('creates a contact request', async () => {
+    const contact = { _id: 'contact-2' };
+    axios.post.mockResolvedValueOnce({ data: contact });
+
+    await expect(
+      create({ friendUserId: 'user-2', message: 'Hello!' }),
+    ).resolves.toBe(contact);
+    expect(axios.post).toHaveBeenCalledWith('/api/contact', {
+      friendUserId: 'user-2',
+      message: 'Hello!',
+    });
   });
-  expect(axios.get).toHaveBeenCalledWith('/api/contact/sample-contact');
-  axios.put.mockResolvedValue({ data: { confirmed: true } });
-  await expect(confirm('sample-contact')).resolves.toEqual({ confirmed: true });
-  expect(axios.put).toHaveBeenCalledWith('/api/contact/sample-contact', {
-    confirm: true,
+
+  it('confirms a contact request', async () => {
+    const contact = { _id: 'contact-2', confirmed: true };
+    axios.put.mockResolvedValueOnce({ data: contact });
+
+    await expect(confirm('contact-2')).resolves.toBe(contact);
+    expect(axios.put).toHaveBeenCalledWith('/api/contact/contact-2', {
+      confirm: true,
+    });
   });
-});
-
-it('loads an existing connection and creates a contact', async () => {
-  axios.get.mockResolvedValue({ data: { confirmed: false } });
-  await expect(getByUserId('friend-1')).resolves.toEqual({ confirmed: false });
-  expect(axios.get).toHaveBeenCalledWith('/api/contact-by/friend-1');
-  axios.post.mockResolvedValue({ data: { _id: 'contact-1' } });
-  const data = { friendUserId: 'friend-1', message: '<p>Hello</p>' };
-  await expect(create(data)).resolves.toEqual({ _id: 'contact-1' });
-  expect(axios.post).toHaveBeenCalledWith('/api/contact', data);
-});
-
-it('distinguishes an absent contact from failed lookups', async () => {
-  axios.get.mockRejectedValueOnce({ response: { status: 404 } });
-  await expect(getByUserId('friend-1')).resolves.toBeNull();
-  const unavailable = { response: { status: 503 } };
-  axios.get.mockRejectedValueOnce(unavailable);
-  await expect(getByUserId('friend-1')).rejects.toBe(unavailable);
-  const network = new Error('network');
-  axios.get.mockRejectedValueOnce(network);
-  await expect(getByUserId('friend-1')).rejects.toBe(network);
 });

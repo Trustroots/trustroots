@@ -60,6 +60,10 @@ function mockResponse(acceptType) {
     res.headers[key] = value;
     return res;
   };
+  res.redirect = function (url) {
+    res.redirected = url;
+    return res;
+  };
 
   return res;
 }
@@ -69,7 +73,7 @@ describe('Controller: core', function () {
     it('marks the signup page as an invite', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/signup' }, res);
-      res.rendered.should.equal('index.server.view.html');
+      res.rendered.should.equal('react-index.server.view.html');
       res.renderVars.invite.should.be.true();
     });
 
@@ -85,10 +89,19 @@ describe('Controller: core', function () {
       res.rendered.should.equal('react-index.server.view.html');
     });
 
-    it('renders the Angular index for Angular-owned paths', function () {
+    it('redirects legacy React routes to their replacement', function () {
       const res = mockResponse();
-      coreController.renderIndex({ path: '/signin' }, res);
-      res.rendered.should.equal('index.server.view.html');
+      coreController.renderIndex({ path: '/about' }, res);
+      res.redirected.should.equal('/');
+    });
+
+    it('renders the React index for unknown paths', function () {
+      const res = mockResponse();
+      res.redirect = function () {
+        throw new Error('should not redirect unknown paths');
+      };
+      coreController.renderIndex({ path: '/definitely-not-a-route' }, res);
+      res.rendered.should.equal('react-index.server.view.html');
     });
 
     it('exposes a sanitized user profile when signed in', function () {

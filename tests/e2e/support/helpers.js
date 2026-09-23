@@ -205,9 +205,17 @@ async function signUp(page, user) {
   await page.getByRole('button', { name: /^next$/i }).click();
 
   const response = await signupResponse;
+  let responseDetail = '';
+
+  if (!response.ok()) {
+    responseDetail = await response
+      .text()
+      .catch(() => 'Response body unavailable.');
+  }
+
   expect(
     response.ok(),
-    `Signup responded with ${response.status()}: ${await response.text()}`,
+    `Signup responded with ${response.status()}: ${responseDetail}`,
   ).toBeTruthy();
 
   const skipButton = page.getByRole('button', { name: /^skip$/i });

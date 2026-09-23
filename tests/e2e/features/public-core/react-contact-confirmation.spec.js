@@ -9,7 +9,7 @@ test('contact confirmation retains guest and missing-request behaviour', async (
   page,
 }) => {
   await page.goto('/contact-confirm/665000000000000000000090');
-  await expect(page).toHaveURL(/\/signin$/);
+  await expect(page).toHaveURL(/\/signin(?:\?|$)/);
   await signInViaApi(page, undefined, SEEDED_RELATIONSHIP_MEMBERS.alice);
   await page.goto('/contact-confirm/665000000000000000000090');
   await expect(page.locator('#tr-react-root')).toBeVisible();

@@ -137,16 +137,24 @@ test.describe.serial('account settings feature coverage', () => {
     const profile = await profileResponse.json();
     expect(profile.usernameUpdateAllowed).toBe(true);
 
-    await page.evaluate(`
-      const injector = window.angular.element(document.body).injector();
-      injector.get('$state').go('profile-edit.account');
-      injector.get('$rootScope').$applyAsync();
-    `);
+    await page.goto('/profile/edit/account');
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
+    await expect(page.getByLabel('Username', { exact: true })).toBeEnabled();
+
+    const nextUsername = createUser().username;
+    await page.getByLabel('Username', { exact: true }).fill(nextUsername);
+    await page
+      .getByRole('button', { name: 'Change username', exact: true })
+      .click();
     await expect(
-      page.locator('form[name="settingsUsernameForm"] input[name="username"]'),
-    ).toBeEnabled();
+      page.getByText('Username updated.', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'View profile', exact: true }),
+    ).toHaveAttribute('href', `/profile/${nextUsername}`);
+    await page.getByRole('link', { name: 'View profile', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/profile/${nextUsername}$`));
   });
 
   test('new members who sign in through the UI cannot change username yet', async ({
@@ -170,16 +178,10 @@ test.describe.serial('account settings feature coverage', () => {
     const profile = await profileResponse.json();
     expect(profile.usernameUpdateAllowed).toBe(false);
 
-    await page.evaluate(`
-      const injector = window.angular.element(document.body).injector();
-      injector.get('$state').go('profile-edit.account');
-      injector.get('$rootScope').$applyAsync();
-    `);
+    await page.goto('/profile/edit/account');
 
     await expect(page).toHaveURL(/\/profile\/edit\/account/);
-    await expect(
-      page.locator('form[name="settingsUsernameForm"] input[name="username"]'),
-    ).toBeDisabled();
+    await expect(page.getByLabel('Username', { exact: true })).toBeDisabled();
   });
 
   test('members can request and confirm profile removal', async ({
@@ -291,6 +293,12 @@ test.describe.serial('account settings feature coverage', () => {
 
     const saveButton = page.getByRole('button', { name: 'Save' });
     const legacyConnections = page.locator('.legacy-social-connections');
+    const deleteConnectionButton = provider =>
+      legacyConnections
+        .locator('li')
+        .filter({ hasText: new RegExp(`^${provider}\\s+Legacy`, 'i') })
+        .getByRole('button', { name: /^delete$/i });
+
     await expect(legacyConnections).toBeVisible();
     expect(
       await saveButton.evaluate(
@@ -304,11 +312,7 @@ test.describe.serial('account settings feature coverage', () => {
     ).toBeTruthy();
 
     for (const provider of ['facebook', 'github', 'twitter']) {
-      await expect(
-        page.getByRole('button', {
-          name: new RegExp(`delete ${provider} connection`, 'i'),
-        }),
-      ).toBeVisible();
+      await expect(deleteConnectionButton(provider)).toBeVisible();
       const removedRoute = await page.request.get(`/api/auth/${provider}`);
       expect(removedRoute.status()).toBe(404);
     }
@@ -332,11 +336,7 @@ test.describe.serial('account settings feature coverage', () => {
           response.request().method() === 'DELETE' &&
           response.url().endsWith(`/api/users/accounts/${provider}`),
       );
-      await page
-        .getByRole('button', {
-          name: new RegExp(`delete ${provider} connection`, 'i'),
-        })
-        .click();
+      await deleteConnectionButton(provider).click();
       expect((await disconnect).ok()).toBeTruthy();
     }
 

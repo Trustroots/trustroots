@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
-import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from '@/modules/core/client/components/Board.js';
@@ -82,7 +82,7 @@ export default function Home({
   user,
   photoCredits,
   build,
-  routeParams = getRouteParams(),
+  routeParams = getCurrentRouteParams(),
 }) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021

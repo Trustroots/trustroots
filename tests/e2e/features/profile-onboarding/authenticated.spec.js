@@ -13,11 +13,6 @@ const {
   waitForTribesList,
 } = require('../../support/helpers');
 
-const seededMemberStoragePath = path.join(
-  __dirname,
-  '../../.auth/seeded-member.json',
-);
-
 test.describe('authenticated member flows', () => {
   let authenticatedMember;
 
@@ -320,8 +315,8 @@ test.describe('authenticated member flows', () => {
   });
 
   test('member can view a seeded host profile', async ({
-    browser,
-    baseURL,
+    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.view-about', [
       'Own profile about tab loads.',
@@ -330,24 +325,13 @@ test.describe('authenticated member flows', () => {
     ]);
 
     const host = SEEDED_MEMBERS[1];
-    const seededMemberContext = await browser.newContext({
-      baseURL,
-      storageState: seededMemberStoragePath,
-    });
-    const seededMemberPage = await seededMemberContext.newPage();
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.goto(`/profile/${host.username}`);
 
-    try {
-      await seededMemberPage.goto(`/profile/${host.username}`);
-
-      await expect(seededMemberPage).toHaveURL(
-        new RegExp(`/profile/${host.username}`),
-      );
-      await expect(
-        seededMemberPage.locator('.row.hidden-xs h4.profile-username'),
-      ).toHaveText(`@${host.username}`);
-    } finally {
-      await seededMemberContext.close();
-    }
+    await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
+    await expect(page.locator('.row.hidden-xs h4.profile-username')).toHaveText(
+      `@${host.username}`,
+    );
   });
 
   test('profile edit locations page is reachable', async ({
@@ -512,25 +496,15 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      const fileInput = page.locator('#profile-edit-avatar-file');
-      await fileInput.waitFor({ state: 'attached' });
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
 
-      // A narrow viewport exposes both the file and camera controls.
-      await page.setViewportSize({ width: 375, height: 812 });
-      for (const id of [
-        'profile-edit-avatar-file',
-        'profile-edit-avatar-camera',
-      ]) {
-        const input = page.locator(`#${id}`);
-        const label = page.locator('label').filter({ has: input });
-        await input.focus();
-        await page.keyboard.press('Tab');
-        await page.keyboard.press('Shift+Tab');
-        await expect(input).toBeFocused();
-        await expect(label).toHaveCSS('outline-style', 'solid');
-        await expect(label).toHaveCSS('outline-width', '3px');
-        await expect(label).toHaveCSS('outline-offset', '3px');
-      }
+      await uploadButton.focus();
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Shift+Tab');
+      await expect(uploadButton).toBeFocused();
+      await expect(uploadButton).toHaveCSS('outline-style', 'solid');
+      await expect(uploadButton).toHaveCSS('outline-width', '3px');
 
       const uploadResponse = page.waitForResponse(
         response =>
@@ -538,21 +512,18 @@ test.describe('authenticated member flows', () => {
       );
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser'),
-        page.locator('label').filter({ has: fileInput }).click(),
+        uploadButton.click(),
       ]);
       await fileChooser.setFiles(validAvatarPath);
       await uploadResponse;
 
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-success'),
-      ).toContainText('Profile photo updated.');
-
-      // Some browsers cannot infer a MIME type from the local file. Exercise
-      // that browser File through the same input, multipart upload and server.
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
       const untypedUploadResponse = page.waitForResponse(response =>
         response.url().includes('/api/users-avatar'),
       );
-      await fileInput.evaluate(input => {
+      await page.locator('input[type="file"]').evaluate(input => {
         const { File, DataTransfer } = input.ownerDocument.defaultView;
         const file = new File([input.files[0]], 'browser-photo.png', {
           type: '',
@@ -589,20 +560,17 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      const fileInput = page.locator('#profile-edit-avatar-file');
-      await fileInput.waitFor({ state: 'attached' });
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        uploadButton.click(),
+      ]);
+      await fileChooser.setFiles(invalidAvatarPath);
 
-      const uploadResponse = page.waitForResponse(
-        response =>
-          response.url().includes('/api/users-avatar') &&
-          response.status() === 415,
+      await expect(page.getByRole('status')).toContainText(
+        'Sorry, we do not support this type of file.',
       );
-      await fileInput.setInputFiles(invalidAvatarPath);
-      await uploadResponse;
-
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-danger'),
-      ).toContainText('Sorry, we do not support this type of file.');
     } finally {
       await context.close();
     }
@@ -636,18 +604,20 @@ test.describe('authenticated member flows', () => {
       expect(fallbackResponse.headers().location).toContain('/img/avatar-');
 
       await page.goto('/profile/edit/photo');
-      const fileInput = page.locator('#profile-edit-avatar-file');
-      await fileInput.waitFor({ state: 'attached' });
-
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') && response.ok(),
       );
-      await fileInput.setInputFiles(validAvatarPath);
+      const [fileChooser] = await Promise.all([
+        page.waitForEvent('filechooser'),
+        uploadButton.click(),
+      ]);
+      await fileChooser.setFiles(validAvatarPath);
       await uploadResponse;
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-success'),
-      ).toContainText('Profile photo updated.');
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
 
       const uploadedResponse = await page.request.get(
         `/api/users/${registered._id}/avatar?source=local`,

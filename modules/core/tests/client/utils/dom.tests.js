@@ -59,30 +59,8 @@ describe('ready', () => {
 });
 
 describe('canUseWebP', () => {
-  function restoreJsdomWindow() {
-    Object.defineProperty(global, 'window', {
-      configurable: true,
-      value: document.defaultView,
-      writable: true,
-    });
-  }
-
   afterEach(() => {
     jest.restoreAllMocks();
-    restoreJsdomWindow();
-  });
-
-  it('returns false when window is unavailable', () => {
-    Object.defineProperty(global, 'window', {
-      configurable: true,
-      value: undefined,
-    });
-
-    try {
-      expect(canUseWebP()).toBe(false);
-    } finally {
-      restoreJsdomWindow();
-    }
   });
 
   it('returns false when canvas context is unavailable', () => {

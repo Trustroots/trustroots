@@ -2,24 +2,28 @@
  * Bottom navigation for small screens
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
+
+import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
+import { getProfileViewTab } from '../utils/profile-routes';
 
 export default function BottomNavigationSmall({
   username,
   isSelf,
   contactCount,
 }) {
-  // @TODO the default value for 'active' will need to be fetched in more React way
-  // when we have a router in place
-  const [active, setActive] = useState(
-    window.location.pathname.split('/')[3] || 'about',
-  );
-
+  const currentPath = useCurrentPath();
+  const pathTab = getProfileViewTab(currentPath, username);
+  const [active, setActive] = useState(pathTab);
   const { t } = useTranslation('users');
+
+  useEffect(() => {
+    setActive(pathTab);
+  }, [pathTab]);
 
   const tabs = [
     {
@@ -39,7 +43,6 @@ export default function BottomNavigationSmall({
     },
   ];
 
-  // contacts tab is shown only sometimes
   if (contactCount > 0 || isSelf) {
     tabs.push({
       key: 'contacts',
@@ -60,7 +63,6 @@ export default function BottomNavigationSmall({
             <li
               key={key}
               className={classNames({ active: active === key })}
-              ui-sref-active="active"
               role="presentation"
             >
               <a href={link} role="tab" onClick={() => setActive(key)}>

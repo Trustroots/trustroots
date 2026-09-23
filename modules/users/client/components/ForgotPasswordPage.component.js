@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 
 import Board from '@/modules/core/client/components/Board';
-import * as authApi from '@/modules/users/client/api/recovery.api';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
+import * as authApi from '@/modules/users/client/api/auth.api';
 
-export default function ForgotPasswordPage({ userhandle }) {
+export default function ForgotPasswordPage() {
+  const { userhandle } = getCurrentRouteParams();
   const [credentials, setCredentials] = useState({
     username: userhandle || '',
   });
@@ -114,5 +115,3 @@ export default function ForgotPasswordPage({ userhandle }) {
     </Board>
   );
 }
-
-ForgotPasswordPage.propTypes = { userhandle: PropTypes.string };

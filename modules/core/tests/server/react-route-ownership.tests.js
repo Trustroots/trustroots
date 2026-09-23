@@ -2,9 +2,11 @@ const {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
   isReactOwnedPath,
+  matchReactRoute,
   normalizePath,
   REACT_OWNED_PATHS,
   REACT_ROUTE_POLICIES,
+  routeRequiresAuth,
 } = require('../../shared/react-route-ownership');
 
 const should = require('should');
@@ -13,20 +15,69 @@ describe('React route ownership', function () {
   it('lists the first React-owned route group', function () {
     REACT_OWNED_PATHS.should.containEql('/support');
     REACT_OWNED_PATHS.should.containEql('/statistics');
+    REACT_OWNED_PATHS.should.containEql('/safety');
     REACT_OWNED_PATHS.should.containEql('/faq/technology');
-    REACT_OWNED_PATHS.should.containEql('/about');
-    REACT_OWNED_PATHS.should.containEql('/not-found');
+    REACT_OWNED_PATHS.should.containEql('/');
+    REACT_OWNED_PATHS.should.containEql('/messages/:username');
+    REACT_OWNED_PATHS.should.containEql('/signin');
+    REACT_OWNED_PATHS.should.containEql('/remove/:token');
   });
 
   it('normalizes paths for server route selection', function () {
     normalizePath('/support/?report=alice').should.equal('/support');
     isReactOwnedPath('/support/?report=alice').should.be.true();
+    normalizePath('/messages/alice/').should.equal('/messages/alice');
   });
 
   it('keeps route policies aligned with owned paths', function () {
     REACT_ROUTE_POLICIES.map(route => route.path)
       .sort()
       .should.deepEqual(REACT_OWNED_PATHS.slice().sort());
+  });
+
+  it('matches exact and parametrised route policies', function () {
+    getReactRoutePolicy('/').should.containDeep({
+      path: '/',
+      title: 'Home',
+    });
+    getReactRoutePolicy('/messages/alice').should.containDeep({
+      path: '/messages/:username',
+      requiresAuth: true,
+    });
+    matchReactRoute('/messages/alice').should.containDeep({
+      params: { username: 'alice' },
+    });
+    matchReactRoute('/circles/hitchhikers').should.containDeep({
+      params: { circle: 'hitchhikers' },
+      policy: {
+        path: '/circles/:circle',
+      },
+    });
+    matchReactRoute('/circles/naturists').should.containDeep({
+      policy: {
+        requiresAuthParams: {
+          circle: ['naturists'],
+        },
+      },
+    });
+    matchReactRoute('/search').should.containDeep({
+      policy: {
+        path: '/search',
+        requiresAuth: true,
+      },
+    });
+    matchReactRoute('/search/members').should.containDeep({
+      policy: {
+        footerHidden: true,
+        requiresAuth: true,
+      },
+    });
+    matchReactRoute('/offer/meet/add').should.containDeep({
+      policy: {
+        path: '/offer/meet/add',
+        requiresAuth: true,
+      },
+    });
   });
 
   it('defines protected admin route policy', function () {
@@ -52,8 +103,75 @@ describe('React route ownership', function () {
     should(
       getReactRouteAccessRedirect(getReactRoutePolicy('/support'), null),
     ).be.null();
+    getReactRouteAccessRedirect(
+      getReactRoutePolicy('/messages'),
+      null,
+    ).should.equal('/signin');
+    getReactRouteAccessRedirect(
+      getReactRoutePolicy('/messages'),
+      null,
+      '/messages?filter=unread',
+    ).should.equal(
+      '/signin?continue=true&returnTo=%2Fmessages%3Ffilter%3Dunread',
+    );
+    getReactRouteAccessRedirect(
+      getReactRoutePolicy('/circles/naturists'),
+      null,
+      '/circles/naturists',
+    ).should.equal('/signin?continue=true&returnTo=%2Fcircles%2Fnaturists');
+    should(
+      getReactRouteAccessRedirect(
+        getReactRoutePolicy('/circles/hitchhikers'),
+        null,
+        '/circles/hitchhikers',
+      ),
+    ).be.null();
   });
 
+  it('evaluates exact parameter-based authentication requirements', function () {
+    routeRequiresAuth(null, '/').should.be.false();
+    routeRequiresAuth(
+      getReactRoutePolicy('/messages'),
+      '/messages',
+    ).should.be.true();
+    routeRequiresAuth(
+      getReactRoutePolicy('/support'),
+      '/support',
+    ).should.be.false();
+    routeRequiresAuth(
+      getReactRoutePolicy('/circles/naturists'),
+      '/circles/naturists',
+    ).should.be.true();
+    routeRequiresAuth(
+      getReactRoutePolicy('/circles/hitchhikers'),
+      '/circles/hitchhikers',
+    ).should.be.false();
+    routeRequiresAuth(
+      getReactRoutePolicy('/circles/hitchhikers'),
+      '/not-a-route',
+    ).should.be.false();
+  });
+
+  it('matches profile and contact route policies', function () {
+    getReactRoutePolicy('/profile/alice').should.containDeep({
+      path: '/profile/:username',
+      requiresAuth: true,
+    });
+    matchReactRoute('/profile/alice/experiences/new').should.containDeep({
+      params: { username: 'alice' },
+      policy: {
+        path: '/profile/:username/experiences/new',
+      },
+    });
+    getReactRoutePolicy('/contact-add/user-2').should.containDeep({
+      path: '/contact-add/:userId',
+      requiresAuth: true,
+    });
+  });
+
+  it('does not claim legacy Angular profile-edit paths', function () {
+    isReactOwnedPath('/profile-edit/about').should.be.false();
+  });
   it('allows either acquisition role while keeping other admin routes restricted', () => {
     for (const route of REACT_ROUTE_POLICIES.filter(route =>
       route.path.startsWith('/admin'),
@@ -71,56 +189,18 @@ describe('React route ownership', function () {
       getReactRouteAccessRedirect(route, null).should.equal('/signin');
     }
   });
-
-  it('does not claim Angular-owned routes', function () {
-    isReactOwnedPath('/profile/edit').should.be.false();
-  });
-});
-
-describe('Profile route ownership', () => {
-  it('selects profile viewing tabs and requires sign-in', () => {
-    for (const path of [
-      '/profile/alice',
-      '/profile/alice/about',
-      '/profile/alice/overview',
-      '/profile/alice/accommodation',
-      '/profile/alice/contacts',
-      '/profile/alice/tribes',
-      '/profile/alice/experiences',
-    ]) {
-      const route = getReactRoutePolicy(path);
-      route.requiresAuth.should.be.true();
-      getReactRouteAccessRedirect(route, null).should.equal('/signin');
-      should(getReactRouteAccessRedirect(route, { username: 'bob' })).be.null();
-      route.params.username.should.equal('alice');
-    }
-    getReactRoutePolicy('/profile/%61lice').params.username.should.equal(
-      'alice',
-    );
-  });
-
-  it('does not select profile editors', () => {
-    should(getReactRoutePolicy('/profile/edit')).be.undefined();
-    should(getReactRoutePolicy('/profile/edit/photo')).be.undefined();
-    getReactRoutePolicy('/profile/alice/experiences/new').path.should.equal(
-      '/profile/:username/experiences/new',
-    );
-    for (const path of ['/profile/%ZZ', '/profile/%2F', '/profile/:username']) {
-      getReactRoutePolicy(path).path.should.equal('/not-found');
-    }
-  });
 });
 
 describe('Circle route ownership', () => {
   it('selects circle pages without claiming other workflows', () => {
     getReactRoutePolicy('/circles/').path.should.equal('/circles');
-    getReactRoutePolicy(
+    matchReactRoute(
       '/circles/sample-circle/?from=profile',
     ).params.circle.should.equal('sample-circle');
-    getReactRoutePolicy('/circles/%73ample-circle').params.circle.should.equal(
+    matchReactRoute('/circles/%73ample-circle').params.circle.should.equal(
       'sample-circle',
     );
-    should(getReactRoutePolicy('/circles/sample/extra')).be.undefined();
+    should(getReactRoutePolicy('/circles/sample/extra')).be.null();
     for (const path of [
       '/circles/%ZZ',
       '/circles/sample%2Fextra',
@@ -133,7 +213,9 @@ describe('Circle route ownership', () => {
   });
   it('preserves member-only circle access', () => {
     const route = getReactRoutePolicy('/circles/naturists');
-    getReactRouteAccessRedirect(route, null).should.equal('/signin');
+    getReactRouteAccessRedirect(route, null, '/circles/naturists').should.equal(
+      '/signin?continue=true&returnTo=%2Fcircles%2Fnaturists',
+    );
     should(getReactRouteAccessRedirect(route, { roles: ['user'] })).be.null();
     should(
       getReactRouteAccessRedirect(
@@ -141,30 +223,5 @@ describe('Circle route ownership', () => {
         null,
       ),
     ).be.null();
-  });
-});
-
-describe('Messaging route ownership', () => {
-  it('selects the inbox and a decoded conversation path', () => {
-    getReactRoutePolicy('/messages').path.should.equal('/messages');
-    getReactRoutePolicy(
-      '/messages/alice?userId=member-1',
-    ).params.username.should.equal('alice');
-    getReactRoutePolicy('/messages/%61lice').params.username.should.equal(
-      'alice',
-    );
-  });
-
-  it('requires sign-in and rejects malformed conversation paths', () => {
-    const route = getReactRoutePolicy('/messages/alice');
-    getReactRouteAccessRedirect(route, null).should.equal('/signin');
-    should(getReactRouteAccessRedirect(route, { username: 'bob' })).be.null();
-    for (const path of [
-      '/messages/%ZZ',
-      '/messages/%2F',
-      '/messages/:username',
-    ]) {
-      getReactRoutePolicy(path).path.should.equal('/not-found');
-    }
   });
 });

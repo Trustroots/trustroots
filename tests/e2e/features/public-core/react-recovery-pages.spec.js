@@ -28,7 +28,8 @@ test('outcome pages retain their onward links', async ({ page }) => {
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await page.getByRole('link', { name: /login first/i }).click();
   await expect(page).toHaveURL(/\/signin$/);
-  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   await expect(page.locator('#username')).toBeVisible();
   expect(pageErrors).toEqual([]);
 });

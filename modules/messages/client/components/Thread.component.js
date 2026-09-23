@@ -6,10 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 import {
-  getRouteParams,
-  go,
-} from '@/modules/core/client/services/angular-compat';
-import { defaultNavigate } from '@/modules/core/client/react-app/shell-helpers';
+  getCurrentRouteParams,
+  navigate,
+} from '@/modules/core/client/services/client-runtime';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
@@ -24,11 +23,10 @@ import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
-import plainTextLength from '@/modules/core/client/utils/plain-text-length';
+import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 
-// Required by LanguageList in Monkeybox component
-// @TODO: move this to higher up in the React tree once we no longer deal with Angular
+// Required by LanguageList in Monkeybox component.
 const queryClient = new QueryClient();
 
 const api = {
@@ -136,11 +134,7 @@ function Loading() {
   );
 }
 
-export default function Thread({
-  user,
-  profileMinimumLength,
-  username: routeUsername,
-}) {
+export default function Thread({ user, profileMinimumLength }) {
   const { t } = useTranslation('messages');
 
   if (!user.public) {
@@ -151,14 +145,10 @@ export default function Thread({
     );
   }
 
-  const username = routeUsername || getRouteParams().username;
+  const username = getCurrentRouteParams().username;
 
   if (user.username === username) {
-    if (routeUsername) {
-      defaultNavigate('/messages');
-    } else {
-      go('inbox');
-    }
+    navigate('inbox');
     return null; // important to return null to indicate "nothing to render"
   }
 
@@ -221,9 +211,7 @@ export default function Thread({
         otherUser = await api.users.fetch(username);
       } catch (error) {
         if (error.response?.status === 404) {
-          const userId = routeUsername
-            ? new URLSearchParams(window.location.search).get('userId')
-            : getRouteParams().userId;
+          const userId = getCurrentRouteParams().userId;
           if (userId !== undefined) {
             otherUser = createFakeUserObject(userId);
             userRemoved = true;
@@ -422,5 +410,4 @@ export default function Thread({
 Thread.propTypes = {
   user: userType.isRequired,
   profileMinimumLength: PropTypes.number.isRequired,
-  username: PropTypes.string,
 };

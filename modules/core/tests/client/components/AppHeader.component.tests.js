@@ -1,13 +1,10 @@
 import React from 'react';
 import { act } from 'react-dom/test-utils';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import AppHeader from '@/modules/core/client/components/AppHeader.component';
-import { $on } from '@/modules/core/client/services/angular-compat';
-
-jest.mock('@/modules/core/client/services/angular-compat');
 
 jest.mock('@/modules/core/client/components/NavigationLoggedIn', () => {
   const React = require('react');
@@ -61,13 +58,7 @@ describe('<AppHeader />', () => {
     );
   });
 
-  it('renders logged-in navigation and reacts to Angular route changes', () => {
-    let stateChangeHandler;
-    $on.mockImplementation((eventName, handler) => {
-      if (eventName === '$stateChangeSuccess') {
-        stateChangeHandler = handler;
-      }
-    });
+  it('renders logged-in navigation and reacts to browser route changes', () => {
     window.history.pushState({}, '', '/profile/alice');
 
     render(
@@ -87,7 +78,7 @@ describe('<AppHeader />', () => {
 
     window.history.pushState({}, '', '/messages');
     act(() => {
-      stateChangeHandler();
+      window.dispatchEvent(new PopStateEvent('popstate'));
     });
 
     expect(screen.getByTestId('logged-in-navigation')).toHaveTextContent(

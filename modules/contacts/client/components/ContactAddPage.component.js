@@ -3,30 +3,21 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'react-query';
 
-import ActivateProfileNotice from '@/modules/users/client/components/Activate';
+import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import { fetchMini } from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
 function defaultContactMessage(displayName) {
-  const safeName = displayName.replace(
-    /[&<>"']/g,
-    character =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      }[character]),
-  );
-  return `<p>Hi!</p><p>I would like to add you as a contact.</p><p>- ${safeName}</p>`;
+  return `<p>Hi!</p><p>I would like to add you as a contact.</p><p>- ${displayName}</p>`;
 }
 
-export default function ContactAddPage({ user, userId }) {
+export default function ContactAddPage({ user }) {
   const { t } = useTranslation('contacts');
+  const { userId } = getCurrentRouteParams();
   const [message, setMessage] = useState(
     defaultContactMessage(user.displayName),
   );
@@ -60,20 +51,20 @@ export default function ContactAddPage({ user, userId }) {
       ? t('You two are already connected. Great!')
       : t('Connection already initiated; now it has to be confirmed.')
     : '';
-  const friendMissing = friendQuery.isError;
-  const contactLookupFailed = contactQuery.isError;
   const displayedError =
     error ||
     (isSelf
       ? t('You cannot connect with yourself. That is just silly!')
-      : friendMissing
+      : friendQuery.isError || contactQuery.isError
       ? t('User does not exist.')
-      : contactLookupFailed
-      ? t('Something went wrong. Try again.')
       : '');
   const displayedSuccess = success || existingContactMessage;
   const isConnected =
-    wasConnected || isSelf || friendMissing || Boolean(existingContact);
+    wasConnected ||
+    isSelf ||
+    friendQuery.isError ||
+    contactQuery.isError ||
+    Boolean(existingContact);
   const isFetching = friendQuery.isLoading || contactQuery.isLoading;
 
   async function handleSubmit(event) {
@@ -154,7 +145,7 @@ export default function ContactAddPage({ user, userId }) {
               </div>
             )}
 
-            {!isFetching && !isConnected && friend?._id && (
+            {!isConnected && friend?._id && (
               <div className="panel panel-default">
                 <div className="panel-heading">
                   <h4>
@@ -194,7 +185,7 @@ export default function ContactAddPage({ user, userId }) {
               </div>
             )}
 
-            {!isFetching && !isConnected && friend?._id && (
+            {!isConnected && friend?._id && (
               <p className="text-center">
                 <button
                   type="submit"
@@ -219,5 +210,4 @@ export default function ContactAddPage({ user, userId }) {
 
 ContactAddPage.propTypes = {
   user: PropTypes.object.isRequired,
-  userId: PropTypes.string.isRequired,
 };

@@ -51,11 +51,9 @@ community media repository and its downloadable assets.
 - **WHEN** a visitor selects a style guide, screenshot collection, media archive, or logo download on the media page
 - **THEN** the selected resource resolves in the Trustroots community media repository
 
-### Requirement: Incremental React page shell
+### Requirement: React page shell
 
-The system SHALL render administration, read-only public pages, circle pages
-and member entry pages with the React application shell while retaining
-Angular for the remaining member workflows during the transition.
+The system SHALL render administration, public pages, circle pages and member workflows with the React application shell.
 
 #### Scenario: Visitor opens a React-owned public page
 
@@ -79,10 +77,10 @@ Angular for the remaining member workflows during the transition.
 - **WHEN** an authenticated member without the admin role directly opens an administration page
 - **THEN** the server redirects the member to the volunteering page
 
-#### Scenario: Visitor opens an Angular-owned member workflow
+#### Scenario: Visitor opens a member workflow
 
 - **WHEN** a visitor opens a profile, offer search, offer, message, or authentication route
-- **THEN** the server continues to render the Angular application root and assets
+- **THEN** the server renders the React application root and assets
 
 #### Scenario: Visitor opens a circle page
 
@@ -108,7 +106,7 @@ The system SHALL render `/`, `/about` and `/safety` through the existing React a
 
 - **WHEN** the visitor follows an onward link or completes a page action
 - **THEN** the existing API behaviour and destination remain available
-- **AND** Angular-owned destinations load their own application root
+- **AND** onward destinations render through the React application shell
 
 ### Requirement: React member entry pages
 
@@ -135,8 +133,8 @@ and links into other application workflows.
 
 #### Scenario: Member leaves an entry page
 
-- **WHEN** a member follows a link to an Angular-owned workflow
-- **THEN** the destination loads its application root
+- **WHEN** a member follows a link to another member workflow
+- **THEN** the destination renders through the React application shell
 - **AND** signing out from navigation ends the authenticated session
 
 ### Requirement: React contact confirmation
@@ -153,7 +151,7 @@ The system SHALL render `/contact-confirm/:contactId` through the existing React
 
 - **WHEN** the visitor follows an onward link or completes a page action
 - **THEN** the existing API behaviour and destination remain available
-- **AND** Angular-owned destinations load their own application root
+- **AND** onward destinations render through the React application shell
 
 ### Requirement: React recovery and outcome pages
 
@@ -169,22 +167,7 @@ The system SHALL render `/password/forgot`, `/password/reset/success`, `/passwor
 
 - **WHEN** the visitor follows an onward link or completes a page action
 - **THEN** the existing API behaviour and destination remain available
-- **AND** Angular-owned destinations load their own application root
-
-### Requirement: Angular compatibility during route extraction
-
-The system SHALL use consistent Angular core and companion packages while preserving the remaining Angular pages and their embedded React components during route extraction.
-
-#### Scenario: Member uses an Angular page
-
-- **WHEN** a member opens an existing Angular-owned workflow
-- **THEN** navigation, forms and embedded React components retain their existing behaviour
-
-#### Scenario: Subscription update fails
-
-- **WHEN** an account subscription update returns an error
-- **THEN** the existing message service displays the failure
-- **AND** the update indicator stops
+- **AND** onward destinations render through the React application shell
 
 ### Requirement: React contact creation
 

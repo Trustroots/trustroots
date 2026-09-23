@@ -6,7 +6,7 @@ import {
   fireEvent,
   waitFor,
 } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
   __esModule: true,

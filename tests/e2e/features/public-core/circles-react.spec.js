@@ -39,7 +39,8 @@ test('circle pages use React and preserve guest navigation', async ({
     .getByRole('link', { name: 'Join Hitchhikers on Trustroots' })
     .click();
   await expect(page).toHaveURL(/\/signup\?tribe=hitchhikers$/);
-  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+  await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
 });
 
 test('circle membership retains account roles and legacy member links', async ({
@@ -82,7 +83,8 @@ test('circle membership retains account roles and legacy member links', async ({
     expect(await page.evaluate(() => window.user.roles)).toEqual(roles);
     await page.getByRole('link', { name: 'Find members', exact: true }).click();
     await expect(page).toHaveURL(/\/search\?tribe=hitchhikers$/);
-    await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(1);
+    await expect(page.locator('#tr-react-root')).toBeVisible();
+    await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   } finally {
     if (wasMember)
       await page.request.post(`/api/users/memberships/${circle._id}`);
