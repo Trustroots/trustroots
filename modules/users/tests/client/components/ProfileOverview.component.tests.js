@@ -67,7 +67,26 @@ describe('<ProfileOverview />', () => {
   });
 
   it('links the owner’s placeholder avatar to photo editing', () => {
-    render(<ProfileOverview profile={profile} isSelf />);
+    render(
+      <ProfileOverview
+        profile={{
+          ...profile,
+          avatarSource: 'gravatar',
+          avatarUploaded: false,
+        }}
+        isSelf
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'Edit profile photo' }),
+    ).toHaveAttribute('href', '/profile/edit/photo');
+  });
+
+  it('links the selected placeholder after a previous upload', () => {
+    render(
+      <ProfileOverview profile={{ ...profile, avatarUploaded: true }} isSelf />,
+    );
 
     expect(
       screen.getByRole('link', { name: 'Edit profile photo' }),

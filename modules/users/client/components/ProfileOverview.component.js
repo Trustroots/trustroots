@@ -16,7 +16,7 @@ const queryClient = new QueryClient();
 export default function ProfileOverview({ profile, isSelf }) {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const showPhotoEditLink =
-    isSelf && (!profile.avatarSource || profile.avatarSource === 'none');
+    isSelf && (!profile.avatarUploaded || profile.avatarSource === 'none');
 
   const handleClose = () => setIsAvatarModalOpen(false);
 
