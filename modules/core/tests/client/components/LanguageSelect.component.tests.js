@@ -100,7 +100,7 @@ describe('<LanguageSelect />', () => {
       isError: false,
     });
 
-    render(<LanguageSelect preSelectedLanguages={['enm']} />);
+    render(<LanguageSelect excludeDeprecated preSelectedLanguages={['enm']} />);
 
     await waitFor(() => {
       expect(asyncSelectProps.at(-1).value).toEqual([existing]);
@@ -108,6 +108,25 @@ describe('<LanguageSelect />', () => {
     expect(await asyncSelectProps.at(-1).loadOptions('Middle')).toEqual([]);
     expect(await asyncSelectProps.at(-1).loadOptions('English')).toEqual([
       selectable,
+    ]);
+  });
+
+  it('offers deprecated languages when used as a search filter', async () => {
+    const historical = {
+      value: 'enm',
+      label: 'Middle English (1100-1500)',
+      deprecated: true,
+    };
+    useLanguagesQuery.mockReturnValue({
+      data: [historical],
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<LanguageSelect />);
+
+    expect(await asyncSelectProps.at(-1).loadOptions('Middle')).toEqual([
+      historical,
     ]);
   });
 
