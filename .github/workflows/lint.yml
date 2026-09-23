@@ -3,12 +3,6 @@ name: Linter
 on:
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**/*.md'
-      - 'apps/android/**'
-      - 'apps/ios/**'
-      - 'docs/**'
-      - 'openspec/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
