@@ -23,7 +23,9 @@ const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const nip19 = require('nostr-tools/nip19');
+const validator = require('validator');
 const User = mongoose.model('User');
+const deprecatedLanguages = require('../../../../config/languages/deprecated');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -87,6 +89,16 @@ exports.update = function (req, res) {
     });
   }
 
+  if (
+    Object.prototype.hasOwnProperty.call(req.body, 'email') &&
+    (typeof req.body.email !== 'string' ||
+      (req.body.email !== '' && !validator.isEmail(req.body.email)))
+  ) {
+    return res.status(400).send({
+      message: 'Please enter a valid email address.',
+    });
+  }
+
   // validate locale
   // @TODO validation framework
   const localeCodes = locales.map(function (locale) {
@@ -100,6 +112,20 @@ exports.update = function (req, res) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('bad-request'),
     });
+  }
+
+  if (req.body.languages) {
+    const existingLanguages = new Set(req.user.languages);
+    const addedDeprecatedLanguage = []
+      .concat(req.body.languages)
+      .some(
+        code => deprecatedLanguages.has(code) && !existingLanguages.has(code),
+      );
+    if (addedDeprecatedLanguage) {
+      return res.status(400).send({
+        message: 'This language can no longer be added to profiles.',
+      });
+    }
   }
 
   // Validate nostr npub - must be a public key, not nsec (secret key)

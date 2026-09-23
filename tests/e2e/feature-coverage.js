@@ -1260,9 +1260,14 @@ const features = [
       'About edit form is reachable.',
       'Valid profile changes persist and are visible on profile view.',
       'Validation errors are visible for invalid content.',
+      'Deprecated languages cannot be added to a profile.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit "about" form is reachable'),
+      spec(
+        'authenticated.spec.js',
+        'deprecated languages cannot be added to a profile',
+      ),
     ],
   },
   {

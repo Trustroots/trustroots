@@ -200,6 +200,48 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/describe yourself/i)).toBeVisible();
   });
 
+  test('deprecated languages cannot be added to a profile', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'Deprecated languages cannot be added to a profile.',
+    ]);
+
+    const response = await page.request.get('/api/languages?format=array');
+    expect(response.ok()).toBeTruthy();
+    const languages = await response.json();
+    expect(languages.find(({ value }) => value === 'enm').deprecated).toBe(
+      true,
+    );
+    expect(
+      languages.find(({ value }) => value === 'iso_639_3-lfn').deprecated,
+    ).toBe(true);
+    expect(languages.find(({ value }) => value === 'grc').deprecated).toBe(
+      false,
+    );
+    expect(languages.find(({ value }) => value === 'lim').label).toBe(
+      'Limburgish',
+    );
+
+    await page.goto('/profile/edit');
+    const languageInput = page.locator(
+      'input[aria-label="Add languages you speak."]',
+    );
+    await languageInput.fill('Middle English');
+    await expect(
+      page.getByText('No languages found; try typing something else.'),
+    ).toBeVisible();
+    await languageInput.fill('English');
+    await expect(
+      page.getByText('English', { exact: true }).last(),
+    ).toBeVisible();
+
+    const rejected = await page.request.put('/api/users', {
+      data: { languages: ['enm'] },
+    });
+    expect(rejected.status()).toBe(400);
+  });
+
   test('profile edit account page is reachable', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'account.details-update', [
       'Account edit page is reachable.',
@@ -245,6 +287,33 @@ test.describe('authenticated member flows', () => {
 
       await expect(page).toHaveURL(new RegExp(`/profile/${member.username}`));
       await expect(page).toHaveTitle(/Profile - Trustroots/);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('member can open photo editing from their placeholder avatar', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Own placeholder avatar links to photo editing.',
+    ]);
+
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      await page.goto(`/profile/${member.username}`);
+      await page
+        .locator('.profile-overview')
+        .getByRole('link', { name: 'Edit profile photo' })
+        .click();
+      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
     } finally {
       await context.close();
     }

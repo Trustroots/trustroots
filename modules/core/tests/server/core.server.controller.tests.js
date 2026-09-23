@@ -1,6 +1,7 @@
 const proxyquire = require('proxyquire').noCallThru();
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
+const deprecatedLanguages = require('../../../../config/languages/deprecated');
 
 require('should');
 
@@ -216,13 +217,36 @@ describe('Controller: core', function () {
     it('returns the languages array when format=array', function () {
       const res = mockResponse();
       coreController.getLanguages({ query: { format: 'array' } }, res);
-      res.body.should.deepEqual(languagesArray);
+      res.body.should.deepEqual(
+        languagesArray.map(language => ({
+          ...language,
+          deprecated: deprecatedLanguages.has(language.value),
+        })),
+      );
+      res.body.filter(language => language.deprecated).length.should.equal(20);
+      res.body
+        .find(language => language.value === 'enm')
+        .deprecated.should.be.true();
+      res.body
+        .find(language => language.value === 'iso_639_3-lfn')
+        .deprecated.should.be.true();
+      res.body
+        .find(language => language.value === 'grc')
+        .deprecated.should.be.false();
+      res.body
+        .find(language => language.value === 'lat')
+        .deprecated.should.be.false();
+      res.body
+        .find(language => language.value === 'lim')
+        .label.should.equal('Limburgish');
     });
 
     it('returns the languages object by default', function () {
       const res = mockResponse();
       coreController.getLanguages({ query: {} }, res);
       res.body.should.deepEqual(languagesObject);
+      res.body.lim.should.equal('Limburgish');
+      res.body.enm.should.equal('Middle English (1100-1500)');
     });
   });
 });
