@@ -9,6 +9,7 @@ import {
   getRouteParams,
   go,
 } from '@/modules/core/client/services/angular-compat';
+import { defaultNavigate } from '@/modules/core/client/react-app/shell-helpers';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
@@ -23,7 +24,7 @@ import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
-import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
+import plainTextLength from '@/modules/core/client/utils/plain-text-length';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 
 // Required by LanguageList in Monkeybox component
@@ -135,7 +136,11 @@ function Loading() {
   );
 }
 
-export default function Thread({ user, profileMinimumLength }) {
+export default function Thread({
+  user,
+  profileMinimumLength,
+  username: routeUsername,
+}) {
   const { t } = useTranslation('messages');
 
   if (!user.public) {
@@ -146,10 +151,14 @@ export default function Thread({ user, profileMinimumLength }) {
     );
   }
 
-  const username = getRouteParams().username;
+  const username = routeUsername || getRouteParams().username;
 
   if (user.username === username) {
-    go('inbox');
+    if (routeUsername) {
+      defaultNavigate('/messages');
+    } else {
+      go('inbox');
+    }
     return null; // important to return null to indicate "nothing to render"
   }
 
@@ -212,7 +221,9 @@ export default function Thread({ user, profileMinimumLength }) {
         otherUser = await api.users.fetch(username);
       } catch (error) {
         if (error.response?.status === 404) {
-          const userId = getRouteParams().userId;
+          const userId = routeUsername
+            ? new URLSearchParams(window.location.search).get('userId')
+            : getRouteParams().userId;
           if (userId !== undefined) {
             otherUser = createFakeUserObject(userId);
             userRemoved = true;
@@ -411,4 +422,5 @@ export default function Thread({ user, profileMinimumLength }) {
 Thread.propTypes = {
   user: userType.isRequired,
   profileMinimumLength: PropTypes.number.isRequired,
+  username: PropTypes.string,
 };

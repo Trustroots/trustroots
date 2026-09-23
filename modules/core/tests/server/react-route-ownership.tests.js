@@ -143,3 +143,28 @@ describe('Circle route ownership', () => {
     ).be.null();
   });
 });
+
+describe('Messaging route ownership', () => {
+  it('selects the inbox and a decoded conversation path', () => {
+    getReactRoutePolicy('/messages').path.should.equal('/messages');
+    getReactRoutePolicy(
+      '/messages/alice?userId=member-1',
+    ).params.username.should.equal('alice');
+    getReactRoutePolicy('/messages/%61lice').params.username.should.equal(
+      'alice',
+    );
+  });
+
+  it('requires sign-in and rejects malformed conversation paths', () => {
+    const route = getReactRoutePolicy('/messages/alice');
+    getReactRouteAccessRedirect(route, null).should.equal('/signin');
+    should(getReactRouteAccessRedirect(route, { username: 'bob' })).be.null();
+    for (const path of [
+      '/messages/%ZZ',
+      '/messages/%2F',
+      '/messages/:username',
+    ]) {
+      getReactRoutePolicy(path).path.should.equal('/not-found');
+    }
+  });
+});
