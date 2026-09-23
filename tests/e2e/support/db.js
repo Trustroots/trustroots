@@ -57,11 +57,32 @@ async function removeUserByUsername(username) {
   return withE2eDb(db => db.collection('users').deleteOne({ username }));
 }
 
+async function removeExperiencesBetweenUsernames(usernameFrom, usernameTo) {
+  return withE2eDb(async db => {
+    const [userFrom, userTo] = await Promise.all([
+      db.collection('users').findOne({ username: usernameFrom }),
+      db.collection('users').findOne({ username: usernameTo }),
+    ]);
+
+    if (!userFrom?._id || !userTo?._id) {
+      return { deletedCount: 0 };
+    }
+
+    return db.collection('experiences').deleteMany({
+      $or: [
+        { userFrom: userFrom._id, userTo: userTo._id },
+        { userFrom: userTo._id, userTo: userFrom._id },
+      ],
+    });
+  });
+}
+
 module.exports = {
   findContactByUsers,
   findOffersByUser,
   findUserByUsername,
   objectId,
+  removeExperiencesBetweenUsernames,
   removeUserByUsername,
   updateUserByUsername,
   withE2eDb,
