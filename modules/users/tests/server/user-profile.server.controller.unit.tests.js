@@ -974,54 +974,24 @@ describe('Profile controller unit tests', () => {
       reloaded.pushRegistration.length.should.equal(0);
     });
 
-    it('addPushRegistration rejects a missing token', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const { res } = await runHandler(res =>
-        profileController.addPushRegistration(
-          { user: { _id: saved._id }, body: { platform: 'android' } },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
-
-    it('addPushRegistration rejects an invalid platform', async () => {
+    it('addPushRegistration rejects new registrations', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const { res } = await runHandler(res =>
         profileController.addPushRegistration(
           {
             user: { _id: saved._id },
-            body: { token: 'device-token', platform: 'invalid' },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
-
-    it('addPushRegistration saves a new registration', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
-
-      const { res } = await runHandler(res =>
-        profileController.addPushRegistration(
-          {
-            user: userDoc,
             body: {
               token: 'new-device-token',
-              platform: 'android',
-              doNotNotify: true,
+              platform: 'web',
             },
           },
           res,
         ),
       );
-      res.statusCode.should.equal(200);
-      res.body.message.should.equal('Saved registration.');
-
-      const reloaded = await User.findById(saved._id);
-      reloaded.pushRegistration.length.should.equal(1);
-      reloaded.pushRegistration[0].token.should.equal('new-device-token');
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Push notifications are no longer available.',
+      );
     });
   });
 

@@ -217,15 +217,6 @@ describe('Controller: core', function () {
     });
   });
 
-  describe('renderServiceWorkerConfig', function () {
-    it('returns javascript exposing the FCM sender id', function () {
-      const res = mockResponse();
-      coreController.renderServiceWorkerConfig({}, res);
-      res.headers['Content-Type'].should.equal('text/javascript');
-      res.body.should.startWith('var FCM_SENDER_ID = ');
-    });
-  });
-
   describe('getLanguages', function () {
     it('returns the languages array when format=array', function () {
       const res = mockResponse();

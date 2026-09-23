@@ -19,8 +19,7 @@ MongoDB or Redis data layer in this change.
   matching and History API observation with TanStack Router.
 - After Angular removal, upgrade Bootstrap 3 to Bootstrap 5 and align
   `react-bootstrap` APIs.
-- Remove the unused Expo push path and upgrade the optional Firebase client
-  messaging stack.
+- Retire unused Expo and Firebase push paths (see `retire-push-notifications`).
 - **Non-goals:** mongoose / mongodb / bson / acl / agenda / redis majors or
   schema migrations.
 
