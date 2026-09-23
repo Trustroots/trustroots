@@ -26,7 +26,7 @@ nodemon({
     assets.fontelloConfig,
   ],
   watch: [
-    ...(worker ? assets.workerJS : assets.views),
+    ...(worker ? assets.workerJS : [assets.views]),
     ...assets.allJS,
     assets.config,
   ],

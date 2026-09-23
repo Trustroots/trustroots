@@ -92,8 +92,9 @@ container's Git fallback to populate the footer.
 
 - Verify native installation and behaviour on macOS arm64.
 - Resolve Firebase runtime compatibility after the browser-push decision (#2829).
-  Push delivery remains unconditionally disabled. Worker tests are excluded in
-  scripts/codex/test-server.sh; restore and verify them after resolving this boundary.
+  Push delivery remains unconditionally disabled. Worker tests are excluded only
+  from the isolated mode of scripts/codex/test-server.sh; restore and verify them
+  there after resolving this boundary.
 - Remove legacy OpenSSL workarounds from end-to-end scripts only after verifying
   those scripts without them.
 - Merge requires a passing production startup check: Passenger must serve an
