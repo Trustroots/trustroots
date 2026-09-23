@@ -35,15 +35,21 @@ We are also open to improvements that [make trustroots forkable](https://github.
 
 ## nvm & npm
 
-We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage the supported Node.js 24 runtime. Node.js 24 includes the supported npm 11 release.
+We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage node versions.
 
-- `nvm install`
 - `nvm use`
-- `npm ci`
+- `npm -g i npm@11.19.0`
+
+Use Node.js 24 (the exact version is in `.nvmrc`) and npm 11. Install dependencies
+with `npm ci`.
 
 To be able to install dependencies on macOS / apple silicon, the following dependencies are required:
 
 - `brew install pkg-config cairo pango libpng jpeg giflib librsvg python-setuptools`
+
+Installing mmmagic expects `python` to be a valid binary, which it is not. This can be solved by adding a symlink from `python` to `python3` like so:
+
+- `ln -s "$(brew --prefix)/bin/python"{3,}`
 
 ## Running locally
 

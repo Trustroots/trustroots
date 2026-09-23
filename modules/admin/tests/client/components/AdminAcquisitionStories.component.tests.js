@@ -41,7 +41,7 @@ describe('<AdminAcquisitionStories />', () => {
             {
               _id: 'match-id',
               username: 'forest',
-              matchReasons: ['Acquisition story'],
+              matchReasons: ['Username identifier'],
             },
           ],
         },
@@ -67,11 +67,12 @@ describe('<AdminAcquisitionStories />', () => {
         hostingLocation: [52.37, 4.9],
         locationFrom: 'Fictional origin',
         locationLiving: 'Fictional home',
+        public: true,
         restrictedMatches: [
           {
             _id: '222222222222222222222222',
             displayName: 'Restricted Example',
-            matchReasons: ['Acquisition story'],
+            matchReasons: ['Username identifier'],
             roles: ['user', 'shadowban'],
             username: 'restricted',
           },
@@ -108,12 +109,13 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getByText('Living: Fictional home')).toBeInTheDocument();
     expect(screen.getByText('From: Fictional origin')).toBeInTheDocument();
     expect(screen.getByText('Hosting: 52.370, 4.900')).toBeInTheDocument();
+    expect(screen.getByText('Visible')).toBeInTheDocument();
     expect(
       screen.getByRole('link', {
         name: 'restricted (Restricted Example)',
       }),
     ).toHaveAttribute('href', '/admin/user?id=222222222222222222222222');
-    expect(screen.getByText(/— Acquisition story/)).toBeInTheDocument();
+    expect(screen.getByText(/— Username identifier/)).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Stories' }).closest('li'),
     ).toHaveClass('active');
@@ -163,6 +165,7 @@ describe('<AdminAcquisitionStories />', () => {
         circleCount: 2,
         created: '2026-01-01T00:00:00.000Z',
         displayName: 'Alice Example',
+        public: true,
         username: 'alice',
       },
       {
@@ -171,6 +174,7 @@ describe('<AdminAcquisitionStories />', () => {
         circleCount: 0,
         created: '2026-02-01T00:00:00.000Z',
         displayName: 'Bob Example',
+        public: false,
         username: 'bob',
       },
     ]);
@@ -204,5 +208,39 @@ describe('<AdminAcquisitionStories />', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Story' }));
     expect(storyOrder()).toEqual(['bob', 'alice']);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Profile visible' }));
+    expect(storyOrder()).toEqual(['bob', 'alice']);
+    fireEvent.click(screen.getByRole('button', { name: 'Profile visible ▲' }));
+    expect(storyOrder()).toEqual(['alice', 'bob']);
+  });
+
+  it('explains its compact sortable and static column headings', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '111111111111111111111111',
+        acquisitionStory: 'A friend recommended it',
+        public: false,
+        username: 'alice',
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByText('A friend recommended it');
+
+    fireEvent.focus(screen.getByRole('button', { name: 'Date ▼' }));
+    expect(await screen.findByText('Date the member signed up')).toBeVisible();
+
+    fireEvent.mouseOver(
+      screen.getByLabelText(
+        'Restricted matches: Suspended or shadowbanned accounts with a matching username or email identifier',
+      ),
+    );
+    expect(
+      await screen.findByText(
+        'Suspended or shadowbanned accounts with a matching username or email identifier',
+      ),
+    ).toBeVisible();
+    expect(screen.getByText('Hidden')).toBeInTheDocument();
   });
 });

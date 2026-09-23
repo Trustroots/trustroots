@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component';
@@ -51,7 +51,9 @@ describe('<AdminAcquisitionStoriesAnalysis />', () => {
     expect(screen.getByText('Search')).toBeInTheDocument();
     expect(screen.queryByText('Friend')).not.toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: 'Analysis' }).closest('li'),
+      within(document.querySelector('.nav-tabs'))
+        .getByRole('link', { name: 'Analysis' })
+        .closest('li'),
     ).toHaveClass('active');
   });
 

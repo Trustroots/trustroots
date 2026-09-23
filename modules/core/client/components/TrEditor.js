@@ -172,67 +172,66 @@ export default function TrEditor({
   placeholder,
   text,
 }) {
-  const editorElementRef = useRef();
-  const mediumRef = useRef();
+  const ref = useRef(null);
+  const mediumRef = useRef(null);
   const onChangeRef = useRef(onChange);
   const onCtrlEnterRef = useRef(onCtrlEnter);
-  const latestEditorText = useRef(null);
+  const latestEditorText = useRef(text);
+  const initialMarkup = useRef({ __html: text });
+  const isApplyingExternalText = useRef(false);
   const { t } = useTranslation('core');
 
-  onChangeRef.current = onChange;
-  onCtrlEnterRef.current = onCtrlEnter;
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+    onCtrlEnterRef.current = onCtrlEnter;
+  });
 
-  const options = {
-    // https://github.com/yabwe/medium-editor#placeholder-options
-    placeholder: {
-      hideOnClick: true,
-      text: placeholder ? placeholder : t('Type your text'),
-    },
-    ...baseOptions,
-  };
-  const optionsRef = useRef(options);
-
-  useEffect(() => {
-    const medium = new MediumEditor(
-      editorElementRef.current,
-      optionsRef.current,
-    );
-    const handleInput = () => {
-      const value = removeTrailingBr(editorElementRef.current.innerHTML);
+  useLayoutEffect(() => {
+    const medium = new MediumEditor(ref.current, {
+      ...baseOptions,
+      placeholder: { hideOnClick: true },
+    });
+    mediumRef.current = medium;
+    const onInput = (event, editable) => {
+      // setContent emits editableInput too; external changes are not user input.
+      if (isApplyingExternalText.current) return;
+      const value = removeTrailingBr(editable.innerHTML);
       latestEditorText.current = value;
       onChangeRef.current(value);
     };
-    const handleEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
-
-    mediumRef.current = medium;
-    medium.subscribe('editableInput', handleInput);
-    medium.subscribe('editableKeydownEnter', handleEnter);
-
+    const onEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
+    medium.subscribe('editableInput', onInput);
+    medium.subscribe('editableKeydownEnter', onEnter);
     return () => {
-      medium.unsubscribe('editableInput', handleInput);
-      medium.unsubscribe('editableKeydownEnter', handleEnter);
+      medium.unsubscribe('editableInput', onInput);
+      medium.unsubscribe('editableKeydownEnter', onEnter);
       medium.destroy();
-      mediumRef.current = null;
     };
   }, []);
 
-  useLayoutEffect(() => {
-    if (text === latestEditorText.current) {
-      return;
+  useEffect(() => {
+    // MediumEditor owns the editable DOM. Echoing its own input back into it
+    // would disturb the caret and native input composition.
+    if (text !== latestEditorText.current) {
+      latestEditorText.current = text;
+      isApplyingExternalText.current = true;
+      try {
+        mediumRef.current.setContent(text);
+      } finally {
+        isApplyingExternalText.current = false;
+      }
     }
-
-    latestEditorText.current = text;
-    const element = editorElementRef.current;
-    if (element.innerHTML === text) {
-      return;
-    }
-
-    mediumRef.current?.saveSelection();
-    element.innerHTML = text;
-    mediumRef.current?.restoreSelection();
   }, [text]);
 
-  return <div className="tr-editor" id={id} ref={editorElementRef} />;
+  return (
+    <div
+      ref={ref}
+      id={id}
+      className="tr-editor"
+      data-placeholder={placeholder ? placeholder : t('Type your text')}
+      dangerouslySetInnerHTML={initialMarkup.current}
+    />
+  );
 }
 
 TrEditor.defaultProps = {

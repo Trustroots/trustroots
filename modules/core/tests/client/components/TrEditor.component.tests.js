@@ -1,74 +1,74 @@
 import React from 'react';
-import { act, render } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import MediumEditor from 'medium-editor';
+import { render, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom/extend-expect';
 
 import '@/config/client/i18n';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 
-const mockMediumEditors = [];
+const mediumEditors = [];
 
-jest.mock('medium-editor', () =>
-  jest.fn().mockImplementation((element, options) => {
+jest.mock('medium-editor', () => {
+  return jest.fn().mockImplementation(element => {
     const subscribers = {};
-    const editor = {
-      destroy: jest.fn(),
-      element,
-      options,
-      restoreSelection: jest.fn(),
-      saveSelection: jest.fn(),
+    const medium = {
       subscribe: jest.fn((eventName, handler) => {
-        subscribers[eventName] = [...(subscribers[eventName] || []), handler];
+        subscribers[eventName] = handler;
+      }),
+      unsubscribe: jest.fn((eventName, handler) => {
+        if (subscribers[eventName] === handler) delete subscribers[eventName];
       }),
       trigger(eventName, ...args) {
-        (subscribers[eventName] || []).forEach(handler => handler(...args));
+        subscribers[eventName](...args);
       },
-      unsubscribe: jest.fn((eventName, handler) => {
-        subscribers[eventName] = (subscribers[eventName] || []).filter(
-          entry => entry !== handler,
-        );
-      }),
+      onChange(value) {
+        element.innerHTML = value;
+        medium.trigger('editableInput', {}, element);
+      },
+      setContent: jest.fn(value => medium.onChange(value)),
+      destroy: jest.fn(),
+      get text() {
+        return element.innerHTML;
+      },
     };
-    mockMediumEditors.push(editor);
-    return editor;
-  }),
-);
-
-function renderEditor(props = {}) {
-  return render(
-    <TrEditor
-      id="bio"
-      onChange={jest.fn()}
-      onCtrlEnter={jest.fn()}
-      text="initial"
-      {...props}
-    />,
-  );
-}
+    mediumEditors.push(medium);
+    return medium;
+  });
+});
 
 describe('<TrEditor />', () => {
   beforeEach(() => {
-    mockMediumEditors.length = 0;
-    MediumEditor.mockClear();
+    mediumEditors.length = 0;
   });
 
   it('forwards onChange text without trailing <br></p>', () => {
     const onChange = jest.fn();
-    const { container } = renderEditor({ onChange });
-    const editor = mockMediumEditors[0];
-    editor.element.innerHTML = '<p>hello<br></p>';
+    render(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={jest.fn()}
+        text="initial"
+      />,
+    );
 
-    act(() => editor.trigger('editableInput'));
+    const editor = mediumEditors[0];
+    editor.onChange('<p>hello<br></p>');
 
-    expect(container.querySelector('.tr-editor')).toHaveAttribute('id', 'bio');
     expect(onChange).toHaveBeenCalledWith('<p>hello</p>');
   });
 
   it('subscribes to ctrl+enter events', () => {
     const onCtrlEnter = jest.fn();
-    const { unmount } = renderEditor({ onCtrlEnter });
-    const editor = mockMediumEditors[0];
+    const { unmount } = render(
+      <TrEditor
+        id="bio"
+        onChange={jest.fn()}
+        onCtrlEnter={onCtrlEnter}
+        text="initial"
+      />,
+    );
 
+    const editor = mediumEditors[0];
     editor.trigger('editableKeydownEnter', { ctrlKey: false });
     editor.trigger('editableKeydownEnter', {
       ctrlKey: true,
@@ -80,7 +80,9 @@ describe('<TrEditor />', () => {
       'editableKeydownEnter',
       expect.any(Function),
     );
-    const handler = editor.subscribe.mock.calls[1][1];
+    const handler = editor.subscribe.mock.calls.find(
+      ([eventName]) => eventName === 'editableKeydownEnter',
+    )[1];
     unmount();
     expect(editor.unsubscribe).toHaveBeenCalledWith(
       'editableKeydownEnter',
@@ -89,113 +91,156 @@ describe('<TrEditor />', () => {
     expect(editor.destroy).toHaveBeenCalledTimes(1);
   });
 
-  it('forwards non-normalised content unchanged', () => {
+  it('forwards non-normalized content unchanged', () => {
     const onChange = jest.fn();
-    renderEditor({ onChange });
-    const editor = mockMediumEditors[0];
-    editor.element.innerHTML = '<p>Hello</p>';
+    render(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={jest.fn()}
+        text="initial"
+      />,
+    );
 
-    act(() => editor.trigger('editableInput'));
+    const editor = mediumEditors[0];
+    editor.onChange('<p>Hello</p>');
 
     expect(onChange).toHaveBeenCalledWith('<p>Hello</p>');
   });
 
-  it('uses translated default placeholder text when none is provided', () => {
-    renderEditor();
+  it('does not re-render the editor for its own input but accepts external text', async () => {
+    const onChange = jest.fn();
+    const onCtrlEnter = jest.fn();
+    const { rerender } = render(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={onCtrlEnter}
+        text="initial"
+      />,
+    );
 
-    expect(mockMediumEditors[0].options.placeholder.text).toBe(
+    const editor = mediumEditors[0];
+    editor.onChange('<p>initial edit</p>');
+    rerender(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={onCtrlEnter}
+        text="<p>initial edit</p>"
+      />,
+    );
+
+    expect(mediumEditors).toHaveLength(1);
+
+    rerender(
+      <TrEditor
+        id="bio"
+        onChange={onChange}
+        onCtrlEnter={onCtrlEnter}
+        text=""
+      />,
+    );
+
+    await waitFor(() => expect(editor.text).toBe(''));
+    expect(mediumEditors).toHaveLength(1);
+    expect(editor.setContent).toHaveBeenCalledWith('');
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps current callbacks and placeholder without recreating the editor', () => {
+    const firstChange = jest.fn();
+    const latestChange = jest.fn();
+    const firstEnter = jest.fn();
+    const latestEnter = jest.fn();
+    const { rerender, container } = render(
+      <TrEditor
+        text="initial"
+        onChange={firstChange}
+        onCtrlEnter={firstEnter}
+      />,
+    );
+    const editor = mediumEditors[0];
+    rerender(
+      <TrEditor
+        text="initial"
+        onChange={latestChange}
+        onCtrlEnter={latestEnter}
+        placeholder="Updated placeholder"
+      />,
+    );
+    editor.onChange('<p>Edited text</p>');
+    editor.trigger('editableKeydownEnter', { ctrlKey: true });
+    expect(mediumEditors).toHaveLength(1);
+    expect(firstChange).not.toHaveBeenCalled();
+    expect(firstEnter).not.toHaveBeenCalled();
+    expect(latestChange).toHaveBeenCalledWith('<p>Edited text</p>');
+    expect(latestEnter).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('.tr-editor')).toHaveAttribute(
+      'data-placeholder',
+      'Updated placeholder',
+    );
+  });
+
+  it('resets to its original text without reporting external changes as input', () => {
+    const onChange = jest.fn();
+    const { rerender, container } = render(
+      <TrEditor text="<p>Original</p>" onChange={onChange} />,
+    );
+    expect(container.querySelector('.tr-editor').innerHTML).toBe(
+      '<p>Original</p>',
+    );
+    const editor = mediumEditors[0];
+    editor.onChange('<p>Edited</p>');
+    rerender(<TrEditor text="<p>Edited</p>" onChange={onChange} />);
+    expect(editor.setContent).not.toHaveBeenCalled();
+    rerender(<TrEditor text="<p>Original</p>" onChange={onChange} />);
+    expect(editor.text).toBe('<p>Original</p>');
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses translated default placeholder text when none is provided', () => {
+    const { container } = render(
+      <TrEditor
+        id="bio"
+        onChange={jest.fn()}
+        onCtrlEnter={jest.fn()}
+        text="initial"
+      />,
+    );
+
+    expect(container.querySelector('.tr-editor')).toHaveAttribute(
+      'data-placeholder',
       'Type your text',
     );
   });
 
   it('passes through a custom placeholder', () => {
-    renderEditor({ placeholder: 'Write a careful reply' });
+    const { container } = render(
+      <TrEditor
+        id="bio"
+        onChange={jest.fn()}
+        onCtrlEnter={jest.fn()}
+        placeholder="Write a careful reply"
+        text="initial"
+      />,
+    );
 
-    expect(mockMediumEditors[0].options.placeholder.text).toBe(
+    expect(container.querySelector('.tr-editor')).toHaveAttribute(
+      'data-placeholder',
       'Write a careful reply',
     );
   });
 
   it('uses a no-op ctrl+enter handler by default', () => {
     render(<TrEditor id="bio" onChange={jest.fn()} text="initial" />);
-    const editor = mockMediumEditors[0];
 
+    const editor = mediumEditors[0];
     expect(() =>
       editor.trigger('editableKeydownEnter', {
         ctrlKey: true,
         preventDefault: jest.fn(),
       }),
     ).not.toThrow();
-  });
-
-  it('updates external content without overwriting an editor update', () => {
-    const onChange = jest.fn();
-    const { container, rerender } = renderEditor({ onChange });
-    const editor = mockMediumEditors[0];
-    const element = container.querySelector('.tr-editor');
-    element.innerHTML = 'typed locally';
-
-    act(() => editor.trigger('editableInput'));
-    rerender(
-      <TrEditor
-        id="bio"
-        onChange={onChange}
-        onCtrlEnter={jest.fn()}
-        text="typed locally"
-      />,
-    );
-    expect(element).toHaveTextContent('typed locally');
-
-    rerender(
-      <TrEditor
-        id="bio"
-        onChange={onChange}
-        onCtrlEnter={jest.fn()}
-        text="updated remotely"
-      />,
-    );
-    expect(element).toHaveTextContent('updated remotely');
-    expect(editor.saveSelection).toHaveBeenCalled();
-    expect(editor.restoreSelection).toHaveBeenCalled();
-  });
-
-  it('leaves matching external content untouched', () => {
-    const onChange = jest.fn();
-    const { container, rerender } = renderEditor({ onChange });
-    const editor = mockMediumEditors[0];
-    const element = container.querySelector('.tr-editor');
-    element.innerHTML = 'already current';
-
-    rerender(
-      <TrEditor
-        id="bio"
-        onChange={onChange}
-        onCtrlEnter={jest.fn()}
-        text="already current"
-      />,
-    );
-
-    expect(element).toHaveTextContent('already current');
-    expect(editor.saveSelection).not.toHaveBeenCalled();
-    expect(editor.restoreSelection).not.toHaveBeenCalled();
-  });
-  it('applies an external reset immediately after input without restoring selection on echoed input', () => {
-    const onChange = jest.fn();
-    const { container, rerender } = renderEditor({ onChange });
-    const editor = mockMediumEditors[0];
-    const element = container.querySelector('.tr-editor');
-    element.innerHTML = '<p>Draft reply</p>';
-    act(() => editor.trigger('editableInput'));
-    rerender(
-      <TrEditor id="bio" onChange={onChange} text="<p>Draft reply</p>" />,
-    );
-    expect(editor.saveSelection).not.toHaveBeenCalled();
-    expect(editor.restoreSelection).not.toHaveBeenCalled();
-    expect(MediumEditor).toHaveBeenCalledTimes(1);
-    element.innerHTML = '<p>Changed draft</p>';
-    act(() => editor.trigger('editableInput'));
-    rerender(<TrEditor id="bio" onChange={onChange} text="" />);
-    expect(element).toBeEmptyDOMElement();
-    expect(onChange).toHaveBeenCalledTimes(2);
   });
 });

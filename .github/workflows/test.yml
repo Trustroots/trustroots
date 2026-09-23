@@ -303,6 +303,7 @@ jobs:
           export TRUSTROOTS_BUILD_COMMIT="$(git rev-parse HEAD)"
           export TRUSTROOTS_BUILD_COMMITTED_AT="$(git show -s --format=%cI HEAD)"
           export TRUSTROOTS_BUILD_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+          # Read metadata on the runner; container Git can reject checkout ownership.
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
