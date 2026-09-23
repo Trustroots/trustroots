@@ -118,7 +118,8 @@ module.exports = defineConfig({
     },
     {
       name: 'authenticated',
-      testMatch: /features\/profile-onboarding\/authenticated\.spec\.js/,
+      testMatch:
+        /features\/profile-onboarding\/(?:authenticated|profile-react)\.spec\.js/,
       dependencies: serializedDependencies(['setup-authenticated'], ['public']),
       fullyParallel: false,
       use: {
