@@ -14,6 +14,7 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
         aria-label={props['aria-label']}
         data-placeholder={props.placeholder}
         data-selected={props.preSelectedLanguages.join(',')}
+        data-exclude-deprecated={props.excludeDeprecated}
         onClick={() => props.onChangeLanguages(['en', 'pt'])}
         type="button"
       >
@@ -24,6 +25,7 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
 
   MockLanguageSelect.propTypes = {
     'aria-label': () => null,
+    excludeDeprecated: () => null,
     onChangeLanguages: () => null,
     placeholder: () => null,
     preSelectedLanguages: () => null,
@@ -53,6 +55,7 @@ describe('<ProfileEditLanguages />', () => {
       name: 'Add languages you speak.',
     });
     expect(select).toHaveAttribute('data-selected', 'fi,sv');
+    expect(select).toHaveAttribute('data-exclude-deprecated', 'true');
     expect(select).toHaveAttribute(
       'data-placeholder',
       'Add languages you speak.',
