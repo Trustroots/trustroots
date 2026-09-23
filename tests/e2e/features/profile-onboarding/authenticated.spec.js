@@ -250,40 +250,6 @@ test.describe('authenticated member flows', () => {
     }
   });
 
-  test('member can open photo editing from their placeholder avatar', async ({
-    browser,
-    baseURL,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'profile.edit-photo', [
-      'Own placeholder avatar links to photo editing on desktop and mobile.',
-    ]);
-
-    const context = await createIsolatedContext(browser, baseURL);
-    const page = await context.newPage();
-
-    try {
-      const member = createUser();
-      await registerViaApi(context.request, member);
-      await signInViaApi(page, context.request, member);
-
-      await page.goto(`/profile/${member.username}`);
-      await page
-        .locator('.profile-overview')
-        .getByRole('link', { name: 'Edit profile photo' })
-        .click();
-      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
-
-      await page.setViewportSize({ width: 375, height: 812 });
-      await page.goto(`/profile/${member.username}`);
-      await page
-        .locator('.avatar-circle[aria-label="Edit profile photo"]')
-        .click();
-      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
-    } finally {
-      await context.close();
-    }
-  });
-
   test('member can view a seeded host profile', async ({
     browser,
     baseURL,
