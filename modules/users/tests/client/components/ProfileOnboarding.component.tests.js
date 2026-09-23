@@ -162,7 +162,11 @@ describe('profile onboarding components', () => {
   it('links the owner’s mobile placeholder avatar to photo editing', () => {
     render(
       <AvatarNameMobile
-        profile={{ avatarSource: 'none', displayName: 'Alice Example' }}
+        profile={{
+          avatarSource: 'gravatar',
+          avatarUploaded: false,
+          displayName: 'Alice Example',
+        }}
         isSelf
       />,
     );
@@ -174,6 +178,19 @@ describe('profile onboarding components', () => {
 
     fireEvent.click(avatarLink);
     expect(avatarLink).not.toHaveClass('profile-avatar-lg');
+  });
+
+  it('links the selected mobile placeholder after a previous upload', () => {
+    render(
+      <AvatarNameMobile
+        profile={{ avatarSource: 'none', avatarUploaded: true }}
+        isSelf
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: 'Edit profile photo' }),
+    ).toHaveAttribute('href', '/profile/edit/photo');
   });
 
   it('renders mobile avatar identity without optional display fields', () => {

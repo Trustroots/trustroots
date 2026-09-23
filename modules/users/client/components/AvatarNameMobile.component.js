@@ -12,7 +12,7 @@ import Avatar from './Avatar.component';
 export default function AvatarNameMobile({ profile, isSelf }) {
   const [isBiggerAvatar, setIsBiggerAvatar] = useState(false);
   const showPhotoEditLink =
-    isSelf && (!profile.avatarSource || profile.avatarSource === 'none');
+    isSelf && (!profile.avatarUploaded || profile.avatarSource === 'none');
 
   return (
     <div className="text-center visible-xs-block" role="dialog">
