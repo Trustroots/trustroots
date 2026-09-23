@@ -145,10 +145,10 @@ function ProfileDesktopActions({
           <Tooltip
             tooltip={
               contact.confirmed
-                ? t('Contacts since {{date, mediumDate}}', {
+                ? t('Contacts since {{date, LL}}', {
                     date: new Date(contact.created),
                   })
-                : t('Request sent {{date, mediumDate}}', {
+                : t('Request sent {{date, LL}}', {
                     date: new Date(contact.created),
                   })
             }
@@ -179,10 +179,14 @@ ProfileDesktopActions.propTypes = {
   referencesEnabled: PropTypes.bool.isRequired,
 };
 
-export default function ProfilePage({ user: authUser }) {
+export default function ProfilePage({
+  currentPath: routedPath,
+  user: authUser,
+}) {
   const { t } = useTranslation('users');
   const { setUser } = useAuth();
-  const currentPath = useCurrentPath();
+  const browserPath = useCurrentPath();
+  const currentPath = routedPath || browserPath;
   const { username } = getCurrentRouteParams();
   const { profileMinimumLength = 140, referencesEnabled = false } =
     useSettings();
@@ -564,5 +568,6 @@ export default function ProfilePage({ user: authUser }) {
 }
 
 ProfilePage.propTypes = {
+  currentPath: PropTypes.string,
   user: PropTypes.object.isRequired,
 };
