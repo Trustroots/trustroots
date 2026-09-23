@@ -74,5 +74,3 @@ export default function RulesText() {
     </>
   );
 }
-
-RulesText.propTypes = {};

@@ -81,6 +81,7 @@ module.exports = webpackMerge.merge(shims, {
     },
   },
   resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.json'],
     fallback: {
       querystring: require.resolve('querystring-es3'),
       url: require.resolve('url/'),
@@ -108,7 +109,7 @@ module.exports = webpackMerge.merge(shims, {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.[jt]sx?$/,
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
         exclude: /node_modules\/(?!(nostr-tools|@noble|@scure)\/)/,

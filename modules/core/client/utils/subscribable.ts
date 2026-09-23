@@ -16,18 +16,18 @@
  *
  * @returns a function that creates a pair of subscribe/notify functions
  */
-export default function createSubscribable() {
-  const subscribers = [];
+export default function createSubscribable<T = unknown>() {
+  const subscribers: Array<(payload: T | undefined) => void> = [];
   return {
-    subscribe(fn) {
+    subscribe(fn: (payload: T | undefined) => void) {
       subscribers.push(fn);
       return () => {
         const idx = subscribers.indexOf(fn);
         if (idx !== -1) subscribers.splice(idx, 1);
       };
     },
-    notify(payload) {
-      const errors = [];
+    notify(payload?: T) {
+      const errors: unknown[] = [];
       for (const fn of [...subscribers]) {
         try {
           fn(payload);

@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ES2020",
+    "lib": ["DOM", "ES2020"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react",
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "modules/*": ["./modules/*"]
+    },
+    "types": ["jest", "node"]
+  },
+  "include": [
+    "modules/*/client/**/*.ts",
+    "modules/*/client/**/*.tsx",
+    "modules/*/tests/client/**/*.ts",
+    "modules/*/tests/client/**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
+}

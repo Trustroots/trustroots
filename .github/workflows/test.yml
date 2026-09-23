@@ -108,6 +108,14 @@ jobs:
           load: true
       - name: Prepare compose local config
         run: node ./scripts/ci/ensure-compose-local.js
+      - name: Type-check client TypeScript
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            -e CI=true \
+            -e NODE_ENV=test \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            dev npm run typecheck
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
