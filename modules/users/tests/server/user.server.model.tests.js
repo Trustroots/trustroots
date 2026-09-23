@@ -179,6 +179,9 @@ describe('User Model Unit Tests:', function () {
           _user3.email = _user.email;
           _user3.save(function (err) {
             should.exist(err);
+            err.errors.email.message.should.equal(
+              'Account with this email exists already.',
+            );
             // Restoring the original email for test3 so it can be used in later tests
             _user3.email = user3_email;
             done();
@@ -199,6 +202,9 @@ describe('User Model Unit Tests:', function () {
           _user3.username = _user.username;
           _user3.save(function (err) {
             should.exist(err);
+            err.errors.username.message.should.equal(
+              'Username exists already.',
+            );
             // Restoring the original username for test3 so it can be used in later tests
             _user3.username = user3_username;
             done();

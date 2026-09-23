@@ -21,6 +21,37 @@ test.describe('seeded message API flows', () => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
   });
 
+  test('a sent message is populated and persists through the native client', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Sending a reply appends it to the thread.',
+    ]);
+    const content = `Database integration ${new ObjectId()}`;
+    const response = await page.request.post('/api/messages', {
+      data: { userTo: SEEDED_MEMBERS[1].id, content },
+    });
+    expect(response.ok()).toBeTruthy();
+    const message = await response.json();
+
+    try {
+      expect(message.userFrom.username).toBe(SEEDED_MEMBERS[0].username);
+      expect(message.userTo.username).toBe(SEEDED_MEMBERS[1].username);
+      const persisted = await withE2eDb(db =>
+        db.collection('messages').findOne({ _id: new ObjectId(message._id) }),
+      );
+      expect(persisted.content).toBe(content);
+    } finally {
+      if (message._id) {
+        await withE2eDb(db =>
+          db
+            .collection('messages')
+            .deleteOne({ _id: new ObjectId(message._id) }),
+        );
+      }
+    }
+  });
+
   for (const role of ['welcome-team', 'admin']) {
     test(`${role} can message above the recipient limit until the role is removed`, async ({
       page,

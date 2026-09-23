@@ -1344,14 +1344,9 @@ describe('Messages controller unit tests', () => {
     it('returns 400 when send populate fails', async () => {
       sinon.stub(Message.prototype, 'save').callsFake(function (cb) {
         const fakeMessage = {
-          populate: sinon
-            .stub()
-            .onFirstCall()
-            .returnsThis()
-            .onSecondCall()
-            .callsFake((opts, populateCb) => {
-              populateCb(new Error('populate failed'));
-            }),
+          populate: sinon.stub().callsFake((opts, populateCb) => {
+            populateCb(new Error('populate failed'));
+          }),
         };
         cb(null, fakeMessage);
       });
