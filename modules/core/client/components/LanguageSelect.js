@@ -11,6 +11,7 @@ import { useLanguagesQuery } from '../api/languages.api';
 const INPUT_MIN_LENGTH = 2;
 
 export default function LanguageSelect({
+  excludeDeprecated = false,
   preSelectedLanguages = [],
   placeholder,
   onChangeLanguages,
@@ -37,7 +38,10 @@ export default function LanguageSelect({
         return resolve([]);
       }
 
-      const res = matchSorter(data, inputValue, { keys: ['label'] });
+      const options = excludeDeprecated
+        ? data.filter(language => !language.deprecated)
+        : data;
+      const res = matchSorter(options, inputValue, { keys: ['label'] });
       resolve(res);
     });
 
@@ -82,6 +86,7 @@ export default function LanguageSelect({
 }
 
 LanguageSelect.propTypes = {
+  excludeDeprecated: PropTypes.bool,
   onChangeLanguages: PropTypes.func,
   placeholder: PropTypes.string,
   preSelectedLanguages: PropTypes.array,

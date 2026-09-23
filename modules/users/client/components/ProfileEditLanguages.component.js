@@ -32,6 +32,7 @@ export default function ProfileEditLanguages({
       <div className="col-sm-9 col-md-7 col-lg-6">
         <QueryClientProvider client={queryClient}>
           <LanguageSelect
+            excludeDeprecated
             onChangeLanguages={onChange}
             placeholder={t('Add languages you speak.')}
             aria-label={t('Add languages you speak.')}
