@@ -28,10 +28,16 @@ async function publicMember(request) {
 test('connection routes require sign-in and reject self-connections', async ({
   page,
 }) => {
-  await page.goto('/contact-add/665000000000000000000090');
-  await expect(page).toHaveURL(/\/signin$/);
-  await page.goto('/profile/samplemember/experiences/new');
-  await expect(page).toHaveURL(/\/signin$/);
+  for (const path of [
+    '/contact-add/665000000000000000000090',
+    '/profile/samplemember/experiences/new',
+  ]) {
+    await page.goto(path);
+    const url = new URL(page.url());
+    expect(url.pathname).toBe('/signin');
+    expect(url.searchParams.get('continue')).toBe('true');
+    expect(url.searchParams.get('returnTo')).toBe(path);
+  }
   const member = SEEDED_RELATIONSHIP_MEMBERS.alice;
   await signInViaApi(page, undefined, member);
   await page.goto(`/contact-add/${member.id}`);

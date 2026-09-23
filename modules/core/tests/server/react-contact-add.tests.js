@@ -16,7 +16,13 @@ describe('React contact creation route responses', function () {
       '/contact-add/665000000000000000000090',
       '/profile/sample-member/experiences/new',
     ]) {
-      await agent.get(path).expect(302).expect('Location', '/signin');
+      await agent
+        .get(path)
+        .expect(302)
+        .expect(
+          'Location',
+          `/signin?continue=true&returnTo=${encodeURIComponent(path)}`,
+        );
     }
   });
   it('renders the React root for the extracted pages', async () => {
