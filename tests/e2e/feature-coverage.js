@@ -1159,7 +1159,7 @@ const features = [
       'New push registrations are rejected.',
       'Historical push registrations can still be removed.',
     ],
-    relatedSpecs: ['member-notifications'],
+    relatedSpecs: [],
   },
   {
     id: 'profile.welcome-onboarding',

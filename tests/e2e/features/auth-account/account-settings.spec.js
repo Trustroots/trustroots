@@ -373,14 +373,16 @@ test.describe.serial('account settings feature coverage', () => {
     });
 
     await updateUserByUsername(user.username, {
-      pushRegistration: [
-        {
-          platform: 'web',
-          token,
-          created: new Date(),
-          deviceId: 'e2e-browser',
-        },
-      ],
+      $set: {
+        pushRegistration: [
+          {
+            platform: 'web',
+            token,
+            created: new Date(),
+            deviceId: 'e2e-browser',
+          },
+        ],
+      },
     });
 
     const remove = await page.request.delete(
