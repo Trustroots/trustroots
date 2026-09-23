@@ -1,8 +1,12 @@
 ## Extraction boundary
 
-This change standardises Node 24.21.0 and npm 11.19.0 while retaining the hybrid
-Angular/React frontend, Agenda 1.0.3, MongoDB driver 3.6.11 and MongoDB server 4.4.
-It is independent of #2769 and the mobile push cleanup.
+This change standardises on Node 24: development and test images use 24.21.0,
+while the Passenger production image supplies 24.18.0. Dependency installation
+uses npm 11.19.0. The production Dockerfile asserts the Node major version; it
+does not enforce patch parity with `.nvmrc`.
+
+The hybrid Angular/React frontend, Agenda 1.0.3, MongoDB driver 3.6.11 and MongoDB
+server 4.4 remain in place. This is independent of #2769 and the mobile push cleanup.
 
 ## Dependency compatibility
 
@@ -59,12 +63,21 @@ Also revisit eslint-webpack-plugin 2.7.0 when migrating to Webpack 5.
 
 ## Verification evidence
 
-At revision `2cbb5a9e7`, CI run 35780874096 passed development and production image
-builds, client and server suites with 100% coverage, and all 214 end-to-end tests.
-This does not verify actual Passenger application or production worker startup.
-The subsequent dependency refresh at `f8a252a4c` has passed both image builds,
-lint and the server check; client and browser checks were still running when
-documented.
+At revision `2a1721b1b`, [CI run 35843725451](https://github.com/Trustroots/trustroots/actions/runs/35843725451)
+passed both image builds, lint, 1,563 client tests and 1,721 server tests with
+100% coverage, and all 214 end-to-end tests (one passed on retry).
+
+The production startup check served `/api/languages` through Passenger and
+observed Agenda starting in the worker. It verified the executable of each
+actual process: Passenger application PID 82 and worker PID 1 both reported
+Node 24.18.0. This verifies startup, not every worker job or a worker supervisor.
+Subsequent revisions must retain green CI before merge.
+
+The production build loads sharp for circle-image generation. The startup
+check now also loads mmmagic as the `app` user and uses `detectFile` to identify
+an anonymous PNG fixture, without the upload fallback or a mocked binding.
+This closes the native file-detector check missing from the earlier run; its
+result is enforced by the production image CI job on subsequent revisions.
 
 Earlier macOS arm64 checks with Node 24.21.0 and npm 11.19.0 passed development
 and production frontend bundles, the service-worker bundle, lint and client

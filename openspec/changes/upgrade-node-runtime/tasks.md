@@ -9,13 +9,15 @@
 
 - [x] Verify development and production frontend and service-worker builds on Node 24.
 - [x] Build development and production images with strict npm installation.
-- [ ] Verify production Passenger application and worker startup.
+- [x] Verify production Passenger application and worker startup (CI at `2a1721b1b`).
+- [x] Add production-image native file detection to the startup check.
 - [ ] Verify native installation on macOS arm64.
 - [x] Run client coverage without reducing the baseline.
 - [x] Run server coverage without reducing the baseline.
 - [x] Run the existing browser suite.
 - [ ] Restore excluded worker tests and verify worker/Firebase compatibility.
-- [ ] Confirm full coverage and browser checks on the final revision.
+- [x] Confirm full coverage and browser checks at reviewed revision `2a1721b1b`.
+      Require passing checks again on subsequent revisions before merge.
 - [ ] Validate and archive the proposal and update living specifications.
 - [x] Open the independent runtime pull request with verification evidence.
 

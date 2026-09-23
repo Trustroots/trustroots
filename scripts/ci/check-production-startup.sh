@@ -82,4 +82,31 @@ for container in "$web" "$worker"; do
     }
   '
 done
-printf 'Passenger application and worker startup passed.\n'
+# Exercise the native upload detector in the running production image as app.
+# A successful install alone does not prove the binding or magic database loads.
+docker exec --user app "$web" node -e '
+  const assert = require("assert");
+  const fs = require("fs");
+  const os = require("os");
+  const path = require("path");
+  const mmmagic = require("mmmagic");
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "trustroots-magic-"));
+  const fixture = path.join(directory, "pixel.png");
+  try {
+    fs.writeFileSync(fixture, Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aB1sAAAAASUVORK5CYII=",
+      "base64",
+    ));
+    const magic = new mmmagic.Magic(mmmagic.MAGIC_MIME_TYPE);
+    magic.detectFile(fixture, (error, mimeType) => {
+      fs.rmSync(directory, {recursive: true, force: true});
+      assert.ifError(error);
+      assert.strictEqual(mimeType, "image/png");
+      console.log("Production mmmagic file detection passed.");
+    });
+  } catch (error) {
+    fs.rmSync(directory, {recursive: true, force: true});
+    throw error;
+  }
+'
+printf 'Passenger application, worker startup and native file detection passed.\n'
