@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
+
 import { listMemberships } from '@/modules/tribes/client/api/tribes.api';
 
 export default function SearchMyCirclesToggle({ selectedTribeIds, onChange }) {
