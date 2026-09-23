@@ -206,7 +206,7 @@ The system SHALL render `/contact-add/:userId` through the existing React applic
 #### Scenario: Member follows a profile link
 
 - **WHEN** the member cancels or follows an onward profile link
-- **THEN** the existing Angular-owned profile workflow loads its application root
+- **THEN** the existing React-owned profile workflow loads
 
 ### Requirement: React experience writing
 

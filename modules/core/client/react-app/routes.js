@@ -12,6 +12,7 @@ import CirclesRoute from '@/modules/tribes/client/components/CirclesRoute';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import Welcome from '@/modules/users/client/components/Welcome.component';
 import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import { signout } from './shell-helpers';
 
 import {
@@ -78,6 +79,10 @@ function renderExperienceCreate({ user }) {
   return React.createElement(ExperienceCreatePage, { user, username });
 }
 
+function renderProfile({ user, params }) {
+  return React.createElement(ProfilePage, { user, username: params.username });
+}
+
 const renderByPath = {
   '/password/forgot': () => (
     <ForgotPasswordPage
@@ -97,6 +102,13 @@ const renderByPath = {
   '/welcome': () => <Welcome />,
   '/navigation': renderNavigation,
   '/search/members': () => <SearchUsers />,
+  '/profile/:username': renderProfile,
+  '/profile/:username/about': renderProfile,
+  '/profile/:username/overview': renderProfile,
+  '/profile/:username/accommodation': renderProfile,
+  '/profile/:username/contacts': renderProfile,
+  '/profile/:username/tribes': renderProfile,
+  '/profile/:username/experiences': renderProfile,
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
   '/admin/acquisition-stories/analysis': () => (

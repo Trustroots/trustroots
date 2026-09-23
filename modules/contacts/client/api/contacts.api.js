@@ -17,6 +17,11 @@ export async function getByContactId(contactId) {
   return data;
 }
 
+export async function list(listUserId) {
+  const { data } = await axios.get(`/api/contacts/${listUserId}`);
+  return data;
+}
+
 export async function confirm(contactId) {
   const { data } = await axios.put(`/api/contact/${contactId}`, {
     confirm: true,

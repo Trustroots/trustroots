@@ -73,7 +73,41 @@ describe('React route ownership', function () {
   });
 
   it('does not claim Angular-owned routes', function () {
-    isReactOwnedPath('/profile/alice').should.be.false();
+    isReactOwnedPath('/profile/edit').should.be.false();
+  });
+});
+
+describe('Profile route ownership', () => {
+  it('selects profile viewing tabs and requires sign-in', () => {
+    for (const path of [
+      '/profile/alice',
+      '/profile/alice/about',
+      '/profile/alice/overview',
+      '/profile/alice/accommodation',
+      '/profile/alice/contacts',
+      '/profile/alice/tribes',
+      '/profile/alice/experiences',
+    ]) {
+      const route = getReactRoutePolicy(path);
+      route.requiresAuth.should.be.true();
+      getReactRouteAccessRedirect(route, null).should.equal('/signin');
+      should(getReactRouteAccessRedirect(route, { username: 'bob' })).be.null();
+      route.params.username.should.equal('alice');
+    }
+    getReactRoutePolicy('/profile/%61lice').params.username.should.equal(
+      'alice',
+    );
+  });
+
+  it('does not select profile editors', () => {
+    should(getReactRoutePolicy('/profile/edit')).be.undefined();
+    should(getReactRoutePolicy('/profile/edit/photo')).be.undefined();
+    getReactRoutePolicy('/profile/alice/experiences/new').path.should.equal(
+      '/profile/:username/experiences/new',
+    );
+    for (const path of ['/profile/%ZZ', '/profile/%2F', '/profile/:username']) {
+      getReactRoutePolicy(path).path.should.equal('/not-found');
+    }
   });
 });
 

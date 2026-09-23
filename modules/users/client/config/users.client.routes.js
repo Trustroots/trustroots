@@ -19,6 +19,12 @@ import profileReferencesTemplateUrl from '@/modules/users/client/views/profile/p
 
 angular.module('users').config(UsersRoutes);
 
+function openReactProfileView($window, $stateParams, suffix = '') {
+  $window.location.assign(
+    `/profile/${encodeURIComponent($stateParams.username)}${suffix}`,
+  );
+}
+
 /* @ngInject */
 function UsersRoutes($stateProvider) {
   $stateProvider
@@ -186,6 +192,10 @@ function UsersRoutes($stateProvider) {
     .state('profile.about', {
       url: '',
       templateUrl: profileViewAboutTemplateUrl,
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        openReactProfileView($window, $stateParams);
+      },
       requiresAuth: true,
       noScrollingTop: true,
       data: {
@@ -195,6 +205,10 @@ function UsersRoutes($stateProvider) {
     .state('profile.accommodation', {
       url: '/accommodation',
       templateUrl: profileviewAccommodationTemplateUrl,
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        openReactProfileView($window, $stateParams, '/accommodation');
+      },
       requiresAuth: true,
       noScrollingTop: true,
       data: {
@@ -204,6 +218,10 @@ function UsersRoutes($stateProvider) {
     .state('profile.overview', {
       url: '/overview',
       templateUrl: profileViewBasicsTemplateUrl,
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        openReactProfileView($window, $stateParams, '/overview');
+      },
       requiresAuth: true,
       noScrollingTop: true,
       data: {
@@ -214,6 +232,10 @@ function UsersRoutes($stateProvider) {
       url: '/contacts',
       template:
         '<contact-list onContactRemoved="profileCtrl.removeContact" appUser="app.user" contacts="profileCtrl.contacts"></contact-list>',
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        openReactProfileView($window, $stateParams, '/contacts');
+      },
       requiresAuth: true,
       noScrollingTop: true,
       data: {
@@ -223,6 +245,10 @@ function UsersRoutes($stateProvider) {
     .state('profile.tribes', {
       url: '/tribes',
       templateUrl: profileViewTribesTemplateUrl,
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        openReactProfileView($window, $stateParams, '/tribes');
+      },
       requiresAuth: true,
       noScrollingTop: true,
       data: {
@@ -374,6 +400,10 @@ function UsersRoutes($stateProvider) {
       url: '',
       template:
         '<list-experiences ng-if="app.appSettings.referencesEnabled" profile="profileCtrl.profile" authenticatedUser="app.user"></list-experiences>',
+      /* @ngInject */
+      onEnter($window, $stateParams) {
+        openReactProfileView($window, $stateParams, '/experiences');
+      },
       requiresAuth: true,
       noScrollingTop: true,
       data: {

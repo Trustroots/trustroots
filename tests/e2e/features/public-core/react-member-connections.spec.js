@@ -79,7 +79,7 @@ test('member edits and submits a contact request and sees its pending state', as
   );
 });
 
-test('member shares an experience through React and returns to Angular history', async ({
+test('member shares an experience through React and returns to their profile history', async ({
   page,
   request,
 }) => {
@@ -119,8 +119,7 @@ test('member shares an experience through React and returns to Angular history',
     await expect(page).toHaveURL(
       new RegExp(`/profile/${recipient.username}/experiences$`),
     );
-    await expect(page.locator('#tr-react-root')).toHaveCount(0);
-    await expect(page.locator('[data-ui-view]')).toBeVisible();
+    await expect(page.locator('#tr-react-root')).toBeVisible();
     expect(errors).toEqual([]);
   } finally {
     // Keep the shared public-project database seed counts stable for

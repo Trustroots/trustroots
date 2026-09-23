@@ -12,6 +12,7 @@ const AREA_BY_SPEC = {
   'account-email-tokens.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
+  'profile-react.spec.js': 'Member flows',
   'member.spec.js': 'Member flows',
   'contacts-and-blocks.spec.js': 'Member flows',
   'offers-and-circles.spec.js': 'Member flows',
