@@ -54,6 +54,11 @@ jobs:
           context: .
           file: production.Dockerfile
           push: false
+          load: true
+          tags: trustroots-production:ci
+      - name: Verify Passenger and worker startup
+        timeout-minutes: 5
+        run: bash scripts/ci/check-production-startup.sh trustroots-production:ci
 
   build-dev-image:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -120,6 +125,8 @@ jobs:
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
+          # Keep the directory writable by the runner after Docker generates reports.
+          mkdir -p ../../coverage/client
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
@@ -220,6 +227,8 @@ jobs:
       - name: Test server with coverage
         working-directory: deploy/docker
         run: |
+          # Keep the directory writable by the runner after Docker generates reports.
+          mkdir -p ../../coverage/server
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
@@ -327,9 +336,14 @@ jobs:
       - name: Test end-to-end smoke suite
         working-directory: deploy/docker
         run: |
+          # Read metadata on the runner: container Git can reject the mounted
+          # checkout ownership, leaving the footer without its commit link.
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
+            -e TRUSTROOTS_BUILD_COMMIT="$(git rev-parse HEAD)" \
+            -e TRUSTROOTS_BUILD_COMMITTED_AT="$(git show -s --format=%cI HEAD)" \
+            -e TRUSTROOTS_BUILD_BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}" \
             -e DB_1_PORT_27017_TCP_ADDR=mongodb \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             -e TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \

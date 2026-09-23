@@ -1,9 +1,9 @@
 # Development image for local `docker compose up` and devcontainer.
 #
-# Node 16, native build deps, npm ci to seed the `node_modules` named volume.
+# Node 24, native build deps, npm ci to seed the `node_modules` named volume.
 # App code is bind-mounted at runtime. Playwright Chromium is baked for E2E.
 
-FROM node:16-bullseye-slim
+FROM node:24.21.0-bookworm-slim
 
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
@@ -37,8 +37,8 @@ RUN apt-get -qq update && apt-get -q install -y \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Pin npm to v7 to satisfy `engines` in package.json (`npm >=6 <8`).
-RUN npm -g i npm@latest-7
+# Keep the package manager consistent across runtime images.
+RUN npm -g i npm@11.19.0
 
 WORKDIR /home/app/trustroots
 
