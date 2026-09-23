@@ -89,32 +89,6 @@ test.describe('public core manifest gap coverage', () => {
     ).toBeVisible();
   });
 
-  test('service worker config renders JavaScript for visitors', async ({
-    request,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'public.service-worker-config', [
-      'Endpoint returns JavaScript config without requiring authentication.',
-    ]);
-
-    const response = await request.get('/config/sw.js');
-    expect(response.ok()).toBeTruthy();
-    expect(response.headers()['content-type']).toContain('text/javascript');
-    expect(await response.text()).toMatch(/var FCM_SENDER_ID = .*;\n/);
-  });
-
-  test('push messaging service worker is served from its registered URL', async ({
-    request,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'public.service-worker-config', [
-      'The generated push messaging service worker is available at the URL registered by the browser.',
-    ]);
-
-    const response = await request.get('/push-messaging-sw.js');
-    expect(response.ok()).toBeTruthy();
-    expect(response.headers()['content-type']).toContain('javascript');
-    expect(await response.text()).toContain("importScripts('/config/sw.js')");
-  });
-
   test('internal links preserve the React single-page shell and browser history', async ({
     page,
   }, testInfo) => {

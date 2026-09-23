@@ -47,7 +47,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
   app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
-  app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.appSettings.limits = {
     maxOfferValidFromNow: config.limits.maxOfferValidFromNow,
   };
@@ -314,7 +313,6 @@ module.exports.initHelmetHeaders = function (app) {
           'https://www.google-analytics.com',
           'https://stats.g.doubleclick.net',
           'https://1p.trustroots.org', // Umami analytics
-          'fcm.googleapis.com',
         ],
 
         // Allows control over Flash and other plugins.

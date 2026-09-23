@@ -635,22 +635,6 @@ const features = [
     ],
   },
   {
-    id: 'public.service-worker-config',
-    area: AREA.publicCore,
-    status: STATUS.active,
-    description:
-      'Service worker config endpoint renders app config for push UX.',
-    roles: ['visitor', 'member'],
-    references: {
-      clientRoutes: [],
-      apiRoutes: [apiRoute('GET', '/config/sw.js', source.coreServer)],
-    },
-    requiredScenarios: [
-      'Endpoint returns JavaScript config without requiring authentication.',
-    ],
-    relatedSpecs: [],
-  },
-  {
     id: 'public.legacy-invite-redirect',
     area: AREA.publicCore,
     status: STATUS.active,
@@ -1157,7 +1141,8 @@ const features = [
     id: 'account.push-registrations',
     area: AREA.authAccount,
     status: STATUS.active,
-    description: 'Members can register and remove web push tokens.',
+    description:
+      'Push registration is retired; historical tokens can still be removed.',
     roles: ['member'],
     references: {
       clientRoutes: [],
@@ -1171,8 +1156,8 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Push registration can be added with deterministic local permissions.',
-      'Push registration can be removed.',
+      'New push registrations are rejected.',
+      'Historical push registrations can still be removed.',
     ],
     relatedSpecs: [],
   },

@@ -29,10 +29,10 @@
 
 ## 4. Stage 4 — Push cleanup
 
-- [ ] 4.1 Remove Expo push (`expo-server-sdk`, exponent notifications, `expo`
-      platform).
-- [ ] 4.2 Upgrade or trim the Firebase client messaging path; clear obsolete
-      transitive JWT/joi packages where applicable.
+- [x] 4.1 Remove Expo push (`expo-server-sdk`, exponent notifications, `expo`
+      platform). Handled in `retire-push-notifications`.
+- [x] 4.2 Retire browser Firebase messaging and related registration/delivery
+      paths. Handled in `retire-push-notifications`.
 
 ## 5. Stage 5 — Verification
 

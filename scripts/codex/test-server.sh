@@ -179,7 +179,6 @@ else
 
   find modules -path '*/tests/server/*.js' \
     ! -path 'modules/core/tests/server/worker.tests.js' \
-    ! -path 'modules/core/tests/server/jobs/send-push-message.server.job.tests.js' \
     -print | sort >"$TEST_FILE_LIST"
 
   TEST_COUNT="$(wc -l <"$TEST_FILE_LIST" | tr -d ' ')"

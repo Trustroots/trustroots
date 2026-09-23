@@ -11,7 +11,6 @@ const contactHandler = require('../../../contacts/server/controllers/contacts.se
 const messageHandler = require('../../../messages/server/controllers/messages.server.controller');
 const offerHandler = require('../../../offers/server/controllers/offers.server.controller');
 const emailService = require('../../../core/server/services/email.server.service');
-const pushService = require('../../../core/server/services/push.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');
 const log = require('../../../../config/lib/logger');
 const del = require('del');
@@ -1310,6 +1309,10 @@ exports.removePushRegistration = function (req, res) {
 
 /**
  * Add push registration
+ *
+ * Push delivery is retired. Keep this endpoint as a deliberate rejection so
+ * older clients fail clearly. Reintroduce registration here if push returns.
+ * Historical tokens remain removable via `removePushRegistration`.
  */
 exports.addPushRegistration = function (req, res) {
   if (!req.user) {
@@ -1318,124 +1321,9 @@ exports.addPushRegistration = function (req, res) {
     });
   }
 
-  let user = req.user;
-  const token = String(_.get(req, 'body.token', ''));
-  const platform = String(_.get(req, 'body.platform', ''));
-  const deviceId = String(_.get(req, 'body.deviceId', ''));
-  const doNotNotify = Boolean(_.get(req, 'body.doNotNotify', false));
-
-  if (!token) {
-    return res.status(400).send({
-      message: 'Token is invalid or missing.',
-    });
-  }
-
-  // PushRegistration is a sub-schema at User schema, thus we need to dig deeper in to get `enumValues`
-  // Will contain array of string values, e.g. `['android', 'ios', 'web']`
-  const validPlatforms =
-    User.schema.path('pushRegistration').schema.path('platform').enumValues ||
-    [];
-
-  if (!platform || validPlatforms.indexOf(platform) === -1) {
-    return res.status(400).send({
-      message: 'Platform is invalid or missing.',
-    });
-  }
-
-  async.waterfall(
-    [
-      // Remove any existing registrations for this token
-
-      function (done) {
-        User.findByIdAndUpdate(user._id, {
-          $pull: {
-            pushRegistration: {
-              token,
-            },
-          },
-        }).exec(function (err) {
-          done(err);
-        });
-      },
-
-      // Add new registration
-
-      function (done) {
-        const registration = {
-          platform,
-          token,
-          created: Date.now(),
-        };
-
-        if (deviceId) {
-          registration.deviceId = deviceId;
-        }
-
-        User.findByIdAndUpdate(
-          user._id,
-          {
-            $push: {
-              pushRegistration: registration,
-            },
-          },
-          {
-            new: true,
-          },
-        ).exec(function (err, updatedUser) {
-          if (err) {
-            return done(err);
-          }
-          user = updatedUser;
-          done();
-        });
-      },
-
-      // Notify the user we just added a device
-
-      function (done) {
-        // Don't notify if in request we asked to be silent
-        if (doNotNotify) {
-          return done();
-        }
-
-        pushService.notifyPushDeviceAdded(user, platform, function (err) {
-          if (err) {
-            // don't stop on error, but log it
-            log(
-              'error',
-              'Error when sending push notification about added device. #9hsdff',
-              {
-                error: err,
-              },
-            );
-          }
-          done();
-        });
-      },
-    ],
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message:
-            errorService.getErrorMessage(err) || 'Failed, please try again.',
-        });
-      } else {
-        User.findById(user._id).exec(function (err, user) {
-          if (err) {
-            return res.status(400).send({
-              message:
-                errorService.getErrorMessage(err) ||
-                'Failed to fetch user, please try again.',
-            });
-          }
-          return res.send({
-            message: 'Saved registration.',
-            user: exports.sanitizeOwnProfile(user),
-          });
-        });
-      }
-    },
-  );
+  return res.status(400).send({
+    message: 'Push notifications are no longer available.',
+  });
 };
 
 /**

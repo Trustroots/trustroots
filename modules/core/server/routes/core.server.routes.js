@@ -28,8 +28,8 @@ module.exports = function (app) {
     res.redirect(301, route);
   });
 
-  // Gives the service worker access to any config it needs
-  app.route('/config/sw.js').get(core.renderServiceWorkerConfig);
+  // Future push: expose service-worker config here if browser push returns
+  // (previously GET /config/sw.js → core.renderServiceWorkerConfig).
 
   // CSP Violations
   // Note: If you’re using a CSRF module like csurf, you might have problems
