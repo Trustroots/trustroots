@@ -13,8 +13,10 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 
 const queryClient = new QueryClient();
 
-export default function ProfileOverview({ profile }) {
+export default function ProfileOverview({ profile, isSelf }) {
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const showPhotoEditLink =
+    isSelf && (!profile.avatarUploaded || profile.avatarSource === 'none');
 
   const handleClose = () => setIsAvatarModalOpen(false);
 
@@ -24,9 +26,15 @@ export default function ProfileOverview({ profile }) {
       <div className="panel panel-default profile-overview">
         {/* avatar */}
         <a
-          className="hidden-xs"
-          aria-hidden={true}
-          onClick={() => setIsAvatarModalOpen(true)}
+          className={`hidden-xs${
+            showPhotoEditLink ? ' profile-photo-edit-link' : ''
+          }`}
+          href={showPhotoEditLink ? '/profile/edit/photo' : undefined}
+          aria-label={showPhotoEditLink ? 'Edit profile photo' : undefined}
+          aria-hidden={showPhotoEditLink ? undefined : true}
+          onClick={
+            showPhotoEditLink ? undefined : () => setIsAvatarModalOpen(true)
+          }
         >
           <Avatar user={profile} size={256} link={false} />
         </a>
@@ -53,4 +61,5 @@ export default function ProfileOverview({ profile }) {
 
 ProfileOverview.propTypes = {
   profile: PropTypes.object.isRequired,
+  isSelf: PropTypes.bool,
 };

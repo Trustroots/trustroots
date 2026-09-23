@@ -1,7 +1,10 @@
 <!-- Avatar+Name for mobile screens -->
 <avatar-name-mobile profile="profileCtrl.profile"></avatar-name-mobile>
 
-<profile-overview profile="profileCtrl.profile"></profile-overview>
+<profile-overview
+  profile="profileCtrl.profile"
+  is-self="profileCtrl.profile._id === app.user._id"
+></profile-overview>
 
 <div class="profile-flags" ng-if="::app.user._id !== profileCtrl.profile._id">
   <report-member
