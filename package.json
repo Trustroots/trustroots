@@ -297,6 +297,13 @@
     },
     "sockjs": {
       "uuid": "11.1.1"
+    },
+    "acl": {
+      "mongodb": "$mongodb",
+      "redis": "3.1.1"
+    },
+    "mongodb-core": {
+      "bson": "1.1.6"
     }
   },
   "optionalDependencies": {
