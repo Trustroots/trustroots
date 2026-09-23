@@ -20,13 +20,7 @@ export default function ProfileTabs({
   const { t } = useTranslation('users');
   const [experiencesCount, setExperiencesCount] = useState(0);
   const [hasPendingExperiences, setHasPendingExperiences] = useState(false);
-  const [pathName, setPathName] = useState(initialPathName);
-
-  useEffect(() => {
-    if (activePathName) {
-      setPathName(activePathName);
-    }
-  }, [activePathName]);
+  const pathName = activePathName || initialPathName;
 
   useEffect(() => {
     const loadExperienceCount = async () => {

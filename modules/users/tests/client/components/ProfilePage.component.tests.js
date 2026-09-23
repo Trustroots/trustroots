@@ -172,6 +172,7 @@ function renderPage(
   user = authUser,
   path = '/profile/bob',
   settings = { profileMinimumLength: 140, referencesEnabled: false },
+  routedPath,
 ) {
   window.history.pushState({}, '', path);
 
@@ -185,7 +186,7 @@ function renderPage(
         user,
       }}
     >
-      <ProfilePage user={user} />
+      <ProfilePage currentPath={routedPath} user={user} />
     </AppProviders>,
   );
 }
@@ -209,6 +210,34 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Offers panel')).toBeVisible();
     expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
+  });
+
+  it('changes tabs without reloading the profile', async () => {
+    const { rerender } = renderPage(
+      authUser,
+      '/profile/bob',
+      { profileMinimumLength: 140, referencesEnabled: false },
+      '/profile/bob',
+    );
+    expect(await screen.findByText('About Bob Example')).toBeVisible();
+
+    rerender(
+      <AppProviders
+        bootstrapData={{
+          env: 'test',
+          isNativeMobileApp: false,
+          settings: { profileMinimumLength: 140, referencesEnabled: false },
+          title: 'Trustroots',
+          user: authUser,
+        }}
+      >
+        <ProfilePage currentPath="/profile/bob/contacts" user={authUser} />
+      </AppProviders>,
+    );
+
+    expect(screen.getByText('Contact list')).toBeVisible();
+    expect(screen.queryByText('Wait a moment…')).not.toBeInTheDocument();
+    expect(usersApi.fetch).toHaveBeenCalledTimes(1);
   });
 
   it('handles viewers without a blocked-member list', async () => {
@@ -238,6 +267,10 @@ describe('ProfilePage', () => {
 
     expect(
       await screen.findByRole('button', { name: 'Remove contact' }),
+    ).toBeVisible();
+    fireEvent.mouseOver(screen.getByRole('button', { name: 'Remove contact' }));
+    expect(
+      await screen.findByText('Contacts since January 1, 2024'),
     ).toBeVisible();
   });
 
@@ -389,6 +422,12 @@ describe('ProfilePage', () => {
 
     expect(
       await screen.findByRole('button', { name: 'Delete contact request' }),
+    ).toBeVisible();
+    fireEvent.mouseOver(
+      screen.getByRole('button', { name: 'Delete contact request' }),
+    );
+    expect(
+      await screen.findByText('Request sent January 1, 2024'),
     ).toBeVisible();
   });
 

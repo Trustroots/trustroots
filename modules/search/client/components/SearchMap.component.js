@@ -172,6 +172,9 @@ export default function SearchMap({
   );
 
   const [viewport, setViewport] = useState(persistentMapLocation);
+  const viewportRef = useRef(persistentMapLocation);
+  const gestureSurfaceRef = useRef(null);
+  const viewportChangeRef = useRef(null);
   const [webGLSupported] = useState(isWebGLSupported);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
@@ -288,11 +291,47 @@ export default function SearchMap({
    * Refresh persistent map state when viewport changes
    */
   const onViewPortChange = viewport => {
+    viewportRef.current = viewport;
     setViewport(viewport);
 
     const { latitude, longitude, zoom } = viewport;
     debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
   };
+  viewportChangeRef.current = onViewPortChange;
+
+  useEffect(() => {
+    const surface = gestureSurfaceRef.current;
+
+    if (!webGLSupported || !surface) {
+      return undefined;
+    }
+
+    const handlePinchWheel = event => {
+      if (!event.ctrlKey) {
+        return;
+      }
+
+      // Firefox sends desktop trackpad pinches as Ctrl+wheel. Capture them
+      // before the map's wheel handler and the browser's page zoom handler.
+      event.preventDefault();
+      event.stopPropagation();
+
+      const current = viewportRef.current;
+      const deltaY = event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY;
+      const zoom = Math.max(0, Math.min(20, current.zoom - deltaY * 0.01));
+
+      if (zoom !== current.zoom) {
+        viewportChangeRef.current({ ...current, zoom });
+      }
+    };
+
+    surface.addEventListener('wheel', handlePinchWheel, {
+      capture: true,
+      passive: false,
+    });
+
+    return () => surface.removeEventListener('wheel', handlePinchWheel, true);
+  }, [webGLSupported]);
 
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
@@ -739,7 +778,7 @@ export default function SearchMap({
   }
 
   return (
-    <>
+    <div ref={gestureSurfaceRef}>
       <ReactMapGL
         reuseMaps
         className="search-map"
@@ -828,7 +867,7 @@ export default function SearchMap({
           </Source>
         )}
       </ReactMapGL>
-    </>
+    </div>
   );
 }
 
