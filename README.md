@@ -40,7 +40,8 @@ We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-an
 - `nvm use`
 - `npm -g i npm@11.19.0`
 
-Use Node.js 24 and npm 11. Install dependencies with `npm ci`.
+Use Node.js 24 (the exact version is in `.nvmrc`) and npm 11. Install dependencies
+with `npm ci`.
 
 To be able to install dependencies on macOS / apple silicon, the following dependencies are required:
 

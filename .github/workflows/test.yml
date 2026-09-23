@@ -54,6 +54,11 @@ jobs:
           context: .
           file: production.Dockerfile
           push: false
+          load: true
+          tags: trustroots-production:ci
+      - name: Verify Passenger and worker startup
+        timeout-minutes: 5
+        run: bash scripts/ci/check-production-startup.sh trustroots-production:ci
 
   build-dev-image:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository

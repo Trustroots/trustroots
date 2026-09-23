@@ -38,6 +38,25 @@ A format 3 migration is deferred as a separate maintenance task. Disabling
 scripts for local lockfile generation does not establish native compatibility;
 Linux image builds and suites provide that evidence.
 
+## Override maintenance
+
+Keep overrides scoped to their parent where possible. Remove each after an
+upstream update resolves the requirement and installation/CI pass without it.
+
+| Override                         | Reason                                                                                                 | Revisit when                                   |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| node-forge 1.4.0                 | Retain the existing dependency maintenance pin                                                         | Parent dependencies resolve a suitable release |
+| websocket-driver 0.7.5           | Retain the existing dependency maintenance pin                                                         | Parent dependencies resolve a suitable release |
+| nan 2.28.0                       | Native compilation on Node 24                                                                          | Native parents adopt a compatible version      |
+| connect-mongo.mongodb            | Preserve the production driver-3 client with connect-mongo 4.6.0 despite its driver-4 peer declaration | Database/Agenda upgrade (#2800)                |
+| gulp-fontello.adm-zip 0.6.1      | Dependency maintenance update                                                                          | Fontello tooling updates its dependency        |
+| socks.ip-address 10.3.1          | Dependency maintenance update                                                                          | socks resolves a suitable release              |
+| mocha.js-yaml, nanoid, minimatch | Refresh pinned transitive dependencies                                                                 | Mocha is upgraded                              |
+| express.qs                       | Use the maintained direct qs version throughout Express                                                | Express updates its dependency                 |
+| mongoose-url-slugs.extend 3.0.2  | Refresh the pinned transitive dependency                                                               | Slug library updates its dependency            |
+
+Also revisit eslint-webpack-plugin 2.7.0 when migrating to Webpack 5.
+
 ## Verification evidence
 
 At revision `2cbb5a9e7`, CI run 35780874096 passed development and production image
@@ -65,8 +84,10 @@ container's Git fallback to populate the footer.
   gulpfile.js; restore and verify them after resolving this boundary.
 - Remove legacy OpenSSL workarounds from end-to-end scripts only after verifying
   those scripts without them.
-- Verify actual Passenger application and production worker startup, including
-  the Node version used by both processes.
+- Merge requires a passing production startup check: Passenger must serve an
+  application route and the worker must start Agenda, both using Node 24. The
+  production image CI job runs this check with a disposable database on an
+  isolated Docker network.
 - Require full coverage and browser checks on the final revision before readiness.
 - Consider lockfile format 3 in a separate maintenance change.
 - Complete deployment verification, then archive this proposal and update the
