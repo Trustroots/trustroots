@@ -260,7 +260,7 @@ export default function OfferMeetEditPage() {
           </Tab>
         </Tabs>
 
-        <div className="text-center">
+        <div className="offer-meet-actions text-center">
           <br />
           {activeTab > 0 && (
             <button

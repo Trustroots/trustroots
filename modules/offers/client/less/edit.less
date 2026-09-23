@@ -97,6 +97,15 @@
         ~'100% - ' (@navbar-height + @navbar-height + @navbar-height)
       );
     }
+    .offer-meet-actions {
+      position: fixed;
+      z-index: @zindex-navbar-fixed + 1;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      min-height: @navbar-height;
+      background: #fff;
+    }
     .offer-map-location-search {
       position: fixed;
       top: (@navbar-height + @navbar-height + 4px);
