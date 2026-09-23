@@ -155,6 +155,34 @@ describe('ContactAddPage', () => {
     expect(await screen.findByText('User does not exist.')).toBeVisible();
   });
 
+  it('keeps the form available when the existing-contact lookup fails', async () => {
+    contactsApi.getByUserId.mockRejectedValue(new Error('lookup failed'));
+    contactsApi.create.mockResolvedValue({});
+    renderContactAddPage();
+
+    expect(
+      await screen.findByText('Something went wrong. Try again.'),
+    ).toBeVisible();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Edit message for Bob Example:',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('User does not exist.')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add contact' }));
+
+    await waitFor(() => {
+      expect(contactsApi.create).toHaveBeenCalledWith({
+        friendUserId: 'friend-1',
+        message: expect.stringContaining('Ada Example'),
+      });
+    });
+    expect(
+      await screen.findByText(/Done! We sent an email to your contact/),
+    ).toBeVisible();
+  });
+
   it('handles duplicate contact responses from the API', async () => {
     contactsApi.create.mockRejectedValue({
       response: {

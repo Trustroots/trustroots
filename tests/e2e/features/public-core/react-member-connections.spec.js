@@ -6,7 +6,10 @@ const {
   fetchUserIdByUsername,
   SEEDED_RELATIONSHIP_MEMBERS,
 } = require('../../support/helpers');
-const { updateUserByUsername } = require('../../support/db');
+const {
+  removeExperiencesBetweenUsernames,
+  updateUserByUsername,
+} = require('../../support/db');
 
 async function publicMember(request) {
   const user = createUser();
@@ -82,36 +85,49 @@ test('member shares an experience through React and returns to Angular history',
 }) => {
   const sender = await publicMember(request);
   const recipient = await publicMember(request);
-  await signInViaApi(page, request, sender);
-  const errors = [];
-  page.on('pageerror', error => errors.push(error.message));
-  await page.goto(`/profile/${recipient.username}/experiences/new`);
-  await expect(page.locator('#tr-react-root')).toBeVisible();
-  await expect(
-    page.getByRole('button', { name: 'Next section', exact: true }),
-  ).toBeDisabled();
-  await page.getByLabel('Met in person', { exact: true }).check();
-  await page.getByRole('button', { name: 'Next section', exact: true }).click();
-  await page.locator('label').filter({ hasText: /^Yes$/ }).click();
-  await page.getByRole('button', { name: 'Next section', exact: true }).click();
-  await page
-    .locator('#feedback-message')
-    .fill('We enjoyed a friendly conversation.');
-  await page
-    .getByRole('button', { name: 'Finish editing and save', exact: true })
-    .click();
-  await expect(
-    page.getByText('Thank you for sharing your experience!'),
-  ).toBeVisible();
-  await page.reload();
-  await expect(
-    page.getByText('You already shared your experience with them'),
-  ).toBeVisible();
-  await page.getByRole('link', { name: 'See their experiences' }).click();
-  await expect(page).toHaveURL(
-    new RegExp(`/profile/${recipient.username}/experiences$`),
-  );
-  await expect(page.locator('#tr-react-root')).toHaveCount(0);
-  await expect(page.locator('[data-ui-view]')).toBeVisible();
-  expect(errors).toEqual([]);
+  try {
+    await signInViaApi(page, request, sender);
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    await page.goto(`/profile/${recipient.username}/experiences/new`);
+    await expect(page.locator('#tr-react-root')).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Next section', exact: true }),
+    ).toBeDisabled();
+    await page.getByLabel('Met in person', { exact: true }).check();
+    await page
+      .getByRole('button', { name: 'Next section', exact: true })
+      .click();
+    await page.locator('label').filter({ hasText: /^Yes$/ }).click();
+    await page
+      .getByRole('button', { name: 'Next section', exact: true })
+      .click();
+    await page
+      .locator('#feedback-message')
+      .fill('We enjoyed a friendly conversation.');
+    await page
+      .getByRole('button', { name: 'Finish editing and save', exact: true })
+      .click();
+    await expect(
+      page.getByText('Thank you for sharing your experience!'),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByText('You already shared your experience with them'),
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'See their experiences' }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${recipient.username}/experiences$`),
+    );
+    await expect(page.locator('#tr-react-root')).toHaveCount(0);
+    await expect(page.locator('[data-ui-view]')).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    // Keep the shared public-project database seed counts stable for
+    // seeded-content.spec.js statistics assertions that run later.
+    await removeExperiencesBetweenUsernames(
+      sender.username,
+      recipient.username,
+    );
+  }
 });

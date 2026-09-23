@@ -31,10 +31,9 @@ test.describe('public footer', () => {
       ['Privacy', '/privacy'],
       ['Contact', '/contact'],
     ]) {
-      await expect(footer.getByRole('link', { name })).toHaveAttribute(
-        'href',
-        href,
-      );
+      await expect(
+        footer.getByRole('link', { name, exact: true }),
+      ).toHaveAttribute('href', href);
     }
 
     await expect(footer.getByRole('link', { name: 'Contribute' })).toHaveCount(

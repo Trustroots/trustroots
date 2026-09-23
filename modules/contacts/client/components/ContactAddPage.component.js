@@ -60,20 +60,20 @@ export default function ContactAddPage({ user, userId }) {
       ? t('You two are already connected. Great!')
       : t('Connection already initiated; now it has to be confirmed.')
     : '';
+  const friendMissing = friendQuery.isError;
+  const contactLookupFailed = contactQuery.isError;
   const displayedError =
     error ||
     (isSelf
       ? t('You cannot connect with yourself. That is just silly!')
-      : friendQuery.isError || contactQuery.isError
+      : friendMissing
       ? t('User does not exist.')
+      : contactLookupFailed
+      ? t('Something went wrong. Try again.')
       : '');
   const displayedSuccess = success || existingContactMessage;
   const isConnected =
-    wasConnected ||
-    isSelf ||
-    friendQuery.isError ||
-    contactQuery.isError ||
-    Boolean(existingContact);
+    wasConnected || isSelf || friendMissing || Boolean(existingContact);
   const isFetching = friendQuery.isLoading || contactQuery.isLoading;
 
   async function handleSubmit(event) {
