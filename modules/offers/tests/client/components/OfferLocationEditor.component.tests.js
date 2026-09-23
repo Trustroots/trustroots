@@ -58,9 +58,24 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
   const React = require('react');
   const PropTypes = require('prop-types');
 
-  function MockMap({ children, fallbackMarker, onClick }) {
+  function MockMap({ children, fallbackMarker, onClick, onLocationChange }) {
     return (
       <div data-testid="offer-map">
+        <button
+          type="button"
+          onClick={() => onLocationChange([48.6908333333, 9.14055555556])}
+        >
+          Report initial centre
+        </button>
+        <button type="button" onClick={() => onLocationChange([50, 10])}>
+          Drag map
+        </button>
+        <button
+          type="button"
+          onClick={() => onLocationChange([48.6908333333, 10])}
+        >
+          Drag map east
+        </button>
         <button
           type="button"
           onClick={() => onClick({ lngLat: [2.35, 48.85] })}
@@ -82,6 +97,7 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
     children: PropTypes.node,
     fallbackMarker: PropTypes.object,
     onClick: PropTypes.func,
+    onLocationChange: PropTypes.func,
   };
 
   return MockMap;
@@ -100,6 +116,27 @@ describe('OfferLocationEditor', () => {
     expect(screen.getByTestId('offer-map')).toBeInTheDocument();
     expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
     expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
+  });
+
+  it('waits for a place search or map movement before choosing a location', () => {
+    const onLocationChange = jest.fn();
+    render(
+      <OfferLocationEditor
+        location={null}
+        onLocationChange={onLocationChange}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Report initial centre' }),
+    );
+    expect(onLocationChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag map' }));
+    expect(onLocationChange).toHaveBeenCalledWith([50, 10]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag map east' }));
+    expect(onLocationChange).toHaveBeenCalledWith([48.6908333333, 10]);
   });
 
   it('renders the map and location guidance', () => {
@@ -149,6 +186,13 @@ describe('OfferLocationEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Click map' }));
 
     expect(onLocationChange).toHaveBeenCalledWith([48.85, 2.35]);
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Report initial centre' }),
+    );
+    expect(onLocationChange).toHaveBeenCalledWith([
+      48.6908333333, 9.14055555556,
+    ]);
   });
 
   it('updates the location when a place bounds search completes', () => {
