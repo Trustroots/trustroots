@@ -359,14 +359,6 @@ if [ "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-false}" != "true" ]; then
         "End-to-end tests blocked because the client bundle could not be built."
     fi
   fi
-else
-  echo "Building push messaging service worker for end-to-end tests..."
-  if ! npm run webpack:service-worker; then
-    exit_with_status \
-      "blocked" \
-      1 \
-      "End-to-end tests blocked because the push messaging service worker could not be built."
-  fi
 fi
 
 set +e

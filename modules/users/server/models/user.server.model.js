@@ -78,13 +78,17 @@ const UserMemberSchema = new Schema(
 );
 
 /**
- * SubSchema for `User` schema's `pushRegistration` array
+ * SubSchema for `User` schema's `pushRegistration` array.
+ *
+ * Push delivery is retired. Keep historical values valid so existing profiles
+ * load and tokens can still be removed. New registrations are rejected in the
+ * profile controller; restore a sender before accepting writes again.
  */
 const UserPushRegistrationSchema = new Schema(
   {
     platform: {
       type: String,
-      // android, ios, web → Firebase; expo → Exponent
+      // Historical platforms: android/ios/web (FCM) and expo (Exponent).
       enum: ['android', 'ios', 'web', 'expo'],
       required: true,
     },

@@ -225,10 +225,7 @@ module.exports = {
   google: {
     page: '',
   },
-  fcm: {
-    senderId: '',
-    serviceAccount: false,
-  },
+  // Future push: restore FCM (or another transport) config here.
   googleAnalytics: {
     enabled: false,
     code: '',

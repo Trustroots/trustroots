@@ -1,11 +1,10 @@
-/* global document, navigator */
+/* global document */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
 import '@/config/client/i18n';
 import ReactApp from '@/modules/core/client/react-app/ReactApp';
 import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
-import { getBootstrapData } from '@/modules/core/client/react-app/bootstrap';
 import { enable as enableUnreadMessageCountPolling } from '@/modules/messages/client/services/unread-message-count.client.service';
 import { enable as enableVisibilityWatching } from '@/modules/messages/client/services/visibility.client.service';
 import { enable as enableFaviconUpdater } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
@@ -43,8 +42,5 @@ if (document.readyState === 'loading') {
   render();
 }
 
-if (navigator.serviceWorker && getBootstrapData().settings.fcmSenderId) {
-  navigator.serviceWorker
-    .register('/push-messaging-sw.js', { scope: '/' })
-    .catch(error => console.warn('Could not register push messaging', error));
-}
+// Future push: register a browser service worker here when reintroducing
+// web push (previously /push-messaging-sw.js when fcmSenderId was set).

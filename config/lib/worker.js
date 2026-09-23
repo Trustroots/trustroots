@@ -18,11 +18,8 @@ exports.start = function (options, callback) {
       require('../../modules/core/server/jobs/send-email.server.job'),
     );
 
-    agenda.define(
-      'send push message',
-      { priority: 'high', concurrency: 10 },
-      require('../../modules/core/server/jobs/send-push-message.server.job'),
-    );
+    // Future push: re-register a delivery job here (previously
+    // `send push message` via modules/core/server/jobs/send-push-message).
 
     agenda.define(
       'check unread messages',

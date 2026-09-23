@@ -29,9 +29,8 @@ continue on the supported runtime.
 2. **Bootstrap after Angular:** Global Bootstrap 5 only after
    `angular-ui-bootstrap` and Angular templates are gone, avoiding a dual-widget
    CSS break.
-3. **Push cleanup last among product stages:** Expo is unused legacy; Firebase
-   client FCM is optional and config-gated. Upgrade or remove without blocking
-   shell work.
+3. **Push cleanup last among product stages:** Expo and browser FCM are retired
+   in `retire-push-notifications`; rebuild later only if demand returns.
 4. **Worktree-safe ESLint:** `root: true` in `.eslintrc.js` so nested git
    worktrees do not load the parent repo ESLint config.
 5. **Preserve single-page navigation:** Once every application route is
@@ -56,7 +55,7 @@ continue on the supported runtime.
 2. Stage 2: migrate remaining Angular routes; remove Angular packages.
 3. Stage 3: adopt React 18 and TanStack Router.
 4. Stage 4: Bootstrap 5 + react-bootstrap 2.
-5. Stage 5: remove Expo; upgrade Firebase client.
+5. Stage 5: retire Expo and Firebase push (see `retire-push-notifications`).
 6. Stage 6: local verification; archive this change when complete.
 
 ## Open Questions

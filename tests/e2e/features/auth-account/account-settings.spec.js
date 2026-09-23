@@ -346,13 +346,13 @@ test.describe.serial('account settings feature coverage', () => {
     expect(storedUser.additionalProvidersData || {}).toEqual({});
   });
 
-  test('members can add and remove push registrations', async ({
+  test('members cannot add push registrations and can remove historical tokens', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'account.push-registrations', [
-      'Push registration can be added with deterministic local permissions.',
-      'Push registration can be removed.',
+      'New push registrations are rejected.',
+      'Historical push registrations can still be removed.',
     ]);
 
     const user = createUser();
@@ -367,11 +367,30 @@ test.describe.serial('account settings feature coverage', () => {
         deviceId: 'e2e-browser',
       },
     });
-    expect(add.ok()).toBeTruthy();
+    expect(add.status()).toBe(400);
+    expect(await add.json()).toMatchObject({
+      message: 'Push notifications are no longer available.',
+    });
+
+    await updateUserByUsername(user.username, {
+      $set: {
+        pushRegistration: [
+          {
+            platform: 'web',
+            token,
+            created: new Date(),
+            deviceId: 'e2e-browser',
+          },
+        ],
+      },
+    });
 
     const remove = await page.request.delete(
       `/api/users/push/registrations/${token}`,
     );
     expect(remove.ok()).toBeTruthy();
+
+    const storedUser = await findUserByUsername(user.username);
+    expect(storedUser.pushRegistration || []).toEqual([]);
   });
 });

@@ -1,7 +1,6 @@
 const errorService = require('../services/error.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const textService = require('../services/text.server.service');
-const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
@@ -110,14 +109,8 @@ exports.receiveExpectCTViolationReport = function (req, res) {
   res.status(204).json();
 };
 
-/**
- * Render javascript content containing service worker config.
- */
-exports.renderServiceWorkerConfig = function (req, res) {
-  res
-    .set('Content-Type', 'text/javascript')
-    .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
-};
+// Future push: restore renderServiceWorkerConfig (previously served
+// `var FCM_SENDER_ID = …` at GET /config/sw.js) when browser push returns.
 
 exports.getLanguages = (req, res) => {
   // Return language list in array format
