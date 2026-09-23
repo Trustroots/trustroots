@@ -5,6 +5,7 @@ const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
+const deprecatedLanguages = require('../../../../config/languages/deprecated');
 const {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
@@ -124,7 +125,12 @@ exports.renderServiceWorkerConfig = function (req, res) {
 exports.getLanguages = (req, res) => {
   // Return language list in array format
   if (req?.query?.format === 'array') {
-    return res.json(languagesArray);
+    return res.json(
+      languagesArray.map(language => ({
+        ...language,
+        deprecated: deprecatedLanguages.has(language.value),
+      })),
+    );
   }
 
   // Return language list in object format
