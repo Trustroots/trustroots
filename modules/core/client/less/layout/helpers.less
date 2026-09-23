@@ -1,7 +1,4 @@
-@import '~bootstrap/less/mixins/background-variant';
-@import '~bootstrap/less/mixins/text-emphasis';
-@import '~bootstrap/less/mixins/text-overflow';
-@import '~bootstrap/less/type';
+@import '~less/bootstrap/legacy-mixins';
 @import '~less/global-variables';
 
 /**
@@ -167,8 +164,7 @@
 
 /**
  * Middle wrapper using flex
- * Since we're using Bootstrap 3, which doesn't yet support flex,
- * this is here to help with middle align on less important places.
+ * This remains for middle alignment on less important places.
  * It's more convenient than `middlw-wrapper` which uses table-cell hack.
  *
  * Usage:

@@ -91,3 +91,25 @@ test('circle membership retains account roles and legacy member links', async ({
     else await page.request.delete(`/api/users/memberships/${circle._id}`);
   }
 });
+
+test('member navigation menus and narrow layout remain usable', async ({
+  page,
+}) => {
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles');
+
+  await page.getByRole('button', { name: 'Support' }).click();
+  await expect(
+    page.locator('#tr-header').getByRole('link', { name: 'Safety' }),
+  ).toBeVisible();
+
+  await page.locator('.dropdown-user .dropdown-toggle').click();
+  await expect(page.getByRole('link', { name: 'My profile' })).toBeVisible();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  const header = page.locator('#tr-header');
+  await expect(header.locator('a[href="/messages"]')).toBeVisible();
+  const headerBounds = await header.boundingBox();
+  expect(headerBounds.x).toBeGreaterThanOrEqual(0);
+  expect(headerBounds.x + headerBounds.width).toBeLessThanOrEqual(391);
+});

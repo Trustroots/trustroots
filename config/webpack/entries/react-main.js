@@ -9,9 +9,17 @@ import { enable as enableUnreadMessageCountPolling } from '@/modules/messages/cl
 import { enable as enableVisibilityWatching } from '@/modules/messages/client/services/visibility.client.service';
 import { enable as enableFaviconUpdater } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
 
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './main.less';
 
-importAll(require.context('../../../modules/', true, /\.less$/));
+// This file is loaded by main.less; do not include it twice in the CSS bundle.
+importAll(
+  require.context(
+    '../../../modules/',
+    true,
+    /^(?!.*\/bootstrap\/legacy-classes\.less$).*\.less$/,
+  ),
+);
 
 function importAll(r) {
   r.keys().forEach(r);
