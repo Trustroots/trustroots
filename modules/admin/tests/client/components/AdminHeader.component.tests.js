@@ -28,7 +28,9 @@ describe('<AdminHeader />', () => {
       expect(
         screen.getByRole('link', { name: 'Welcome team' }),
       ).toHaveAttribute('href', '/admin/acquisition-stories');
-      expect(screen.getAllByRole('link')).toHaveLength(3);
+      expect(screen.getAllByRole('link')).toHaveLength(
+        user?.roles?.includes('welcome-team') ? 4 : 3,
+      );
       expect(
         screen.queryByRole('link', { name: 'Audit log' }),
       ).not.toBeInTheDocument();
@@ -40,6 +42,11 @@ describe('<AdminHeader />', () => {
         'href',
         '/admin/acquisition-stories/analysis',
       );
+      if (user?.roles?.includes('welcome-team')) {
+        expect(
+          screen.getByRole('link', { name: 'Location corrections' }),
+        ).toHaveAttribute('href', '/admin/location-corrections');
+      }
     },
   );
 

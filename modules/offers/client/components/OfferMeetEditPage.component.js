@@ -6,7 +6,6 @@ import {
   getCurrentRouteParams,
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
-import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffer, updateOffer } from '../api/offers.api';
 import MeetsExplanation from './MeetsExplanation.component';
@@ -36,7 +35,7 @@ export default function OfferMeetEditPage() {
     if (isNewOffer) {
       setOffer({
         description: '',
-        location: [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng],
+        location: null,
         validUntil: defaultValidUntil(),
       });
       return undefined;
@@ -82,6 +81,8 @@ export default function OfferMeetEditPage() {
   const hasValidExpiry =
     Boolean(offer?.validUntil) &&
     Number.isFinite(new Date(offer.validUntil).getTime());
+  const hasLocation =
+    Array.isArray(offer?.location) && offer.location.length === 2;
 
   if (isLoading || !offer) {
     return (
@@ -94,7 +95,12 @@ export default function OfferMeetEditPage() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (isSaving || descriptionLength < MIN_DESCRIPTION || !hasValidExpiry) {
+    if (
+      isSaving ||
+      descriptionLength < MIN_DESCRIPTION ||
+      !hasValidExpiry ||
+      !hasLocation
+    ) {
       return;
     }
 
@@ -135,7 +141,10 @@ export default function OfferMeetEditPage() {
           <button
             className="btn btn-lg btn-inverse-primary pull-right"
             disabled={
-              isSaving || descriptionLength < MIN_DESCRIPTION || !hasValidExpiry
+              isSaving ||
+              descriptionLength < MIN_DESCRIPTION ||
+              !hasValidExpiry ||
+              !hasLocation
             }
             type="submit"
           >
@@ -236,6 +245,11 @@ export default function OfferMeetEditPage() {
             eventKey={1}
             title="Location"
           >
+            {!hasLocation && (
+              <p className="alert alert-info" role="status">
+                Search for a place or move the map to set your meeting location.
+              </p>
+            )}
             <OfferLocationEditor
               location={offer.location}
               offerType="meet"
@@ -274,7 +288,7 @@ export default function OfferMeetEditPage() {
             <button
               aria-label="Finish editing and save"
               className="btn btn-action btn-primary"
-              disabled={isSaving || !hasValidExpiry}
+              disabled={isSaving || !hasValidExpiry || !hasLocation}
               type="submit"
             >
               Finish

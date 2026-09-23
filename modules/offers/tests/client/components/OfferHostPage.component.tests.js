@@ -72,6 +72,13 @@ describe('OfferHostPage', () => {
     fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
       target: { value: 'Welcome to my home.' },
     });
+    expect(
+      screen.getByRole('button', { name: 'Save and Exit' }),
+    ).toBeDisabled();
+    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+    fireEvent.click(
+      document.querySelector('[data-testid="location-editor"] button'),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Save and Exit' }));
 
     await waitFor(() => {
@@ -80,6 +87,7 @@ describe('OfferHostPage', () => {
           description: 'Welcome to my home.',
           status: 'yes',
           type: 'host',
+          location: [52, 4],
         }),
       );
     });
@@ -143,6 +151,11 @@ describe('OfferHostPage', () => {
     expect(
       await screen.findByText('Set your hosting location on the map.'),
     ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Search for a place or move the map/),
+    ).toBeInTheDocument();
+    fireEvent.submit(document.querySelector('form'));
+    expect(offersApi.createOffer).not.toHaveBeenCalled();
   });
 
   it('keeps the editor open when saving fails', async () => {

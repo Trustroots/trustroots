@@ -92,6 +92,16 @@ jest.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
 }));
 
 describe('OfferLocationEditor', () => {
+  it('shows a map without an offer marker before a location is chosen', () => {
+    render(
+      <OfferLocationEditor location={null} onLocationChange={jest.fn()} />,
+    );
+
+    expect(screen.getByTestId('offer-map')).toBeInTheDocument();
+    expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
+  });
+
   it('renders the map and location guidance', () => {
     render(
       <OfferLocationEditor

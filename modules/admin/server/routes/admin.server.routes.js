@@ -5,6 +5,7 @@ const adminAcquisitionStories = require('../controllers/admin.acquisition-storie
 const adminAuditLog = require('../controllers/admin.audit-log.server.controller');
 const adminMessages = require('../controllers/admin.messages.server.controller');
 const adminNewsletter = require('../controllers/admin.newsletter.server.controller');
+const adminLocationCorrections = require('../controllers/admin.location-corrections.server.controller');
 const adminPolicy = require('../policies/admin.server.policy');
 const adminThreads = require('../controllers/admin.threads.server.controller');
 const adminUsers = require('../controllers/admin.users.server.controller');
@@ -13,6 +14,16 @@ const adminNotes = require('../controllers/admin.notes.server.controller');
 const adminReferenceThreads = require('../controllers/admin.reference-threads.server.controller');
 
 module.exports = app => {
+  app
+    .route('/api/admin/location-corrections')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminLocationCorrections.list);
+
+  app
+    .route('/api/admin/location-corrections/send')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminLocationCorrections.send);
+
   app
     .route('/api/admin/acquisition-stories')
     .all(adminPolicy.isAllowed)

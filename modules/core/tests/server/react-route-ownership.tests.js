@@ -176,7 +176,9 @@ describe('React route ownership', function () {
     for (const route of REACT_ROUTE_POLICIES.filter(route =>
       route.path.startsWith('/admin'),
     )) {
-      const acquisition = route.path.startsWith('/admin/acquisition-stories');
+      const acquisition =
+        route.path.startsWith('/admin/acquisition-stories') ||
+        route.path === '/admin/location-corrections';
       should(
         getReactRouteAccessRedirect(route, { roles: ['welcome-team'] }),
       ).equal(acquisition ? null : '/volunteering');

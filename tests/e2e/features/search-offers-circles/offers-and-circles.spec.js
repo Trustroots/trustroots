@@ -102,6 +102,23 @@ test.describe.serial('search offers and circles feature coverage', () => {
       .getByPlaceholder('Write here...')
       .fill('A walk with fellow members.');
     await page.getByRole('button', { name: 'Next section' }).click();
+    await page.evaluate(() => {
+      window.settings.mapbox = { publicKey: 'test-geocoding-token' };
+    });
+    await page.route('https://api.mapbox.com/geocoding/**', route =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            { id: 'place.example', text: 'Example town', center: [-7, 35] },
+          ],
+        }),
+      }),
+    );
+    await page
+      .getByLabel('Search places', { exact: true })
+      .fill('Example town');
+    await page.getByRole('option', { name: 'Example town' }).click();
     const savedMeet = page.waitForResponse(
       response =>
         response.url().endsWith('/api/offers') &&
@@ -114,6 +131,58 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const [meeting] = await findOffersByUser(memberId, {
       type: 'meet',
       description: 'A walk with fellow members.',
+    });
+    await page.request.delete(`/api/offers/${meeting._id}`);
+  });
+
+  test('new meeting offer requires a chosen location', async ({ page }) => {
+    await page.goto('/offer/meet/add');
+    await page.getByPlaceholder('Write here...').fill('A meeting in the park.');
+    await page.getByRole('button', { name: 'Next section' }).click();
+
+    const finish = page.getByRole('button', {
+      name: 'Finish editing and save',
+    });
+    await expect(finish).toBeDisabled();
+    await expect(page.getByRole('status')).toContainText(
+      'Search for a place or move the map',
+    );
+
+    await page.evaluate(() => {
+      window.settings.mapbox = { publicKey: 'test-geocoding-token' };
+    });
+    await page.route('https://api.mapbox.com/geocoding/**', route =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            { id: 'place.example', text: 'Example town', center: [-7, 35] },
+          ],
+        }),
+      }),
+    );
+    await page
+      .getByLabel('Search places', { exact: true })
+      .fill('Example town');
+    await page.getByRole('option', { name: 'Example town' }).click();
+    await expect(finish).toBeEnabled();
+
+    const saved = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/offers') &&
+        response.request().method() === 'POST',
+    );
+    await finish.click();
+    const response = await saved;
+    expect(response.ok()).toBeTruthy();
+    const [latitude, longitude] = response.request().postDataJSON().location;
+    expect(latitude).toBeCloseTo(35, 1);
+    expect(longitude).toBeCloseTo(-7, 1);
+
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [meeting] = await findOffersByUser(memberId, {
+      type: 'meet',
+      description: 'A meeting in the park.',
     });
     await page.request.delete(`/api/offers/${meeting._id}`);
   });

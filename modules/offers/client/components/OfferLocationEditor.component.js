@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React, { useState } from 'react';
 
 import Map from '@/modules/core/client/components/Map/index';
+import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import OfferLocationOverlay from './OfferLocationOverlay';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import { getOfferHexColor } from '../utils/markers';
@@ -13,6 +14,7 @@ export default function OfferLocationEditor({
   onLocationChange,
 }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const mapLocation = location || [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng];
 
   function handlePlaceSearch(data, type) {
     if (type === 'center' && data?.lat && data?.lng) {
@@ -45,12 +47,16 @@ export default function OfferLocationEditor({
         <Map
           aria-describedby="offerLocation"
           className="offer-location"
-          fallbackMarker={{
-            color: getOfferHexColor({ offerType, offerStatus }),
-            location,
-          }}
+          fallbackMarker={
+            location
+              ? {
+                  color: getOfferHexColor({ offerType, offerStatus }),
+                  location,
+                }
+              : undefined
+          }
           height={320}
-          location={location}
+          location={mapLocation}
           onLocationChange={onLocationChange}
           onClick={event => {
             if (event?.lngLat) {
@@ -61,7 +67,7 @@ export default function OfferLocationEditor({
           width="100%"
           zoom={
             /* istanbul ignore next -- offer editors initialise a two-coordinate location. */
-            location?.length === 2 ? 13 : 4
+            location?.length === 2 ? 13 : DEFAULT_LOCATION.zoom
           }
         >
           {location?.length === 2 && (
@@ -79,7 +85,7 @@ export default function OfferLocationEditor({
 }
 
 OfferLocationEditor.propTypes = {
-  location: PropTypes.arrayOf(PropTypes.number).isRequired,
+  location: PropTypes.arrayOf(PropTypes.number),
   offerStatus: PropTypes.string,
   offerType: PropTypes.string,
   onLocationChange: PropTypes.func.isRequired,
