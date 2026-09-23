@@ -34,8 +34,18 @@ describe('Profile view route handover', function () {
     }
   }));
 
-  it('leaves experience writing in Angular', inject(function ($state) {
-    expect($state.get('profile.experiences.new').onEnter).toBeUndefined();
+  it('opens experience writing in the React shell and leaves editors in Angular', inject(function (
+    $state,
+    $injector,
+  ) {
+    const assign = jest.fn();
+    $injector.invoke($state.get('profile.experiences.new').onEnter, null, {
+      $window: { location: { assign } },
+      $stateParams: { username: 'sample member' },
+    });
+    expect(assign).toHaveBeenCalledWith(
+      '/profile/sample%20member/experiences/new',
+    );
     expect($state.get('profile-edit.about').onEnter).toBeUndefined();
   }));
 });
