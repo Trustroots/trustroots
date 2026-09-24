@@ -15,14 +15,17 @@ const testFiles =
     ? configuredTestFiles
     : glob.sync('modules/*/tests/server/**/*.js');
 
-function finish(error) {
-  agenda._mdb.close(() => {
-    mongooseService.disconnect(() => {
-      if (error) {
-        console.error(error);
-        process.exitCode = 1;
-      }
-    });
+async function finish(error) {
+  try {
+    await agenda.close();
+  } catch (closeError) {
+    error = error || closeError;
+  }
+  mongooseService.disconnect(() => {
+    if (error) {
+      console.error(error);
+      process.exitCode = 1;
+    }
   });
 }
 
