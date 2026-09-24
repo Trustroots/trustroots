@@ -5,7 +5,7 @@ const config = require('../../../../config/config');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const mongoosePaginate = require('mongoose-paginate');
-const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const uniqueValidation = require('../../../../config/lib/mongoose-unique-validation');
 const integerValidator = require('mongoose-integer');
 const urlslugs = require('mongoose-url-slugs');
 const randomColor = require('randomcolor');
@@ -182,8 +182,7 @@ TribeSchema.plugin(
 );
 
 /**
- * Make sure unique fields yeld verbal errors
- * @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
+ * Convert duplicate unique values into field validation errors.
  */
 TribeSchema.plugin(uniqueValidation);
 
