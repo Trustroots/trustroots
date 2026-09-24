@@ -26,6 +26,13 @@ function getSupportVolunteerName() {
   return _.sample(config.supportVolunteerNames);
 }
 
+function removeLinksFromMessagePreview(content) {
+  return _.toString(content).replace(
+    /<a\b[^>]*>[\s\S]*?<\/a>/gi,
+    '[link removed]',
+  );
+}
+
 exports.sendMessagesUnread = function (
   userFrom,
   userTo,
@@ -55,12 +62,23 @@ exports.sendMessagesUnread = function (
 
   // Variables passed to email text/html templates
   const params = exports.addEmailBaseTemplateParams({
+    // Messages sent by administrators (including scam warnings) are
+    // delivered as official Trustroots support mail rather than from an
+    // individual administrator account.
+    from:
+      userFrom.roles && userFrom.roles.includes('admin')
+        ? 'Trustroots Support <' + config.supportEmail + '>'
+        : undefined,
     subject: mailSubject,
     name: userTo.displayName,
     email: userTo.email,
     mailTitle: mailSubject,
     messageCount: notification.messages.length,
-    messages: notification.messages,
+    messages: notification.messages.map(function (message) {
+      return Object.assign({}, message, {
+        content: removeLinksFromMessagePreview(message.content),
+      });
+    }),
     userFromName: userFrom.displayName,
     userToName: userTo.displayName,
     urlReplyPlainText: urlReply,
@@ -250,6 +268,23 @@ exports.sendSignupEmailConfirmation = function (user, callback) {
   });
 
   exports.renderEmailAndSend('signup', params, callback);
+};
+
+exports.sendFlaggedSignupAlert = function (user, matchedKeywords, callback) {
+  const params = {
+    from: 'Trustroots Support <' + config.supportEmail + '>',
+    name: 'Trustroots Support',
+    email: config.supportEmail,
+    subject: 'Signup matched safety-review keywords',
+    matchedKeywords: matchedKeywords.join(', '),
+    memberName: user.displayName,
+    username: user.username,
+    adminProfileUrl: url + '/admin/user?id=' + user._id,
+    skipHtmlTemplate: true,
+    sparkpostCampaign: 'flagged-signup-alert',
+  };
+
+  exports.renderEmailAndSend('flagged-signup-alert', params, callback);
 };
 
 exports.sendSupportRequest = function (replyTo, supportRequest, callback) {

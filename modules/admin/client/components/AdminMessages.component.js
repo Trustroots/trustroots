@@ -1,8 +1,12 @@
 // External dependencies
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 // Internal dependencies
-import { getMessages } from '../api/messages.api';
+import {
+  getMessages,
+  getScammerRecipients,
+  sendScammerWarning,
+} from '../api/messages.api';
 import { searchUsers } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
@@ -27,14 +31,23 @@ export default function AdminMessages() {
   const [referenceThreads, setReferenceThreads] = useState([]);
   const [member1, setMember1] = useState(initialMember1);
   const [member2, setMember2] = useState(initialMember2);
+  const warningAttempt = useRef(null);
+  const [scammerUsername, setScammerUsername] = useState('');
+  const [scammerRecipients, setScammerRecipients] = useState(null);
+  const [scammerError, setScammerError] = useState('');
+  const [warningContent, setWarningContent] = useState(
+    'Sorry, you have received a message from a scammer. Please ignore it.',
+  );
+  const [warningSent, setWarningSent] = useState(null);
+  const [isLoadingRecipients, setIsLoadingRecipients] = useState(false);
+  const [isSendingWarning, setIsSendingWarning] = useState(false);
 
-  async function onSubmit(event) {
-    event.preventDefault();
-    if (member1 && member2) {
-      const userId1 = await resolveExactMemberId(member1, searchUsers, [
+  const runQuery = useCallback(async (member1Value, member2Value) => {
+    if (member1Value && member2Value) {
+      const userId1 = await resolveExactMemberId(member1Value, searchUsers, [
         'username',
       ]);
-      const userId2 = await resolveExactMemberId(member2, searchUsers, [
+      const userId2 = await resolveExactMemberId(member2Value, searchUsers, [
         'username',
       ]);
       if (!userId1 || !userId2) {
@@ -51,6 +64,73 @@ export default function AdminMessages() {
       );
       setQueried(true);
     }
+  }, []);
+
+  useEffect(() => {
+    if (initialMember1 && initialMember2) {
+      void runQuery(initialMember1, initialMember2);
+    }
+  }, [initialMember1, initialMember2, runQuery]);
+
+  function onSubmit(event) {
+    event.preventDefault();
+    void runQuery(member1, member2);
+  }
+
+  async function previewScammerRecipients(event) {
+    event.preventDefault();
+    const username = scammerUsername.trim();
+    setScammerError('');
+    setWarningSent(null);
+    setIsLoadingRecipients(true);
+    try {
+      setScammerRecipients(await getScammerRecipients(username));
+    } catch (error) {
+      setScammerRecipients(null);
+      setScammerError(
+        error.response?.data?.message || 'Could not find that member.',
+      );
+    } finally {
+      setIsLoadingRecipients(false);
+    }
+  }
+
+  async function sendWarning(event) {
+    event.preventDefault();
+    setScammerError('');
+    setWarningSent(null);
+    setIsSendingWarning(true);
+    const username = scammerRecipients.scammer.username;
+    if (
+      !warningAttempt.current ||
+      warningAttempt.current.username !== username ||
+      warningAttempt.current.content !== warningContent
+    ) {
+      warningAttempt.current = {
+        username,
+        content: warningContent,
+        requestId: Array.from(
+          window.crypto.getRandomValues(new Uint8Array(16)),
+          byte => byte.toString(16).padStart(2, '0'),
+        ).join(''),
+      };
+    }
+    try {
+      const result = await sendScammerWarning(
+        scammerRecipients.scammer.username,
+        warningContent,
+        warningAttempt.current.requestId,
+      );
+      warningAttempt.current = null;
+      setWarningSent(result.sent);
+      setScammerRecipients(null);
+    } catch (error) {
+      setScammerError(
+        error.response?.data?.message || 'Could not send the warning.',
+      );
+    } finally {
+      setIsSendingWarning(false);
+    }
   }
 
   return (
@@ -58,6 +138,86 @@ export default function AdminMessages() {
       <AdminHeader />
       <div className="container">
         <h2>Messages</h2>
+
+        <section className="panel panel-warning">
+          <div className="panel-heading">
+            <h3 className="panel-title">Warn scammer recipients</h3>
+          </div>
+          <div className="panel-body">
+            <p>Enter a member username to find everyone they contacted.</p>
+            <form className="form-inline" onSubmit={previewScammerRecipients}>
+              <input
+                aria-label="Scammer username"
+                className="form-control"
+                disabled={isLoadingRecipients || isSendingWarning}
+                onChange={({ target: { value } }) => {
+                  setScammerUsername(value);
+                  setScammerRecipients(null);
+                  setScammerError('');
+                  setWarningSent(null);
+                }}
+                placeholder="Scammer username"
+                type="text"
+                value={scammerUsername}
+              />{' '}
+              <button
+                className="btn btn-default"
+                disabled={
+                  !scammerUsername.trim() ||
+                  isLoadingRecipients ||
+                  isSendingWarning
+                }
+                type="submit"
+              >
+                {isLoadingRecipients ? 'Looking up…' : 'Show recipients'}
+              </button>
+            </form>
+            {scammerRecipients && (
+              <form onSubmit={sendWarning}>
+                <p>
+                  <strong>{scammerRecipients.recipients.length}</strong>{' '}
+                  recipient(s) found for @{scammerRecipients.scammer.username}.
+                </p>
+                {scammerRecipients.recipients.length > 0 && (
+                  <ul>
+                    {scammerRecipients.recipients.map(recipient => (
+                      <li key={recipient._id}>
+                        <UserLink user={recipient} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {scammerRecipients.recipients.length > 0 && (
+                  <>
+                    <textarea
+                      aria-label="Warning message"
+                      disabled={isSendingWarning}
+                      className="form-control"
+                      onChange={({ target: { value } }) =>
+                        setWarningContent(value)
+                      }
+                      rows="3"
+                      value={warningContent}
+                    />
+                    <button
+                      className="btn btn-warning"
+                      disabled={!warningContent.trim() || isSendingWarning}
+                      type="submit"
+                    >
+                      {isSendingWarning ? 'Sending…' : 'Send warning to all'}
+                    </button>
+                  </>
+                )}
+              </form>
+            )}
+            {warningSent !== null && (
+              <p className="text-success">
+                Sent {warningSent} warning message(s).
+              </p>
+            )}
+            {scammerError && <p className="text-danger">{scammerError}</p>}
+          </div>
+        </section>
 
         <form className="form-inline" onSubmit={event => onSubmit(event)}>
           <input

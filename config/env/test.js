@@ -28,14 +28,50 @@ module.exports = {
     debug: false,
     // Autoindex indexes
     // Mongoose calls createIndex on each Model's index when staring the app
-    // Indexes are built once per test run in gulpfile.js (ensureIndexes).
+    // Indexes are built once per test run in scripts/test-server.js.
     autoIndex: false,
     // Check for MongoDB version compatibility on start
     checkCompatibility: false,
   },
   maxUploadSize: 10000, // =10kb in bytes. Set ridiculously small just for tests
+  host: process.env.TRUSTROOTS_E2E_HOST || 'localhost',
   port: Number(process.env.PORT) || 3001,
-  illegalStrings: ['trustroots', 'trust', 'roots'],
+  // Subset of `default.js` illegalStrings for route tests. The full production
+  // list lives in default.js; extend this when adding reserved names that need
+  // explicit signup/profile test coverage.
+  illegalStrings: [
+    'trustroots',
+    'trust',
+    'roots',
+    'nostr',
+    'npub',
+    'nsec',
+    'nip05',
+    'relay',
+    'about',
+    'contact',
+    'faq',
+    'foundation',
+    'privacy',
+    'rules',
+    'team',
+    'help',
+    'abuse',
+    'safety',
+    'legal',
+    'staff',
+    'media',
+    'volunteering',
+    'contribute',
+    'statistics',
+    'search',
+    'messages',
+    'inbox',
+    'offer',
+    'offers',
+    'hosting',
+    'contacts',
+  ],
   app: {
     title: 'Trustroots test environment.',
     description: 'Trustroots test environment.',

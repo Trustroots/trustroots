@@ -41,7 +41,7 @@ export default function ProfileViewBasics({ profile }) {
     t('Reply rate {{replyRate}}.', { replyRate });
 
   const getReplyTime = replyTime =>
-    t('Replies within {{replyTime, fromNow}}.', { replyTime });
+    t('Replies within {{replyTime}}.', { replyTime });
 
   const getMemberSince = created =>
     t('Member since {{date, ll}}', { date: new Date(created) });
@@ -61,7 +61,7 @@ export default function ProfileViewBasics({ profile }) {
       {replyRate && <span>{getReplyRate(replyRate)}</span>}
       {replyTime && (
         <span>
-          <br />
+          {replyRate && <br />}
           {getReplyTime(replyTime)}
         </span>
       )}

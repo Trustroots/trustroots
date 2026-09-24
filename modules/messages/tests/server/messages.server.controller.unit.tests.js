@@ -9,6 +9,7 @@ const sinon = require('sinon');
 const messagesController = require('../../server/controllers/messages.server.controller');
 const config = require('../../../../config/config');
 const spamService = require('../../../core/server/services/spam.server.service');
+const messageStatService = require('../../server/services/message-stat.server.service');
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -205,6 +206,50 @@ describe('Messages controller unit tests', () => {
         throttle.count = originalCount;
       }
     });
+
+    for (const role of ['welcome-team', 'admin']) {
+      it(`exempts ${role} from throttling while retaining recipient validation`, async () => {
+        sender.roles = ['user', role];
+        const distinct = sinon
+          .stub(Message, 'distinct')
+          .resolves(
+            Array.from(
+              { length: config.limits.messagesToIndividualsThrottle.count + 1 },
+              () => new mongoose.Types.ObjectId(),
+            ),
+          );
+        const res = deferredResponse();
+        await messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: new mongoose.Types.ObjectId().toString(),
+              content: 'Welcome to the community.',
+            },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(404);
+        distinct.called.should.equal(false);
+
+        sender.roles = ['user'];
+        const revokedResponse = deferredResponse();
+        await messagesController.send(
+          {
+            user: sender,
+            body: {
+              userTo: new mongoose.Types.ObjectId().toString(),
+              content: 'Welcome to the community.',
+            },
+          },
+          revokedResponse,
+        );
+        await revokedResponse.waitForResponse();
+        revokedResponse.statusCode.should.equal(429);
+        distinct.calledOnce.should.equal(true);
+      });
+    }
 
     it('sends a message successfully', async () => {
       const senderDoc = await User.findById(sender._id);
@@ -686,6 +731,10 @@ describe('Messages controller unit tests', () => {
       const { sender, receiver } = await prepareSender();
       sender.roles = ['user', 'shadowban'];
       await sender.save();
+      const updateMessageStat = sinon.stub(
+        messageStatService,
+        'updateMessageStat',
+      );
 
       const res = deferredResponse();
       messagesController.send(
@@ -708,6 +757,7 @@ describe('Messages controller unit tests', () => {
       });
       saved.shadowHidden.should.be.true();
       saved.read.should.be.true();
+      sinon.assert.notCalled(updateMessageStat);
     });
   });
 

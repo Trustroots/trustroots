@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 
 import TrEditor from '@/modules/core/client/components/TrEditor';
-import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
+import { plainTextLength } from '@/modules/core/client/utils/filters';
 
 export default function ThreadReply({ onSend, cacheKey }) {
   const { t } = useTranslation('messages');
@@ -72,7 +72,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
       className="form-horizontal"
       onSubmit={event => send(event)}
     >
-      <div className="row">
+      <div className="row message-reply-editor-row">
         <div className="col-xs-12">
           <div className="panel panel-default">
             <TrEditor
@@ -85,7 +85,7 @@ export default function ThreadReply({ onSend, cacheKey }) {
           </div>
         </div>
       </div>
-      <div className="col-xs-2 col-sm-12">
+      <div className="col-xs-2 col-sm-12 message-reply-actions">
         <small className="text-muted hidden-xs">
           {t(
             'Highlight text to add links or change its appearance. Ctrl+Enter to send.',

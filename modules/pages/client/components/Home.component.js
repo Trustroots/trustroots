@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
-import { getRouteParams } from '@/modules/core/client/services/angular-compat';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { userType } from '@/modules/users/client/users.prop-types';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from '@/modules/core/client/components/Board.js';
@@ -78,10 +78,15 @@ export function getSignupUrl(circleSlug) {
   return '/signup';
 }
 
-export default function Home({ user, photoCredits, build }) {
+export default function Home({
+  user,
+  photoCredits,
+  build,
+  routeParams = getCurrentRouteParams(),
+}) {
   const { t } = useTranslation('pages');
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
-  const { circle: circleRouteParam, tribe: tribeRouteParam } = getRouteParams();
+  const { circle: circleRouteParam, tribe: tribeRouteParam } = routeParams;
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
@@ -422,6 +427,9 @@ export default function Home({ user, photoCredits, build }) {
                   <a href="/statistics">{t('Statistics')}</a>
                 </li>
                 <li>
+                  <a href="/safety">{t('Safety')}</a>
+                </li>
+                <li>
                   <a href="/support">{t('Contact & support')}</a>
                 </li>
               </ul>
@@ -510,6 +518,7 @@ export default function Home({ user, photoCredits, build }) {
 }
 
 Home.propTypes = {
+  routeParams: PropTypes.object,
   user: userType,
   isNativeMobileApp: PropTypes.bool,
   photoCredits: PropTypes.object,

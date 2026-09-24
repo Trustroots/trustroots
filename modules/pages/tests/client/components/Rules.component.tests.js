@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Rules from '@/modules/pages/client/components/Rules.component';
@@ -28,9 +28,13 @@ describe('<Rules />', () => {
     expect(
       screen.getByText(/Be friendly and know when to stop messaging someone\./),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'safety' })).toHaveAttribute(
+      'href',
+      '/safety',
+    );
     expect(screen.getByRole('link', { name: 'privacy' })).toHaveAttribute(
       'href',
-      'privacy',
+      '/privacy',
     );
   });
 });

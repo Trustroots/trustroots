@@ -15,6 +15,7 @@
   "No": "No",
   "No conversations yet.": "No conversations yet.",
   "Please write longer profile description before sending messages.": "Please write longer profile description before sending messages.",
+  "Safety note:": "Safety note:",
   "Send": "Send",
   "Sorry I can't host": "Sorry I can't host",
   "Tell a little bit about yourself": "Tell a little bit about yourself",
@@ -22,6 +23,7 @@
   "This user isn't a member anymore.": "This user isn't a member anymore.",
   "Tip": "Tip",
   "Trustroots is very much about spontaneous travel": "Trustroots is very much about spontaneous travel",
+  "Trustroots will never ask you for your ID, credit card details, or payment of any kind.": "Trustroots will never ask you for your ID, credit card details, or payment of any kind.",
   "Unknown member": "Unknown member",
   "What are your expectations in regards with going through their town?": "What are your expectations in regards with going through their town?",
   "Write back": "Write back",
@@ -35,5 +37,10 @@
   "Your profile seems quite empty.": "Your profile seems quite empty.",
   "Your response won't be visible to them.": "Your response won't be visible to them.",
   "{{count}} unread messages": "{{count}} unread messages",
-  "{{count}} unread messages_plural": "{{count}} unread messages"
+  "{{count}} unread messages_plural": "{{count}} unread messages",
+  ".": ".",
+  " and ": " and ",
+  "Before meeting someone new, read our ": "Before meeting someone new, read our ",
+  "community rules": "community rules",
+  "safety tips": "safety tips"
 }

@@ -8,9 +8,14 @@ const {
   SEEDED_SHADOW,
   EUROPE_OFFERS_QUERY,
   fetchUserIdByUsername,
+  createIsolatedContext,
+  createUser,
+  registerViaApi,
   signInViaApi,
   waitForTribesList,
 } = require('../../support/helpers');
+
+const { updateUserByUsername } = require('../../support/db');
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -105,6 +110,30 @@ test.describe('confirmed member flows', () => {
     ).toBeVisible();
   });
 
+  test('mobile members can read About after landing on Overview', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.view-about', [
+      'Mobile Overview defaults do not prevent selecting and reloading About.',
+    ]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/profile/${portland.username}`);
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${portland.username}/overview$`),
+    );
+    await page.getByRole('tab', { name: 'About', exact: true }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/profile/${portland.username}/about$`),
+    );
+    await expect(
+      page.getByText(SEEDED_PROFILE_DESCRIPTION).first(),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByText(SEEDED_PROFILE_DESCRIPTION).first(),
+    ).toBeVisible();
+  });
+
   test('third seeded host profile is visible to signed-in members', async ({
     page,
   }, testInfo) => {
@@ -165,6 +194,7 @@ test.describe('confirmed member flows', () => {
     annotateFeature(testInfo, 'messages.new-conversation', [
       'Profile action links to a new message thread.',
       'New thread empty state is visible.',
+      'New thread empty state links to safety guidance.',
       'Sending an opening message creates the conversation.',
     ]);
 
@@ -240,17 +270,35 @@ test.describe('confirmed member flows', () => {
 
   test('member can join and leave a circle from its detail page', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'circles.join-leave', [
       'Member can join a circle from its detail page.',
       'Member can leave that circle again from the same page.',
     ]);
 
+    const tribesResponse = await request.get('/api/tribes?limit=150');
+    expect(tribesResponse.ok()).toBeTruthy();
+    const hikers = (await tribesResponse.json()).find(
+      tribe => tribe.slug === 'hikers',
+    );
+    expect(hikers).toBeTruthy();
+
+    const membershipsResponse = await request.get('/api/users/memberships');
+    expect(membershipsResponse.ok()).toBeTruthy();
+    const memberships = await membershipsResponse.json();
+    if (memberships.some(item => item.tribe._id === hikers._id)) {
+      const leave = await request.delete(
+        `/api/users/memberships/${hikers._id}`,
+      );
+      expect(leave.ok()).toBeTruthy();
+    }
+
     await page.goto('/circles/hikers');
 
     const joinButton = page.locator('button.tribe-join');
     await expect(joinButton).toBeVisible();
-    await expect(joinButton).toHaveAttribute('aria-label', /join this circle/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /join \(/i);
 
     const joinResponse = page.waitForResponse(
       response =>
@@ -260,7 +308,12 @@ test.describe('confirmed member flows', () => {
     );
     await joinButton.click();
     await joinResponse;
-    await expect(joinButton).toContainText(/you'?re a member/i);
+    await expect(joinButton).toContainText("You're a member");
+    await expect(joinButton).toHaveClass(/btn-primary/);
+    await expect(joinButton).not.toHaveCSS(
+      'background-color',
+      'rgb(255, 255, 255)',
+    );
     await expect(joinButton).toHaveAttribute('aria-label', /leave circle/i);
 
     const leaveResponse = page.waitForResponse(
@@ -270,11 +323,13 @@ test.describe('confirmed member flows', () => {
         response.ok(),
     );
     await joinButton.click();
-    await page
+    const leaveDialog = page.locator('div.modal[role="dialog"]');
+    await expect(leaveDialog).toBeVisible();
+    await leaveDialog
       .getByRole('button', { name: 'Leave circle', exact: true })
       .click();
     await leaveResponse;
-    await expect(joinButton).toContainText(/join this circle/i);
+    await expect(joinButton).toHaveAttribute('aria-label', /join \(/i);
   });
 
   test('shadowbanned member profiles are hidden from other members', async ({
@@ -422,8 +477,9 @@ test.describe('confirmed member flows', () => {
   });
 
   test('new message thread shows the empty conversation state', async ({
+    browser,
+    baseURL,
     page,
-    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.new-conversation', [
       'Profile action links to a new message thread.',
@@ -431,12 +487,23 @@ test.describe('confirmed member flows', () => {
       'Sending an opening message creates the conversation.',
     ]);
 
-    const beijing = SEEDED_MEMBERS[2];
-    const beijingId = await fetchUserIdByUsername(request, beijing.username);
+    const recipient = createUser();
+    const recipientContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(recipientContext.request, recipient);
+      await updateUserByUsername(recipient.username, {
+        $set: { public: true },
+      });
+    } finally {
+      await recipientContext.close();
+    }
 
-    await page.goto(`/messages/${beijing.username}?userId=${beijingId}`);
+    await page.goto(`/messages/${recipient.username}`);
 
     await expect(page.getByText(/you haven't been talking yet/i)).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: /safety tips/i }),
+    ).toHaveAttribute('href', '/safety');
   });
 
   test('experience form shows duplicate when already shared', async ({

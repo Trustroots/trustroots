@@ -38,9 +38,10 @@ We are also open to improvements that [make trustroots forkable](https://github.
 We're using [nvm](https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating) to manage node versions.
 
 - `nvm use`
-- `npm -g i npm@latest-7 node-gyp@0.8.0`
+- `npm -g i npm@11.19.0`
 
-It's important to use the latest version of npm v7 and not later.
+Use Node.js 24 (the exact version is in `.nvmrc`) and npm 11. Install dependencies
+with `npm ci`.
 
 To be able to install dependencies on macOS / apple silicon, the following dependencies are required:
 
@@ -49,12 +50,6 @@ To be able to install dependencies on macOS / apple silicon, the following depen
 Installing mmmagic expects `python` to be a valid binary, which it is not. This can be solved by adding a symlink from `python` to `python3` like so:
 
 - `ln -s "$(brew --prefix)/bin/python"{3,}`
-
-If you're running on apple silicon, you also need to run this command:
-
-- `sed -i '' 's/"rU"/"r"/' ~/.nvm/versions/node/v16.20.2/lib/node_modules/npm/node_modules/node-gyp/gyp/pylib/gyp/input.py`
-
-You might also need to run the linux equivalent of that if you see an error about "ValueError: invalid mode: 'rU' while trying to load binding.gyp". The linux equivalent removes the first set of `''`.
 
 ## Running locally
 
@@ -65,10 +60,15 @@ Choose the setup that fits what you're doing:
 - Dev container: open the repository with **Dev Containers: Reopen in Container**
   and run `npm start` inside the integrated terminal
 
-The host and Docker setups serve the app at http://localhost:3000. Docker also
-starts MailDev at http://localhost:1080.
+The host and Docker setups serve the app at http://localhost:3000.
 
-Docker dev uses hot reload, MailDev, and a shared MongoDB service. See
+Mailpit catches outbound development email when using Docker Compose or the Dev
+Container. Its web UI is available at http://localhost:1080 for Docker Compose
+and http://localhost:11080 for the Dev Container. Bare `npm start` uses an
+in-process JSON transport instead and does not start the mail UI.
+
+Docker dev uses hot reload, Mailpit, and a shared MongoDB service. Development
+emails are captured locally and are not delivered. See
 [`deploy/docker/README.md`](deploy/docker/README.md) for first-time setup,
 troubleshooting, dependency rebuilds, test workflows, and production-like image
 checks. See [`.devcontainer/README.md`](.devcontainer/README.md) for editor and

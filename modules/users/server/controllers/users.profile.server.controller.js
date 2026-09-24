@@ -11,7 +11,6 @@ const contactHandler = require('../../../contacts/server/controllers/contacts.se
 const messageHandler = require('../../../messages/server/controllers/messages.server.controller');
 const offerHandler = require('../../../offers/server/controllers/offers.server.controller');
 const emailService = require('../../../core/server/services/email.server.service');
-const pushService = require('../../../core/server/services/push.server.service');
 const statService = require('../../../stats/server/services/stats.server.service');
 const log = require('../../../../config/lib/logger');
 const del = require('del');
@@ -23,7 +22,9 @@ const sanitizeHtml = require('sanitize-html');
 const mongoose = require('mongoose');
 const moment = require('moment');
 const nip19 = require('nostr-tools/nip19');
+const validator = require('validator');
 const User = mongoose.model('User');
+const deprecatedLanguages = require('../../../../config/languages/deprecated');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
@@ -87,6 +88,16 @@ exports.update = function (req, res) {
     });
   }
 
+  if (
+    Object.prototype.hasOwnProperty.call(req.body, 'email') &&
+    (typeof req.body.email !== 'string' ||
+      (req.body.email !== '' && !validator.isEmail(req.body.email)))
+  ) {
+    return res.status(400).send({
+      message: 'Please enter a valid email address.',
+    });
+  }
+
   // validate locale
   // @TODO validation framework
   const localeCodes = locales.map(function (locale) {
@@ -100,6 +111,20 @@ exports.update = function (req, res) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('bad-request'),
     });
+  }
+
+  if (req.body.languages) {
+    const existingLanguages = new Set(req.user.languages);
+    const addedDeprecatedLanguage = []
+      .concat(req.body.languages)
+      .some(
+        code => deprecatedLanguages.has(code) && !existingLanguages.has(code),
+      );
+    if (addedDeprecatedLanguage) {
+      return res.status(400).send({
+        message: 'This language can no longer be added to profiles.',
+      });
+    }
   }
 
   // Validate nostr npub - must be a public key, not nsec (secret key)
@@ -235,39 +260,28 @@ exports.update = function (req, res) {
 
       // Update user
       function (token, email, done) {
-        // For security measurement do not use _id from the req.body object
-        delete req.body._id;
-
-        // For security measurement remove these from the req.body object
-        // Users aren't allowed to modify these directly
-        delete req.body.member;
-        delete req.body.public;
-        delete req.body.created;
-        delete req.body.seen;
-        delete req.body.passwordUpdated;
-        delete req.body.roles;
-        delete req.body.email;
-        delete req.body.emailHash;
-        delete req.body.emailToken;
-        delete req.body.emailTemporary;
-        delete req.body.provider;
-        delete req.body.usernameUpdated;
-        delete req.body.salt;
-        delete req.body.password;
-        delete req.body.resetPasswordToken;
-        delete req.body.resetPasswordExpires;
-        delete req.body.removeProfileToken;
-        delete req.body.removeProfileExpires;
-        delete req.body.additionalProvidersData;
-        delete req.body.publicReminderCount;
-        delete req.body.publicReminderSent;
-        delete req.body.welcomeSequenceStep;
-        delete req.body.welcomeSequenceSent;
-        delete req.body.acquisitionStory;
-
-        // Merge existing user
-        let user = req.user;
-        user = _.extend(user, req.body);
+        const editableFields = [
+          'firstName',
+          'lastName',
+          'tagline',
+          'description',
+          'birthdate',
+          'gender',
+          'languages',
+          'locationLiving',
+          'locationFrom',
+          'username',
+          'extSitesCouchers',
+          'extSitesBW',
+          'extSitesCS',
+          'extSitesWS',
+          'nostrNpub',
+          'avatarSource',
+          'avatarUploaded',
+          'newsletter',
+          'locale',
+        ];
+        const user = _.extend(req.user, _.pick(req.body, editableFields));
         user.updated = Date.now();
 
         // This is set only if user edited email
@@ -277,17 +291,7 @@ exports.update = function (req, res) {
         }
 
         user.save(function (err) {
-          if (!err) {
-            req.login(user, function (err) {
-              if (err) {
-                done(err);
-              } else {
-                done(null, token, user);
-              }
-            });
-          } else {
-            done(err, token, user);
-          }
+          done(err, token, user);
         });
       },
 
@@ -840,18 +844,26 @@ function isUsernameUpdateAllowed(user) {
   return moment().isSameOrAfter(allowedDate);
 }
 
-/**
- * Sanitize profile before sending it to frontend
- * - Ensures certain fields are removed before publishing
- * - Collects tribe id's into one simple array
- * - Removes tribe references that don't exist anymore (i.e. they are removed from `tribes` table but reference ID remains in the user's table)
- * - Sanitize description in case
- *
- * @param {Object} profile - User profile to sanitize
- * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
- * @return {Object} Sanitized profile.
- */
-exports.sanitizeProfile = function (profile, authenticatedUser) {
+// Some responses sanitize another member's public profile, while authenticated
+// user responses need own-account fields such as usernameUpdateAllowed.
+function sameUser(profile, authenticatedUser) {
+  if (
+    !profile ||
+    !authenticatedUser ||
+    !profile._id ||
+    !authenticatedUser._id
+  ) {
+    return false;
+  }
+
+  if (authenticatedUser._id.equals) {
+    return authenticatedUser._id.equals(profile._id);
+  }
+
+  return authenticatedUser._id.toString() === profile._id.toString();
+}
+
+function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
   if (!profile) {
     return;
   }
@@ -859,12 +871,24 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   // Destruct Mongoose object to regular object so that we can manipulate it
   profile = profile.toObject();
 
+  const authenticatedRoles = authenticatedUser?.roles || [];
+  const hideExternalContactDetails =
+    !isOwnProfile &&
+    authenticatedRoles.includes('shadowban') &&
+    !authenticatedRoles.includes('admin');
+
   // We're sanitizing this already on saving/updating the profile, but here we do it again just in case.
-  if (profile.description)
+  if (profile.description) {
     profile.description = sanitizeHtml(
       profile.description,
       textService.sanitizeOptions,
     );
+    if (hideExternalContactDetails) {
+      profile.description = textService.stripContactDetails(
+        profile.description,
+      );
+    }
+  }
 
   // Remove tribes without reference object (= they've been deleted from `tribes` table)
   if (profile.member && profile.member.length > 0) {
@@ -881,9 +905,6 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
       profile.memberIds.push(tribeId.toString());
     });
   }
-
-  const isOwnProfile =
-    authenticatedUser && authenticatedUser._id.equals(profile._id);
 
   if (isOwnProfile) {
     // Is user allowed to update their username?
@@ -921,7 +942,14 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   // Legacy social connections are still shown so members can remove them.
   // Only the identifiers needed for those rows and existing public links may
   // reach the client; provider payloads can also contain credentials and PII.
-  if (_.isObject(profile.additionalProvidersData)) {
+  if (hideExternalContactDetails) {
+    delete profile.additionalProvidersData;
+    delete profile.extSitesBW;
+    delete profile.extSitesCS;
+    delete profile.extSitesCouchers;
+    delete profile.extSitesWS;
+    delete profile.nostrNpub;
+  } else if (_.isObject(profile.additionalProvidersData)) {
     const providerIdentityFields = {
       facebook: ['id'],
       github: ['login'],
@@ -953,6 +981,29 @@ exports.sanitizeProfile = function (profile, authenticatedUser) {
   delete profile.__v;
 
   return profile;
+}
+
+/**
+ * Sanitize profile before sending it to frontend
+ * - Ensures certain fields are removed before publishing
+ * - Collects tribe id's into one simple array
+ * - Removes tribe references that don't exist anymore (i.e. they are removed from `tribes` table but reference ID remains in the user's table)
+ * - Sanitize description in case
+ *
+ * @param {Object} profile - User profile to sanitize
+ * @param {Object} authenticatedUser - Currently authenticated user profile. Allows some fields if this matches to `profile`
+ * @return {Object} Sanitized profile.
+ */
+exports.sanitizeProfile = function (profile, authenticatedUser) {
+  return sanitizeProfile(
+    profile,
+    sameUser(profile, authenticatedUser),
+    authenticatedUser,
+  );
+};
+
+exports.sanitizeOwnProfile = function (profile) {
+  return sanitizeProfile(profile, true, profile);
 };
 
 /**
@@ -1250,7 +1301,7 @@ exports.removePushRegistration = function (req, res) {
     } else {
       return res.send({
         message: 'Removed registration.',
-        user: exports.sanitizeProfile(user, user),
+        user: exports.sanitizeOwnProfile(user),
       });
     }
   });
@@ -1258,6 +1309,10 @@ exports.removePushRegistration = function (req, res) {
 
 /**
  * Add push registration
+ *
+ * Push delivery is retired. Keep this endpoint as a deliberate rejection so
+ * older clients fail clearly. Reintroduce registration here if push returns.
+ * Historical tokens remain removable via `removePushRegistration`.
  */
 exports.addPushRegistration = function (req, res) {
   if (!req.user) {
@@ -1266,124 +1321,9 @@ exports.addPushRegistration = function (req, res) {
     });
   }
 
-  let user = req.user;
-  const token = String(_.get(req, 'body.token', ''));
-  const platform = String(_.get(req, 'body.platform', ''));
-  const deviceId = String(_.get(req, 'body.deviceId', ''));
-  const doNotNotify = Boolean(_.get(req, 'body.doNotNotify', false));
-
-  if (!token) {
-    return res.status(400).send({
-      message: 'Token is invalid or missing.',
-    });
-  }
-
-  // PushRegistration is a sub-schema at User schema, thus we need to dig deeper in to get `enumValues`
-  // Will contain array of string values, e.g. `['android', 'ios', 'web']`
-  const validPlatforms =
-    User.schema.path('pushRegistration').schema.path('platform').enumValues ||
-    [];
-
-  if (!platform || validPlatforms.indexOf(platform) === -1) {
-    return res.status(400).send({
-      message: 'Platform is invalid or missing.',
-    });
-  }
-
-  async.waterfall(
-    [
-      // Remove any existing registrations for this token
-
-      function (done) {
-        User.findByIdAndUpdate(user._id, {
-          $pull: {
-            pushRegistration: {
-              token,
-            },
-          },
-        }).exec(function (err) {
-          done(err);
-        });
-      },
-
-      // Add new registration
-
-      function (done) {
-        const registration = {
-          platform,
-          token,
-          created: Date.now(),
-        };
-
-        if (deviceId) {
-          registration.deviceId = deviceId;
-        }
-
-        User.findByIdAndUpdate(
-          user._id,
-          {
-            $push: {
-              pushRegistration: registration,
-            },
-          },
-          {
-            new: true,
-          },
-        ).exec(function (err, updatedUser) {
-          if (err) {
-            return done(err);
-          }
-          user = updatedUser;
-          done();
-        });
-      },
-
-      // Notify the user we just added a device
-
-      function (done) {
-        // Don't notify if in request we asked to be silent
-        if (doNotNotify) {
-          return done();
-        }
-
-        pushService.notifyPushDeviceAdded(user, platform, function (err) {
-          if (err) {
-            // don't stop on error, but log it
-            log(
-              'error',
-              'Error when sending push notification about added device. #9hsdff',
-              {
-                error: err,
-              },
-            );
-          }
-          done();
-        });
-      },
-    ],
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message:
-            errorService.getErrorMessage(err) || 'Failed, please try again.',
-        });
-      } else {
-        User.findById(user._id).exec(function (err, user) {
-          if (err) {
-            return res.status(400).send({
-              message:
-                errorService.getErrorMessage(err) ||
-                'Failed to fetch user, please try again.',
-            });
-          }
-          return res.send({
-            message: 'Saved registration.',
-            user: exports.sanitizeProfile(user, user),
-          });
-        });
-      }
-    },
-  );
+  return res.status(400).send({
+    message: 'Push notifications are no longer available.',
+  });
 };
 
 /**
@@ -1433,6 +1373,7 @@ exports.search = function (req, res, next) {
       $and: [
         { public: true }, // only public users
         { _id: { $nin: blocked } }, // remove ones that I blocked
+        { roles: { $nin: ['suspended', 'shadowban'] } },
         {
           $text: {
             $search: req.query.search,

@@ -204,3 +204,38 @@ exports.plainText = function (content, cleanWhitespace) {
 
   return content;
 };
+
+/**
+ * Remove contact details from rich text without changing the stored content.
+ *
+ * @param {String} content - Content that may contain URLs, emails or phone numbers.
+ * @returns {String} Plain text with detected contact details removed.
+ */
+exports.stripContactDetails = function (content) {
+  content = sanitizeHtml(_.toString(content), {
+    allowedTags: exports.sanitizeOptions.allowedTags,
+    allowedAttributes: exports.sanitizeOptions.allowedAttributes,
+    exclusiveFilter(frame) {
+      return (
+        frame.tag === 'a' &&
+        /^(?:(?:https?|s?ftp|mailto|tel):|\/\/)/i.test(
+          _.get(frame, 'attribs.href', ''),
+        )
+      );
+    },
+  });
+  content = exports.plainText(content);
+
+  if (!content) {
+    return '';
+  }
+
+  return Autolinker.link(content, {
+    email: true,
+    hashtag: false,
+    mention: false,
+    phone: true,
+    urls: true,
+    replaceFn: () => '',
+  });
+};

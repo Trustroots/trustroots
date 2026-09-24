@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import MediumEditor from 'react-medium-editor';
+import MediumEditor from 'medium-editor';
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect, useRef } from 'react';
 import 'medium-editor/dist/css/medium-editor.css';
 
 const baseOptions = {
@@ -172,37 +172,64 @@ export default function TrEditor({
   placeholder,
   text,
 }) {
-  const ref = React.createRef();
+  const ref = useRef(null);
+  const mediumRef = useRef(null);
+  const onChangeRef = useRef(onChange);
+  const onCtrlEnterRef = useRef(onCtrlEnter);
+  const latestEditorText = useRef(text);
+  const initialMarkup = useRef({ __html: text });
+  const isApplyingExternalText = useRef(false);
   const { t } = useTranslation('core');
 
-  useEffect(() => {
-    const { medium } = ref.current;
-    const onEnter = event => event.ctrlKey && onCtrlEnter(event);
+  useLayoutEffect(() => {
+    onChangeRef.current = onChange;
+    onCtrlEnterRef.current = onCtrlEnter;
+  });
+
+  useLayoutEffect(() => {
+    const medium = new MediumEditor(ref.current, {
+      ...baseOptions,
+      placeholder: { hideOnClick: true },
+    });
+    mediumRef.current = medium;
+    const onInput = (event, editable) => {
+      // setContent emits editableInput too; external changes are not user input.
+      if (isApplyingExternalText.current) return;
+      const value = removeTrailingBr(editable.innerHTML);
+      latestEditorText.current = value;
+      onChangeRef.current(value);
+    };
+    const onEnter = event => event.ctrlKey && onCtrlEnterRef.current(event);
+    medium.subscribe('editableInput', onInput);
     medium.subscribe('editableKeydownEnter', onEnter);
     return () => {
-      // the onCtrlEnter that gets passed through will change quite a lot as it
-      // probably gets redefined over and over with different bound state
-      // this means it'll actually subscribe/unsubscribe per keypress...
-      // seems a bit much, but that's how these react hooks work!
+      medium.unsubscribe('editableInput', onInput);
       medium.unsubscribe('editableKeydownEnter', onEnter);
+      medium.destroy();
     };
-  }, [onCtrlEnter]);
+  }, []);
 
-  const options = {
-    // https://github.com/yabwe/medium-editor#placeholder-options
-    placeholder: {
-      hideOnClick: true,
-      text: placeholder ? placeholder : t('Type your text'),
-    },
-    ...baseOptions,
-  };
+  useEffect(() => {
+    // MediumEditor owns the editable DOM. Echoing its own input back into it
+    // would disturb the caret and native input composition.
+    if (text !== latestEditorText.current) {
+      latestEditorText.current = text;
+      isApplyingExternalText.current = true;
+      try {
+        mediumRef.current.setContent(text);
+      } finally {
+        isApplyingExternalText.current = false;
+      }
+    }
+  }, [text]);
 
-  const editorProps = { id, text, options, className: 'tr-editor' };
   return (
-    <MediumEditor
+    <div
       ref={ref}
-      onChange={value => onChange(removeTrailingBr(value))}
-      {...editorProps}
+      id={id}
+      className="tr-editor"
+      data-placeholder={placeholder ? placeholder : t('Type your text')}
+      dangerouslySetInnerHTML={initialMarkup.current}
     />
   );
 }

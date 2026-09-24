@@ -73,6 +73,34 @@ describe('Service: email', function () {
     });
   });
 
+  it('can send a flagged signup alert to support', function (done) {
+    const user = {
+      _id: 'member-id',
+      displayName: 'Example Member',
+      username: 'example-member',
+    };
+
+    emailService.sendFlaggedSignupAlert(
+      user,
+      ['support', 'trustroots'],
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].type.should.equal('send email');
+        jobs[0].data.to.address.should.equal(config.supportEmail);
+        jobs[0].data.subject.should.equal(
+          'Signup matched safety-review keywords',
+        );
+        jobs[0].data.text.should.containEql('support, trustroots');
+        jobs[0].data.text.should.containEql(user.displayName);
+        jobs[0].data.text.should.containEql('@' + user.username);
+        jobs[0].data.text.should.containEql('/admin/user?id=' + user._id);
+        should(jobs[0].data.html).equal(undefined);
+        done();
+      },
+    );
+  });
+
   it('can send change email confirmation', function (done) {
     const user = {
       displayName: 'test user',
@@ -250,11 +278,51 @@ describe('Service: email', function () {
         notification.messages.forEach(function (notification) {
           jobs[0].data.text.should.containEql(notification.content);
         });
+        jobs[0].data.text.should.containEql(
+          'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+        );
+        jobs[0].data.html.should.containEql(
+          'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
+        );
         jobs[0].data.text.should.containEql('/messages/' + userFrom.username);
         jobs[0].data.text.should.containEql('/profile/' + userFrom.username);
         jobs[0].data.html.should.containEql('/messages/' + userFrom.username);
         jobs[0].data.to.name.should.equal(userTo.displayName);
         jobs[0].data.to.address.should.equal(userTo.email);
+        done();
+      },
+    );
+  });
+
+  it('sends administrator message notifications from Trustroots Support', function (done) {
+    const userFrom = {
+      _id: 'admin-user-id',
+      username: 'admin-user',
+      displayName: 'Admin User',
+      email: 'admin@example.com',
+      roles: ['user', 'admin'],
+    };
+    const userTo = {
+      _id: 'recipient-user-id',
+      username: 'recipient-user',
+      displayName: 'Recipient User',
+      email: 'recipient@example.com',
+      roles: ['user'],
+    };
+    const notification = {
+      messages: [{ id: 'message-id-1', content: 'Safety warning' }],
+    };
+
+    emailService.sendMessagesUnread(
+      userFrom,
+      userTo,
+      notification,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].data.from.should.equal(
+          'Trustroots Support <' + config.supportEmail + '>',
+        );
         done();
       },
     );
@@ -293,6 +361,44 @@ describe('Service: email', function () {
         jobs[0].data.subject.should.equal(
           userFrom.displayName + ' is still waiting for a reply on Trustroots',
         );
+        done();
+      },
+    );
+  });
+
+  it('removes links from unread message previews', function (done) {
+    const userFrom = {
+      _id: 'from-user-id',
+      username: 'userfrom',
+      displayName: 'from name',
+      email: 'from@test.com',
+    };
+    const userTo = {
+      _id: 'to-user-id',
+      username: 'userto',
+      displayName: 'to name',
+      email: 'to@test.com',
+    };
+    const notification = {
+      messages: [
+        {
+          id: 'message-id-1',
+          content:
+            'Visit <a href="https://example.invalid/payment">example.invalid/payment</a>.',
+        },
+      ],
+    };
+
+    emailService.sendMessagesUnread(
+      userFrom,
+      userTo,
+      notification,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].data.html.should.containEql('Visit [link removed].');
+        jobs[0].data.html.should.not.containEql('https://example.invalid');
+        jobs[0].data.text.should.not.containEql('https://example.invalid');
         done();
       },
     );
@@ -381,10 +487,10 @@ describe('Service: email', function () {
       should.exist(jobs[0].data.text);
       jobs[0].data.text.should.containEql('test-support-message');
       jobs[0].data.text.should.containEql(
-        'Reporting member: ' + supportRequest.reportMember,
+        'Reported member: ' + supportRequest.reportMember,
       );
       jobs[0].data.text.should.containEql(
-        'Username: ' + supportRequest.username,
+        'From username: ' + supportRequest.username,
       );
       jobs[0].data.text.should.containEql('Email: ' + supportRequest.email);
       jobs[0].data.text.should.containEql(
@@ -574,6 +680,13 @@ describe('Service: email', function () {
       jobs.length.should.equal(1);
       jobs[0].data.subject.should.equal(
         'Confirm removing your Trustroots profile',
+      );
+      jobs[0].data.html.should.containEql('Review account deletion');
+      jobs[0].data.html.should.containEql(
+        'Your account will not be deleted unless you confirm there.',
+      );
+      jobs[0].data.text.should.containEql(
+        'Your account will not be deleted unless you confirm there.',
       );
       jobs[0].data.text.should.containEql('/remove/remove-token');
       done();

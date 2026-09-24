@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const should = require('should');
+const sinon = require('sinon');
 
 const cleanup = require('../../../server/services/historical-spam-cleanup.server.service');
 
@@ -66,7 +67,60 @@ describe('Service: historical spam cleanup', () => {
     sequence = 0;
   });
 
-  afterEach(removeCreatedData);
+  afterEach(async () => {
+    sinon.restore();
+    await removeCreatedData();
+  });
+
+  it('uses safe defaults when there are no campaign accounts', async () => {
+    const result = await cleanup.run();
+
+    result.should.deepEqual({
+      candidates: 0,
+      eligible: 0,
+      protected: 0,
+      deleted: 0,
+    });
+  });
+
+  it('retains an account protected immediately before deletion', async () => {
+    const candidate = await createCandidate();
+    const query = result => ({
+      select() {
+        return this;
+      },
+      lean() {
+        return Promise.resolve(result);
+      },
+    });
+    const find = sinon.stub(AdminNote, 'find');
+    find.onFirstCall().returns(query([]));
+    find.onSecondCall().returns(query([{ user: candidate._id }]));
+
+    const result = await cleanup.run({ deleteAccounts: true });
+
+    result.should.deepEqual({
+      candidates: 1,
+      eligible: 0,
+      protected: 1,
+      deleted: 0,
+    });
+    should.exist(await User.findById(candidate._id));
+  });
+
+  it('supports legacy and empty deletion results', async () => {
+    await createCandidate();
+    const deleteMany = sinon.stub(User, 'deleteMany');
+    deleteMany.onFirstCall().resolves({ n: 1 });
+    deleteMany.onSecondCall().resolves({});
+
+    const legacyResult = await cleanup.run({ deleteAccounts: true });
+    const emptyResult = await cleanup.run({ deleteAccounts: true });
+    deleteMany.restore();
+
+    legacyResult.deleted.should.equal(1);
+    emptyResult.deleted.should.equal(0);
+  });
 
   it('dry-runs eligible campaign accounts and retains protected accounts', async () => {
     const eligible = await createCandidate();

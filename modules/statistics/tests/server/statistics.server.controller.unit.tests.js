@@ -79,14 +79,6 @@ describe('Statistics controller unit tests', () => {
       });
     });
 
-    it('getPushRegistrationCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
-      statistics.getPushRegistrationCount(err => {
-        err.should.be.Error();
-        done();
-      });
-    });
-
     it('getLastSeenStatistic propagates database errors', done => {
       sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
       statistics.getLastSeenStatistic({ days: 7 }, err => {
@@ -351,22 +343,6 @@ describe('Statistics controller unit tests', () => {
       });
     });
 
-    it('counts push registrations', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
-      userDoc.public = true;
-      userDoc.pushRegistration = [{ platform: 'android', token: 'abc' }];
-      await userDoc.save();
-
-      await new Promise((resolve, reject) => {
-        statistics.getPushRegistrationCount((err, count) => {
-          if (err) return reject(err);
-          count.should.equal(1);
-          resolve();
-        });
-      });
-    });
-
     it('counts users seen recently', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
@@ -411,7 +387,7 @@ describe('Statistics controller unit tests', () => {
       });
     });
 
-    it('aggregates all experiences and unique real-life connections', async () => {
+    it('counts only positive experiences as real-life connections', async () => {
       const users = await utils.saveUsers(utils.generateUsers(4));
       const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
       const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
@@ -467,7 +443,7 @@ describe('Statistics controller unit tests', () => {
         recommended: 2,
         notRecommended: 2,
         recent: { total: 4, recommended: 2, notRecommended: 1 },
-        realLifeConnections: { total: 3, recent: 2 },
+        realLifeConnections: { total: 2, recent: 2 },
       });
     });
   });

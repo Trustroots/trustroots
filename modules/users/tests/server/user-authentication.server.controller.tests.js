@@ -377,6 +377,55 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('keeps name-spam errors separate from username advice', async () => {
+      const controller = loadSignupController();
+      const res = deferredResponse();
+      controller.signup(
+        {
+          body: {
+            firstName: 'Amina',
+            lastName: 'spam_name',
+            username: 'samplemember',
+            email: 'sample-member@example.org',
+            password: 'password123',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Snap! Something went wrong. If this keeps happening, please contact us.',
+      );
+    });
+
+    it('keeps internal signup errors private', async () => {
+      const controller = loadSignupController();
+      sinon
+        .stub(crypto, 'randomBytes')
+        .callsFake((size, callback) =>
+          callback(new Error('Internal secret detail')),
+        );
+      const res = deferredResponse();
+      controller.signup(
+        {
+          body: {
+            firstName: 'Amina',
+            lastName: 'Vale',
+            username: 'samplemember',
+            email: 'sample-member@example.org',
+            password: 'password123',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Snap! Something went wrong. If this keeps happening, please contact us.',
+      );
+    });
+
     it('creates a user and logs them in', async () => {
       const controller = loadSignupController();
       const res = deferredResponse();
@@ -394,6 +443,74 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body.username.should.equal('adalovelace');
+    });
+
+    it('sends one alert after a matching user is saved', async () => {
+      const sendFlaggedSignupAlert = sinon
+        .stub()
+        .callsFake((user, matchedKeywords, callback) => callback());
+      const controller = proxyquire(controllerPath, {
+        '../../../core/server/services/email.server.service': {
+          sendFlaggedSignupAlert,
+          sendSignupEmailConfirmation: (user, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+      const req = {
+        body: {
+          firstName: 'TrustRoots',
+          lastName: 'Member',
+          username: 'flaggedmember',
+          password: 'password123',
+          email: 'flagged-signup@example.com',
+        },
+        login: (user, callback) => callback(),
+      };
+
+      controller.signup(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      sendFlaggedSignupAlert.calledOnce.should.be.true();
+      sendFlaggedSignupAlert.firstCall.args[1].should.deepEqual(['trustroots']);
+      const saved = await User.findOne({ username: 'flaggedmember' });
+      should.exist(saved);
+    });
+
+    it('continues signup when flagged-alert delivery fails', async () => {
+      const log = sinon.stub();
+      const controller = proxyquire(controllerPath, {
+        '../../../../config/lib/logger': log,
+        '../../../core/server/services/email.server.service': {
+          sendFlaggedSignupAlert: (user, matchedKeywords, callback) =>
+            callback(new Error('alert mail failed')),
+          sendSignupEmailConfirmation: (user, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+      const req = {
+        body: {
+          firstName: 'Support',
+          lastName: 'Member',
+          username: 'alertfailure',
+          password: 'password123',
+          email: 'alert-failure@example.com',
+        },
+        login: (user, callback) => callback(),
+      };
+
+      controller.signup(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      res.body.username.should.equal('alertfailure');
+      log
+        .calledWith(
+          'error',
+          'Flagged signup alert delivery failed.',
+          sinon.match.has('error'),
+        )
+        .should.be.true();
     });
 
     it('returns an empty object when signup completes without a user', async () => {
@@ -511,6 +628,8 @@ describe('Authentication controller OAuth unit tests', () => {
     it('logs in a valid user', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
+      userDoc.created = new Date('2020-05-27T19:23:44.733Z');
+      await userDoc.save();
       const controller = loadSigninController(() => [null, userDoc, null]);
       const res = deferredResponse();
       const req = { login: (user, cb) => cb() };
@@ -518,6 +637,7 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       res.body._id.toString().should.equal(userDoc._id.toString());
+      res.body.usernameUpdateAllowed.should.be.true();
     });
 
     it('returns 400 when login fails after authentication', async () => {

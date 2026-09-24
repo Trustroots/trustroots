@@ -45,7 +45,19 @@ test.describe('admin reference and error feature coverage', () => {
       data: { search: 'definitely-no-e2e-user' },
     });
     expect(noResults.ok()).toBeTruthy();
-    expect(await noResults.json()).toEqual([]);
+    expect(await noResults.json()).toEqual({
+      pagination: {
+        page: 1,
+        pageSize: 150,
+        total: 0,
+        totalPages: 0,
+      },
+      sort: {
+        column: 'username',
+        direction: 'ascending',
+      },
+      users: [],
+    });
 
     const missingUser = await page.request.post('/api/admin/user', {
       data: { id: '000000000000000000000000' },

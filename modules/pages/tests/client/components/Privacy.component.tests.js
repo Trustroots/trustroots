@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Privacy from '@/modules/pages/client/components/Privacy.component';
@@ -52,5 +52,10 @@ describe('<Privacy />', () => {
       'https://www.sparkpost.com/',
     );
     expect(screen.queryByText(/Google Firebase/)).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /The most recent IP address used during authenticated activity/,
+      ),
+    ).toBeInTheDocument();
   });
 });

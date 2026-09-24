@@ -1,6 +1,7 @@
 const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
+  SEEDED_MEMBERS,
   createUser,
   registerViaApi,
   signOut,
@@ -29,6 +30,7 @@ test.describe.serial('authentication smoke', () => {
       'Homepage loads for visitors.',
       'Sign in and sign up entry points are visible.',
       'Homepage footer links to public statistics.',
+      'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
     ]);
 
@@ -40,6 +42,9 @@ test.describe.serial('authentication smoke', () => {
     await expect(
       page.locator('.home-footer-pages a[href="/statistics"]'),
     ).toHaveText('Statistics');
+    await expect(
+      page.locator('.home-footer-pages a[href="/safety"]'),
+    ).toHaveText('Safety');
   });
 
   test('signup submits a unique user through the UI', async ({
@@ -80,6 +85,96 @@ test.describe.serial('authentication smoke', () => {
     await signUp(page, signupUser);
   });
 
+  test('signup rejects reserved service names', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    const member = createUser();
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    const validationResponse = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/auth/signup/validate') &&
+        response.request().postDataJSON().username === 'nostr',
+    );
+    await page.locator('#username').fill('nostr');
+    await page.locator('#username').blur();
+    expect(await (await validationResponse).json()).toMatchObject({
+      valid: false,
+      message: 'Username is not available.',
+    });
+    await expect(
+      page.getByText('Username is not available.', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    const rejected = await request.post('/api/auth/signup', {
+      data: { ...member, username: 'nostr' },
+    });
+    expect(rejected.status()).toBe(400);
+    await page.locator('#username').fill(member.username);
+    await page.locator('#username').blur();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
+
+  test('signup explains underscores and waits for username validation', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup form validates required fields.',
+    ]);
+    const member = createUser();
+    let releaseValidation;
+    const validationGate = new Promise(resolve => {
+      releaseValidation = resolve;
+    });
+    await page.route('**/api/auth/signup/validate', async route => {
+      await validationGate;
+      await route.continue();
+    });
+    await page.goto('/signup');
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#password').fill(member.password);
+    await page.locator('#username').fill('sample_member');
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    await page.locator('#username').blur();
+    await expect(
+      page
+        .getByText(
+          'Use 3-34 letters, numbers, periods or hyphens. Underscores are not allowed at signup.',
+        )
+        .first(),
+    ).toBeVisible();
+    const rejected = await request.post('/api/auth/signup', {
+      data: { ...member, username: 'sample_member' },
+    });
+    expect(rejected.status()).toBe(400);
+    expect((await rejected.json()).message).toContain(
+      'Underscores are not allowed at signup.',
+    );
+    await page.locator('#username').fill(member.username);
+    try {
+      await expect(
+        page.getByRole('button', { name: 'Checking username…' }),
+      ).toBeDisabled();
+    } finally {
+      releaseValidation();
+    }
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+  });
+
   test('signed out user can sign in with username', async ({
     page,
   }, testInfo) => {
@@ -104,5 +199,26 @@ test.describe.serial('authentication smoke', () => {
 
     await signOut(page);
     await signInExisting(page, user.email);
+  });
+
+  test('sign-in continues to the protected destination', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.protected-route-redirect', [
+      'Protected routes preserve their path and query when redirecting to sign in.',
+    ]);
+
+    await signOut(page);
+    await page.goto('/messages?filter=unread');
+    await expect(page).toHaveURL(
+      /\/signin\?continue=true&returnTo=%2Fmessages%3Ffilter%3Dunread/,
+    );
+
+    const confirmedMember = SEEDED_MEMBERS[0];
+    await page.locator('#username').fill(confirmedMember.username);
+    await page.locator('#password').fill(confirmedMember.password);
+    await page.getByRole('button', { name: /sign in to continue/i }).click();
+
+    await expect(page).toHaveURL(/\/messages\?filter=unread/);
   });
 });

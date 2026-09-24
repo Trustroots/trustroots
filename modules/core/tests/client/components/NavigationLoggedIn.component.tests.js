@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import NavigationLoggedIn from '@/modules/core/client/components/NavigationLoggedIn';
@@ -115,6 +115,9 @@ describe('<NavigationLoggedIn />', () => {
       'href',
       '/statistics',
     );
+    screen.getAllByRole('link', { name: 'Safety' }).forEach(link => {
+      expect(link).toHaveAttribute('href', '/safety');
+    });
     const wikiLink = screen.getByRole('link', { name: 'Wiki' });
     expect(wikiLink).toHaveAttribute('href', 'https://wiki.trustroots.org/');
     expect(wikiLink).toHaveAttribute('target', '_blank');

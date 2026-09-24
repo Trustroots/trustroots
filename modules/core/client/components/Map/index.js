@@ -1,6 +1,6 @@
 // External dependencies
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactMapGL from 'react-map-gl';
 
 // Internal dependencies
@@ -16,6 +16,7 @@ export default function Map(props) {
   const {
     children,
     fallbackMarker,
+    onLocationChange,
     location = [48.6908333333, 9.14055555556], // Default location to Europe when not set
     zoom = 6,
     ...overrideProps // anything else will be passed down to <ReactMapGL> as props
@@ -27,6 +28,20 @@ export default function Map(props) {
     longitude: location[1],
     zoom,
   });
+  useEffect(() => {
+    setViewport(current => ({
+      ...current,
+      latitude: location[0],
+      longitude: location[1],
+    }));
+  }, [location[0], location[1]]);
+
+  function handleViewportChange(nextViewport) {
+    setViewport(nextViewport);
+    if (onLocationChange) {
+      onLocationChange([nextViewport.latitude, nextViewport.longitude]);
+    }
+  }
   const MAPBOX_TOKEN = getMapBoxToken();
   const showMapStyles =
     props.showMapStyles &&
@@ -40,6 +55,7 @@ export default function Map(props) {
         height={props.height || 320}
         location={location}
         marker={fallbackMarker}
+        onLocationChange={onLocationChange}
         scrollZoom={props.scrollZoom}
         width={props.width || '100%'}
         zoom={zoom}
@@ -54,7 +70,7 @@ export default function Map(props) {
       height={320}
       mapboxApiAccessToken={MAPBOX_TOKEN}
       mapStyle={mapStyle}
-      onViewportChange={setViewport}
+      onViewportChange={handleViewportChange}
       touchRotate={false}
       {...viewport}
       width={
@@ -81,6 +97,7 @@ Map.propTypes = {
     location: PropTypes.arrayOf(PropTypes.number).isRequired,
   }),
   location: PropTypes.arrayOf(PropTypes.number),
+  onLocationChange: PropTypes.func,
   height: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   scrollZoom: PropTypes.bool,
   showMapStyles: PropTypes.bool,

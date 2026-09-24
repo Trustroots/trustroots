@@ -1,10 +1,32 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import UserLink from '@/modules/admin/client/components/UserLink.component';
 
+beforeEach(() => {
+  window.user = { roles: ['admin'] };
+});
+afterEach(() => {
+  delete window.user;
+});
+
 describe('<UserLink />', () => {
+  it('uses public profile links or plain text when requested', () => {
+    const { rerender } = render(
+      <UserLink publicProfile user={{ _id: 'member-id', username: 'river' }} />,
+    );
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/profile/river');
+    rerender(
+      <UserLink
+        publicProfile
+        user={{ _id: 'member-id', displayName: 'River' }}
+      />,
+    );
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByText('River')).toBeInTheDocument();
+  });
+
   it('renders unknown when the user id is missing', () => {
     render(<UserLink user={{ username: 'missing-id' }} />);
 

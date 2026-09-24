@@ -1,10 +1,15 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import UserState from '@/modules/admin/client/components/UserState.component';
 
 describe('<UserState />', () => {
+  it('displays the Welcome team label', () => {
+    render(<UserState user={{ roles: ['welcome-team'], public: true }} />);
+    expect(screen.getByText('Welcome team')).toBeInTheDocument();
+  });
+
   it('renders support-relevant profile state labels', () => {
     render(
       <UserState

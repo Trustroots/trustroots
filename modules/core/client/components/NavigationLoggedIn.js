@@ -12,6 +12,7 @@ import {
 // Internal dependencies
 import { userType } from '@/modules/users/client/users.prop-types';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
+import UnreadCount from '@/modules/messages/client/components/UnreadCount.component';
 import Icon from './Icon';
 import MenuItem from './NavigationMenuItem';
 import SubMenuList from './NavigationSubMenuList';
@@ -51,6 +52,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           <DropMenuItem href="/faq">
             {t('Frequently Asked Questions')}
           </DropMenuItem>
+          <DropMenuItem href="/safety">{t('Safety')}</DropMenuItem>
           <DropMenuItem href="/faq/bugs-and-features">
             {t('Report a bug')}
           </DropMenuItem>
@@ -97,7 +99,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
             size="lg"
           />
           <span className="hidden-xs">{t('Messages')}</span>
-          <unread-count></unread-count>
+          <UnreadCount />
         </MenuItem>
         <MenuItem
           currentPath={currentPath}
@@ -177,6 +179,10 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
               {
                 href: '/rules',
                 label: t('Rules'),
+              },
+              {
+                href: '/safety',
+                label: t('Safety'),
               },
               {
                 href: '/statistics',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Home, {
@@ -12,8 +12,8 @@ jest.mock('@/modules/tribes/client/api/tribes.api');
 
 const mockGetRouteParams = jest.fn();
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  getRouteParams: () => mockGetRouteParams(),
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentRouteParams: () => mockGetRouteParams(),
 }));
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
@@ -69,6 +69,10 @@ describe('<Home />', () => {
     expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
       'href',
       '/statistics',
+    );
+    expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
+      'href',
+      '/safety',
     );
   });
 

@@ -417,6 +417,41 @@ describe('User profile CRUD tests', function () {
     });
   });
 
+  it('retains and removes existing deprecated languages but rejects new ones', async function () {
+    user.languages = ['enm'];
+    await user.save();
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+
+    const retained = await agent
+      .put('/api/users')
+      .send({ languages: ['enm', 'eng'] })
+      .expect(200);
+    retained.body.languages.should.deepEqual(['enm', 'eng']);
+
+    const removed = await agent
+      .put('/api/users')
+      .send({ languages: ['eng'] })
+      .expect(200);
+    removed.body.languages.should.deepEqual(['eng']);
+
+    const rejected = await agent
+      .put('/api/users')
+      .send({ languages: ['eng', 'enm'] })
+      .expect(400);
+    rejected.body.message.should.equal(
+      'This language can no longer be added to profiles.',
+    );
+
+    await agent
+      .put('/api/users')
+      .send({ languages: ['iso_639_3-lfn'] })
+      .expect(400);
+    await agent.put('/api/users').send({ languages: 'enm' }).expect(400);
+
+    const stored = await User.findById(user._id);
+    Array.from(stored.languages).should.deepEqual(['eng']);
+  });
+
   it('should be able to update own nostr npub', function (done) {
     user.roles = ['user'];
 
@@ -426,10 +461,14 @@ describe('User profile CRUD tests', function () {
         .post('/api/auth/signin')
         .send(credentials)
         .expect(200)
-        .end(function (signinErr) {
+        .end(function (signinErr, signinRes) {
           if (signinErr) {
             return done(signinErr);
           }
+
+          const signinSessionCookie = signinRes.headers['set-cookie'].find(
+            cookie => cookie.startsWith('connect.sid='),
+          );
 
           agent
             .put('/api/users')
@@ -441,6 +480,15 @@ describe('User profile CRUD tests', function () {
               }
 
               userInfoRes.body.nostrNpub.should.equal(validNpub);
+
+              const updateSessionCookie = (
+                userInfoRes.headers['set-cookie'] || []
+              ).find(cookie => cookie.startsWith('connect.sid='));
+              if (updateSessionCookie) {
+                updateSessionCookie
+                  .split(';')[0]
+                  .should.equal(signinSessionCookie.split(';')[0]);
+              }
 
               User.findById(user._id, function (findErr, userFindRes) {
                 should.not.exist(findErr);

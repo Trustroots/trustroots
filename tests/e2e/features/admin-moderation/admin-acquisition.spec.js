@@ -13,6 +13,12 @@ test.describe('admin acquisition feature coverage', () => {
     annotateFeature(testInfo, 'admin.acquisition-stories', [
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
+      'Story rows link profile pictures to public member profiles.',
+      'Story rows show circle participation.',
+      'Story rows show available member and hosting locations.',
+      'Story rows show whether profiles are visible.',
+      'Story rows show matching restricted accounts.',
+      'Story columns can be sorted.',
     ]);
     annotateFeature(testInfo, 'admin.acquisition-analysis', [
       'Acquisition story analysis page loads.',
@@ -21,14 +27,51 @@ test.describe('admin acquisition feature coverage', () => {
 
     await page.goto('/admin/acquisition-stories');
     await expect(page).toHaveURL(/\/admin\/acquisition-stories/);
+    await expect(
+      page.getByRole('link', {
+        name: 'Open public profile for Alice Contact',
+      }),
+    ).toHaveAttribute('href', '/profile/e2e-seeded-alice');
+    await expect(
+      page.getByRole('button', { name: /^circles$/i }),
+    ).toBeVisible();
+    await expect(page.getByText('Living: Fictional home')).toBeVisible();
+    await expect(page.getByText('From: Fictional origin')).toBeVisible();
+    await expect(page.getByText(/^Hosting: /)).toBeVisible();
+    const aliceRow = page.locator('tr').filter({ hasText: 'Alice Contact' });
+    await expect(aliceRow.getByText('Visible', { exact: true })).toBeVisible();
+    await expect(
+      aliceRow.getByRole('link', {
+        name: 'e2e-seeded-shadow (Shadow Spammer)',
+      }),
+    ).toHaveAttribute('href', '/admin/user?id=665000000000000000000004');
+    await expect(
+      aliceRow.getByText(/Temporary email identifier/),
+    ).toBeVisible();
+    await expect(aliceRow.getByText(/Acquisition story/)).toHaveCount(0);
+    await expect(page.locator('img[loading="lazy"]').first()).toHaveAttribute(
+      'src',
+      /\/api\/users\/.+\/avatar\?size=32/,
+    );
 
     const stories = await page.request.post('/api/admin/acquisition-stories');
     expect(stories.ok()).toBeTruthy();
-    expect(
-      (await stories.json()).some(item =>
-        /hitchhiking friends/i.test(item.acquisitionStory),
-      ),
-    ).toBe(true);
+    const storyRows = await stories.json();
+    const aliceStory = storyRows.find(item =>
+      /hitchhiking friends/i.test(item.acquisitionStory),
+    );
+    expect(aliceStory).toBeTruthy();
+    expect(aliceStory.circleCount).toBe(1);
+    expect(aliceStory.locationLiving).toBe('Fictional home');
+    expect(aliceStory.locationFrom).toBe('Fictional origin');
+    expect(aliceStory.hostingLocation).toHaveLength(2);
+    expect(aliceStory.public).toBe(true);
+    expect(aliceStory.restrictedMatches).toEqual([
+      expect.objectContaining({
+        username: 'e2e-seeded-shadow',
+        matchReasons: ['Temporary email identifier'],
+      }),
+    ]);
 
     await page.goto('/admin/acquisition-stories/analysis');
     await expect(page).toHaveURL(/\/admin\/acquisition-stories\/analysis/);

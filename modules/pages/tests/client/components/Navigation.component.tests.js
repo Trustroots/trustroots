@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 
@@ -55,6 +55,10 @@ describe('<Navigation />', () => {
     expect(screen.getByRole('link', { name: 'Statistics' })).toHaveAttribute(
       'href',
       '/statistics',
+    );
+    expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
+      'href',
+      '/safety',
     );
   });
 

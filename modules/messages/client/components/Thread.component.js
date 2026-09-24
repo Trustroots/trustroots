@@ -6,9 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from 'react-query';
 
 import {
-  getRouteParams,
-  go,
-} from '@/modules/core/client/services/angular-compat';
+  getCurrentRouteParams,
+  navigate,
+} from '@/modules/core/client/services/client-runtime';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import { userType } from '@/modules/users/client/users.prop-types';
@@ -23,11 +23,10 @@ import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
-import plainTextLength from '@/modules/core/client/filters/plain-text-length.client.filter';
+import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 
-// Required by LanguageList in Monkeybox component
-// @TODO: move this to higher up in the React tree once we no longer deal with Angular
+// Required by LanguageList in Monkeybox component.
 const queryClient = new QueryClient();
 
 const api = {
@@ -40,6 +39,8 @@ const ThreadContainer = styled.div`
   top: 44px;
   bottom: 0;
   width: 100%;
+  min-height: 0;
+  overflow: hidden;
   @media (min-width: 768px) {
     width: 505px;
     bottom: 12px;
@@ -73,6 +74,19 @@ function YouHaveNotBeenTalkingYet() {
       <h4>{t("You haven't been talking yet.")}</h4>
       <Flashcard />
     </div>
+  );
+}
+
+function SafetyReminder() {
+  const { t } = useTranslation('messages');
+  return (
+    <p className="text-muted text-center">
+      {t('Before meeting someone new, read our ')}
+      <a href="/safety">{t('safety tips')}</a>
+      {t(' and ')}
+      <a href="/rules">{t('community rules')}</a>
+      {t('.')}
+    </p>
   );
 }
 
@@ -131,10 +145,10 @@ export default function Thread({ user, profileMinimumLength }) {
     );
   }
 
-  const username = getRouteParams().username;
+  const username = getCurrentRouteParams().username;
 
   if (user.username === username) {
-    go('inbox');
+    navigate('inbox');
     return null; // important to return null to indicate "nothing to render"
   }
 
@@ -197,7 +211,7 @@ export default function Thread({ user, profileMinimumLength }) {
         otherUser = await api.users.fetch(username);
       } catch (error) {
         if (error.response?.status === 404) {
-          const userId = getRouteParams().userId;
+          const userId = getCurrentRouteParams().userId;
           if (userId !== undefined) {
             otherUser = createFakeUserObject(userId);
             userRemoved = true;
@@ -339,6 +353,7 @@ export default function Thread({ user, profileMinimumLength }) {
                   onFetchMore={fetchMoreData}
                 />
               )}
+              {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showQuickReply && (
                 <QuickReply
                   onSend={content => sendMessage(content)}

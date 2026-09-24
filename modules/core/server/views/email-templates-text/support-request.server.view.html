@@ -1,10 +1,10 @@
-{% if request.reportMember %}Reporting member: {{request.reportMember}}
+{% if request.reportMember %}Reported member: {{request.reportMember}}
 {% endif %}
 {{request.message}}
 
 
 -- {# These two dashes should have space after them and this line stops .editorconfig stripping it out. #}
-Username: {{request.username}}
+From username: {{request.username}}
 Email: {{request.email}}
 Authenticated: {{request.authenticated}}
 Browser: {{request.userAgent}}

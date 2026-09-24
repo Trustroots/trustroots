@@ -44,11 +44,31 @@ import {
   communityNotesLayer,
   communityNotesClusterLayer,
   communityNotesClusterCountLayer,
+  communityNotesClusterCountLayerOSM,
 } from './community-notes-layers';
 import { OpenLocationCode } from 'open-location-code';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
+const COMMUNITY_NOTES_RECONNECT_DELAY_MS = 1000;
+const MISSING_MAP_LAYER_ERROR =
+  /^The layer '.*' does not exist in the map's style and cannot be queried for features\.$/;
+
 const olc = new OpenLocationCode();
+
+function handleMapError(event) {
+  const error = event?.error;
+
+  // A pointer event can race with style teardown after React has removed the
+  // interactive layers. Mapbox already returns no features for this query, so
+  // do not report the expected lifecycle race as an application error.
+  if (MISSING_MAP_LAYER_ERROR.test(error?.message)) {
+    return;
+  }
+
+  // Keep Mapbox's default behaviour for every other map error.
+  // eslint-disable-next-line no-console
+  console.error(error || event);
+}
 
 function getPlusCodeFromRawEvent(event) {
   const tag = event.tags.find(
@@ -112,7 +132,6 @@ function nostrEventsToGeoJSON(events) {
           pubkey: event.pubkey,
           authorPubkey: getNostrEventAuthorPubkey(event),
           created_at: event.created_at,
-          verified: event.kind === 30398,
           kind: event.kind,
           tags: JSON.stringify(event.tags),
         },
@@ -153,6 +172,9 @@ export default function SearchMap({
   );
 
   const [viewport, setViewport] = useState(persistentMapLocation);
+  const viewportRef = useRef(persistentMapLocation);
+  const gestureSurfaceRef = useRef(null);
+  const viewportChangeRef = useRef(null);
   const [webGLSupported] = useState(isWebGLSupported);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
@@ -169,6 +191,7 @@ export default function SearchMap({
   const [leafletMapState, setLeafletMapState] = useState();
   const communityNotesTimerRef = useRef(null);
   const communityNotesEventsRef = useRef([]);
+  const hasInitialisedFiltersRef = useRef(false);
 
   const parsedFilters = filters ? JSON.parse(filters) : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
@@ -180,6 +203,7 @@ export default function SearchMap({
     typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
   const effectiveMapStyle =
     !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
+  const isOsmStyle = effectiveMapStyle?.name === MAP_STYLE_OSM.name;
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles =
     webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
@@ -267,11 +291,47 @@ export default function SearchMap({
    * Refresh persistent map state when viewport changes
    */
   const onViewPortChange = viewport => {
+    viewportRef.current = viewport;
     setViewport(viewport);
 
     const { latitude, longitude, zoom } = viewport;
     debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
   };
+  viewportChangeRef.current = onViewPortChange;
+
+  useEffect(() => {
+    const surface = gestureSurfaceRef.current;
+
+    if (!webGLSupported || !surface) {
+      return undefined;
+    }
+
+    const handlePinchWheel = event => {
+      if (!event.ctrlKey) {
+        return;
+      }
+
+      // Firefox sends desktop trackpad pinches as Ctrl+wheel. Capture them
+      // before the map's wheel handler and the browser's page zoom handler.
+      event.preventDefault();
+      event.stopPropagation();
+
+      const current = viewportRef.current;
+      const deltaY = event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY;
+      const zoom = Math.max(0, Math.min(20, current.zoom - deltaY * 0.01));
+
+      if (zoom !== current.zoom) {
+        viewportChangeRef.current({ ...current, zoom });
+      }
+    };
+
+    surface.addEventListener('wheel', handlePinchWheel, {
+      capture: true,
+      passive: false,
+    });
+
+    return () => surface.removeEventListener('wheel', handlePinchWheel, true);
+  }, [webGLSupported]);
 
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
@@ -443,13 +503,71 @@ export default function SearchMap({
     }
   }
 
+  const zoomToCommunityNotesCluster = cluster => {
+    if (!cluster?.geometry?.coordinates) {
+      return;
+    }
+
+    setViewport({
+      ...viewport,
+      latitude: cluster.geometry.coordinates[1],
+      longitude: cluster.geometry.coordinates[0],
+      zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
+      transitionDuration: 'auto',
+      transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
+    });
+  };
+
+  const openCommunityNotesCluster = cluster => {
+    const clusterId = cluster?.properties?.cluster_id;
+    if (clusterId === undefined) {
+      zoomToCommunityNotesCluster(cluster);
+      return;
+    }
+
+    const source = getMapRef()?.getSource(SOURCE_COMMUNITY_NOTES);
+    if (!source) {
+      zoomToCommunityNotesCluster(cluster);
+      return;
+    }
+
+    source.getClusterLeaves(
+      clusterId,
+      cluster.properties.point_count,
+      0,
+      (error, leaves) => {
+        if (error) {
+          zoomToCommunityNotesCluster(cluster);
+          return;
+        }
+
+        const plusCode = getPlusCodeFromEvent(leaves[0].properties);
+        const sharesPlusCode = leaves.every(
+          leaf => getPlusCodeFromEvent(leaf.properties) === plusCode,
+        );
+
+        if (!sharesPlusCode) {
+          zoomToCommunityNotesCluster(cluster);
+          return;
+        }
+
+        if (onCommunityNoteOpen) {
+          onCommunityNoteOpen({
+            notes: leaves.map(leaf => reconstructEvent(leaf.properties)),
+            plusCode,
+          });
+        }
+      },
+    );
+  };
+
   const onClickMap = event => {
     const { features } = event;
     clearPreviouslySelectedState();
 
     if (!features?.length) {
       // Close open offers when clicking on map canvas
-      // Delegated to Angular controller; to be refactored to React
+      // Delegated to the search shell.
       onOfferClose();
       return;
     }
@@ -464,17 +582,7 @@ export default function SearchMap({
 
     // Community notes cluster click — zoom in
     if (layerId === communityNotesClusterLayer.id) {
-      const feature = features[0];
-      if (feature?.geometry?.coordinates) {
-        setViewport({
-          ...viewport,
-          latitude: feature.geometry.coordinates[1],
-          longitude: feature.geometry.coordinates[0],
-          zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
-          transitionDuration: 'auto',
-          transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
-        });
-      }
+      openCommunityNotesCluster(features[0]);
       return;
     }
 
@@ -494,14 +602,14 @@ export default function SearchMap({
   };
 
   /**
-   * Fetch offer data and open it on seach sidebar (handled by Angular)
+   * Fetch offer data and open it in the search sidebar.
    */
   async function openOfferById(offerId) {
     // @TODO: cancellation when opening another offer instead
     const offer = await getOffer(offerId);
 
     if (offer) {
-      // Delegated to Angular controller, to be refactored
+      // Delegated to the search shell.
       onOfferOpen(offer);
     }
   }
@@ -537,7 +645,7 @@ export default function SearchMap({
   }, []);
 
   // Apply externally changed bounds object
-  // Changed by Angular search sidebar
+  // Changed by the search sidebar
   useEffect(() => {
     if (webGLSupported && bounds?.northEast && bounds?.southWest) {
       zoomToBounds(bounds);
@@ -545,10 +653,15 @@ export default function SearchMap({
   }, [bounds, webGLSupported]);
 
   // Apply externally changed filters object
-  // Changed by Angular search sidebar
+  // Changed by the search sidebar
   useEffect(() => {
-    // Clear out previous open offers and such
-    onOfferClose();
+    // Preserve an offer opened from the initial URL. Later filter changes
+    // clear the selection because it may no longer match the visible results.
+    if (hasInitialisedFiltersRef.current) {
+      onOfferClose();
+    } else {
+      hasInitialisedFiltersRef.current = true;
+    }
     clearPreviouslySelectedState();
     clearPreviouslyHoveredState();
 
@@ -564,31 +677,80 @@ export default function SearchMap({
     }
 
     communityNotesEventsRef.current = [];
-    nostrService
-      .subscribeMapNotes(event => {
-        communityNotesEventsRef.current.push({
-          ...event,
-          authorPubkey: getNostrEventAuthorPubkey(event),
+    let cancelled = false;
+    let reconnectTimer = null;
+
+    const updateCommunityNotes = async () => {
+      const events = [...communityNotesEventsRef.current];
+      const visibleNotes =
+        await nostrService.filterCommunityNotesByAuthorVisibility(events);
+
+      if (
+        cancelled ||
+        events.length !== communityNotesEventsRef.current.length
+      ) {
+        return;
+      }
+      setCommunityNotes(nostrEventsToGeoJSON(visibleNotes));
+    };
+
+    const receiveCommunityNote = event => {
+      const note = {
+        ...event,
+        authorPubkey: getNostrEventAuthorPubkey(event),
+      };
+      const existingIndex = communityNotesEventsRef.current.findIndex(
+        existing => existing.id === event.id,
+      );
+      if (existingIndex === -1) {
+        communityNotesEventsRef.current.push(note);
+      } else {
+        communityNotesEventsRef.current[existingIndex] = note;
+      }
+      clearTimeout(communityNotesTimerRef.current);
+      communityNotesTimerRef.current = setTimeout(() => {
+        void updateCommunityNotes();
+      }, 200);
+    };
+
+    const handleEose = () => {
+      clearTimeout(communityNotesTimerRef.current);
+      void updateCommunityNotes();
+    };
+
+    const scheduleReconnect = () => {
+      if (cancelled || reconnectTimer) return;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        // Defined below before any reconnect timer can run.
+        // eslint-disable-next-line no-use-before-define
+        void subscribeToCommunityNotes();
+      }, COMMUNITY_NOTES_RECONNECT_DELAY_MS);
+    };
+
+    const subscribeToCommunityNotes = async () => {
+      try {
+        await nostrService.subscribeMapNotes(receiveCommunityNote, undefined, {
+          onClose: scheduleReconnect,
+          onEose: handleEose,
         });
-        clearTimeout(communityNotesTimerRef.current);
-        communityNotesTimerRef.current = setTimeout(() => {
-          setCommunityNotes(
-            nostrEventsToGeoJSON([...communityNotesEventsRef.current]),
-          );
-        }, 200);
-      })
-      .catch(() => {
-        setCommunityNotes({ type: 'FeatureCollection', features: [] });
-      });
+      } catch {
+        scheduleReconnect();
+      }
+    };
+
+    void subscribeToCommunityNotes();
 
     return () => {
+      cancelled = true;
+      clearTimeout(reconnectTimer);
       nostrService.unsubscribeMapNotes();
       clearTimeout(communityNotesTimerRef.current);
     };
   }, [communityNotesEnabled]);
 
   // Apply externally changed location object
-  // Changed by Angular controller when loading offer via URL
+  // Changed by the search shell when loading an offer via the URL
   useEffect(() => {
     if (location?.lat && location?.lng) {
       setViewport({
@@ -616,7 +778,7 @@ export default function SearchMap({
   }
 
   return (
-    <>
+    <div ref={gestureSurfaceRef}>
       <ReactMapGL
         reuseMaps
         className="search-map"
@@ -643,6 +805,7 @@ export default function SearchMap({
         mapboxApiAccessToken={MAPBOX_TOKEN}
         mapStyle={effectiveMapStyle}
         onClick={onClickMap}
+        onError={handleMapError}
         onHover={onHover}
         onInteractionStateChange={debouncedUpdateOffers}
         onMouseLeave={clearPreviouslyHoveredState}
@@ -677,7 +840,7 @@ export default function SearchMap({
         >
           <Layer {...clusterLayer} />
           {/* OSM and Mapbox use different fonts for cluster numbers */}
-          {effectiveMapStyle === MAP_STYLE_OSM ? (
+          {isOsmStyle ? (
             <Layer {...clusterCountLayerOSM} />
           ) : (
             <Layer {...clusterCountLayerMapbox} />
@@ -695,12 +858,16 @@ export default function SearchMap({
             promoteId="id"
           >
             <Layer {...communityNotesClusterLayer} />
-            <Layer {...communityNotesClusterCountLayer} />
+            {isOsmStyle ? (
+              <Layer {...communityNotesClusterCountLayerOSM} />
+            ) : (
+              <Layer {...communityNotesClusterCountLayer} />
+            )}
             <Layer {...communityNotesLayer} />
           </Source>
         )}
       </ReactMapGL>
-    </>
+    </div>
   );
 }
 

@@ -5,11 +5,11 @@ import PropTypes from 'prop-types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
-import { $on } from '@/modules/core/client/services/angular-compat';
 import { getCount as getExperiencesCount } from '@/modules/experiences/client/api/experiences.api';
 import Badge from '@/modules/core/client/components/Badge';
 
 export default function ProfileTabs({
+  activePathName,
   contactsCount,
   initialPathName,
   isExperiencesEnabled,
@@ -20,26 +20,21 @@ export default function ProfileTabs({
   const { t } = useTranslation('users');
   const [experiencesCount, setExperiencesCount] = useState(0);
   const [hasPendingExperiences, setHasPendingExperiences] = useState(false);
-  const [pathName, setPathName] = useState(initialPathName);
+  const pathName = activePathName || initialPathName;
 
-  useEffect(async () => {
-    if (isExperiencesEnabled) {
-      const { count, hasPending } = await getExperiencesCount(userId);
-      setExperiencesCount(count);
-      if (hasPending) {
-        setHasPendingExperiences(true);
+  useEffect(() => {
+    const loadExperienceCount = async () => {
+      if (isExperiencesEnabled) {
+        const { count, hasPending } = await getExperiencesCount(userId);
+        setExperiencesCount(count);
+        if (hasPending) {
+          setHasPendingExperiences(true);
+        }
       }
-    }
-  }, []);
+    };
 
-  // Handle tab changes from Angular UI router
-  useEffect(
-    () =>
-      $on('$stateChangeSuccess', (event, { name }) => {
-        setPathName(name);
-      }),
-    [],
-  );
+    loadExperienceCount();
+  }, []);
 
   return (
     <div className="profile-tabs" role="navigation">
@@ -103,6 +98,7 @@ export default function ProfileTabs({
 }
 
 ProfileTabs.propTypes = {
+  activePathName: PropTypes.string,
   contactsCount: PropTypes.number,
   initialPathName: PropTypes.string.isRequired,
   isExperiencesEnabled: PropTypes.bool.isRequired,

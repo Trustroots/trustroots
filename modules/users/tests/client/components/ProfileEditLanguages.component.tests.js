@@ -1,12 +1,12 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
-import { $broadcast } from '@/modules/core/client/services/angular-compat';
+import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/core/client/services/angular-compat');
+jest.mock('@/modules/core/client/services/client-runtime');
 jest.mock('@/modules/core/client/components/LanguageSelect', () => {
   function MockLanguageSelect(props) {
     return (
@@ -14,6 +14,7 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
         aria-label={props['aria-label']}
         data-placeholder={props.placeholder}
         data-selected={props.preSelectedLanguages.join(',')}
+        data-exclude-deprecated={props.excludeDeprecated}
         onClick={() => props.onChangeLanguages(['en', 'pt'])}
         type="button"
       >
@@ -24,6 +25,7 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
 
   MockLanguageSelect.propTypes = {
     'aria-label': () => null,
+    excludeDeprecated: () => null,
     onChangeLanguages: () => null,
     placeholder: () => null,
     preSelectedLanguages: () => null,
@@ -53,6 +55,7 @@ describe('<ProfileEditLanguages />', () => {
       name: 'Add languages you speak.',
     });
     expect(select).toHaveAttribute('data-selected', 'fi,sv');
+    expect(select).toHaveAttribute('data-exclude-deprecated', 'true');
     expect(select).toHaveAttribute(
       'data-placeholder',
       'Add languages you speak.',
@@ -60,11 +63,11 @@ describe('<ProfileEditLanguages />', () => {
 
     fireEvent.click(select);
 
-    expect($broadcast).toHaveBeenCalledWith('userChanged');
+    expect(broadcastClientEvent).toHaveBeenCalledWith('userChanged');
     expect(onChangeLanguages).toHaveBeenCalledWith(['en', 'pt']);
   });
 
-  it('does not require onChangeLanguages callback prop to update angular state', () => {
+  it('does not require an onChangeLanguages callback to update client state', () => {
     render(
       <ProfileEditLanguages
         profileLanguages={['en']}
@@ -78,7 +81,7 @@ describe('<ProfileEditLanguages />', () => {
 
     fireEvent.click(select);
 
-    expect($broadcast).toHaveBeenCalledWith('userChanged');
+    expect(broadcastClientEvent).toHaveBeenCalledWith('userChanged');
   });
 
   it('always keeps selected languages visible in language select input', () => {

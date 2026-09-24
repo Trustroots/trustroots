@@ -660,6 +660,52 @@ describe('Offers controller unit tests', () => {
       res.body.noOfferDescription.should.not.containEql('script');
     });
 
+    it('hides contact details from shadowbanned viewers', async () => {
+      const offer = await createOffer(owner._id, {
+        description:
+          '<p>Write to member@example.org or visit https://example.org/offer.</p>',
+        noOfferDescription: '<p>Call (555) 666-7777 instead.</p>',
+      });
+      const offerReq = await Offer.findById(offer._id).populate(
+        'user',
+        userProfile.userListingProfileFields,
+      );
+      stranger.roles = ['user', 'shadowban'];
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: stranger, offer: offerReq }, res),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.description.should.equal('Write to  or visit .');
+      res.body.noOfferDescription.should.equal('Call  instead.');
+    });
+
+    it('keeps contact details for offer owners and administrative viewers', async () => {
+      const offer = await createOffer(owner._id, {
+        description: '<p>Visit https://example.org/offer.</p>',
+      });
+      const offerReq = await Offer.findById(offer._id).populate(
+        'user',
+        userProfile.userListingProfileFields,
+      );
+      stranger.roles = ['user', 'admin', 'shadowban'];
+
+      const ownerResult = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer: offerReq }, res),
+      );
+      const adminResult = await runHandler(res =>
+        offersController.getOffer({ user: stranger, offer: offerReq }, res),
+      );
+
+      ownerResult.res.body.description.should.containEql(
+        'https://example.org/offer',
+      );
+      adminResult.res.body.description.should.containEql(
+        'https://example.org/offer',
+      );
+    });
+
     it('returns precise location when the offer user is an owner id', async () => {
       const offer = {
         _id: new mongoose.Types.ObjectId(),
@@ -704,6 +750,21 @@ describe('Offers controller unit tests', () => {
 
       res.statusCode.should.equal(200);
       res.body.location.should.deepEqual([10, 20]);
+    });
+
+    it('returns fuzzy location without an authenticated viewer', async () => {
+      const offer = await createOffer(owner._id);
+      const offerReq = await Offer.findById(offer._id).populate(
+        'user',
+        userProfile.userListingProfileFields,
+      );
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ offer: offerReq }, res),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.location.should.deepEqual(Array.from(offerReq.locationFuzzy));
     });
 
     it('returns 400 when populating tribe memberships fails', async () => {

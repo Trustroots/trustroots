@@ -195,27 +195,8 @@ exports.getNewsletterSubscriptionsCount = function (callback) {
   );
 };
 
-/**
- * Get count of registered push notifications
- */
-exports.getPushRegistrationCount = function (callback) {
-  User.countDocuments(
-    {
-      public: true,
-      pushRegistration: {
-        $exists: true,
-        // `pushRegistration` array should not be empty
-        $not: { $size: 0 },
-      },
-    },
-    function (err, count) {
-      if (err) {
-        return callback(err);
-      }
-      callback(null, parseInt(count, 10) || 0);
-    },
-  );
-};
+// Future push: restore getPushRegistrationCount here if product metrics
+// need historical pushRegistration totals again.
 
 /**
  * Generate statistics based on the user last seen attribute
@@ -326,7 +307,12 @@ exports.getExperienceStatistics = function (since, callback) {
       realLifeConnections: done => {
         Experience.aggregate(
           [
-            { $match: { 'interactions.met': true } },
+            {
+              $match: {
+                recommend: 'yes',
+                'interactions.met': true,
+              },
+            },
             {
               $project: {
                 created: 1,

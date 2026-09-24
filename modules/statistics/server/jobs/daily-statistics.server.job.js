@@ -3,7 +3,6 @@
  *
  * Counted:
  * - member count
- * - push registrations enabled
  */
 
 /**
@@ -45,33 +44,8 @@ module.exports = function (job, agendaDone) {
         });
       },
 
-      // Get number of users who have push notifications enabled
-      function (done) {
-        statistics.getPushRegistrationCount(function (err, count) {
-          if (err) {
-            log(
-              'error',
-              'Daily statistics: failed fetching push registration count.',
-              err,
-            );
-            return done();
-          }
-
-          // Write number to stats
-          writeDailyStat(
-            {
-              namespace: 'pushRegistrations',
-              values: {
-                count,
-              },
-              tags: {
-                type: 'all',
-              },
-            },
-            done,
-          );
-        });
-      },
+      // Future push: optionally count historical pushRegistration rows here
+      // (previously getPushRegistrationCount → pushRegistrations measurement).
 
       function (done) {
         collectLastSeen(

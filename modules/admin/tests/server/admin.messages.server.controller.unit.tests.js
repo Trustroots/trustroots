@@ -6,6 +6,7 @@ require('should');
 
 const Message = mongoose.model('Message');
 const ReferenceThread = mongoose.model('ReferenceThread');
+const User = mongoose.model('User');
 
 function messageQuery(exec) {
   return {
@@ -114,5 +115,91 @@ describe('Admin messages controller unit tests', () => {
     );
     const response = await res.waitForResponse();
     response.body.referenceThreads.should.deepEqual([]);
+  });
+
+  it('looks up recipients when no current administrator id is available', async () => {
+    const scammerId = new mongoose.Types.ObjectId();
+    const recipientId = new mongoose.Types.ObjectId();
+    sinon.stub(User, 'findOne').returns({
+      exec: () => Promise.resolve({ _id: scammerId, username: 'scammer' }),
+    });
+    sinon.stub(Message, 'distinct').returns({
+      exec: () => Promise.resolve([recipientId]),
+    });
+    const findUsers = sinon.stub(User, 'find').returns({
+      select: () => ({
+        sort: () => ({
+          exec: () =>
+            Promise.resolve([{ _id: recipientId, username: 'recipient' }]),
+        }),
+      }),
+    });
+
+    const res = mockResponse();
+    await adminMessages.getScammerRecipients(
+      { body: { username: 'scammer' } },
+      res,
+    );
+    const response = await res.waitForResponse();
+
+    response.body.recipients.length.should.equal(1);
+    findUsers.firstCall.args[0]._id.$in.should.deepEqual([recipientId]);
+  });
+
+  it('returns a generic lookup error when recipient discovery fails', async () => {
+    sinon.stub(User, 'findOne').returns({
+      exec: () => Promise.reject(new Error('lookup failed')),
+    });
+
+    const res = mockResponse();
+    await adminMessages.getScammerRecipients(
+      { body: { username: 'scammer' }, user: { _id: 'admin-id' } },
+      res,
+    );
+    const response = await res.waitForResponse();
+
+    response.statusCode.should.equal(400);
+  });
+
+  it('rejects missing warning content', async () => {
+    const res = mockResponse();
+    await adminMessages.sendScammerWarning(
+      { body: { username: 'scammer' } },
+      res,
+    );
+    const response = await res.waitForResponse();
+
+    response.statusCode.should.equal(400);
+    response.body.message.should.equal('Please write a message.');
+  });
+
+  it('returns the validation error when warning recipient lookup is invalid', async () => {
+    const res = mockResponse();
+    await adminMessages.sendScammerWarning(
+      { body: { content: 'Safety warning' } },
+      res,
+    );
+    const response = await res.waitForResponse();
+
+    response.statusCode.should.equal(400);
+    response.body.message.should.equal('Missing `username` field.');
+  });
+
+  it('returns a generic warning error when recipient discovery fails', async () => {
+    sinon.stub(User, 'findOne').returns({
+      exec: () => Promise.reject(new Error('lookup failed')),
+    });
+
+    const res = mockResponse();
+    await adminMessages.sendScammerWarning(
+      {
+        body: { content: 'Safety warning', username: 'scammer' },
+        user: { _id: 'admin-id' },
+      },
+      res,
+    );
+    const response = await res.waitForResponse();
+
+    response.statusCode.should.equal(400);
   });
 });

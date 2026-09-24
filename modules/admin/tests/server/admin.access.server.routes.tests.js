@@ -49,6 +49,16 @@ describe('Admin access route tests', () => {
     },
     {
       method: 'post',
+      path: '/api/admin/messages/scammer-recipients',
+      body: { username: _usersRaw[2].username },
+    },
+    {
+      method: 'post',
+      path: '/api/admin/messages/scammer-warning',
+      body: { username: _usersRaw[2].username, content: 'Warning' },
+    },
+    {
+      method: 'post',
       path: '/api/admin/threads',
       body: { userId: targetUserId },
     },
@@ -106,6 +116,31 @@ describe('Admin access route tests', () => {
   });
 
   afterEach(utils.clearDatabase);
+
+  it('allows welcome-team acquisition access only, and honours revocation', async () => {
+    const User = mongoose.model('User');
+    await User.updateOne(
+      { username: credentialsRegular.username },
+      { $addToSet: { roles: 'welcome-team' } },
+    );
+    const agent = request.agent(app);
+    await utils.signIn(credentialsRegular, agent);
+    for (const endpoint of adminRequests()) {
+      const expected = endpoint.path.startsWith(
+        '/api/admin/acquisition-stories',
+      )
+        ? 200
+        : 403;
+      await agent[endpoint.method](endpoint.path)
+        .send(endpoint.body || {})
+        .expect(expected);
+    }
+    await User.updateOne(
+      { username: credentialsRegular.username },
+      { $pull: { roles: 'welcome-team' } },
+    );
+    await expectAdminRequestsForbidden(agent);
+  });
 
   it('does not allow guests to use admin endpoints', async () => {
     await expectAdminRequestsForbidden(request.agent(app));

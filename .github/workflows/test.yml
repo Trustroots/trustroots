@@ -2,8 +2,8 @@ name: Tests
 
 on:
   pull_request:
-    branches: [main]
-    types: [opened, synchronize, reopened]
+    branches: [main, 'codex/**']
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
   workflow_dispatch:
@@ -26,6 +26,22 @@ permissions:
   packages: write
 
 jobs:
+  build-production-image:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build production image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: production.Dockerfile
+          cache-from: type=gha,scope=production
+          cache-to: type=gha,mode=max,scope=production
+          push: false
+
   build-dev-image:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
@@ -95,6 +111,7 @@ jobs:
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
+          mkdir -p ../../coverage/client
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
@@ -120,7 +137,6 @@ jobs:
             status="failed"
             message="Client coverage failed."
           fi
-          mkdir -p ../../coverage/client
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
           COMMAND="npm run test:coverage:client && npm run coverage:check -- --scope=client" \
           node - <<'NODE'
@@ -186,6 +202,7 @@ jobs:
       - name: Test server with coverage
         working-directory: deploy/docker
         run: |
+          mkdir -p ../../coverage/server
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
@@ -214,7 +231,6 @@ jobs:
             status="failed"
             message="Server coverage failed."
           fi
-          mkdir -p ../../coverage/server
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
           COMMAND="npm run test:coverage:server && npm run coverage:check -- --scope=server" \
           node - <<'NODE'
@@ -284,6 +300,10 @@ jobs:
       - name: Test end-to-end smoke suite
         working-directory: deploy/docker
         run: |
+          export TRUSTROOTS_BUILD_COMMIT="$(git rev-parse HEAD)"
+          export TRUSTROOTS_BUILD_COMMITTED_AT="$(git show -s --format=%cI HEAD)"
+          export TRUSTROOTS_BUILD_BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+          # Read metadata on the runner; container Git can reject checkout ownership.
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm \
             -e CI=true \
             -e NODE_ENV=test \
@@ -295,6 +315,9 @@ jobs:
             -e TRUSTROOTS_E2E_WORKERS=2 \
             -e TRUSTROOTS_E2E_SERIAL_PROJECTS=true \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
+            -e TRUSTROOTS_BUILD_COMMIT \
+            -e TRUSTROOTS_BUILD_COMMITTED_AT \
+            -e TRUSTROOTS_BUILD_BRANCH \
             dev npm run test:e2e
       - name: Upload Playwright report
         if: always()

@@ -6,6 +6,7 @@ const userProfile = require('../controllers/users.profile.server.controller');
 const userAvatar = require('../controllers/users.avatar.server.controller');
 const userPassword = require('../controllers/users.password.server.controller');
 const userAuthentication = require('../controllers/users.authentication.server.controller');
+const userExport = require('../controllers/users.export.server.controller');
 
 module.exports = function (app) {
   // Setting up the users profile api
@@ -21,6 +22,11 @@ module.exports = function (app) {
     .route('/api/users/remove/:token')
     .all(usersPolicy.isAllowed)
     .delete(userProfile.removeProfile);
+
+  app
+    .route('/api/users/export')
+    .all(usersPolicy.isAllowed)
+    .get(userExport.download);
 
   app
     .route('/api/users-avatar')

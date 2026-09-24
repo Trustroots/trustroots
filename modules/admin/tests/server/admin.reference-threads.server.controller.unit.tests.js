@@ -57,6 +57,8 @@ describe('Admin reference threads controller unit tests', () => {
   });
 
   it('returns top negative recipients', async () => {
+    const now = new Date('2026-07-27T12:00:00.000Z');
+    const clock = sinon.useFakeTimers(now);
     const userId = new mongoose.Types.ObjectId();
     const user = { _id: userId, displayName: 'Negative Receiver' };
     sinon.stub(ReferenceThread, 'find').returns({
@@ -70,7 +72,7 @@ describe('Admin reference threads controller unit tests', () => {
         }),
       }),
     });
-    sinon.stub(ReferenceThread, 'aggregate').returns({
+    const aggregate = sinon.stub(ReferenceThread, 'aggregate').returns({
       exec: () => Promise.resolve([{ _id: userId, count: 3 }]),
     });
     sinon.stub(User, 'find').returns({
@@ -88,6 +90,13 @@ describe('Admin reference threads controller unit tests', () => {
         user,
       },
     ]);
+    aggregate.firstCall.args[0][0].should.deepEqual({
+      $match: {
+        created: { $gte: new Date('2025-07-27T12:00:00.000Z') },
+        reference: 'no',
+      },
+    });
+    clock.restore();
   });
 
   it('keeps recipient ids when their profiles are unavailable', async () => {

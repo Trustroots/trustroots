@@ -247,6 +247,7 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
           },
         })
           .sort({ firstMessageCreated: -1 })
+          .populate('firstMessageUserFrom', '_id')
           .exec(function (err, resp) {
             return done(err, resp);
           });
@@ -256,6 +257,10 @@ exports.readMessageStatsOfUser = function (userId, timeNow, callback) {
        * Count the statistics
        */
       function (messageStats, done) {
+        // Deleted senders cannot receive replies. Exclude their statistics before
+        // choosing the time window, including records left by earlier deletions.
+        messageStats = messageStats.filter(stat => stat.firstMessageUserFrom);
+
         /**
          * Choose the MessageStats to use (as described above)
          * if we have less than 10 stats in last 90 days since timeNow,

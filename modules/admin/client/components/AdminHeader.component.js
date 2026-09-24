@@ -1,8 +1,10 @@
 // External dependencies
 import classnames from 'classnames';
 import React, { useEffect } from 'react';
+import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
+  const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
@@ -33,6 +35,10 @@ export default function AdminHeader() {
       label: 'Acquisition stories',
     },
     {
+      path: 'acquisition-stories/analysis',
+      label: 'Analysis',
+    },
+    {
       path: 'newsletter',
       label: 'Newsletter',
     },
@@ -42,7 +48,7 @@ export default function AdminHeader() {
     <li
       key={path}
       className={classnames({
-        active: currentPath === path || currentPath.startsWith(`${path}/`),
+        active: currentPath === path,
       })}
     >
       <a href={`/admin/${path}`}>{label}</a>
@@ -53,13 +59,25 @@ export default function AdminHeader() {
     <nav className="navbar navbar-white navbar-admin">
       <div className="container">
         <div className="navbar-header">
-          <a className="navbar-brand" href="/admin">
-            Admin
+          <a
+            className="navbar-brand"
+            href={isAdmin ? '/admin' : '/admin/acquisition-stories'}
+          >
+            {isAdmin ? 'Admin' : 'Welcome team'}
           </a>
         </div>
-        <ul className="nav navbar-nav">{pages.map(page => renderTab(page))}</ul>
+        <ul className="nav navbar-nav">
+          {pages
+            .filter(
+              page =>
+                isAdmin ||
+                page.path === 'acquisition-stories' ||
+                page.path === 'acquisition-stories/analysis',
+            )
+            .map(page => renderTab(page))}
+        </ul>
         <ul className="nav navbar-nav pull-right">
-          {renderTab({ path: 'audit-log', label: 'Audit log' })}
+          {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
         </ul>
       </div>
     </nav>
