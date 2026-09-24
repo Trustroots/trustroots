@@ -192,6 +192,22 @@ describe('OfferHostPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('explains the location requirement when a new member cannot host', async () => {
+    offersApi.getOffers.mockResolvedValue([]);
+    render(<OfferHostPage user={user} />);
+
+    expect(await screen.findByText('Can you host?')).toBeVisible();
+    fireEvent.click(screen.getByRole('radio', { name: 'No' }));
+
+    expect(
+      screen.getByText(/Choose a location in the Location tab before saving/),
+    ).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Location' })).toBeEnabled();
+    expect(
+      screen.getByRole('button', { name: 'Save and Exit' }),
+    ).toBeDisabled();
+  });
+
   it('adjusts guest count and circle visibility settings', async () => {
     render(<OfferHostPage user={user} />);
 

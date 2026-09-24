@@ -172,6 +172,12 @@ export default function OfferHostPage({ user }) {
           onSelect={setActiveTab}
         >
           <Tab eventKey={0} title="Availability">
+            {!hasLocation && (
+              <p className="alert alert-info" role="status">
+                Choose a location in the Location tab before saving, even if you
+                cannot host.
+              </p>
+            )}
             <div className="row">
               <div className="col-xs-12 col-sm-6">
                 <div className="panel panel-default offer-meta">

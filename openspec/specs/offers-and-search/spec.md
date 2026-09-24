@@ -79,6 +79,12 @@ The system SHALL let a member create, update, list, and remove their hosting off
 - **THEN** the editor does not save the map's default coordinates as their offer location
 - **AND** the server rejects a new offer at those coordinates
 
+#### Scenario: Member cannot host and has no selected location
+
+- **WHEN** a member selects that they cannot host while creating an offer
+- **THEN** the editor explains that a location is still required before saving
+- **AND** the Location tab remains available
+
 ### Requirement: Meeting offers
 
 The system SHALL let a member create, edit, list, expire, and delete their meeting offers. A newly created offer SHALL require an explicitly selected location.
