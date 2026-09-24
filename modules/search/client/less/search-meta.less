@@ -6,9 +6,30 @@
   position: absolute;
   z-index: @zindex-navbar;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: @navbar-height;
   margin-bottom: 0;
   border: 0;
   box-shadow: @map-toolbar-shadow;
+
+  .btn-group-justified,
+  .btn-group,
+  .btn {
+    height: 100%;
+  }
+
+  .btn-group {
+    min-width: 0;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: @font-size-base;
+    white-space: nowrap;
+  }
 
   .form-group {
     margin: 0;

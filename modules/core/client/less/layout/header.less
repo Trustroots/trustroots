@@ -31,7 +31,7 @@
     margin-bottom: 0;
   }
 
-  .nav {
+  .navbar-nav {
     // Fix, because we don't have normal Bootstrap collapsable menu
     > li {
       float: left;
@@ -138,6 +138,12 @@
   }
   .header-more-text {
     font-size: 14px;
+
+    &.btn-link {
+      --bs-btn-color: @navbar-default-link-color;
+      --bs-btn-hover-color: @navbar-default-link-hover-color;
+      color: @navbar-default-link-color;
+    }
   }
   .header-welcome-text,
   .btn {

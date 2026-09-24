@@ -611,10 +611,20 @@ test.describe('rendered search map feature coverage', () => {
     await installNostrRelayStub(page);
     await page.goto('/search');
 
-    await page
+    const placeButton = page.getByRole('button', { name: 'Search places' });
+    const filtersButton = page
       .locator('.search-map-meta button')
-      .filter({ hasText: 'Filters' })
-      .click();
+      .filter({ hasText: 'Filters' });
+    await expect(placeButton).toBeVisible();
+    await expect(filtersButton).toBeVisible();
+    const placeBounds = await placeButton.boundingBox();
+    const filtersBounds = await filtersButton.boundingBox();
+    expect(placeBounds.y).toBe(filtersBounds.y);
+    expect(placeBounds.height).toBeLessThanOrEqual(46);
+    expect(filtersBounds.height).toBeLessThanOrEqual(46);
+    await expect(page.locator('.search-map-container')).toBeVisible();
+
+    await filtersButton.click();
 
     const filterLabel = page
       .locator('.search-sidebar-filters label')

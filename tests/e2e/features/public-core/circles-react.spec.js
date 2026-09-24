@@ -29,6 +29,9 @@ test('circle pages use React and preserve guest navigation', async ({
   ]);
   await page.goto('/circles');
   await expect(page.locator('#tr-react-root')).toBeVisible();
+  await expect(
+    page.locator('#tr-header').getByRole('link', { name: 'Read more' }),
+  ).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   await page.getByRole('link', { name: /^Hitchhikers/ }).click();
   await expect(page).toHaveURL(/\/circles\/hitchhikers$/);
@@ -100,6 +103,21 @@ test('member navigation menus and narrow layout remain usable', async ({
 
   const header = page.locator('#tr-header');
   await expect(header).toHaveCSS('background-color', 'rgb(18, 181, 145)');
+  await expect(page.getByRole('button', { name: 'Support' })).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
+  await expect(header.locator('a[href="/search"]')).toHaveCSS(
+    'color',
+    'rgb(255, 255, 255)',
+  );
+  const circlesBounds = await header
+    .locator('a[href="/circles"]')
+    .boundingBox();
+  const searchBounds = await header.locator('a[href="/search"]').boundingBox();
+  expect(searchBounds.x).toBeGreaterThanOrEqual(
+    circlesBounds.x + circlesBounds.width,
+  );
   await page.getByRole('button', { name: 'Support' }).hover();
   await expect(header.getByRole('link', { name: 'Safety' })).toBeVisible();
 
