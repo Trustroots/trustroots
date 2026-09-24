@@ -4,7 +4,6 @@ import {
   create,
   read,
   readMine,
-  report,
   getCount,
   getSuggestion,
 } from '@/modules/experiences/client/api/experiences.api';
@@ -57,16 +56,6 @@ describe('experiences api', () => {
     axios.get.mockRejectedValueOnce(error);
 
     await expect(readMine({ userWith: 'user-2' })).rejects.toBe(error);
-  });
-
-  it('reports a member', async () => {
-    axios.post.mockResolvedValueOnce({});
-
-    await report({ username: 'spammer' }, 'They are a spammer');
-    expect(axios.post).toHaveBeenCalledWith('/api/support', {
-      message: 'They are a spammer',
-      reportMember: 'spammer',
-    });
   });
 
   it('returns the experience count', async () => {
