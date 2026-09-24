@@ -48,13 +48,11 @@ describe('Service: error', function () {
     );
     for (const name of [
       'getErrorMessageByKey',
-      'getNewError',
       'getErrorMessage',
       'errorResponse',
     ]) {
       esmService[name].should.equal(errorService[name]);
     }
-    esmService.getNewError('not-found').message.should.equal('Not found.');
   });
 
   describe('getErrorMessageByKey', function () {
@@ -75,43 +73,6 @@ describe('Service: error', function () {
     it('returns the default message when no key is given', function () {
       const message = errorService.getErrorMessageByKey();
       message.should.startWith('Snap! Something went wrong.');
-    });
-  });
-
-  describe('getNewError', function () {
-    it('uses an overridden message lookup on the CommonJS service', function () {
-      const overriddenService = {
-        ...errorService,
-        getErrorMessageByKey: () => 'Overridden message.',
-      };
-
-      overriddenService
-        .getNewError('not-found')
-        .message.should.equal('Overridden message.');
-    });
-
-    it('works when the ESM function is called without a service object', async function () {
-      const { getNewError } = await import(
-        '../../../server/services/error.server.service.mjs'
-      );
-
-      getNewError('not-found').message.should.equal('Not found.');
-    });
-
-    it('returns an Error with the matching message', function () {
-      const err = errorService.getNewError('not-found');
-      err.should.be.an.instanceof(Error);
-      err.message.should.equal('Not found.');
-    });
-
-    it('sets the status code when provided', function () {
-      const err = errorService.getNewError('forbidden', 403);
-      err.status.should.equal(403);
-    });
-
-    it('does not set a status code when omitted', function () {
-      const err = errorService.getNewError('forbidden');
-      (err.status === undefined).should.be.true();
     });
   });
 

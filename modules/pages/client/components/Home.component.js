@@ -93,7 +93,6 @@ export default function Home({
   const memberCount = new Intl.NumberFormat().format(140000);
 
   // TODO get header height instead of magic number 56
-  // const headerHeight = angular.element('#tr-header').height() || 0; // code of the original angular controller
   const headerHeight = 56;
 
   const boardHeight =

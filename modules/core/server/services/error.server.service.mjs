@@ -28,25 +28,6 @@ export function getErrorMessageByKey(key) {
 }
 
 /**
- * Generate JS Error object with a message and status code
- *
- * @param key String Key matching messages at getErrorMessageByKey()
- * @param status Int Valid HTTP status code
- * @return Error
- */
-export function getNewError(key, status) {
-  const message =
-    this && typeof this.getErrorMessageByKey === 'function'
-      ? this.getErrorMessageByKey(key)
-      : getErrorMessageByKey(key);
-  const err = new Error(message);
-
-  if (status) err.status = status;
-
-  return err;
-}
-
-/**
  * Get the error message from error object
  * @param err Error
  * @return String Error message
