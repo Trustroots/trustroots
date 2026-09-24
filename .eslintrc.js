@@ -175,6 +175,22 @@ module.exports = {
     },
 
     /**
+     * Server TypeScript uses Node's module rules and remains separately opted in.
+     */
+    {
+      files: ['modules/*/server/**/*.{ts,cts,mts}'],
+      env: {
+        node: true,
+      },
+      parser: '@typescript-eslint/parser',
+      extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
+      parserOptions: {
+        ecmaVersion: 2022,
+        sourceType: 'module',
+      },
+    },
+
+    /**
      * Overrides for server side test files
      */
     {

@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2020"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"]
+  },
+  "include": [
+    "modules/*/server/**/*.ts",
+    "modules/*/server/**/*.cts",
+    "modules/*/server/**/*.mts",
+    "modules/*/server/**/*.d.ts"
+  ],
+  "exclude": ["node_modules", "modules/*/tests/**"]
+}

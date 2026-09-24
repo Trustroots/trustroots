@@ -1,0 +1,6 @@
+- [x] Add a strict server TypeScript configuration using NodeNext resolution.
+- [x] Enable TypeScript lint parsing for opted-in server TypeScript modules.
+- [x] Expose the JSON-for-script CommonJS service's callable type to TypeScript.
+- [x] Add a server-specific typecheck command and include it in the aggregate.
+- [x] Keep existing JavaScript server loading and runtime behaviour unchanged.
+- [x] Validate the OpenSpec change and review package script/configuration scope.
