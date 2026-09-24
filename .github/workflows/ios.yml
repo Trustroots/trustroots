@@ -1,0 +1,49 @@
+name: iOS
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'apps/ios/**'
+      - 'openspec/changes/add-native-ios-member-mvp/**'
+      - '.github/workflows/ios.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/ios/**'
+      - 'openspec/changes/add-native-ios-member-mvp/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    name: iOS simulator tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select an iPhone simulator
+        id: simulator
+        run: |
+          device_id="$(xcrun simctl list devices available -j | ruby -rjson -e '
+            JSON.parse($stdin.read).fetch("devices").each_value do |devices|
+              iphone = devices.find { |device| device.fetch("name").start_with?("iPhone") }
+              if iphone
+                puts iphone.fetch("udid")
+                break
+              end
+            end
+          ')"
+          test -n "$device_id"
+          echo "id=$device_id" >> "$GITHUB_OUTPUT"
+      - name: Run iOS tests
+        working-directory: apps/ios
+        run: >-
+          xcodebuild
+          -project Trustroots.xcodeproj
+          -scheme TrustrootsTests
+          -destination 'id=${{ steps.simulator.outputs.id }}'
+          CODE_SIGNING_ALLOWED=NO
+          test

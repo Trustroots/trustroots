@@ -1,11 +1,9 @@
 /**
  * Module dependencies.
  */
-let acl = require('acl');
+const acl =
+  require('../../../core/server/services/memory-policy.server.service')();
 const errorService = require('../../../core/server/services/error.server.service');
-
-// Using the memory backend
-acl = new acl(new acl.memoryBackend());
 
 /**
  * Invoke Users Permissions
