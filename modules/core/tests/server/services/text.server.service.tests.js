@@ -6,6 +6,22 @@ require('should');
  * Statistics routes tests
  */
 describe('Text processor tests', function () {
+  it('provides the same service through ESM and CommonJS', async function () {
+    const esmService = await import(
+      '../../../server/services/text.server.service.mjs'
+    );
+
+    for (const name of [
+      'html',
+      'isEmpty',
+      'plainText',
+      'sanitizeOptions',
+      'stripContactDetails',
+    ]) {
+      textService[name].should.equal(esmService[name]);
+    }
+  });
+
   const htmlString =
     'Foo' +
     '<i>foo</i>' +

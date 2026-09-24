@@ -75,3 +75,25 @@ The project SHALL start its server and worker and run server tests through npm s
 
 - **WHEN** a developer invokes the server test command or its watch variant
 - **THEN** database preparation, index creation, test execution, and cleanup occur without loading Gulp
+
+### Requirement: Incremental server ESM interoperability
+
+Server modules migrated to native ESM SHALL remain available to existing
+CommonJS server consumers until those consumers are migrated.
+
+#### Scenario: Existing consumer loads a migrated service
+
+- **WHEN** a CommonJS server module loads a migrated service through its existing path
+- **THEN** it receives the same callable exports and configuration values
+
+#### Scenario: ESM consumer loads a migrated service
+
+- **WHEN** an ESM server module imports the migrated service
+- **THEN** it can use named exports without a CommonJS namespace adapter
+
+Migration constraints: CommonJS shims expose read-only ESM namespace objects,
+so tests must replace a migrated dependency at the import boundary instead of
+stubbing its named exports. Migrated modules must avoid top-level await while
+CommonJS consumers still use `require()`. Keep per-file `.mjs` modules and their
+`.js` shims during the incremental migration; switch to package-wide ESM and
+remove the shims only after the remaining CommonJS consumers have moved.
