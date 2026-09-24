@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 // Internal dependencies
 import '@/config/client/i18n';
 import { createValidator } from '@/modules/core/client/utils/validation';
+import * as supportApi from '@/modules/support/client/api/support.api';
 import * as experiencesApi from '../api/experiences.api';
 import DuplicateInfo from './create-experience/DuplicateInfo';
 import ExperienceWithSelfInfo from './create-experience/ExperienceWithSelfInfo';
@@ -81,7 +82,7 @@ export default function CreateExperience({ userFrom, userTo }) {
     const [savedExperience] = await Promise.all([
       experiencesApi.create({ ...experience, userTo: userTo._id }),
       recommend === 'no' && report
-        ? experiencesApi.report(userTo, reportMessage)
+        ? supportApi.reportMember(userTo, reportMessage)
         : null,
     ]);
 

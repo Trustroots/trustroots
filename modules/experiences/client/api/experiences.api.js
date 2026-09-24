@@ -56,17 +56,6 @@ export async function readMine({ userWith }) {
 }
 
 /**
- * API request: report a member
- * @TODO this request belongs to a different module
- * @param {object} user - member to report
- * @param {string} message - message to administrators
- * @returns Promise<void>
- */
-export async function report(user, message) {
-  await axios.post('/api/support', { message, reportMember: user.username });
-}
-
-/**
  * API request: get count of experiences
  *
  * @param {string} userTo - id of the user with whom the experiences were shared
