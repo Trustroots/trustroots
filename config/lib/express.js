@@ -54,12 +54,24 @@ module.exports.initLocalVariables = function (app) {
 
   // Assets
   if (
+    process.env.TRUSTROOTS_VITE_DEV_SERVER === 'true' &&
+    process.env.NODE_ENV === 'development'
+  ) {
+    app.locals.reactUsesVite = true;
+    app.locals.reactJsFiles = [
+      'assets/@vite/client',
+      'assets/config/vite/react-main.js',
+    ];
+    app.locals.reactCssFiles = [];
+  } else if (
     process.env.NODE_ENV === 'production' ||
     process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
   ) {
+    app.locals.reactUsesVite = false;
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = ['assets/react-main.css'];
   } else {
+    app.locals.reactUsesVite = false;
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = []; // style is bundled with javascript
   }
