@@ -3,6 +3,7 @@ const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
 const buildMetadata = require('../../../../config/lib/build-metadata');
+const typedMetadata = require('../../../../config/lib/build-metadata.cts');
 
 describe('Build metadata helper', () => {
   const buildEnvironmentVariables = [
@@ -36,6 +37,7 @@ describe('Build metadata helper', () => {
       buildMetadata.formatUtcDateTime(date),
       '2026-06-21 18:06',
     );
+    assert.strictEqual(typedMetadata.formatUtcDateTime, buildMetadata.formatUtcDateTime);
   });
 
   it('builds metadata from git log output', () => {

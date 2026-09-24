@@ -27,3 +27,27 @@ existing server JavaScript.
   service
 - **THEN** the type checker exposes its callable input and output types
 - **AND** the production JavaScript service remains the runtime implementation
+
+### Requirement: Server TypeScript can run on the supported Node runtime
+
+Opted-in server `.cts` modules SHALL use syntax that Node 24 can strip and
+execute without a separate transpilation step. Existing CommonJS service
+paths SHALL remain callable by current consumers.
+
+#### Scenario: Authentication service uses a typed implementation
+
+- **WHEN** the existing authentication service path is required by server code
+- **THEN** it loads the typed implementation through the CommonJS adapter
+- **AND** username validation and email-token outputs remain unchanged
+
+#### Scenario: Build metadata uses typed formatting
+
+- **WHEN** the existing build-metadata helper is required
+- **THEN** it uses a typed implementation for branch and timestamp formatting
+- **AND** its existing callback and export shapes remain unchanged
+
+#### Scenario: Runtime TypeScript is checked before deployment
+
+- **WHEN** the server type-check command runs
+- **THEN** it checks both runtime `.cts` implementations under strict settings
+- **AND** runtime execution does not depend on TypeScript compiler output

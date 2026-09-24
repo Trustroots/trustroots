@@ -14,7 +14,11 @@ today, and has different dependency and module-resolution requirements.
   existing JavaScript linting.
 - Add an initial type declaration for the existing JSON-for-script server
   service so new TypeScript server code can call it safely.
-- Keep existing server JavaScript, runtime discovery and deployment unchanged.
+- Move authentication validation, email-token logic, and build-metadata
+  formatting into typed `.cts` modules executed through Node 24's native type
+  stripping. Keep their current CommonJS paths as adapters for existing callers.
+- Keep runtime discovery and deployment commands unchanged; server type
+  checking remains a separate required check because Node does not type-check.
 
 ## Capabilities
 
@@ -25,6 +29,7 @@ today, and has different dependency and module-resolution requirements.
 
 ## Impact
 
-This affects TypeScript configuration and the server service type surface only.
-It does not execute TypeScript in production or change HTTP behaviour, persisted
-data, or deployment requirements.
+This affects TypeScript configuration, the authentication service, and build
+metadata. It relies on the already required Node 24 runtime. HTTP
+behaviour, persisted data, existing imports, and deployment commands remain
+unchanged. Only erasable TypeScript syntax can be used in runtime modules.

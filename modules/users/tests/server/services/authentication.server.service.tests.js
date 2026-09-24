@@ -1,4 +1,5 @@
 const proxyquire = require('proxyquire').noCallThru();
+const typedAuthentication = require('../../../server/services/authentication.server.service.cts');
 
 require('should');
 
@@ -12,6 +13,22 @@ const authenticationService = proxyquire(
 );
 
 describe('Service: authentication', function () {
+  it('runs the typed implementation through the CommonJS adapter', function () {
+    const token = typedAuthentication.generateEmailToken(
+      { email: 'member@example.org' },
+      Buffer.from('salt:'),
+    );
+    token.should.equal(
+      authenticationService.generateEmailToken(
+        { email: 'member@example.org' },
+        Buffer.from('salt:'),
+      ),
+    );
+    typedAuthentication
+      .validateUsername('traveller', () => false)
+      .should.be.true();
+  });
+
   describe('generateEmailToken', function () {
     it('generates a hex token from salt and email', function () {
       const salt = Buffer.from('salt:');

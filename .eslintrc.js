@@ -178,7 +178,10 @@ module.exports = {
      * Server TypeScript uses Node's module rules and remains separately opted in.
      */
     {
-      files: ['modules/*/server/**/*.{ts,cts,mts}'],
+      files: [
+        'config/lib/**/*.{ts,cts,mts}',
+        'modules/*/server/**/*.{ts,cts,mts}',
+      ],
       env: {
         node: true,
       },
