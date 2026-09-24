@@ -1,10 +1,23 @@
 @import '~less/global-variables';
 
+@brand-primary-rgb: red(@brand-primary), green(@brand-primary),
+  blue(@brand-primary);
+@link-color-rgb: red(@link-color), green(@link-color), blue(@link-color);
+@link-hover-color-rgb: red(@link-hover-color), green(@link-hover-color),
+  blue(@link-hover-color);
+
 // Classes still present in React page markup. Keep their Bootstrap 3 viewport
 // boundaries while the layouts move to Bootstrap 5's grid and utilities.
 :root {
   --bs-body-font-size: @font-size-base;
   --bs-body-line-height: @line-height-base;
+  --bs-primary: @brand-primary;
+  --bs-primary-rgb: ~'@{brand-primary-rgb}';
+  --bs-link-color: @link-color;
+  --bs-link-color-rgb: ~'@{link-color-rgb}';
+  --bs-link-hover-color: @link-hover-color;
+  --bs-link-hover-color-rgb: ~'@{link-hover-color-rgb}';
+  --bs-focus-ring-color: fade(@brand-primary, 25%);
 }
 
 body {
@@ -46,6 +59,19 @@ a {
   --bs-btn-hover-border-color: darken(@brand-primary, 6%);
   --bs-btn-active-bg: darken(@brand-primary, 9%);
   --bs-btn-active-border-color: darken(@brand-primary, 9%);
+  --bs-btn-disabled-bg: @brand-primary;
+  --bs-btn-disabled-border-color: @brand-primary;
+  --bs-btn-focus-shadow-rgb: ~'@{brand-primary-rgb}';
+}
+
+.form-check-input:checked {
+  background-color: @brand-primary;
+  border-color: @brand-primary;
+}
+
+.form-check-input:focus {
+  border-color: lighten(@brand-primary, 30%);
+  box-shadow: 0 0 0 0.25rem fade(@brand-primary, 25%);
 }
 
 .btn-link {

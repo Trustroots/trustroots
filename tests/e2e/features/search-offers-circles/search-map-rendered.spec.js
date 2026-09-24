@@ -1,4 +1,9 @@
-const { annotateFeature, expect, test } = require('../../support/test');
+const {
+  annotateFeature,
+  expect,
+  test,
+  useElementScreenshot,
+} = require('../../support/test');
 const { finalizeEvent } = require('nostr-tools');
 
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
@@ -650,6 +655,7 @@ test.describe('rendered search map feature coverage', () => {
       'Community Notes sidebar displays a plus-code thread.',
       'Reply action opens the Nostroots action-gate modal.',
     ]);
+    useElementScreenshot(testInfo, '.search-sidebar-container');
 
     const noteEvents = [
       communityNoteText,
@@ -681,6 +687,12 @@ test.describe('rendered search map feature coverage', () => {
     await expect(sidebar.getByText(communityNotePlusCode)).toBeVisible();
     await expect(sidebar.getByText(communityNoteText)).toBeVisible();
     await expect(sidebar.getByText('via Nostroots')).toBeVisible();
+    await expect(
+      sidebar.locator('.community-notes-sidebar-note').first(),
+    ).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    await expect(
+      page.locator('.search-sidebar-tabs .nav-link').first(),
+    ).toHaveCSS('color', 'rgb(51, 51, 51)');
 
     await sidebar.getByRole('button', { name: 'Reply' }).click();
 

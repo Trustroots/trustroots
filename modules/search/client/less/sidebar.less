@@ -4,8 +4,17 @@
 
 // Styled as 'mobile first'
 .search-sidebar-container {
-  // Active tab
+  .nav-tabs .nav-link {
+    color: @text-color;
+
+    &:hover,
+    &:focus {
+      color: @brand-primary;
+    }
+  }
+
   .nav-tabs .nav-link.active {
+    color: @text-color;
     border-bottom-color: @brand-primary;
   }
 
