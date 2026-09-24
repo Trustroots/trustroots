@@ -26,6 +26,26 @@ describe('Service: email', function () {
     emailService = loadEmailService();
   });
 
+  it('passes Agenda enqueue failures to the email caller', function (done) {
+    const enqueueError = new Error('Job could not be queued');
+    emailService = loadEmailService({
+      '../../../../config/lib/agenda': {
+        now() {
+          return Promise.reject(enqueueError);
+        },
+      },
+    });
+    emailService.renderEmail = function (templateName, params, callback) {
+      callback(null, { to: { address: 'member@example.test' } });
+    };
+
+    emailService.renderEmailAndSend('example', {}, function (err, job) {
+      err.should.equal(enqueueError);
+      should.not.exist(job);
+      done();
+    });
+  });
+
   it('can send signup email confirmation', function (done) {
     const user = {
       displayName: 'test user',
