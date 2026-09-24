@@ -16,6 +16,5 @@ module.exports = {
     config: 'modules/*/server/config/*.js',
     policies: 'modules/*/server/policies/*.js',
     views: 'modules/*/server/views/*.html',
-    migrations: 'migrations/*.js',
   },
 };

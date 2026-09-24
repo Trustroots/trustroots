@@ -17,7 +17,7 @@ import {
   generateClientUser,
   generateMessage,
 } from '@/testutils/client/data.client.testutil';
-import * as angularCompat from '@/modules/core/client/services/client-runtime';
+import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 
 const api = {
   users: usersAPI,
@@ -140,7 +140,7 @@ let routeParams = {
   username: otherUser.username,
 };
 
-angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
+clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
 
 describe('<Thread>', () => {
   beforeEach(() => {
@@ -149,7 +149,7 @@ describe('<Thread>', () => {
     routeParams = {
       username: otherUser.username,
     };
-    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
+    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
   });
 
   it('shows the activation prompt and skips loading for private users', () => {
@@ -230,13 +230,13 @@ describe('<Thread>', () => {
     routeParams = {
       username: me.username,
     };
-    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
+    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
     await waitFor(() =>
-      expect(angularCompat.navigate).toHaveBeenCalledWith('inbox'),
+      expect(clientRuntime.navigate).toHaveBeenCalledWith('inbox'),
     );
     expect(
       screen.queryByText(/You haven't been talking yet/),
@@ -269,7 +269,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
+    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -324,7 +324,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
+    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -361,7 +361,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    angularCompat.getCurrentRouteParams.mockReturnValue(routeParams);
+    clientRuntime.getCurrentRouteParams.mockReturnValue(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
