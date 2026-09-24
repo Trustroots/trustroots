@@ -5,6 +5,7 @@
     "modules/*/tests/**",
     "deploy/docker/data/**",
     "modules/*/server/**/*.model.js",
+    "modules/*/server/**/*.model.mjs",
     "modules/*/server/models/**",
     "modules/core/server/jobs/send-push-message.server.job.js",
     "modules/users/server/jobs/user-welcome-sequence-first.server.job.js",

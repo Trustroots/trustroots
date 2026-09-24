@@ -3,7 +3,9 @@
 ## Purpose
 
 Define the supported JavaScript runtime platform and the verification required to keep development, automation, and production environments aligned.
+
 ## Requirements
+
 ### Requirement: Supported JavaScript runtime
 
 The project SHALL require the Node.js 24 release line and npm 11 for development, dependency installation, automated tests, builds, and production execution.
