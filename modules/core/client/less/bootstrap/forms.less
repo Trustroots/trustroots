@@ -41,7 +41,7 @@ input[type='color'] {
   }
 }
 
-// We have "reveal password" button via Angular directive already
+// The application provides its own reveal-password button
 input[type='password']::-ms-reveal {
   display: none;
 }
@@ -59,20 +59,13 @@ label + .checkbox {
   margin-top: -5px;
 }
 
-/**
- * Angular validator classes
- * @link https://docs.angularjs.org/guide/forms#using-css-classes
- */
+// Form validation errors
 .has-error .form-control,
-.has-error .form-control:focus,
-.form-control.ng-dirty.ng-invalid {
+.has-error .form-control:focus {
   border-color: @brand-danger;
   box-shadow: 0 0 3px lighten(@brand-danger, 50%);
 }
 
-/**
- * Animating these is done via trFocustip and trMailcheck directives
- */
 .help-block {
   display: block;
   opacity: 1;
@@ -80,17 +73,6 @@ label + .checkbox {
   margin: 0;
   .font-brand-regular();
   color: @gray-light;
-  &.ng-hide-add.ng-hide-add-active,
-  &.ng-hide-remove.ng-hide-remove-active {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.1, 0.57, 0.1, 1);
-    transition-duration: 300ms;
-  }
-  &.ng-hide {
-    line-height: 0;
-    opacity: 0;
-    padding: 0;
-  }
 }
 
 // Input without any borders and other visual cues
