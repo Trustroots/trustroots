@@ -42,7 +42,9 @@ test.describe('public core manifest gap coverage', () => {
     );
 
     await page.goto('/support');
-    await page.getByLabel(/message/i).fill('E2E failing support request.');
+    await page
+      .getByRole('textbox', { name: 'Message', exact: true })
+      .fill('E2E failing support request.');
     await page.getByRole('button', { name: /^send$/i }).click();
 
     await expect(

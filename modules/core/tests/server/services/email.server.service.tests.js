@@ -386,7 +386,7 @@ describe('Service: email', function () {
     );
   });
 
-  it('removes links from unread message previews', function (done) {
+  it('defangs links in unread message previews', function (done) {
     const userFrom = {
       _id: 'from-user-id',
       username: 'userfrom',
@@ -406,6 +406,14 @@ describe('Service: email', function () {
           content:
             'Visit <a href="https://example.invalid/payment">example.invalid/payment</a>.',
         },
+        {
+          id: 'message-id-2',
+          content: 'Or visit https://scammetyscammetyscam.example.com/.',
+        },
+        {
+          id: 'message-id-3',
+          content: 'The domain is scammetyscammetyscam.example.com.',
+        },
       ],
     };
 
@@ -416,9 +424,32 @@ describe('Service: email', function () {
       function (err) {
         if (err) return done(err);
         jobs.length.should.equal(1);
-        jobs[0].data.html.should.containEql('Visit [link removed].');
+        jobs[0].data.html.should.containEql(
+          'Visit https[:]//example[.]invalid/payment.',
+        );
+        jobs[0].data.text.should.containEql(
+          'Visit https[:]//example[.]invalid/payment.',
+        );
         jobs[0].data.html.should.not.containEql('https://example.invalid');
         jobs[0].data.text.should.not.containEql('https://example.invalid');
+        jobs[0].data.html.should.containEql(
+          'Or visit https[:]//scammetyscammetyscam[.]example[.]com/.',
+        );
+        jobs[0].data.text.should.containEql(
+          'Or visit https[:]//scammetyscammetyscam[.]example[.]com/.',
+        );
+        jobs[0].data.html.should.containEql(
+          'The domain is scammetyscammetyscam[.]example[.]com.',
+        );
+        jobs[0].data.text.should.containEql(
+          'The domain is scammetyscammetyscam[.]example[.]com.',
+        );
+        jobs[0].data.html.should.not.containEql(
+          'scammetyscammetyscam.example.com',
+        );
+        jobs[0].data.text.should.not.containEql(
+          'scammetyscammetyscam.example.com',
+        );
         done();
       },
     );

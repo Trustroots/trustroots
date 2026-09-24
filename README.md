@@ -27,6 +27,10 @@ Priorities:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [team.trustroots.org](https://team.trustroots.org/) for more ways to help.
 
+## Android preview
+
+Download the latest signed Android APK from [GitHub Releases](https://github.com/Trustroots/trustroots/releases). A new prerelease is published after a successful Android build on `main`.
+
 ## Medium term plans
 
 Our medium term plan is decentralisation through the Nostr protocol. See https://github.com/Trustroots/nostroots.

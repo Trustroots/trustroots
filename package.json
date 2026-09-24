@@ -92,7 +92,6 @@
   },
   "dependencies": {
     "@tanstack/react-router": "1.120.5",
-    "acl": "0.4.11",
     "agenda": "4.4.0",
     "akismet-api": "5.3.0",
     "async": "2.6.4",
