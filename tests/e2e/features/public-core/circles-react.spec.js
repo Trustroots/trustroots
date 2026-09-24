@@ -98,6 +98,11 @@ test('member navigation menus and narrow layout remain usable', async ({
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.goto('/circles');
 
+  const header = page.locator('#tr-header');
+  await expect(header).toHaveCSS('background-color', 'rgb(18, 181, 145)');
+  await page.getByRole('button', { name: 'Support' }).hover();
+  await expect(header.getByRole('link', { name: 'Safety' })).toBeVisible();
+
   await page.getByRole('button', { name: 'Support' }).click();
   await expect(
     page.locator('#tr-header').getByRole('link', { name: 'Safety' }),
@@ -107,7 +112,6 @@ test('member navigation menus and narrow layout remain usable', async ({
   await expect(page.getByRole('link', { name: 'My profile' })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const header = page.locator('#tr-header');
   await expect(header.locator('a[href="/messages"]')).toBeVisible();
   const headerBounds = await header.boundingBox();
   expect(headerBounds.x).toBeGreaterThanOrEqual(0);
