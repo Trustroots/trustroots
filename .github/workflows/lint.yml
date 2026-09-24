@@ -67,7 +67,7 @@ jobs:
           reporter: github-check
           filter_mode: file # annotate all issues in changed files (mirrors old only-pr-files)
           fail_level: error # fail the check on ESLint errors (warnings still reported)
-          eslint_flags: '--ext .js,.mjs,.ts,.tsx .'
+          eslint_flags: '--ext .js,.mjs,.ts,.tsx,.cts,.mts .'
       - name: Upload ESLint report
         uses: actions/upload-artifact@v7
         with:
