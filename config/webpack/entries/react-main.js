@@ -9,16 +9,12 @@ import { enable as enableUnreadMessageCountPolling } from '@/modules/messages/cl
 import { enable as enableVisibilityWatching } from '@/modules/messages/client/services/visibility.client.service';
 import { enable as enableFaviconUpdater } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
 
-import 'bootstrap/dist/css/bootstrap.min.css';
 import './main.less';
 
-// main.less already includes the site-owned Bootstrap compatibility styles.
 importAll(require.context('../../../modules/', true, /\.less$/));
 
 function importAll(r) {
-  r.keys()
-    .filter(key => key !== './core/client/less/bootstrap/legacy-classes.less')
-    .forEach(r);
+  r.keys().forEach(r);
 }
 
 function enableMessageShellServices() {

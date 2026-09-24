@@ -37,7 +37,7 @@ export default function SearchSidebar({
         activeKey={activeTab}
         className="search-sidebar-tabs"
         id="search-sidebar-tabs"
-        justify
+        justified
         onSelect={onTabSelect}
       >
         <Tab

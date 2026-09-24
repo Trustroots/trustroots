@@ -10,7 +10,7 @@ export default function NavigationLoggedOut({ currentPath }) {
   const { t } = useTranslation('core');
 
   return (
-    <div className="container w-100">
+    <div className="container">
       <nav
         aria-label={t('Page navigation')}
         className="header-welcome text-center"

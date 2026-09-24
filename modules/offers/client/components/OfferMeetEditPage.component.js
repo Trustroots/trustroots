@@ -155,7 +155,7 @@ export default function OfferMeetEditPage() {
           activeKey={activeTab}
           className="offer-tabs"
           id="offer-meet-tabs"
-          onSelect={key => setActiveTab(Number(key))}
+          onSelect={setActiveTab}
         >
           <Tab eventKey={0} title="Details">
             <div className="row">
