@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
     {% endfor %} {% if env === 'development' or env === 'test' %} {% for jsFile
     in reactJsFiles %}
-    <script
+    <script {% if reactUsesVite %}type="module" {% endif %}
       src="/{{jsFile}}?c={{appSettings.commit}}"
       nonce="{{ nonce }}"
     ></script>

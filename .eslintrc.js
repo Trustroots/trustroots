@@ -73,6 +73,7 @@ module.exports = {
     {
       files: [
         '*.js',
+        'vite.config.mjs',
         'config/**',
         'migrations/**',
         'modules/*/shared/**/*.js',
@@ -159,6 +160,7 @@ module.exports = {
      */
     {
       files: [
+        'config/vite/**/*.{ts,tsx}',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/tests/client/**/*.{ts,tsx}',
       ],
