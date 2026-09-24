@@ -516,7 +516,7 @@ describe('React route ownership', () => {
     ).toBe('/signin');
   });
 
-  it('does not claim remaining Angular-owned paths', () => {
+  it('does not claim legacy profile-edit paths', () => {
     expect(isReactRoute('/profile-edit/about')).toBe(false);
     expect(findRoute('/profile-edit/about')).toBe(undefined);
   });
