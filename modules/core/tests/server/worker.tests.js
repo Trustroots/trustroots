@@ -201,6 +201,26 @@ describe('Worker tests', function () {
     agenda.start.calledBefore(agenda.every).should.equal(true);
   });
 
+  it('reports recurring scheduling failures during worker startup', async function () {
+    const scheduleError = new Error('Recurring job could not be scheduled');
+    agenda.every.rejects(scheduleError);
+
+    try {
+      await new Promise(function (resolve, reject) {
+        worker.start(workerOptions, function (err) {
+          if (err !== scheduleError) {
+            reject(err || new Error('Expected the scheduling failure'));
+          } else {
+            resolve();
+          }
+        });
+      });
+      agenda.start.calledTwice.should.equal(true);
+    } finally {
+      worker.removeExitListeners();
+    }
+  });
+
   it('only schedules defined jobs', function () {
     const jobNames = _.map(definedJobs, 'name');
     scheduledJobs.forEach(function (job) {
