@@ -1,5 +1,5 @@
 @import '~less/global-variables';
-@import '~bootstrap/less/mixins/image';
+@import '~less/bootstrap/legacy-mixins';
 
 /**
  * Edit offer
@@ -12,7 +12,7 @@
   @media (max-width: @screen-xs) {
     margin-top: @navbar-height;
   }
-  .nav-tabs {
+  &.nav-tabs {
     @media (max-width: @screen-xs) {
       position: fixed;
       z-index: @zindex-navbar-fixed;
@@ -30,10 +30,10 @@
       @media (min-width: @screen-sm-min) {
         font-size: @font-size-large;
       }
-      a {
+      .nav-link {
         border: 0;
       }
-      &.active a {
+      .nav-link.active {
         color: #fff;
         background-color: @gray-light;
         border: 0;
@@ -47,6 +47,16 @@
     // At footer we'll place fixed navigation,
     // ensure we have space for it
     margin-bottom: @navbar-height;
+
+    form > .text-center {
+      position: fixed;
+      z-index: @zindex-popover + 1;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      padding: 10px;
+      background: #fff;
+    }
   }
   .offer-map {
     position: relative;

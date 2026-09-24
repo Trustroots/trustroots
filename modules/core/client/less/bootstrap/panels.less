@@ -1,4 +1,4 @@
-@import '~bootstrap/less/mixins/gradients';
+@import '~less/bootstrap/legacy-mixins';
 @import '~less/global-variables';
 @import '~less/layout/typography';
 
@@ -56,7 +56,11 @@
       font-weight: bold;
 
       // Vertical gradient, from top to bottom
-      #gradient.vertical(rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0); rgba(red(@panel-bg), green(@panel-bg), blue(@panel-bg), 0.96); 0%; 80%);
+      background: linear-gradient(
+        to bottom,
+        fade(@panel-bg, 0%) 0%,
+        fade(@panel-bg, 96%) 80%
+      );
       &:hover {
         transition: color 0.4s;
         color: lighten(@text-color, 40%);

@@ -20,7 +20,7 @@ export default function AppHeader({
   const currentPath = routedPath || browserPath;
 
   return (
-    <Navbar className="hidden-print" id="tr-header" fixedTop>
+    <Navbar className="hidden-print" id="tr-header" fixed="top">
       <a
         className="btn btn-primary sr-only sr-only-focusable sr-helper"
         href="#tr-main"

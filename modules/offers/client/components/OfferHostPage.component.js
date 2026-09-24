@@ -164,7 +164,7 @@ export default function OfferHostPage({ user }) {
           activeKey={activeTab}
           className="offer-tabs"
           id="offer-host-tabs"
-          onSelect={setActiveTab}
+          onSelect={key => setActiveTab(Number(key))}
         >
           <Tab eventKey={0} title="Availability">
             <div className="row">

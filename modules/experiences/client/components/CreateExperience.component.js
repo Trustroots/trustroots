@@ -196,7 +196,7 @@ export default function CreateExperience({ userFrom, userTo }) {
     <div>
       <Tabs
         activeKey={step}
-        bsStyle="pills"
+        variant="pills"
         id="create-experience-tabs"
         className="create-experience-tabs"
       >
