@@ -7,6 +7,7 @@ const async = require('async');
 const juice = require('juice');
 const moment = require('moment');
 const autolinker = require('autolinker');
+const he = require('he');
 const analyticsHandler = require('../controllers/analytics.server.controller');
 const textService = require('./text.server.service');
 const render = require('../../../../config/lib/render');
@@ -26,11 +27,24 @@ function getSupportVolunteerName() {
   return _.sample(config.supportVolunteerNames);
 }
 
+function defangUrl(value) {
+  return value.replace(/:/g, '[:]').replace(/\./g, '[.]');
+}
+
 function removeLinksFromMessagePreview(content) {
-  return _.toString(content).replace(
-    /<a\b[^>]*>[\s\S]*?<\/a>/gi,
-    '[link removed]',
+  const withoutAnchors = _.toString(content).replace(
+    /<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1[^>]*>[\s\S]*?<\/a>/gi,
+    (_anchor, _quote, href) => _.escape(defangUrl(he.decode(href))),
   );
+
+  return autolinker.link(withoutAnchors, {
+    urls: true,
+    email: false,
+    phone: false,
+    mention: false,
+    hashtag: false,
+    replaceFn: match => _.escape(defangUrl(match.getMatchedText())),
+  });
 }
 
 exports.sendMessagesUnread = function (
