@@ -2,7 +2,7 @@
  * Module dependencies.
  */
 const mongoose = require('mongoose');
-const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const uniqueValidation = require('../../../../config/lib/mongoose-unique-validation');
 const Schema = mongoose.Schema;
 
 /**

@@ -534,7 +534,7 @@ exports.changeRole = async (req, res) => {
     );
 
     // No documents were updated
-    if (!user.n) {
+    if (!user.matchedCount) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });
