@@ -214,6 +214,40 @@ describe('User Model Unit Tests:', function () {
     });
   });
 
+  describe('Mongoose 6 database compatibility', function () {
+    it('reports a duplicate email on updateOne and leaves the stored user unchanged', async function () {
+      const first = await new User(user).save();
+      const second = await new User(user3).save();
+
+      try {
+        await User.updateOne(
+          { _id: second._id },
+          { $set: { email: first.email } },
+        );
+        throw new Error('Expected the unique email index to reject the update');
+      } catch (err) {
+        err.should.be.instanceof(mongoose.Error.ValidationError);
+        err.errors.email.message.should.equal(
+          'Account with this email exists already.',
+        );
+      }
+
+      const stored = await User.findById(second._id);
+      stored.email.should.equal(user3.email);
+    });
+
+    it('keeps unknown query fields in the MongoDB filter', async function () {
+      await new User(user).save();
+
+      const match = await User.findOne({
+        username: user.username,
+        fieldNotInSchema: 'anonymous-value',
+      });
+
+      should.not.exist(match);
+    });
+  });
+
   describe('Username Validation', function () {
     it('should show error to save username beginning with .', function (done) {
       const _user = new User(user);
