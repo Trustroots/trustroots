@@ -24,7 +24,7 @@
       "packagePatterns": ["^webpack"]
     },
     {
-      "packageNames": ["mapbox-gl", "react-map-gl", "ui-leaflet"],
+      "packageNames": ["mapbox-gl", "react-map-gl"],
       "packagePatterns": ["^leaflet"]
     },
     {
@@ -32,29 +32,8 @@
       "packagePatterns": ["^i18next"]
     },
     {
-      "packageNames": [
-        "angular",
-        "angular-animate",
-        "angular-aria",
-        "angular-message-format",
-        "angular-mocks",
-        "angular-resource",
-        "angular-sanitize",
-        "angular-touch"
-      ],
-      "allowedVersions": "<=1.6"
-    },
-    {
-      "packageNames": ["angular-confirm"],
-      "allowedVersions": "<=1"
-    },
-    {
       "packageNames": ["bootstrap"],
       "allowedVersions": "<=3"
-    },
-    {
-      "packageNames": ["angular-ui-router"],
-      "allowedVersions": "<=0.4"
     },
     {
       "sourceUrlPrefixes": ["https://github.com/babel/babel"]
