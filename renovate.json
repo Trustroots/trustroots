@@ -45,9 +45,6 @@
   "rebaseConflictedPrs": false,
   "rebaseStalePrs": false,
   "supportPolicy": "lts_latest",
-  "travis": {
-    "enabled": true
-  },
   "docker": {
     "enabled": true
   },
