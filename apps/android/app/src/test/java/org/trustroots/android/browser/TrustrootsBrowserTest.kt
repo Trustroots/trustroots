@@ -6,6 +6,12 @@ import org.junit.Test
 
 class TrustrootsBrowserTest {
     @Test
+    fun hidesWebsiteHeaderAndRemovesItsSpacing() {
+        assertTrue(embeddedBrowserStyle.contains("#tr-header { display: none !important; }"))
+        assertTrue(embeddedBrowserStyle.contains(".container-spacer { margin-top: 0 !important; }"))
+        assertTrue(embeddedBrowserStyle.contains("location.hostname !== 'www.trustroots.org'"))
+    }
+    @Test
     fun allowsTrustrootsHttpsPages() {
         assertTrue(isAllowedTrustrootsURL("https://www.trustroots.org/faq"))
         assertTrue(isAllowedTrustrootsURL("https://community.trustroots.org/password/forgot"))
