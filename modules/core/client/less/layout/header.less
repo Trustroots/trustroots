@@ -7,14 +7,6 @@
 #tr-header {
   .font-brand-regular();
   color: @navbar-default-color;
-  background: @navbar-default-bg;
-  min-height: @navbar-height;
-  padding: 0;
-
-  > .container {
-    min-height: @navbar-height;
-    justify-content: flex-start;
-  }
 
   .navbar {
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
@@ -25,13 +17,11 @@
   }
 
   .navbar-nav {
-    flex-direction: row;
-    align-items: center;
     margin-top: 0;
     margin-bottom: 0;
   }
 
-  .navbar-nav {
+  .nav {
     // Fix, because we don't have normal Bootstrap collapsable menu
     > li {
       float: left;
@@ -41,19 +31,6 @@
       text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
     }
 
-    > li > a,
-    > .dropdown > .dropdown-toggle {
-      display: block;
-      padding: 10px 12px;
-      color: @navbar-default-link-color;
-      text-decoration: none;
-    }
-
-    > .dropdown > .dropdown-toggle {
-      background: transparent;
-      border: 0;
-    }
-
     .dropdown-header {
       cursor: auto;
     }
@@ -61,9 +38,8 @@
     .dropdown-menu {
       a {
         text-shadow: none;
-        &.active,
-        &:active,
-        &:focus {
+        &[role='menuitem']:active,
+        &[role='menuitem']:focus {
           outline: none;
           color: @navbar-default-color;
           background: @brand-primary;
@@ -71,10 +47,10 @@
       }
     }
 
-    // Keep mobile icons legible against the green header.
+    // On mobile navi icons are highlighted differently
     @media (max-width: @grid-float-breakpoint-max) {
       a {
-        color: @navbar-default-link-color;
+        color: darken(@brand-primary, 15%);
         text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.3);
         font-size: 18px;
       }
@@ -86,18 +62,12 @@
   }
 
   .nav-header-primary {
-    margin-left: auto;
+    float: right;
 
     @media (max-width: @grid-float-breakpoint-max) {
-      margin-left: auto;
+      float: none;
       display: flex;
       justify-content: space-between;
-
-      > li > a,
-      > li > a:hover,
-      > li > a:focus {
-        color: @navbar-default-link-color;
-      }
     }
   }
 
@@ -127,7 +97,6 @@
 /* Welcome-header for non-authenticated users */
 .header-welcome {
   display: flex;
-  flex: 1;
   align-items: center;
   justify-content: center;
   padding: 5px 0;
@@ -139,12 +108,6 @@
   }
   .header-more-text {
     font-size: 14px;
-
-    &.btn-link {
-      --bs-btn-color: @navbar-default-link-color;
-      --bs-btn-hover-color: @navbar-default-link-hover-color;
-      color: @navbar-default-link-color;
-    }
   }
   .header-welcome-text,
   .btn {

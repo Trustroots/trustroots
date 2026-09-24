@@ -1,9 +1,4 @@
-const {
-  annotateFeature,
-  expect,
-  test,
-  useElementScreenshot,
-} = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/test');
 const { finalizeEvent } = require('nostr-tools');
 
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
@@ -303,10 +298,6 @@ test.describe('rendered search map feature coverage', () => {
     await expect(
       page.locator('[data-testid="leaflet-search-map"]'),
     ).toBeVisible();
-    const zoomControl = page.locator(
-      '.leaflet-top.leaflet-right .leaflet-control-zoom',
-    );
-    await expect(zoomControl).toBeVisible();
     await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
     await expect(page.locator('.leaflet-tile').first()).toHaveJSProperty(
       'naturalWidth',
@@ -620,20 +611,10 @@ test.describe('rendered search map feature coverage', () => {
     await installNostrRelayStub(page);
     await page.goto('/search');
 
-    const placeButton = page.getByRole('button', { name: 'Search places' });
-    const filtersButton = page
+    await page
       .locator('.search-map-meta button')
-      .filter({ hasText: 'Filters' });
-    await expect(placeButton).toBeVisible();
-    await expect(filtersButton).toBeVisible();
-    const placeBounds = await placeButton.boundingBox();
-    const filtersBounds = await filtersButton.boundingBox();
-    expect(placeBounds.y).toBe(filtersBounds.y);
-    expect(placeBounds.height).toBeLessThanOrEqual(46);
-    expect(filtersBounds.height).toBeLessThanOrEqual(46);
-    await expect(page.locator('.search-map-container')).toBeVisible();
-
-    await filtersButton.click();
+      .filter({ hasText: 'Filters' })
+      .click();
 
     const filterLabel = page
       .locator('.search-sidebar-filters label')
@@ -655,7 +636,6 @@ test.describe('rendered search map feature coverage', () => {
       'Community Notes sidebar displays a plus-code thread.',
       'Reply action opens the Nostroots action-gate modal.',
     ]);
-    useElementScreenshot(testInfo, '.search-sidebar-container');
 
     const noteEvents = [
       communityNoteText,
@@ -687,12 +667,6 @@ test.describe('rendered search map feature coverage', () => {
     await expect(sidebar.getByText(communityNotePlusCode)).toBeVisible();
     await expect(sidebar.getByText(communityNoteText)).toBeVisible();
     await expect(sidebar.getByText('via Nostroots')).toBeVisible();
-    await expect(
-      sidebar.locator('.community-notes-sidebar-note').first(),
-    ).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-    await expect(
-      page.locator('.search-sidebar-tabs .nav-link').first(),
-    ).toHaveCSS('color', 'rgb(51, 51, 51)');
 
     await sidebar.getByRole('button', { name: 'Reply' }).click();
 
@@ -726,7 +700,7 @@ test.describe('rendered search map feature coverage', () => {
 
     const sidebar = page.locator('.search-sidebar-container');
     await expect(sidebar).toBeVisible();
-    await sidebar.getByRole('tab', { name: 'Results' }).click();
+    await sidebar.locator('.nav-tabs > li').nth(1).locator('a').click();
     await expect(
       sidebar
         .locator('.search-sidebar-results')

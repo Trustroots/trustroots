@@ -78,7 +78,7 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
     <>
       <button
         title={currentLanguage?.label}
-        className={classnames('btn', 'text-nowrap', {
+        className={classnames('btn', {
           'btn-primary': buttonStyle === 'primary',
           'btn-default': buttonStyle === 'default',
           'btn-inverse': buttonStyle === 'inverse',
@@ -88,7 +88,9 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
           setIsModalVisible(true);
         }}
       >
-        {currentLanguage?.label ?? 'English'}
+        {t('Language: {{code}}', {
+          code: currentLanguage?.code?.toUpperCase() ?? 'EN',
+        })}
       </button>
       <Modal show={isModalVisible} onHide={onModalHide}>
         <Modal.Header closeButton>

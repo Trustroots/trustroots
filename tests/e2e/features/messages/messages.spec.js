@@ -1,9 +1,4 @@
-const {
-  annotateFeature,
-  test,
-  expect,
-  useElementScreenshot,
-} = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_CONVERSATIONS,
@@ -63,7 +58,6 @@ test.describe('seeded message flows', () => {
       'Thread view shows seeded replies.',
       'Thread can be opened by username or userId route/query.',
     ]);
-    useElementScreenshot(testInfo, '.message-reply-actions');
 
     const portland = SEEDED_MEMBERS[1];
     const portlandId = await fetchUserIdByUsername(request, portland.username);
@@ -76,10 +70,6 @@ test.describe('seeded message flows', () => {
     await expect(
       page.getByText(SEEDED_CONVERSATIONS.berlinPortland.openingMessage),
     ).toBeVisible();
-    await expect(page.locator('#messageReplySubmit')).toHaveCSS(
-      'background-color',
-      'rgb(18, 181, 145)',
-    );
   });
 
   test('inbox does not list the shadowbanned sender', async ({

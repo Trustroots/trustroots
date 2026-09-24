@@ -340,7 +340,7 @@ export default function SignupPage() {
         <div className="row signup-form-steps">
           {step === 1 && (
             <div className="signup-form-step">
-              <div className="col-10 offset-1 col-sm-8 offset-sm-2 col-md-6 offset-md-3">
+              <div className="col-xs-offset-1 col-xs-10 col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6 col-lg-offset-4 col-lg-4">
                 <div className="form-group">
                   <label htmlFor="firstName" className="col-sm-4 control-label">
                     First Name
@@ -482,9 +482,9 @@ export default function SignupPage() {
                       )}
                   </div>
                 </div>
-                <div className="form-group signup-newsletter">
-                  <div className="col-sm-8 offset-sm-4">
-                    <label className="signup-newsletter-label">
+                <div className="form-group checkbox">
+                  <div className="col-sm-offset-4 col-sm-8">
+                    <label>
                       <input
                         type="checkbox"
                         name="newsletter"
@@ -501,12 +501,12 @@ export default function SignupPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <div className="col-8 col-sm-8 offset-sm-4 text-muted">
+                  <div className="col-xs-8 col-sm-8 col-sm-offset-4 text-muted">
                     <p>
                       By signing up you agree to abide to our{' '}
-                      <span className="d-inline d-sm-none">rules</span>
+                      <span className="visible-xs-inline">rules</span>
                       <a
-                        className="d-none d-sm-inline"
+                        className="hidden-xs"
                         href="/rules"
                         onClick={handleOpenRules}
                       >
@@ -516,7 +516,7 @@ export default function SignupPage() {
                       everyone.
                     </p>
                   </div>
-                  <div className="col-4 d-block d-sm-none">
+                  <div className="col-xs-4 visible-xs-block">
                     <a
                       className="btn btn-default"
                       href="/rules"
@@ -547,7 +547,7 @@ export default function SignupPage() {
                     />
                   </div>
                 </div>
-                <div className="text-center signup-next">
+                <div className="text-center form-group">
                   <br />
                   <button
                     type="button"

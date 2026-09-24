@@ -242,9 +242,7 @@ async function run() {
     metrics.codeCoverage = codeCoverage;
   }
 
-  const incompleteFeatureCoverage =
-    process.env.TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE !== 'true' &&
-    featureCoverageIncomplete(metrics);
+  const incompleteFeatureCoverage = featureCoverageIncomplete(metrics);
   if (incompleteFeatureCoverage && status === 'passed') {
     status = 'failed';
     exitCode = 1;

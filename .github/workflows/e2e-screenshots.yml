@@ -138,7 +138,6 @@ jobs:
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
             -e TRUSTROOTS_E2E_SCREENSHOTS=true \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
-            -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
             dev npm run test:e2e -- "${specs[@]}"
           test_status="$?"
           set -e

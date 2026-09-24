@@ -4,7 +4,7 @@ import React from 'react';
 
 export default function NavigationSubMenuList({ list }) {
   return (
-    <div className="small text-muted dropdown-meta text-center font-brand-regular">
+    <li className="small text-muted dropdown-meta text-center font-brand-regular">
       <ul className="list-inline">
         {list.map(({ href, label, rel, target }) => (
           <li key={href}>
@@ -14,7 +14,7 @@ export default function NavigationSubMenuList({ list }) {
           </li>
         ))}
       </ul>
-    </div>
+    </li>
   );
 }
 

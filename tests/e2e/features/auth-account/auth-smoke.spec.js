@@ -1,9 +1,4 @@
-const {
-  annotateFeature,
-  test,
-  expect,
-  useElementScreenshot,
-} = require('../../support/test');
+const { annotateFeature, test, expect } = require('../../support/test');
 
 const {
   SEEDED_MEMBERS,
@@ -88,20 +83,6 @@ test.describe.serial('authentication smoke', () => {
     });
 
     await signUp(page, signupUser);
-  });
-
-  test('signup uses the Trustroots primary colour', async ({
-    page,
-  }, testInfo) => {
-    annotateFeature(testInfo, 'auth.signup', [
-      'Signup form validates required fields.',
-    ]);
-    useElementScreenshot(testInfo, '.signup-form-steps');
-
-    await page.goto('/signup');
-    await expect(
-      page.getByRole('button', { name: 'Please fill in the form' }),
-    ).toHaveCSS('background-color', 'rgb(18, 181, 145)');
   });
 
   test('UI signup creates an account that can sign in with username and email', async ({
