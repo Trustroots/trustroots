@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.content.Context
 import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,11 +28,14 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Brush
 import java.net.HttpURLConnection
 import java.net.URL
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -47,10 +51,11 @@ internal fun RemoteArtwork(
     size: Dp,
     background: Color = MaterialTheme.colorScheme.primary,
 ) {
+    val context = LocalContext.current.applicationContext
     val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}"
     val bitmap by produceState<Bitmap?>(null, cacheKey) {
         value = if (url == null) null else artworkCache.get(cacheKey) ?: withContext(Dispatchers.IO) {
-            loadArtwork(url, sessionCookie)?.also { artworkCache.put(cacheKey, it) }
+            loadArtwork(context, url, sessionCookie)?.also { artworkCache.put(cacheKey, it) }
         }
     }
     Box(
@@ -80,10 +85,11 @@ internal fun ArtworkHero(
     blurBackground: Boolean,
     testTag: String,
 ) {
+    val context = LocalContext.current.applicationContext
     val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}"
     val bitmap by produceState<Bitmap?>(null, cacheKey) {
         value = if (url == null) null else artworkCache.get(cacheKey) ?: withContext(Dispatchers.IO) {
-            loadArtwork(url, sessionCookie)?.also { artworkCache.put(cacheKey, it) }
+            loadArtwork(context, url, sessionCookie)?.also { artworkCache.put(cacheKey, it) }
         }
     }
     Box(Modifier.fillMaxWidth().height(250.dp).background(background).testTag(testTag)) {
@@ -119,7 +125,12 @@ internal fun ArtworkHero(
 
 private fun URL?.orEmpty(): String = this?.toString().orEmpty()
 
-private fun loadArtwork(url: URL, sessionCookie: String?): Bitmap? = runCatching {
+private fun loadArtwork(context: Context, url: URL, sessionCookie: String?): Bitmap? {
+    val cached = if (url.path.startsWith("/uploads-circle/")) circleImageFile(context, url) else null
+    if (cached != null && System.currentTimeMillis() - cached.lastModified() < 7L * 24 * 60 * 60 * 1000) {
+        BitmapFactory.decodeFile(cached.path)?.let { return it }
+    }
+    return runCatching {
     var current = url
     repeat(3) { attempt ->
         val connection = current.openConnection() as HttpURLConnection
@@ -143,7 +154,16 @@ private fun loadArtwork(url: URL, sessionCookie: String?): Bitmap? = runCatching
                         output.toByteArray()
                     }
                     if (bytes.size > 2 * 1024 * 1024) return@runCatching null
-                    return@runCatching BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    if (bitmap != null && cached != null) {
+                        runCatching {
+                            cached.parentFile?.mkdirs()
+                            cached.writeBytes(bytes)
+                            cached.parentFile?.listFiles()?.sortedByDescending(File::lastModified)
+                                ?.drop(24)?.forEach(File::delete)
+                        }
+                    }
+                    return@runCatching bitmap
                 }
                 HttpURLConnection.HTTP_MOVED_PERM,
                 HttpURLConnection.HTTP_MOVED_TEMP,
@@ -161,4 +181,11 @@ private fun loadArtwork(url: URL, sessionCookie: String?): Bitmap? = runCatching
         }
     }
     null
-}.getOrNull()
+    }.getOrNull() ?: cached?.let { BitmapFactory.decodeFile(it.path) }
+}
+
+private fun circleImageFile(context: Context, url: URL): File {
+    val digest = MessageDigest.getInstance("SHA-256").digest(url.toString().toByteArray())
+        .joinToString("") { "%02x".format(it) }
+    return File(context.cacheDir, "circle-artwork/$digest")
+}

@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import android.graphics.Bitmap
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -13,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.io.ByteArrayOutputStream
+import java.io.File
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Rule
@@ -32,6 +34,8 @@ class CirclesJourneyTest {
     @After fun closeServer() = server.close()
 
     @Test fun browsesAndJoinsCircle() {
+        val circleArt = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "circle-artwork")
+        circleArt.deleteRecursively()
         val responder = thread {
             repeat(5) {
                 server.accept().use { socket ->
@@ -74,6 +78,7 @@ class CirclesJourneyTest {
         val quietTop = compose.onNodeWithText("Quiet Circle").fetchSemanticsNode().boundsInRoot.top
         assertTrue(popularTop < quietTop)
         compose.onNodeWithContentDescription("Wanderers image").assertIsDisplayed()
+        assertTrue(circleArt.listFiles()?.isNotEmpty() == true)
         compose.onNodeWithContentDescription("Wanderers image").performClick()
         compose.onNodeWithText("Meet fellow travellers").assertIsDisplayed()
         val circleHero = compose.onNodeWithTag("circleHero").fetchSemanticsNode().boundsInRoot

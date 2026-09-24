@@ -3,8 +3,11 @@ package org.trustroots.android.api
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
+import java.io.IOException
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
@@ -26,8 +29,19 @@ data class MemberProfile(
     val tagline: String?,
     val description: String?,
     val location: String?,
+    val locationLiving: String? = null,
+    val locationFrom: String? = null,
     val languages: List<String>,
     val circles: List<TrustrootsCircle> = emptyList(),
+)
+
+data class ProfileUpdate(
+    val displayName: String,
+    val tagline: String,
+    val description: String,
+    val locationLiving: String,
+    val locationFrom: String,
+    val languages: List<String>,
 )
 
 data class MessageMember(val id: String?, val username: String?, val displayName: String) {
@@ -88,8 +102,19 @@ class MobileApiException(
         get() = statusCode == HttpURLConnection.HTTP_UNAUTHORIZED
 }
 
-class MobileApiClient(baseURL: String) {
+class MobileApiClient(
+    baseURL: String,
+    private val responseCache: SecureResponseCache? = null,
+    private val cacheAccount: String? = null,
+) {
     private val baseURL = secureApiBaseURL(baseURL)
+    private val mutableOfflineSavedAt = MutableStateFlow<Long?>(null)
+    val offlineSavedAt = mutableOfflineSavedAt.asStateFlow()
+
+    fun clearCachedAccount() {
+        cacheAccount?.let { responseCache?.clear(baseURL, it) }
+        mutableOfflineSavedAt.value = null
+    }
     fun circleImageURL(slug: String): URL =
         URL("$baseURL/uploads-circle/${encode(slug).replace("+", "%20")}/120x120.jpg")
     fun circleHeroURL(slug: String): URL =
@@ -200,6 +225,24 @@ class MobileApiClient(baseURL: String) {
             }
         }
 
+    suspend fun updateProfile(session: MemberSession, update: ProfileUpdate): Result<MemberProfile> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                require(update.displayName.isNotBlank())
+                val body = JSONObject()
+                    .put("displayName", update.displayName.trim())
+                    .put("tagline", update.tagline.trim())
+                    .put("description", update.description.trim())
+                    .put("locationLiving", update.locationLiving.trim())
+                    .put("locationFrom", update.locationFrom.trim())
+                    .put("languages", JSONArray(update.languages.distinct().sorted()))
+                    .toString()
+                parseMember(JSONObject(jsonRequest(
+                    "/api/users", "PUT", body, session.cookieHeader,
+                ).body))
+            }
+        }
+
     suspend fun inbox(session: MemberSession, page: Int = 1): Result<List<MessageThread>> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -216,7 +259,7 @@ class MobileApiClient(baseURL: String) {
         withContext(Dispatchers.IO) {
             runCatching {
                 parseMessages(JSONArray(jsonRequest(
-                    "/api/messages/${encode(memberID)}?limit=30", "GET",
+                    "/api/messages/${encode(memberID)}?limit=100", "GET",
                     sessionCookie = session.cookieHeader,
                 ).body))
             }
@@ -356,10 +399,35 @@ class MobileApiClient(baseURL: String) {
                     message = message.ifBlank { rejectedMessage },
                 )
             }
+            if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+                responseCache?.save(baseURL, cacheAccount, path, responseBody)
+            } else if (method != "GET" && sessionCookie != null && cacheAccount != null) {
+                when {
+                    path == "/api/messages" -> responseCache?.clearCategories(
+                        baseURL, cacheAccount, setOf("inbox", "thread"),
+                    )
+                    path.startsWith("/api/users/memberships/") -> responseCache?.clearCategories(
+                        baseURL, cacheAccount, setOf("own-profile", "profile"),
+                    )
+                    path == "/api/users" -> responseCache?.clearCategories(
+                        baseURL, cacheAccount, setOf("own-profile"),
+                    )
+                }
+            }
+            mutableOfflineSavedAt.value = null
             return JsonResponse(
                 body = responseBody.ifBlank { "{}" },
                 sessionCookie = sessionCookieFrom(connection.headerFields),
             )
+        } catch (error: IOException) {
+            val cached = if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+                responseCache?.load(baseURL, cacheAccount, path)
+            } else null
+            if (cached != null) {
+                mutableOfflineSavedAt.value = cached.savedAt
+                return JsonResponse(cached.body, null)
+            }
+            throw error
         } finally {
             connection.disconnect()
         }
@@ -418,6 +486,8 @@ internal fun parseMember(value: JSONObject): MemberProfile {
         description = value.optionalText("description"),
         location = value.optionalText("locationLiving")
             ?: value.optionalText("locationFrom")?.let { "From $it" },
+        locationLiving = value.optionalText("locationLiving"),
+        locationFrom = value.optionalText("locationFrom"),
         languages = if (languages == null) emptyList() else (0 until languages.length())
             .mapNotNull { languages.optString(it).takeIf(String::isNotBlank) },
         circles = if (memberships == null) emptyList() else (0 until memberships.length())

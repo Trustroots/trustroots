@@ -17,6 +17,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -44,6 +46,7 @@ import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
+import org.trustroots.android.api.ProfileUpdate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MessageThread
@@ -134,6 +137,7 @@ internal fun MemberProfileScreen(
     session: MemberSession,
     username: String,
     onSessionInvalidated: () -> Unit,
+    onOwnProfileSaved: (MemberProfile) -> Unit = {},
     onBack: () -> Unit,
 ) {
     var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
@@ -146,6 +150,15 @@ internal fun MemberProfileScreen(
     var references by remember(username) { mutableStateOf<List<ProfileReference>>(emptyList()) }
     var showAllContacts by remember(username) { mutableStateOf(false) }
     var showAllReferences by remember(username) { mutableStateOf(false) }
+    var editing by remember(username) { mutableStateOf(false) }
+    if (editing && profile != null) {
+        EditProfileScreen(
+            api, session, requireNotNull(profile), onSessionInvalidated,
+            onCancel = { editing = false },
+            onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
+        )
+        return
+    }
     relatedUsername?.let { related ->
         MemberProfileScreen(api, session, related, onSessionInvalidated) { relatedUsername = null }
         return
@@ -155,6 +168,7 @@ internal fun MemberProfileScreen(
         return
     }
     LaunchedEffect(username) {
+        if (profile != null) return@LaunchedEffect
         api.profile(session, username).onSuccess { member ->
             profile = member
             member.id?.let { id ->
@@ -194,6 +208,9 @@ internal fun MemberProfileScreen(
             }
             }
             Column(Modifier.padding(20.dp)) {
+            if (member.username == session.member.username) {
+                Button(onClick = { editing = true }) { Text("Edit profile") }
+            }
             member.tagline?.let {
                 Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), style = MaterialTheme.typography.titleMedium)
             }
@@ -286,6 +303,77 @@ internal fun MemberProfileScreen(
     }
 }
 
+@Composable
+private fun EditProfileScreen(
+    api: MobileApiClient,
+    session: MemberSession,
+    profile: MemberProfile,
+    onSessionInvalidated: () -> Unit,
+    onCancel: () -> Unit,
+    onSaved: (MemberProfile) -> Unit,
+) {
+    var name by remember(profile.username) { mutableStateOf(profile.displayName) }
+    var tagline by remember(profile.username) { mutableStateOf(profile.tagline.orEmpty()) }
+    var description by remember(profile.username) {
+        mutableStateOf(Html.fromHtml(profile.description.orEmpty(), Html.FROM_HTML_MODE_COMPACT).toString().trim())
+    }
+    var living by remember(profile.username) { mutableStateOf(profile.locationLiving.orEmpty()) }
+    var from by remember(profile.username) { mutableStateOf(profile.locationFrom.orEmpty()) }
+    var languages by remember(profile.username) { mutableStateOf(profile.languages.toSet()) }
+    var languageMenu by remember { mutableStateOf(false) }
+    var saving by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val options = remember(languages) {
+        (listOf("eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr") + languages)
+            .distinct().sortedBy(::languageName)
+    }
+    Column(Modifier.fillMaxSize().imePadding().verticalScroll(rememberScrollState()).padding(20.dp)) {
+        TextButton(onClick = onCancel) { Text("‹ Back") }
+        Text("Edit profile", style = MaterialTheme.typography.headlineMedium)
+        OutlinedTextField(name, { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(tagline, { tagline = it }, label = { Text("Tagline") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(living, { living = it }, label = { Text("Lives in") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(from, { from = it }, label = { Text("From") }, modifier = Modifier.fillMaxWidth())
+        Text("Languages", modifier = Modifier.padding(top = 12.dp))
+        Box {
+            TextButton(onClick = { languageMenu = true }) {
+                Text(if (languages.isEmpty()) "Choose languages" else languages.sortedBy(::languageName).joinToString { languageName(it) })
+            }
+            DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
+                options.forEach { code ->
+                    DropdownMenuItem(
+                        text = { Text("${if (code in languages) "✓ " else ""}${languageName(code)}") },
+                        onClick = { languages = if (code in languages) languages - code else languages + code },
+                    )
+                }
+            }
+        }
+        OutlinedTextField(
+            description, { description = it }, label = { Text("About me") },
+            minLines = 5, maxLines = 12, modifier = Modifier.fillMaxWidth(),
+        )
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        Button(
+            onClick = {
+                scope.launch {
+                    saving = true
+                    error = null
+                    api.updateProfile(session, ProfileUpdate(name, tagline, description, living, from, languages.toList()))
+                        .onSuccess(onSaved)
+                        .onFailure {
+                            if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
+                            else error = it.message ?: "Could not save profile."
+                        }
+                    saving = false
+                }
+            },
+            enabled = name.isNotBlank() && !saving,
+            modifier = Modifier.padding(top = 16.dp),
+        ) { Text(if (saving) "Saving…" else "Save profile") }
+    }
+}
+
 internal fun languageName(code: String): String {
     val names = mapOf(
         "eng" to "English", "ger" to "German", "deu" to "German", "fre" to "French",
@@ -338,7 +426,7 @@ internal fun MessageInboxScreen(
         do {
             val batch = api.inbox(session, page).getOrElse {
                 if ((it as? MobileApiException)?.isAuthenticationFailure == true) onSessionInvalidated()
-                else error = it.message ?: "Could not load messages."
+                else if (collected.isEmpty()) error = it.message ?: "Could not load messages."
                 break
             }
             collected += batch

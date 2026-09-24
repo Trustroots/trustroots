@@ -8,12 +8,15 @@
 
 ## 2. Native member MVP
 
-- [ ] 2.1 Implement profile viewing and editing.
+- [x] 2.1 Implement profile viewing and editing.
 - [x] 2.2 Implement circle browsing, details and membership changes.
 - [x] 2.3 Implement native map search and host details.
 - [x] 2.4 Implement inboxes, conversations and message sending.
 - [ ] 2.5 Implement native experiences and account settings.
-- [ ] 2.6 Add local filters and account-scoped offline read caching.
+- [x] 2.6 Add local filters and account-scoped offline read caching.
+- [x] 2.6.1 Cache selected map, message and profile reads by account and server;
+      show a saved-data warning and cache a limited set of circle images.
+- [x] 2.6.2 Add local filters for loaded circles and conversations.
 - [x] 2.7 Add native member search and profile viewing.
 
 ## 3. Browser fallback and identity

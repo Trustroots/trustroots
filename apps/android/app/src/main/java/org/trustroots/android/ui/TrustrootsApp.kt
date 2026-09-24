@@ -42,6 +42,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -74,7 +75,9 @@ import org.trustroots.android.R
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
+import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
 import org.trustroots.android.ui.theme.TrustrootsGreen
@@ -84,6 +87,7 @@ import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 fun TrustrootsApp() {
     val context = LocalContext.current
     val sessionStore = remember { SecureMobileSessionStore(context.applicationContext) }
+    val responseCache = remember { SecureResponseCache(context.applicationContext) }
     var session by remember { mutableStateOf<MemberSession?>(null) }
     var starting by remember { mutableStateOf(true) }
     var signedOutMessage by remember { mutableStateOf<String?>(null) }
@@ -110,11 +114,20 @@ fun TrustrootsApp() {
     } else {
         MemberShell(
             session = requireNotNull(session),
+            responseCache = responseCache,
+            onMemberUpdated = { member ->
+                session?.copy(member = member)?.let { updated ->
+                    sessionStore.save(updated)
+                    session = updated
+                }
+            },
             onSignedOut = {
+                session?.let { responseCache.clear(BuildConfig.API_BASE_URL.trim().trimEnd('/'), it.member.username) }
                 sessionStore.clear()
                 session = null
             },
             onSessionInvalidated = {
+                session?.let { responseCache.clear(BuildConfig.API_BASE_URL.trim().trimEnd('/'), it.member.username) }
                 sessionStore.clear()
                 session = null
                 signedOutMessage =
@@ -317,6 +330,8 @@ private enum class MenuPage {
 @Composable
 private fun MemberShell(
     session: MemberSession,
+    responseCache: SecureResponseCache,
+    onMemberUpdated: (MobileMember) -> Unit,
     onSignedOut: () -> Unit,
     onSessionInvalidated: () -> Unit,
 ) {
@@ -330,7 +345,10 @@ private fun MemberShell(
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
-    val api = remember { MobileApiClient(BuildConfig.API_BASE_URL) }
+    val api = remember(session.member.username) {
+        MobileApiClient(BuildConfig.API_BASE_URL, responseCache, session.member.username)
+    }
+    val offlineSavedAt by api.offlineSavedAt.collectAsState()
     LaunchedEffect(session, destination, messagesNavigationID) {
         while (true) {
             api.inbox(session).onSuccess { threads ->
@@ -383,11 +401,16 @@ private fun MemberShell(
             }
         },
     ) { insets ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(insets),
-        ) {
+        Column(Modifier.fillMaxSize().padding(insets)) {
+            offlineSavedAt?.let { savedAt ->
+                Text(
+                    "Offline · Showing saved data from " +
+                        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(savedAt)),
+                    color = Color.White,
+                    modifier = Modifier.fillMaxWidth().background(TrustrootsGreen).padding(8.dp),
+                )
+            }
+            Box(Modifier.fillMaxWidth().weight(1f)) {
             val browser = browserRoute
             if (browser != null) {
                 TrustrootsBrowser(route = browser, onClose = { browserRoute = null })
@@ -405,6 +428,9 @@ private fun MemberShell(
                         username = session.member.username,
                         onSessionInvalidated = onSessionInvalidated,
                         onBack = { menuPage = MenuPage.Menu },
+                        onOwnProfileSaved = { updated ->
+                            onMemberUpdated(MobileMember(updated.username, updated.displayName))
+                        },
                     )
                     MenuPage.Account -> AccountScreen(
                         session = session,
@@ -454,6 +480,7 @@ private fun MemberShell(
                     }
                     else -> PlaceholderScreen(destination = destination, session = session)
                 }
+            }
             }
         }
     }
