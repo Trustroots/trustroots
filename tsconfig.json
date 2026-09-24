@@ -3,6 +3,7 @@
     "allowJs": true,
     "checkJs": false,
     "strict": true,
+    "isolatedModules": true,
     "noEmit": true,
     "skipLibCheck": true,
     "target": "ES2020",
@@ -16,13 +17,11 @@
       "@/*": ["./*"],
       "modules/*": ["./modules/*"]
     },
-    "types": ["jest", "node"]
+    "types": []
   },
   "include": [
     "modules/*/client/**/*.ts",
-    "modules/*/client/**/*.tsx",
-    "modules/*/tests/client/**/*.ts",
-    "modules/*/tests/client/**/*.tsx"
+    "modules/*/client/**/*.tsx"
   ],
   "exclude": ["node_modules"]
 }
