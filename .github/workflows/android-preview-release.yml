@@ -1,0 +1,68 @@
+name: Android preview release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/android/**'
+      - '.github/workflows/android-preview-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-preview-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish signed APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v4
+      - name: Install Android SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Set preview version
+        run: |
+          echo "ANDROID_VERSION_NAME=0.1-$(date -u +%Y%m%d-%H%M)" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=$((100000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - name: Restore signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/trustroots-release.jks"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/trustroots-release.jks" >> "$GITHUB_ENV"
+      - name: Test, lint and build signed APK
+        working-directory: apps/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+          ./gradlew testDebugUnitTest lintDebug assembleRelease
+      - name: Verify and prepare APK
+        run: |
+          apk="apps/android/app/build/outputs/apk/release/app-release.apk"
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify "$apk"
+          mkdir -p release
+          cp "$apk" "release/trustroots-android-${ANDROID_VERSION_NAME}.apk"
+          (cd release && sha256sum *.apk > "trustroots-android-${ANDROID_VERSION_NAME}.apk.sha256")
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "android-preview-${GITHUB_RUN_NUMBER}" release/* \
+            --target "$GITHUB_SHA" \
+            --title "Android preview ${ANDROID_VERSION_NAME}" \
+            --notes "Signed Android preview from commit ${GITHUB_SHA}. Build ${ANDROID_VERSION_CODE}." \
+            --prerelease
