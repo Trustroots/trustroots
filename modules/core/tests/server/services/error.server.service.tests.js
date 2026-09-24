@@ -79,6 +79,25 @@ describe('Service: error', function () {
   });
 
   describe('getNewError', function () {
+    it('uses an overridden message lookup on the CommonJS service', function () {
+      const overriddenService = {
+        ...errorService,
+        getErrorMessageByKey: () => 'Overridden message.',
+      };
+
+      overriddenService
+        .getNewError('not-found')
+        .message.should.equal('Overridden message.');
+    });
+
+    it('works when the ESM function is called without a service object', async function () {
+      const { getNewError } = await import(
+        '../../../server/services/error.server.service.mjs'
+      );
+
+      getNewError('not-found').message.should.equal('Not found.');
+    });
+
     it('returns an Error with the matching message', function () {
       const err = errorService.getNewError('not-found');
       err.should.be.an.instanceof(Error);

@@ -35,7 +35,10 @@ export function getErrorMessageByKey(key) {
  * @return Error
  */
 export function getNewError(key, status) {
-  const message = getErrorMessageByKey(key);
+  const message =
+    this && typeof this.getErrorMessageByKey === 'function'
+      ? this.getErrorMessageByKey(key)
+      : getErrorMessageByKey(key);
   const err = new Error(message);
 
   if (status) err.status = status;
