@@ -10,12 +10,15 @@ fi
 benchmark_dir=$(mktemp -d "${TMPDIR:-/tmp}/trustroots-package-manager.XXXXXX")
 trap 'rm -rf "$benchmark_dir"' EXIT
 
-echo "Node: $(node --version)"
-echo "npm: $(npm --version)"
-echo "pnpm: $(pnpm --version)"
+node_version=$(node --version)
+npm_version=$(npm --version)
+pnpm_version=$(pnpm --version)
+echo "Node: $node_version"
+echo "npm: $npm_version"
+echo "pnpm: $pnpm_version"
 
-if [[ "$(npm --version)" != '11.17.0' || "$(pnpm --version)" != '11.25.0' ]]; then
-  echo 'Use npm 11.17.0 and pnpm 11.25.0 for comparable lockfile installs.' >&2
+if [[ ! "$node_version" =~ ^v24\. || "$npm_version" != '11.17.0' || "$pnpm_version" != '11.25.0' ]]; then
+  echo 'Use Node.js 24, npm 11.17.0, and pnpm 11.25.0 for comparable lockfile installs.' >&2
   exit 2
 fi
 

@@ -7,9 +7,11 @@ evaluated.
 Run scripts/benchmark-package-managers.sh from a disposable checkout on
 Node.js 24, npm 11.17.0, and pnpm 11.25.0. The script archives the committed
 HEAD into a fresh temporary directory for each install, then repeats with a
-warm cache or store. Uncommitted changes are not measured. It runs lifecycle
-scripts so native dependency setup is included in the result. Record the
-operating system, runtime versions, and output alongside the decision.
+warm cache or store. Uncommitted changes are not measured. Record the operating
+system, runtime versions, and full output alongside the decision. Check pnpm's
+output for ignored dependency build scripts: a successful install with skipped
+native builds is not equivalent to npm's install. Approve the required builds
+explicitly and rerun the comparison before drawing a performance conclusion.
 
 Repeat the comparison in both development and production container builds.
 Review strict dependency resolution failures, the pinned Git dependency, and
