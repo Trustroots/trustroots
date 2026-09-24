@@ -13,3 +13,6 @@ The authentication service and build-metadata helper are the first runtime
 modules. Their tests exercise the adapters and the typed implementations.
 The current NYC server coverage report instruments the CommonJS adapters but
 does not yet measure the native `.cts` sources.
+The server test runner transpiles `.cts` through the existing TypeScript
+dependency because NYC's require hook cannot pass raw TypeScript to Node's
+native type stripper. Application and e2e runtimes use Node's native path.
