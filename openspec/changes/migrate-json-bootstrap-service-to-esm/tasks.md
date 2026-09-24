@@ -1,0 +1,4 @@
+- [x] Move the JSON-for-script serialisation implementation to a native ESM module.
+- [x] Keep the CommonJS service path as an adapter for existing server consumers.
+- [ ] Confirm server lint and coverage include the new ESM implementation.
+- [ ] Confirm existing service consumers retain the same output behaviour.

@@ -1,7 +1,2 @@
-/** Serialise bootstrap data without introducing HTML delimiters. */
-module.exports = function jsonForScript(value) {
-  return JSON.stringify(value === undefined ? null : value).replace(
-    /[<>&\u2028\u2029]/g,
-    character => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`,
-  );
-};
+// Keep the existing CommonJS entry point while consumers migrate to ESM.
+module.exports = require('./json-for-script.server.service.mjs').jsonForScript;
