@@ -51,3 +51,10 @@ paths SHALL remain callable by current consumers.
 - **WHEN** the server type-check command runs
 - **THEN** it checks both runtime `.cts` implementations under strict settings
 - **AND** runtime execution does not depend on TypeScript compiler output
+
+#### Scenario: Runtime TypeScript is included in server coverage
+
+- **WHEN** the server coverage command runs
+- **THEN** it measures the opted-in `.cts` implementations as well as their
+  CommonJS adapters
+- **AND** untested `.cts` code counts against the server's 100% coverage gate

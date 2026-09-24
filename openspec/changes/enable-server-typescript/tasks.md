@@ -8,5 +8,5 @@
 - [x] Preserve its existing callback path and export shape.
 - [x] Add server tests for the typed modules and adapters.
 - [ ] Confirm runtime outputs, type checking and lint in CI.
-- [ ] Add coverage reporting for the native `.cts` sources.
+- [x] Add coverage reporting for the native `.cts` sources.
 - [x] Validate the OpenSpec change and review package script/configuration scope.

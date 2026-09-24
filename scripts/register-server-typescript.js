@@ -10,6 +10,8 @@ require.extensions['.cts'] = function (module, filename) {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2020,
+      inlineSourceMap: true,
+      inlineSources: true,
     },
   });
   module._compile(outputText, filename);
