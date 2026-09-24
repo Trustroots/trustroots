@@ -309,6 +309,11 @@ test.describe('authenticated member flows', () => {
         .getByRole('link', { name: 'Edit profile photo' })
         .click();
       await expect(page).toHaveURL(/\/profile\/edit\/photo/);
+
+      await page.setViewportSize({ width: 375, height: 700 });
+      await page.goto(`/profile/${member.username}`);
+      await page.getByRole('link', { name: 'Edit profile photo' }).click();
+      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
     } finally {
       await context.close();
     }

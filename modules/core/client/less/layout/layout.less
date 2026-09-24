@@ -100,6 +100,11 @@ hr {
   overflow: auto;
   outline: none;
   padding-bottom: @article-padding-bottom;
+  // Photo boards sit directly below the fixed header, whose height varies
+  // between the signed-in and guest navigation and across viewport widths.
+  > .board:first-child {
+    margin-top: var(--tr-header-height, 0px);
+  }
   @media (max-width: @screen-xs-max) {
     padding-bottom: @article-padding-bottom-xs;
   }

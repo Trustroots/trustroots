@@ -3,6 +3,31 @@ const { annotateFeature, test, expect } = require('../../support/test');
 const { createUser, waitForTribesList } = require('../../support/helpers');
 
 test.describe('public pages and unauthenticated flows', () => {
+  test('photo boards start at the bottom of the fixed header', async ({
+    page,
+  }) => {
+    for (const path of ['/', '/faq', '/support']) {
+      await page.goto(path);
+      await expect
+        .poll(async () => {
+          const [header, board] = await Promise.all([
+            page.locator('#tr-header').boundingBox(),
+            page.locator('#tr-main > .board').first().boundingBox(),
+          ]);
+          return Math.abs(board.y - (header.y + header.height));
+        })
+        .toBeLessThanOrEqual(1);
+
+      if (path === '/') {
+        const board = await page.locator('.home-intro').boundingBox();
+        const rightGap = Math.abs(
+          page.viewportSize().width - (board.x + board.width),
+        );
+        expect(rightGap).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
   test('RTL pages load the generated stylesheet from a nested route', async ({
     page,
     context,
