@@ -61,29 +61,27 @@ export default function Recommend({
           aria-labelledby="would-you-recommend-them-question"
         >
           <ToggleButton
-            className="btn btn-lg"
-            aria-checked={recommend === 'yes'}
+            id="recommend-yes"
             value="yes"
-            bsStyle="default"
-            bsSize="large"
+            variant="outline-secondary"
+            size="lg"
           >
             {t('Yes')}
           </ToggleButton>
           <ToggleButton
-            className="btn btn-lg"
-            aria-checked={recommend === 'no'}
+            id="recommend-no"
             value="no"
-            bsStyle="default"
-            bsSize="large"
+            variant="outline-secondary"
+            size="lg"
           >
             {t('No')}
           </ToggleButton>
           <RecommendationDivider />
           <ToggleButton
-            aria-checked={recommend === 'unknown'}
+            id="recommend-unknown"
             value="unknown"
-            bsStyle="default"
-            bsSize="large"
+            variant="outline-secondary"
+            size="lg"
           >
             {t('Skip')}
           </ToggleButton>

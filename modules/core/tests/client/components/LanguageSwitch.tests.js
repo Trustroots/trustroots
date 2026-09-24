@@ -16,30 +16,32 @@ describe('default presentation', () => {
   it('opens a modal with language options and search', () => {
     render(<LanguageSwitch />);
 
-    fireEvent.click(screen.getByText('Language: EN'));
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
 
     expect(screen.getByText('Select a language')).toBeInTheDocument();
     expect(screen.getByRole('searchbox')).toHaveAttribute(
       'placeholder',
       'Search languages…',
     );
-    expect(screen.getByText('English')).toBeInTheDocument();
+    expect(
+      screen.getByText('English', { selector: 'strong' }),
+    ).toBeInTheDocument();
   });
 
   it('can filter and change language from the modal', async () => {
     render(<LanguageSwitch buttonStyle="primary" />);
 
-    expect(screen.getByText('Language: EN')).toHaveClass('btn-primary');
+    expect(screen.getByRole('button', { name: 'English' })).toHaveClass(
+      'btn-primary',
+    );
 
-    fireEvent.click(screen.getByText('Language: EN'));
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
     fireEvent.change(screen.getByRole('searchbox'), {
       target: { value: 'Suomi' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Suomi' }));
 
-    await waitFor(() =>
-      expect(screen.getByText('Language: FI')).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByTitle('Suomi')).toBeInTheDocument());
     await waitFor(() =>
       expect(screen.queryByText('Select a language')).not.toBeInTheDocument(),
     );
@@ -50,7 +52,7 @@ describe('default presentation', () => {
 
     render(<LanguageSwitch saveToAPI={true} />);
 
-    fireEvent.click(screen.getByText('Language: EN'));
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
 
     await waitFor(() =>
@@ -63,7 +65,7 @@ describe('default presentation', () => {
 
     render(<LanguageSwitch buttonStyle="inverse" />);
 
-    expect(screen.getByRole('button', { name: 'Language: EN' })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'English' })).toHaveClass(
       'btn-inverse',
     );
   });

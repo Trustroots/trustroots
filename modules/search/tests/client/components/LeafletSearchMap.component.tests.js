@@ -39,6 +39,9 @@ jest.mock('leaflet', () => ({
     mockCircleMarkers.push(marker);
     return marker;
   }),
+  control: {
+    zoom: jest.fn(() => ({ addTo: jest.fn() })),
+  },
   divIcon: jest.fn(options => options),
   layerGroup: jest.fn(() => {
     const group = {
@@ -145,6 +148,7 @@ beforeEach(() => {
   L.DomEvent.stopPropagation.mockClear();
   L.tileLayer.mockClear();
   L.map.mockClear();
+  L.control.zoom.mockClear();
 });
 
 describe('<LeafletSearchMap />', () => {
@@ -170,8 +174,9 @@ describe('<LeafletSearchMap />', () => {
     });
 
     expect(L.map).toHaveBeenCalledWith(expect.any(HTMLDivElement), {
-      zoomControl: true,
+      zoomControl: false,
     });
+    expect(L.control.zoom).toHaveBeenCalledWith({ position: 'topright' });
     expect(L.tileLayer).toHaveBeenCalledWith(
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       expect.objectContaining({ maxZoom: 19 }),

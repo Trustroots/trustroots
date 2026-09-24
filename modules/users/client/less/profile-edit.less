@@ -1,9 +1,19 @@
 @import '~less/global-variables';
-@import '~bootstrap/less/mixins/size';
+@import '~less/bootstrap/legacy-mixins';
 
 // Make space for .profile-edit-navbar-mobile
 .profile-edit {
   margin-bottom: @navbar-height;
+}
+
+.profile-remove-confirmation label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  input[type='checkbox'] {
+    margin: 0;
+  }
 }
 
 // Profile edit navbar, visible only on bigger screens

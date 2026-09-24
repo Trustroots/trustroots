@@ -109,4 +109,40 @@ describe('<AppHeader />', () => {
       '/messages alice',
     );
   });
+
+  it('tracks the rendered header height as navigation changes size', () => {
+    let resizeHeader;
+    const originalResizeObserver = global.ResizeObserver;
+    const bounds = jest
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ height: 54 });
+    global.ResizeObserver = class {
+      constructor(callback) {
+        resizeHeader = callback;
+      }
+      observe() {}
+      disconnect() {}
+    };
+
+    try {
+      const { unmount } = render(<AppHeader onSignout={jest.fn()} />);
+      expect(
+        document.documentElement.style.getPropertyValue('--tr-header-height'),
+      ).toBe('54px');
+
+      bounds.mockReturnValue({ height: 68 });
+      act(() => resizeHeader());
+      expect(
+        document.documentElement.style.getPropertyValue('--tr-header-height'),
+      ).toBe('68px');
+
+      unmount();
+      expect(
+        document.documentElement.style.getPropertyValue('--tr-header-height'),
+      ).toBe('');
+    } finally {
+      bounds.mockRestore();
+      global.ResizeObserver = originalResizeObserver;
+    }
+  });
 });

@@ -1,6 +1,6 @@
 // External dependencies
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from 'react-bootstrap';
 
@@ -18,9 +18,36 @@ export default function AppHeader({
   const { t } = useTranslation('core');
   const browserPath = useCurrentPath();
   const currentPath = routedPath || browserPath;
+  const headerRef = useRef(null);
+
+  useEffect(() => {
+    const header = headerRef.current;
+    const updateHeight = () => {
+      document.documentElement.style.setProperty(
+        '--tr-header-height',
+        `${header.getBoundingClientRect().height}px`,
+      );
+    };
+    updateHeight();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateHeight);
+      return () => {
+        window.removeEventListener('resize', updateHeight);
+        document.documentElement.style.removeProperty('--tr-header-height');
+      };
+    }
+
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--tr-header-height');
+    };
+  }, []);
 
   return (
-    <Navbar className="hidden-print" id="tr-header" fixedTop>
+    <Navbar className="hidden-print" id="tr-header" fixed="top" ref={headerRef}>
       <a
         className="btn btn-primary sr-only sr-only-focusable sr-helper"
         href="#tr-main"

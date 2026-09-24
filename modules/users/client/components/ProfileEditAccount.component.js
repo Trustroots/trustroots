@@ -237,7 +237,7 @@ export default function ProfileEditAccount({ user }) {
       <div className="panel panel-default">
         <div className="panel-heading">{t('News and updates')}</div>
         <div className="panel-body">
-          <div className="checkbox">
+          <div className="checkbox profile-remove-confirmation">
             <label>
               <input
                 type="checkbox"
