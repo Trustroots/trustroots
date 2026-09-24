@@ -128,8 +128,8 @@ module.exports = {
      */
     {
       files: [
-        'modules/*/tests/client/*.js',
-        'modules/*/tests/client/**/*.js',
+        'modules/*/tests/client/*.{js,ts,tsx}',
+        'modules/*/tests/client/**/*.{js,ts,tsx}',
         'testutils/client/*.js',
       ],
       extends: [
@@ -151,6 +151,26 @@ module.exports = {
       },
       globals: {
         L: true,
+      },
+    },
+
+    /**
+     * TypeScript is introduced for client code only. Keep JS linting unchanged.
+     */
+    {
+      files: [
+        'modules/*/client/**/*.{ts,tsx}',
+        'modules/*/tests/client/**/*.{ts,tsx}',
+      ],
+      parser: '@typescript-eslint/parser',
+      extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
+      parserOptions: {
+        ecmaVersion: 2018,
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+      },
+      rules: {
+        'react/prop-types': 0,
       },
     },
 
