@@ -1,0 +1,26 @@
+name: Classify CI changes
+
+on:
+  workflow_call:
+    outputs:
+      run-code:
+        description: Whether application builds and tests are needed
+        value: ${{ jobs.changes.outputs.run-code }}
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      run-code: ${{ steps.changes.outputs.run-code }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Check documentation detection
+        run: python3 -m unittest discover -s scripts/ci -p 'test_detect_docs_only.py'
+      - name: Classify changed files
+        id: changes
+        run: python3 scripts/ci/detect_docs_only.py
