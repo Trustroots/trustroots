@@ -52,6 +52,30 @@ describe('Messages controller unit tests', () => {
     return utils.clearDatabase();
   });
 
+  it('paginates stored messages with the existing Mongoose plugin', async () => {
+    const [sender, recipient] = await utils.saveUsers(
+      utils.generateUsers(2, { public: true }),
+    );
+    await Message.create(
+      [1, 2, 3].map(sequence => ({
+        userFrom: sender._id,
+        userTo: recipient._id,
+        content: `Anonymous message ${sequence}`,
+        created: new Date(Date.UTC(2020, 0, sequence)),
+      })),
+    );
+
+    const page = await Message.paginate(
+      { userFrom: sender._id },
+      { page: 2, limit: 1, sort: { created: -1 } },
+    );
+
+    page.total.should.equal(3);
+    page.pages.should.equal(3);
+    page.docs.length.should.equal(1);
+    page.docs[0].content.should.equal('Anonymous message 2');
+  });
+
   describe('guards require an authenticated user', () => {
     it('inbox responds with 403', async () => {
       const res = deferredResponse();
