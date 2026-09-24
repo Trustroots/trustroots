@@ -1,12 +1,11 @@
 /**
  * Module dependencies.
  */
-const acl = require('acl');
+const createMemoryPolicy = require('../../../core/server/services/memory-policy.server.service');
 const _ = require('lodash');
 const errorService = require('../../../core/server/services/error.server.service');
 
-// Using the memory backend
-const aclInstance = new acl(new acl.memoryBackend());
+const aclInstance = createMemoryPolicy();
 
 /**
  * Invoke Users Permissions

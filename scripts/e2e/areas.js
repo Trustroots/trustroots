@@ -8,6 +8,7 @@ const AREA_BY_SPEC = {
   'circles-react.spec.js': 'Member flows',
   'member-entry-react.spec.js': 'Member flows',
   'auth-smoke.spec.js': 'Authentication',
+  'route-permissions.spec.js': 'Authentication',
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
