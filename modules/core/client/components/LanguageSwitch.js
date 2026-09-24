@@ -78,7 +78,7 @@ export default function LanguageSwitch({ buttonStyle = 'default', saveToAPI }) {
     <>
       <button
         title={currentLanguage?.label}
-        className={classnames('btn', {
+        className={classnames('btn', 'text-nowrap', {
           'btn-primary': buttonStyle === 'primary',
           'btn-default': buttonStyle === 'default',
           'btn-inverse': buttonStyle === 'inverse',

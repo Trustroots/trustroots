@@ -298,6 +298,10 @@ test.describe('rendered search map feature coverage', () => {
     await expect(
       page.locator('[data-testid="leaflet-search-map"]'),
     ).toBeVisible();
+    const zoomControl = page.locator(
+      '.leaflet-top.leaflet-right .leaflet-control-zoom',
+    );
+    await expect(zoomControl).toBeVisible();
     await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
     await expect(page.locator('.leaflet-tile').first()).toHaveJSProperty(
       'naturalWidth',
