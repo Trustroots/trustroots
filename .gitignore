@@ -35,8 +35,6 @@ node_modules/
 *.pyc
 passenger.*
 *.pid
-scipts/docker/nginx-conf/*
-!scipts/docker/nginx-conf/trustroots.conf
 
 # Ansible Deployment Junk
 deploy/ansible/playbooks/*/*.retry

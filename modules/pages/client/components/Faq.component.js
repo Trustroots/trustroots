@@ -316,7 +316,7 @@ export default function Faq({ category, children }) {
             {/* .sidebar */}
           </div>
           <div className="col-xs-12 col-sm-8 col-md-8">
-            <div className="ui-view-slide-reveal">{children}</div>
+            <div>{children}</div>
             <br />
             <br />
             <hr />

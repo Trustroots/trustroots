@@ -39,7 +39,7 @@ afterEach(() => {
 });
 
 describe('<ProfileEditLanguages />', () => {
-  it('prefills languages and broadcasts changes back to Angular', () => {
+  it('prefills languages and broadcasts profile language changes', () => {
     const onChangeLanguages = jest.fn();
 
     render(

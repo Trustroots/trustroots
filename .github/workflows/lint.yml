@@ -14,10 +14,16 @@ permissions:
   pull-requests: write
 
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
+
   lint:
     # Don't run inline ESlint test if PR is from a forked repo (i.e. it doesn't have read permission)
     # See https://github.com/ataylorme/eslint-annotate-action/issues/28
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: changes
+    if: >
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      github.event.pull_request.head.repo.full_name == github.repository
 
     runs-on: ubuntu-latest
 
