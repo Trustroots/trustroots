@@ -11,6 +11,16 @@ val configuredMapboxToken = providers.gradleProperty("trustrootsMapboxToken")
 val buildEpochSeconds = providers.exec {
     commandLine("date", "+%s")
 }.standardOutput.asText.map(String::trim)
+val releaseKeystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
+val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD")
+val releaseKeyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS")
+val releaseKeyPassword = providers.environmentVariable("ANDROID_KEY_PASSWORD")
+val releaseSigningConfigured = listOf(
+    releaseKeystorePath,
+    releaseKeystorePassword,
+    releaseKeyAlias,
+    releaseKeyPassword,
+).all { it.isPresent }
 
 android {
     namespace = "org.trustroots.android"
@@ -20,12 +30,25 @@ android {
         applicationId = "org.trustroots.android"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = providers.environmentVariable("ANDROID_VERSION_CODE")
+            .map { it.toInt() }.orElse(1).get()
+        versionName = providers.environmentVariable("ANDROID_VERSION_NAME")
+            .orElse("0.1.0").get()
         buildConfigField("String", "API_BASE_URL", "\"${configuredApiURL.get()}\"")
         buildConfigField("String", "MAPBOX_PUBLIC_TOKEN", "\"${configuredMapboxToken.get()}\"")
         buildConfigField("long", "BUILD_EPOCH_SECONDS", "${buildEpochSeconds.get()}L")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        if (releaseSigningConfigured) {
+            create("previewRelease") {
+                storeFile = file(releaseKeystorePath.get())
+                storePassword = releaseKeystorePassword.get()
+                keyAlias = releaseKeyAlias.get()
+                keyPassword = releaseKeyPassword.get()
+            }
+        }
     }
 
     buildTypes {
@@ -34,6 +57,9 @@ android {
             versionNameSuffix = "-dev"
         }
         release {
+            if (releaseSigningConfigured) {
+                signingConfig = signingConfigs.getByName("previewRelease")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             buildConfigField("String", "API_BASE_URL", "\"https://www.trustroots.org\"")
