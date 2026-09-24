@@ -147,6 +147,8 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await expect(page.getByRole('status')).toContainText(
       'Search for a place or move the map',
     );
+    await page.getByRole('button', { name: 'Zoom in' }).click();
+    await expect(finish).toBeDisabled();
 
     await page.evaluate(() => {
       window.settings.mapbox = { publicKey: 'test-geocoding-token' };

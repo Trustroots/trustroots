@@ -136,6 +136,19 @@ describe('AdminLocationCorrections', () => {
     ).toBeInTheDocument();
   });
 
+  it('reports when a stale queue cannot be refreshed', async () => {
+    api.sendLocationCorrection.mockRejectedValue({ response: { status: 409 } });
+    api.getLocationCorrections.mockResolvedValueOnce(candidates);
+    api.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
+    render(<AdminLocationCorrections />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Review alex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not refresh location corrections.',
+    );
+  });
+
   it('shows loading failures and an empty queue', async () => {
     api.getLocationCorrections.mockRejectedValueOnce(new Error('offline'));
     const first = render(<AdminLocationCorrections />);

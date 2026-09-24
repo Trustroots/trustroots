@@ -132,6 +132,39 @@ describe('Offers controller unit tests', () => {
       res.body.message.should.equal('Choose a location for your offer.');
     });
 
+    it('allows a location near but distinct from the map starting point', async () => {
+      const { res } = await runHandler(res =>
+        offersController.create(
+          {
+            user: owner,
+            body: { type: 'host', location: [48.6908333333, 9.141] },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+    });
+
+    it('rejects an incomplete location', async () => {
+      const { res } = await runHandler(res =>
+        offersController.create(
+          { user: owner, body: { type: 'host', location: [48.6908333333] } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
+    it('rejects a location that is not a coordinate pair', async () => {
+      const { res } = await runHandler(res =>
+        offersController.create(
+          { user: owner, body: { type: 'host', location: 'invalid' } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
     it('creates a host offer', async () => {
       const { res } = await runHandler(res =>
         offersController.create(
