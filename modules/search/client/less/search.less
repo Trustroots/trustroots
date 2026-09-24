@@ -123,11 +123,13 @@
 
 .community-notes-sidebar-header {
   margin-bottom: @padding-base-horizontal;
+  padding-bottom: @padding-small-horizontal;
+  border-bottom: 1px solid @gray-lighter;
 }
 
 .community-notes-sidebar-title {
   margin: 0 0 2px;
-  font-size: 16px;
+  font-size: @font-size-large;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -156,16 +158,18 @@
 }
 
 .community-notes-sidebar-note {
+  border: 1px solid @panel-border;
   border-left: 3px solid @brand-primary;
   padding: @padding-small-horizontal @padding-base-horizontal;
   margin-bottom: 8px;
-  background: @gray-lighter;
-  border-radius: 0 @border-radius-base @border-radius-base 0;
-  transition: background-color 0.15s ease-out, border-color 0.15s ease-out;
+  background: @panel-bg;
+  border-radius: @panel-border-radius;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
 
   &:hover {
-    background: darken(@gray-lighter, 3%);
     border-left-color: darken(@brand-primary, 8%);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
   }
 
   &:last-child {
@@ -185,11 +189,11 @@
   font-weight: 600;
 
   a {
-    color: @text-color;
+    color: @brand-secondary;
     text-decoration: none;
 
     &:hover {
-      color: @brand-primary;
+      color: darken(@brand-secondary, 15%);
     }
   }
 }
