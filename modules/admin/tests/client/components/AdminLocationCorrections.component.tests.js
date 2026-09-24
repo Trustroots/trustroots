@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminLocationCorrections from '@/modules/admin/client/components/AdminLocationCorrections.component';
 import * as api from '@/modules/admin/client/api/location-corrections.api';
@@ -47,13 +53,17 @@ describe('AdminLocationCorrections', () => {
 
   it('reviews exact and nearby candidates and sends an edited message', async () => {
     render(<AdminLocationCorrections />);
-    expect(await screen.findByText('Exact former default')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Exact default location'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Nearby for review')).toBeInTheDocument();
     expect(api.sendLocationCorrection).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Review alex' }));
     expect(
-      screen.getByText('Exact former default location'),
+      within(
+        screen.getByRole('region', { name: 'Review location correction' }),
+      ).getByText('Exact default location'),
     ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View offer' })).toHaveAttribute(
       'href',
@@ -100,6 +110,30 @@ describe('AdminLocationCorrections', () => {
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  });
+
+  it('refreshes the queue when a candidate changes before sending', async () => {
+    api.sendLocationCorrection.mockRejectedValue({
+      response: { status: 409, data: { message: 'Candidate changed.' } },
+    });
+    api.getLocationCorrections.mockResolvedValueOnce(candidates);
+    api.getLocationCorrections.mockResolvedValueOnce([candidates[1]]);
+    render(<AdminLocationCorrections />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Review alex' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Candidate changed.',
+    );
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('button', { name: 'Review alex' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(api.getLocationCorrections).toHaveBeenCalledTimes(2);
+    expect(
+      screen.getByRole('button', { name: 'Review sam' }),
+    ).toBeInTheDocument();
   });
 
   it('shows loading failures and an empty queue', async () => {

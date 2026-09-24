@@ -10,7 +10,7 @@ const Offer = mongoose.model('Offer');
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 
-// The former default is stored as latitude, longitude, as are offer locations.
+// The map's default is stored as latitude, longitude, as are offer locations.
 const DEFAULT_LOCATION = [48.6908333333, 9.14055555556];
 const HISTORIC_AREA = {
   south: 48.6825742243,
@@ -123,19 +123,38 @@ async function findCandidates(senderId) {
     match: candidate.offers.some(offer => offer.match === 'exact')
       ? 'exact'
       : 'nearby',
-    key: candidateKey(candidate.userId, candidate.offers),
   }));
-  const contactedKeys = candidates.map(candidate => candidate.key);
-  const contacted = contactedKeys.length
-    ? await Message.find({ locationCorrectionKey: { $in: contactedKeys } })
-        .select('locationCorrectionKey')
+  const contacted = candidates.length
+    ? await Message.find({
+        userTo: { $in: candidates.map(candidate => candidate.userId) },
+        locationCorrectionOffers: { $exists: true, $ne: [] },
+      })
+        .select('userTo locationCorrectionOffers')
         .exec()
     : [];
-  const sentKeys = new Set(
-    contacted.map(message => message.locationCorrectionKey),
-  );
+  const covered = new Map();
+  for (const message of contacted) {
+    const userId = String(message.userTo);
+    if (!covered.has(userId)) covered.set(userId, new Set());
+    for (const offer of message.locationCorrectionOffers) {
+      covered
+        .get(userId)
+        .add([String(offer.offer), ...offer.location].join(':'));
+    }
+  }
   return candidates
-    .filter(candidate => !sentKeys.has(candidate.key))
+    .map(candidate => {
+      const uncovered = candidate.offers.filter(
+        offer =>
+          !covered
+            .get(candidate.userId)
+            ?.has([String(offer._id), ...offer.location].join(':')),
+      );
+      return uncovered.length
+        ? { ...candidate, key: candidateKey(candidate.userId, uncovered) }
+        : null;
+    })
+    .filter(Boolean)
     .sort(compareCandidates);
 }
 
@@ -201,7 +220,7 @@ exports.send = async (req, res) => {
   ) {
     return res.status(400).send({ message: 'Invalid correction message.' });
   }
-  const cleanContent = textService.html(content);
+  const cleanContent = textService.html(content).replace(/\r?\n/g, '<br>');
   if (!cleanContent || textService.isEmpty(cleanContent)) {
     return res.status(400).send({ message: 'Please write a message.' });
   }

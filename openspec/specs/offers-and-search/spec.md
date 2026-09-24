@@ -77,6 +77,7 @@ The system SHALL let a member create, update, list, and remove their hosting off
 
 - **WHEN** a member completes other hosting details but has not chosen a location
 - **THEN** the editor does not save the map's default coordinates as their offer location
+- **AND** the server rejects a new offer at those coordinates
 
 ### Requirement: Meeting offers
 
@@ -96,6 +97,7 @@ The system SHALL let a member create, edit, list, expire, and delete their meeti
 
 - **WHEN** a member completes other meeting details but has not chosen a location
 - **THEN** the editor does not save the map's default coordinates as their offer location
+- **AND** the server rejects a new offer at those coordinates
 
 ### Requirement: Legacy offer routes
 
@@ -109,7 +111,7 @@ equivalents.
 
 ### Requirement: Welcome team location correction
 
-The system SHALL let welcome team members review active offers whose actual stored location matches the former default coordinates or lies within the historic nearby area. It SHALL distinguish exact and nearby matches and group offers by member.
+The system SHALL let welcome team members review active offers whose actual stored location matches the map's default coordinates or lies within the nearby area. It SHALL distinguish exact and nearby matches and group offers by member.
 
 #### Scenario: Welcome team reviews candidates
 
@@ -130,6 +132,11 @@ The system SHALL let welcome team members review active offers whose actual stor
 
 - **WHEN** a contacted offer's stored location changes while remaining in the nearby area
 - **THEN** it can be reviewed again at the new location
+
+#### Scenario: Another offer expires
+
+- **WHEN** a member's meeting offer expires after their current offer locations were contacted
+- **THEN** their unchanged active offers do not reappear in the correction queue
 
 #### Scenario: Unauthorised access
 

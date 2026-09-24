@@ -241,6 +241,43 @@ describe('Welcome team location corrections', () => {
       .expect(409);
   });
 
+  it('does not requeue covered offers when another offer expires', async () => {
+    const hosting = await addOffer(member, exact);
+    const meeting = await addOffer(member, nearby, {
+      type: 'meet',
+      validUntil: new Date(Date.now() + 86400000),
+    });
+    const {
+      body: [candidate],
+    } = await teamAgent.get('/api/admin/location-corrections').expect(200);
+    await teamAgent
+      .post('/api/admin/location-corrections/send')
+      .send({
+        userId: candidate.userId,
+        key: candidate.key,
+        content: 'Please check both locations.\n\nThank you.',
+      })
+      .expect(200);
+    const sent = await Message.findOne({
+      locationCorrectionKey: candidate.key,
+    });
+    sent.content.should.containEql('<br><br>');
+
+    meeting.validUntil = new Date(Date.now() - 86400000);
+    await meeting.save();
+    (
+      await teamAgent.get('/api/admin/location-corrections').expect(200)
+    ).body.should.have.length(0);
+
+    hosting.location = nearby;
+    await hosting.save();
+    const { body: changed } = await teamAgent
+      .get('/api/admin/location-corrections')
+      .expect(200);
+    changed.should.have.length(1);
+    changed[0].key.should.not.equal(candidate.key);
+  });
+
   it('repairs the thread on a retry after message storage succeeded', async () => {
     await addOffer(member, exact);
     const {

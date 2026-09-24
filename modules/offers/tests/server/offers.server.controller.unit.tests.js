@@ -115,6 +115,23 @@ describe('Offers controller unit tests', () => {
       res.body.message.should.equal('Missing offer location.');
     });
 
+    it('rejects the unchosen map starting location', async () => {
+      const { res } = await runHandler(res =>
+        offersController.create(
+          {
+            user: owner,
+            body: {
+              type: 'host',
+              location: [48.6908333333, 9.14055555556],
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Choose a location for your offer.');
+    });
+
     it('creates a host offer', async () => {
       const { res } = await runHandler(res =>
         offersController.create(
@@ -239,6 +256,21 @@ describe('Offers controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(400);
+    });
+
+    it('rejects changing an offer to the map starting location', async () => {
+      const { res } = await runHandler(res =>
+        offersController.update(
+          {
+            user: owner,
+            offer: offerReq,
+            body: { location: [48.6908333333, 9.14055555556] },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Choose a location for your offer.');
     });
 
     it('rejects changing the offer type', async () => {

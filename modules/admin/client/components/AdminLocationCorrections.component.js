@@ -19,7 +19,7 @@ function initialMessage(candidate) {
   ).join('\n');
   return `Hello ${
     candidate.displayName || candidate.username
-  },\n\nOne or more of your Trustroots offers currently appears near a location that was once used as the map's starting point. Could you check that each location is correct? If a location needs changing, you can edit your offers here:\n${links}\n\nThank you!`;
+  },\n\nOne or more of your Trustroots offers currently appears near the map's default starting point. Could you check that each location is correct? If a location needs changing, you can edit your offers here:\n${links}\n\nThank you!`;
 }
 
 export default function AdminLocationCorrections() {
@@ -79,6 +79,16 @@ export default function AdminLocationCorrections() {
       setSelected(null);
       setContent('');
     } catch (sendError) {
+      if (sendError.response?.status === 409) {
+        try {
+          setCandidates(await getLocationCorrections());
+          setSelected(null);
+          setContent('');
+        } catch {
+          setError('Could not refresh location corrections.');
+          return;
+        }
+      }
       setError(
         sendError.response?.data?.message || 'Could not send the message.',
       );
@@ -93,7 +103,7 @@ export default function AdminLocationCorrections() {
       <main className="container">
         <h1>Location corrections</h1>
         <p>
-          These offers are at or near the map’s former starting point. Nearby
+          These offers are at or near the map’s default starting point. Nearby
           members may genuinely live there; review each offer before writing.
         </p>
         {isLoading && <p>Loading candidates…</p>}
@@ -119,7 +129,7 @@ export default function AdminLocationCorrections() {
               <section key={match}>
                 <h2>
                   {match === 'exact'
-                    ? 'Exact former default'
+                    ? 'Exact default location'
                     : 'Nearby for review'}
                 </h2>
                 <ul className="list-unstyled">
@@ -154,7 +164,7 @@ export default function AdminLocationCorrections() {
               <h2>Review {selected.displayName || selected.username}</h2>
               <p>
                 {selected.match === 'exact'
-                  ? 'Exact former default location'
+                  ? 'Exact default location'
                   : 'Nearby location: verify before contacting'}
               </p>
               <ul>

@@ -67,6 +67,12 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
         >
           Report initial centre
         </button>
+        <button
+          type="button"
+          onClick={() => onLocationChange([48.690834, 9.140556])}
+        >
+          Zoom map
+        </button>
         <button type="button" onClick={() => onLocationChange([50, 10])}>
           Drag map
         </button>
@@ -130,6 +136,9 @@ describe('OfferLocationEditor', () => {
     fireEvent.click(
       screen.getByRole('button', { name: 'Report initial centre' }),
     );
+    expect(onLocationChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Zoom map' }));
     expect(onLocationChange).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Drag map' }));
