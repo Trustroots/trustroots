@@ -1,6 +1,12 @@
 import axios from 'axios';
 
-import { join, leave, read, get } from '@/modules/tribes/client/api/tribes.api';
+import {
+  listMemberships,
+  join,
+  leave,
+  read,
+  get,
+} from '@/modules/tribes/client/api/tribes.api';
 
 jest.mock('axios');
 
@@ -9,6 +15,14 @@ afterEach(() => {
 });
 
 describe('tribes api', () => {
+  it("lists the current member's circles", async () => {
+    const memberships = [{ tribe: { _id: 'tribe-1' } }];
+    axios.get.mockResolvedValueOnce({ data: memberships });
+
+    await expect(listMemberships()).resolves.toBe(memberships);
+    expect(axios.get).toHaveBeenCalledWith('/api/users/memberships');
+  });
+
   it('joins a tribe', async () => {
     const updated = { _id: 'user-1' };
     axios.post.mockResolvedValueOnce({ data: updated });
