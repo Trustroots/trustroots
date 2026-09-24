@@ -1,5 +1,10 @@
 import axios from 'axios';
 
+export async function listMemberships() {
+  const { data } = await axios.get('/api/users/memberships');
+  return data;
+}
+
 export async function join(tribeId) {
   const { data } = await axios.post(`/api/users/memberships/${tribeId}`);
   return data;
