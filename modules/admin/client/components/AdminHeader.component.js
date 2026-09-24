@@ -1,10 +1,10 @@
 // External dependencies
 import classnames from 'classnames';
 import React, { useEffect } from 'react';
-import { getUser } from '../../../core/client/services/angular-compat';
+import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
 export default function AdminHeader() {
-  const isAdmin = (getUser()?.roles || []).includes('admin');
+  const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
@@ -35,6 +35,10 @@ export default function AdminHeader() {
       label: 'Acquisition stories',
     },
     {
+      path: 'acquisition-stories/analysis',
+      label: 'Analysis',
+    },
+    {
       path: 'newsletter',
       label: 'Newsletter',
     },
@@ -44,7 +48,7 @@ export default function AdminHeader() {
     <li
       key={path}
       className={classnames({
-        active: currentPath === path || currentPath.startsWith(`${path}/`),
+        active: currentPath === path,
       })}
     >
       <a href={`/admin/${path}`}>{label}</a>
@@ -64,7 +68,12 @@ export default function AdminHeader() {
         </div>
         <ul className="nav navbar-nav">
           {pages
-            .filter(page => isAdmin || page.path === 'acquisition-stories')
+            .filter(
+              page =>
+                isAdmin ||
+                page.path === 'acquisition-stories' ||
+                page.path === 'acquisition-stories/analysis',
+            )
             .map(page => renderTab(page))}
         </ul>
         <ul className="nav navbar-nav pull-right">

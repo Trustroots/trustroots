@@ -147,6 +147,37 @@ messages between identified members, and reference threads for moderation.
 - **WHEN** an authorised administrator submits a malformed member identifier
 - **THEN** the system rejects the request with an error response
 
+### Requirement: Scammer recipient warnings
+
+The system SHALL let authorised administrators find the distinct members
+contacted by a member username and send one warning message to all of them.
+
+#### Scenario: Administrator previews scammer recipients
+
+- **WHEN** an authorised administrator supplies a member username
+- **THEN** the system displays the distinct existing members that member has
+  contacted
+
+#### Scenario: Administrator sends a scammer warning
+
+- **WHEN** an authorised administrator confirms a non-empty warning message
+- **THEN** the system sends it to every previewed recipient in a normal message
+  thread
+- **AND** the notification email is sent from Trustroots Support
+
+#### Scenario: Administrator retries a partially completed warning
+
+- **WHEN** warning delivery fails or its response is lost and the administrator retries the same warning request
+- **THEN** the request reuses its message identifiers and repairs missing or older thread state without duplicating messages
+- **AND** retries preserve read state and newer conversation messages
+- **AND** overlapping retries create only one inbox thread for each administrator and recipient pair
+- **AND** a new deliberate warning uses a new request identifier
+
+#### Scenario: Regular member requests a scammer warning
+
+- **WHEN** a regular member requests the lookup or send endpoint
+- **THEN** the system denies access
+
 ### Requirement: Readable moderation context
 
 The system SHALL present member search results, reports, message inspection,
@@ -328,22 +359,23 @@ NOT automatically change an account because of a match.
 
 The system SHALL compare acquisition-story rows with a bounded set of
 suspended and shadowbanned accounts and show possible matches to authorised
-administrators. Match signals SHALL include similar normalised identifiers,
-identical normalised acquisition stories, and conservatively similar
-acquisition stories. Matches SHALL NOT automatically change account state.
+administrators. Match signals SHALL include similar normalised username and
+email local-part identifiers and SHALL NOT include acquisition-story text.
+Matches SHALL NOT automatically change account state.
 
 #### Scenario: Acquisition story resembles a restricted account
 
 - **WHEN** an authorised administrator opens the acquisition-stories view
-- **AND** a story row resembles a suspended or shadowbanned account
+- **AND** a story row has an identifier resembling one from a suspended or shadowbanned account
 - **THEN** the row identifies the matching restricted account
-- **AND** labels the identifier, exact-story, or similar-story signal
+- **AND** labels the username, email, or temporary-email identifier signal
 - **AND** links to the restricted account's member report
 
 #### Scenario: Acquisition story has no restricted-account signal
 
 - **WHEN** an authorised administrator opens the acquisition-stories view
-- **AND** a story row has no qualifying restricted-account match
+- **AND** a row shares exact or similar acquisition-story text with a restricted account
+- **AND** the accounts have no qualifying identifier match
 - **THEN** the row is shown without a restricted-account lead
 
 ### Requirement: Member role inventory
@@ -383,3 +415,15 @@ Administrators SHALL be able to grant and revoke `welcome-team` from member role
 
 - **WHEN** a non-administrator requests a role change
 - **THEN** the request is forbidden
+
+### Requirement: Acquisition-story table context
+
+The acquisition-stories view SHALL show each member's profile visibility,
+explain its compact column headings, and allow profile visibility to be sorted.
+
+#### Scenario: Administrator opens acquisition stories
+
+- **WHEN** an authorised administrator opens the acquisition-stories view
+- **THEN** each story shows whether the member's profile is visible
+- **AND** compact column headings provide accessible explanations
+- **AND** the administrator can sort the rows by profile visibility

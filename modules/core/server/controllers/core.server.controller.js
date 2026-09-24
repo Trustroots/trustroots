@@ -1,14 +1,13 @@
 const errorService = require('../services/error.server.service');
 const userProfile = require('../../../users/server/controllers/users.profile.server.controller');
 const textService = require('../services/text.server.service');
-const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
+const deprecatedLanguages = require('../../../../config/languages/deprecated');
 const {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
-  isReactOwnedPath,
 } = require('../../shared/react-route-ownership');
 
 /**
@@ -48,18 +47,16 @@ exports.renderIndex = function (req, res) {
   const accessRedirect = getReactRouteAccessRedirect(
     reactRoutePolicy,
     renderVars.user,
+    req.originalUrl,
   );
+  const redirect = reactRoutePolicy?.redirectTo || accessRedirect;
 
-  if (accessRedirect) {
-    return res.redirect(accessRedirect);
+  if (redirect) {
+    return res.redirect(redirect);
   }
 
-  res.render(
-    isReactOwnedPath(req.path)
-      ? 'react-index.server.view.html'
-      : 'index.server.view.html',
-    renderVars,
-  );
+  // All SPA routes use the React shell; unknown paths render React NotFound.
+  res.render('react-index.server.view.html', renderVars);
 };
 
 /**
@@ -112,19 +109,18 @@ exports.receiveExpectCTViolationReport = function (req, res) {
   res.status(204).json();
 };
 
-/**
- * Render javascript content containing service worker config.
- */
-exports.renderServiceWorkerConfig = function (req, res) {
-  res
-    .set('Content-Type', 'text/javascript')
-    .send('var FCM_SENDER_ID = ' + JSON.stringify(config.fcm.senderId) + ';\n');
-};
+// Future push: restore renderServiceWorkerConfig (previously served
+// `var FCM_SENDER_ID = …` at GET /config/sw.js) when browser push returns.
 
 exports.getLanguages = (req, res) => {
   // Return language list in array format
   if (req?.query?.format === 'array') {
-    return res.json(languagesArray);
+    return res.json(
+      languagesArray.map(language => ({
+        ...language,
+        deprecated: deprecatedLanguages.has(language.value),
+      })),
+    );
   }
 
   // Return language list in object format

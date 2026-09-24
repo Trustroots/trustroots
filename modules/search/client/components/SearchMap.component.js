@@ -172,6 +172,9 @@ export default function SearchMap({
   );
 
   const [viewport, setViewport] = useState(persistentMapLocation);
+  const viewportRef = useRef(persistentMapLocation);
+  const gestureSurfaceRef = useRef(null);
+  const viewportChangeRef = useRef(null);
   const [webGLSupported] = useState(isWebGLSupported);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState();
@@ -188,6 +191,7 @@ export default function SearchMap({
   const [leafletMapState, setLeafletMapState] = useState();
   const communityNotesTimerRef = useRef(null);
   const communityNotesEventsRef = useRef([]);
+  const hasInitialisedFiltersRef = useRef(false);
 
   const parsedFilters = filters ? JSON.parse(filters) : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
@@ -287,11 +291,47 @@ export default function SearchMap({
    * Refresh persistent map state when viewport changes
    */
   const onViewPortChange = viewport => {
+    viewportRef.current = viewport;
     setViewport(viewport);
 
     const { latitude, longitude, zoom } = viewport;
     debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
   };
+  viewportChangeRef.current = onViewPortChange;
+
+  useEffect(() => {
+    const surface = gestureSurfaceRef.current;
+
+    if (!webGLSupported || !surface) {
+      return undefined;
+    }
+
+    const handlePinchWheel = event => {
+      if (!event.ctrlKey) {
+        return;
+      }
+
+      // Firefox sends desktop trackpad pinches as Ctrl+wheel. Capture them
+      // before the map's wheel handler and the browser's page zoom handler.
+      event.preventDefault();
+      event.stopPropagation();
+
+      const current = viewportRef.current;
+      const deltaY = event.deltaMode === 1 ? event.deltaY * 40 : event.deltaY;
+      const zoom = Math.max(0, Math.min(20, current.zoom - deltaY * 0.01));
+
+      if (zoom !== current.zoom) {
+        viewportChangeRef.current({ ...current, zoom });
+      }
+    };
+
+    surface.addEventListener('wheel', handlePinchWheel, {
+      capture: true,
+      passive: false,
+    });
+
+    return () => surface.removeEventListener('wheel', handlePinchWheel, true);
+  }, [webGLSupported]);
 
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
@@ -527,7 +567,7 @@ export default function SearchMap({
 
     if (!features?.length) {
       // Close open offers when clicking on map canvas
-      // Delegated to Angular controller; to be refactored to React
+      // Delegated to the search shell.
       onOfferClose();
       return;
     }
@@ -562,14 +602,14 @@ export default function SearchMap({
   };
 
   /**
-   * Fetch offer data and open it on seach sidebar (handled by Angular)
+   * Fetch offer data and open it in the search sidebar.
    */
   async function openOfferById(offerId) {
     // @TODO: cancellation when opening another offer instead
     const offer = await getOffer(offerId);
 
     if (offer) {
-      // Delegated to Angular controller, to be refactored
+      // Delegated to the search shell.
       onOfferOpen(offer);
     }
   }
@@ -605,7 +645,7 @@ export default function SearchMap({
   }, []);
 
   // Apply externally changed bounds object
-  // Changed by Angular search sidebar
+  // Changed by the search sidebar
   useEffect(() => {
     if (webGLSupported && bounds?.northEast && bounds?.southWest) {
       zoomToBounds(bounds);
@@ -613,10 +653,15 @@ export default function SearchMap({
   }, [bounds, webGLSupported]);
 
   // Apply externally changed filters object
-  // Changed by Angular search sidebar
+  // Changed by the search sidebar
   useEffect(() => {
-    // Clear out previous open offers and such
-    onOfferClose();
+    // Preserve an offer opened from the initial URL. Later filter changes
+    // clear the selection because it may no longer match the visible results.
+    if (hasInitialisedFiltersRef.current) {
+      onOfferClose();
+    } else {
+      hasInitialisedFiltersRef.current = true;
+    }
     clearPreviouslySelectedState();
     clearPreviouslyHoveredState();
 
@@ -705,7 +750,7 @@ export default function SearchMap({
   }, [communityNotesEnabled]);
 
   // Apply externally changed location object
-  // Changed by Angular controller when loading offer via URL
+  // Changed by the search shell when loading an offer via the URL
   useEffect(() => {
     if (location?.lat && location?.lng) {
       setViewport({
@@ -733,7 +778,7 @@ export default function SearchMap({
   }
 
   return (
-    <>
+    <div ref={gestureSurfaceRef}>
       <ReactMapGL
         reuseMaps
         className="search-map"
@@ -822,7 +867,7 @@ export default function SearchMap({
           </Source>
         )}
       </ReactMapGL>
-    </>
+    </div>
   );
 }
 

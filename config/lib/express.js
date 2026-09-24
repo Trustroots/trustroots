@@ -21,6 +21,8 @@ const buildMetadata = require('./build-metadata');
 const path = require('path');
 const paginate = require('express-paginate');
 const uuid = require('uuid');
+const qs = require('qs');
+const jsonForScript = require('../../modules/core/server/services/json-for-script.server.service');
 
 /**
  * Initialize local variables
@@ -45,7 +47,6 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.maxUploadSize = config.maxUploadSize;
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
   app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
-  app.locals.appSettings.fcmSenderId = config.fcm.senderId;
   app.locals.appSettings.limits = {
     maxOfferValidFromNow: config.limits.maxOfferValidFromNow,
   };
@@ -56,13 +57,9 @@ module.exports.initLocalVariables = function (app) {
     process.env.NODE_ENV === 'production' ||
     process.env.TRUSTROOTS_E2E_USE_EXTRACTED_CSS === 'true'
   ) {
-    app.locals.jsFiles = ['assets/main.js'];
-    app.locals.cssFiles = ['assets/main.css'];
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = ['assets/react-main.css'];
   } else {
-    app.locals.jsFiles = ['assets/main.js'];
-    app.locals.cssFiles = []; // style is bundled with javascript
     app.locals.reactJsFiles = ['assets/react-main.js'];
     app.locals.reactCssFiles = []; // style is bundled with javascript
   }
@@ -164,11 +161,13 @@ module.exports.initMiddleware = function (app) {
 module.exports.initViewEngine = function (app) {
   // Set Nunjucks as the template engine
   // https://mozilla.github.io/nunjucks/
-  nunjucks.configure('./modules/core/server/views', {
+  const templates = nunjucks.configure('./modules/core/server/views', {
     express: app,
     watch: false,
     noCache: true,
   });
+
+  templates.addFilter('jsonForScript', jsonForScript);
 
   // app.engine('nunjucks', nunjucks);
   app.set('view engine', 'html');
@@ -314,7 +313,6 @@ module.exports.initHelmetHeaders = function (app) {
           'https://www.google-analytics.com',
           'https://stats.g.doubleclick.net',
           'https://1p.trustroots.org', // Umami analytics
-          'fcm.googleapis.com',
         ],
 
         // Allows control over Flash and other plugins.
@@ -456,6 +454,7 @@ module.exports.initErrorRoutes = function (app) {
 module.exports.init = function (connection) {
   // Initialize express app
   const app = express();
+  app.set('query parser', query => qs.parse(query));
 
   // Initialize local variables
   this.initLocalVariables(app);

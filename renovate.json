@@ -13,7 +13,7 @@
       "prPriority": -1
     },
     {
-      "packageNames": ["babel-eslint", "gulp-eslint"],
+      "packageNames": ["babel-eslint"],
       "packagePatterns": ["^eslint"]
     },
     {

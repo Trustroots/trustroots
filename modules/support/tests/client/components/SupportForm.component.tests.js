@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SupportForm from '@/modules/support/client/components/SupportForm';
@@ -105,8 +105,16 @@ describe('<SupportForm />', () => {
 
     render(<SupportForm user={{}} />);
 
-    expect(screen.getByText('Reporting member')).toBeInTheDocument();
+    expect(screen.getByText('Reported member')).toBeInTheDocument();
     expect(screen.getByText('bob')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'This message goes to Trustroots support, not to the member.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Report member to support' }),
+    ).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Message'), {
       target: { value: 'I need to report Bob' },

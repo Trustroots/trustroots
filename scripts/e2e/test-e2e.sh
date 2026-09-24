@@ -13,6 +13,7 @@ PLAYWRIGHT_ERROR=""
 
 export TRUSTROOTS_E2E_WEB_PORT="${TRUSTROOTS_E2E_WEB_PORT:-4300}"
 export TRUSTROOTS_E2E_API_PORT="${TRUSTROOTS_E2E_API_PORT:-4301}"
+export TRUSTROOTS_E2E_HOST="${TRUSTROOTS_E2E_HOST:-127.0.0.1}"
 export TRUSTROOTS_E2E_REUSE_SERVER="${TRUSTROOTS_E2E_REUSE_SERVER:-false}"
 
 if [ "${CI:-}" = "true" ]; then
@@ -40,14 +41,6 @@ if [ -z "${TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER:-}" ]; then
   else
     export TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER=true
   fi
-fi
-
-NODE_MAJOR="$(node -e "console.log(process.versions.node.split('.')[0])")"
-if [ "$NODE_MAJOR" -ge 17 ]; then
-  case " ${NODE_OPTIONS:-} " in
-    *" --openssl-legacy-provider "*) ;;
-    *) export NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--openssl-legacy-provider" ;;
-  esac
 fi
 
 write_status() {
@@ -119,7 +112,7 @@ NODE
 
 needs_firefox_browser() {
   case " $* " in
-    *" --project=messages-firefox-layout "* | *" --project messages-firefox-layout "*)
+    *" --project=photo-upload-firefox "* | *" --project photo-upload-firefox "* | *" --project=messages-firefox-layout "* | *" --project messages-firefox-layout "*)
       return 0
       ;;
     *" --project"*)
@@ -319,18 +312,18 @@ fi
 
 if ! ensure_playwright_browsers "$@"; then
   if has_codex_network_denial "$PLAYWRIGHT_ERROR"; then
-    echo "Network access is required to download the required Playwright browser. Grant network permission, then rerun." >&2
+    echo "Network access is required to download the required Playwright browsers. Grant network permission, then rerun." >&2
     exit_with_status \
       "blocked" \
       1 \
-      "End-to-end tests blocked by network permission while installing the required Playwright browser."
+      "End-to-end tests blocked by network permission while installing the required Playwright browsers."
   fi
 
   echo "$PLAYWRIGHT_ERROR" >&2
   exit_with_status \
     "blocked" \
     1 \
-    "End-to-end tests blocked because the required Playwright browser could not be installed."
+    "End-to-end tests blocked because the required Playwright browsers could not be installed."
 fi
 
 rm -rf coverage/e2e/js-raw coverage/e2e/captured-bundles

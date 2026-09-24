@@ -635,22 +635,6 @@ const features = [
     ],
   },
   {
-    id: 'public.service-worker-config',
-    area: AREA.publicCore,
-    status: STATUS.active,
-    description:
-      'Service worker config endpoint renders app config for push UX.',
-    roles: ['visitor', 'member'],
-    references: {
-      clientRoutes: [],
-      apiRoutes: [apiRoute('GET', '/config/sw.js', source.coreServer)],
-    },
-    requiredScenarios: [
-      'Endpoint returns JavaScript config without requiring authentication.',
-    ],
-    relatedSpecs: [],
-  },
-  {
     id: 'public.legacy-invite-redirect',
     area: AREA.publicCore,
     status: STATUS.active,
@@ -1158,7 +1142,8 @@ const features = [
     id: 'account.push-registrations',
     area: AREA.authAccount,
     status: STATUS.active,
-    description: 'Members can register and remove web push tokens.',
+    description:
+      'Push registration is retired; historical tokens can still be removed.',
     roles: ['member'],
     references: {
       clientRoutes: [],
@@ -1172,8 +1157,8 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Push registration can be added with deterministic local permissions.',
-      'Push registration can be removed.',
+      'New push registrations are rejected.',
+      'Historical push registrations can still be removed.',
     ],
     relatedSpecs: [],
   },
@@ -1261,9 +1246,14 @@ const features = [
       'About edit form is reachable.',
       'Valid profile changes persist and are visible on profile view.',
       'Validation errors are visible for invalid content.',
+      'Deprecated languages cannot be added to a profile.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit "about" form is reachable'),
+      spec(
+        'authenticated.spec.js',
+        'deprecated languages cannot be added to a profile',
+      ),
     ],
   },
   {
@@ -1317,6 +1307,9 @@ const features = [
     requiredScenarios: [
       'Photo edit page is reachable.',
       'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
       'Invalid upload shows an error.',
       'Avatar endpoint returns uploaded or fallback image.',
     ],
@@ -2650,17 +2643,34 @@ const features = [
           requiresRole: 'admin',
         }),
       ],
-      apiRoutes: [apiRoute('POST', '/api/admin/messages', source.adminServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/messages', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-recipients',
+          source.adminServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-warning',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Admin messages page loads.',
       'Admin can query messages between two users.',
+      'Admin can preview recipients contacted by a reported member.',
       'Shadow-hidden messages are visible to admin.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
         'admin messages tool shows shadow-hidden messages between members',
+      ),
+      spec(
+        'admin-inspection.spec.js',
+        'admin can preview recipients contacted by a reported member',
       ),
     ],
   },

@@ -31,12 +31,8 @@ describe('Admin acquisition stories controller unit tests', () => {
   });
 
   describe('list', () => {
-    it('yields to I/O at the source limits and prepares each story only once', async function () {
+    it('yields to I/O while comparing the bounded data sources', async function () {
       this.timeout(30000);
-      const readStory = sinon.spy(
-        () =>
-          'A fictional traveller recommended this community while discussing a journey.',
-      );
       const stories = Array.from({ length: 500 }, (_, index) => ({
         _id: `visitor-${index}`,
         username: `visitor${index}`,
@@ -50,9 +46,6 @@ describe('Admin acquisition stories controller unit tests', () => {
         username: `restricted${index}`,
         email: `restricted${index}@example.test`,
         emailTemporary: '',
-        get acquisitionStory() {
-          return readStory();
-        },
       }));
       const find = sinon.stub(User, 'find');
       const storyLimit = sinon.stub().returns({ exec: async () => stories });
@@ -84,18 +77,20 @@ describe('Admin acquisition stories controller unit tests', () => {
       }
       sinon.assert.calledOnceWithExactly(storyLimit, 500);
       ioTurns.should.be.aboveOrEqual(5000);
-      readStory.callCount.should.equal(1000);
       res.body.should.have.length(500);
       res.body
         .every(story => story.restrictedMatches.length === 0)
         .should.be.true();
     });
 
-    it('keeps the first ten matches in source order and excludes the member itself', async () => {
+    it('keeps the first ten identifier matches in source order', async () => {
       const users = utils.generateUsers(12);
-      users.forEach(user => {
+      users[0].username = 'abcdefghijklmn';
+      users[0].acquisitionStory = 'An active member story.';
+      users.slice(1).forEach((user, index) => {
+        user.username = users[0].username.slice(index, index + 4);
         user.roles = ['user', 'shadowban'];
-        user.acquisitionStory = 'The same fictional community recommendation.';
+        user.acquisitionStory = `Restricted member story ${index}.`;
       });
       await utils.saveUsers(users);
       const res = mockResponse();
@@ -104,47 +99,55 @@ describe('Admin acquisition stories controller unit tests', () => {
         created: -1,
         _id: 1,
       });
-      res.body.forEach(story => {
-        story.restrictedMatches
-          .map(user => user._id.toString())
-          .should.deepEqual(
-            expected
-              .filter(user => !user._id.equals(story._id))
-              .slice(0, 10)
-              .map(user => user._id.toString()),
-          );
-      });
+      const story = res.body.find(user => user.username === users[0].username);
+      story.restrictedMatches
+        .map(user => user._id.toString())
+        .should.deepEqual(
+          expected.slice(0, 10).map(user => user._id.toString()),
+        );
     });
 
     it('returns acquisition stories for users who have one', async () => {
-      const users = utils.generateUsers(2);
+      const users = utils.generateUsers(3);
       users[0].acquisitionStory = 'Found via couch surfing';
       users[0].member = [{ tribe: new mongoose.Types.ObjectId() }];
       users[0].locationFrom = 'Fictional origin';
       users[0].locationLiving = 'Fictional home';
-      users[1].acquisitionStory = '';
+      users[0].public = true;
+      users[1].acquisitionStory = 'Found through a fictional gathering';
+      users[1].public = false;
+      users[2].acquisitionStory = '';
 
-      await utils.saveUsers(users);
+      const [visibleUser, hiddenUser] = await utils.saveUsers(users);
 
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      res.body.length.should.equal(1);
-      res.body[0].acquisitionStory.should.equal('Found via couch surfing');
-      res.body[0].circleCount.should.equal(1);
-      res.body[0].locationFrom.should.equal('Fictional origin');
-      res.body[0].locationLiving.should.equal('Fictional home');
-      should(res.body[0].hostingLocation).equal(null);
-      should(res.body[0].member).be.undefined();
-      res.body[0].restrictedMatches.should.deepEqual([]);
-      should(res.body[0].email).be.undefined();
-      should(res.body[0].emailTemporary).be.undefined();
+      res.body.length.should.equal(2);
+      const visibleStory = res.body.find(
+        story => story.username === visibleUser.username,
+      );
+      const hiddenStory = res.body.find(
+        story => story.username === hiddenUser.username,
+      );
+      visibleStory.acquisitionStory.should.equal('Found via couch surfing');
+      visibleStory.circleCount.should.equal(1);
+      visibleStory.locationFrom.should.equal('Fictional origin');
+      visibleStory.locationLiving.should.equal('Fictional home');
+      visibleStory.public.should.equal(true);
+      hiddenStory.public.should.equal(false);
+      should(visibleStory.hostingLocation).equal(null);
+      should(visibleStory.member).be.undefined();
+      visibleStory.restrictedMatches.should.deepEqual([]);
+      should(visibleStory.email).be.undefined();
+      should(visibleStory.emailTemporary).be.undefined();
     });
 
-    it('returns identifier, exact-story, and fuzzy-story restricted matches', async () => {
-      const users = utils.generateUsers(4);
+    it('returns identifier matches but ignores exact and similar stories', async () => {
+      const users = utils.generateUsers(6);
       users[0].username = 'identifier-clue-copy';
-      users[0].email = 'active@example.test';
+      users[0].email = 'email-clue-copy@example.test';
+      users[0].emailTemporary = 'temporary-clue-copy@example.test';
       users[0].acquisitionStory =
         'I heard about Trustroots through a travelling friend.';
 
@@ -165,6 +168,17 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[3].roles = ['user', 'shadowban'];
       users[3].acquisitionStory = 'A completely different source.';
 
+      users[4].username = 'email-match-user';
+      users[4].email = 'email-clue@example.test';
+      users[4].roles = ['user', 'suspended'];
+      users[4].acquisitionStory = 'Another unrelated source.';
+
+      users[5].username = 'temporary-match-user';
+      users[5].email = 'other@example.test';
+      users[5].emailTemporary = 'temporary-clue@example.test';
+      users[5].roles = ['user', 'shadowban'];
+      users[5].acquisitionStory = 'Yet another unrelated source.';
+
       await utils.saveUsers(users);
 
       const res = mockResponse();
@@ -174,15 +188,25 @@ describe('Admin acquisition stories controller unit tests', () => {
         user => user.username === 'identifier-clue-copy',
       );
       story.restrictedMatches.should.have.length(3);
-      story.restrictedMatches
-        .find(user => user.username === 'exact-story-user')
-        .matchReasons.should.deepEqual(['Acquisition story']);
-      story.restrictedMatches
-        .find(user => user.username === 'fuzzy-story-user')
-        .matchReasons.should.deepEqual(['Similar acquisition story']);
+      should(
+        story.restrictedMatches.find(
+          user => user.username === 'exact-story-user',
+        ),
+      ).be.undefined();
+      should(
+        story.restrictedMatches.find(
+          user => user.username === 'fuzzy-story-user',
+        ),
+      ).be.undefined();
       story.restrictedMatches
         .find(user => user.username === 'identifierclue')
         .matchReasons.should.deepEqual(['Username identifier']);
+      story.restrictedMatches
+        .find(user => user.username === 'email-match-user')
+        .matchReasons.should.deepEqual(['Email identifier']);
+      story.restrictedMatches
+        .find(user => user.username === 'temporary-match-user')
+        .matchReasons.should.deepEqual(['Temporary email identifier']);
       story.restrictedMatches.forEach(match => {
         should(match.email).be.undefined();
         ['shadowban', 'suspended']
@@ -371,20 +395,6 @@ describe('Admin acquisition stories controller unit tests', () => {
       should.exist(res.body);
       res.body.table.should.be.an.Array();
       res.body.table.should.have.length(0);
-    });
-  });
-
-  describe('getStorySimilarity', () => {
-    it('requires substantive stories and scores small edits highly', () => {
-      adminAcquisitionStories
-        .getStorySimilarity('short', 'short')
-        .should.equal(0);
-      adminAcquisitionStories
-        .getStorySimilarity(
-          'A travelling friend recommended Trustroots to me.',
-          'A traveler friend recommended Trustroots to me.',
-        )
-        .should.be.above(0.82);
     });
   });
 });

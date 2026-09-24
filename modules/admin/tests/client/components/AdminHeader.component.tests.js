@@ -1,11 +1,11 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
 
-jest.mock('@/modules/core/client/services/angular-compat', () => ({
-  getUser: () => global.window.user,
+jest.mock('@/modules/core/client/services/client-runtime', () => ({
+  getCurrentUser: () => global.window.user,
 }));
 
 afterEach(() => {
@@ -28,10 +28,18 @@ describe('<AdminHeader />', () => {
       expect(
         screen.getByRole('link', { name: 'Welcome team' }),
       ).toHaveAttribute('href', '/admin/acquisition-stories');
-      expect(screen.getAllByRole('link')).toHaveLength(2);
+      expect(screen.getAllByRole('link')).toHaveLength(3);
       expect(
         screen.queryByRole('link', { name: 'Audit log' }),
       ).not.toBeInTheDocument();
+
+      expect(
+        screen.getByRole('link', { name: 'Acquisition stories' }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: 'Analysis' })).toHaveAttribute(
+        'href',
+        '/admin/acquisition-stories/analysis',
+      );
     },
   );
 
@@ -52,13 +60,16 @@ describe('<AdminHeader />', () => {
     ).not.toHaveClass('active');
   });
 
-  it('marks nested admin pages as active', () => {
+  it('marks the most specific nested admin page as active', () => {
     window.history.pushState({}, '', '/admin/acquisition-stories/analysis');
 
     render(<AdminHeader />);
 
     expect(
       screen.getByRole('link', { name: 'Acquisition stories' }).closest('li'),
+    ).not.toHaveClass('active');
+    expect(
+      screen.getByRole('link', { name: 'Analysis' }).closest('li'),
     ).toHaveClass('active');
   });
 

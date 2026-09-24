@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import ReportMember from '@/modules/support/client/components/ReportMember.component';
 
@@ -20,6 +20,6 @@ describe('<ReportMember />', () => {
 
     expect(link).toHaveAttribute('href', '/support?report=alice');
     expect(link).toHaveClass('support-link');
-    expect(link).toHaveTextContent('Report member');
+    expect(link).toHaveTextContent('Report member to support');
   });
 });

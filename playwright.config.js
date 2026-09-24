@@ -4,17 +4,19 @@ const { defineConfig, devices } = require('@playwright/test');
 
 const apiPort = process.env.TRUSTROOTS_E2E_API_PORT || 4301;
 const webPort = process.env.TRUSTROOTS_E2E_WEB_PORT || 4300;
+const applicationHost = process.env.TRUSTROOTS_E2E_HOST || 'localhost';
+const applicationUrlHost = applicationHost.includes(':')
+  ? `[${applicationHost}]`
+  : applicationHost;
 const useWebpackDevServer =
   process.env.TRUSTROOTS_E2E_USE_WEBPACK_DEV_SERVER === 'true';
-// Use `localhost` (not `127.0.0.1`) to match the host the app binds to
-// (config.host) and the webpack dev-server proxy target. On machines where
-// `localhost` resolves to IPv6 (::1), probing 127.0.0.1 never succeeds and the
-// webServer readiness check times out.
+// The e2e script pins this host to IPv4 loopback so Node and Chromium cannot
+// choose different localhost address families inside a container.
 const baseURL =
   process.env.PLAYWRIGHT_BASE_URL ||
   (useWebpackDevServer
-    ? `http://localhost:${webPort}`
-    : `http://localhost:${apiPort}`);
+    ? `http://${applicationUrlHost}:${webPort}`
+    : `http://${applicationUrlHost}:${apiPort}`);
 const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 const seededMemberStorageState = path.join(
   __dirname,
@@ -45,7 +47,7 @@ const webServers = useWebpackDevServer
   ? [
       {
         command: 'npm run start:e2e:api',
-        url: `http://localhost:${apiPort}/api/languages?format=array`,
+        url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,
         reuseExistingServer:
           process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
@@ -61,7 +63,7 @@ const webServers = useWebpackDevServer
   : [
       {
         command: 'npm run start:e2e:api',
-        url: `http://localhost:${apiPort}/api/languages?format=array`,
+        url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
         timeout: 120 * 1000,
         reuseExistingServer:
           process.env.TRUSTROOTS_E2E_REUSE_SERVER === 'true' && !process.env.CI,
@@ -116,7 +118,8 @@ module.exports = defineConfig({
     },
     {
       name: 'authenticated',
-      testMatch: /features\/profile-onboarding\/authenticated\.spec\.js/,
+      testMatch:
+        /features\/profile-onboarding\/(?:authenticated|profile-react)\.spec\.js/,
       dependencies: serializedDependencies(['setup-authenticated'], ['public']),
       fullyParallel: false,
       use: {
@@ -128,6 +131,19 @@ module.exports = defineConfig({
               },
             }
           : {}),
+      },
+    },
+    {
+      name: 'photo-upload-firefox',
+      testMatch: /features\/profile-onboarding\/authenticated\.spec\.js/,
+      grep: /member can upload a valid profile photo/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['authenticated'],
+      ),
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Firefox'],
       },
     },
     {
@@ -263,7 +279,7 @@ module.exports = defineConfig({
       testMatch: /features\/experiences-references\/.*\.spec\.js/,
       dependencies: serializedDependencies(
         ['setup-authenticated'],
-        ['search-map-rendered'],
+        ['setup-authenticated'],
       ),
       fullyParallel: false,
       use: {
@@ -283,7 +299,7 @@ module.exports = defineConfig({
       testMatch: /features\/profile-onboarding\/member\.spec\.js/,
       dependencies: serializedDependencies(
         ['setup-authenticated'],
-        ['experiences'],
+        ['setup-authenticated'],
       ),
       fullyParallel: false,
       use: {
@@ -301,7 +317,10 @@ module.exports = defineConfig({
     {
       name: 'admin',
       testMatch: /features\/admin-moderation\/.*\.spec\.js/,
-      dependencies: serializedDependencies(['setup-authenticated'], ['member']),
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['setup-authenticated'],
+      ),
       fullyParallel: false,
       use: {
         ...devices['Desktop Chrome'],

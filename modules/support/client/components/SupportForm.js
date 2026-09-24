@@ -79,7 +79,9 @@ export default function SupportForm({ user }) {
   return (
     <div className="panel panel-default">
       <div className="panel-heading">
-        <h4>{t('Contact us')}</h4>
+        <h4>
+          {reportMember ? t('Report member to support') : t('Contact us')}
+        </h4>
       </div>
       <div className="panel-body">
         {sendingFailed && (
@@ -100,11 +102,18 @@ export default function SupportForm({ user }) {
           {reportMember && (
             <div className="form-group">
               <label className="col-sm-2 control-label">
-                {t('Reporting member')}
+                {t('Reported member')}
               </label>
               <div className="col-sm-10">
                 <p className="form-control-static">
                   <strong>{reportMember}</strong>
+                </p>
+                <p className="form-control-static">
+                  <em>
+                    {t(
+                      'This message goes to Trustroots support, not to the member.',
+                    )}
+                  </em>
                 </p>
                 <p className="form-control-static">
                   <em>
@@ -134,7 +143,9 @@ export default function SupportForm({ user }) {
                 }}
               ></textarea>
               <span className="help-block">
-                {t('Please write in English if possible.')}
+                {t(
+                  'Our support team speaks several languages. Write in whichever language you prefer — English is helpful when you can.',
+                )}
                 <br />
               </span>
             </div>

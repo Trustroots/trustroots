@@ -1,3 +1,4 @@
+/* global window */
 const { annotateFeature, test, expect } = require('../../support/test');
 
 test.describe('public core manifest gap coverage', () => {
@@ -61,8 +62,13 @@ test.describe('public core manifest gap coverage', () => {
     ]);
 
     await page.goto('/support?report=e2e-seeded-shadow');
-    await expect(page.getByText('Reporting member')).toBeVisible();
+    await expect(page.getByText('Reported member')).toBeVisible();
     await expect(page.getByText('e2e-seeded-shadow')).toBeVisible();
+    await expect(
+      page.getByText(
+        'This message goes to Trustroots support, not to the member.',
+      ),
+    ).toBeVisible();
 
     await page.locator('#message').fill('E2E support report from UI coverage.');
     await page.locator('#username').fill('guest-support-ui');
@@ -83,17 +89,40 @@ test.describe('public core manifest gap coverage', () => {
     ).toBeVisible();
   });
 
-  test('service worker config renders JavaScript for visitors', async ({
-    request,
+  test('internal links preserve the React single-page shell and browser history', async ({
+    page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'public.service-worker-config', [
-      'Endpoint returns JavaScript config without requiring authentication.',
+    annotateFeature(testInfo, 'public.single-page-navigation', [
+      'React-owned links update the URL without reloading the document.',
+      'Browser history restores the previous React-owned route in the same document.',
     ]);
 
-    const response = await request.get('/config/sw.js');
-    expect(response.ok()).toBeTruthy();
-    expect(response.headers()['content-type']).toContain('text/javascript');
-    expect(await response.text()).toMatch(/var FCM_SENDER_ID = .*;\n/);
+    await page.goto('/rules');
+    await page.evaluate(() => {
+      window.__trustrootsSpaDocument = {};
+    });
+
+    await page
+      .locator('#tr-footer')
+      .getByRole('link', { name: 'FAQ', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/faq$/);
+    await expect(
+      page.getByRole('heading', {
+        name: 'about the site & community',
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(() => Boolean(window.__trustrootsSpaDocument)),
+    ).toBeTruthy();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/rules$/);
+    await expect(page.getByRole('heading', { name: /^rules$/i })).toBeVisible();
+    expect(
+      await page.evaluate(() => Boolean(window.__trustrootsSpaDocument)),
+    ).toBeTruthy();
   });
 
   test('legacy invite redirects to signup', async ({ request }, testInfo) => {

@@ -55,3 +55,55 @@ upload cannot be used.
 
 - **WHEN** a signed-in member uploads an unsupported file as a profile photo
 - **THEN** the system explains that the file type is not supported
+
+### Requirement: React profile viewing
+
+The system SHALL render member profile views with the React application shell
+while preserving the existing profile access and navigation behaviour.
+
+#### Scenario: Member opens a profile tab
+
+- **WHEN** an authenticated member opens a profile about, overview,
+  accommodation, contacts, circles or experience-history URL
+- **THEN** the React shell displays that tab and the profile navigation
+- **AND** profile data and privacy rules continue to come from the existing APIs
+
+#### Scenario: Member follows a profile action
+
+- **WHEN** a member follows an edit, message, contact or experience-writing link
+  from a profile view
+- **THEN** the existing destination URL and access rule are retained
+
+#### Scenario: Member opens an unavailable profile
+
+- **WHEN** an authenticated member opens a profile that does not exist
+- **THEN** the profile view displays the missing-member state
+
+#### Scenario: Angular page links to a profile tab
+
+- **WHEN** a member follows a named-state link from an Angular page
+- **THEN** the browser opens the corresponding React-owned profile URL
+
+### Requirement: Selectable profile languages
+
+The system SHALL identify deprecated catalogue entries and prevent members from adding them as spoken profile languages while retaining existing selections.
+
+#### Scenario: Member searches for a deprecated language
+
+- **WHEN** a member searches the profile language picker for a deprecated entry
+- **THEN** the entry is not offered as a new selection
+
+#### Scenario: Member retains or removes an existing deprecated language
+
+- **WHEN** a member already has a deprecated language and saves their profile with that language unchanged or removed
+- **THEN** the update succeeds and any retained selection remains legible
+
+#### Scenario: Member submits a new deprecated language directly
+
+- **WHEN** a profile update adds a deprecated language that was not previously selected
+- **THEN** the server rejects the update
+
+#### Scenario: Member finds Limburgish
+
+- **WHEN** the language catalogue is shown in English
+- **THEN** the `lim` language is labelled Limburgish

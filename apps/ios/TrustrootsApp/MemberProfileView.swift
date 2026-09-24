@@ -391,7 +391,7 @@ struct MemberProfileView: View {
                 Button {
                     showReportMember = true
                 } label: {
-                    Label("Report member", systemImage: "flag")
+                    Label("Report member to support", systemImage: "flag")
                 }
                 .foregroundStyle(.secondary)
 
@@ -538,7 +538,7 @@ private struct ReportMemberView: View {
                     )
                 } else {
                     Form {
-                        Section("Reporting") {
+                        Section("Reported member") {
                             LabeledContent("Member", value: "\(displayName) (@\(username))")
                         }
 
@@ -550,7 +550,7 @@ private struct ReportMemberView: View {
                         } header: {
                             Text("What happened?")
                         } footer: {
-                            Text("Please include enough detail for the support team to understand and investigate.")
+                            Text("This message goes to Trustroots support, not to the member. Please include enough detail for the support team to understand and investigate.")
                         }
 
                         if let errorMessage {
@@ -584,7 +584,7 @@ private struct ReportMemberView: View {
                     }
                 }
             }
-            .navigationTitle("Report member")
+            .navigationTitle("Report member to support")
             .navigationBarTitleDisplayMode(.inline)
             .interactiveDismissDisabled(isSending)
             .toolbar {

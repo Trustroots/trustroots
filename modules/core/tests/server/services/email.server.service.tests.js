@@ -294,6 +294,40 @@ describe('Service: email', function () {
     );
   });
 
+  it('sends administrator message notifications from Trustroots Support', function (done) {
+    const userFrom = {
+      _id: 'admin-user-id',
+      username: 'admin-user',
+      displayName: 'Admin User',
+      email: 'admin@example.com',
+      roles: ['user', 'admin'],
+    };
+    const userTo = {
+      _id: 'recipient-user-id',
+      username: 'recipient-user',
+      displayName: 'Recipient User',
+      email: 'recipient@example.com',
+      roles: ['user'],
+    };
+    const notification = {
+      messages: [{ id: 'message-id-1', content: 'Safety warning' }],
+    };
+
+    emailService.sendMessagesUnread(
+      userFrom,
+      userTo,
+      notification,
+      function (err) {
+        if (err) return done(err);
+        jobs.length.should.equal(1);
+        jobs[0].data.from.should.equal(
+          'Trustroots Support <' + config.supportEmail + '>',
+        );
+        done();
+      },
+    );
+  });
+
   it('uses the follow-up subject for repeated unread message notifications', function (done) {
     const userFrom = {
       _id: 'from-user-id',
@@ -453,10 +487,10 @@ describe('Service: email', function () {
       should.exist(jobs[0].data.text);
       jobs[0].data.text.should.containEql('test-support-message');
       jobs[0].data.text.should.containEql(
-        'Reporting member: ' + supportRequest.reportMember,
+        'Reported member: ' + supportRequest.reportMember,
       );
       jobs[0].data.text.should.containEql(
-        'Username: ' + supportRequest.username,
+        'From username: ' + supportRequest.username,
       );
       jobs[0].data.text.should.containEql('Email: ' + supportRequest.email);
       jobs[0].data.text.should.containEql(

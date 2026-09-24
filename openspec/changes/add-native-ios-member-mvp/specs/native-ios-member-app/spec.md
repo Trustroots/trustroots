@@ -304,8 +304,11 @@ relationship and SHALL keep reporting and blocking as independent actions.
 
 #### Scenario: Member reports another member
 
-- **WHEN** a signed-in member selects Report member on another member's profile
+- **WHEN** a signed-in member selects Report member to support on another
+  member's profile
 - **THEN** the app presents a native form identifying the reported member
+- **AND** makes clear that the message goes to Trustroots support, not to the
+  member
 - **AND** submits the member's description through the existing `/api/support`
   route with the reported username
 - **AND** confirms that the report was sent

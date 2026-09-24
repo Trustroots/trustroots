@@ -56,17 +56,6 @@ describe('Daily Statistics Job - Unit Test', function () {
       });
     });
 
-    it('continues when fetching push registration count fails', function (done) {
-      sinon
-        .stub(statistics, 'getPushRegistrationCount')
-        .callsFake(cb => cb(new Error('push db down')));
-
-      statsJob(null, function (e) {
-        if (e) return done(e);
-        done();
-      });
-    });
-
     it('continues when fetching host offer counts fails', function (done) {
       sinon
         .stub(statistics, 'getHostOffersCount')
@@ -187,10 +176,10 @@ describe('Daily Statistics Job - Unit Test', function () {
         try {
           // test influx endpoint
 
-          // Called total 2 times, once per each stat call in job
+          // Called once per each remaining daily stat write
           sinon.assert.callCount(
             influx.InfluxDB.prototype.writeMeasurement,
-            17,
+            16,
           );
 
           // Member count stat point
@@ -206,18 +195,6 @@ describe('Daily Statistics Job - Unit Test', function () {
             .have.propertyByPath('tags', 'members')
             .eql('members');
           should(memberPoint).not.have.property('timestamp');
-
-          // Push registration count stat point
-          const pushMeasurement =
-            influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[0];
-          const pushPoints =
-            influx.InfluxDB.prototype.writeMeasurement.getCall(1).args[1];
-          const pushPoint = pushPoints[0];
-          should(pushPoints.length).eql(1);
-          should(pushMeasurement).eql('pushRegistrations');
-          should(pushPoint).have.propertyByPath('fields', 'count').eql(0);
-          should(pushPoint).have.propertyByPath('tags', 'type').eql('all');
-          should(pushPoint).not.have.property('timestamp');
 
           return done();
         } catch (e) {

@@ -206,13 +206,55 @@ describe('file-upload.service unit tests', () => {
         const options = getMulterOptions();
         options.dest.should.equal(os.tmpdir());
         options.limits.fileSize.should.be.a.Number();
-        fs.unlinkSync(filePath);
+        options.limits.files.should.equal(1);
+        options.limits.fields.should.equal(10);
+        options.limits.parts.should.equal(11);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
+  });
+
+  for (const [description, bytes, expectedStatus] of [
+    ['a valid image', Buffer.from([0xff, 0xd8, 0xff, 0x00]), 200],
+    ['disguised non-image content', Buffer.from('not an image'), 415],
+  ]) {
+    it(`validates ${description} by its bytes when the browser omits the MIME type`, done => {
+      const filePath = writeTempFile(bytes);
+      const { uploadFile } = loadUploadFileWithFileFilter(
+        { mimetype: 'application/octet-stream' },
+        { path: filePath },
+      );
+      const res = mockResponse();
+      const finish = () => {
+        try {
+          res.statusCode.should.equal(expectedStatus);
+          done();
+        } catch (err) {
+          done(err);
+        } finally {
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+      };
+      res.send = finish;
+      uploadFile(validMimeTypes, uploadField, {}, res, finish);
+    });
+  }
+
+  it('removes temporary files after content validation declines an upload', done => {
+    const filePath = writeTempFile(Buffer.from('Sample text document'));
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(415);
+      fs.existsSync(filePath).should.equal(false);
+      done();
+    });
+    uploadFile(validMimeTypes, uploadField, {}, res, () =>
+      done(new Error('Unexpected accepted file')),
+    );
   });
 
   it('rejects requests without an uploaded file', done => {
@@ -237,10 +279,10 @@ describe('file-upload.service unit tests', () => {
         res.body.message.should.equal(
           errorService.getErrorMessageByKey('unsupported-media-type'),
         );
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
@@ -268,7 +310,7 @@ describe('file-upload.service unit tests', () => {
 
       uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
         try {
-          fs.unlinkSync(filePath);
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
           index += 1;
           if (index < samples.length) {
             runNext();
@@ -276,7 +318,7 @@ describe('file-upload.service unit tests', () => {
             done();
           }
         } catch (err) {
-          fs.unlinkSync(filePath);
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
           done(err);
         }
       });
@@ -285,69 +327,35 @@ describe('file-upload.service unit tests', () => {
     runNext();
   });
 
-  it('accepts jpeg files via the mmmagic detector', done => {
+  it('accepts jpeg files via the file-type detector', done => {
     delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    const filePath = writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00]));
-    const uploadFile = proxyquire(
-      '../../../server/services/file-upload.service',
-      {
-        multer: () => ({
-          single: () => (req, res, callback) => {
-            req.file = { path: filePath };
-            callback(null);
-          },
-        }),
-        mmmagic: {
-          MAGIC_MIME_TYPE: 16,
-          Magic: function Magic() {
-            this.detectFile = (path, cb) => cb(null, 'image/jpeg');
-          },
-        },
-        '../../../../config/config': require('../../../../../config/config'),
-        './error.server.service': errorService,
-      },
-    ).uploadFile;
+    const filePath = writeTempFile(
+      Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]),
+    );
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
 
     uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
       try {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
   });
 
-  it('rejects files when mmmagic detection fails', done => {
+  it('rejects files when magic-byte detection finds no supported type', done => {
     delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    const filePath = writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00]));
-    const uploadFile = proxyquire(
-      '../../../server/services/file-upload.service',
-      {
-        multer: () => ({
-          single: () => (req, res, callback) => {
-            req.file = { path: filePath };
-            callback(null);
-          },
-        }),
-        mmmagic: {
-          MAGIC_MIME_TYPE: 16,
-          Magic: function Magic() {
-            this.detectFile = (path, cb) => cb(new Error('magic failed'));
-          },
-        },
-        '../../../../config/config': require('../../../../../config/config'),
-        './error.server.service': errorService,
-      },
-    ).uploadFile;
+    const filePath = writeTempFile(Buffer.from('not a supported file'));
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
     const res = mockResponse(() => {
       try {
         res.statusCode.should.equal(415);
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
@@ -363,10 +371,10 @@ describe('file-upload.service unit tests', () => {
     const res = mockResponse(() => {
       try {
         res.statusCode.should.equal(415);
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        fs.unlinkSync(filePath);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });

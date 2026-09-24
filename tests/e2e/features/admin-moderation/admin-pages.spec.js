@@ -84,10 +84,9 @@ test.describe('admin moderation page flows', () => {
       ['Privacy', '/privacy'],
       ['Contact', '/contact'],
     ]) {
-      await expect(footer.getByRole('link', { name })).toHaveAttribute(
-        'href',
-        href,
-      );
+      await expect(
+        footer.getByRole('link', { name, exact: true }),
+      ).toHaveAttribute('href', href);
     }
     await expect(
       footer.getByRole('link', { name: 'Trustroots Foundation' }),
@@ -170,7 +169,7 @@ test.describe('admin React route access boundaries', () => {
     await signOut(page);
     await page.goto('/admin', { waitUntil: 'domcontentloaded' });
 
-    await expect(page).toHaveURL(/\/signin$/);
+    await expect(page).toHaveURL(/\/signin\?continue=true&returnTo=%2Fadmin/);
   });
 
   test('non-admin direct admin load redirects to volunteering', async ({

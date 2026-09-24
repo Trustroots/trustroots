@@ -13,11 +13,6 @@ const {
   waitForTribesList,
 } = require('../../support/helpers');
 
-const seededMemberStoragePath = path.join(
-  __dirname,
-  '../../.auth/seeded-member.json',
-);
-
 test.describe('authenticated member flows', () => {
   let authenticatedMember;
 
@@ -212,6 +207,48 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/describe yourself/i)).toBeVisible();
   });
 
+  test('deprecated languages cannot be added to a profile', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'Deprecated languages cannot be added to a profile.',
+    ]);
+
+    const response = await page.request.get('/api/languages?format=array');
+    expect(response.ok()).toBeTruthy();
+    const languages = await response.json();
+    expect(languages.find(({ value }) => value === 'enm').deprecated).toBe(
+      true,
+    );
+    expect(
+      languages.find(({ value }) => value === 'iso_639_3-lfn').deprecated,
+    ).toBe(true);
+    expect(languages.find(({ value }) => value === 'grc').deprecated).toBe(
+      false,
+    );
+    expect(languages.find(({ value }) => value === 'lim').label).toBe(
+      'Limburgish',
+    );
+
+    await page.goto('/profile/edit');
+    const languageInput = page.locator(
+      'input[aria-label="Add languages you speak."]',
+    );
+    await languageInput.fill('Middle English');
+    await expect(
+      page.getByText('No languages found; try typing something else.'),
+    ).toBeVisible();
+    await languageInput.fill('English');
+    await expect(
+      page.getByText('English', { exact: true }).last(),
+    ).toBeVisible();
+
+    const rejected = await page.request.put('/api/users', {
+      data: { languages: ['enm'] },
+    });
+    expect(rejected.status()).toBe(400);
+  });
+
   test('profile edit account page is reachable', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'account.details-update', [
       'Account edit page is reachable.',
@@ -262,9 +299,36 @@ test.describe('authenticated member flows', () => {
     }
   });
 
-  test('member can view a seeded host profile', async ({
+  test('member can open photo editing from their placeholder avatar', async ({
     browser,
     baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Own placeholder avatar links to photo editing.',
+    ]);
+
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+
+    try {
+      const member = createUser();
+      await registerViaApi(context.request, member);
+      await signInViaApi(page, context.request, member);
+
+      await page.goto(`/profile/${member.username}`);
+      await page
+        .locator('.profile-overview')
+        .getByRole('link', { name: 'Edit profile photo' })
+        .click();
+      await expect(page).toHaveURL(/\/profile\/edit\/photo/);
+    } finally {
+      await context.close();
+    }
+  });
+
+  test('member can view a seeded host profile', async ({
+    page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.view-about', [
       'Own profile about tab loads.',
@@ -273,24 +337,13 @@ test.describe('authenticated member flows', () => {
     ]);
 
     const host = SEEDED_MEMBERS[1];
-    const seededMemberContext = await browser.newContext({
-      baseURL,
-      storageState: seededMemberStoragePath,
-    });
-    const seededMemberPage = await seededMemberContext.newPage();
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.goto(`/profile/${host.username}`);
 
-    try {
-      await seededMemberPage.goto(`/profile/${host.username}`);
-
-      await expect(seededMemberPage).toHaveURL(
-        new RegExp(`/profile/${host.username}`),
-      );
-      await expect(
-        seededMemberPage.locator('.row.hidden-xs h4.profile-username'),
-      ).toHaveText(`@${host.username}`);
-    } finally {
-      await seededMemberContext.close();
-    }
+    await expect(page).toHaveURL(new RegExp(`/profile/${host.username}`));
+    await expect(page.locator('.row.hidden-xs h4.profile-username')).toHaveText(
+      `@${host.username}`,
+    );
   });
 
   test('profile edit locations page is reachable', async ({
@@ -437,6 +490,9 @@ test.describe('authenticated member flows', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'profile.edit-photo', [
       'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
     ]);
 
     const validAvatarPath = path.join(
@@ -452,7 +508,15 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
+
+      await uploadButton.focus();
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Shift+Tab');
+      await expect(uploadButton).toBeFocused();
+      await expect(uploadButton).toHaveCSS('outline-style', 'solid');
+      await expect(uploadButton).toHaveCSS('outline-width', '3px');
 
       const uploadResponse = page.waitForResponse(
         response =>
@@ -460,14 +524,28 @@ test.describe('authenticated member flows', () => {
       );
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
+        uploadButton.click(),
       ]);
       await fileChooser.setFiles(validAvatarPath);
       await uploadResponse;
 
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-success'),
-      ).toContainText('Profile photo updated.');
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
+      const untypedUploadResponse = page.waitForResponse(response =>
+        response.url().includes('/api/users-avatar'),
+      );
+      await page.locator('input[type="file"]').evaluate(input => {
+        const { File, DataTransfer } = input.ownerDocument.defaultView;
+        const file = new File([input.files[0]], 'browser-photo.png', {
+          type: '',
+        });
+        const transfer = new DataTransfer();
+        transfer.items.add(file);
+        input.files = transfer.files;
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      expect((await untypedUploadResponse).status()).toBe(200);
     } finally {
       await context.close();
     }
@@ -494,23 +572,17 @@ test.describe('authenticated member flows', () => {
       await signInViaApi(page, context.request, member);
 
       await page.goto('/profile/edit/photo');
-      await expect(page.locator('#profile-edit-avatar-file')).toBeVisible();
-
-      const uploadResponse = page.waitForResponse(
-        response =>
-          response.url().includes('/api/users-avatar') &&
-          response.status() === 415,
-      );
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
+      await expect(uploadButton).toBeVisible();
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
+        uploadButton.click(),
       ]);
       await fileChooser.setFiles(invalidAvatarPath);
-      await uploadResponse;
 
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-danger'),
-      ).toContainText('Sorry, we do not support this type of file.');
+      await expect(page.getByRole('status')).toContainText(
+        'Sorry, we do not support this type of file.',
+      );
     } finally {
       await context.close();
     }
@@ -544,19 +616,20 @@ test.describe('authenticated member flows', () => {
       expect(fallbackResponse.headers().location).toContain('/img/avatar-');
 
       await page.goto('/profile/edit/photo');
+      const uploadButton = page.getByRole('button', { name: /upload photo/i });
       const uploadResponse = page.waitForResponse(
         response =>
           response.url().includes('/api/users-avatar') && response.ok(),
       );
       const [fileChooser] = await Promise.all([
         page.waitForEvent('filechooser'),
-        page.locator('#profile-edit-avatar-file').click(),
+        uploadButton.click(),
       ]);
       await fileChooser.setFiles(validAvatarPath);
       await uploadResponse;
-      await expect(
-        page.locator('#mc-messages-wrapper .alert-success'),
-      ).toContainText('Profile photo updated.');
+      await expect(page.getByRole('status')).toContainText(
+        'Profile photo updated.',
+      );
 
       const uploadedResponse = await page.request.get(
         `/api/users/${registered._id}/avatar?source=local`,

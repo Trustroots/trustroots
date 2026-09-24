@@ -1,11 +1,18 @@
 const path = require('path');
 
 const AREA_BY_SPEC = {
+  'react-recovery-pages.spec.js': 'Public pages',
+  'react-member-connections.spec.js': 'Public pages',
+  'react-contact-confirmation.spec.js': 'Public pages',
+  'react-home-safety.spec.js': 'Public pages',
+  'circles-react.spec.js': 'Member flows',
+  'member-entry-react.spec.js': 'Member flows',
   'auth-smoke.spec.js': 'Authentication',
   'account-lifecycle.spec.js': 'Authentication',
   'account-email-tokens.spec.js': 'Authentication',
   'account-settings.spec.js': 'Authentication',
   'authenticated.spec.js': 'Member flows',
+  'profile-react.spec.js': 'Member flows',
   'member.spec.js': 'Member flows',
   'contacts-and-blocks.spec.js': 'Member flows',
   'offers-and-circles.spec.js': 'Member flows',
@@ -69,7 +76,9 @@ function computeAreaCoverage(byArea = {}) {
         ? Number(((exercisedAreas.length / defined) * 100).toFixed(2))
         : 0,
     areaPassCoverage:
-      defined > 0 ? Number(((greenAreas.length / defined) * 100).toFixed(2)) : 0,
+      defined > 0
+        ? Number(((greenAreas.length / defined) * 100).toFixed(2))
+        : 0,
   };
 }
 

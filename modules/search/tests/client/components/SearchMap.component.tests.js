@@ -1,6 +1,6 @@
 import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
@@ -331,6 +331,88 @@ describe('Search', () => {
     expect(mockMapProps.width).toBe('100%');
   });
 
+  it('zooms the map on a Firefox trackpad pinch without zooming the page', () => {
+    renderSearchMap();
+    const pinch = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      ctrlKey: true,
+      deltaY: -50,
+    });
+
+    act(() => screen.getByTestId('react-map-gl').dispatchEvent(pinch));
+
+    expect(pinch.defaultPrevented).toBe(true);
+    expect(mockMapProps.zoom).toBe(2.5);
+    expect(mockSetPersistentMapLocation).toHaveBeenCalledWith(
+      expect.objectContaining({ zoom: 2.5 }),
+    );
+
+    act(() =>
+      screen.getByTestId('react-map-gl').dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaMode: 1,
+          deltaY: -1,
+        }),
+      ),
+    );
+    expect(mockMapProps.zoom).toBe(2.9);
+  });
+
+  it('leaves ordinary wheel input to the map and clamps pinch zoom', () => {
+    renderSearchMap();
+    const map = screen.getByTestId('react-map-gl');
+    const wheel = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaY: -50,
+    });
+
+    act(() => map.dispatchEvent(wheel));
+    expect(wheel.defaultPrevented).toBe(false);
+    expect(mockMapProps.zoom).toBe(2);
+
+    act(() =>
+      map.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaY: -5000,
+        }),
+      ),
+    );
+    expect(mockMapProps.zoom).toBe(20);
+
+    mockSetPersistentMapLocation.mockClear();
+    act(() =>
+      map.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaY: -5000,
+        }),
+      ),
+    );
+    expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
+
+    act(() =>
+      map.dispatchEvent(
+        new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          ctrlKey: true,
+          deltaY: 5000,
+        }),
+      ),
+    );
+    expect(mockMapProps.zoom).toBe(0);
+  });
+
   it('uses the default map location when persisted coordinates are missing', () => {
     mockPersistentMapLocation = {
       zoom: 2,
@@ -428,7 +510,8 @@ describe('Search', () => {
       onOfferClose,
     });
 
-    await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockMapProps.zoom).toBe(6));
+    expect(onOfferClose).not.toHaveBeenCalled();
     expect(mockQueryOffers).not.toHaveBeenCalled();
   });
 
@@ -449,14 +532,31 @@ describe('Search', () => {
     const onOfferClose = jest.fn();
     renderSearchMap({ onOfferClose });
 
-    await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
-    onOfferClose.mockClear();
+    expect(onOfferClose).not.toHaveBeenCalled();
 
     act(() => {
       mockMapProps.onClick({ features: [] });
     });
 
     expect(onOfferClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes an open offer when search filters change', async () => {
+    const onOfferClose = jest.fn();
+    const { rerender } = renderSearchMap({ onOfferClose });
+
+    expect(onOfferClose).not.toHaveBeenCalled();
+
+    rerender(
+      <SearchMap
+        filters='{"hosting":"yes"}'
+        isUserPublic={true}
+        onOfferClose={onOfferClose}
+        onOfferOpen={jest.fn()}
+      />,
+    );
+
+    await waitFor(() => expect(onOfferClose).toHaveBeenCalledTimes(1));
   });
 
   it('ignores hover events that do not identify a new offer point', () => {
@@ -846,8 +946,9 @@ describe('Search', () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>
@@ -903,8 +1004,9 @@ describe('Search', () => {
       }),
     );
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>
@@ -970,8 +1072,9 @@ describe('Search', () => {
     });
     await waitFor(() => expect(secondCallbacks).toBeDefined());
 
-    act(() => {
+    await act(async () => {
       secondCallbacks.onEose();
+      await Promise.resolve();
     });
     await waitFor(() =>
       expect(mockSourcePropsById['community-notes'].data.features).toHaveLength(
@@ -1011,8 +1114,9 @@ describe('Search', () => {
 
     renderSearchMap({ filters: '{"communityNotes":true}' });
 
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     onEvent({
@@ -1021,8 +1125,9 @@ describe('Search', () => {
       authorPubkey: 'author-second',
       tags: [['l', '8FVC9G8F+5W', 'open-location-code']],
     });
-    act(() => {
+    await act(async () => {
       jest.advanceTimersByTime(200);
+      await Promise.resolve();
     });
 
     await waitFor(() =>

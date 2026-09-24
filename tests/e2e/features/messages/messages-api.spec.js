@@ -1,5 +1,11 @@
 const { request: playwrightRequest } = require('@playwright/test');
 const { annotateFeature, test, expect } = require('../../support/test');
+const { ObjectId } = require('mongodb');
+const {
+  findUserByUsername,
+  updateUserByUsername,
+  withE2eDb,
+} = require('../../support/db');
 
 const {
   SEEDED_CONVERSATIONS,
@@ -14,6 +20,60 @@ test.describe('seeded message API flows', () => {
   test.beforeEach(async ({ page, request }) => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
   });
+
+  for (const role of ['welcome-team', 'admin']) {
+    test(`${role} can message above the recipient limit until the role is removed`, async ({
+      page,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'messages.reply-send', [
+        'Sending a reply appends it to the thread.',
+      ]);
+      const member = SEEDED_MEMBERS[0];
+      const sender = await findUserByUsername(member.username);
+      const history = Array.from({ length: 16 }, () => ({
+        _id: new ObjectId(),
+        userFrom: sender._id,
+        userTo: new ObjectId(),
+        created: new Date(),
+        content: 'Earlier community greeting.',
+      }));
+      const content = `Welcome team throttle regression ${new ObjectId()}`;
+      const send = () =>
+        page.request.post('/api/messages', {
+          data: { userTo: SEEDED_MEMBERS[1].id, content },
+        });
+      try {
+        await withE2eDb(db => db.collection('messages').insertMany(history));
+        await updateUserByUsername(member.username, {
+          $set: { roles: ['user'] },
+        });
+        expect((await send()).status()).toBe(429);
+        await updateUserByUsername(member.username, {
+          $set: { roles: ['user', role] },
+        });
+        expect((await send()).ok()).toBeTruthy();
+        const thread = await page.request.get(
+          `/api/messages/${SEEDED_MEMBERS[1].id}`,
+        );
+        expect((await thread.json()).map(message => message.content)).toContain(
+          content,
+        );
+        await updateUserByUsername(member.username, {
+          $set: { roles: ['user'] },
+        });
+        expect((await send()).status()).toBe(429);
+      } finally {
+        await updateUserByUsername(member.username, {
+          $set: { roles: sender.roles },
+        });
+        await withE2eDb(db =>
+          db.collection('messages').deleteMany({
+            _id: { $in: history.map(message => message._id) },
+          }),
+        );
+      }
+    });
+  }
 
   test('message APIs require an authenticated member', async ({
     baseURL,
