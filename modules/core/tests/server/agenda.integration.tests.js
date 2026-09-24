@@ -179,35 +179,58 @@ describe('Agenda integration tests', function () {
     jobs[0].attrs.lastFinishedAt.should.be.instanceof(Date);
   });
 
-  it('unlocks unfinished jobs after a worker restart', async function () {
+  it('unlocks only unfinished jobs after a worker restart', async function () {
     const jobs = mongoClient.db().collection('agendaJobs');
     const marker = 'anonymous-unlock-integration-test';
+    const lockedAt = new Date(Date.now() - 60 * 1000);
+    const futureRun = new Date(Date.now() + 60 * 60 * 1000);
 
-    await jobs.insertOne({
-      name: marker,
-      lockedAt: new Date(),
-      lastModifiedBy: 'stopped-worker',
-      lastRunAt: new Date(),
-      nextRunAt: null,
-    });
+    await jobs.insertMany([
+      {
+        name: `${marker}-unfinished`,
+        lockedAt,
+        lastModifiedBy: 'stopped-worker',
+        lastRunAt: lockedAt,
+        nextRunAt: null,
+      },
+      {
+        name: `${marker}-finished`,
+        lockedAt,
+        lastFinishedAt: new Date(),
+        nextRunAt: futureRun,
+      },
+      {
+        name: `${marker}-scheduled`,
+        nextRunAt: futureRun,
+      },
+    ]);
 
-    await new Promise(function (resolve, reject) {
-      worker.unlockAgendaJobs(function (err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
+    try {
+      await new Promise(function (resolve, reject) {
+        worker.unlockAgendaJobs(function (err) {
+          if (err) reject(err);
+          else resolve();
+        });
       });
-    });
 
-    const unlockedJob = await jobs.findOne({ name: marker });
+      const [unfinished, finished, scheduled] = await Promise.all([
+        jobs.findOne({ name: `${marker}-unfinished` }),
+        jobs.findOne({ name: `${marker}-finished` }),
+        jobs.findOne({ name: `${marker}-scheduled` }),
+      ]);
 
-    unlockedJob.should.not.have.property('lockedAt');
-    unlockedJob.should.not.have.property('lastModifiedBy');
-    unlockedJob.should.not.have.property('lastRunAt');
-    unlockedJob.nextRunAt.should.be.instanceof(Date);
+      unfinished.should.not.have.property('lockedAt');
+      unfinished.should.not.have.property('lastModifiedBy');
+      unfinished.should.not.have.property('lastRunAt');
+      unfinished.nextRunAt.should.be.instanceof(Date);
+      unfinished.nextRunAt.getTime().should.be.above(lockedAt.getTime());
 
-    await jobs.deleteOne({ name: marker });
+      finished.lockedAt.getTime().should.equal(lockedAt.getTime());
+      finished.nextRunAt.getTime().should.equal(futureRun.getTime());
+      scheduled.should.not.have.property('lockedAt');
+      scheduled.nextRunAt.getTime().should.equal(futureRun.getTime());
+    } finally {
+      await jobs.deleteMany({ name: { $regex: `^${marker}-` } });
+    }
   });
 });
