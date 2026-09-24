@@ -63,7 +63,7 @@ export default defineConfig({
     cssCodeSplit: false,
     rollupOptions: {
       input: {
-        'react-main': resolve(root, 'config/vite/react-main.js'),
+        'react-main': resolve(root, 'config/vite/react-main.tsx'),
       },
       output: {
         entryFileNames: 'react-main.js',

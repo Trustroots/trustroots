@@ -20,6 +20,7 @@
     "types": []
   },
   "include": [
+    "config/vite/react-main.tsx",
     "modules/*/client/**/*.ts",
     "modules/*/client/**/*.tsx"
   ],

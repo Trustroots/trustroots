@@ -1,5 +1,7 @@
-- [x] Add an opt-in Vite build and development server for the current React shell.
+- [x] Add opt-in Vite build and development commands for the current React shell.
+- [x] Add a typed React entry and include it in client type checking and linting.
 - [x] Preserve the existing Webpack scripts as the default while the prototype is evaluated.
+- [ ] Make the Vite production build pass with the current JavaScript files containing JSX and the Less pipeline.
 - [ ] Compare production CSS, including RTL output, and static asset paths with Webpack.
 - [ ] Smoke-test the backend template connection and all remaining hybrid routes.
 - [ ] Record development and production build measurements before proposing a default switch.

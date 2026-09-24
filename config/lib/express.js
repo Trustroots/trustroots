@@ -60,7 +60,7 @@ module.exports.initLocalVariables = function (app) {
     app.locals.reactUsesVite = true;
     app.locals.reactJsFiles = [
       'assets/@vite/client',
-      'assets/config/vite/react-main.js',
+      'assets/config/vite/react-main.tsx',
     ];
     app.locals.reactCssFiles = [];
   } else if (

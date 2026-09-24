@@ -1,4 +1,3 @@
-/* global document */
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -10,26 +9,26 @@ import { enable as enableUnreadMessageCountPolling } from '@/modules/messages/cl
 import { enable as enableVisibilityWatching } from '@/modules/messages/client/services/visibility.client.service';
 import { enable as enableFaviconUpdater } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';
 
-import '../webpack/entries/main.less';
+import './load-styles';
 
-import.meta.glob('../../modules/**/*.less', { eager: true });
-
-function enableMessageShellServices() {
+function enableMessageShellServices(): void {
   enableVisibilityWatching();
   enableFaviconUpdater();
   enableUnreadMessageCountPolling();
 }
 
-function render() {
+function render(): void {
   enableMessageShellServices();
-  const root = createRoot(document.getElementById('tr-react-root'));
+  const element = document.getElementById('tr-react-root');
+  if (!element) {
+    throw new Error('React root element is missing');
+  }
+  const root = createRoot(element);
 
   root.render(
-    React.createElement(
-      AppProviders,
-      null,
-      React.createElement(ReactApp, null),
-    ),
+    <AppProviders>
+      <ReactApp />
+    </AppProviders>,
   );
 }
 

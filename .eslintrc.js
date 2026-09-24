@@ -160,6 +160,7 @@ module.exports = {
      */
     {
       files: [
+        'config/vite/**/*.{ts,tsx}',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/tests/client/**/*.{ts,tsx}',
       ],

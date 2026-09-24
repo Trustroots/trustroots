@@ -7,6 +7,8 @@ need to be proven before replacing the current build.
 ## What Changes
 
 - Add an opt-in Vite build and development server for the current React shell.
+- Use a checked TypeScript/JSX entry to exercise the existing client TypeScript
+  support through Vite's development and production paths.
 - Preserve the existing Webpack scripts as the default while the prototype is
   evaluated.
 - Document parity checks for styles, module discovery, assets, backend
