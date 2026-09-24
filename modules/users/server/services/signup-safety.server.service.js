@@ -1,17 +1,3 @@
-const KEYWORDS = ['support', 'system', 'trustroots'];
+const { KEYWORDS, matchSignupProfile } = require('./signup-safety.server.service.mjs');
 
-exports.matchSignupProfile = function (profile) {
-  const identifyingText = [
-    profile.firstName,
-    profile.lastName,
-    profile.displayName,
-    profile.username,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-
-  return KEYWORDS.filter(keyword => identifyingText.includes(keyword));
-};
-
-exports.KEYWORDS = KEYWORDS;
+module.exports = { matchSignupProfile, KEYWORDS };

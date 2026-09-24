@@ -1,0 +1,6 @@
+- [x] Move JSON-for-script serialisation to ESM with a CommonJS adapter.
+- [x] Move memory policy and error responses to ESM with CommonJS adapters.
+- [x] Move signup safety and user roles to ESM with CommonJS adapters.
+- [x] Exercise named ESM imports and existing CommonJS exports in service tests.
+- [ ] Confirm server lint and coverage include the new ESM implementations.
+- [ ] Confirm existing service consumers retain their behaviour.

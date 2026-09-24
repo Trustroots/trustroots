@@ -42,6 +42,21 @@ function mockResponse(acceptType) {
 }
 
 describe('Service: error', function () {
+  it('exposes callable named ESM exports', async function () {
+    const esmService = await import(
+      '../../../server/services/error.server.service.mjs'
+    );
+    for (const name of [
+      'getErrorMessageByKey',
+      'getNewError',
+      'getErrorMessage',
+      'errorResponse',
+    ]) {
+      esmService[name].should.equal(errorService[name]);
+    }
+    esmService.getNewError('not-found').message.should.equal('Not found.');
+  });
+
   describe('getErrorMessageByKey', function () {
     it('returns the message for a known key', function () {
       errorService.getErrorMessageByKey('not-found').should.equal('Not found.');
