@@ -11,7 +11,7 @@ test('welcome team location correction review sends from the current member', as
   request,
 }, testInfo) => {
   annotateFeature(testInfo, 'admin.location-corrections', [
-    'Welcome team reviews a former-default location candidate.',
+    'Welcome team reviews a default-location candidate.',
     'Welcome team sends a personalised message and the candidate leaves the queue.',
   ]);
   const sender = createUser({ firstName: 'Morgan', lastName: 'Greeter' });
