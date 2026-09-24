@@ -2,7 +2,12 @@ module.exports = {
   server: {
     fontelloConfig: 'modules/core/client/fonts/fontello/config.json',
     workerJS: ['worker.js', 'config/**/*.js'],
-    allJS: ['server.js', 'config/**/*.js', 'modules/*/server/**/*.js'],
+    allJS: [
+      'server.js',
+      'config/**/*.js',
+      'modules/*/server/**/*.js',
+      'modules/*/server/**/*.mjs',
+    ],
     models: 'modules/*/server/models/**/*.js',
     routes: [
       'modules/!(core)/server/routes/**/*.js',

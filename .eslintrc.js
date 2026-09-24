@@ -76,8 +76,8 @@ module.exports = {
         'config/**',
         'migrations/**',
         'modules/*/shared/**/*.js',
-        'modules/*/server/*.js',
-        'modules/*/server/**/*.js',
+        'modules/*/server/*.{js,mjs}',
+        'modules/*/server/**/*.{js,mjs}',
         'testutils/server/**',
       ],
       env: {
