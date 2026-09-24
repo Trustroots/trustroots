@@ -71,10 +71,10 @@
       }
     }
 
-    // On mobile navi icons are highlighted differently
+    // Keep mobile icons legible against the green header.
     @media (max-width: @grid-float-breakpoint-max) {
       a {
-        color: darken(@brand-primary, 15%);
+        color: @navbar-default-link-color;
         text-shadow: 1px 1px 1px rgba(255, 255, 255, 0.3);
         font-size: 18px;
       }
@@ -92,6 +92,12 @@
       margin-left: auto;
       display: flex;
       justify-content: space-between;
+
+      > li > a,
+      > li > a:hover,
+      > li > a:focus {
+        color: @navbar-default-link-color;
+      }
     }
   }
 

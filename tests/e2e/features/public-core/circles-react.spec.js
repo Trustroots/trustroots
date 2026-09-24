@@ -113,6 +113,12 @@ test('member navigation menus and narrow layout remain usable', async ({
 
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(header.locator('a[href="/messages"]')).toBeVisible();
+  for (const href of ['/circles', '/search', '/messages', '/navigation']) {
+    await expect(header.locator(`a[href="${href}"] .icon`)).toHaveCSS(
+      'color',
+      'rgb(255, 255, 255)',
+    );
+  }
   const headerBounds = await header.boundingBox();
   expect(headerBounds.x).toBeGreaterThanOrEqual(0);
   expect(headerBounds.x + headerBounds.width).toBeLessThanOrEqual(391);
