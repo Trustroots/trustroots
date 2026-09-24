@@ -37,9 +37,9 @@
     "i18n:check-placeholders": "node ./bin/check-i18n-placeholders.js",
     "i18n": "npm run i18n:extract && npm run i18n:fix-weblate",
     "install-dependencies": "node ./bin/install-deps.js",
-    "lint:watch": "esw --cache --watch --quiet .",
-    "lint": "eslint .",
-    "lint:report": "eslint --output-file ./eslint_report.json --format json .",
+    "lint:watch": "esw --ext .js,.mjs --cache --watch --quiet .",
+    "lint": "eslint --ext .js,.mjs .",
+    "lint:report": "eslint --ext .js,.mjs --output-file ./eslint_report.json --format json .",
     "migrate-down": "migrate down",
     "migrate": "migrate up",
     "postshrinkwrap": "node -e \"fs.utimesSync('./node_modules', new Date(), new Date());\"",
@@ -81,7 +81,7 @@
     "test:server:codex": "TRUSTROOTS_SKIP_LOCAL_CONFIG=true ./scripts/codex/test-server.sh",
     "test:server:files": "node ./scripts/test-server-files.js",
     "test:codex": "npm run test:client && npm run test:server:codex",
-    "test:server:watch": "npm run check-environment && NODE_ENV=test nodemon --watch modules --watch config --watch migrations --watch server.js --ext js --ignore 'modules/*/client/**' --ignore 'modules/*/tests/client/**' --exec 'node ./scripts/test-server.js'",
+    "test:server:watch": "npm run check-environment && NODE_ENV=test nodemon --watch modules --watch config --watch migrations --watch server.js --ext js,mjs --ignore 'modules/*/client/**' --ignore 'modules/*/tests/client/**' --exec 'node ./scripts/test-server.js'",
     "test:server": "NODE_ENV=test node ./scripts/test-server.js",
     "test": "npm run check-environment && npm run lint && npm run test:client && npm run test:server",
     "webpack": "webpack --config config/webpack/webpack.config.js",
@@ -308,7 +308,7 @@
   },
   "license": "AGPL",
   "lint-staged": {
-    "*.js": [
+    "*.{js,mjs}": [
       "npm run reformat-files",
       "eslint"
     ],

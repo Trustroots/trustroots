@@ -12,7 +12,7 @@ const inspectHost = process.env.TRUSTROOTS_NODE_INSPECT_HOST || '127.0.0.1';
 nodemon({
   script: worker ? 'worker.js' : 'server.js',
   nodeArgs: [`--inspect=${inspectHost}:${inspectPort}`],
-  ext: worker ? 'js' : 'js, html',
+  ext: worker ? 'js, mjs' : 'js, mjs, html',
   ignore: [
     'bin/**',
     'migrations/**',
