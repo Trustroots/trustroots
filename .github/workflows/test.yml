@@ -116,6 +116,13 @@ jobs:
             -e NODE_ENV=test \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             dev npm run typecheck
+      - name: Build opt-in Vite assets
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            -e CI=true \
+            -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
+            dev npm run build:vite
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |
