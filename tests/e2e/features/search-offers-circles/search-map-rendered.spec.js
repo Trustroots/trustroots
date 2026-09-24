@@ -752,6 +752,25 @@ test.describe('rendered search map feature coverage', () => {
     await expect(result.getByText(/Berlin Host/i)).toBeVisible();
   });
 
+  test('location search accepts a place with Enter', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-locations', [
+      'Geocoding/map interactions are stubbed deterministically.',
+    ]);
+
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    await page.getByRole('button', { name: 'Search places' }).click();
+    const searchInput = page.getByRole('textbox', { name: 'Search places' });
+    await searchInput.fill('Berlin');
+    await searchInput.press('Enter');
+
+    await expect(searchInput).toBeHidden();
+    await expect(page.locator('.search-map')).toBeVisible();
+  });
+
   test('location search uses deterministic geocoding fixture', async ({
     page,
   }, testInfo) => {

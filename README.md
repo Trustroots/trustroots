@@ -9,6 +9,12 @@
   <br>
 </p>
 
+## Android preview
+
+[![Download Android APK](https://img.shields.io/github/v/release/Trustroots/trustroots?include_prereleases&sort=date&filter=Android%20preview%20%2A&display_name=release&label=Download%20Android%20APK&logo=android)](https://github.com/Trustroots/trustroots/releases)
+
+Download the latest signed Android APK from [GitHub Releases](https://github.com/Trustroots/trustroots/releases). The badge updates automatically when a new Android preview is published after a successful build on `main`.
+
 ## Current development
 
 [![Tests](https://github.com/Trustroots/trustroots/actions/workflows/test.yml/badge.svg)](https://team.trustroots.org/coverage/)
@@ -26,10 +32,6 @@ Priorities:
 - Make Trustroots easier to fork and run independently.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines and tests. See [team.trustroots.org](https://team.trustroots.org/) for more ways to help.
-
-## Android preview
-
-Download the latest signed Android APK from [GitHub Releases](https://github.com/Trustroots/trustroots/releases). A new prerelease is published after a successful Android build on `main`.
 
 ## Medium term plans
 

@@ -106,9 +106,8 @@ ContactListPresentational.propTypes = {
 };
 
 /**
- * This filter is probably different from the AngularJS filter.
- * It filters contacts with users, who contain a given string in one of their string fields (shallow)
- * Case insensitive.
+ * Filters contacts whose user has a string field containing the given text.
+ * Case insensitive, shallow fields only.
  * @TODO improve it!
  */
 function filterContacts(contacts, filter) {

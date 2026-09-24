@@ -28,7 +28,7 @@
 
 .leaflet-top,
 .leaflet-bottom {
-  // Stop angular-ui-bootstrap dropdowns going under leaflet elements
+  // Keep dropdowns above Leaflet controls
   // (e.g. search suggestions list goes under zoom buttons at host offer editor)
   z-index: @zindex-dropdown - 1;
 }
