@@ -27,4 +27,3 @@ external database-backed ACL packages.
 
 - **WHEN** none of a request's roles has permission for its route and method
 - **THEN** the route policy denies the request
-
