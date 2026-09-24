@@ -8,8 +8,7 @@ import { defineConfig } from 'vite';
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL('.', import.meta.url));
-const apiTarget =
-  process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
+const apiTarget = process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
 const port = Number(process.env.PORT) || 3000;
 
 export default defineConfig({
