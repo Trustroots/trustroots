@@ -13,6 +13,7 @@ module.exports = {
       },
     ],
     ['@babel/preset-react'],
+    ['@babel/preset-typescript'],
   ],
   plugins: compact([
     // Always transpile class fields: webpack 4's parser cannot handle the

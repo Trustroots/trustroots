@@ -10,11 +10,12 @@ module.exports = {
     '^.+\\.(css|jpg|png|gif|webp|svg|less|html)$':
       '<rootDir>/jest/jest.empty-module.js',
   },
-  testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.js'],
+  testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.[jt]s?(x)'],
   testEnvironment: 'jsdom',
   collectCoverageFrom: [
-    '<rootDir>/modules/*/client/**/*.js',
+    '<rootDir>/modules/*/client/**/*.{js,ts,tsx}',
     '!<rootDir>/modules/*/tests/**',
+    '!<rootDir>/modules/*/client/**/*.module.{js,ts,tsx}',
     '!<rootDir>/modules/*/client/**/views/**',
     '!<rootDir>/modules/*/client/**/less/**',
   ],
@@ -22,7 +23,7 @@ module.exports = {
   coverageReporters: ['text-summary', 'html', 'json-summary', 'lcov'],
   setupFilesAfterEnv: ['<rootDir>/jest/jest.setup.js'],
   transform: {
-    '^.+\\.js$': 'babel-jest',
+    '^.+\\.[jt]sx?$': 'babel-jest',
   },
   transformIgnorePatterns: ['/node_modules/(?!use-local-storage-state/)'],
 };

@@ -2,7 +2,7 @@ import createSubscribable from '@/modules/core/client/utils/subscribable';
 
 describe('createSubscribable', () => {
   it('notifies all subscribers with the payload', () => {
-    const { subscribe, notify } = createSubscribable();
+    const { subscribe, notify } = createSubscribable<{ count: number }>();
     const first = jest.fn();
     const second = jest.fn();
 
@@ -15,7 +15,7 @@ describe('createSubscribable', () => {
   });
 
   it('stops notifying unsubscribed callbacks', () => {
-    const { subscribe, notify } = createSubscribable();
+    const { subscribe, notify } = createSubscribable<string>();
     const subscriber = jest.fn();
     const unsubscribe = subscribe(subscriber);
 
@@ -27,7 +27,7 @@ describe('createSubscribable', () => {
   });
 
   it('does not skip later subscribers when a callback unsubscribes itself', () => {
-    const { subscribe, notify } = createSubscribable();
+    const { subscribe, notify } = createSubscribable<string>();
     const first = jest.fn();
     const second = jest.fn();
     const unsubscribeFirst = subscribe(payload => {
@@ -47,7 +47,7 @@ describe('createSubscribable', () => {
   });
 
   it('continues notifying other subscribers when one throws', () => {
-    const { subscribe, notify } = createSubscribable();
+    const { subscribe, notify } = createSubscribable<string>();
     const error = new Error('first failed');
     const throwingSubscriber = jest.fn(() => {
       throw error;
@@ -63,7 +63,7 @@ describe('createSubscribable', () => {
   });
 
   it('reports all subscriber errors after notification finishes', () => {
-    const { subscribe, notify } = createSubscribable();
+    const { subscribe, notify } = createSubscribable<void>();
 
     subscribe(() => {
       throw new Error('first failed');
