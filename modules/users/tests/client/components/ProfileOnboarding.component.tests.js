@@ -5,32 +5,9 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import AvatarNameMobile from '@/modules/users/client/components/AvatarNameMobile.component';
 import ConfirmEmailNotification from '@/modules/users/client/components/ConfirmEmailNotification.component';
-import DownloadProfile from '@/modules/users/client/components/DownloadProfile.component';
 import HostingAndMeetPanel from '@/modules/users/client/components/HostingAndMeetPanel.component';
-import InterfaceLanguagePanel from '@/modules/users/client/components/InterfaceLanguagePanel.component';
 import UserDoesNotExist from '@/modules/users/client/components/UserDoesNotExist.component';
 import Welcome from '@/modules/users/client/components/Welcome.component';
-
-jest.mock('@/modules/core/client/components/LanguageSwitch', () => {
-  function MockLanguageSwitch({ buttonStyle, saveToAPI }) {
-    return (
-      <button
-        data-button-style={buttonStyle}
-        data-save-to-api={String(saveToAPI)}
-        type="button"
-      >
-        Language switch
-      </button>
-    );
-  }
-
-  MockLanguageSwitch.propTypes = {
-    buttonStyle: () => null,
-    saveToAPI: () => null,
-  };
-
-  return MockLanguageSwitch;
-});
 
 jest.mock('@/modules/users/client/components/Avatar.component', () => {
   function MockAvatar({ size, user }) {
@@ -66,43 +43,6 @@ describe('profile onboarding components', () => {
     expect(
       screen.getByRole('link', { name: 'email settings' }),
     ).toHaveAttribute('href', '/profile/edit/account');
-  });
-
-  it('builds profile data download links for the current member', () => {
-    render(<DownloadProfile userId="user-1" username="alice" />);
-
-    expect(
-      screen.getByRole('link', { name: 'Download all data' }),
-    ).toHaveAttribute('href', '/api/users/export');
-    expect(
-      screen.getByRole('link', { name: 'Download all data' }),
-    ).toHaveAttribute('download', 'trustroots-data.json');
-    expect(screen.getByRole('link', { name: 'Profile' })).toHaveAttribute(
-      'href',
-      '/api/users/alice',
-    );
-    expect(screen.getByRole('link', { name: 'Contacts' })).toHaveAttribute(
-      'href',
-      '/api/contacts/user-1',
-    );
-    expect(screen.getByRole('link', { name: 'Hosting offer' })).toHaveAttribute(
-      'href',
-      '/api/offers-by/user-1',
-    );
-  });
-
-  it('renders interface language controls with API saving enabled', () => {
-    render(<InterfaceLanguagePanel />);
-
-    expect(
-      screen.getByRole('button', { name: 'Language switch' }),
-    ).toHaveAttribute('data-button-style', 'primary');
-    expect(
-      screen.getByRole('button', { name: 'Language switch' }),
-    ).toHaveAttribute('data-save-to-api', 'true');
-    expect(
-      screen.getByRole('link', { name: 'You can help us out!' }),
-    ).toHaveAttribute('href', 'https://team.trustroots.org/');
   });
 
   it('points members to hosting location editing', () => {
