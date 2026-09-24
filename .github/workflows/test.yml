@@ -26,8 +26,14 @@ permissions:
   packages: write
 
 jobs:
+  changes:
+    uses: ./.github/workflows/ci-changes.yml
+
   build-production-image:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: changes
+    if: >
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -43,7 +49,10 @@ jobs:
           push: false
 
   build-dev-image:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    needs: changes
+    if: >
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     outputs:
       image-ref: ${{ steps.image.outputs.image-ref }}
@@ -73,9 +82,9 @@ jobs:
           push: true
 
   client:
-    needs: build-dev-image
+    needs: [changes, build-dev-image]
     if: >
-      always() &&
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
       (github.event_name != 'workflow_dispatch' || inputs.run_client) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
@@ -169,9 +178,9 @@ jobs:
           if-no-files-found: ignore
 
   server:
-    needs: build-dev-image
+    needs: [changes, build-dev-image]
     if: >
-      always() &&
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
       (github.event_name != 'workflow_dispatch' || inputs.run_server) &&
       (needs.build-dev-image.result == 'success' || needs.build-dev-image.result == 'skipped')
     runs-on: ubuntu-latest
@@ -263,9 +272,9 @@ jobs:
           if-no-files-found: ignore
 
   e2e:
-    needs: build-dev-image
+    needs: [changes, build-dev-image]
     if: >
-      always() &&
+      always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
       (
         (github.event_name == 'workflow_dispatch' && inputs.run_e2e) ||
         (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
@@ -350,8 +359,8 @@ jobs:
           if-no-files-found: ignore
 
   coverage-summary:
-    if: always() && github.event_name == 'pull_request'
-    needs: [client, server, e2e]
+    if: always() && !cancelled() && needs.changes.outputs.run-code != 'false' && github.event_name == 'pull_request'
+    needs: [changes, client, server, e2e]
     runs-on: ubuntu-latest
     permissions:
       actions: read
