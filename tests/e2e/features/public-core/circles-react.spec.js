@@ -137,6 +137,18 @@ test('member navigation menus and narrow layout remain usable', async ({
       'rgb(255, 255, 255)',
     );
   }
+  const mobileLinks = await Promise.all(
+    ['/circles', '/search', '/messages', '/navigation'].map(href =>
+      header.locator(`a[href="${href}"]`).boundingBox(),
+    ),
+  );
+  mobileLinks.forEach((bounds, index) => {
+    expect(bounds.width).toBeGreaterThan(0);
+    if (index > 0) {
+      const previous = mobileLinks[index - 1];
+      expect(bounds.x).toBeGreaterThanOrEqual(previous.x + previous.width);
+    }
+  });
   const headerBounds = await header.boundingBox();
   expect(headerBounds.x).toBeGreaterThanOrEqual(0);
   expect(headerBounds.x + headerBounds.width).toBeLessThanOrEqual(391);
