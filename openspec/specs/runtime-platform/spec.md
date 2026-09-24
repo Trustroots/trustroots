@@ -88,3 +88,10 @@ CommonJS server consumers until those consumers are migrated.
 
 - **WHEN** an ESM server module imports the migrated service
 - **THEN** it can use named exports without a CommonJS namespace adapter
+
+Migration constraints: CommonJS shims expose read-only ESM namespace objects,
+so tests must replace a migrated dependency at the import boundary instead of
+stubbing its named exports. Migrated modules must avoid top-level await while
+CommonJS consumers still use `require()`. Keep per-file `.mjs` modules and their
+`.js` shims during the incremental migration; switch to package-wide ESM and
+remove the shims only after the remaining CommonJS consumers have moved.
