@@ -27,11 +27,11 @@ export default function OfferLocationEditor({
   }
 
   function handleMapLocationChange(nextLocation) {
-    // Map initialisation can report its default centre as a location change.
+    // The unchosen map centre is not an offer location.
     if (
       !location &&
-      Math.abs(nextLocation[0] - DEFAULT_LOCATION.lat) < 0.01 &&
-      Math.abs(nextLocation[1] - DEFAULT_LOCATION.lng) < 0.01
+      nextLocation[0] === DEFAULT_LOCATION.lat &&
+      nextLocation[1] === DEFAULT_LOCATION.lng
     ) {
       return;
     }
@@ -72,7 +72,7 @@ export default function OfferLocationEditor({
           onLocationChange={handleMapLocationChange}
           onClick={event => {
             if (event?.lngLat) {
-              onLocationChange([event.lngLat[1], event.lngLat[0]]);
+              handleMapLocationChange([event.lngLat[1], event.lngLat[0]]);
             }
           }}
           scrollZoom

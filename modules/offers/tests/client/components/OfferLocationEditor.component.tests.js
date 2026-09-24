@@ -71,7 +71,7 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
           type="button"
           onClick={() => onLocationChange([48.690834, 9.140556])}
         >
-          Zoom map
+          Drag near default
         </button>
         <button type="button" onClick={() => onLocationChange([50, 10])}>
           Drag map
@@ -87,6 +87,12 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
           onClick={() => onClick({ lngLat: [2.35, 48.85] })}
         >
           Click map
+        </button>
+        <button
+          type="button"
+          onClick={() => onClick({ lngLat: [9.14055555556, 48.6908333333] })}
+        >
+          Click initial centre
         </button>
         <button type="button" onClick={() => onClick({})}>
           Empty map click
@@ -138,8 +144,13 @@ describe('OfferLocationEditor', () => {
     );
     expect(onLocationChange).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Zoom map' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Click initial centre' }),
+    );
     expect(onLocationChange).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Drag near default' }));
+    expect(onLocationChange).toHaveBeenCalledWith([48.690834, 9.140556]);
 
     fireEvent.click(screen.getByRole('button', { name: 'Drag map' }));
     expect(onLocationChange).toHaveBeenCalledWith([50, 10]);
