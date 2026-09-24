@@ -1,12 +1,6 @@
 {
   "all": true,
-  "extension": [".js", ".mjs", ".cts"],
-  "include": [
-    "config/lib/**/*.cts",
-    "modules/*/server/**/*.js",
-    "modules/*/server/**/*.mjs",
-    "modules/*/server/**/*.cts"
-  ],
+  "include": ["modules/*/server/**/*.js", "modules/*/server/**/*.mjs"],
   "exclude": [
     "modules/*/tests/**",
     "deploy/docker/data/**",

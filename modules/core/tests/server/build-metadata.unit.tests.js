@@ -37,7 +37,10 @@ describe('Build metadata helper', () => {
       buildMetadata.formatUtcDateTime(date),
       '2026-06-21 18:06',
     );
-    assert.strictEqual(typedMetadata.formatUtcDateTime, buildMetadata.formatUtcDateTime);
+    assert.strictEqual(
+      typedMetadata.formatUtcDateTime,
+      buildMetadata.formatUtcDateTime,
+    );
   });
 
   it('builds metadata from git log output', () => {

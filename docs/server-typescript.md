@@ -11,3 +11,5 @@ CommonJS callers.
 
 The authentication service and build-metadata helper are the first runtime
 modules. Their tests exercise the adapters and the typed implementations.
+The current NYC server coverage report instruments the CommonJS adapters but
+does not yet measure the native `.cts` sources.
