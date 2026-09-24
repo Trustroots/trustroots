@@ -236,6 +236,28 @@ describe('User Model Unit Tests:', function () {
       stored.email.should.equal(user3.email);
     });
 
+    it('reports a duplicate username on findOneAndUpdate without changing the user', async function () {
+      const first = await new User(user).save();
+      const second = await new User(user3).save();
+
+      try {
+        await User.findOneAndUpdate(
+          { _id: second._id },
+          { $set: { username: first.username } },
+          { new: true },
+        );
+        throw new Error(
+          'Expected the unique username index to reject the update',
+        );
+      } catch (err) {
+        err.should.be.instanceof(mongoose.Error.ValidationError);
+        err.errors.username.message.should.equal('Username exists already.');
+      }
+
+      const stored = await User.findById(second._id);
+      stored.username.should.equal(user3.username);
+    });
+
     it('keeps unknown query fields in the MongoDB filter', async function () {
       await new User(user).save();
 
