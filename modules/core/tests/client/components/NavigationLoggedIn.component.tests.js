@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -40,10 +40,13 @@ describe('<NavigationLoggedIn />', () => {
       '/search',
     );
     fireEvent.click(screen.getByRole('button', { name: 'Support' }));
-    expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
-      'href',
-      '/safety',
-    );
+    const supportMenu = screen
+      .getByRole('button', { name: 'Support' })
+      .closest('li')
+      .querySelector('.dropdown-menu');
+    expect(
+      within(supportMenu).getByRole('link', { name: 'Safety' }),
+    ).toHaveAttribute('href', '/safety');
     fireEvent.click(screen.getByRole('button', { name: /avatar/i }));
     expect(screen.getAllByText('Alice Example').length).toBe(2);
     expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute(

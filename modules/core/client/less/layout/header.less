@@ -13,6 +13,7 @@
 
   > .container {
     min-height: @navbar-height;
+    justify-content: flex-start;
   }
 
   .navbar {
@@ -60,8 +61,9 @@
     .dropdown-menu {
       a {
         text-shadow: none;
-        &[role='menuitem']:active,
-        &[role='menuitem']:focus {
+        &.active,
+        &:active,
+        &:focus {
           outline: none;
           color: @navbar-default-color;
           background: @brand-primary;
@@ -84,10 +86,10 @@
   }
 
   .nav-header-primary {
-    float: right;
+    margin-left: auto;
 
     @media (max-width: @grid-float-breakpoint-max) {
-      float: none;
+      margin-left: auto;
       display: flex;
       justify-content: space-between;
     }

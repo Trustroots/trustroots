@@ -20,6 +20,15 @@
 }
 
 .button-variant(@color, @background, @border) {
+  --bs-btn-color: @color;
+  --bs-btn-bg: @background;
+  --bs-btn-border-color: @border;
+  --bs-btn-hover-color: @color;
+  --bs-btn-hover-bg: darken(@background, 5%);
+  --bs-btn-hover-border-color: darken(@border, 5%);
+  --bs-btn-active-color: @color;
+  --bs-btn-active-bg: darken(@background, 8%);
+  --bs-btn-active-border-color: darken(@border, 8%);
   color: @color;
   background-color: @background;
   border-color: @border;

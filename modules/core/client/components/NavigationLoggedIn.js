@@ -38,8 +38,10 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </Navbar.Brand>
       </div>
 
-      <Nav className="hidden-xs">
+      <Nav as="ul" className="hidden-xs">
         <NavDropdown
+          as="li"
+          renderMenuOnMount
           className="hidden-xs cursor-pointer"
           id="support-dropdown"
           title={t('Support')}
@@ -55,7 +57,7 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
         </NavDropdown>
       </Nav>
 
-      <Nav className="nav-header-primary">
+      <Nav as="ul" className="nav-header-primary">
         <MenuItem
           currentPath={currentPath}
           path="/circles"
@@ -112,6 +114,8 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
           Nostroots
         </MenuItem>
         <NavDropdown
+          as="li"
+          renderMenuOnMount
           className="dropdown-user hidden-xs cursor-pointer"
           id="profile-dropdown"
           align="end"

@@ -2,6 +2,11 @@
 
 // Classes still present in React page markup. Keep their Bootstrap 3 viewport
 // boundaries while the layouts move to Bootstrap 5's grid and utilities.
+:root {
+  --bs-body-font-size: @font-size-base;
+  --bs-body-line-height: @line-height-base;
+}
+
 body {
   font-size: @font-size-base;
   color: @text-color;
@@ -10,9 +15,24 @@ body {
 
 a {
   color: @link-color;
+  text-decoration: none;
+  &:hover,
+  &:focus {
+    color: @link-hover-color;
+    text-decoration: underline;
+  }
 }
 
 .btn-default {
+  --bs-btn-color: @btn-default-color;
+  --bs-btn-bg: @btn-default-bg;
+  --bs-btn-border-color: @btn-default-border;
+  --bs-btn-hover-color: @btn-default-color;
+  --bs-btn-hover-bg: darken(@btn-default-bg, 5%);
+  --bs-btn-hover-border-color: @btn-default-border;
+  --bs-btn-active-color: @btn-default-color;
+  --bs-btn-active-bg: darken(@btn-default-bg, 8%);
+  --bs-btn-active-border-color: @btn-default-border;
   color: @btn-default-color;
   background: @btn-default-bg;
   border: 1px solid @btn-default-border;
@@ -61,12 +81,79 @@ a {
   max-width: 100%;
   height: auto;
 }
+.img-circle {
+  border-radius: 50%;
+}
+.form-control.input-lg {
+  height: 46px;
+  padding: 10px 16px;
+  font-size: @font-size-large;
+  border-radius: @border-radius-large;
+}
+.btn-block {
+  display: block;
+  width: 100%;
+}
+.btn-group-justified {
+  display: flex;
+  width: 100%;
+  > .btn,
+  > .btn-group {
+    flex: 1;
+  }
+}
+.form-control-static {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  margin-bottom: 0;
+}
+.close {
+  float: right;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1;
+  color: #000;
+  opacity: 0.2;
+  background: transparent;
+  border: 0;
+}
+.close:hover,
+.close:focus {
+  opacity: 0.5;
+}
+.checkbox-inline {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 10px;
+}
 .help-block {
   display: block;
   color: @text-muted;
 }
 .control-label {
   font-weight: 600;
+}
+label {
+  font-weight: 700;
+}
+.form-control {
+  font-size: @font-size-base;
+}
+.form-horizontal .form-group {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+
+  > [class*='col-'] {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+}
+@media (min-width: @screen-sm-min) {
+  .form-horizontal .control-label {
+    text-align: right;
+  }
 }
 .form-group {
   margin-bottom: 15px;
@@ -96,6 +183,9 @@ a {
 .media-left {
   flex: none;
   padding-right: 10px;
+}
+.media-object {
+  display: block;
 }
 .media-body {
   flex: 1;
@@ -261,11 +351,35 @@ a {
 }
 @media (min-width: 768px) and (max-width: @screen-sm-max) {
   .stack-legacy-columns(md);
+  .make-legacy-columns(xs);
   .make-legacy-columns(sm);
 }
 @media (min-width: 992px) and (max-width: @screen-md-max) {
   .stack-legacy-columns(lg);
+  .make-legacy-columns(xs);
+  .make-legacy-columns(sm);
   .make-legacy-columns(md);
+}
+
+@media (min-width: 576px) and (max-width: @screen-xs-max) {
+  .container {
+    max-width: none;
+  }
+}
+@media (min-width: @screen-sm-min) and (max-width: @screen-sm-max) {
+  .container {
+    max-width: 750px;
+  }
+}
+@media (min-width: @screen-md-min) and (max-width: @screen-md-max) {
+  .container {
+    max-width: 970px;
+  }
+}
+@media (min-width: @screen-lg-min) {
+  .container {
+    max-width: 1170px;
+  }
 }
 
 @media (max-width: @screen-xs-max) {

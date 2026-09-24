@@ -62,8 +62,6 @@ export default function Recommend({
         >
           <ToggleButton
             id="recommend-yes"
-            className="btn btn-lg"
-            aria-checked={recommend === 'yes'}
             value="yes"
             variant="outline-secondary"
             size="lg"
@@ -72,8 +70,6 @@ export default function Recommend({
           </ToggleButton>
           <ToggleButton
             id="recommend-no"
-            className="btn btn-lg"
-            aria-checked={recommend === 'no'}
             value="no"
             variant="outline-secondary"
             size="lg"
@@ -83,7 +79,6 @@ export default function Recommend({
           <RecommendationDivider />
           <ToggleButton
             id="recommend-unknown"
-            aria-checked={recommend === 'unknown'}
             value="unknown"
             variant="outline-secondary"
             size="lg"
