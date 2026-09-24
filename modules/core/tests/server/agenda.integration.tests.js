@@ -10,11 +10,13 @@ describe('Agenda integration tests', function () {
   const recurringJobName = 'agenda integration recurring job';
   const preserveJobName = 'agenda integration preserve nextRunAt';
   const productionShapedJobName = 'agenda integration production shaped job';
+  const restartedJobName = 'agenda integration restarted worker job';
   const jobNames = [
     immediateJobName,
     recurringJobName,
     preserveJobName,
     productionShapedJobName,
+    restartedJobName,
   ];
   // Agenda schedules the first human-interval run as "now"; by the time the
   // document is persisted that timestamp can already be slightly in the past.
@@ -149,6 +151,34 @@ describe('Agenda integration tests', function () {
     jobs[0].attrs.lastFinishedAt
       .getTime()
       .should.equal(lastFinishedAt.getTime());
+  });
+
+  it('preserves a recurring schedule when a new Agenda instance registers it', async function () {
+    agenda.define(restartedJobName, function () {});
+    await agenda.every('5 minutes', restartedJobName);
+
+    const nextRunAt = new Date(Date.now() + 60 * 60 * 1000);
+    await jobsCollection.updateOne(
+      { name: restartedJobName },
+      { $set: { nextRunAt } },
+    );
+
+    const restartedAgenda = new Agenda({
+      db: { address: config.db.uri, collection },
+    });
+    try {
+      await new Promise(function (resolve) {
+        restartedAgenda.once('ready', resolve);
+      });
+      restartedAgenda.define(restartedJobName, function () {});
+      await restartedAgenda.every('5 minutes', restartedJobName);
+
+      const jobs = await restartedAgenda.jobs({ name: restartedJobName });
+      jobs.length.should.equal(1);
+      jobs[0].attrs.nextRunAt.getTime().should.equal(nextRunAt.getTime());
+    } finally {
+      await restartedAgenda.close();
+    }
   });
 
   it('persists and executes an immediate job', async function () {
