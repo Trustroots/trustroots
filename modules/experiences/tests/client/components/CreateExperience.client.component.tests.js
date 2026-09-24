@@ -9,10 +9,12 @@ import {
 import '@testing-library/jest-dom';
 
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
+import * as supportApi from '@/modules/support/client/api/support.api';
 
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
 
 jest.mock('@/modules/experiences/client/api/experiences.api');
+jest.mock('@/modules/support/client/api/support.api');
 afterEach(() => jest.clearAllMocks());
 
 async function waitForLoader() {
@@ -204,7 +206,7 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    expect(experiencesApi.report).toHaveBeenCalledWith(
+    expect(supportApi.reportMember).toHaveBeenCalledWith(
       userTo,
       'they were mean to me',
     );
