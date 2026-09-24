@@ -5,6 +5,12 @@ plugins {
 
 val configuredApiURL = providers.gradleProperty("trustrootsApiUrl")
     .orElse("https://www.trustroots.org")
+val configuredMapboxToken = providers.gradleProperty("trustrootsMapboxToken")
+    .orElse(providers.environmentVariable("TRUSTROOTS_MAPBOX_TOKEN"))
+    .orElse("")
+val buildEpochSeconds = providers.exec {
+    commandLine("date", "+%s")
+}.standardOutput.asText.map(String::trim)
 
 android {
     namespace = "org.trustroots.android"
@@ -17,6 +23,8 @@ android {
         versionCode = 1
         versionName = "0.1.0"
         buildConfigField("String", "API_BASE_URL", "\"${configuredApiURL.get()}\"")
+        buildConfigField("String", "MAPBOX_PUBLIC_TOKEN", "\"${configuredMapboxToken.get()}\"")
+        buildConfigField("long", "BUILD_EPOCH_SECONDS", "${buildEpochSeconds.get()}L")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -62,6 +70,9 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.webkit:webkit:1.17.1")
+    implementation("com.squareup.okhttp3:okhttp:5.3.2")
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")

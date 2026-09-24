@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,7 +42,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,6 +60,11 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -75,8 +84,20 @@ import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 fun TrustrootsApp() {
     val context = LocalContext.current
     val sessionStore = remember { SecureMobileSessionStore(context.applicationContext) }
-    var session by remember { mutableStateOf(sessionStore.load()) }
+    var session by remember { mutableStateOf<MemberSession?>(null) }
+    var starting by remember { mutableStateOf(true) }
     var signedOutMessage by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(sessionStore) {
+        val startedAt = android.os.SystemClock.elapsedRealtime()
+        session = withContext(Dispatchers.IO) { sessionStore.load() }
+        val remaining = 700 - (android.os.SystemClock.elapsedRealtime() - startedAt)
+        if (remaining > 0) delay(remaining)
+        starting = false
+    }
+    if (starting) {
+        StartupScreen(session?.member?.displayName?.substringBefore(' '))
+        return
+    }
     if (session == null) {
         SignInScreen(
             initialMessage = signedOutMessage,
@@ -104,6 +125,45 @@ fun TrustrootsApp() {
 }
 
 @Composable
+internal fun StartupScreen(firstName: String?) {
+    val buildDate = rememberBuildDate()
+    Box(Modifier.fillMaxSize().background(TrustrootsPaleGreen).safeDrawingPadding()) {
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.trustroots_logo),
+                contentDescription = "Trustroots",
+                modifier = Modifier.size(180.dp),
+            )
+            Text("Travellers’ community", style = MaterialTheme.typography.titleMedium)
+            if (!firstName.isNullOrBlank()) {
+                Text(
+                    "Hi $firstName",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(top = 24.dp),
+                )
+            }
+        }
+        Text(
+            "Build: $buildDate",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
+        )
+    }
+}
+
+@Composable
+private fun rememberBuildDate(): String {
+    return remember {
+        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT)
+            .format(Date(BuildConfig.BUILD_EPOCH_SECONDS * 1_000))
+    }
+}
+
+@Composable
 private fun SignInScreen(
     initialMessage: String?,
     onSignedIn: (MemberSession) -> Unit,
@@ -115,13 +175,7 @@ private fun SignInScreen(
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
     val scope = rememberCoroutineScope()
     val api = remember { MobileApiClient(BuildConfig.API_BASE_URL) }
-    val context = LocalContext.current
-    val buildDate = remember {
-        val installedAt = context.packageManager
-            .getPackageInfo(context.packageName, 0)
-            .lastUpdateTime
-        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(installedAt))
-    }
+    val buildDate = rememberBuildDate()
     val attemptSignIn: () -> Unit = {
         scope.launch {
             isLoading = true
@@ -157,7 +211,7 @@ private fun SignInScreen(
             Image(
                 painter = painterResource(R.drawable.trustroots_logo),
                 contentDescription = "Trustroots",
-                modifier = Modifier.size(124.dp),
+                modifier = Modifier.size(156.dp),
             )
             Text("Travellers’ community", style = MaterialTheme.typography.titleMedium)
             Text(
@@ -271,25 +325,41 @@ private fun MemberShell(
     var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
     var accountMessage by remember { mutableStateOf<String?>(null) }
     var isAccountActionRunning by remember { mutableStateOf(false) }
+    var accountActionLabel by remember { mutableStateOf<String?>(null) }
+    var hasUnreadMessages by remember { mutableStateOf(false) }
+    var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var circlesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val api = remember { MobileApiClient(BuildConfig.API_BASE_URL) }
+    LaunchedEffect(session, destination, messagesNavigationID) {
+        while (true) {
+            api.inbox(session).onSuccess { threads ->
+                hasUnreadMessages = threads.any { !it.read }
+            }
+            delay(60_000)
+        }
+    }
     Scaffold(
         topBar = {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(TrustrootsGreen)
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                    .statusBarsPadding()
+                    .padding(horizontal = 10.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.SpaceAround,
             ) {
                 Destination.entries.forEach { item ->
                     IconButton(
                         onClick = {
+                            if (item == Destination.Messages) messagesNavigationID++
+                            if (item == Destination.Circles) circlesNavigationID++
                             destination = item
                             menuPage = MenuPage.Menu
                             browserRoute = null
                         },
                     ) {
+                        Box {
                         Icon(
                             imageVector = when (item) {
                                 Destination.Circles -> Icons.Default.Groups
@@ -300,6 +370,14 @@ private fun MemberShell(
                             contentDescription = item.label,
                             tint = Color.White,
                         )
+                        if (item == Destination.Messages && hasUnreadMessages) {
+                            Badge(
+                                modifier = Modifier.align(Alignment.TopEnd),
+                                containerColor = Color.Red,
+                                contentColor = Color.White,
+                            ) { Text("1") }
+                        }
+                        }
                     }
                 }
             }
@@ -321,18 +399,23 @@ private fun MemberShell(
                         openAccount = { menuPage = MenuPage.Account },
                         openBrowser = { browserRoute = it },
                     )
-                    MenuPage.Profile -> ProfileScreen(
+                    MenuPage.Profile -> MemberProfileScreen(
+                        api = api,
                         session = session,
+                        username = session.member.username,
+                        onSessionInvalidated = onSessionInvalidated,
                         onBack = { menuPage = MenuPage.Menu },
                     )
                     MenuPage.Account -> AccountScreen(
                         session = session,
                         accountMessage = accountMessage,
                         isActionRunning = isAccountActionRunning,
+                        actionLabel = accountActionLabel,
                         onBack = { menuPage = MenuPage.Menu },
                         onCheckAccount = {
                             scope.launch {
                                 isAccountActionRunning = true
+                                accountActionLabel = "Checking account…"
                                 api.currentMember(session)
                                     .onSuccess { accountMessage = "Signed in as ${it.displayName}." }
                                     .onFailure {
@@ -343,6 +426,7 @@ private fun MemberShell(
                                         }
                                     }
                                 isAccountActionRunning = false
+                                accountActionLabel = null
                             }
                         },
                         onResetPassword = {
@@ -352,33 +436,37 @@ private fun MemberShell(
                             )
                         },
                         onSignedOut = {
-                            scope.launch {
-                                isAccountActionRunning = true
+                            onSignedOut()
+                            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
                                 api.signOut(session)
-                                onSignedOut()
                             }
                         },
                     )
                 }
             } else {
-                PlaceholderScreen(destination = destination, session = session)
+                when (destination) {
+                    Destination.Circles -> key(circlesNavigationID) {
+                        CirclesScreen(api, session, onSessionInvalidated)
+                    }
+                    Destination.Search -> SearchHubScreen(api, session, onSessionInvalidated)
+                    Destination.Messages -> key(messagesNavigationID) {
+                        MessageInboxScreen(api, session, onSessionInvalidated)
+                    }
+                    else -> PlaceholderScreen(destination = destination, session = session)
+                }
             }
         }
     }
 }
 
 @Composable
-private fun MenuScreen(
+internal fun MenuScreen(
     session: MemberSession,
     openProfile: () -> Unit,
     openAccount: () -> Unit,
     openBrowser: (BrowserRoute) -> Unit,
 ) {
-    val context = LocalContext.current
-    val buildDate = remember {
-        val installedAt = context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime
-        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(installedAt))
-    }
+    val buildDate = rememberBuildDate()
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -504,10 +592,11 @@ private fun ProfileScreen(session: MemberSession, onBack: () -> Unit) {
 }
 
 @Composable
-private fun AccountScreen(
+internal fun AccountScreen(
     session: MemberSession,
     accountMessage: String?,
     isActionRunning: Boolean,
+    actionLabel: String?,
     onBack: () -> Unit,
     onCheckAccount: () -> Unit,
     onResetPassword: () -> Unit,
@@ -531,6 +620,12 @@ private fun AccountScreen(
             enabled = !isActionRunning,
             modifier = Modifier.padding(top = 20.dp),
         ) { Text("Check account") }
+        actionLabel?.let { label ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                Text(label, modifier = Modifier.padding(start = 10.dp))
+            }
+        }
         TextButton(onClick = onResetPassword) { Text("Forgot your password?") }
         accountMessage?.let {
             Text(

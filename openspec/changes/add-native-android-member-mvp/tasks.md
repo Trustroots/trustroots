@@ -9,11 +9,12 @@
 ## 2. Native member MVP
 
 - [ ] 2.1 Implement profile viewing and editing.
-- [ ] 2.2 Implement circle browsing, details and membership changes.
-- [ ] 2.3 Implement native map search and host details.
-- [ ] 2.4 Implement inboxes, conversations and message sending.
+- [x] 2.2 Implement circle browsing, details and membership changes.
+- [x] 2.3 Implement native map search and host details.
+- [x] 2.4 Implement inboxes, conversations and message sending.
 - [ ] 2.5 Implement native experiences and account settings.
 - [ ] 2.6 Add local filters and account-scoped offline read caching.
+- [x] 2.7 Add native member search and profile viewing.
 
 ## 3. Browser fallback and identity
 
@@ -24,7 +25,9 @@
 ## 4. Verification and distribution
 
 - [x] 4.1 Add API-client contract and session-storage unit tests.
-- [ ] 4.2 Add Compose UI tests for the core member journeys.
+- [ ] 4.2 Add Compose UI tests for the core member journeys (member search,
+      profile viewing, circles, map loading, messaging and account responsiveness
+      covered; other journeys remain).
 - [x] 4.3 Validate the OpenSpec change and run Android lint and tests.
 - [ ] 4.4 Add internal-testing release documentation and privacy metadata.
 
