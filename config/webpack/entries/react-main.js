@@ -12,17 +12,13 @@ import { enable as enableFaviconUpdater } from '@/modules/messages/client/servic
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './main.less';
 
-// This file is loaded by main.less; do not include it twice in the CSS bundle.
-importAll(
-  require.context(
-    '../../../modules/',
-    true,
-    /^(?!.*\/bootstrap\/legacy-classes\.less$).*\.less$/,
-  ),
-);
+// main.less already includes the site-owned Bootstrap compatibility styles.
+importAll(require.context('../../../modules/', true, /\.less$/));
 
 function importAll(r) {
-  r.keys().forEach(r);
+  r.keys()
+    .filter(key => key !== './core/client/less/bootstrap/legacy-classes.less')
+    .forEach(r);
 }
 
 function enableMessageShellServices() {
