@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { execFileSync } = require('child_process');
 const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 
@@ -6,6 +7,40 @@ const buildMetadata = require('../../../../config/lib/build-metadata');
 const typedMetadata = require('../../../../config/lib/build-metadata.cts');
 
 describe('Build metadata helper', () => {
+  it('loads both typed helpers with Node native type stripping', () => {
+    const authenticationPath = require.resolve(
+      '../../../../modules/users/server/services/authentication.server.service.cts',
+    );
+    const metadataPath = require.resolve(
+      '../../../../config/lib/build-metadata.cts',
+    );
+    const output = execFileSync(
+      process.execPath,
+      [
+        '-e',
+        `const auth = require(process.argv[1]);
+const metadata = require(process.argv[2]);
+process.stdout.write(JSON.stringify({
+  username: auth.validateUsername('traveller', () => false),
+  date: metadata.formatUtcDateTime(new Date('2026-06-21T18:06:12Z')),
+}));`,
+        authenticationPath,
+        metadataPath,
+      ],
+      {
+        env: {
+          OPENSSL_CONF: process.env.OPENSSL_CONF,
+          PATH: process.env.PATH,
+        },
+      },
+    ).toString();
+
+    assert.deepStrictEqual(JSON.parse(output), {
+      username: true,
+      date: '2026-06-21 18:06',
+    });
+  });
+
   const buildEnvironmentVariables = [
     'TRUSTROOTS_BUILD_BRANCH',
     'TRUSTROOTS_BUILD_COMMIT',
