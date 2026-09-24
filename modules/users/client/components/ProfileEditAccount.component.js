@@ -295,6 +295,14 @@ export default function ProfileEditAccount({ user }) {
       </div>
 
       <div className="panel panel-default">
+        <div className="panel-body">
+          <a className="btn btn-default" href="/api/users/export">
+            {t('Download your data')}
+          </a>
+        </div>
+      </div>
+
+      <div className="panel panel-default">
         <div className="panel-heading">{t('Remove profile')}</div>
         <div className="panel-body">
           <div className="checkbox">

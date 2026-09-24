@@ -64,6 +64,9 @@ describe('ProfileEditAccount', () => {
     expect(screen.getByLabelText('Current password')).toBeInTheDocument();
     expect(screen.getByText('Community newsletter')).toBeInTheDocument();
     expect(
+      screen.getByRole('link', { name: 'Download your data' }),
+    ).toHaveAttribute('href', '/api/users/export');
+    expect(
       screen.getByLabelText('Yes, I want to remove my profile'),
     ).toBeInTheDocument();
   });
