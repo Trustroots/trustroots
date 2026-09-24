@@ -40,6 +40,12 @@ test.describe('seeded message API flows', () => {
       db.collection('messages').findOne({ _id: new ObjectId(message._id) }),
     );
     expect(persisted.content).toBe(content);
+    const thread = await page.request.get(
+      `/api/messages/${SEEDED_MEMBERS[1].id}`,
+    );
+    expect((await thread.json()).map(reply => reply.content)).toContain(
+      content,
+    );
   });
 
   for (const role of ['welcome-team', 'admin']) {
