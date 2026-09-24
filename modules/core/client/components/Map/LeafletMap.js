@@ -39,7 +39,7 @@ export default function LeafletMap({
     L.tileLayer(tiles.url, tiles.options).addTo(map);
 
     mapRef.current = map;
-    map.on('moveend', () => {
+    map.on('dragend', () => {
       if (locationChangeRef.current) {
         const centre = map.getCenter();
         locationChangeRef.current([centre.lat, centre.lng]);

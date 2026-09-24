@@ -53,7 +53,7 @@ test('welcome team location correction review sends from the current member', as
 
     await signInViaApi(page, request, sender);
     await page.goto('/admin/location-corrections');
-    await expect(page.getByText('Exact former default')).toBeVisible();
+    await expect(page.getByText('Exact default location')).toBeVisible();
     await page
       .getByRole('button', { name: `Review ${recipient.username}` })
       .click();
