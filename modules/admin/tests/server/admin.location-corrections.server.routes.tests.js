@@ -276,6 +276,17 @@ describe('Welcome team location corrections', () => {
       .expect(200);
     changed.should.have.length(1);
     changed[0].key.should.not.equal(candidate.key);
+    await teamAgent
+      .post('/api/admin/location-corrections/send')
+      .send({
+        userId: changed[0].userId,
+        key: changed[0].key,
+        content: 'Please check the updated location.',
+      })
+      .expect(200);
+    (
+      await teamAgent.get('/api/admin/location-corrections').expect(200)
+    ).body.should.have.length(0);
   });
 
   it('repairs the thread on a retry after message storage succeeded', async () => {
