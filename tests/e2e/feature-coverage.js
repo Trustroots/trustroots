@@ -2630,6 +2630,37 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'admin.location-corrections',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Welcome team members can review and contact members whose offers may use the former map default.',
+    roles: ['admin', 'welcome-team'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-location-corrections',
+          '/admin/location-corrections',
+          source.adminClient,
+          { requiresAuth: true, requiresRole: ['admin', 'welcome-team'] },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/location-corrections', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/location-corrections/send',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Welcome team reviews a default-location candidate.',
+      'Welcome team sends a personalised message and the candidate leaves the queue.',
+    ],
+    relatedSpecs: [],
+  },
+  {
     id: 'admin.messages',
     area: AREA.adminModeration,
     status: STATUS.active,

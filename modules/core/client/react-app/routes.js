@@ -20,6 +20,7 @@ import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcqu
 import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
+import AdminLocationCorrections from '@/modules/admin/client/components/AdminLocationCorrections.component';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
 import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
 import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers.component';
@@ -190,6 +191,7 @@ const renderByPath = {
   ),
   '/admin/audit-log': () => <AdminAuditLog />,
   '/admin/messages': () => <AdminMessages />,
+  '/admin/location-corrections': () => <AdminLocationCorrections />,
   '/admin/newsletter': () => <AdminNewsletter />,
   '/admin/reference-threads': () => <AdminReferenceThreads />,
   '/admin/search-users': () => <AdminSearchUsers />,

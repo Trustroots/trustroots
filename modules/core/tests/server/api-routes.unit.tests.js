@@ -505,6 +505,10 @@ describe('API route registrations', () => {
       'adminAcquisitionStories',
     );
     const auditLog = controller(['list', 'record'], 'adminAuditLog');
+    const locationCorrections = controller(
+      ['list', 'send'],
+      'adminLocationCorrections',
+    );
     const messages = controller(['getMessages'], 'adminMessages');
     const newsletter = controller(
       [
@@ -537,6 +541,8 @@ describe('API route registrations', () => {
         '../controllers/admin.acquisition-stories.server.controller':
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
+        '../controllers/admin.location-corrections.server.controller':
+          locationCorrections,
         '../controllers/admin.messages.server.controller': messages,
         '../controllers/admin.newsletter.server.controller': newsletter,
         '../controllers/admin.notes.server.controller': notes,
@@ -548,6 +554,14 @@ describe('API route registrations', () => {
       },
     );
 
+    assertHandlers(routeByPath(routes, '/api/admin/location-corrections').get, [
+      auditLog.record,
+      locationCorrections.list,
+    ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/location-corrections/send').post,
+      [auditLog.record, locationCorrections.send],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/acquisition-stories').post, [
       auditLog.record,
       acquisitionStories.list,

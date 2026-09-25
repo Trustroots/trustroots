@@ -44,6 +44,11 @@ describe('Admin policy unit tests', () => {
     const welcome = policies.shift();
     welcome.roles.should.deepEqual(['welcome-team']);
     welcome.allows.should.deepEqual([
+      { resources: '/api/admin/location-corrections', permissions: ['get'] },
+      {
+        resources: '/api/admin/location-corrections/send',
+        permissions: ['post'],
+      },
       { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
       {
         resources: '/api/admin/acquisition-stories/analysis',

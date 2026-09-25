@@ -59,6 +59,10 @@ describe('OfferMeetEditPage', () => {
     const date = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
     fireEvent.change(expiry, { target: { value: date } });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+    fireEvent.click(
+      document.querySelector('[data-testid="location-editor"] button'),
+    );
     fireEvent.submit(document.querySelector('form'));
     await waitFor(() =>
       expect(offersApi.createOffer).toHaveBeenCalledWith(
@@ -86,6 +90,14 @@ describe('OfferMeetEditPage', () => {
     });
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     expect(await screen.findByTestId('location-editor')).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Finish editing and save' }),
+    ).toBeDisabled();
+    fireEvent.submit(document.querySelector('form'));
+    expect(offersApi.createOffer).not.toHaveBeenCalled();
+    fireEvent.click(
+      document.querySelector('[data-testid="location-editor"] button'),
+    );
     fireEvent.click(
       screen.getByRole('button', { name: 'Finish editing and save' }),
     );
@@ -95,6 +107,7 @@ describe('OfferMeetEditPage', () => {
         expect.objectContaining({
           description: 'Coffee in the park.',
           type: 'meet',
+          location: [52, 4],
         }),
       );
     });
@@ -150,6 +163,9 @@ describe('OfferMeetEditPage', () => {
       target: { value: 'Coffee in the park.' },
     });
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+    fireEvent.click(
+      document.querySelector('[data-testid="location-editor"] button'),
+    );
     fireEvent.submit(document.querySelector('form'));
 
     await waitFor(() => {

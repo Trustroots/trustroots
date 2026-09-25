@@ -15,6 +15,11 @@ exports.invokeRolesPolicies = () => {
     {
       roles: ['welcome-team'],
       allows: [
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
+        {
+          resources: '/api/admin/location-corrections/send',
+          permissions: ['post'],
+        },
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
         {
           resources: '/api/admin/acquisition-stories/analysis',
@@ -25,6 +30,11 @@ exports.invokeRolesPolicies = () => {
     {
       roles: ['admin'],
       allows: [
+        { resources: '/api/admin/location-corrections', permissions: ['get'] },
+        {
+          resources: '/api/admin/location-corrections/send',
+          permissions: ['post'],
+        },
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
         {
           resources: '/api/admin/acquisition-stories/analysis',

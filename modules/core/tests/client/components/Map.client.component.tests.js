@@ -109,12 +109,31 @@ it('synchronises panning and external place searches while retaining zoom', () =
   act(() =>
     mockMapGL.mock.calls
       .slice(-1)[0][0]
-      .onViewportChange({ latitude: 51, longitude: 11, zoom: 15 }),
+      .onViewportChange(
+        { latitude: 51, longitude: 11, zoom: 15 },
+        { isPanning: true, isZooming: false },
+      ),
   );
   expect(onLocationChange).toHaveBeenCalledWith([51, 11]);
+  onLocationChange.mockClear();
+  act(() =>
+    mockMapGL.mock.calls
+      .slice(-1)[0][0]
+      .onViewportChange(
+        { latitude: 51, longitude: 11, zoom: 16 },
+        { isPanning: true, isZooming: true },
+      ),
+  );
+  expect(onLocationChange).not.toHaveBeenCalled();
+  act(() =>
+    mockMapGL.mock.calls
+      .slice(-1)[0][0]
+      .onViewportChange({ latitude: 51, longitude: 11, zoom: 16 }),
+  );
+  expect(onLocationChange).not.toHaveBeenCalled();
   rerender(<Map location={[52, 12]} onLocationChange={onLocationChange} />);
   expect(mockMapGL.mock.calls.slice(-1)[0][0]).toEqual(
-    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 15 }),
+    expect.objectContaining({ latitude: 52, longitude: 12, zoom: 16 }),
   );
 });
 it('allows maps to pan without a location callback', () => {

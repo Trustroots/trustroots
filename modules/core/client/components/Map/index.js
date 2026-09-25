@@ -36,9 +36,15 @@ export default function Map(props) {
     }));
   }, [location[0], location[1]]);
 
-  function handleViewportChange(nextViewport) {
+  function handleViewportChange(nextViewport, interactionState) {
     setViewport(nextViewport);
-    if (onLocationChange) {
+    // Zoom controls and external place searches also change the viewport.
+    // Only a deliberate pan should choose a new offer location.
+    if (
+      onLocationChange &&
+      interactionState?.isPanning &&
+      !interactionState.isZooming
+    ) {
       onLocationChange([nextViewport.latitude, nextViewport.longitude]);
     }
   }
