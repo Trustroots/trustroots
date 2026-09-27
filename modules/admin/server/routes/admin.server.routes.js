@@ -11,6 +11,7 @@ const adminUsers = require('../controllers/admin.users.server.controller');
 const adminDashboard = require('../controllers/admin.dashboard.server.controller');
 const adminNotes = require('../controllers/admin.notes.server.controller');
 const adminReferenceThreads = require('../controllers/admin.reference-threads.server.controller');
+const adminExperienceChanges = require('../controllers/admin.experience-changes.server.controller');
 
 module.exports = app => {
   app
@@ -92,6 +93,26 @@ module.exports = app => {
     .route('/api/admin/reference-threads')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminReferenceThreads.list);
+
+  app
+    .route('/api/admin/experiences')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.findExperiences);
+
+  app
+    .route('/api/admin/experiences/:id/change-links')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.issueLink);
+
+  app
+    .route('/api/admin/experience-change-requests')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminExperienceChanges.listRequests);
+
+  app
+    .route('/api/admin/experience-change-requests/:id/decision')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminExperienceChanges.decide);
 
   app
     .route('/api/admin/newsletter-subscribers/split')

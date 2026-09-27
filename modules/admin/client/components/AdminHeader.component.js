@@ -31,6 +31,10 @@ export default function AdminHeader() {
       label: 'Reference threads',
     },
     {
+      path: 'experience-changes',
+      label: 'Experience changes',
+    },
+    {
       path: 'acquisition-stories',
       label: 'Acquisition stories',
     },

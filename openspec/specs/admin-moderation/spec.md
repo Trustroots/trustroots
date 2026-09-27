@@ -427,3 +427,24 @@ explain its compact column headings, and allow profile visibility to be sorted.
 - **THEN** each story shows whether the member's profile is visible
 - **AND** compact column headings provide accessible explanations
 - **AND** the administrator can sort the rows by profile visibility
+
+### Requirement: Experience change administration
+
+The system SHALL let administrators find Experiences, issue member-scoped
+change links, and review pending change requests. These capabilities SHALL be
+unavailable to non-administrators.
+
+#### Scenario: Administrator issues a link
+
+- **WHEN** an administrator selects an Experience and its author or recipient
+- **THEN** the system returns a seven-day link scoped to that Experience and member
+
+#### Scenario: Administrator decides a request
+
+- **WHEN** an administrator approves or rejects a pending Experience change request
+- **THEN** the decision and administrator are recorded for audit
+
+#### Scenario: Regular member requests an admin action
+
+- **WHEN** a regular member requests link issuance or a review decision
+- **THEN** the system denies access

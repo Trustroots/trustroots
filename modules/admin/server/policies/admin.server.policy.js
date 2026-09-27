@@ -52,6 +52,19 @@ exports.invokeRolesPolicies = () => {
           permissions: ['post'],
         },
         { resources: '/api/admin/reference-threads', permissions: ['get'] },
+        { resources: '/api/admin/experiences', permissions: ['get'] },
+        {
+          resources: '/api/admin/experiences/:id/change-links',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/experience-change-requests',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/experience-change-requests/:id/decision',
+          permissions: ['post'],
+        },
         {
           resources: '/api/admin/newsletter-subscribers',
           permissions: ['get'],
