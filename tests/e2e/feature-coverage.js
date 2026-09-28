@@ -411,17 +411,30 @@ const features = [
     id: 'public.volunteering',
     area: AREA.publicCore,
     status: STATUS.active,
-    description: 'Volunteering page is available to visitors.',
-    roles: ['visitor'],
+    description:
+      'Volunteering page offers a short support enquiry for prospective volunteers.',
+    roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
         clientRoute('volunteering', '/volunteering', source.pagesClient),
       ],
       apiRoutes: [],
     },
-    requiredScenarios: ['Volunteering page loads.'],
+    requiredScenarios: [
+      'Volunteering page loads.',
+      'Visitors can submit a volunteer enquiry from the volunteering page.',
+      'Members can submit a volunteer enquiry from the volunteering page.',
+    ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /volunteering loads'),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a volunteer enquiry from the volunteering page',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'member can send a volunteer enquiry from the volunteering page',
+      ),
     ],
   },
   {

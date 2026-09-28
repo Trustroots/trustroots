@@ -49,6 +49,7 @@ describe('<SupportForm />', () => {
       await screen.findByRole('link', { name: 'frequently asked questions' }),
     ).toBeInTheDocument();
     expect(send).toHaveBeenCalledWith({
+      category: 'other',
       email: 'alice@example.com',
       message: 'I need help',
       reportMember: '',
@@ -101,12 +102,19 @@ describe('<SupportForm />', () => {
 
   it('includes the reported member from the URL', async () => {
     send.mockResolvedValueOnce({});
-    window.history.pushState({}, '', '/support?report=bob');
+    window.history.pushState(
+      {},
+      '',
+      '/support?report=bob&category=volunteering',
+    );
 
     render(<SupportForm user={{}} />);
 
     expect(screen.getByText('Reported member')).toBeInTheDocument();
     expect(screen.getByText('bob')).toBeInTheDocument();
+    expect(screen.getByLabelText('What can we help with?')).toHaveValue(
+      'reportMember',
+    );
     expect(
       screen.getByText(
         'This message goes to Trustroots support, not to the member.',
@@ -126,6 +134,7 @@ describe('<SupportForm />', () => {
         expect.objectContaining({
           message: 'I need to report Bob',
           reportMember: 'bob',
+          category: 'reportMember',
         }),
       ),
     );
@@ -143,6 +152,115 @@ describe('<SupportForm />', () => {
       render(<SupportForm user={{}} />);
 
       expect(await screen.findByText('?report=bob')).toBeInTheDocument();
+    } finally {
+      global.URL = OriginalURL;
+    }
+  });
+
+  it('opens a short volunteer enquiry and submits its category', async () => {
+    send.mockResolvedValueOnce({});
+    window.history.pushState({}, '', '/support?category=volunteering');
+    render(<SupportForm user={{}} />);
+    expect(screen.getByLabelText('What can we help with?')).toHaveValue(
+      'volunteering',
+    );
+    expect(
+      screen.getByText(
+        /Briefly tell us about your interests, skills, and availability\./,
+      ),
+    ).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'I can help translate for two hours a week.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() =>
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'volunteering',
+          reportMember: '',
+        }),
+      ),
+    );
+  });
+
+  it.each(['unknown', 'toString', ''])(
+    'ignores unsupported URL category %s',
+    category => {
+      window.history.pushState({}, '', `/support?category=${category}`);
+      render(<SupportForm user={{}} />);
+      expect(screen.getByLabelText('What can we help with?')).toHaveValue(
+        'other',
+      );
+    },
+  );
+
+  it('omits the reported member when changing category and restores it when switching back', async () => {
+    send.mockResolvedValueOnce({});
+    window.history.pushState({}, '', '/support?report=example-member');
+    render(<SupportForm user={{}} />);
+    const category = screen.getByLabelText('What can we help with?');
+    fireEvent.change(category, { target: { value: 'account' } });
+    expect(screen.queryByText('example-member')).not.toBeInTheDocument();
+    fireEvent.change(category, { target: { value: 'reportMember' } });
+    expect(screen.getByText('example-member')).toBeInTheDocument();
+    fireEvent.change(category, { target: { value: 'volunteering' } });
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'I can help.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() =>
+      expect(send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'volunteering',
+          reportMember: '',
+        }),
+      ),
+    );
+  });
+
+  it('shows reporting guidance when selected without a report URL', () => {
+    render(<SupportForm user={{}} />);
+    fireEvent.change(screen.getByLabelText('What can we help with?'), {
+      target: { value: 'reportMember' },
+    });
+    expect(
+      screen.getByText('Please include the member’s username in your message.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'This message goes to Trustroots support, not to the member.',
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('disables category selection while sending', async () => {
+    let finishSending;
+    send.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finishSending = resolve;
+        }),
+    );
+    render(<SupportForm user={{}} />);
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'Please help.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(screen.getByLabelText('What can we help with?')).toBeDisabled();
+    finishSending({});
+    expect(await screen.findByText(/Thank you!/)).toBeInTheDocument();
+  });
+
+  it('leaves the default category when URL parsing fails without a query string', () => {
+    const OriginalURL = global.URL;
+    global.URL = jest.fn(() => {
+      throw new Error('broken URL parser');
+    });
+    try {
+      render(<SupportForm user={{}} />);
+      expect(screen.getByLabelText('What can we help with?')).toHaveValue(
+        'other',
+      );
     } finally {
       global.URL = OriginalURL;
     }

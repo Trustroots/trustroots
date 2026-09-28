@@ -6,6 +6,7 @@ import { Trans, useTranslation } from 'react-i18next';
 // Internal dependencies
 import { send } from '../api/support.api';
 import usePersistentSupportMessage from '../hooks/use-persistent-support-message';
+import { SUPPORT_CATEGORIES } from '../../shared/categories';
 
 export default function SupportForm({ user }) {
   const { t } = useTranslation('support');
@@ -13,6 +14,7 @@ export default function SupportForm({ user }) {
   const [isSending, setIsSending] = useState(false);
   const [sendingFailed, setSendingFailed] = useState(false);
   const [reportMember, setReportMember] = useState('');
+  const [category, setCategory] = useState('other');
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [supportMessage, setSupportMessage] = usePersistentSupportMessage('');
@@ -22,9 +24,10 @@ export default function SupportForm({ user }) {
     setIsSending(true);
     try {
       await send({
+        category,
         email,
         message: supportMessage,
-        reportMember,
+        reportMember: category === 'reportMember' ? reportMember : '',
         username,
       });
       setSupportMessage(''); // Clear out message from browser cache
@@ -42,10 +45,24 @@ export default function SupportForm({ user }) {
       const username = url.get('report');
       if (username) {
         setReportMember(username);
+        setCategory('reportMember');
+      } else {
+        const requestedCategory = url.get('category');
+        if (
+          Object.prototype.hasOwnProperty.call(
+            SUPPORT_CATEGORIES,
+            requestedCategory,
+          )
+        ) {
+          setCategory(requestedCategory);
+        }
       }
     } catch {
       // Backup in parsing errors, just grab the whole URL part
       setReportMember(document.location.search);
+      if (document.location.search) {
+        setCategory('reportMember');
+      }
     }
   }, []);
 
@@ -80,7 +97,9 @@ export default function SupportForm({ user }) {
     <div className="panel panel-default">
       <div className="panel-heading">
         <h4>
-          {reportMember ? t('Report member to support') : t('Contact us')}
+          {category === 'reportMember'
+            ? t('Report member to support')
+            : t('Contact us')}
         </h4>
       </div>
       <div className="panel-body">
@@ -98,16 +117,41 @@ export default function SupportForm({ user }) {
           autoComplete="off"
           className="form-horizontal"
         >
+          <div className="form-group">
+            <label htmlFor="category" className="col-sm-2 control-label">
+              {t('What can we help with?')}
+            </label>
+            <div className="col-sm-10">
+              <select
+                id="category"
+                className="form-control input-lg"
+                value={category}
+                disabled={isSending}
+                onChange={event => setCategory(event.target.value)}
+              >
+                <option value="account">{t('Account help')}</option>
+                <option value="reportMember">{t('Report a member')}</option>
+                <option value="volunteering">{t('Volunteering')}</option>
+                <option value="other">{t('Other')}</option>
+              </select>
+            </div>
+          </div>
           {/* Reporting another profile */}
-          {reportMember && (
+          {category === 'reportMember' && (
             <div className="form-group">
               <label className="col-sm-2 control-label">
                 {t('Reported member')}
               </label>
               <div className="col-sm-10">
-                <p className="form-control-static">
-                  <strong>{reportMember}</strong>
-                </p>
+                {reportMember ? (
+                  <p className="form-control-static">
+                    <strong>{reportMember}</strong>
+                  </p>
+                ) : (
+                  <p className="help-block">
+                    {t('Please include the member’s username in your message.')}
+                  </p>
+                )}
                 <p className="form-control-static">
                   <em>
                     {t(
@@ -136,13 +180,22 @@ export default function SupportForm({ user }) {
                 rows="7"
                 id="message"
                 required
+                aria-describedby="message-help"
                 disabled={isSending}
                 defaultValue={supportMessage}
                 onChange={event => {
                   setSupportMessage(event.target.value);
                 }}
               ></textarea>
-              <span className="help-block">
+              <span className="help-block" id="message-help">
+                {category === 'volunteering' && (
+                  <>
+                    {t(
+                      'Briefly tell us about your interests, skills, and availability.',
+                    )}
+                    <br />
+                  </>
+                )}
                 {t(
                   'Our support team speaks several languages. Write in whichever language you prefer — English is helpful when you can.',
                 )}

@@ -123,6 +123,7 @@ describe('Support controller unit tests', () => {
       username: 'guest',
     });
     harness.savedSupportRequests[0].should.deepEqual({
+      category: 'other',
       email: 'guest@example.com',
       message: '<p>Need help</p>',
       userAgent: 'TestAgent',
@@ -237,6 +238,7 @@ describe('Support controller unit tests', () => {
       username: 'username',
     });
     harness.savedSupportRequests[0].should.containEql({
+      category: 'reportMember',
       reportMember: 'reported-user',
       user: userId,
     });
@@ -270,6 +272,66 @@ describe('Support controller unit tests', () => {
       .calledWith('error', 'Failed storing support request to the DB. #39ghsa')
       .should.be.true();
   });
+
+  for (const category of ['account', 'reportMember', 'volunteering', 'other']) {
+    it(`stores and emails the ${category} category`, async () => {
+      const harness = loadController();
+      const res = mockResponse();
+      harness.controller.supportRequest(
+        {
+          body: {
+            category,
+            message: 'Support enquiry.',
+            email: 'visitor@example.test',
+            reportMember: 'example-member',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      harness.savedSupportRequests[0].category.should.equal(category);
+      const data = harness.sendSupportRequest.firstCall.args[1];
+      data.category.should.equal(category);
+      if (category === 'reportMember') {
+        data.reportMember.should.equal('example-member');
+        harness.savedSupportRequests[0].reportMember.should.equal(
+          'example-member',
+        );
+      } else {
+        data.reportMember.should.equal(false);
+        require('should').not.exist(
+          harness.savedSupportRequests[0].reportMember,
+        );
+      }
+    });
+  }
+
+  for (const category of [
+    'unknown',
+    'toString',
+    '__proto__',
+    '',
+    null,
+    ['other'],
+    {},
+  ]) {
+    it(`rejects invalid category ${JSON.stringify(
+      category,
+    )} before storage or delivery`, async () => {
+      const harness = loadController();
+      const res = mockResponse();
+      harness.controller.supportRequest(
+        { body: { category, message: 'Support enquiry.' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      harness.savedSupportRequests.length.should.equal(0);
+      harness.sendSupportRequest.called.should.equal(false);
+      harness.stat.called.should.equal(false);
+    });
+  }
 
   it('returns 400 and does not record stats when email send fails', async () => {
     const harness = loadController({ emailError: new Error('smtp failed') });

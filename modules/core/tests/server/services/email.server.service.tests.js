@@ -493,6 +493,7 @@ describe('Service: email', function () {
 
   it('can send support request email', function (done) {
     const supportRequest = {
+      category: 'reportMember',
       message: 'test-support-message',
       username: 'joedoe',
       email: 'test@test.com',
@@ -521,7 +522,7 @@ describe('Service: email', function () {
       jobs.length.should.equal(1);
       jobs[0].type.should.equal('send email');
       jobs[0].data.subject.should.equal(
-        'Support request from ' +
+        'Support request [Report a member] from ' +
           supportRequest.username +
           ' (' +
           supportRequest.displayName +
@@ -537,6 +538,7 @@ describe('Service: email', function () {
       should.not.exist(jobs[0].data.html);
       should.exist(jobs[0].data.text);
       jobs[0].data.text.should.containEql('test-support-message');
+      jobs[0].data.text.should.containEql('Category: Report a member');
       jobs[0].data.text.should.containEql(
         'Reported member: ' + supportRequest.reportMember,
       );
@@ -587,7 +589,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request');
+      jobs[0].data.subject.should.equal('Support request [Other]');
       done();
     });
   });
@@ -604,7 +606,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request from joedoe');
+      jobs[0].data.subject.should.equal('Support request [Other] from joedoe');
       done();
     });
   });
@@ -621,7 +623,7 @@ describe('Service: email', function () {
     emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
       if (err) return done(err);
       jobs.length.should.equal(1);
-      jobs[0].data.subject.should.equal('Support request (Joe Doe)');
+      jobs[0].data.subject.should.equal('Support request [Other] (Joe Doe)');
       done();
     });
   });
