@@ -69,6 +69,13 @@ test.describe.serial('account settings feature coverage', () => {
       },
     });
     expect(changed.ok()).toBeTruthy();
+    const changedProfile = (await changed.json()).user;
+    expect(changedProfile.username).toBe(user.username);
+    expect(changedProfile).not.toHaveProperty('password');
+    expect(changedProfile).not.toHaveProperty('salt');
+    expect(changedProfile).not.toHaveProperty('emailToken');
+    expect(changedProfile).not.toHaveProperty('resetPasswordToken');
+    expect(changedProfile).not.toHaveProperty('pushRegistration');
   });
 
   test('members can change their password through account settings', async ({
