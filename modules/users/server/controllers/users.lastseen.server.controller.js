@@ -3,18 +3,11 @@
  */
 const mongoose = require('mongoose');
 const moment = require('moment');
-const net = require('net');
+const {
+  getClientIpAddress,
+} = require('../../../core/server/services/client-ip.server.service');
 const User = mongoose.model('User');
 const config = require('../../../../config/config');
-
-function getClientIpAddress(req) {
-  // Passenger creates this secure header after Nginx has restored a Cloudflare
-  // visitor address. Do not trust ordinary forwarding headers from clients.
-  const passengerClientAddress = req.get('!~Passenger-Client-Address');
-  const clientIpAddress = passengerClientAddress || req.ip;
-
-  return net.isIP(clientIpAddress) ? clientIpAddress : undefined;
-}
 
 /**
  * When user is logged in, update her last seen to Now in database

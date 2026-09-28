@@ -4,9 +4,7 @@
 
 Allow members to present themselves to the Trustroots community and manage the
 information shown on their profile.
-
 ## Requirements
-
 ### Requirement: Profile viewing
 
 The system SHALL let signed-in members view their own profile and available
@@ -107,3 +105,13 @@ The system SHALL identify deprecated catalogue entries and prevent members from 
 
 - **WHEN** the language catalogue is shown in English
 - **THEN** the `lim` language is labelled Limburgish
+
+### Requirement: Targeted avatar-upload limits
+
+The system SHALL enforce a configurable, shared request limit for authenticated avatar uploads using the account identity and a bounded window.
+
+#### Scenario: Member exceeds the avatar-upload policy
+
+- **WHEN** a member exceeds the configured avatar-upload limit within its window
+- **THEN** the request is rejected with HTTP 429 and a `Retry-After` header
+

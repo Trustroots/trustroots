@@ -7,6 +7,7 @@ const userAvatar = require('../controllers/users.avatar.server.controller');
 const userPassword = require('../controllers/users.password.server.controller');
 const userAuthentication = require('../controllers/users.authentication.server.controller');
 const userExport = require('../controllers/users.export.server.controller');
+const targetedRequestLimit = require('../../../core/server/middleware/targeted-request-limit.server.middleware');
 
 module.exports = function (app) {
   // Setting up the users profile api
@@ -31,7 +32,11 @@ module.exports = function (app) {
   app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)
-    .post(userAvatar.avatarUploadField, userAvatar.avatarUpload);
+    .post(
+      targetedRequestLimit.avatarUpload,
+      userAvatar.avatarUploadField,
+      userAvatar.avatarUpload,
+    );
 
   app
     .route('/api/users/:avatarUserId/avatar')

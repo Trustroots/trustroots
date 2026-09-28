@@ -337,6 +337,7 @@ describe('API route registrations', () => {
       ['removeOAuthProvider'],
       'userAuthentication',
     );
+    const targetedRequestLimit = controller(['avatarUpload'], 'requestLimit');
 
     const { params, routes } = register(
       '../../../../modules/users/server/routes/users.server.routes',
@@ -346,6 +347,8 @@ describe('API route registrations', () => {
         '../controllers/users.password.server.controller': password,
         '../controllers/users.profile.server.controller': profile,
         '../policies/users.server.policy': policy,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          targetedRequestLimit,
       },
     );
 
@@ -358,6 +361,7 @@ describe('API route registrations', () => {
       profile.removeProfile,
     ]);
     assertHandlers(routeByPath(routes, '/api/users-avatar').post, [
+      targetedRequestLimit.avatarUpload,
       avatar.avatarUploadField,
       avatar.avatarUpload,
     ]);
@@ -426,12 +430,18 @@ describe('API route registrations', () => {
       ['forgot', 'reset', 'validateResetToken'],
       'userPassword',
     );
+    const targetedRequestLimit = controller(
+      ['resendConfirmation', 'forgotPassword', 'resetPassword', 'signin'],
+      'requestLimit',
+    );
 
     const { routes } = register(
       '../../../../modules/users/server/routes/auth.server.routes',
       {
         '../controllers/users.authentication.server.controller': authentication,
         '../controllers/users.password.server.controller': password,
+        '../../../core/server/middleware/targeted-request-limit.server.middleware':
+          targetedRequestLimit,
       },
     );
 
@@ -442,15 +452,18 @@ describe('API route registrations', () => {
       authentication.confirmEmail,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/resend-confirmation').post, [
+      targetedRequestLimit.resendConfirmation,
       authentication.resendConfirmation,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/forgot').post, [
+      targetedRequestLimit.forgotPassword,
       password.forgot,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/reset/:token').get, [
       password.validateResetToken,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/reset/:token').post, [
+      targetedRequestLimit.resetPassword,
       password.reset,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signup').post, [
@@ -460,6 +473,7 @@ describe('API route registrations', () => {
       authentication.signupValidation,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signin').post, [
+      targetedRequestLimit.signin,
       authentication.signin,
     ]);
     assertHandlers(routeByPath(routes, '/api/auth/signout').get, [
