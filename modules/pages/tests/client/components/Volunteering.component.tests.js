@@ -30,5 +30,8 @@ describe('<Volunteering />', () => {
       'href',
       'https://team.trustroots.org/',
     );
+    expect(
+      screen.getByRole('link', { name: 'I’d like to volunteer' }),
+    ).toHaveAttribute('href', '/support?category=volunteering');
   });
 });

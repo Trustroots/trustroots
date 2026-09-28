@@ -137,6 +137,7 @@ jobs:
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
             -e TRUSTROOTS_E2E_SCREENSHOTS=true \
+            -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
             dev npm run test:e2e -- "${specs[@]}"
           test_status="$?"

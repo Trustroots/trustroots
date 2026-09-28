@@ -21,6 +21,7 @@ const AREA_BY_SPEC = {
   'public-pages.spec.js': 'Public pages',
   'footer.spec.js': 'Public pages',
   'core-gaps.spec.js': 'Public pages',
+  'support-categories.spec.js': 'Public pages',
   'footer.spec.js': 'Public pages',
   'nostr.spec.js': 'Nostr',
   'seeded-content.spec.js': 'Seeded content',
