@@ -132,6 +132,12 @@ jobs:
             -e CI=true \
             -e TRUSTROOTS_SKIP_LOCAL_CONFIG=true \
             dev npm run build:vite
+      - name: Smoke-test Vite production script loading
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            -e CI=true \
+            dev npm run test:vite:production
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |

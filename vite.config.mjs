@@ -77,6 +77,8 @@ const legacyCssImports = {
 export default defineConfig({
   base: '/assets/',
   root,
+  // Express owns public files; copying public/ into public/assets would nest it.
+  publicDir: false,
   plugins: [
     legacyJsx,
     legacyCssImports,
@@ -142,6 +144,8 @@ export default defineConfig({
         'react-main': resolve(root, 'config/vite/react-main.tsx'),
       },
       output: {
+        // Express serves the production entry with a classic script tag.
+        format: 'iife',
         entryFileNames: 'react-main.js',
         assetFileNames: assetInfo => {
           const extension = extname(assetInfo.name || '').toLowerCase();
