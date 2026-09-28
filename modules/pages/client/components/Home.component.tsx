@@ -102,7 +102,7 @@ interface HomeProps {
 
 export default function Home({
   user,
-  photoCredits = {},
+  photoCredits,
   build,
   routeParams = getCurrentRouteParams(),
 }: HomeProps) {
