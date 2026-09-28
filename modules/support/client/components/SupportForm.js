@@ -129,10 +129,11 @@ export default function SupportForm({ user }) {
                 disabled={isSending}
                 onChange={event => setCategory(event.target.value)}
               >
-                <option value="account">{t('Account help')}</option>
-                <option value="reportMember">{t('Report a member')}</option>
-                <option value="volunteering">{t('Volunteering')}</option>
-                <option value="other">{t('Other')}</option>
+                {Object.entries(SUPPORT_CATEGORIES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {t(label)}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

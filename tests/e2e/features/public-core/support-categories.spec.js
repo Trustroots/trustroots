@@ -1,6 +1,9 @@
 const { annotateFeature, test, expect } = require('../../support/test');
 const { SEEDED_MEMBERS, signInViaApi } = require('../../support/helpers');
 const { withE2eDb } = require('../../support/db');
+const {
+  SUPPORT_CATEGORIES,
+} = require('../../../../modules/support/shared/categories');
 
 async function submitEnquiry(page, message, category) {
   await page.getByLabel('Message', { exact: true }).fill(message);
@@ -25,14 +28,9 @@ async function submitEnquiry(page, message, category) {
       'data.text': { $regex: message },
     }),
   );
-  expect(email.data.subject).toContain(
-    `[${category === 'volunteering' ? 'Volunteering' : 'Report a member'}]`,
-  );
-  expect(email.data.text).toContain(
-    `Category: ${
-      category === 'volunteering' ? 'Volunteering' : 'Report a member'
-    }`,
-  );
+  const categoryLabel = SUPPORT_CATEGORIES[category];
+  expect(email.data.subject).toContain(`[${categoryLabel}]`);
+  expect(email.data.text).toContain(`Category: ${categoryLabel}`);
   return stored;
 }
 

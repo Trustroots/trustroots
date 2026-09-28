@@ -131,6 +131,7 @@ describe('Support controller unit tests', () => {
     });
     harness.stat.firstCall.args[0].tags.should.deepEqual({
       authenticated: 'no',
+      category: 'other',
       type: 'normal',
     });
   });
@@ -244,6 +245,7 @@ describe('Support controller unit tests', () => {
     });
     harness.stat.firstCall.args[0].tags.should.deepEqual({
       authenticated: 'yes',
+      category: 'reportMember',
       type: 'reportMember',
     });
   });
@@ -293,6 +295,10 @@ describe('Support controller unit tests', () => {
       harness.savedSupportRequests[0].category.should.equal(category);
       const data = harness.sendSupportRequest.firstCall.args[1];
       data.category.should.equal(category);
+      harness.stat.firstCall.args[0].tags.should.containEql({
+        category,
+        type: category === 'reportMember' ? 'reportMember' : 'normal',
+      });
       if (category === 'reportMember') {
         data.reportMember.should.equal('example-member');
         harness.savedSupportRequests[0].reportMember.should.equal(

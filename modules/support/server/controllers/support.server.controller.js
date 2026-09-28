@@ -129,6 +129,7 @@ exports.supportRequest = function (req, res) {
           },
           tags: {
             authenticated: supportRequestData.authenticated,
+            category,
             type: supportRequestData.reportMember ? 'reportMember' : 'normal',
           },
         };
