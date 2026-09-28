@@ -1,5 +1,10 @@
 /* global window */
-const { annotateFeature, test, expect } = require('../../support/test');
+const {
+  annotateFeature,
+  test,
+  expect,
+  useElementScreenshot,
+} = require('../../support/test');
 
 test.describe('public core manifest gap coverage', () => {
   test('support API accepts valid guest requests', async ({
@@ -26,6 +31,8 @@ test.describe('public core manifest gap coverage', () => {
   test('support API surfaces send failures as validation errors', async ({
     page,
   }, testInfo) => {
+    useElementScreenshot(testInfo, '.panel');
+    await page.setViewportSize({ width: 1280, height: 1000 });
     annotateFeature(testInfo, 'public.support-submit', [
       'Support request validation errors are shown without sending email.',
     ]);
