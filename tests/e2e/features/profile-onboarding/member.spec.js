@@ -178,7 +178,7 @@ test.describe('confirmed member flows', () => {
       'locale',
       'blocked',
       'lastIpAddress',
-      'pushRegistrations',
+      'pushRegistration',
       'providerData',
       'password',
       'roles',
