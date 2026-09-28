@@ -130,4 +130,3 @@ Migrated spam, upload, statistics and Influx services SHALL expose named ESM fun
 
 - **WHEN** a CommonJS consumer requires the existing path and an ESM consumer imports the implementation
 - **THEN** their default service objects are identical and the implementation provides named function exports without top-level await
-
