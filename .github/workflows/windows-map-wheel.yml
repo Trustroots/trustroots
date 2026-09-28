@@ -50,7 +50,7 @@ jobs:
           npm ci --ignore-scripts
       - name: Install Firefox and Brave
         run: |
-          npx playwright install firefox
+          npx playwright install firefox ffmpeg
           $version = '1.96.59'
           $archive = Join-Path $env:RUNNER_TEMP 'brave.zip'
           Invoke-WebRequest "https://github.com/brave/brave-browser/releases/download/v$version/brave-v$version-win32-x64.zip" -OutFile $archive
