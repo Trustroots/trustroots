@@ -25,40 +25,15 @@ const nip19 = require('nostr-tools/nip19');
 const validator = require('validator');
 const User = mongoose.model('User');
 const deprecatedLanguages = require('../../../../config/languages/deprecated');
+const {
+  profileQueryFields,
+  selectProfileResponse,
+} = require('../services/profile-response.server.service');
 
 // Fields to send publicly about any user profile
 // to make sure we're not sending unsecure content (eg. passwords)
 // Pick here fields to send
-exports.userProfileFields = [
-  'id',
-  'displayName',
-  'username',
-  'gender',
-  'tagline',
-  'description',
-  'locationFrom',
-  'locationLiving',
-  'languages',
-  'birthdate',
-  'seen',
-  'created',
-  'updated',
-  'passwordUpdated',
-  'avatarSource',
-  'avatarUploaded',
-  'member',
-  'replyRate',
-  'replyTime',
-  'extSitesCouchers', // BeWelcome username
-  'extSitesBW', // BeWelcome username
-  'extSitesCS', // CouchSurfing username
-  'extSitesWS', // WarmShowers username
-  'nostrNpub', // nostr npub
-  'emailHash', // MD5 hashed email to use with Gravatars
-  'additionalProvidersData.facebook.id', // For FB avatars and profile links
-  'additionalProvidersData.twitter.screen_name', // For Twitter profile links
-  'additionalProvidersData.github.login', // For GitHub profile links
-].join(' ');
+exports.userProfileFields = profileQueryFields.join(' ');
 
 // Restricted set of profile fields when only really "miniprofile" is needed
 exports.userMiniProfileFields = [
@@ -980,7 +955,7 @@ function sanitizeProfile(profile, isOwnProfile, authenticatedUser) {
   // http://aaronheckmann.tumblr.com/post/48943525537/mongoose-v3-part-1-versioning
   delete profile.__v;
 
-  return profile;
+  return selectProfileResponse(profile, isOwnProfile);
 }
 
 /**

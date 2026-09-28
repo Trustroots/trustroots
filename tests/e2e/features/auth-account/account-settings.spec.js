@@ -132,7 +132,11 @@ test.describe.serial('account settings feature coverage', () => {
       data: { tagline },
     });
     expect(valid.ok()).toBeTruthy();
-    expect((await valid.json()).tagline).toBe(tagline);
+    const updatedProfile = await valid.json();
+    expect(updatedProfile.tagline).toBe(tagline);
+    expect(updatedProfile.email).toBe(user.email);
+    expect(updatedProfile.locale).toBeDefined();
+    expect(updatedProfile.blocked).toEqual([]);
   });
 
   test('older members who sign in through the UI can change username', async ({

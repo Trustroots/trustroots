@@ -171,6 +171,20 @@ test.describe('confirmed member flows', () => {
     const profile = await response.json();
     expect(profile.username).toBe(host.username);
     expect(profile.displayName).toBe(`${host.firstName} ${host.lastName}`);
+    for (const privateField of [
+      'email',
+      'emailTemporary',
+      'newsletter',
+      'locale',
+      'blocked',
+      'lastIpAddress',
+      'pushRegistrations',
+      'providerData',
+      'password',
+      'roles',
+    ]) {
+      expect(profile[privateField]).toBeUndefined();
+    }
   });
 
   test('another host accommodation page shows hosting details', async ({
