@@ -1569,6 +1569,8 @@ const features = [
       'Circle filter query resolves the selected circle.',
       'Search map renders with deterministic offline style.',
       'Route fixture offers populate the rendered map source.',
+      'Mouse-wheel input zooms the rendered map in and out.',
+      'Mouse-wheel input zooms the raster fallback map in and out.',
       'Later camera commands recenter the raster map after a place search.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
@@ -1579,6 +1581,14 @@ const features = [
       spec(
         'search-map-rendered.spec.js',
         'search map renders with offline style and fixture offers',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'mouse wheel zooms the rendered search map in and out',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'mouse wheel zooms the raster fallback map in and out',
       ),
       spec(
         'search-map-rendered.spec.js',

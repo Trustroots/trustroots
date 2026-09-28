@@ -13,6 +13,23 @@ const {
 const berlin = SEEDED_MEMBERS[0];
 const communityNotePlusCode = '9F4MG82G+7Q';
 const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
+
+async function expectWheelZoom(page) {
+  const canvas = page.locator('.mapboxgl-canvas, .leaflet-container').first();
+  await expect(canvas).toBeVisible();
+  const box = await canvas.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  const readZoom = () =>
+    page.evaluate(
+      () => JSON.parse(window.localStorage.getItem('search-map-location')).zoom,
+    );
+  const initialZoom = await readZoom();
+  await page.mouse.wheel(0, -240);
+  await expect.poll(readZoom).toBeGreaterThan(initialZoom);
+  const zoomedIn = await readZoom();
+  await page.mouse.wheel(0, 240);
+  await expect.poll(readZoom).toBeLessThan(zoomedIn);
+}
 async function installNostrRelayStub(page, events = []) {
   await page.addInitScript(relayEvents => {
     const NativeWebSocket = window.WebSocket;
@@ -258,6 +275,52 @@ test.describe('rendered search map feature coverage', () => {
       hasCanvas: true,
       persistedStyleName: 'E2E Offline Map',
     });
+  });
+
+  test('mouse wheel zooms the rendered search map in and out', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Mouse-wheel input zooms the rendered map in and out.',
+    ]);
+    await waitForSearchMap(page);
+    await expectWheelZoom(page);
+    await page.getByRole('link', { name: 'Circles', exact: true }).click();
+    await expect(page).toHaveURL(/\/circles$/);
+    await page.locator('a[href="/search"]').first().click();
+    await waitForSearchMap(page);
+    await expectWheelZoom(page);
+    await seedMapState(page, { zoom: 2 });
+    await page.reload();
+    await expect(page.getByText('Zoom closer to find members.')).toBeVisible();
+    await expectWheelZoom(page);
+  });
+
+  test('mouse wheel zooms the raster fallback map in and out', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Mouse-wheel input zooms the raster fallback map in and out.',
+    ]);
+    await page.addInitScript(() => {
+      const getContext = window.HTMLCanvasElement.prototype.getContext;
+      window.HTMLCanvasElement.prototype.getContext = function (type, ...args) {
+        if (type === 'webgl' || type === 'experimental-webgl') return null;
+        return getContext.call(this, type, ...args);
+      };
+    });
+    await context.route('**://*.tile.openstreetmap.org/**', route =>
+      route.fulfill({
+        body: Buffer.from(
+          'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+          'base64',
+        ),
+        contentType: 'image/png',
+      }),
+    );
+    await page.goto('/search');
+    await expectWheelZoom(page);
   });
 
   test('search map uses the raster fallback when WebGL is unavailable', async ({

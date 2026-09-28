@@ -265,6 +265,21 @@ module.exports = defineConfig({
       },
     },
     {
+      name: 'search-map-wheel-firefox',
+      testMatch:
+        /features\/search-offers-circles\/search-map-rendered\.spec\.js/,
+      grep: /mouse wheel/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['search-map-rendered'],
+      ),
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: seededMemberStorageState,
+      },
+    },
+    {
       name: 'messages-firefox-layout',
       testMatch: /features\/messages\/messages-layout\.spec\.js/,
       dependencies: serializedDependencies(['setup-authenticated'], ['admin']),
