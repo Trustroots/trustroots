@@ -22,7 +22,7 @@ const readMapZoom = page =>
     return raw ? JSON.parse(raw).zoom : null;
   });
 
-async function wheelOverMap(page, selector, delta) {
+async function wheelOverMap(page, selector, delta, deltaMode) {
   const canvas = page.locator(selector);
   await expect(canvas).toBeVisible();
   // React Map GL receives input through its overlay above the canvas. Hover
@@ -38,29 +38,41 @@ async function wheelOverMap(page, selector, delta) {
   await surface.hover({
     position: { x: (box.width * 3) / 4, y: box.height / 2 },
   });
-  await page.mouse.wheel(0, delta);
+  if (deltaMode === 1) {
+    // Exercise the renderer's real DOM wheel handler with Firefox-style line
+    // units. This is synthetic; the pixel case above uses browser input.
+    await surface.dispatchEvent('wheel', {
+      deltaY: delta,
+      deltaMode,
+      clientX: box.x + (box.width * 3) / 4,
+      clientY: box.y + box.height / 2,
+    });
+  } else {
+    await page.mouse.wheel(0, delta);
+  }
 }
 
-async function expectWheelZoom(page, selector) {
+async function expectWheelZoom(page, selector, deltaMode) {
+  const delta = deltaMode === 1 ? 3 : 240;
   const readZoom = () => readMapZoom(page);
   await expect.poll(readZoom).not.toBeNull();
   const initialZoom = await readZoom();
-  await wheelOverMap(page, selector, -240);
+  await wheelOverMap(page, selector, -delta, deltaMode);
   await expect.poll(readZoom).toBeGreaterThan(initialZoom);
   const zoomedIn = await readZoom();
-  await wheelOverMap(page, selector, 240);
+  await wheelOverMap(page, selector, delta, deltaMode);
   await expect.poll(readZoom).toBeLessThan(zoomedIn);
 }
 
-async function expectWheelZoomAfterNavigation(page, selector) {
-  await expectWheelZoom(page, selector);
+async function expectWheelZoomAfterNavigation(page, selector, deltaMode) {
+  await expectWheelZoom(page, selector, deltaMode);
   await page.getByRole('link', { name: 'Circles', exact: true }).click();
   await expect(page).toHaveURL(/\/circles$/);
   await page.locator('a[href="/search"]').first().click();
   if (selector === '.mapboxgl-canvas') {
     await waitForSearchMap(page);
   }
-  await expectWheelZoom(page, selector);
+  await expectWheelZoom(page, selector, deltaMode);
 }
 async function installNostrRelayStub(page, events = []) {
   await page.addInitScript(relayEvents => {
@@ -273,12 +285,52 @@ async function waitForRasterTileNear(
 }
 
 test.describe('rendered search map feature coverage', () => {
-  test.beforeEach(async ({ context, page, request, mapZoom }) => {
-    await seedMapState(page, { zoom: mapZoom });
-    await useMapProviderHar(context, 'search-map');
-    await blockUnexpectedMapNetwork(context);
-    await useMapRouteFixtures(context);
-    await signInViaApi(page, request, berlin);
+  test.beforeEach(
+    async ({ context, page, request, mapZoom, browser }, testInfo) => {
+      if (process.env.TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS === 'true') {
+        testInfo.annotations.push({
+          type: 'browser-version',
+          description: browser.version(),
+        });
+        await page.addInitScript(() => {
+          window.__wheelEvents = [];
+          document.addEventListener(
+            'wheel',
+            event => {
+              window.__wheelEvents.push({
+                deltaX: event.deltaX,
+                deltaY: event.deltaY,
+                deltaMode: event.deltaMode,
+                ctrlKey: event.ctrlKey,
+                isTrusted: event.isTrusted,
+              });
+            },
+            true,
+          );
+        });
+      }
+      await seedMapState(page, { zoom: mapZoom });
+      await useMapProviderHar(context, 'search-map');
+      await blockUnexpectedMapNetwork(context);
+      await useMapRouteFixtures(context);
+      await signInViaApi(page, request, berlin);
+    },
+  );
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (
+      process.env.TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS === 'true' &&
+      !page.isClosed()
+    ) {
+      const diagnostics = await page.evaluate(() => ({
+        userAgent: window.navigator.userAgent,
+        events: window.__wheelEvents,
+      }));
+      await testInfo.attach('wheel-events', {
+        body: JSON.stringify(diagnostics, null, 2),
+        contentType: 'application/json',
+      });
+    }
   });
 
   test('search map renders with offline style and fixture offers', async ({
@@ -312,66 +364,85 @@ test.describe('rendered search map feature coverage', () => {
   // Seed each starting zoom once. Persisted viewport updates are debounced,
   // so driving a long wheel sequence towards a boundary can read stale zoom.
   for (const zoom of [6, 2]) {
-    const suffix = zoom <= 2 ? ' at low zoom' : '';
-    test.describe(`wheel input starting at zoom ${zoom}`, () => {
-      test.use({ mapZoom: zoom });
-      test(`mouse wheel zooms the rendered search map in and out${suffix}`, async ({
-        page,
-        browserName,
-      }, testInfo) => {
-        // Mapbox GL needs WebGL; Firefox CI falls back to Leaflet and has no
-        // .mapboxgl-canvas. Wheel zoom on that path is covered separately.
-        test.skip(
-          browserName === 'firefox',
-          'Mapbox GL is unavailable in Firefox CI; use the raster fallback wheel test.',
-        );
-        annotateFeature(testInfo, 'search.map', [
-          'Mouse-wheel input zooms the rendered map in and out.',
-          'Mouse-wheel input works after returning to Search.',
-          ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
-        ]);
-        await waitForSearchMap(page);
-        if (zoom <= 2) {
-          await expect(
-            page.getByText('Zoom closer to find members.'),
-          ).toBeVisible();
-        }
-        await expectWheelZoomAfterNavigation(page, '.mapboxgl-canvas');
-      });
-
-      test(`mouse wheel zooms the raster fallback map in and out${suffix}`, async ({
-        context,
-        page,
-      }, testInfo) => {
-        annotateFeature(testInfo, 'search.map', [
-          'Mouse-wheel input zooms the raster fallback map in and out.',
-          'Mouse-wheel input works after returning to Search.',
-          ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
-        ]);
-        await page.addInitScript(() => {
-          const getContext = window.HTMLCanvasElement.prototype.getContext;
-          window.HTMLCanvasElement.prototype.getContext = function (
-            type,
-            ...args
-          ) {
-            if (type === 'webgl' || type === 'experimental-webgl') return null;
-            return getContext.call(this, type, ...args);
-          };
+    for (const deltaMode of [0, 1]) {
+      const suffix =
+        (zoom <= 2 ? ' at low zoom' : '') +
+        (deltaMode === 1 ? ' with line-based deltas' : '');
+      test.describe(`wheel input starting at zoom ${zoom}`, () => {
+        test.use({ mapZoom: zoom });
+        test(`mouse wheel zooms the rendered search map in and out${suffix}`, async ({
+          page,
+          browserName,
+        }, testInfo) => {
+          // Mapbox GL needs WebGL; Firefox CI falls back to Leaflet and has no
+          // .mapboxgl-canvas. Wheel zoom on that path is covered separately.
+          test.skip(
+            browserName === 'firefox',
+            'Mapbox GL is unavailable in Firefox CI; use the raster fallback wheel test.',
+          );
+          annotateFeature(testInfo, 'search.map', [
+            'Mouse-wheel input zooms the rendered map in and out.',
+            'Mouse-wheel input works after returning to Search.',
+            ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
+            ...(deltaMode === 1
+              ? ['Line-based wheel events zoom the rendered map.']
+              : []),
+          ]);
+          await waitForSearchMap(page);
+          if (zoom <= 2) {
+            await expect(
+              page.getByText('Zoom closer to find members.'),
+            ).toBeVisible();
+          }
+          await expectWheelZoomAfterNavigation(
+            page,
+            '.mapboxgl-canvas',
+            deltaMode,
+          );
         });
-        await context.route('**://*.tile.openstreetmap.org/**', route =>
-          route.fulfill({
-            body: Buffer.from(
-              'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
-              'base64',
-            ),
-            contentType: 'image/png',
-          }),
-        );
-        await page.goto('/search');
-        await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
-        await expectWheelZoomAfterNavigation(page, '.leaflet-container');
+
+        test(`mouse wheel zooms the raster fallback map in and out${suffix}`, async ({
+          context,
+          page,
+        }, testInfo) => {
+          annotateFeature(testInfo, 'search.map', [
+            'Mouse-wheel input zooms the raster fallback map in and out.',
+            'Mouse-wheel input works after returning to Search.',
+            ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
+            ...(deltaMode === 1
+              ? ['Line-based wheel events zoom the raster fallback map.']
+              : []),
+          ]);
+          await page.addInitScript(() => {
+            const getContext = window.HTMLCanvasElement.prototype.getContext;
+            window.HTMLCanvasElement.prototype.getContext = function (
+              type,
+              ...args
+            ) {
+              if (type === 'webgl' || type === 'experimental-webgl')
+                return null;
+              return getContext.call(this, type, ...args);
+            };
+          });
+          await context.route('**://*.tile.openstreetmap.org/**', route =>
+            route.fulfill({
+              body: Buffer.from(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL0iAAAAABJRU5ErkJggg==',
+                'base64',
+              ),
+              contentType: 'image/png',
+            }),
+          );
+          await page.goto('/search');
+          await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+          await expectWheelZoomAfterNavigation(
+            page,
+            '.leaflet-container',
+            deltaMode,
+          );
+        });
       });
-    });
+    }
   }
 
   test('search map uses the raster fallback when WebGL is unavailable', async ({
