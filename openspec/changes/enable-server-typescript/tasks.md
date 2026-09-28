@@ -1,12 +1,14 @@
 - [x] Add a strict server TypeScript configuration using NodeNext resolution.
 - [x] Enable TypeScript lint parsing for opted-in server TypeScript modules.
-- [x] Expose the JSON-for-script CommonJS service's callable type to TypeScript.
+- [x] Keep type declarations limited to services used by the trial.
 - [x] Add a server-specific typecheck command and include it in the aggregate.
 - [x] Move authentication logic into a Node 24 executable `.cts` module.
 - [x] Preserve its existing CommonJS path and configuration injection.
 - [x] Move build-metadata formatting into a Node 24 executable `.cts` module.
 - [x] Preserve its existing callback path and export shape.
 - [x] Add server tests for the typed modules and adapters.
-- [ ] Confirm runtime outputs, type checking and lint in CI.
+- [x] Confirm runtime outputs, type checking and lint in CI.
+- [x] Include `.cts` sources in server and worker restart watches.
 - [x] Add coverage reporting for the native `.cts` sources.
 - [x] Validate the OpenSpec change and review package script/configuration scope.
+- [ ] Assess errors caught by the trial against checked JavaScript and stronger tests before expanding the migration.

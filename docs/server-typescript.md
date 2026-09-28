@@ -18,3 +18,11 @@ The server test runner transpiles `.cts` through the existing TypeScript
 dependency with inline source maps because NYC's require hook cannot pass raw
 TypeScript to Node's native type stripper. Application and e2e runtimes use
 Node's native path.
+
+Server and worker development watches and the server test watch include `.cts`
+files in both `config` and server modules. The server checker has its own
+configuration, without browser libraries or client path aliases.
+
+Keep this trial limited to these two modules until its value is assessed
+against checked JavaScript and stronger tests. Further migration needs evidence
+of useful errors caught by the types that outweigh the adapters and test hook.

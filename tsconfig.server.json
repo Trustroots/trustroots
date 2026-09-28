@@ -1,6 +1,11 @@
 {
-  "extends": "./tsconfig.json",
   "compilerOptions": {
+    "strict": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ES2020",
+    "esModuleInterop": true,
     "lib": ["ES2020"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -10,8 +15,7 @@
     "config/lib/**/*.cts",
     "modules/*/server/**/*.ts",
     "modules/*/server/**/*.cts",
-    "modules/*/server/**/*.mts",
-    "modules/*/server/**/*.d.ts"
+    "modules/*/server/**/*.mts"
   ],
   "exclude": ["node_modules", "modules/*/tests/**"]
 }

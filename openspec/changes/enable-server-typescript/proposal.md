@@ -12,13 +12,11 @@ today, and has different dependency and module-resolution requirements.
   package-wide CommonJS default.
 - Add server-scoped ESLint parsing for TypeScript modules without changing
   existing JavaScript linting.
-- Add an initial type declaration for the existing JSON-for-script server
-  service so new TypeScript server code can call it safely.
 - Move authentication validation, email-token logic, and build-metadata
   formatting into typed `.cts` modules executed through Node 24's native type
   stripping. Keep their current CommonJS paths as adapters for existing callers.
-- Keep runtime discovery and deployment commands unchanged; server type
-  checking remains a separate required check because Node does not type-check.
+- Include `.cts` in server and worker restart watches; server type checking
+  remains a separate required check because Node does not type-check.
 
 ## Capabilities
 

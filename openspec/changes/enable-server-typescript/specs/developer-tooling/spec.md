@@ -21,13 +21,6 @@ existing server JavaScript.
   environment
 - **AND** lint settings for existing JavaScript remain unchanged
 
-#### Scenario: TypeScript server code imports a declared CommonJS service
-
-- **WHEN** a checked server TypeScript module imports the JSON-for-script
-  service
-- **THEN** the type checker exposes its callable input and output types
-- **AND** the production JavaScript service remains the runtime implementation
-
 ### Requirement: Server TypeScript can run on the supported Node runtime
 
 Opted-in server `.cts` modules SHALL use syntax that Node 24 can strip and
@@ -58,3 +51,9 @@ paths SHALL remain callable by current consumers.
 - **THEN** it measures the opted-in `.cts` implementations as well as their
   CommonJS adapters
 - **AND** untested `.cts` code counts against the server's 100% coverage gate
+
+#### Scenario: A typed server implementation is edited during development
+
+- **WHEN** a developer edits a `.cts` file in config or a server module
+- **THEN** the server and worker development watches restart their processes
+- **AND** the server test watch reruns the tests

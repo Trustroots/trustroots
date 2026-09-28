@@ -194,6 +194,16 @@ module.exports = {
     },
 
     /**
+     * Native .cts implementations use CommonJS exports.
+     */
+    {
+      files: ['config/lib/**/*.cts', 'modules/*/server/**/*.cts'],
+      parserOptions: {
+        sourceType: 'commonjs',
+      },
+    },
+
+    /**
      * Overrides for server side test files
      */
     {
