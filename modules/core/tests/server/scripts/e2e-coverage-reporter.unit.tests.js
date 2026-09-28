@@ -198,7 +198,8 @@ describe('E2E coverage reporter unit tests', () => {
       testInfo.annotations.map(parseFeatureAnnotation).should.deepEqual([
         {
           featureId: 'messages.read-count-sync',
-          scenario: 'Unread count changes after opening or marking a thread read.',
+          scenario:
+            'Unread count changes after opening or marking a thread read.',
         },
         {
           featureId: 'messages.read-count-sync',
@@ -475,6 +476,52 @@ describe('E2E coverage reporter unit tests', () => {
       fs.unlinkSync(statusPath);
       fs.unlinkSync(resultsPath);
     });
+    for (const [testStatus, testExitCode] of [
+      ['passed', '0'],
+      ['failed', '1'],
+    ]) {
+      it(`preserves ${testStatus} results for deliberately partial screenshot runs`, () => {
+        const directory = fs.mkdtempSync(
+          path.join(os.tmpdir(), 'trustroots-e2e-partial-'),
+        );
+        const resultsPath = path.join(directory, 'results.json');
+        const statusPath = path.join(directory, 'status.json');
+        const report = reportWithSpecs([
+          {
+            file: 'tests/e2e/features/messages/messages.spec.js',
+            title: 'inbox lists seeded conversation',
+            tests: [testCase(testStatus)],
+          },
+        ]);
+        try {
+          fs.writeFileSync(resultsPath, JSON.stringify(report));
+          const result = spawnSync(
+            process.execPath,
+            ['scripts/e2e/summarize-results.js'],
+            {
+              cwd: path.resolve(__dirname, '../../../../../'),
+              env: {
+                ...process.env,
+                STATUS: testStatus,
+                EXIT_CODE: testExitCode,
+                TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE: 'false',
+                TRUSTROOTS_E2E_STATUS_PATH: statusPath,
+                TRUSTROOTS_E2E_RESULTS_PATH: resultsPath,
+              },
+              encoding: 'utf8',
+            },
+          );
+          result.status.should.equal(0);
+          const status = JSON.parse(fs.readFileSync(statusPath, 'utf8'));
+          status.status.should.equal(testStatus);
+          status.exitCode.should.equal(Number(testExitCode));
+          status.metrics.failed.should.equal(testStatus === 'failed' ? 1 : 0);
+          status.metrics.missingScenarioCount.should.be.above(0);
+        } finally {
+          fs.rmSync(directory, { recursive: true, force: true });
+        }
+      });
+    }
   });
 
   describe('coverage report e2e lane status', () => {
@@ -514,9 +561,11 @@ describe('E2E coverage reporter unit tests', () => {
 
       metrics.passed.should.equal(false);
       resolveE2eLaneStatus('passed', metrics).should.equal('failed');
-      resolveE2eLaneMessage('passed', metrics, 'Playwright passed.').should.match(
-        /feature coverage is below 100%/,
-      );
+      resolveE2eLaneMessage(
+        'passed',
+        metrics,
+        'Playwright passed.',
+      ).should.match(/feature coverage is below 100%/);
     });
   });
 });

@@ -411,17 +411,30 @@ const features = [
     id: 'public.volunteering',
     area: AREA.publicCore,
     status: STATUS.active,
-    description: 'Volunteering page is available to visitors.',
-    roles: ['visitor'],
+    description:
+      'Volunteering page offers a short support enquiry for prospective volunteers.',
+    roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
         clientRoute('volunteering', '/volunteering', source.pagesClient),
       ],
       apiRoutes: [],
     },
-    requiredScenarios: ['Volunteering page loads.'],
+    requiredScenarios: [
+      'Volunteering page loads.',
+      'Visitors can submit a volunteer enquiry from the volunteering page.',
+      'Members can submit a volunteer enquiry from the volunteering page.',
+    ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /volunteering loads'),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a volunteer enquiry from the volunteering page',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'member can send a volunteer enquiry from the volunteering page',
+      ),
     ],
   },
   {
@@ -521,6 +534,7 @@ const features = [
     requiredScenarios: [
       'Support page loads for visitors.',
       'Support page accepts the report query parameter.',
+      'Profile report links prefill the reported member without replacing the reporter.',
       'Support contact form is visible.',
     ],
     relatedSpecs: [
@@ -543,8 +557,20 @@ const features = [
     requiredScenarios: [
       'Support request submission succeeds with valid data.',
       'Support request validation errors are shown without sending email.',
+      'Account help requests retain their category in storage and email.',
+      'Other requests retain their category in storage and email.',
+      'Profile reports retain the reported member and reporter in storage and email.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the account category',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the other category',
+      ),
+    ],
   },
   {
     id: 'public.statistics',
