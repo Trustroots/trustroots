@@ -1,6 +1,7 @@
-- [x] Import the npm lockfile into a candidate pnpm lockfile.
+- [x] Generate a candidate pnpm lockfile on demand from the committed npm lockfile.
 - [x] Add a repeatable local cold and warm install benchmark.
 - [x] Document the production and development container checks needed before a switch.
-- [ ] Run and record the comparison on the supported Node.js 24 runtime.
+- [x] Run and record the first install attempts on the supported Node.js 24 runtime.
+- [ ] Approve and verify required dependency builds for both managers, then rerun an equivalent comparison.
 - [ ] Run both candidate installs in the development and production container builds.
 - [ ] Propose a separate migration only if the measured results and compatibility checks justify it.

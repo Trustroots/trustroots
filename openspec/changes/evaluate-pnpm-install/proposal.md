@@ -9,6 +9,8 @@ container compatibility.
 
 - Add a repeatable package-manager comparison that records cold and warm
   installs for npm and pnpm using the same checkout and runtime.
+- Generate the candidate pnpm lockfile for each comparison and retain it with
+  the install output instead of maintaining a second repository lockfile.
 - Record the strict-resolution and native-dependency checks required before a
   package-manager switch is proposed.
 - Keep npm as the supported package manager until measurements and container
