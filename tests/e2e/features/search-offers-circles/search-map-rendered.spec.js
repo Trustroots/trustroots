@@ -18,11 +18,14 @@ async function expectWheelZoom(page) {
   const canvas = page.locator('.mapboxgl-canvas, .leaflet-container').first();
   await expect(canvas).toBeVisible();
   const box = await canvas.boundingBox();
+  expect(box, 'map canvas should have a layout box').toBeTruthy();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   const readZoom = () =>
-    page.evaluate(
-      () => JSON.parse(window.localStorage.getItem('search-map-location')).zoom,
-    );
+    page.evaluate(() => {
+      const raw = window.localStorage.getItem('search-map-location');
+      return raw ? JSON.parse(raw).zoom : null;
+    });
+  await expect.poll(readZoom).not.toBeNull();
   const initialZoom = await readZoom();
   await page.mouse.wheel(0, -240);
   await expect.poll(readZoom).toBeGreaterThan(initialZoom);
@@ -279,7 +282,14 @@ test.describe('rendered search map feature coverage', () => {
 
   test('mouse wheel zooms the rendered search map in and out', async ({
     page,
+    browserName,
   }, testInfo) => {
+    // Mapbox GL needs WebGL; Firefox CI falls back to Leaflet and has no
+    // .mapboxgl-canvas. Wheel zoom on that path is covered separately.
+    test.skip(
+      browserName === 'firefox',
+      'Mapbox GL is unavailable in Firefox CI; use the raster fallback wheel test.',
+    );
     annotateFeature(testInfo, 'search.map', [
       'Mouse-wheel input zooms the rendered map in and out.',
     ]);
