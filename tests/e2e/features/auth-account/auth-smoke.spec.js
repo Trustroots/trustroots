@@ -18,7 +18,7 @@ async function signInExisting(page, usernameOrEmail) {
     response.url().endsWith('/api/auth/signin'),
   );
   await page.getByRole('button', { name: /login/i }).click();
-  const cookie = (await (await signinResponse).headers())['set-cookie'];
+  const cookie = (await (await signinResponse).allHeaders())['set-cookie'];
   expect(cookie).toMatch(/HttpOnly/);
   expect(cookie).toMatch(/SameSite=Lax/i);
   await expect(page).toHaveURL(/\/search/);
@@ -32,7 +32,7 @@ test.describe.serial('authentication smoke', () => {
   test('anonymous visits do not create a session cookie', async ({
     request,
   }, testInfo) => {
-    annotateFeature(testInfo, 'auth.session', [
+    annotateFeature(testInfo, 'auth.signin', [
       'Uninitialised anonymous requests do not create a stored browser session.',
     ]);
 
