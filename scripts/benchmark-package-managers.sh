@@ -56,6 +56,9 @@ measure() {
     echo "$label: could not prepare a fresh checkout" >&2
     return 1
   fi
+  # The project's prepare hook needs Git even when dependencies came from an
+  # archive. Initialise only this disposable snapshot, outside the timing.
+  git init --quiet "$checkout" || return 1
 
   local started=$SECONDS
   local status=0

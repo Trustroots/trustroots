@@ -16,7 +16,7 @@ export PATH=/tmp/trustroots-pm-tools/node_modules/.bin:$PATH
 ```
 
 The script archives the committed HEAD, imports its npm lockfile, and copies
-that snapshot into a fresh temporary directory for each install, then repeats
+that snapshot into a fresh temporary Git repository for each install, then repeats
 with a warm cache or store. Uncommitted changes are not measured. It saves the
 generated lockfile, operating system, commit, runtime versions, timings, and
 full output under `tmp/package-manager-benchmark-*`. Pass a report directory as
@@ -59,3 +59,43 @@ installations. Approve and verify the necessary build scripts for both managers,
 then rerun before drawing a performance conclusion. Native functionality and
 both container comparisons remain outstanding. No package-manager switch is
 recommended by this run.
+
+## Targeted native build follow-up: 28 September 2026
+
+After updating the branch against `main`, a fresh snapshot of
+`a88c4fd5eafea5cab75236316dcc6593682979c2` was installed once with each manager
+on the same Darwin arm64 host and runtime versions as the first run. Exact
+versions were approved only inside the disposable snapshots:
+`canvas@3.2.0`, `core-js@2.6.12`, `core-js-pure@3.49.0`,
+`styled-components@5.3.6`, `unrs-resolver@1.12.2` and `sharp@0.35.4`.
+The [sanitised install and probe output](benchmarks/package-manager-native-2026-09-28.txt)
+records the policies and results.
+
+npm used a snapshot-only `package.json` `allowScripts` map; npm 11.17.0
+rejects `--allow-scripts` for project-scoped installs. pnpm used a
+snapshot-only `pnpm-workspace.yaml` `allowBuilds` map and
+`--pm-on-fail=ignore`. No committed manifest, lockfile, or project build policy
+was changed.
+
+| Manager | Clean install           | Canvas PNG probe | Sharp PNG probe | Prepare hook after snapshot Git initialisation |
+| ------- | ----------------------- | ---------------- | --------------- | ---------------------------------------------- |
+| npm     | Exit 1 at Husky prepare | Pass             | Pass            | Pass                                           |
+| pnpm    | Exit 1 at Husky prepare | Pass             | Pass            | Pass                                           |
+
+Approved dependency builds completed under both managers, and each native probe generated a
+2×2 PNG and checked its signature. The remaining install failure was the
+project's `husky install` prepare hook: these archives have no `.git` directory,
+and `HUSKY=0` did not prevent that error. Initialising Git inside each disposable
+snapshot and rerunning only the prepare hook resolved it. The pnpm snapshot's
+hook was run directly because `pnpm run` attempted an automatic dependency
+install against the project's npm package-manager declaration.
+
+This closes the local canvas and sharp compatibility question for this host,
+including pnpm's stricter dependency layout. It is not a successful clean-install
+benchmark: the benchmark harness still needs explicit snapshot build approvals
+before repeat timings are comparable. The harness now initialises each
+disposable snapshot as a Git repository before timing, so its prepare hook has
+the required Git context. It does not copy or alter the source repository's Git
+metadata.
+Development and production container installs, gm and file-magic checks remain
+outstanding. npm remains the supported package manager.
