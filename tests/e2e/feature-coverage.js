@@ -556,8 +556,19 @@ const features = [
     requiredScenarios: [
       'Support request submission succeeds with valid data.',
       'Support request validation errors are shown without sending email.',
+      'Account help requests retain their category in storage and email.',
+      'Other requests retain their category in storage and email.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the account category',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the other category',
+      ),
+    ],
   },
   {
     id: 'public.statistics',

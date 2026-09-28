@@ -10,6 +10,13 @@ import { SUPPORT_CATEGORIES } from '../../shared/categories';
 
 export default function SupportForm({ user }) {
   const { t } = useTranslation('support');
+  // Keep literal keys discoverable by the translation extractor.
+  const categoryLabels = {
+    account: t('Account help'),
+    reportMember: t('Report a member'),
+    volunteering: t('Volunteering'),
+    other: t('Other'),
+  };
   const [isSent, setIsSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendingFailed, setSendingFailed] = useState(false);
@@ -129,9 +136,9 @@ export default function SupportForm({ user }) {
                 disabled={isSending}
                 onChange={event => setCategory(event.target.value)}
               >
-                {Object.entries(SUPPORT_CATEGORIES).map(([value, label]) => (
+                {Object.keys(SUPPORT_CATEGORIES).map(value => (
                   <option key={value} value={value}>
-                    {t(label)}
+                    {categoryLabels[value]}
                   </option>
                 ))}
               </select>
