@@ -913,7 +913,7 @@ describe('Service: email', function () {
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.containEql(
-        "Remember, I'm just a little mail robot. Don't reply to this email directly.",
+        'This is an automated email. Please don’t reply directly.',
       );
       done();
     });
@@ -934,7 +934,7 @@ describe('Service: email', function () {
     emailService.renderEmail('reset-password', params, function (err, email) {
       if (err) return done(err);
       email.text.should.not.containEql(
-        "Remember, I'm just a little mail robot. Don't reply to this email directly.",
+        'This is an automated email. Please don’t reply directly.',
       );
       done();
     });

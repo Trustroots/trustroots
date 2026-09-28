@@ -78,21 +78,19 @@ export default function SupportForm({ user }) {
       <>
         <p className="lead">
           <em>
-            {t('Thank you!')}
+            {t('Thanks for getting in touch!')}
             <br />
             <br />
             {t(
-              'I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!',
+              'Your message has been sent to the Trustroots team. We’re a small team of volunteers, so a reply may take a little time. We appreciate your patience.',
             )}
-            <br />
-            <br />– {t('Trustroots Support Robot')}
           </em>
         </p>
         <p>
           <br />
           <br />
           <Trans t={t} ns="support">
-            You could continue to <a href="/">home</a> or see{' '}
+            Return to <a href="/">home</a> or browse our{' '}
             <a href="/faq">frequently asked questions</a>.
           </Trans>
         </p>

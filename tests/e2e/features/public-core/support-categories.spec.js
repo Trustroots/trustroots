@@ -57,7 +57,13 @@ async function submitEnquiry(page, message, category) {
   const response = await sent;
   expect(response.ok()).toBeTruthy();
   expect(response.request().postDataJSON().category).toBe(category);
-  await expect(page.getByText('Thank you!')).toBeVisible();
+  await expect(page.getByText('Thanks for getting in touch!')).toBeVisible();
+  await expect(
+    page.getByText(
+      'Your message has been sent to the Trustroots team. We’re a small team of volunteers, so a reply may take a little time. We appreciate your patience.',
+    ),
+  ).toBeVisible();
+  await expect(page.getByText(/Trustroots Support Robot/)).toHaveCount(0);
 
   const stored = await withE2eDb(db =>
     db.collection('supportrequests').findOne({ message }),

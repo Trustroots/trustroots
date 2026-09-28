@@ -85,9 +85,9 @@ test.describe('public core manifest gap coverage', () => {
     await page.getByRole('button', { name: /^send$/i }).click();
     await supportRequest;
 
-    await expect(page.getByText('Thank you!')).toBeVisible();
+    await expect(page.getByText('Thanks for getting in touch!')).toBeVisible();
     await expect(
-      page.getByText(/sent your message to our support people/i),
+      page.getByText(/Your message has been sent to the Trustroots team/),
     ).toBeVisible();
   });
 

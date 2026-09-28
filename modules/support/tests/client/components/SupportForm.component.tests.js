@@ -248,7 +248,9 @@ describe('<SupportForm />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(screen.getByLabelText('What can we help with?')).toBeDisabled();
     finishSending({});
-    expect(await screen.findByText(/Thank you!/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Thanks for getting in touch!/),
+    ).toBeInTheDocument();
   });
 
   it('leaves the default category when URL parsing fails without a query string', () => {
