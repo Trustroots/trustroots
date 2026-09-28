@@ -163,7 +163,7 @@ test.describe('confirmed member flows', () => {
       'Profile API returns public profile data.',
     ]);
 
-    const host = SEEDED_MEMBERS[0];
+    const host = SEEDED_MEMBERS[1];
     const response = await request.get(`/api/users/${host.username}`);
 
     expect(response.ok()).toBeTruthy();
