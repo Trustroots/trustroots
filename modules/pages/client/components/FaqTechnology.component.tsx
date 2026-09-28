@@ -1,15 +1,17 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function FaqTechnology() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <Faq category="technology">
       <div className="faq-question" id="opensource">
         <h3>{t('Is Trustroots open source?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Yes! Our code is available on{' '}
           <a href="https://github.com/Trustroots/trustroots/">GitHub</a> and
           licensed under the{' '}
@@ -22,7 +24,7 @@ export default function FaqTechnology() {
 
       <div className="faq-question" id="im-a-developer">
         <h3>{t("I'm a developer and I want to help!")}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Great! We&apos;re actively developing Trustroots again. For larger
           product changes, we&apos;re focusing on Nostroots, our Nostr-based
           project. Check the{' '}
@@ -35,7 +37,7 @@ export default function FaqTechnology() {
 
       <div className="faq-question" id="are-you-planning-to-do-x-feature">
         <h3>{t('Are you planning to do X feature?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Trustroots is under active development again, and smaller improvements
           and fixes are welcome here. Larger product changes are focused on{' '}
           <a href="https://nos.trustroots.org/">Nostroots</a>, our Nostr-based
@@ -45,7 +47,7 @@ export default function FaqTechnology() {
 
       <div className="faq-question" id="statistics">
         <h3>{t('Do you have public statistics?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Yep, see <a href="/statistics">statistics</a> page for some basic
           statistics. We are planning to publish more thorough statistics
           eventually. If you are interested in analysing our data deeper, please{' '}

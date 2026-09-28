@@ -1,10 +1,23 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
 import PropTypes from 'prop-types';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import { Trans, useTranslation } from 'react-i18next';
 
-export default function Faq({ category, children }) {
-  const { t } = useTranslation('pages');
+interface FaqProps {
+  category?:
+    | 'bugs-and-features'
+    | 'circles'
+    | 'foundation'
+    | 'general'
+    | 'technology'
+    | 'tribes';
+  children?: React.ReactNode;
+}
+
+export default function Faq({ category, children }: FaqProps) {
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>
@@ -322,7 +335,7 @@ export default function Faq({ category, children }) {
             <hr />
             <p className="lead text-center" id="more-questions">
               {/* @TODO remove ns (issue #1368) */}
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 More questions? <a href="/support">Ask us!</a> <br />
                 <br />
                 See also our <a href="https://ideas.trustroots.org/">

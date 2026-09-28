@@ -1,9 +1,11 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Contribute() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>
@@ -26,7 +28,7 @@ export default function Contribute() {
         <div className="row">
           <div className="col-xs-12 col-sm-12 col-md-offset-2 col-md-8">
             <p className="lead">
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 Trustroots is a non-profit <a href="/foundation">foundation</a>{' '}
                 registered in the United Kingdom in{' '}
                 <a href="https://ideas.trustroots.org/2015/03/10/announcing-trustroots-foundation/">
@@ -47,7 +49,7 @@ export default function Contribute() {
           <div className="col-xs-12  col-sm-6 col-md-offset-2 col-md-4">
             <h2>{t('Volunteering')}</h2>
             <p>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 Whether you’re a hardcore techie or know nothing of coding, we
                 can use your help! See{' '}
                 <a href="https://team.trustroots.org/">volunteer page</a>{' '}
@@ -62,7 +64,7 @@ export default function Contribute() {
           <div className="col-xs-12 col-sm-6 col-md-4">
             <h2>{t('Referal Programs')}</h2>
             <p>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 We use and recommend <strong>Namecheap</strong> for domains,
                 partly because they&apos;re a{' '}
                 <a href="https://www.namecheap.com/about/causes.aspx">
@@ -74,7 +76,7 @@ export default function Contribute() {
               </Trans>
             </p>
             <p>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 Our servers are hosted at reliable and easy to use{' '}
                 <strong>DigitalOcean</strong>. Sign up via{' '}
                 <a href="https://www.digitalocean.com/?refcode=6dc078966c9c">

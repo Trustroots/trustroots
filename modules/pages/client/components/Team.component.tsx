@@ -1,19 +1,21 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
+import type { PageTranslator, PageUser } from '../types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
-import { getVolunteers } from '../api/volunteers.api';
+import { getVolunteers, type Volunteer } from '../api/volunteers.api';
 import { userType } from '@/modules/users/client/users.prop-types';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import ManifestoText from './ManifestoText.component.js';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 
-export default function Team({ user }) {
-  const { t } = useTranslation('pages');
+export default function Team({ user }: { user?: PageUser | null }) {
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
   const [isFetching, setIsFetching] = useState(false);
-  const [volunteers, setVolunteers] = useState([]);
-  const [alumni, setAlumni] = useState([]);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
+  const [alumni, setAlumni] = useState<Volunteer[]>([]);
 
   async function fetchVolunteers() {
     setIsFetching(true);
@@ -83,7 +85,7 @@ export default function Team({ user }) {
               </div>
             )}
             <p className="text-center">
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 <a href="/support">Contact us</a> if you have any questions.
               </Trans>
             </p>

@@ -1,10 +1,12 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import RulesText from '@/modules/pages/client/components/RulesText.component';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Rules() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>
@@ -27,7 +29,7 @@ export default function Rules() {
               <RulesText />
             </div>
             <p>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 See also our pages about <a href="/safety">safety</a> and{' '}
                 <a href="/privacy">privacy</a>.
               </Trans>
