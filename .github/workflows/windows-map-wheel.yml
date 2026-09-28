@@ -50,6 +50,8 @@ jobs:
           npm install --global npm@11.17.0
           # These map tests do not use native image processing or upload modules.
           npm ci --ignore-scripts
+          # Use current Firefox and branded-browser protocol support in this job.
+          npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.63.0
       - name: Install Firefox and Brave
         run: |
           npx playwright install firefox ffmpeg
@@ -97,7 +99,7 @@ jobs:
         run: node scripts/e2e/seed.js
       - name: Run Windows wheel scenarios
         run: |
-          node -p "JSON.stringify({ platform: process.platform, release: require('os').release(), node: process.version })"
+          node -p "JSON.stringify({ platform: process.platform, release: require('os').release(), node: process.version, playwright: require('@playwright/test/package.json').version })"
           npx playwright test --config playwright.windows-wheel.config.js
       - name: Upload browser diagnostics
         if: always()
