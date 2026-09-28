@@ -3,6 +3,13 @@ const nunjucks = require('nunjucks');
 const jsonForScript = require('../../../server/services/json-for-script.server.service');
 
 describe('Bootstrap JSON formatting', () => {
+  it('exposes the same function through the ESM entry point', async () => {
+    const { jsonForScript: esmJsonForScript } = await import(
+      '../../../server/services/json-for-script.server.service.mjs'
+    );
+    esmJsonForScript.should.equal(jsonForScript);
+  });
+
   it('round-trips text with HTML delimiters and Unicode separators', () => {
     const value = { name: '</script><p>Sample & text</p>\u2028\u2029' };
     const encoded = jsonForScript(value);
