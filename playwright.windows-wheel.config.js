@@ -20,6 +20,9 @@ module.exports = defineConfig({
   ...base,
   workers: 1,
   retries: 0,
+  // Software WebGL on hosted Windows runners can stall the browser thread.
+  timeout: 120000,
+  expect: { ...base.expect, timeout: 30000 },
   reporter: [
     ['list'],
     [
@@ -32,7 +35,7 @@ module.exports = defineConfig({
     ...base.use,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'off',
   },
   webServer: {
     command: 'node server.js',
@@ -44,7 +47,11 @@ module.exports = defineConfig({
     {
       name: 'setup-windows-wheel',
       testMatch: /setup\/auth\.setup\.js/,
-      use: { ...devices['Desktop Edge'], channel: 'msedge' },
+      use: {
+        ...devices['Desktop Edge'],
+        userAgent: undefined,
+        channel: 'msedge',
+      },
     },
     {
       name: 'windows-edge-wheel',
@@ -53,6 +60,7 @@ module.exports = defineConfig({
       dependencies: ['setup-windows-wheel'],
       use: {
         ...devices['Desktop Edge'],
+        userAgent: undefined,
         channel: 'msedge',
         storageState: memberState,
         launchOptions: chromiumOptions,
@@ -65,6 +73,7 @@ module.exports = defineConfig({
       dependencies: ['setup-windows-wheel'],
       use: {
         ...devices['Desktop Chrome'],
+        userAgent: undefined,
         storageState: memberState,
         launchOptions: {
           ...chromiumOptions,
@@ -77,7 +86,11 @@ module.exports = defineConfig({
       testMatch: wheelSpec,
       grep: /mouse wheel.*raster fallback map/,
       dependencies: ['setup-windows-wheel'],
-      use: { ...devices['Desktop Firefox'], storageState: memberState },
+      use: {
+        ...devices['Desktop Firefox'],
+        userAgent: undefined,
+        storageState: memberState,
+      },
     },
   ],
 });

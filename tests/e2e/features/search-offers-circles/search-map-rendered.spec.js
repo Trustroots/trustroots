@@ -32,6 +32,24 @@ async function wheelOverMap(page, selector, delta, deltaMode) {
       ? '.search-map-container .overlays'
       : selector,
   );
+  if (selector === '.mapboxgl-canvas') {
+    // A visible overlay can resize before the WebGL canvas and controller do.
+    // Sending input in that interval can put it outside the rendered map.
+    await expect
+      .poll(async () => {
+        const [rendered, input] = await Promise.all([
+          canvas.boundingBox(),
+          surface.boundingBox(),
+        ]);
+        return (
+          !!rendered &&
+          !!input &&
+          Math.abs(rendered.width - input.width) < 1 &&
+          Math.abs(rendered.height - input.height) < 1
+        );
+      })
+      .toBe(true);
+  }
   const box = await surface.boundingBox();
   expect(box, 'map input surface should have a layout box').toBeTruthy();
   // Avoid the current-location marker at the centre of the map.
