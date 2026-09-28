@@ -113,7 +113,7 @@ module.exports = webpackMerge.merge(shims, {
         test: /\.[jt]sx?$/,
         // Transpile our own code, plus the modern-syntax dependencies that
         // must match the application's supported browser targets.
-        exclude: /node_modules\/(?!(nostr-tools|@noble|@scure)\/)/,
+        exclude: /node_modules[\\/](?!(nostr-tools|@noble|@scure)[\\/])/,
         use: [
           {
             loader: 'babel-loader',

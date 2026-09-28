@@ -6,6 +6,8 @@ on:
     paths:
       - '.github/workflows/windows-map-wheel.yml'
       - 'playwright*.config.js'
+      - 'config/webpack/**'
+      - 'babel.config.js'
       - 'tests/e2e/**'
       - 'modules/search/client/**'
       - 'modules/core/client/components/Map/**'
