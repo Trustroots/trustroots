@@ -534,6 +534,7 @@ const features = [
     requiredScenarios: [
       'Support page loads for visitors.',
       'Support page accepts the report query parameter.',
+      'Profile report links prefill the reported member without replacing the reporter.',
       'Support contact form is visible.',
     ],
     relatedSpecs: [
@@ -558,6 +559,7 @@ const features = [
       'Support request validation errors are shown without sending email.',
       'Account help requests retain their category in storage and email.',
       'Other requests retain their category in storage and email.',
+      'Profile reports retain the reported member and reporter in storage and email.',
     ],
     relatedSpecs: [
       spec(

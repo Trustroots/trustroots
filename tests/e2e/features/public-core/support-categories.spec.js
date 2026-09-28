@@ -158,6 +158,93 @@ for (const signedIn of [false, true]) {
   });
 }
 
+async function openProfileReportForm(page, request) {
+  const reporter = SEEDED_MEMBERS[0];
+  const reportedMember = SEEDED_MEMBERS[1];
+  await signInViaApi(page, request, reporter);
+  await page.goto(`/profile/${reportedMember.username}`);
+  const reportLink = page.getByRole('link', {
+    name: `Report member ${reportedMember.username} to support`,
+  });
+  await expect(reportLink).toHaveAttribute(
+    'href',
+    `/support?report=${reportedMember.username}`,
+  );
+  await reportLink.click();
+  await expect(page).toHaveURL(`/support?report=${reportedMember.username}`);
+  await expect(page.getByLabel('What can we help with?')).toHaveValue(
+    'reportMember',
+  );
+  const reportedRow = page.locator('.form-group').filter({
+    has: page.getByText('Reported member', { exact: true }),
+  });
+  await expect(
+    reportedRow.getByText(reportedMember.username, { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('Please include the member’s username in your message.'),
+  ).toHaveCount(0);
+  const reporterRow = page.locator('.form-group').filter({
+    has: page.getByText('Username', { exact: true }),
+  });
+  await expect(
+    reporterRow.getByText(reporter.username, { exact: true }),
+  ).toBeVisible();
+  await expect(
+    reporterRow.getByText(reportedMember.username, { exact: true }),
+  ).toHaveCount(0);
+  return { reporter, reportedMember };
+}
+
+for (const submit of [false, true]) {
+  test(`profile report ${
+    submit
+      ? 'submission retains the reported member and reporter'
+      : 'link prefills the reported member'
+  }`, async ({ page, request }, testInfo) => {
+    annotateFeature(testInfo, 'public.support-page', [
+      'Support page accepts the report query parameter.',
+      'Profile report links prefill the reported member without replacing the reporter.',
+      'Support contact form is visible.',
+    ]);
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    const { reporter, reportedMember } = await openProfileReportForm(
+      page,
+      request,
+    );
+    if (!submit) {
+      useElementScreenshot(testInfo, '.panel');
+      return;
+    }
+    annotateFeature(testInfo, 'public.support-submit', [
+      'Support request submission succeeds with valid data.',
+      'Profile reports retain the reported member and reporter in storage and email.',
+    ]);
+    const message = `Profile report ${Date.now()}`;
+    const sent = page.waitForRequest(
+      request =>
+        request.url().includes('/api/support') && request.method() === 'POST',
+    );
+    const stored = await submitEnquiry(page, message, 'reportMember');
+    expect((await sent).postDataJSON().reportMember).toBe(
+      reportedMember.username,
+    );
+    expect(stored.reportMember).toBe(reportedMember.username);
+    expect(stored.username).toBe(reporter.username);
+    expect(stored.email).toBe(reporter.email);
+    const email = await withE2eDb(db =>
+      db.collection('agendaJobs').findOne({
+        name: 'send email',
+        'data.text': { $regex: message },
+      }),
+    );
+    expect(email.data.text).toContain(
+      `Reported member: ${reportedMember.username}`,
+    );
+    expect(email.data.text).toContain(`From username: ${reporter.username}`);
+  });
+}
+
 test('report links select reporting and retain the reported username', async ({
   page,
 }, testInfo) => {
