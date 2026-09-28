@@ -2,4 +2,4 @@
 - [x] Add middleware and end-to-end regression coverage without removing existing cases.
 - [x] Run focused middleware tests, lint and strict OpenSpec validation.
 - [x] Update the living account-access specification.
-- [ ] Run the full server and browser integration suites, then archive the proposal.
+- [x] Run the full server and browser integration suites, then archive the proposal.
