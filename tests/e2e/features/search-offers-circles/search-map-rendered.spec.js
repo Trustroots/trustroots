@@ -14,17 +14,20 @@ const berlin = SEEDED_MEMBERS[0];
 const communityNotePlusCode = '9F4MG82G+7Q';
 const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
 
-async function expectWheelZoom(page) {
-  const canvas = page.locator('.mapboxgl-canvas, .leaflet-container').first();
+const readMapZoom = page =>
+  page.evaluate(() => {
+    const raw = window.localStorage.getItem('search-map-location');
+    return raw ? JSON.parse(raw).zoom : null;
+  });
+
+async function expectWheelZoom(page, selector) {
+  const canvas = page.locator(selector);
   await expect(canvas).toBeVisible();
   const box = await canvas.boundingBox();
   expect(box, 'map canvas should have a layout box').toBeTruthy();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  const readZoom = () =>
-    page.evaluate(() => {
-      const raw = window.localStorage.getItem('search-map-location');
-      return raw ? JSON.parse(raw).zoom : null;
-    });
+  // Avoid the current-location marker at the centre of the map.
+  await page.mouse.move(box.x + (box.width * 3) / 4, box.y + box.height / 2);
+  const readZoom = () => readMapZoom(page);
   await expect.poll(readZoom).not.toBeNull();
   const initialZoom = await readZoom();
   await page.mouse.wheel(0, -240);
@@ -32,6 +35,31 @@ async function expectWheelZoom(page) {
   const zoomedIn = await readZoom();
   await page.mouse.wheel(0, 240);
   await expect.poll(readZoom).toBeLessThan(zoomedIn);
+}
+
+async function expectWheelZoomAfterNavigation(page, selector) {
+  await expectWheelZoom(page, selector);
+  await page.getByRole('link', { name: 'Circles', exact: true }).click();
+  await expect(page).toHaveURL(/\/circles$/);
+  await page.locator('a[href="/search"]').first().click();
+  if (selector === '.mapboxgl-canvas') {
+    await waitForSearchMap(page);
+  }
+  await expectWheelZoom(page, selector);
+
+  // Reach the low-zoom state through real wheel input. Adding another init
+  // script would race with the existing map-state seed when reloading.
+  for (let step = 0; step < 10 && (await readMapZoom(page)) > 2; step++) {
+    const previousZoom = await readMapZoom(page);
+    await page.mouse.wheel(0, 960);
+    await expect.poll(() => readMapZoom(page)).toBeLessThan(previousZoom);
+  }
+  await expect.poll(() => readMapZoom(page)).toBeLessThanOrEqual(2);
+  // This overlay belongs to the Mapbox renderer; Leaflet has no such overlay.
+  if (selector === '.mapboxgl-canvas') {
+    await expect(page.getByText('Zoom closer to find members.')).toBeVisible();
+  }
+  await expectWheelZoom(page, selector);
 }
 async function installNostrRelayStub(page, events = []) {
   await page.addInitScript(relayEvents => {
@@ -292,18 +320,11 @@ test.describe('rendered search map feature coverage', () => {
     );
     annotateFeature(testInfo, 'search.map', [
       'Mouse-wheel input zooms the rendered map in and out.',
+      'Mouse-wheel input works after returning to Search.',
+      'Mouse-wheel input works at low zoom.',
     ]);
     await waitForSearchMap(page);
-    await expectWheelZoom(page);
-    await page.getByRole('link', { name: 'Circles', exact: true }).click();
-    await expect(page).toHaveURL(/\/circles$/);
-    await page.locator('a[href="/search"]').first().click();
-    await waitForSearchMap(page);
-    await expectWheelZoom(page);
-    await seedMapState(page, { zoom: 2 });
-    await page.reload();
-    await expect(page.getByText('Zoom closer to find members.')).toBeVisible();
-    await expectWheelZoom(page);
+    await expectWheelZoomAfterNavigation(page, '.mapboxgl-canvas');
   });
 
   test('mouse wheel zooms the raster fallback map in and out', async ({
@@ -312,6 +333,8 @@ test.describe('rendered search map feature coverage', () => {
   }, testInfo) => {
     annotateFeature(testInfo, 'search.map', [
       'Mouse-wheel input zooms the raster fallback map in and out.',
+      'Mouse-wheel input works after returning to Search.',
+      'Mouse-wheel input works at low zoom.',
     ]);
     await page.addInitScript(() => {
       const getContext = window.HTMLCanvasElement.prototype.getContext;
@@ -330,7 +353,8 @@ test.describe('rendered search map feature coverage', () => {
       }),
     );
     await page.goto('/search');
-    await expectWheelZoom(page);
+    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+    await expectWheelZoomAfterNavigation(page, '.leaflet-container');
   });
 
   test('search map uses the raster fallback when WebGL is unavailable', async ({

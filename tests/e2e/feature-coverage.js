@@ -1571,6 +1571,8 @@ const features = [
       'Route fixture offers populate the rendered map source.',
       'Mouse-wheel input zooms the rendered map in and out.',
       'Mouse-wheel input zooms the raster fallback map in and out.',
+      'Mouse-wheel input works after returning to Search.',
+      'Mouse-wheel input works at low zoom.',
       'Later camera commands recenter the raster map after a place search.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
