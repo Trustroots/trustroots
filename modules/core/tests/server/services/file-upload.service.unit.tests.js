@@ -4,7 +4,12 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
+const multer = require('multer');
+const config = require('../../../../../config/config');
+const uploadService = require('../../../server/services/file-upload.service');
+const multerPrototype = Object.getPrototypeOf(multer());
+let singleStub;
 
 const errorService = require('../../../server/services/error.server.service');
 require('should');
@@ -37,54 +42,30 @@ function mockResponse(done) {
 }
 
 function loadUploadFileWithStubbedMulter(reqFile, multerError) {
-  return proxyquire('../../../server/services/file-upload.service', {
-    multer: () => ({
-      single: () => (req, res, callback) => {
-        if (multerError) {
-          return callback(multerError);
-        }
-        req.file = reqFile;
-        callback(null);
-      },
-    }),
-    '../../../../config/config': require('../../../../../config/config'),
-    './error.server.service': errorService,
-  }).uploadFile;
+  singleStub.callsFake(() => (req, res, callback) => {
+    if (multerError) return callback(multerError);
+    req.file = reqFile;
+    callback(null);
+  });
+  return uploadService.uploadFile;
 }
 
 function loadUploadFileWithFileFilter(file, reqFile, configOverrides) {
   let capturedMulterOptions;
-  const stubConfig = Object.assign(
-    {},
-    require('../../../../../config/config'),
-    configOverrides,
-  );
-
-  const uploadFile = proxyquire(
-    '../../../server/services/file-upload.service',
-    {
-      multer: options => {
-        capturedMulterOptions = options;
-        return {
-          single: () => (req, res, callback) => {
-            options.fileFilter(req, file, err => {
-              if (err) {
-                return callback(err);
-              }
-              req.file = reqFile;
-              callback(null);
-            });
-          },
-        };
-      },
-      '../../../../config/config': stubConfig,
-      './error.server.service': errorService,
-    },
-  ).uploadFile;
-
+  Object.assign(config, configOverrides);
+  singleStub.callsFake(function () {
+    capturedMulterOptions = this;
+    return (req, res, callback) => {
+      this.fileFilter(req, file, err => {
+        if (err) return callback(err);
+        req.file = reqFile;
+        callback(null);
+      });
+    };
+  });
   return {
     getMulterOptions: () => capturedMulterOptions,
-    uploadFile,
+    uploadFile: uploadService.uploadFile,
   };
 }
 
@@ -97,8 +78,33 @@ describe('file-upload.service unit tests', () => {
   ];
   const uploadField = 'avatar';
 
+  let originalFallback;
+  let originalTmpDir;
+
   beforeEach(() => {
+    singleStub = sinon.stub(multerPrototype, 'single');
+    originalFallback = process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+    originalTmpDir = config.uploadTmpDir;
     process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+  });
+
+  afterEach(() => {
+    sinon.restore();
+    config.uploadTmpDir = originalTmpDir;
+    if (originalFallback === undefined) {
+      delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+    } else {
+      process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = originalFallback;
+    }
+  });
+
+  it('shares its mutable default object and named function with CommonJS', async () => {
+    const esmService = await import(
+      '../../../server/services/file-upload.service.mjs'
+    );
+    esmService.default.should.equal(uploadService);
+    esmService.uploadFile.should.equal(uploadService.uploadFile);
+    Object.isFrozen(uploadService).should.equal(false);
   });
 
   it('maps unsupported media type errors from multer', done => {
@@ -204,7 +210,10 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
       try {
         const options = getMulterOptions();
-        options.dest.should.equal(os.tmpdir());
+        options.storage.getDestination({}, {}, (err, destination) => {
+          if (err) throw err;
+          destination.should.equal(os.tmpdir());
+        });
         options.limits.fileSize.should.be.a.Number();
         options.limits.files.should.equal(1);
         options.limits.fields.should.equal(10);
