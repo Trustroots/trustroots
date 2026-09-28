@@ -8,6 +8,14 @@ import { send } from '@/modules/support/client/api/support.api';
 
 jest.mock('@/modules/support/client/api/support.api');
 
+const scrollIntoView = jest.fn();
+beforeAll(() => {
+  HTMLElement.prototype.scrollIntoView = scrollIntoView;
+});
+afterAll(() => {
+  delete HTMLElement.prototype.scrollIntoView;
+});
+
 afterEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
@@ -73,6 +81,35 @@ describe('<SupportForm />', () => {
       await screen.findByText('Something went wrong sending your message.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send' })).toBeEnabled();
+    expect(screen.getByRole('alert')).toHaveFocus();
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' });
+    expect(screen.getByLabelText('Message')).toHaveValue('I need help');
+  });
+
+  it('refocuses a repeated failure and allows a successful retry', async () => {
+    send
+      .mockRejectedValueOnce(new Error('delivery unavailable'))
+      .mockRejectedValueOnce(new Error('delivery unavailable'))
+      .mockResolvedValueOnce({});
+    render(<SupportForm user={{}} />);
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'A saved support enquiry.' },
+    });
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      screen.getByRole('button', { name: 'Send' }).focus();
+      fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+      await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());
+      expect(scrollIntoView).toHaveBeenCalledTimes(attempt);
+      expect(screen.getByLabelText('Message')).toHaveValue(
+        'A saved support enquiry.',
+      );
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    expect(
+      await screen.findByRole('link', { name: 'home' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('keeps the send button disabled until message has non-whitespace text', () => {

@@ -1,5 +1,5 @@
 // External dependencies
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -20,6 +20,7 @@ export default function SupportForm({ user }) {
   const [isSent, setIsSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [sendingFailed, setSendingFailed] = useState(false);
+  const errorRef = useRef(null);
   const [reportMember, setReportMember] = useState('');
   const [category, setCategory] = useState('other');
   const [email, setEmail] = useState('');
@@ -29,6 +30,7 @@ export default function SupportForm({ user }) {
   const onSubmit = async event => {
     event.preventDefault();
     setIsSending(true);
+    setSendingFailed(false);
     try {
       await send({
         category,
@@ -73,6 +75,15 @@ export default function SupportForm({ user }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (sendingFailed) {
+      // Sending can scroll the form's error above the viewport. Bring it back
+      // below the fixed navigation and announce it to keyboard users.
+      errorRef.current.focus({ preventScroll: true });
+      errorRef.current.scrollIntoView({ block: 'center' });
+    }
+  }, [sendingFailed]);
+
   if (isSent) {
     return (
       <>
@@ -109,7 +120,12 @@ export default function SupportForm({ user }) {
       </div>
       <div className="panel-body">
         {sendingFailed && (
-          <div className="alert alert-danger" role="alert">
+          <div
+            className="alert alert-danger"
+            role="alert"
+            ref={errorRef}
+            tabIndex={-1}
+          >
             <strong>{t('Something went wrong sending your message.')}</strong>
             <br />
             {t('Please ensure you are connected to internet and try again.')}
