@@ -12,3 +12,4 @@
 - [x] Add coverage reporting for the native `.cts` sources.
 - [x] Validate the OpenSpec change and review package script/configuration scope.
 - [ ] Assess errors caught by the trial against checked JavaScript and stronger tests before expanding the migration.
+- [x] Record an initial comparison of `.cts` and equivalent JSDoc checks, including the existing caller boundary.

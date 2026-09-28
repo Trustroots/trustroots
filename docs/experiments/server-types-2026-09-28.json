@@ -1,0 +1,56 @@
+[
+  {
+    "name": "baseline",
+    "cts": [],
+    "checkedJs": []
+  },
+  {
+    "name": "Return a Buffer where the token API promises a string",
+    "cts": [
+      {
+        "code": 2322,
+        "message": "Type 'Buffer' is not assignable to type 'string'."
+      }
+    ],
+    "checkedJs": [
+      {
+        "code": 2322,
+        "message": "Type 'Buffer' is not assignable to type 'string'."
+      }
+    ]
+  },
+  {
+    "name": "Pass a string instead of the token salt Buffer",
+    "cts": [
+      {
+        "code": 2345,
+        "message": "Argument of type 'string' is not assignable to parameter of type 'Buffer'."
+      }
+    ],
+    "checkedJs": [
+      {
+        "code": 2345,
+        "message": "Argument of type 'string' is not assignable to parameter of type 'Buffer'."
+      }
+    ]
+  },
+  {
+    "name": "Return a number from the reserved-username predicate",
+    "cts": [
+      {
+        "code": 2322,
+        "message": "Type 'number' is not assignable to type 'boolean'."
+      }
+    ],
+    "checkedJs": [
+      {
+        "code": 2322,
+        "message": "Type 'number' is not assignable to type 'boolean'."
+      }
+    ]
+  },
+  {
+    "name": "Checked JavaScript caller uses the existing untyped adapter",
+    "checkedJs": []
+  }
+]
