@@ -5,6 +5,7 @@ import userPassword from '../controllers/users.password.server.controller.js';
 import userAuthentication from '../controllers/users.authentication.server.controller.js';
 import userExport from '../controllers/users.export.server.controller.js';
 import unifiedPush from '../controllers/users.unified-push.server.controller.js';
+import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.js';
 
 /**
  * Module dependencies.
@@ -33,7 +34,11 @@ const defaultExport = function (app) {
   app
     .route('/api/users-avatar')
     .all(usersPolicy.isAllowed)
-    .post(userAvatar.avatarUploadField, userAvatar.avatarUpload);
+    .post(
+      targetedRequestLimit.avatarUpload,
+      userAvatar.avatarUploadField,
+      userAvatar.avatarUpload,
+    );
 
   app
     .route('/api/users/:avatarUserId/avatar')

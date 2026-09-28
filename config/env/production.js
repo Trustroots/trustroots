@@ -9,6 +9,17 @@
  */
 
 module.exports = {
+  targetedRequestLimits: {
+    signin: { windowMs: 15 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
+    forgotPassword: { windowMs: 60 * 60 * 1000, ipLimit: 30, identityLimit: 5 },
+    resetPassword: { windowMs: 60 * 60 * 1000, ipLimit: 60, identityLimit: 10 },
+    resendConfirmation: {
+      windowMs: 60 * 60 * 1000,
+      ipLimit: 30,
+      identityLimit: 5,
+    },
+    avatarUpload: { windowMs: 60 * 60 * 1000, ipLimit: 120, identityLimit: 20 },
+  },
   umami: {
     scriptSrc: 'https://1p.trustroots.org/script.js',
     websiteId: '23ec0c85-2ebc-4d85-9063-c23d90b8ded1',
