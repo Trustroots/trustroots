@@ -182,12 +182,16 @@ module.exports.initSession = function (app, connection) {
   // https://www.npmjs.com/package/express-session
   app.use(
     session({
-      saveUninitialized: true,
-      resave: true,
+      saveUninitialized: false,
+      resave: false,
       secret: config.sessionSecret,
+      // Trust forwarded protocol only when explicitly enabled for a trusted
+      // HTTPS frontend. Direct TLS (for example Passenger) needs no proxy.
+      proxy: config.sessionProxy === true,
       cookie: {
-        // If secure is true, and you access your site over HTTP, the cookie will not be set.
-        secure: false, // ...or you could use `config.https`, but it screws things up with Nginx proxy.
+        secure: config.https === true,
+        httpOnly: true,
+        sameSite: 'lax',
 
         // Specifies the number (in milliseconds) to use when calculating the
         // Expires Set-Cookie attribute. This is done by taking the current
