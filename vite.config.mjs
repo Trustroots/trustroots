@@ -110,6 +110,16 @@ export default defineConfig({
       url: require.resolve('url/'),
     },
   },
+  optimizeDeps: {
+    // Source transforms do not run during the dependency scan. Legacy .js
+    // components contain JSX, and the shared route policy is CommonJS.
+    include: ['@/modules/core/shared/react-route-ownership', 'process/browser'],
+    rolldownOptions: {
+      moduleTypes: { '.js': 'jsx' },
+      // Pre-bundled CommonJS dependencies can also use Node's process global.
+      transform: { inject: { process: 'process/browser' } },
+    },
+  },
   css: {
     preprocessorOptions: {
       less: {

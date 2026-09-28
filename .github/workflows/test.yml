@@ -138,6 +138,12 @@ jobs:
           docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
             -e CI=true \
             dev npm run test:vite:production
+      - name: Smoke-test Vite development proxy and module loading
+        working-directory: deploy/docker
+        run: |
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml run --rm --no-deps \
+            -e CI=true \
+            dev npm run test:vite:development
       - name: Test client with coverage
         working-directory: deploy/docker
         run: |

@@ -26,6 +26,13 @@ Chromium browser (`npx playwright install chromium`), already included in the
 development container. It checks script execution and route rendering without
 a database; full API and member workflows remain separate end-to-end checks.
 
+`npm run test:vite:development` runs the same three route checks through the
+actual Vite development server proxy to Express. It verifies module loading
+and injected styles from the Vite browser origin. Both smoke commands run in
+CI. Dependency scanning treats legacy `.js` components as JSX, pre-bundles the
+shared CommonJS route policy, and injects the browser `process` shim into
+pre-bundled dependencies such as `parse-link-header`.
+
 CSS and RTL parity, hybrid route smoke tests, and build measurements remain
 required before proposing a default switch. Vite does not yet generate the
 Webpack RTL stylesheet.
