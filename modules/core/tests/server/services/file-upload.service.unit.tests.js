@@ -79,18 +79,23 @@ describe('file-upload.service unit tests', () => {
   const uploadField = 'avatar';
 
   let originalFallback;
-  let originalTmpDir;
+  let originalConfig;
 
   beforeEach(() => {
     singleStub = sinon.stub(multerPrototype, 'single');
     originalFallback = process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    originalTmpDir = config.uploadTmpDir;
+    originalConfig = { ...config };
     process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
   });
 
   afterEach(() => {
     sinon.restore();
-    config.uploadTmpDir = originalTmpDir;
+    Object.keys(config).forEach(key => {
+      if (!Object.prototype.hasOwnProperty.call(originalConfig, key)) {
+        delete config[key];
+      }
+    });
+    Object.assign(config, originalConfig);
     if (originalFallback === undefined) {
       delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
     } else {
