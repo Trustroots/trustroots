@@ -19,6 +19,7 @@ module.exports = {
     '<rootDir>/modules/*/client/**/*.{js,ts,tsx}',
     '!<rootDir>/modules/core/client/types.d.ts',
     '!<rootDir>/modules/*/tests/**',
+    '!<rootDir>/modules/*/client/**/*.d.ts',
     '!<rootDir>/modules/*/client/**/*.module.{js,ts,tsx}',
     '!<rootDir>/modules/*/client/**/views/**',
     '!<rootDir>/modules/*/client/**/less/**',

@@ -7,10 +7,10 @@ import SearchSidebarResults, {
   formatAge,
 } from '@/modules/search/client/components/SearchSidebarResults.component';
 
+let mockLanguagesData = { en: 'English', fi: 'Finnish' };
+
 jest.mock('@/modules/core/client/api/languages.api', () => ({
-  useLanguagesQuery: () => ({
-    data: { en: 'English', fi: 'Finnish' },
-  }),
+  useLanguagesQuery: () => ({ data: mockLanguagesData }),
 }));
 
 jest.mock('@/modules/users/client/components/Avatar.component', () => ({
@@ -29,6 +29,10 @@ jest.mock(
 );
 
 describe('<SearchSidebarResults />', () => {
+  beforeEach(() => {
+    mockLanguagesData = { en: 'English', fi: 'Finnish' };
+  });
+
   it('returns an empty age for a missing birthday', () => {
     expect(formatAge()).toBe('');
   });
@@ -211,5 +215,23 @@ describe('<SearchSidebarResults />', () => {
     );
 
     expect(screen.getByText('zz')).toBeInTheDocument();
+  });
+
+  it('renders an offer while the language names are not loaded', () => {
+    mockLanguagesData = undefined;
+
+    render(
+      <SearchSidebarResults
+        offer={{
+          type: 'meet',
+          user: { username: 'language-wait', languages: ['en'] },
+        }}
+        onCloseSidebar={jest.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: /language-wait/ }),
+    ).toBeInTheDocument();
   });
 });
