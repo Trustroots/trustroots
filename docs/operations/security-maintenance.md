@@ -12,6 +12,6 @@ Restrict backup access to named operators, encrypt storage and transport, and re
 
 ## Incident diagnostics
 
-Keep timestamps, event types, aggregate counts and error classifications. Exclude passwords, tokens, private message content and unnecessary personal identifiers. Restrict log and export access, define retention, and review administrative exports for their intended audience. A redaction helper reduces accidental exposure; it cannot infer sensitive data in every free-text string.
+Keep timestamps, event types, aggregate counts and error classifications. Exclude passwords, tokens, private message content and unnecessary personal identifiers. Restrict log and export access, define retention, and review administrative exports for their intended audience. The [application logging guide](../Logging.md) describes the logger's metadata redaction and its limits; it cannot infer sensitive data in every free-text string.
 
 Dependency update and CI secret-handling ownership are covered by the separate CI hardening PR.

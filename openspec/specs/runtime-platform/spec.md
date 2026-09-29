@@ -112,3 +112,27 @@ path as an adapter until all consumers have migrated.
 
 - **WHEN** an ESM consumer imports the implementation
 - **THEN** it can access the service functions through named ESM exports
+
+### Requirement: Redact sensitive diagnostic metadata
+
+The application logger SHALL redact credential, recovery-token, and private
+message fields from structured metadata before sending it to configured
+transports. Redaction SHALL preserve stable event descriptions and
+non-sensitive classifications, avoid mutating caller objects, and bound
+traversal of cyclic or unusually large metadata. Error messages and stacks SHALL
+not be emitted through structured error metadata.
+
+#### Scenario: Structured log metadata contains sensitive values
+
+- **WHEN** a caller logs nested passwords, reset tokens, cookies, authorization values, or private message content
+- **THEN** configured transports receive redacted values and retain useful event metadata
+
+#### Scenario: Log metadata contains cycles, accessors, or deep structures
+
+- **WHEN** metadata contains a cycle, accessor, excessive nesting, or more than 1,000 visited entries
+- **THEN** logging completes with safe placeholders without invoking accessors or exposing skipped payloads
+
+#### Scenario: Error metadata may contain request values
+
+- **WHEN** a caller logs an Error object as metadata
+- **THEN** the transport receives only recognised error-name, machine-code and status classifications without message or stack text

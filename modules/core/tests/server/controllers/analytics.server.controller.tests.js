@@ -1,4 +1,5 @@
 const analytics = require('../../../server/controllers/analytics.server.controller');
+const proxyquire = require('proxyquire').noCallThru();
 
 require('should');
 
@@ -61,6 +62,39 @@ describe('Controller: analytics', function () {
     it('returns an empty string when neither URL nor UTM params are given', function () {
       const result = analytics.appendUTMParams();
       result.should.equal('');
+    });
+
+    it('logs only UTM presence when validation fails', function () {
+      let loggedArguments;
+      const analyticsWithLogSpy = proxyquire(
+        '../../../server/controllers/analytics.server.controller',
+        {
+          '../../../../config/lib/logger'() {
+            loggedArguments = Array.from(arguments);
+          },
+        },
+      );
+      const privateUrl =
+        'https://example.test/reset?token=private-token&email=person@example.test';
+
+      analyticsWithLogSpy.appendUTMParams(privateUrl, {
+        source: 'private-source-value',
+      });
+
+      loggedArguments[0].should.equal('error');
+      loggedArguments[1].should.equal(
+        'utmTrackify() missing one of the required variables.',
+      );
+      loggedArguments[2].should.eql({
+        hasTrackUrl: true,
+        hasSource: true,
+        hasMedium: false,
+        hasCampaign: false,
+      });
+      JSON.stringify(loggedArguments).should.not.containEql('private-token');
+      JSON.stringify(loggedArguments).should.not.containEql(
+        'private-source-value',
+      );
     });
   });
 });
