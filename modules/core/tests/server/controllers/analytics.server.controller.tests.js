@@ -1,5 +1,5 @@
 const analytics = require('../../../server/controllers/analytics.server.controller');
-const proxyquire = require('proxyquire').noCallThru();
+const winston = require('winston');
 
 require('should');
 
@@ -65,21 +65,23 @@ describe('Controller: analytics', function () {
     });
 
     it('logs only UTM presence when validation fails', function () {
-      let loggedArguments;
-      const analyticsWithLogSpy = proxyquire(
-        '../../../server/controllers/analytics.server.controller',
-        {
-          '../../../../config/lib/logger'() {
-            loggedArguments = Array.from(arguments);
-          },
-        },
-      );
+      const originalLog = winston.log;
+      const calls = [];
+      winston.log = function () {
+        calls.push(Array.from(arguments));
+      };
       const privateUrl =
         'https://example.test/reset?token=private-token&email=person@example.test';
 
-      analyticsWithLogSpy.appendUTMParams(privateUrl, {
-        source: 'private-source-value',
-      });
+      try {
+        analytics.appendUTMParams(privateUrl, {
+          source: 'private-source-value',
+        });
+      } finally {
+        winston.log = originalLog;
+      }
+
+      const loggedArguments = calls[0];
 
       loggedArguments[0].should.equal('error');
       loggedArguments[1].should.equal(
