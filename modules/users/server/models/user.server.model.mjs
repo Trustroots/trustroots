@@ -307,10 +307,8 @@ const UserSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  // Changes whenever the privately staged avatar set is replaced.
   avatarVersion: {
     type: String,
-    default: '',
   },
   newsletter: {
     type: Boolean,
