@@ -1599,6 +1599,8 @@ const features = [
       'Mouse-wheel input zooms the raster fallback map in and out.',
       'Mouse-wheel input works after returning to Search.',
       'Mouse-wheel input works at low zoom.',
+      'Page-based wheel events visibly zoom the rendered map.',
+      'Page-based wheel events visibly zoom the raster fallback map.',
       'Line-based wheel events zoom the rendered map.',
       'Line-based wheel events zoom the raster fallback map.',
       'Later camera commands recenter the raster map after a place search.',

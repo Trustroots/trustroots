@@ -56,9 +56,9 @@ async function wheelOverMap(page, selector, delta, deltaMode) {
   await surface.hover({
     position: { x: (box.width * 3) / 4, y: box.height / 2 },
   });
-  if (deltaMode === 1) {
-    // Exercise the renderer's real DOM wheel handler with Firefox-style line
-    // units. This is synthetic; the pixel case above uses browser input.
+  if (deltaMode !== 0) {
+    // Exercise the renderer's DOM wheel handler with line and page units.
+    // These cases are synthetic; the pixel case uses browser input.
     await surface.dispatchEvent('wheel', {
       deltaY: delta,
       deltaMode,
@@ -71,15 +71,16 @@ async function wheelOverMap(page, selector, delta, deltaMode) {
 }
 
 async function expectWheelZoom(page, selector, deltaMode) {
-  const delta = deltaMode === 1 ? 3 : 240;
+  const delta = [240, 3, 1][deltaMode];
   const readZoom = () => readMapZoom(page);
   await expect.poll(readZoom).not.toBeNull();
   const initialZoom = await readZoom();
   await wheelOverMap(page, selector, -delta, deltaMode);
-  await expect.poll(readZoom).toBeGreaterThan(initialZoom);
+  // A tiny numerical change can be imperceptible to someone using the map.
+  await expect.poll(readZoom).toBeGreaterThan(initialZoom + 0.5);
   const zoomedIn = await readZoom();
   await wheelOverMap(page, selector, delta, deltaMode);
-  await expect.poll(readZoom).toBeLessThan(zoomedIn);
+  await expect.poll(readZoom).toBeLessThan(zoomedIn - 0.5);
 }
 
 async function expectWheelZoomAfterNavigation(page, selector, deltaMode) {
@@ -316,6 +317,8 @@ test.describe('rendered search map feature coverage', () => {
             'wheel',
             event => {
               window.__wheelEvents.push({
+                type: event.type,
+                targetClass: event.target.className,
                 deltaX: event.deltaX,
                 deltaY: event.deltaY,
                 deltaMode: event.deltaMode,
@@ -382,10 +385,10 @@ test.describe('rendered search map feature coverage', () => {
   // Seed each starting zoom once. Persisted viewport updates are debounced,
   // so driving a long wheel sequence towards a boundary can read stale zoom.
   for (const zoom of [6, 2]) {
-    for (const deltaMode of [0, 1]) {
+    for (const deltaMode of [0, 1, 2]) {
       const suffix =
         (zoom <= 2 ? ' at low zoom' : '') +
-        (deltaMode === 1 ? ' with line-based deltas' : '');
+        ['', ' with line-based deltas', ' with page-based deltas'][deltaMode];
       test.describe(`wheel input starting at zoom ${zoom}`, () => {
         test.use({ mapZoom: zoom });
         test(`mouse wheel zooms the rendered search map in and out${suffix}`, async ({
@@ -404,6 +407,9 @@ test.describe('rendered search map feature coverage', () => {
             ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
             ...(deltaMode === 1
               ? ['Line-based wheel events zoom the rendered map.']
+              : []),
+            ...(deltaMode === 2
+              ? ['Page-based wheel events visibly zoom the rendered map.']
               : []),
           ]);
           await waitForSearchMap(page);
@@ -429,6 +435,11 @@ test.describe('rendered search map feature coverage', () => {
             ...(zoom <= 2 ? ['Mouse-wheel input works at low zoom.'] : []),
             ...(deltaMode === 1
               ? ['Line-based wheel events zoom the raster fallback map.']
+              : []),
+            ...(deltaMode === 2
+              ? [
+                  'Page-based wheel events visibly zoom the raster fallback map.',
+                ]
               : []),
           ]);
           await page.addInitScript(() => {
