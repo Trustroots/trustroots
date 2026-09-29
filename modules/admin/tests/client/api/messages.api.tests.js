@@ -6,7 +6,9 @@ import {
   sendScammerWarning,
 } from '@/modules/admin/client/api/messages.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();

@@ -136,3 +136,136 @@ test('member shares an experience through React and returns to their profile his
     );
   }
 });
+
+test('member recovers when an experience saves but its response is lost', async ({
+  page,
+  request,
+}) => {
+  const sender = await publicMember(request);
+  const recipient = await publicMember(request);
+  try {
+    await signInViaApi(page, request, sender);
+    await page.goto(`/profile/${recipient.username}/experiences/new`);
+    await page.getByLabel('Met in person', { exact: true }).check();
+    await page
+      .getByRole('button', { name: 'Next section', exact: true })
+      .click();
+    await page.locator('label').filter({ hasText: /^Yes$/ }).click();
+    await page
+      .getByRole('button', { name: 'Next section', exact: true })
+      .click();
+    await page
+      .locator('#feedback-message')
+      .fill('A fictional experience with a lost response.');
+    await page.route(
+      '**/api/experiences',
+      async route => {
+        const response = await route.fetch();
+        expect(response.status()).toBe(201);
+        await route.fulfill({
+          status: 503,
+          json: { message: 'Response unavailable' },
+        });
+      },
+      { times: 1 },
+    );
+    const finish = page.getByRole('button', {
+      name: 'Finish editing and save',
+      exact: true,
+    });
+    await finish.click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'We could not save your experience. Your text is still here. Please try again.',
+    );
+    await finish.click();
+    await expect(
+      page.getByText('Thank you for sharing your experience!'),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByText('You already shared your experience with them'),
+    ).toBeVisible();
+  } finally {
+    await removeExperiencesBetweenUsernames(
+      sender.username,
+      recipient.username,
+    );
+  }
+});
+
+test('member retries failed experience requests without losing their feedback', async ({
+  page,
+  request,
+}) => {
+  const sender = await publicMember(request);
+  const recipient = await publicMember(request);
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  try {
+    await signInViaApi(page, request, sender);
+    await page.route(
+      '**/api/my-experience?**',
+      route =>
+        route.fulfill({ status: 503, json: { message: 'Temporary failure' } }),
+      { times: 1 },
+    );
+    await page.goto(`/profile/${recipient.username}/experiences/new`);
+    await expect(page.getByRole('alert')).toHaveText(
+      /We could not load the experience form. Please try again./,
+    );
+    await page.getByRole('button', { name: 'Try again', exact: true }).click();
+    await page.getByLabel('Met in person', { exact: true }).check();
+    await page
+      .getByRole('button', { name: 'Next section', exact: true })
+      .click();
+    await page.locator('label').filter({ hasText: /^Yes$/ }).click();
+    await page
+      .getByRole('button', { name: 'Next section', exact: true })
+      .click();
+    const feedback = page.locator('#feedback-message');
+    const finish = page.getByRole('button', {
+      name: 'Finish editing and save',
+      exact: true,
+    });
+    await feedback.fill('A fictional experience to preserve while retrying.');
+    await page.route(
+      '**/api/experiences',
+      route =>
+        route.fulfill({ status: 503, json: { message: 'Temporary failure' } }),
+      { times: 1 },
+    );
+    await finish.click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'We could not save your experience. Your text is still here. Please try again.',
+    );
+    await expect(feedback).toHaveValue(
+      'A fictional experience to preserve while retrying.',
+    );
+    await expect(finish).toBeEnabled();
+
+    await feedback.fill('x'.repeat(2001));
+    await finish.click();
+    await expect(page.getByRole('alert')).toHaveText(
+      'Your feedback is too long. Please shorten it and try again.',
+    );
+    await expect(feedback).toHaveValue('x'.repeat(2001));
+    await feedback.fill('We enjoyed a friendly conversation.');
+    await finish.click();
+    await expect(
+      page.getByText('Thank you for sharing your experience!'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('We could not save your experience.', { exact: false }),
+    ).toHaveCount(0);
+    await page.reload();
+    await expect(
+      page.getByText('You already shared your experience with them'),
+    ).toBeVisible();
+    expect(errors).toEqual([]);
+  } finally {
+    await removeExperiencesBetweenUsernames(
+      sender.username,
+      recipient.username,
+    );
+  }
+});

@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 
 export async function get(userTo) {
   const { data } = await axios.get(`/api/references-thread/${userTo}`);
