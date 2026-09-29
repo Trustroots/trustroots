@@ -1,6 +1,7 @@
 /** Unit tests for the OAuth helpers of the authentication controller. */
 const crypto = require('crypto');
 const mongoose = require('mongoose');
+const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 const winston = require('winston');
 const should = require('should');
@@ -12,6 +13,8 @@ const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
 const User = mongoose.model('User');
+const controllerPath =
+  '../../server/controllers/users.authentication.server.controller';
 
 function stubControllerDependencies(dependencyStubs) {
   for (const [dependencyPath, methods] of Object.entries(dependencyStubs)) {
