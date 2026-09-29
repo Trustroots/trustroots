@@ -341,7 +341,7 @@ export function stringifyLegacySearch(search) {
 }
 
 export function createAppRouter() {
-  return createRouter({
+  const router = createRouter({
     context: {
       navigateOverride: undefined,
     },
@@ -350,6 +350,12 @@ export function createAppRouter() {
     routeTree,
     stringifySearch: stringifyLegacySearch,
   });
+
+  // ReactAppShell applies route-specific scroll behaviour after each render.
+  // Skip TanStack's initial reset so routes marked noScrollingTop are honoured.
+  router.resetNextScroll = false;
+
+  return router;
 }
 
 export function findRoute(path) {

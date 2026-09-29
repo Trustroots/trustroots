@@ -46,6 +46,7 @@ export default function ReactAppShell() {
     const destination = new URL(target, window.location.origin);
     router.navigate({
       hash: destination.hash.slice(1),
+      resetScroll: false,
       search: Object.fromEntries(destination.searchParams),
       to: destination.pathname,
     });
