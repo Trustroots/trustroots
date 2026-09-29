@@ -101,14 +101,20 @@ describe('Read experiences by userTo Id', () => {
           .have.property('userFrom')
           .which.is.Object()
           .with.properties(
-            userProfile.userMiniProfileFields.split(' ').slice(2, -1),
+            userProfile.userMiniProfileFields
+              .split(' ')
+              .filter(field => field !== 'avatarVersion')
+              .slice(2, -1),
           );
 
         should(ref)
           .have.property('userTo')
           .which.is.Object()
           .with.properties(
-            userProfile.userMiniProfileFields.split(' ').slice(2, -1),
+            userProfile.userMiniProfileFields
+              .split(' ')
+              .filter(field => field !== 'avatarVersion')
+              .slice(2, -1),
           );
 
         should(ref).have.propertyByPath('interactions', 'met').Boolean();
