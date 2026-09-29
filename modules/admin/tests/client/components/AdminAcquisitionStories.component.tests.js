@@ -167,7 +167,9 @@ describe('<AdminAcquisitionStories />', () => {
 
     render(<AdminAcquisitionStories />);
 
-    expect(await screen.findByRole('link', { name: 'casey' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'casey' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('table')).toHaveTextContent('casey');
   });
 

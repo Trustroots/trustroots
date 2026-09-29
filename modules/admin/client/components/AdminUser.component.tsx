@@ -58,11 +58,17 @@ interface MemberThreadReference {
   message?: string;
 }
 
+interface MemberContactUser {
+  _id: string;
+  username?: string;
+  displayName?: string;
+}
+
 interface MemberContact {
   _id: string;
-  userFrom?: string | MemberRecord;
-  userTo?: string | MemberRecord;
-  user?: string | MemberRecord;
+  userFrom?: string | MemberContactUser;
+  userTo?: string | MemberContactUser;
+  user?: string | MemberContactUser;
   created?: string | number;
 }
 
