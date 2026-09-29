@@ -229,7 +229,7 @@
     "less": "3.13.1",
     "less-loader": "7.3.0",
     "lint-staged": "17.0.8",
-    "mini-css-extract-plugin": "1.6.0",
+    "mini-css-extract-plugin": "2.10.2",
     "mocha": "8.4.0",
     "nodemon": "3.1.14",
     "nyc": "18.0.0",
