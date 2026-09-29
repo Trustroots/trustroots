@@ -3,7 +3,7 @@
  */
 require('should');
 const moment = require('moment');
-const proxyquire = require('proxyquire').noCallThru();
+const emailService = require('../../../../core/server/services/email.server.service');
 const sinon = require('sinon');
 const async = require('async');
 const testutils = require('../../../../../testutils/server/server.testutil');
@@ -569,26 +569,18 @@ describe('Job: message unread', function () {
     });
 
     it('logs queue drain errors but still completes', function (done) {
-      const jobPath = '../../../server/jobs/message-unread.server.job';
-      const jobWithQueueError = proxyquire(jobPath, {
-        async: {
-          eachSeries: async.eachSeries,
-          series: async.series,
-          waterfall: async.waterfall,
-          queue() {
-            const queue = {
-              push() {
-                setImmediate(() => {
-                  if (typeof queue.drain === 'function') {
-                    queue.drain(new Error('queue failed'));
-                  }
-                });
-              },
-              drain: null,
-            };
-            return queue;
+      const jobWithQueueError = require('../../../server/jobs/message-unread.server.job');
+      sinon.stub(async, 'queue').callsFake(() => {
+        const queue = {
+          push() {
+            setImmediate(() => {
+              if (typeof queue.drain === 'function')
+                queue.drain(new Error('queue failed'));
+            });
           },
-        },
+          drain: null,
+        };
+        return queue;
       });
 
       sinon.stub(Message, 'aggregate').yields(null, [
@@ -626,18 +618,8 @@ describe('Job: message unread', function () {
     });
 
     it('continues when notifications have no message ids', function (done) {
-      const jobPath = '../../../server/jobs/message-unread.server.job';
-      const jobWithEmptyMessages = proxyquire(jobPath, {
-        async: {
-          eachSeries: async.eachSeries,
-          series: async.series,
-          waterfall: async.waterfall,
-          queue: async.queue,
-        },
-        '../../../core/server/services/email.server.service': {
-          sendMessagesUnread: (from, to, notification, cb) => cb(),
-        },
-      });
+      const jobWithEmptyMessages = require('../../../server/jobs/message-unread.server.job');
+      sinon.stub(emailService, 'sendMessagesUnread').callsArg(3);
 
       sinon.stub(Message, 'aggregate').yields(null, [
         {

@@ -3,7 +3,6 @@
  * the route tests do not reach. Handlers are invoked directly with mock
  * req/res/next against the test database.
  */
-const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
 const sinon = require('sinon');
 
@@ -13,8 +12,7 @@ require('should');
 
 const Contact = mongoose.model('Contact');
 
-const controllerPath = '../../server/controllers/contacts.server.controller';
-const emailServicePath = '../../../core/server/services/email.server.service';
+const emailService = require('../../../core/server/services/email.server.service');
 
 function runHandler(invoke) {
   return new Promise(resolve => {
@@ -170,12 +168,10 @@ describe('Contacts controller unit tests', () => {
     });
 
     it('cleans up the contact when email sending fails', async () => {
-      const controller = proxyquire(controllerPath, {
-        [emailServicePath]: {
-          sendConfirmContact: (from, to, contact, html, plain, cb) =>
-            cb(new Error('mail failed')),
-        },
-      });
+      sinon
+        .stub(emailService, 'sendConfirmContact')
+        .callsArgWith(5, new Error('mail failed'));
+      const controller = contactsController;
 
       const { res } = await runHandler(res =>
         controller.add(
