@@ -1,10 +1,12 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Privacy() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>
@@ -32,7 +34,7 @@ export default function Privacy() {
             <p
               className="text-muted"
               itemProp="datePublished"
-              dateTime="2014-12-23"
+              {...{ dateTime: '2014-12-23' }}
             >
               <time itemProp="dateModified" dateTime="2026-07-26">
                 {t('Last updated on {{date, LL}}', {
@@ -50,14 +52,14 @@ export default function Privacy() {
                 </em>
               </p>
               <h3>{t('Your data is yours')}</h3>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 Members on Trustroots can download their profile, contact and
                 hosting data through the{' '}
                 <a href="/profile/edit/account">Account settings</a>.
               </Trans>
               <br />
               <br />
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 You are able to remove your profile from the Trustroots by
                 asking us to delete your account through the{' '}
                 <a href="/profile/edit/account">Account settings</a>.
@@ -112,7 +114,7 @@ export default function Privacy() {
               </p>
               <h3>{t('Nostroots and Nostr')}</h3>
               <p>
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   Trustroots offers an optional Nostr integration through
                   Nostroots. Information you publish to Nostr may be stored and
                   redistributed by relays outside Trustroots&apos; control. Your
@@ -131,7 +133,7 @@ export default function Privacy() {
               </p>
               <ul>
                 <li>
-                  <Trans t={t} ns="pages">
+                  <Trans t={rawT} ns="pages">
                     Communication with our support team by email or contact form
                     is managed through Zendesk and stored on Zendesk servers.
                     See the{' '}
@@ -147,19 +149,19 @@ export default function Privacy() {
                   )}
                 </li>
                 <li>
-                  <Trans t={t} ns="pages">
+                  <Trans t={rawT} ns="pages">
                     We route our emails through{' '}
                     <a href="https://www.sparkpost.com/">SparkPost</a> servers.
                   </Trans>
                 </li>
               </ul>
               <h3>{t('Our server')}</h3>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 Our server (and thus your data) is securely hosted at Hetzner in
                 Germany.
               </Trans>
               <h3>{t('Research')}</h3>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 Scientific trust metric research might be done with Trustroots
                 data, but in such case the data is always anonymized. See our{' '}
                 <a href="/statistics">statistics page</a> for more information.
@@ -167,13 +169,13 @@ export default function Privacy() {
             </div>
             <hr />
             <p className="lead">
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 Questions? <a href="/support">Drop us a line!</a>
               </Trans>
             </p>
             <p>
               <small className="text-muted">
-                <Trans t={t} ns="pages">
+                <Trans t={rawT} ns="pages">
                   Content available under a{' '}
                   <a
                     href="https://creativecommons.org/licenses/by-sa/4.0/"

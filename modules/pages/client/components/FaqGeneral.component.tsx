@@ -1,9 +1,11 @@
+import type { PageTranslator } from '../types';
 import React from 'react';
 import Faq from '@/modules/pages/client/components/Faq.component.js';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function FaqGeneral() {
-  const { t } = useTranslation('pages');
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <Faq category="general">
@@ -20,7 +22,7 @@ export default function FaqGeneral() {
         )}
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           In the initial phase we were focusing on getting especially
           hitchhikers on board and making the site ideal for that. Our
           background is within Hitchhikers community and in{' '}
@@ -43,14 +45,14 @@ export default function FaqGeneral() {
 
       <div className="faq-question" id="is-there-mobile-app">
         <h3>{t('Is there a mobile app?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Trustroots itself does not currently have a mobile app, but we have
           new features that are available through the{' '}
           <a href="https://nos.trustroots.org/">Nostroots mobile app</a>.
         </Trans>
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           However, our website is mobile optimized, so you could also add it to
           your phone&apos;s home screen for quick access. Here are instructions
           for{' '}
@@ -112,7 +114,7 @@ export default function FaqGeneral() {
         {t(
           'New Facebook connections are no longer supported. Members who connected Facebook in the past can continue using their stored Facebook profile image or disconnect the legacy connection from their account settings.',
         )}{' '}
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           <a href="https://ideas.trustroots.org/2014/12/29/life-outside-big-blue-box/">
             Read our blog post
           </a>{' '}
@@ -134,21 +136,21 @@ export default function FaqGeneral() {
         )}
         <br />
         <br />
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Do <a href="/contact">contact us</a> if you want to help with this.
         </Trans>
       </div>
 
       <div className="faq-question" id="why-was-my-account-suspended">
         <h3>{t('Why was my account suspended?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           See <a href="/rules">rules of Trustroots</a> for details.
         </Trans>
       </div>
 
       <div className="faq-question" id="how-can-i-remove-my-account">
         <h3>{t('How can I remove my account')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           You can remove your account via{' '}
           <a href="/profile-edit/account#remove">account page</a>. We will not
           store your profile in our systems after removal.
@@ -157,7 +159,7 @@ export default function FaqGeneral() {
 
       <div className="faq-question" id="how-can-i-help">
         <h3>{t('How can I help?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           Trustroots is a community of travellers for sharing, hosting and
           getting people together. If you want to help grow this network you can
           find some <a href="https://team.trustroots.org/">things to do here</a>
@@ -167,7 +169,7 @@ export default function FaqGeneral() {
 
       <div className="faq-question" id="how-can-i-contact-you">
         <h3>{t('How can I contact you?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           In plenty of public and private ways:{' '}
           <a href="/support">drop us a message</a>,{' '}
           <a href="https://ideas.trustroots.org/">comment on our blog</a>,{' '}
@@ -184,7 +186,7 @@ export default function FaqGeneral() {
         id="how-do-i-report-a-member-that-violates-the-rules"
       >
         <h3>{t('How do I report a member that violates the rules?')}</h3>
-        <Trans t={t} ns="pages">
+        <Trans t={rawT} ns="pages">
           If you navigate to the profile of a user, you will find a link that
           says &quot;Report member to support&quot; that will lead you to a
           report form. Also, at any point, you can{' '}

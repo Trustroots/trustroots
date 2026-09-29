@@ -1,11 +1,18 @@
+import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
 import PropTypes from 'prop-types';
 import { userType } from '@/modules/users/client/users.prop-types';
 import { useTranslation } from 'react-i18next';
 
-export default function Navigation({ user, onSignout }) {
-  const { t } = useTranslation('pages');
+interface NavigationProps {
+  user: PageUser;
+  onSignout: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+}
+
+export default function Navigation({ user, onSignout }: NavigationProps) {
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>

@@ -1,14 +1,16 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
+import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 
 // Internal dependencies`
 import { userType } from '@/modules/users/client/users.prop-types';
-import Board from '@/modules/core/client/components/Board.js';
+import Board from './PageBoard';
 import ManifestoText from './ManifestoText.component.js';
 
-export default function Foundation({ user }) {
-  const { t } = useTranslation('pages');
+export default function Foundation({ user }: { user?: PageUser | null }) {
+  const { t: rawT } = useTranslation('pages');
+  const t = rawT as unknown as PageTranslator;
 
   return (
     <>
@@ -82,7 +84,7 @@ export default function Foundation({ user }) {
           <div className="col-xs-12 col-sm-8 col-sm-offset-2 col-md-6 col-md-offset-3 text-center">
             <h2 id="board">{t('Board')}</h2>
             <p>
-              <Trans t={t} ns="pages">
+              <Trans t={rawT} ns="pages">
                 We are a group of hospitality exchange enthusiasts with
                 backgrounds in some notable projects. The same people who also
                 brought you <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
@@ -114,7 +116,7 @@ export default function Foundation({ user }) {
               <div className="media-body">
                 <h4 className="media-heading">Mikael</h4>
                 <p className="text-color-links">
-                  <Trans t={t} ns="pages">
+                  <Trans t={rawT} ns="pages">
                     Working on big freegan/travel projects such as{' '}
                     <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
                     <a href="http://hitchgathering.org/">
@@ -264,7 +266,7 @@ export default function Foundation({ user }) {
               <div className="media-body">
                 <h4 className="media-heading">Kasper</h4>
                 <p className="text-color-links">
-                  <Trans t={t} ns="pages">
+                  <Trans t={rawT} ns="pages">
                     Founded multiple popular and trusted websites such as{' '}
                     <a href="https://hitchwiki.org/">Hitchwiki</a>,{' '}
                     <a href="https://trashwiki.org/">Trashwiki</a>,{' '}

@@ -6,19 +6,26 @@ import {
   useSettings,
 } from '@/modules/core/client/react-app/AppProviders';
 import { onClientEvent } from '@/modules/core/client/services/client-runtime';
+import type { PageUser } from '../types';
 
-export default function HomeRoute({ user }) {
+type PhotoCredits = Record<string, string>;
+
+export default function HomeRoute({ user }: { user?: PageUser | null }) {
   const { isNativeMobileApp } = useAppConfig();
   const { build } = useSettings();
-  const [photoCredits, setPhotoCredits] = useState({});
+  const [photoCredits, setPhotoCredits] = useState<PhotoCredits>({});
+  const listenForPhotoCredits = onClientEvent as unknown as (
+    eventName: 'photoCreditsRemoved' | 'photoCreditsUpdated',
+    listener: (event: null, photos: PhotoCredits) => void,
+  ) => () => void;
   useLayoutEffect(() => {
-    const stopAdding = onClientEvent(
+    const stopAdding = listenForPhotoCredits(
       'photoCreditsUpdated',
       (_event, photos) => {
         setPhotoCredits(current => ({ ...current, ...photos }));
       },
     );
-    const stopRemoving = onClientEvent(
+    const stopRemoving = listenForPhotoCredits(
       'photoCreditsRemoved',
       (_event, photos) => {
         setPhotoCredits(current =>
@@ -35,9 +42,10 @@ export default function HomeRoute({ user }) {
       stopRemoving();
     };
   }, []);
-  const routeParams = Object.fromEntries(
-    new URLSearchParams(window.location.search),
-  );
+  const routeParams: Record<string, string> = {};
+  new URLSearchParams(window.location.search).forEach((value, key) => {
+    routeParams[key] = value;
+  });
   return (
     <Home
       user={user}
