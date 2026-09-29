@@ -1,20 +1,21 @@
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 require('should');
 
-const controllerPath =
-  '../../../server/controllers/users.export.server.controller';
+const path = require('path');
+const config = require('../../../../../config/config');
+config.files.server.models.forEach(modelPath =>
+  require(path.resolve(modelPath)),
+);
+const contactsService = require('../../../../contacts/server/controllers/contacts.server.controller');
+const offersService = require('../../../../offers/server/controllers/offers.server.controller');
+const profilesService = require('../../../server/controllers/users.profile.server.controller');
+const controller = require('../../../server/controllers/users.export.server.controller');
 
 function loadController({ profile, contacts, offers }) {
-  return proxyquire(controllerPath, {
-    '../../../contacts/server/controllers/contacts.server.controller': {
-      contactListByUser: contacts,
-    },
-    '../../../offers/server/controllers/offers.server.controller': {
-      offersByUserId: offers,
-    },
-    './users.profile.server.controller': { userByUsername: profile },
-  });
+  sinon.stub(profilesService, 'userByUsername').callsFake(profile);
+  sinon.stub(contactsService, 'contactListByUser').callsFake(contacts);
+  sinon.stub(offersService, 'offersByUserId').callsFake(offers);
+  return controller;
 }
 
 function mockResponse() {
@@ -36,6 +37,8 @@ function mockResponse() {
 
 describe('Member data export controller', () => {
   const user = { _id: 'member-id', username: 'member' };
+
+  afterEach(() => sinon.restore());
 
   it('returns the current member’s sanitised profile, contacts, and offers', async () => {
     const profile = sinon.stub().callsFake((req, res, next, username) => {
