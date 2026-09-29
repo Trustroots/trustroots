@@ -85,6 +85,11 @@ const registerRoutes = app => {
     .post(adminAuditLog.record, adminUsers.getUser);
 
   app
+    .route('/api/admin/staff-blockers')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminUsers.listStaffBlockers);
+
+  app
     .route('/api/admin/user/change-role')
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.changeRole);

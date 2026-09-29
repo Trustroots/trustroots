@@ -494,6 +494,45 @@ export const getUser = async (req, res) => {
  * This middleware changes user roles by ID
  * Used for suspending users or setting them a "shadow ban"
  */
+/** Admins inspect blockers of all staff; Welcome team members inspect their own. */
+export const listStaffBlockers = async (req, res) => {
+  try {
+    const staffMembers = req.user.roles.includes('admin')
+      ? await User.find({ roles: { $in: ['admin', 'welcome-team'] } })
+          .select('username displayName')
+          .sort({ username: 1 })
+          .lean()
+      : await User.find({ _id: req.user._id })
+          .select('username displayName')
+          .lean();
+    const staffIds = staffMembers.map(staff => staff._id);
+    const blockers = staffIds.length
+      ? await User.find({ blocked: { $in: staffIds } })
+          .select('username displayName blocked')
+          .sort({ username: 1 })
+          .lean()
+      : [];
+
+    res.send(
+      staffMembers.map(staff => ({
+        _id: staff._id,
+        username: staff.username,
+        displayName: staff.displayName,
+        blockedBy: blockers
+          .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
+          .map(({ _id, username, displayName }) => ({
+            _id,
+            username,
+            displayName,
+          })),
+      })),
+    );
+  } catch (err) {
+    log('error', 'Failed to load members who blocked staff.', { error: err });
+    handleAdminApiError(res, err);
+  }
+};
+
 export const changeRole = async (req, res) => {
   const userId = _.get(req, ['body', 'id']);
   const role = _.get(req, ['body', 'role']);
@@ -606,6 +645,7 @@ export default {
   listUsersByRole,
   listUsersByLastIpAddress,
   getUser,
+  listStaffBlockers,
   findPotentialMatches,
   changeRole,
   usernameToUserId,
