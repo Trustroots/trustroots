@@ -15,7 +15,12 @@ import CreateExperience from '@/modules/experiences/client/components/CreateExpe
 
 jest.mock('@/modules/experiences/client/api/experiences.api');
 jest.mock('@/modules/support/client/api/support.api');
-afterEach(() => jest.clearAllMocks());
+afterEach(() => {
+  jest.restoreAllMocks();
+  jest.clearAllMocks();
+  localStorage.clear();
+  delete window.settings;
+});
 
 async function waitForLoader() {
   await waitForElementToBeRemoved(() => screen.getByText('Wait a moment…'));
@@ -139,7 +144,7 @@ describe('<CreateExperience />', () => {
       target: { value: 'they made a tasty pie' },
     });
 
-    fireEvent.click(getAllByText('Finish')[0]);
+    fireEvent.click(getAllByText('Save experience')[0]);
 
     expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
@@ -217,7 +222,7 @@ describe('<CreateExperience />', () => {
 
     fireEvent.click(getAllByText('Next')[0]);
 
-    fireEvent.click(getAllByText('Finish')[0]);
+    fireEvent.click(getAllByText('Save experience')[0]);
 
     expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: {
@@ -315,7 +320,7 @@ describe('<CreateExperience />', () => {
       ),
     ).toBeInTheDocument();
 
-    fireEvent.click(getAllByText('Finish')[0]);
+    fireEvent.click(getAllByText('Save experience')[0]);
 
     expect(experiencesApi.create).toHaveBeenCalledWith({
       interactions: { met: true, host: false, guest: false },
@@ -370,7 +375,12 @@ describe('<CreateExperience />', () => {
       'We could not save your experience. Your text is still here. Please try again.',
     ],
     [
-      { response: { data: { details: { feedbackPublic: 'toolong' } } } },
+      {
+        response: {
+          status: 400,
+          data: { details: { feedbackPublic: 'toolong' } },
+        },
+      },
       'Your feedback is too long. Please shorten it and try again.',
     ],
   ])(
@@ -381,17 +391,17 @@ describe('<CreateExperience />', () => {
         .mockResolvedValueOnce({ public: false });
       await fillExperience();
 
-      fireEvent.click(screen.getAllByText('Finish')[0]);
+      fireEvent.click(screen.getAllByText('Save experience')[0]);
       expect(await screen.findByRole('alert')).toHaveTextContent(message);
       expect(
         screen.getByLabelText(/Leave your public feedback here/),
       ).toHaveValue('A fictional public experience.');
-      expect(screen.getAllByText('Finish')[0]).toBeEnabled();
+      expect(screen.getAllByText('Save experience')[0]).toBeEnabled();
       expect(
         screen.queryByText('Thank you for sharing your experience!'),
       ).not.toBeInTheDocument();
 
-      fireEvent.click(screen.getAllByText('Finish')[0]);
+      fireEvent.click(screen.getAllByText('Save experience')[0]);
       expect(
         await screen.findByText('Thank you for sharing your experience!'),
       ).toBeInTheDocument();
@@ -410,7 +420,7 @@ describe('<CreateExperience />', () => {
       userFrom: userFrom._id,
       public: true,
     });
-    fireEvent.click(screen.getAllByText('Finish')[0]);
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
     expect(
       await screen.findByText('Thank you for sharing your experience!'),
     ).toBeInTheDocument();
@@ -429,11 +439,11 @@ describe('<CreateExperience />', () => {
         response: { status: 409 },
       });
       experiencesApi.readMine.mockResolvedValueOnce(existing);
-      fireEvent.click(screen.getAllByText('Finish')[0]);
+      fireEvent.click(screen.getAllByText('Save experience')[0]);
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'We could not save your experience.',
       );
-      expect(screen.getAllByText('Finish')[0]).toBeEnabled();
+      expect(screen.getAllByText('Save experience')[0]).toBeEnabled();
     },
   );
 
@@ -443,17 +453,17 @@ describe('<CreateExperience />', () => {
     experiencesApi.readMine.mockRejectedValueOnce(
       new Error('Connection failed'),
     );
-    fireEvent.click(screen.getAllByText('Finish')[0]);
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'We could not save your experience.',
     );
-    expect(screen.getAllByText('Finish')[0]).toBeEnabled();
+    expect(screen.getAllByText('Save experience')[0]).toBeEnabled();
   });
 
   it('does not send a private report when saving the experience fails', async () => {
     experiencesApi.create.mockRejectedValueOnce(new Error('Connection failed'));
     await fillExperience({ report: true });
-    fireEvent.click(screen.getAllByText('Finish')[0]);
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
     await screen.findByRole('alert');
     expect(supportApi.reportMember).not.toHaveBeenCalled();
   });
@@ -465,7 +475,7 @@ describe('<CreateExperience />', () => {
       .mockRejectedValueOnce(new Error('Connection failed again'))
       .mockResolvedValueOnce();
     await fillExperience({ report: true });
-    fireEvent.click(screen.getAllByText('Finish')[0]);
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
 
     expect(
       await screen.findByText('Thank you for sharing your experience!'),
@@ -503,5 +513,175 @@ describe('<CreateExperience />', () => {
       userTo,
       'A fictional private report.',
     );
+  });
+  it('recovers public draft choices after reopening, without storing a private report', async () => {
+    await fillExperience({ report: true });
+    const stored = JSON.parse(
+      localStorage.getItem('trustroots:experience-draft:v1:111111:222222'),
+    );
+    expect(stored).toMatchObject({
+      met: true,
+      recommend: 'no',
+      feedbackPublic: 'A fictional public experience.',
+    });
+    expect(JSON.stringify(stored)).not.toContain('A fictional private report.');
+    const { cleanup } = require('@testing-library/react/pure');
+    cleanup();
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    fireEvent.click(await screen.findByText('Restore draft'));
+    expect(screen.getByLabelText('Met in person')).toBeChecked();
+    fireEvent.click(screen.getAllByText('Next')[0]);
+    expect(screen.getByText('No').querySelector('input')).toBeChecked();
+    fireEvent.click(screen.getAllByText('Next')[0]);
+    expect(
+      screen.getByLabelText(/Leave your public feedback here/),
+    ).toHaveValue('A fictional public experience.');
+    experiencesApi.create.mockResolvedValueOnce({ public: false });
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
+    await screen.findByText('Your experience has been saved.');
+    expect(
+      localStorage.getItem('trustroots:experience-draft:v1:111111:222222'),
+    ).toBeNull();
+    expect(supportApi.reportMember).not.toHaveBeenCalled();
+  });
+
+  function storeDraft() {
+    localStorage.setItem(
+      'trustroots:experience-draft:v1:111111:222222',
+      JSON.stringify({
+        met: true,
+        host: false,
+        guest: false,
+        recommend: 'no',
+        feedbackPublic: 'An unfinished sample.',
+        updatedAt: Date.now(),
+      }),
+    );
+  }
+
+  it('discards a saved draft and starts with empty choices', async () => {
+    storeDraft();
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    fireEvent.click(await screen.findByText('Discard draft'));
+    expect(screen.getByLabelText('Met in person')).not.toBeChecked();
+    expect(
+      localStorage.getItem('trustroots:experience-draft:v1:111111:222222'),
+    ).toBeNull();
+  });
+
+  it('keeps the required recommendation when restoring after the other member published', async () => {
+    storeDraft();
+    experiencesApi.readMine.mockResolvedValueOnce({
+      userFrom: userTo._id,
+      public: true,
+    });
+    experiencesApi.create.mockResolvedValueOnce({ public: true });
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    fireEvent.click(await screen.findByText('Restore draft'));
+    fireEvent.click(screen.getAllByText('Next')[0]);
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
+    await screen.findByText('Your experience has been saved.');
+    expect(experiencesApi.create).toHaveBeenCalledWith(
+      expect.objectContaining({ recommend: 'yes' }),
+    );
+  });
+
+  it('shows recovery is unavailable when device storage fails', async () => {
+    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('Storage full');
+    });
+    await fillExperience();
+    expect(
+      screen.getByText(/Your browser could not save a draft/),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText('Save experience')[0]).toBeEnabled();
+  });
+
+  it('shows saving and prevents repeated clicks or editing while awaiting confirmation', async () => {
+    let resolveSave;
+    experiencesApi.create.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveSave = resolve;
+        }),
+    );
+    await fillExperience();
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
+    expect(screen.getByText('Saving your experience…')).toBeInTheDocument();
+    expect(
+      screen.getByLabelText(/Leave your public feedback here/),
+    ).toBeDisabled();
+    fireEvent.click(screen.getAllByText('Saving…')[0]);
+    expect(experiencesApi.create).toHaveBeenCalledTimes(1);
+    resolveSave({ public: false });
+    await screen.findByText('Your experience has been saved.');
+  });
+
+  it.each([new Error('Response lost'), { response: { status: 503 } }])(
+    'confirms an uncertain save without another POST (%j)',
+    async error => {
+      await fillExperience();
+      experiencesApi.create.mockRejectedValueOnce(error);
+      experiencesApi.readMine.mockResolvedValueOnce({
+        userFrom: userFrom._id,
+        public: false,
+      });
+      fireEvent.click(screen.getAllByText('Save experience')[0]);
+      await screen.findByText('Your experience has been saved.');
+      expect(experiencesApi.create).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('shows confirmation while the private report is still sending', async () => {
+    let resolveReport;
+    supportApi.reportMember.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveReport = resolve;
+        }),
+    );
+    experiencesApi.create.mockResolvedValueOnce({ public: false });
+    await fillExperience({ report: true });
+    fireEvent.click(screen.getAllByText('Save experience')[0]);
+    await screen.findByText('Your experience has been saved.');
+    expect(
+      screen.getByText('Sending your private report…'),
+    ).toBeInTheDocument();
+    resolveReport();
+    await screen.findByText(/You also reported them to us/);
+    expect(
+      screen.queryByText('Sending your private report…'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('uses the configured feedback limit and preserves oversized text', async () => {
+    window.settings = { limits: { maximumExperienceFeedbackPublicLength: 30 } };
+    await fillExperience();
+    const feedback = screen.getByLabelText(/Leave your public feedback here/);
+    fireEvent.change(feedback, { target: { value: 'x'.repeat(31) } });
+    expect(screen.getByText('31 / 30 characters')).toBeInTheDocument();
+    expect(screen.getAllByText('Save experience')[0]).toBeDisabled();
+    expect(feedback).toHaveValue('x'.repeat(31));
+    fireEvent.change(feedback, { target: { value: 'A shorter sample.' } });
+    expect(screen.getAllByText('Save experience')[0]).toBeEnabled();
+  });
+  it('lets a restored oversized draft reach the feedback step so it can be shortened', async () => {
+    storeDraft();
+    window.settings = { limits: { maximumExperienceFeedbackPublicLength: 5 } };
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    fireEvent.click(await screen.findByText('Restore draft'));
+    fireEvent.click(screen.getAllByText('Next')[0]);
+    fireEvent.click(screen.getAllByText('Next')[0]);
+    expect(
+      screen.getByLabelText(/Leave your public feedback here/),
+    ).toHaveValue('An unfinished sample.');
+    expect(screen.getAllByText('Save experience')[0]).toBeDisabled();
+    fireEvent.change(screen.getByLabelText(/Leave your public feedback here/), {
+      target: { value: 'Short' },
+    });
+    expect(screen.getAllByText('Save experience')[0]).toBeEnabled();
   });
 });
