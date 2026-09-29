@@ -206,9 +206,11 @@ describe('<CreateExperience />', () => {
       userTo: userTo._id,
     });
 
-    expect(supportApi.reportMember).toHaveBeenCalledWith(
-      userTo,
-      'they were mean to me',
+    await waitFor(() =>
+      expect(supportApi.reportMember).toHaveBeenCalledWith(
+        userTo,
+        'they were mean to me',
+      ),
     );
 
     const successMessage = await waitFor(() =>
@@ -268,10 +270,10 @@ describe('<CreateExperience />', () => {
       public: true,
       response: null,
     });
+    experiencesApi.create.mockResolvedValueOnce({ public: true });
 
-    const { getAllByText, getByLabelText, queryByLabelText } = render(
-      <CreateExperience userFrom={userFrom} userTo={userTo} />,
-    );
+    const { getAllByText, getByLabelText, queryByLabelText, findByText } =
+      render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
 
     await waitForLoader();
 
@@ -288,5 +290,194 @@ describe('<CreateExperience />', () => {
         'Would you like to describe something about your experience with them? (Optional)',
       ),
     ).toBeInTheDocument();
+
+    fireEvent.click(getAllByText('Finish')[0]);
+
+    expect(experiencesApi.create).toHaveBeenCalledWith({
+      interactions: { met: true, host: false, guest: false },
+      recommend: 'yes',
+      feedbackPublic: '',
+      userTo: userTo._id,
+    });
+    expect(
+      await findByText('Thank you for sharing your experience!'),
+    ).toBeInTheDocument();
+  });
+
+  it('lets members retry when the initial experience lookup fails', async () => {
+    experiencesApi.readMine
+      .mockRejectedValueOnce(new Error('Connection failed'))
+      .mockResolvedValueOnce(null);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'We could not load the experience form. Please try again.',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByLabelText('Met in person')).toBeInTheDocument();
+    expect(experiencesApi.readMine).toHaveBeenCalledTimes(2);
+  });
+
+  async function fillExperience({ report = false } = {}) {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+    render(<CreateExperience userFrom={userFrom} userTo={userTo} />);
+    await waitForLoader();
+    fireEvent.click(screen.getByLabelText('Met in person'));
+    fireEvent.click(screen.getAllByText('Next')[0]);
+    fireEvent.click(screen.getByText(report ? 'No' : 'Yes'));
+    if (report) {
+      fireEvent.click(
+        screen.getByText('Privately report this person to the moderators'),
+      );
+      fireEvent.change(screen.getByLabelText('Message to the moderators'), {
+        target: { value: 'A fictional private report.' },
+      });
+    }
+    fireEvent.click(screen.getAllByText('Next')[0]);
+    fireEvent.change(screen.getByLabelText(/Leave your public feedback here/), {
+      target: { value: 'A fictional public experience.' },
+    });
+  }
+
+  it.each([
+    [
+      new Error('Network failure'),
+      'We could not save your experience. Your text is still here. Please try again.',
+    ],
+    [
+      { response: { data: { details: { feedbackPublic: 'toolong' } } } },
+      'Your feedback is too long. Please shorten it and try again.',
+    ],
+  ])(
+    'preserves the draft and enables retry after a failed save (%j)',
+    async (error, message) => {
+      experiencesApi.create
+        .mockRejectedValueOnce(error)
+        .mockResolvedValueOnce({ public: false });
+      await fillExperience();
+
+      fireEvent.click(screen.getAllByText('Finish')[0]);
+      expect(await screen.findByRole('alert')).toHaveTextContent(message);
+      expect(
+        screen.getByLabelText(/Leave your public feedback here/),
+      ).toHaveValue('A fictional public experience.');
+      expect(screen.getAllByText('Finish')[0]).toBeEnabled();
+      expect(
+        screen.queryByText('Thank you for sharing your experience!'),
+      ).not.toBeInTheDocument();
+
+      fireEvent.click(screen.getAllByText('Finish')[0]);
+      expect(
+        await screen.findByText('Thank you for sharing your experience!'),
+      ).toBeInTheDocument();
+      expect(experiencesApi.create).toHaveBeenCalledTimes(2);
+      expect(experiencesApi.create.mock.calls[1]).toEqual(
+        experiencesApi.create.mock.calls[0],
+      );
+      expect(screen.queryByText(message)).not.toBeInTheDocument();
+    },
+  );
+
+  it('recognises a saved experience after a lost response causes a retry conflict', async () => {
+    await fillExperience();
+    experiencesApi.create.mockRejectedValueOnce({ response: { status: 409 } });
+    experiencesApi.readMine.mockResolvedValueOnce({
+      userFrom: userFrom._id,
+      public: true,
+    });
+    fireEvent.click(screen.getAllByText('Finish')[0]);
+    expect(
+      await screen.findByText('Thank you for sharing your experience!'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `Your experience with ${userTo.displayName} is public now.`,
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it.each([null, { userFrom: 'another-member', public: true }])(
+    'does not claim success for an unconfirmed conflict (%j)',
+    async existing => {
+      await fillExperience();
+      experiencesApi.create.mockRejectedValueOnce({
+        response: { status: 409 },
+      });
+      experiencesApi.readMine.mockResolvedValueOnce(existing);
+      fireEvent.click(screen.getAllByText('Finish')[0]);
+      expect(await screen.findByRole('alert')).toHaveTextContent(
+        'We could not save your experience.',
+      );
+      expect(screen.getAllByText('Finish')[0]).toBeEnabled();
+    },
+  );
+
+  it('keeps the draft available when checking a retry conflict also fails', async () => {
+    await fillExperience();
+    experiencesApi.create.mockRejectedValueOnce({ response: { status: 409 } });
+    experiencesApi.readMine.mockRejectedValueOnce(
+      new Error('Connection failed'),
+    );
+    fireEvent.click(screen.getAllByText('Finish')[0]);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'We could not save your experience.',
+    );
+    expect(screen.getAllByText('Finish')[0]).toBeEnabled();
+  });
+
+  it('does not send a private report when saving the experience fails', async () => {
+    experiencesApi.create.mockRejectedValueOnce(new Error('Connection failed'));
+    await fillExperience({ report: true });
+    fireEvent.click(screen.getAllByText('Finish')[0]);
+    await screen.findByRole('alert');
+    expect(supportApi.reportMember).not.toHaveBeenCalled();
+  });
+
+  it('can retry a failed private report without saving the experience again', async () => {
+    experiencesApi.create.mockResolvedValueOnce({ public: false });
+    supportApi.reportMember
+      .mockRejectedValueOnce(new Error('Connection failed'))
+      .mockRejectedValueOnce(new Error('Connection failed again'))
+      .mockResolvedValueOnce();
+    await fillExperience({ report: true });
+    fireEvent.click(screen.getAllByText('Finish')[0]);
+
+    expect(
+      await screen.findByText('Thank you for sharing your experience!'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Your experience was saved, but your private report could not be sent.',
+    );
+    expect(
+      screen.queryByText(/You also reported them to us/),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Retry private report' }),
+    );
+    await waitFor(() =>
+      expect(supportApi.reportMember).toHaveBeenCalledTimes(2),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Retry private report' }),
+      ).toBeEnabled(),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Retry private report' }),
+    );
+
+    expect(
+      await screen.findByText(/You also reported them to us/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Your experience was saved, but/),
+    ).not.toBeInTheDocument();
+    expect(experiencesApi.create).toHaveBeenCalledTimes(1);
+    expect(supportApi.reportMember).toHaveBeenCalledTimes(3);
+    expect(supportApi.reportMember).toHaveBeenLastCalledWith(
+      userTo,
+      'A fictional private report.',
+    );
   });
 });
