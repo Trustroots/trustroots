@@ -4,9 +4,7 @@
 
 Let members build trusted relationships while controlling unwanted contact and
 protecting the community from hidden or harmful activity.
-
 ## Requirements
-
 ### Requirement: Contact relationships
 
 The system SHALL let available members create, confirm, view, and remove
@@ -64,7 +62,11 @@ contact record remains.
 ### Requirement: Blocking
 
 The system SHALL let members block and unblock other members, and SHALL hide
-blocked relationship actions and protected profile access.
+blocked relationship actions and protected profile access. A member who has
+blocked another member SHALL retain direct access to that member's profile and
+avatar to reach the unblock control. A member who has been blocked SHALL not
+receive the profile owner's avatar; administrators retain their moderation
+access.
 
 #### Scenario: Member blocks another member
 
@@ -75,6 +77,21 @@ blocked relationship actions and protected profile access.
 
 - **WHEN** a member unblocks another member
 - **THEN** the system removes the block and restores permitted relationship actions
+
+#### Scenario: Blocked member requests the blocker's avatar
+
+- **WHEN** a member requests the avatar of a member who has blocked them
+- **THEN** the system returns the default avatar
+
+#### Scenario: Blocker requests the blocked member's avatar
+
+- **WHEN** a member requests the avatar of a member they have blocked
+- **THEN** the system returns the member's avatar so the blocker can use the profile's unblock control
+
+#### Scenario: Administrator requests a blocked member's avatar
+
+- **WHEN** an administrator requests the avatar of a member who has blocked them
+- **THEN** the system returns the member's avatar
 
 ### Requirement: Shadow-hidden activity
 

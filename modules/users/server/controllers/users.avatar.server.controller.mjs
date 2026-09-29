@@ -313,8 +313,15 @@ const getAvatar = (req, res) => {
     req.profile.roles.includes('shadowban');
   const isPublicProfile = req.profile.public;
   const isAdmin = req.user.roles.includes('admin');
+  const isBlockedByProfile = (req.profile.blocked || []).some(
+    blockedUserId => blockedUserId.toString() === req.user._id.toString(),
+  );
 
-  if (!isAdmin && !isOwnProfile && (!isPublicProfile || isBannedProfile)) {
+  if (
+    !isAdmin &&
+    !isOwnProfile &&
+    (!isPublicProfile || isBannedProfile || isBlockedByProfile)
+  ) {
     return serveAvatarUrl(res, defaultAvatarUrl);
   }
 
@@ -360,6 +367,7 @@ const userForAvatarByUserId = async (req, res, next, userId) => {
     'additionalProvidersData.facebook.id', // For FB avatars
     'avatarSource',
     'avatarUploaded',
+    'blocked',
     'emailHash', // MD5 hashed email to use with Gravatars
     'id',
     'public',
