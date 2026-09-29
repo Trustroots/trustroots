@@ -1,5 +1,20 @@
+const sinon = require('sinon');
 const proxyquire = require('proxyquire').noCallThru();
 require('should');
+
+const path = require('path');
+const mongoose = require('mongoose');
+const config = require('../../../../../config/config');
+config.files.server.models.forEach(modelPath =>
+  require(path.resolve(modelPath)),
+);
+const analyticsHandler = require('../../../../core/server/controllers/analytics.server.controller');
+const emailService = require('../../../../core/server/services/email.server.service');
+require('../../../server/models/user.server.model');
+const User = mongoose.model('User');
+const profileHandler = require('../../../server/controllers/users.profile.server.controller');
+const statService = require('../../../../stats/server/services/stats.server.service');
+const controller = require('../../../server/controllers/users.password.server.controller');
 
 function deferredResponse() {
   let resolveResponse;
@@ -155,6 +170,7 @@ describe('Password controller direct unit tests', () => {
       completed.should.containEql('failed:tokenSave');
     });
   });
+  afterEach(() => sinon.restore());
 
   describe('reset', () => {
     it('returns the reset failure response when login fails after save', async () => {

@@ -427,6 +427,33 @@ describe('Messages controller unit tests', () => {
       const reloaded = await Message.findById(message._id);
       reloaded.read.should.be.true();
     });
+
+    it('does not mark another member’s incoming message as read', async () => {
+      const [sender, receiver, stranger] = await utils.saveUsers(
+        utils.generateUsers(3, { public: true }),
+      );
+      const Message = mongoose.model('Message');
+      const message = await new Message({
+        content: 'Unread hello',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      }).save();
+
+      const res = deferredResponse();
+      messagesController.markRead(
+        {
+          user: { _id: stranger._id, id: stranger._id.toString() },
+          body: { messageIds: [message._id.toString()] },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+
+      const reloaded = await Message.findById(message._id);
+      reloaded.read.should.be.false();
+    });
   });
 
   describe('messagesCount', () => {
