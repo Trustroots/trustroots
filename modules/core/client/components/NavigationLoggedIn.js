@@ -230,10 +230,8 @@ export default function NavigationLoggedIn({ currentPath, onSignout, user }) {
                 rel: 'noopener noreferrer',
               },
               {
-                href: 'https://team.trustroots.org/',
+                href: '/support?category=volunteering',
                 label: t('Volunteering'),
-                target: '_blank',
-                rel: 'noopener noreferrer',
               },
             ]}
           />

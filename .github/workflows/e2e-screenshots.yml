@@ -16,7 +16,6 @@ env:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   screenshots:
@@ -28,7 +27,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -56,7 +55,7 @@ jobs:
 
       - name: Comment when no e2e spec changes
         if: steps.changed.outputs.has_specs != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const marker = '<!-- e2e-screenshots -->';
@@ -96,11 +95,11 @@ jobs:
 
       - name: Set up Docker Buildx
         if: steps.changed.outputs.has_specs == 'true'
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - name: Build dev image
         if: steps.changed.outputs.has_specs == 'true'
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: deploy/docker/dev.Dockerfile
@@ -137,6 +136,7 @@ jobs:
             -e TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
             -e TRUSTROOTS_E2E_MONGO_URI=mongodb://mongodb:27017/trustroots-test \
             -e TRUSTROOTS_E2E_SCREENSHOTS=true \
+            -e TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE=false \
             -e TRUSTROOTS_E2E_SKIP_JS_COVERAGE=true \
             -e TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE=true \
             dev npm run test:e2e -- "${specs[@]}"
@@ -183,7 +183,7 @@ jobs:
 
       - name: Upsert PR comment with screenshots
         if: steps.changed.outputs.has_specs == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           SCREENSHOT_COUNT: ${{ steps.collect.outputs.count }}
           TEST_STATUS: ${{ steps.run.outputs.test_status }}

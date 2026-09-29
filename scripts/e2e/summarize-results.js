@@ -110,7 +110,9 @@ function summarizeReport(report) {
     skipped,
     passRate: total > 0 ? Number(((passed / total) * 100).toFixed(2)) : 0,
     durationMs,
-    areas: Array.from(areas).filter(area => area !== 'Setup').sort(),
+    areas: Array.from(areas)
+      .filter(area => area !== 'Setup')
+      .sort(),
     areaCount: areas.size,
     byArea: areaResults,
     areaCoverage: areaCoverage.areaCoverage,
@@ -161,24 +163,24 @@ function formatMessage(metrics, fallbackMessage) {
   }
 
   const parts = [
-    `${metrics.passed}/${metrics.total} Playwright tests passed (${metrics.passRate.toFixed(
-      2,
-    )}%)`,
+    `${metrics.passed}/${
+      metrics.total
+    } Playwright tests passed (${metrics.passRate.toFixed(2)}%)`,
   ];
 
   if (typeof metrics.areaCoverage === 'number') {
     parts.push(
-      `${metrics.exercisedAreaCount}/${metrics.definedAreaCount} areas exercised (${metrics.areaCoverage.toFixed(
-        2,
-      )}%)`,
+      `${metrics.exercisedAreaCount}/${
+        metrics.definedAreaCount
+      } areas exercised (${metrics.areaCoverage.toFixed(2)}%)`,
     );
   }
 
   if (typeof metrics.featureCoverage === 'number') {
     parts.push(
-      `${metrics.coveredFeatureCount}/${metrics.activeFeatureCount} features covered (${metrics.featureCoverage.toFixed(
-        2,
-      )}%)`,
+      `${metrics.coveredFeatureCount}/${
+        metrics.activeFeatureCount
+      } features covered (${metrics.featureCoverage.toFixed(2)}%)`,
     );
   }
 
@@ -242,8 +244,11 @@ async function run() {
     metrics.codeCoverage = codeCoverage;
   }
 
+  // Screenshot runs intentionally select only changed specs. Keep their actual
+  // coverage metrics, but require complete feature coverage for normal CI runs.
   const incompleteFeatureCoverage =
     process.env.TRUSTROOTS_E2E_ALLOW_PARTIAL_FEATURE_COVERAGE !== 'true' &&
+    process.env.TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE !== 'false' &&
     featureCoverageIncomplete(metrics);
   if (incompleteFeatureCoverage && status === 'passed') {
     status = 'failed';

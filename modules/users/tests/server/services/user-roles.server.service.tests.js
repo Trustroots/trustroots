@@ -3,6 +3,20 @@ const userRoles = require('../../../server/services/user-roles.server.service');
 require('should');
 
 describe('Service: user-roles', function () {
+  it('exposes the same roles and functions through ESM', async function () {
+    const esmService = await import(
+      '../../../server/services/user-roles.server.service.mjs'
+    );
+    for (const name of [
+      'restrictedMessagingRoles',
+      'hasRole',
+      'hasAnyRole',
+      'hasRestrictedMessagingRole',
+    ]) {
+      esmService[name].should.equal(userRoles[name]);
+    }
+  });
+
   describe('hasRole', function () {
     it('returns true when the user has the role', function () {
       userRoles.hasRole({ roles: ['user', 'admin'] }, 'admin').should.be.true();
