@@ -125,6 +125,27 @@ describe('ProfileEditPhoto', () => {
     },
   );
 
+  it('continues the upload when FileReader returns a non-string result', async () => {
+    usersApi.uploadAvatar.mockResolvedValue({});
+    usersApi.update.mockResolvedValue({ ...user, avatarSource: 'local' });
+    const fileReaderMock = {
+      readAsDataURL: jest.fn(),
+      onloadend: null,
+      result: new ArrayBuffer(0),
+    };
+    jest.spyOn(window, 'FileReader').mockImplementation(() => fileReaderMock);
+
+    renderPage();
+    fireEvent.change(document.querySelector('input[type="file"]'), {
+      target: {
+        files: [new File(['data'], 'photo.png', { type: 'image/png' })],
+      },
+    });
+    fileReaderMock.onloadend();
+
+    await waitFor(() => expect(usersApi.uploadAvatar).toHaveBeenCalled());
+  });
+
   it('shows a preview and progress while an image uploads', async () => {
     let resolveUpload;
     usersApi.uploadAvatar.mockReturnValue(
