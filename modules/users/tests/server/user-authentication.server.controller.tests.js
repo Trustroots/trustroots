@@ -426,6 +426,30 @@ describe('Authentication controller OAuth unit tests', () => {
       );
     });
 
+    it('returns retryable service unavailable when password hashing is overloaded', async () => {
+      const overload = Object.assign(
+        new Error('Password service is temporarily busy. Please try again.'),
+        { code: 'KDF_OVERLOADED', userFacing: true },
+      );
+      const controller = proxyquire(controllerPath, {
+        async: {
+          waterfall(steps, done) {
+            done(overload);
+          },
+        },
+        '../../../stats/server/services/stats.server.service': {
+          stat: (statsObject, callback) => callback(),
+        },
+      });
+      const res = deferredResponse();
+
+      controller.signup({ body: {} }, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(503);
+      res.body.message.should.equal(overload.message);
+    });
+
     it('creates a user and logs them in', async () => {
       const controller = loadSignupController();
       const res = deferredResponse();
