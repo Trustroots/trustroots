@@ -348,12 +348,10 @@ export function createAppRouter() {
     defaultPreload: 'intent',
     parseSearch: parseLegacySearch,
     routeTree,
+    // ReactAppShell handles scrolling and respects route-specific metadata.
+    scrollRestoration: () => false,
     stringifySearch: stringifyLegacySearch,
   });
-
-  // ReactAppShell applies route-specific scroll behaviour after each render.
-  // Skip TanStack's initial reset so routes marked noScrollingTop are honoured.
-  router.resetNextScroll = false;
 
   return router;
 }
