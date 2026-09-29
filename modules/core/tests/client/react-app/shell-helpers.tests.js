@@ -112,6 +112,7 @@ describe('React shell helpers', () => {
 
   it.each([
     ['a click outside a link', document.createElement('span')],
+    ['a non-element click target', document.createTextNode('label')],
     [
       'a downloaded link',
       Object.assign(document.createElement('a'), {

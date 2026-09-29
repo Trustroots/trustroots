@@ -1,0 +1,89 @@
+import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
+import { onClientEvent } from '@/modules/core/client/services/client-runtime';
+import omit from 'lodash/omit';
+import type { Photo } from '../services/photos.service';
+
+type PhotoCredit = Photo & { imageUrl?: string };
+type BoardCreditsProps = { photoCredits?: Record<string, PhotoCredit> };
+type PhotoCreditEvent = Record<string, PhotoCredit>;
+
+/**
+ * Board Credits component Print out credits for photos used at the page.
+ * Usage: `<BoardsCredits {...props}><WrappedComponent /></Tooltip>`
+ *
+ * @param {object} photos - object containing photo objects accessible by their keys
+ */
+export default function BoardCredits({
+  photoCredits: initialPhotoCredits = {},
+}: BoardCreditsProps) {
+  const { t } = useTranslation('messages');
+
+  const [photoCredits, setPhotoCredits] = useState(initialPhotoCredits);
+
+  useEffect(() => setPhotoCredits(initialPhotoCredits), [initialPhotoCredits]);
+
+  useEffect(
+    () =>
+      onClientEvent('photoCreditsUpdated', (_scope, photo) =>
+        setPhotoCredits(current => ({
+          ...current,
+          ...(photo as PhotoCreditEvent),
+        })),
+      ),
+    [],
+  );
+
+  useEffect(
+    () =>
+      onClientEvent('photoCreditsRemoved', (_scope, photo) =>
+        setPhotoCredits(current =>
+          omit(current, Object.keys(photo as PhotoCreditEvent)),
+        ),
+      ),
+    [],
+  );
+
+  const credits = Object.keys(photoCredits).map(key => {
+    return { key, ...photoCredits[key] };
+  });
+
+  if (credits.length === 0) return null;
+
+  return (
+    <small className="font-brand-light">
+      <span className="boards-credits">
+        {credits.length === 1 && <span>Photo by </span>}
+        {credits.length > 1 && <span>Photos by </span>}
+        {credits.map((credit, index) => (
+          <span key={credit.key}>
+            <a href={credit.url} rel="noopener">
+              {credit.name}
+            </a>
+            {credit.license && (
+              <span>
+                {' '}
+                (
+                <a
+                  href={credit.license_url}
+                  title={t<string>('License')}
+                  rel="license noopener"
+                  aria-label={t<string>('License')}
+                >
+                  {credit.license}
+                </a>
+                )
+              </span>
+            )}
+            {index < credits.length - 1 && <span>, </span>}
+          </span>
+        ))}
+      </span>
+    </small>
+  );
+}
+
+BoardCredits.propTypes = {
+  photoCredits: PropTypes.object,
+};
