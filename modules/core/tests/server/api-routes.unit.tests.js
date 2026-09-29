@@ -1,4 +1,7 @@
 const assert = require('assert');
+const fs = require('node:fs');
+const { createRequire } = require('node:module');
+const sinon = require('sinon');
 const proxyquire = require('proxyquire').noCallThru();
 
 function handler(name) {
@@ -75,7 +78,29 @@ function assertPolicy(route, policy) {
 
 function register(modulePath, stubs) {
   const { app, params, routes } = createAppRecorder();
-  proxyquire(modulePath, stubs)(app);
+  const file = require.resolve(modulePath);
+  if (fs.existsSync(file.replace(/\.js$/, '.mjs'))) {
+    const sandbox = sinon.createSandbox();
+    const dependencyRequire = createRequire(file);
+    try {
+      for (const [specifier, replacements] of Object.entries(stubs)) {
+        const dependency = dependencyRequire(specifier);
+        for (const [name, value] of Object.entries(replacements)) {
+          if (typeof value === 'function') {
+            const replacement = sandbox.stub(dependency, name).callsFake(value);
+            replacement.routeTestName = value.routeTestName;
+          } else {
+            sandbox.stub(dependency, name).value(value);
+          }
+        }
+      }
+      require(file)(app);
+    } finally {
+      sandbox.restore();
+    }
+  } else {
+    proxyquire(modulePath, stubs)(app);
+  }
   return { params, routes };
 }
 
