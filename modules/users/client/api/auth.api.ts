@@ -19,6 +19,7 @@ export interface AuthenticatedUser {
   _id: string;
   username: string;
   email?: string;
+  roles?: string[];
 }
 
 export async function signin(

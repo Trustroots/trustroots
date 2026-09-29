@@ -5,11 +5,12 @@ import React from 'react';
 // Internal dependencies
 import UsersList from '@/modules/users/client/components/UsersList';
 import NoContent from '@/modules/core/client/components/NoContent';
+import type { UserSummary } from '@/modules/users/client/types';
 
 export default function UsersResults({
   users,
 }: {
-  users: Array<Record<string, unknown>>;
+  users: UserSummary[];
 }) {
   const { t } = useTranslation('search');
   if (!users || users.length === 0) {
