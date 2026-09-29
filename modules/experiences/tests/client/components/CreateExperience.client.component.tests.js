@@ -186,7 +186,7 @@ describe('<CreateExperience />', () => {
     fireEvent.click(getAllByText('Next')[0]);
     fireEvent.click(getByText('Yes'));
     fireEvent.click(getAllByText('Next')[0]);
-    fireEvent.click(getAllByText('Finish')[0]);
+    fireEvent.click(getAllByText('Save experience')[0]);
 
     expect(
       await waitFor(() =>
