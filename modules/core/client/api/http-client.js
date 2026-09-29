@@ -4,8 +4,10 @@ const httpClient = axios.create({
   timeout: 15000,
 });
 
+const stateChangingMethods = new Set(['post', 'put', 'patch', 'delete']);
+
 httpClient.interceptors.request.use(config => {
-  if (config.method && config.method.toLowerCase() !== 'get') {
+  if (stateChangingMethods.has(config.method)) {
     config.headers.set('X-Trustroots-Request', '1');
   }
 
