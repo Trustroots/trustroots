@@ -155,6 +155,7 @@ test.describe.serial('auth email and token feature coverage', () => {
       'Password reset succeeds with matching valid passwords.',
       'The browser completing the reset receives a fresh session.',
       'Other sessions and reused tokens are rejected.',
+      'Member can sign in with the new password.',
     ]);
 
     const user = createUser();
