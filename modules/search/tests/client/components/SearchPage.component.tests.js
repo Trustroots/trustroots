@@ -102,10 +102,7 @@ jest.mock('@/modules/search/client/components/SearchSidebar.component', () => {
     __esModule: true,
     default: props => (
       <>
-        <button
-          onClick={() => props.onTabSelect('unexpected')}
-          type="button"
-        >
+        <button onClick={() => props.onTabSelect('unexpected')} type="button">
           Select unexpected tab
         </button>
         <ActualSearchSidebar {...props} />

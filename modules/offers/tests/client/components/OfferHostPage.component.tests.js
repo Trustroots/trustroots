@@ -13,7 +13,11 @@ jest.mock('react-bootstrap', () => {
     Tabs: props => (
       <>
         <ReactBootstrap.Tabs {...props} />
-        <button onClick={() => props.onSelect(null)} type="button">
+        <button
+          // eslint-disable-next-line react/prop-types
+          onClick={() => props.onSelect(null)}
+          type="button"
+        >
           Clear selected tab
         </button>
       </>
