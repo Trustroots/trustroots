@@ -10,7 +10,7 @@ const testutils = require('../../../../testutils/server/server.testutil');
 const errorService = require('../../../core/server/services/error.server.service');
 const proxyquire = require('proxyquire').noCallThru();
 const emailService = require('../../../core/server/services/email.server.service');
-const should = require('should');
+require('should');
 
 require('../../server/models/user.server.model');
 const User = mongoose.model('User');
