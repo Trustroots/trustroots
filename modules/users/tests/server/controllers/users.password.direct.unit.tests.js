@@ -46,7 +46,19 @@ function loadController({ user, confirmEmailError } = {}) {
   sinon.stub(User, 'findById').callsFake((id, callback) => {
     callback(null, user || null);
   });
-  sinon.stub(profileHandler, 'sanitizeProfile').callsFake(profile => profile);
+  sinon.stub(User, 'findOneAndUpdate').callsFake((query, update, options, callback) => {
+    callback(null, user || null);
+  });
+  if (!User.isValidPassword) {
+    User.isValidPassword = () => true;
+  }
+  if (!User.hashPassword) {
+    User.hashPassword = password => password;
+  }
+  sinon.stub(profileHandler, 'sanitizeOwnProfile').callsFake(profile => profile);
+  if (profileHandler.sanitizeProfile) {
+    sinon.stub(profileHandler, 'sanitizeProfile').callsFake(profile => profile);
+  }
   sinon.stub(analyticsHandler, 'appendUTMParams').callsFake(url => url);
   sinon
     .stub(emailService, 'sendResetPassword')
@@ -124,7 +136,7 @@ describe('Password controller direct unit tests', () => {
       res.body.message.should.equal('login failed');
     });
 
-    it('returns the confirmation email failure after saving and logging in', async () => {
+    it('succeeds when the confirmation email fails after saving and logging in', async () => {
       const controller = loadController({
         user: fakeUser(),
         confirmEmailError: new Error('confirm email failed'),
@@ -145,8 +157,8 @@ describe('Password controller direct unit tests', () => {
       );
 
       await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('confirm email failed');
+      res.statusCode.should.equal(200);
+      res.body.message.should.equal('Password changed successfully!');
     });
   });
 });
