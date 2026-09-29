@@ -3,16 +3,7 @@ name: Windows map wheel
 on:
   pull_request:
     branches: [main, 'codex/**']
-    paths:
-      - '.github/workflows/windows-map-wheel.yml'
-      - 'playwright*.config.js'
-      - 'config/webpack/**'
-      - 'babel.config.js'
-      - 'tests/e2e/**'
-      - 'modules/search/client/**'
-      - 'modules/core/client/components/Map/**'
-      - 'package.json'
-      - 'package-lock.json'
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   workflow_dispatch:
 
 permissions:
@@ -24,6 +15,10 @@ concurrency:
 
 jobs:
   wheel:
+    # Add the windows-ci label for PRs that need Windows browser coverage.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'windows-ci')
     runs-on: windows-2025
     timeout-minutes: 25
     env:
