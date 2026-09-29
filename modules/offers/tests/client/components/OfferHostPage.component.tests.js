@@ -5,6 +5,26 @@ import '@testing-library/jest-dom';
 import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.component';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 
+jest.mock('react-bootstrap', () => {
+  const ReactBootstrap = jest.requireActual('react-bootstrap');
+
+  return {
+    ...ReactBootstrap,
+    Tabs: props => (
+      <>
+        <ReactBootstrap.Tabs {...props} />
+        <button
+          // eslint-disable-next-line react/prop-types
+          onClick={() => props.onSelect(null)}
+          type="button"
+        >
+          Clear selected tab
+        </button>
+      </>
+    ),
+  };
+});
+
 jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   trackEvent: jest.fn(),
@@ -57,6 +77,18 @@ describe('OfferHostPage', () => {
     expect(await screen.findByText('Can you host?')).toBeVisible();
     expect(screen.getByText('Yes')).toBeInTheDocument();
     expect(screen.getByDisplayValue('2')).toBeInTheDocument();
+  });
+
+  it('keeps the active tab when selection is cleared', async () => {
+    render(<OfferHostPage user={user} />);
+
+    expect(await screen.findByText('Can you host?')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selected tab' }));
+
+    expect(screen.getByRole('tab', { name: 'Availability' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 
   it('creates a new host offer when saving', async () => {
