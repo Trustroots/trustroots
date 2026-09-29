@@ -14,10 +14,11 @@ function normaliseOfferExpiry(type, validUntil, maxValidFromNow, now) {
     return undefined;
   }
 
+  const maximumAge = maxValidFromNow || { days: 30 };
   const parsedValidUntil = moment(validUntil);
   const minDate = moment(now).startOf('day');
   const maxDate = moment(now)
-    .add(maxValidFromNow || { days: 30 })
+    .add(maximumAge)
     // Add one extra day just to accommodate oddities from timezones
     .endOf('day');
 
@@ -32,7 +33,7 @@ function normaliseOfferExpiry(type, validUntil, maxValidFromNow, now) {
     }
   }
 
-  return moment(now).add(maxValidFromNow).toDate();
+  return moment(now).add(maximumAge).toDate();
 }
 
 module.exports = normaliseOfferExpiry;
