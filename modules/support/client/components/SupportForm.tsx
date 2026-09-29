@@ -236,7 +236,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {t('Team Guide')}
+                      {t<string>('Team Guide')}
                     </a>
                     <br />
                   </>
