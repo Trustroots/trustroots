@@ -27,30 +27,26 @@ describe('Display Message Statistics in User Route', function () {
   });
 
   // create testing users
-  before(function (done) {
+  before(async function () {
+    const fixturePassword = await User.hashPassword(password);
     for (let i = 0; i < 23; ++i) {
-      users.push(
-        new User({
-          firstName: 'firstName',
-          lastName: 'lastName',
-          displayName: 'displayName',
-          email: 'user' + i + '@example.com',
-          username: 'username' + i,
-          password,
-          provider: 'local',
-          public: true,
-        }),
-      );
+      const user = new User({
+        firstName: 'firstName',
+        lastName: 'lastName',
+        displayName: 'displayName',
+        email: 'user' + i + '@example.com',
+        username: 'username' + i,
+        password: fixturePassword,
+        provider: 'local',
+        public: true,
+      });
+      users.push(user);
     }
 
-    // Save the users to database
-    async.each(
-      users,
-      function (user, callback) {
-        user.save(callback);
-      },
-      done,
-    );
+    // The route test logs in as one fixture user; seed the shared valid hash
+    // directly so creating these statistics-only records does not consume
+    // the bounded password KDF queue.
+    await User.collection.insertMany(users.map(user => user.toObject()));
   });
 
   // create testing messageStats
