@@ -164,6 +164,7 @@ jest.mock('react-map-gl', () => {
   return {
     __esModule: true,
     default: MockReactMapGL,
+    MapController: jest.requireActual('react-map-gl').MapController,
     FlyToInterpolator: jest.fn(function FlyToInterpolator(options) {
       this.options = options;
     }),
@@ -1408,6 +1409,39 @@ describe('Search', () => {
     expect(mockMapProps.zoom).toBe(2);
   });
 
+  it('uses zero leaves when a community cluster omits its point count', () => {
+    mockSource.getClusterLeaves.mockImplementation(
+      (clusterId, limit, offset, done) =>
+        done(null, [
+          {
+            properties: {
+              tags: JSON.stringify([['l', '9F350000+', 'open-location-code']]),
+            },
+          },
+        ]),
+    );
+    renderSearchMap({ filters: '{"communityNotes":true}' });
+
+    act(() => {
+      mockMapProps.onClick({
+        features: [
+          {
+            geometry: { coordinates: [3.5, 51.5] },
+            layer: { id: 'community-notes-clusters' },
+            properties: { cluster_id: 12 },
+          },
+        ],
+      });
+    });
+
+    expect(mockSource.getClusterLeaves).toHaveBeenCalledWith(
+      12,
+      0,
+      0,
+      expect.any(Function),
+    );
+  });
+
   it('zooms Community Note clusters whose leaves have different locations', () => {
     mockSource.getClusterLeaves.mockImplementation(
       (clusterId, limit, offset, done) => {
@@ -1578,6 +1612,33 @@ describe('Search', () => {
     jest.useRealTimers();
   });
 
+  it('flushes notes on relay EOSE and cancels a pending reconnect', async () => {
+    jest.useFakeTimers();
+    const { unmount } = renderSearchMap({
+      filters: '{"communityNotes":true}',
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const [receiveNote, , handlers] = mockSubscribeMapNotes.mock.calls[0];
+    act(() => handlers.onEose());
+    act(() =>
+      receiveNote({
+        id: 'note-1',
+        tags: [['l', '9F350000+', 'open-location-code']],
+      }),
+    );
+    act(() => handlers.onEose());
+    expect(mockFilterCommunityNotesByAuthorVisibility).toHaveBeenCalled();
+
+    act(() => handlers.onClose());
+    unmount();
+
+    expect(mockUnsubscribeMapNotes).toHaveBeenCalled();
+    jest.useRealTimers();
+  });
+
   it('logs offer query failures in development without replacing current offers', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     const consoleError = jest
@@ -1601,6 +1662,23 @@ describe('Search', () => {
     });
 
     process.env.NODE_ENV = originalNodeEnv;
+    consoleError.mockRestore();
+  });
+
+  it('does not log offer query failures outside development', async () => {
+    const consoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    mockPersistentMapLocation = {
+      ...mockPersistentMapLocation,
+      zoom: 6,
+    };
+    mockQueryOffers.mockRejectedValueOnce(new Error('network failed'));
+
+    renderSearchMap();
+
+    await waitFor(() => expect(mockQueryOffers).toHaveBeenCalled());
+    expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
 

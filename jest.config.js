@@ -1,6 +1,9 @@
 module.exports = {
   watchman: false,
   moduleNameMapper: {
+    '^@/(.*)\\.js$': '<rootDir>/$1',
+    '^modules/(.*)\\.js$': '<rootDir>/modules/$1',
+    '^(\\.{1,2}/.*)\\.js$': '$1',
     '^@/(.*)$': '<rootDir>/$1',
     '^modules/(.*)$': '<rootDir>/modules/$1',
     '^nostr-tools/relay$':
@@ -15,6 +18,7 @@ module.exports = {
   collectCoverageFrom: [
     '<rootDir>/modules/*/client/**/*.{js,ts,tsx}',
     '!<rootDir>/modules/*/tests/**',
+    '!<rootDir>/modules/*/client/**/*.d.ts',
     '!<rootDir>/modules/*/client/**/*.module.{js,ts,tsx}',
     '!<rootDir>/modules/*/client/**/views/**',
     '!<rootDir>/modules/*/client/**/less/**',

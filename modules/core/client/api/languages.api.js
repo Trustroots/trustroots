@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query';
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 
 /**
  * Get languages from API
