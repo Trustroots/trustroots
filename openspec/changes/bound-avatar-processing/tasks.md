@@ -1,0 +1,6 @@
+- [x] Inspect the existing implementation and define the bounded change.
+- [x] Create and strictly validate the proposal before implementation.
+- [ ] Implement the guardrails and document rollout requirements.
+- [ ] Add anonymous regression cases and an appropriate end-to-end case.
+- [ ] Run focused checks and preserve full client/server coverage.
+- [ ] Update the living specification and archive the completed proposal.
