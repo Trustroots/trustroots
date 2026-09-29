@@ -2,7 +2,9 @@ import axios from 'axios';
 
 import { block, unblock, list } from '@/modules/users/client/api/block.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
