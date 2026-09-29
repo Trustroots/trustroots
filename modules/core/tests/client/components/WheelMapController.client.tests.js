@@ -1,14 +1,19 @@
 import { EventManager } from 'mjolnir.js';
 import { Manager } from 'mjolnir.js/dist/es5/utils/hammer.browser';
-import { WebMercatorViewport } from 'react-map-gl';
+import ReactMapGL, { WebMercatorViewport } from 'react-map-gl';
 import WheelMapController from '@/modules/core/client/components/Map/WheelMapController';
 
 describe('map wheel zoom', () => {
   let element;
   let eventManager;
   let viewport;
+  let interactionState;
 
-  function createMap({ scrollZoom = true, zoom = 6 } = {}) {
+  function createMap({
+    scrollZoom = true,
+    zoom = 6,
+    applyTransitions = false,
+  } = {}) {
     element = document.createElement('div');
     // The Node entry point uses a no-op gesture manager. Use the browser
     // implementation so wheel events reach the real map controller.
@@ -25,19 +30,29 @@ describe('map wheel zoom', () => {
     function onViewportChange(nextViewport) {
       // Apply controlled viewport updates synchronously; browser tests cover
       // the rendered transition and the application's persistence debounce.
-      viewport = { ...nextViewport, transitionDuration: 0 };
+      viewport = applyTransitions
+        ? nextViewport
+        : { ...nextViewport, transitionDuration: 0 };
       controller.setOptions({
+        ...ReactMapGL.defaultProps,
         ...viewport,
         eventManager,
         onViewportChange,
+        onStateChange,
         scrollZoom,
       });
     }
 
+    function onStateChange(nextState) {
+      interactionState = { ...nextState };
+    }
+
     controller.setOptions({
+      ...ReactMapGL.defaultProps,
       ...viewport,
       eventManager,
       onViewportChange,
+      onStateChange,
       scrollZoom,
     });
   }
@@ -56,7 +71,32 @@ describe('map wheel zoom', () => {
     return event;
   }
 
-  afterEach(() => eventManager.destroy());
+  afterEach(() => {
+    eventManager.destroy();
+    jest.useRealTimers();
+  });
+
+  it('immediately applies wheel zoom when smoothing is disabled', () => {
+    jest.useFakeTimers();
+    createMap({ applyTransitions: true });
+    wheel(0, -120);
+    expect(viewport.zoom).toBeGreaterThan(6.5);
+    wheel(0, 120);
+    expect(viewport.zoom).toBeCloseTo(6, 6);
+    expect(interactionState.isZooming).toBe(false);
+    expect(interactionState.isPanning).toBe(false);
+  });
+
+  it('retains explicitly requested smooth wheel zoom', () => {
+    jest.useFakeTimers();
+    createMap({ scrollZoom: { smooth: true }, applyTransitions: true });
+    wheel(0, -120);
+    expect(viewport.zoom).toBe(6);
+    expect(interactionState.isZooming).toBe(true);
+    jest.advanceTimersByTime(300);
+    expect(viewport.zoom).toBeGreaterThan(6.5);
+    expect(interactionState.isZooming).toBe(false);
+  });
 
   it.each([
     ['pixel', 0, 120],
