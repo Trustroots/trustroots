@@ -417,9 +417,26 @@ module.exports.initHelmetHeaders = function (app) {
  */
 module.exports.initModulesClientRoutes = function (app) {
   // Setting the app router and static folder
+  app.use(denyAvatarStagingRequests);
   app.use('/', express.static(path.resolve('./public')));
   app.use('/', express.static(path.resolve('./public/assets')));
 };
+
+function denyAvatarStagingRequests(req, res, next) {
+  let decodedPath;
+  try {
+    decodedPath = decodeURIComponent(req.path);
+  } catch (error) {
+    return res.sendStatus(404);
+  }
+
+  if (decodedPath.split('/').some(segment => segment.startsWith('.staging-'))) {
+    return res.sendStatus(404);
+  }
+  return next();
+}
+
+module.exports.denyAvatarStagingRequests = denyAvatarStagingRequests;
 
 /**
  * Configure the modules ACL policies

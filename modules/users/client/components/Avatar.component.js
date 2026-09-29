@@ -103,7 +103,11 @@ function localAvatarUrl(user, size) {
       validSizes.find(validSize => validSize === size || validSize > size) ||
       2048;
 
-    return `/uploads-profile/${user._id}/avatar/${fileSize}.jpg?${timestamp}`;
+    const version = /^[a-f0-9]{32}$/.test(user.avatarVersion || '')
+      ? `${user.avatarVersion}/`
+      : '';
+
+    return `/uploads-profile/${user._id}/avatar/${version}${fileSize}.jpg?${timestamp}`;
   }
 }
 

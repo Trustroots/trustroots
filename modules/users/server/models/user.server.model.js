@@ -302,6 +302,11 @@ const UserSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  // Generated server-side only after a complete avatar thumbnail set is ready.
+  avatarVersion: {
+    type: String,
+    match: /^[a-f0-9]{32}$/,
+  },
   newsletter: {
     type: Boolean,
     default: false,

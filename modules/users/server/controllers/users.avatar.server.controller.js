@@ -1,25 +1,16 @@
 const _ = require('lodash');
-const async = require('async');
 const fs = require('fs');
-const mkdirRecursive = require('mkdir-recursive');
 const mongoose = require('mongoose');
-const path = require('path');
 
 const log = require('../../../../config/lib/logger');
 const config = require('../../../../config/config');
 const fileUpload = require('../../../core/server/services/file-upload.service');
 const errorService = require('../../../core/server/services/error.server.service');
+const avatarProcessing = require('../services/avatar-processing.server.service');
 
 const User = mongoose.model('User');
-const avatarSizes = [2048, 1024, 512, 256, 128, 64, 32];
 
-// Load either ImageMagick or GraphicsMagick as an image processor
-// Defaults to GraphicsMagick
-// @link https://github.com/aheckmann/gm#use-imagemagick-instead-of-gm
-const imageProcessor =
-  config.imageProcessor === 'imagemagic'
-    ? require('gm').subClass({ imageMagick: true })
-    : require('gm');
+const avatarVersionPattern = /^[a-f0-9]{32}$/;
 
 /**
  * Middleware to validate+process avatar upload field
@@ -48,134 +39,114 @@ const avatarUploadField = (req, res, next) => {
  * Multer has placed uploaded the file in temp folder and path is now available
  * via `req.file.path`
  */
+const removeTemporaryUpload = async sourcePath => {
+  try {
+    await fs.promises.unlink(sourcePath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      log(
+        'error',
+        'User profile avatar upload: failed to clean out temporary image.',
+        error,
+      );
+    }
+  }
+};
+
+const removeVersionAfterSaveFailure = async result => {
+  try {
+    await avatarProcessing.removeAvatarVersion(
+      result.avatarDirectory,
+      result.version,
+    );
+  } catch (error) {
+    log(
+      'error',
+      'User profile avatar upload: failed to clean up unpublished avatar version.',
+      error,
+    );
+  }
+};
+
 const avatarUpload = (req, res) => {
-  // Each user has their own folder for avatars
-  const uploadDir =
-    path.resolve(config.uploadDir) + '/' + req.user._id + '/avatar'; // No trailing slash
-
-  /**
-   * Process uploaded file
-   */
-  async.waterfall(
-    [
-      // Ensure user's upload directory exists
-      function (done) {
-        mkdirRecursive.mkdir(uploadDir, function (err) {
-          if (err && err.code !== 'EEXIST') {
-            return done(err);
-          }
-          done();
-        });
-      },
-
-      // Make the thumbnails
-      function (done) {
-        if (process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK === 'true') {
-          return async.each(
-            avatarSizes,
-            function (thumbSize, callback) {
-              fs.copyFile(
-                req.file.path,
-                uploadDir + '/' + thumbSize + '.jpg',
-                callback,
-              );
-            },
-            done,
-          );
-        }
-
-        let asyncQueueErrorHappened;
-
-        // Create a queue worker
-        // @link https://github.com/caolan/async#queueworker-concurrency
-        const q = async.queue(function (thumbSize, callback) {
-          // Create thumbnail size
-          // Images are resized following quality/size -optimization tips from this article:
-          // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/
-          imageProcessor(req.file.path)
-            // .in('jpeg:fancy-upsampling=false')  // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
-            .autoOrient()
-            .noProfile() // No color profile
-            .colorspace('rgb') // Not sRGB @link https://ehc.ac/p/graphicsmagick/bugs/331/?limit=25
-            .interlace('None') // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#progressive-rendering
-            .filter('Triangle') // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#resampling
-            .resize(thumbSize, thumbSize + '^') // ^ = Dimensions are treated as minimum rather than maximum values. @link http://www.graphicsmagick.org/Magick++/Geometry.html
-            .gravity('Center')
-            .extent(thumbSize, thumbSize)
-            .unsharp(0.25, 0.25, 8, 0.065) // radius [, sigma, amount, threshold] - @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#sharpening
-            .quality(82) // @link https://www.smashingmagazine.com/2015/06/efficient-image-resizing-with-imagemagick/#quality-and-compression
-            .write(uploadDir + '/' + thumbSize + '.jpg', function (err) {
-              // Something's wrong with the file, stop here.
-              if (err) {
-                log(
-                  'error',
-                  'User profile avatar upload: failed to generate thumbnail.',
-                  err,
-                );
-
-                // This stops us sending res multiple times since tasks are running paraller
-                if (!asyncQueueErrorHappened) {
-                  asyncQueueErrorHappened = true;
-
-                  // Stop the queue
-                  q.pause();
-
-                  // Attempt to delete tmp file
-                  fs.unlink(req.file.path, function (err) {
-                    if (err) {
-                      log(
-                        'error',
-                        'User profile avatar upload: failed to clean out temporary image.',
-                        err,
-                      );
-                    }
-                    // @link http://www.restpatterns.org/HTTP_Status_Codes/422_-_Unprocessable_Entity
-                    return res.status(422).send({
-                      message: 'Failed to process image, please try again.',
-                    });
-                  });
-                } else {
-                  callback(err, thumbSize);
-                }
-              } else {
-                callback(err, thumbSize);
-              }
-            });
-        }, 3); // How many thumbnails to process simultaneously?
-
-        // Start processing these sizes
-        q.push(avatarSizes);
-
-        // Assign a final callback to work queue
-        // Done with all the thumbnail sizes, continue...
-        q.drain = done;
-      },
-
-      // Delete uploaded temp file
-      function (done) {
-        fs.unlink(req.file.path, function (err) {
-          done(err);
-        });
-      },
-
-      // Catch errors
-    ],
-    function (err) {
-      if (err) {
-        return res.status(400).send({
-          message:
-            errorService.getErrorMessage(err) ||
-            /* istanbul ignore next */
-            'Failed to process image, please try again.',
-        });
-      } else {
-        // All Done!
-        return res.send({
-          message: 'Avatar image uploaded.',
+  const job = {
+    sourcePath: req.file.path,
+    userId: req.user._id,
+    callback: async (processingError, result) => {
+      if (processingError) {
+        await removeTemporaryUpload(req.file.path);
+        log(
+          'error',
+          'User profile avatar upload: failed to generate thumbnails.',
+          processingError,
+        );
+        return res.status(422).send({
+          message: 'Failed to process image, please try again.',
         });
       }
+
+      const previousVersion = req.user.avatarVersion;
+      req.user.avatarVersion = result.version;
+      req.user.save(async error => {
+        if (error) {
+          req.user.avatarVersion = previousVersion;
+          await Promise.all([
+            removeTemporaryUpload(req.file.path),
+            removeVersionAfterSaveFailure(result),
+          ]);
+          return res.status(400).send({
+            message:
+              errorService.getErrorMessage(error) ||
+              'Failed to save the new avatar version.',
+          });
+        }
+
+        await removeTemporaryUpload(req.file.path);
+        User.findById(req.user._id, 'avatarVersion').exec(
+          async (findError, currentUser) => {
+            if (findError) {
+              log(
+                'error',
+                'User profile avatar upload: failed to verify current avatar version.',
+                findError,
+              );
+            } else if (currentUser?.avatarVersion === result.version) {
+              if (
+                previousVersion &&
+                avatarVersionPattern.test(previousVersion) &&
+                previousVersion !== result.version
+              ) {
+                try {
+                  await avatarProcessing.removeAvatarVersion(
+                    result.avatarDirectory,
+                    previousVersion,
+                  );
+                } catch (cleanupError) {
+                  log(
+                    'error',
+                    'User profile avatar upload: failed to remove the previous avatar version.',
+                    cleanupError,
+                  );
+                }
+              }
+            }
+
+            return res.send({
+              message: 'Avatar image uploaded.',
+            });
+          },
+        );
+      });
     },
-  );
+  };
+
+  if (!avatarProcessing.enqueueAvatarProcessing(job)) {
+    removeTemporaryUpload(req.file.path).finally(() => {
+      res.status(503).send({
+        message: 'Avatar processing is busy. Please try again shortly.',
+      });
+    });
+  }
 };
 
 /**
@@ -213,7 +184,11 @@ function getLocalAvatarUrl(user, size) {
 
     const domain = `${config.https ? 'https' : 'http'}://${config.domain}`;
 
-    return `${domain}/uploads-profile/${user._id}/avatar/${fileSize}.jpg?${timestamp}`;
+    const version = avatarVersionPattern.test(user.avatarVersion || '')
+      ? `${user.avatarVersion}/`
+      : '';
+
+    return `${domain}/uploads-profile/${user._id}/avatar/${version}${fileSize}.jpg?${timestamp}`;
   }
 }
 
@@ -359,6 +334,7 @@ const userForAvatarByUserId = async (req, res, next, userId) => {
     'additionalProvidersData.facebook.id', // For FB avatars
     'avatarSource',
     'avatarUploaded',
+    'avatarVersion',
     'emailHash', // MD5 hashed email to use with Gravatars
     'id',
     'public',

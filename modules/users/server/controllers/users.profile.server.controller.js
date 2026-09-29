@@ -46,6 +46,7 @@ exports.userProfileFields = [
   'passwordUpdated',
   'avatarSource',
   'avatarUploaded',
+  'avatarVersion',
   'member',
   'replyRate',
   'replyTime',
@@ -68,6 +69,7 @@ exports.userMiniProfileFields = [
   'username',
   'avatarSource',
   'avatarUploaded',
+  'avatarVersion',
   'emailHash',
   'additionalProvidersData.facebook.id', // For FB avatars
 ].join(' ');
