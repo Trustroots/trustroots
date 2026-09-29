@@ -163,6 +163,30 @@ describe('<CreateExperience />', () => {
     );
   });
 
+  it('keeps the form open when the save response is empty', async () => {
+    experiencesApi.readMine.mockResolvedValueOnce(null);
+    experiencesApi.create.mockResolvedValueOnce(null);
+
+    const { getByText, getAllByText, getByLabelText } = render(
+      <CreateExperience userFrom={userFrom} userTo={userTo} />,
+    );
+
+    await waitForLoader();
+    fireEvent.click(getByLabelText('They hosted me'));
+    fireEvent.click(getAllByText('Next')[0]);
+    fireEvent.click(getByText('Yes'));
+    fireEvent.click(getAllByText('Next')[0]);
+    fireEvent.click(getAllByText('Finish')[0]);
+
+    expect(
+      await waitFor(() =>
+        getByText(
+          'We could not save your experience. Your text is still here. Please try again.',
+        ),
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('submit a report when recommend is no and user wants to send a report', async () => {
     experiencesApi.readMine.mockResolvedValueOnce(null);
     experiencesApi.create.mockResolvedValueOnce({ public: false });
