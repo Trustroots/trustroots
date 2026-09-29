@@ -8,7 +8,11 @@ const Menu = styled.ul`
   margin-bottom: 20px;
 `;
 
-export default function AdminAcquisitionStoriesMenu({ active }) {
+export default function AdminAcquisitionStoriesMenu({
+  active,
+}: {
+  active: string;
+}) {
   return (
     <Menu className="nav nav-tabs">
       <li

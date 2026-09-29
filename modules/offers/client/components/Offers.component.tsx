@@ -35,7 +35,8 @@ export class Offers extends Component<OffersProps, OffersState> {
       isMobile:
         window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 ||
         ((window as Window & { isNativeMobileApp?: boolean })
-          .isNativeMobileApp ?? false),
+          .isNativeMobileApp ??
+          false),
     };
   }
 

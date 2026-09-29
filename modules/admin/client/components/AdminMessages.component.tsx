@@ -1,6 +1,12 @@
 // External dependencies
 import axios from 'axios';
-import React, { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 
 // Internal dependencies
 import {
@@ -55,8 +61,11 @@ interface MessagesResponse {
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError<{ message?: string }>(error)) {
-    return error.response?.data?.message || fallback;
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = error.response as
+      | { data?: { message?: string } }
+      | undefined;
+    return response?.data?.message || fallback;
   }
   return fallback;
 }
@@ -71,7 +80,9 @@ export default function AdminMessages() {
 
   const [queried, setQueried] = useState(false);
   const [messages, setMessages] = useState<AdminMessage[]>([]);
-  const [referenceThreads, setReferenceThreads] = useState<ReferenceThread[]>([]);
+  const [referenceThreads, setReferenceThreads] = useState<ReferenceThread[]>(
+    [],
+  );
   const [member1, setMember1] = useState(initialMember1);
   const [member2, setMember2] = useState(initialMember2);
   const warningAttempt = useRef<WarningAttempt | null>(null);
@@ -86,29 +97,35 @@ export default function AdminMessages() {
   const [isLoadingRecipients, setIsLoadingRecipients] = useState(false);
   const [isSendingWarning, setIsSendingWarning] = useState(false);
 
-  const runQuery = useCallback(async (member1Value: string, member2Value: string) => {
-    if (member1Value && member2Value) {
-      const userId1 = await resolveExactMemberId(member1Value, searchUsers, [
-        'username',
-      ]);
-      const userId2 = await resolveExactMemberId(member2Value, searchUsers, [
-        'username',
-      ]);
-      if (!userId1 || !userId2) {
-        setMessages([]);
-        setReferenceThreads([]);
-        setQueried(true);
-        return;
-      }
+  const runQuery = useCallback(
+    async (member1Value: string, member2Value: string) => {
+      if (member1Value && member2Value) {
+        const userId1 = await resolveExactMemberId(member1Value, searchUsers, [
+          'username',
+        ]);
+        const userId2 = await resolveExactMemberId(member2Value, searchUsers, [
+          'username',
+        ]);
+        if (!userId1 || !userId2) {
+          setMessages([]);
+          setReferenceThreads([]);
+          setQueried(true);
+          return;
+        }
 
-      const result: AdminMessage[] | MessagesResponse = await getMessages(userId1, userId2);
-      setMessages(Array.isArray(result) ? result : result.messages || []);
-      setReferenceThreads(
-        Array.isArray(result) ? [] : result.referenceThreads || [],
-      );
-      setQueried(true);
-    }
-  }, []);
+        const result: AdminMessage[] | MessagesResponse = await getMessages(
+          userId1,
+          userId2,
+        );
+        setMessages(Array.isArray(result) ? result : result.messages || []);
+        setReferenceThreads(
+          Array.isArray(result) ? [] : result.referenceThreads || [],
+        );
+        setQueried(true);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (initialMember1 && initialMember2) {

@@ -2,11 +2,10 @@
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getAuditLog } from '../api/audit-log.api';
+import { getAuditLog, type AdminAuditLogEntry } from '../api/audit-log.api';
 import AdminHeader from './AdminHeader.component';
 import Json from './Json.component';
 import UserLink from './UserLink.component';
-import type { AdminAuditLogEntry } from '../api/audit-log.api';
 
 export default class AdminAuditLog extends Component<
   Record<string, never>,
@@ -46,7 +45,7 @@ export default class AdminAuditLog extends Component<
                     By <UserLink user={item.user || {}} /> (
                     {item.ip || 'Unknown IP address'}), <time>{item.date}</time>
                   </p>
-              {(['body', 'params', 'query'] as const).map(
+                  {(['body', 'params', 'query'] as const).map(
                     type =>
                       Boolean(item[type]) && (
                         <div key={type}>

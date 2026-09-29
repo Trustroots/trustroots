@@ -59,7 +59,10 @@ export function formatAge(birthdate?: string | number | null) {
   return age;
 }
 
-export function OfferDescription({ description, offerType }: OfferDescriptionProps) {
+export function OfferDescription({
+  description,
+  offerType,
+}: OfferDescriptionProps) {
   if (!description) {
     return null;
   }

@@ -1,5 +1,4 @@
 // External dependencies
-import axios from 'axios';
 import React, {
   useCallback,
   useEffect,
@@ -47,7 +46,11 @@ interface SplitResult {
   outputFormat: 'csv' | 'jsonl' | 'ndjson';
 }
 
-function triggerDownload(fileName: string, content: string, contentType: string) {
+function triggerDownload(
+  fileName: string,
+  content: string,
+  contentType: string,
+) {
   const contentBlob = new Blob([content], {
     type: contentType,
   });
@@ -65,7 +68,11 @@ function triggerCsvDownload(fileName: string, csv: string) {
   triggerDownload(fileName, csv, 'text/csv;charset=utf-8;');
 }
 
-function triggerRecipientDownload(prefix: string, result: SplitResult, content: string) {
+function triggerRecipientDownload(
+  prefix: string,
+  result: SplitResult,
+  content: string,
+) {
   const contentType =
     result.outputFormat === 'csv'
       ? 'text/csv;charset=utf-8;'
@@ -96,42 +103,55 @@ function isAudienceCriteriaReady(criteria: NewsletterAudienceCriteria) {
 }
 
 function audienceError(error: unknown, fallback: string) {
-  return axios.isAxiosError<{ message?: string }>(error)
-    ? error.response?.data?.message || fallback
-    : fallback;
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = error.response as
+      | { data?: { message?: string } }
+      | undefined;
+    return response?.data?.message || fallback;
+  }
+  return fallback;
 }
 
 export default function AdminNewsletter() {
   const [audienceCount, setAudienceCount] = useState<number | null>(null);
-  const [audienceErrorMessage, setAudienceErrorMessage] = useState<string | null>(null);
+  const [audienceErrorMessage, setAudienceErrorMessage] = useState<
+    string | null
+  >(null);
   const [isAudienceCountLoading, setIsAudienceCountLoading] = useState(false);
-  const [audienceCriteria, setAudienceCriteria] = useState<NewsletterAudienceCriteria>({
-    circleIds: [],
-    latitude: '',
-    locationText: '',
-    longitude: '',
-    radiusKm: '50',
-    sources: ['from', 'hosting', 'living'],
-  });
+  const [audienceCriteria, setAudienceCriteria] =
+    useState<NewsletterAudienceCriteria>({
+      circleIds: [],
+      latitude: '',
+      locationText: '',
+      longitude: '',
+      radiusKm: '50',
+      sources: ['from', 'hosting', 'living'],
+    });
   const [circles, setCircles] = useState<CircleChoice[]>([]);
-  const [circlesErrorMessage, setCirclesErrorMessage] = useState<string | null>(null);
+  const [circlesErrorMessage, setCirclesErrorMessage] = useState<string | null>(
+    null,
+  );
   const [circleId, setCircleId] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [exportErrorMessage, setExportErrorMessage] = useState<string | null>(null);
+  const [exportErrorMessage, setExportErrorMessage] = useState<string | null>(
+    null,
+  );
   const [isExportingAll, setIsExportingAll] = useState(false);
   const [isExportingCircle, setIsExportingCircle] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [result, setResult] = useState<SplitResult | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const audiencePreviewRequestId = useRef(0);
-  const audiencePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const audiencePreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     async function loadCircles() {
       try {
-        const circleChoices = await readCircles(500);
+        const circleChoices = await readCircles({ limit: 500 });
         setCircles(circleChoices || []);
-      } catch (error) {
+      } catch {
         setCirclesErrorMessage(
           'Could not load circles. Location filters are still available.',
         );
@@ -141,30 +161,35 @@ export default function AdminNewsletter() {
     loadCircles();
   }, []);
 
-  const refreshAudienceCount = useCallback(async (criteria: NewsletterAudienceCriteria) => {
-    const requestId = audiencePreviewRequestId.current + 1;
-    audiencePreviewRequestId.current = requestId;
-    setAudienceErrorMessage(null);
-    setIsAudienceCountLoading(true);
+  const refreshAudienceCount = useCallback(
+    async (criteria: NewsletterAudienceCriteria) => {
+      const requestId = audiencePreviewRequestId.current + 1;
+      audiencePreviewRequestId.current = requestId;
+      setAudienceErrorMessage(null);
+      setIsAudienceCountLoading(true);
 
-    try {
-      const preview: AudiencePreview = await previewNewsletterAudience(criteria);
-      if (audiencePreviewRequestId.current === requestId) {
-        setAudienceCount(preview.count);
-      }
-    } catch (error) {
-      if (audiencePreviewRequestId.current === requestId) {
-        setAudienceCount(null);
-        setAudienceErrorMessage(
-          audienceError(error, 'Could not preview this newsletter audience.'),
+      try {
+        const preview: AudiencePreview = await previewNewsletterAudience(
+          criteria,
         );
+        if (audiencePreviewRequestId.current === requestId) {
+          setAudienceCount(preview.count);
+        }
+      } catch (error) {
+        if (audiencePreviewRequestId.current === requestId) {
+          setAudienceCount(null);
+          setAudienceErrorMessage(
+            audienceError(error, 'Could not preview this newsletter audience.'),
+          );
+        }
+      } finally {
+        if (audiencePreviewRequestId.current === requestId) {
+          setIsAudienceCountLoading(false);
+        }
       }
-    } finally {
-      if (audiencePreviewRequestId.current === requestId) {
-        setIsAudienceCountLoading(false);
-      }
-    }
-  }, []);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (audiencePreviewTimer.current !== null) {
@@ -245,7 +270,9 @@ export default function AdminNewsletter() {
     setErrorMessage(null);
 
     try {
-      const splitResult: SplitResult = await splitNewsletterSubscribers(selectedFile);
+      const splitResult: SplitResult = await splitNewsletterSubscribers(
+        selectedFile,
+      );
       setResult(splitResult);
     } catch (error) {
       const message = audienceError(
@@ -260,7 +287,7 @@ export default function AdminNewsletter() {
   }
 
   function onFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.item(0) || null;
+    const file = event.target.files?.[0] || null;
     setSelectedFile(file || null);
     setResult(null);
     setErrorMessage(null);
@@ -274,7 +301,9 @@ export default function AdminNewsletter() {
       const csv = await getNewsletterSubscribersCsv();
       triggerCsvDownload(ALL_SUBSCRIBERS_FILE_NAME, csv);
     } catch (error) {
-      setExportErrorMessage(audienceError(error, 'Could not export newsletter subscribers.'));
+      setExportErrorMessage(
+        audienceError(error, 'Could not export newsletter subscribers.'),
+      );
     } finally {
       setIsExportingAll(false);
     }
@@ -300,7 +329,10 @@ export default function AdminNewsletter() {
       );
     } catch (error) {
       setExportErrorMessage(
-        audienceError(error, 'Could not export newsletter subscribers for this circle.'),
+        audienceError(
+          error,
+          'Could not export newsletter subscribers for this circle.',
+        ),
       );
     } finally {
       setIsExportingCircle(false);
@@ -333,11 +365,13 @@ export default function AdminNewsletter() {
         <form onSubmit={event => onAudiencePreview(event)}>
           <fieldset>
             <legend className="h4">Location sources</legend>
-            {([
-              ['living', 'Living location'],
-              ['from', 'Origin location'],
-              ['hosting', 'Hosting location'],
-            ] as Array<[AudienceSource, string]>).map(([value, label]) => (
+            {(
+              [
+                ['living', 'Living location'],
+                ['from', 'Origin location'],
+                ['hosting', 'Hosting location'],
+              ] as Array<[AudienceSource, string]>
+            ).map(([value, label]) => (
               <label
                 className="checkbox-inline"
                 key={value}

@@ -7,7 +7,13 @@
  * @param  {[number]} zoom
  * @return {[number]}
  */
-const metersPerPixel = ({ latitude, zoom }: { latitude: number; zoom: number }) => {
+const metersPerPixel = ({
+  latitude,
+  zoom,
+}: {
+  latitude: number;
+  zoom: number;
+}) => {
   const earthCircumference = 40075017;
   const latitudeRadians = latitude * (Math.PI / 180);
   return (
@@ -28,8 +34,11 @@ export const zoomToPixelMeters = ({
   latitude,
   meters,
   zoom,
-}: { latitude: number; meters: number; zoom: number }) =>
-  meters / metersPerPixel({ latitude, zoom });
+}: {
+  latitude: number;
+  meters: number;
+  zoom: number;
+}) => meters / metersPerPixel({ latitude, zoom });
 
 /**
  * Return HEX color for the type of hosting offer

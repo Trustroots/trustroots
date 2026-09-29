@@ -21,7 +21,9 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
   const [offers, setOffers] = useState<MeetOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRemoving, setIsRemoving] = useState(false);
-  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
+  const [expandedDescriptions, setExpandedDescriptions] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     let isMounted = true;
@@ -35,7 +37,7 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
         if (isMounted) {
           setOffers(
             (data || []).sort(
-                (left, right) =>
+              (left, right) =>
                 new Date(right.validUntil).getTime() -
                 new Date(left.validUntil).getTime(),
             ),
@@ -117,7 +119,10 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
           key={offer._id}
         >
           <div className="panel-body">
-            <OfferLocation location={offer.location || []} offerType={offer.type} />
+            <OfferLocation
+              location={offer.location || []}
+              offerType={offer.type}
+            />
 
             <br />
             <br />

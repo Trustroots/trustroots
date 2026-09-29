@@ -12,7 +12,10 @@ const usePersistentMapLocation = (initialMapLocation: MapLocation) => {
     { defaultValue: initialMapLocation },
   );
 
-  return [mapLocation, (newLocation: MapLocation) => setMapLocation(newLocation)] as const;
+  return [
+    mapLocation,
+    (newLocation: MapLocation) => setMapLocation(newLocation),
+  ] as const;
 };
 
 export default usePersistentMapLocation;

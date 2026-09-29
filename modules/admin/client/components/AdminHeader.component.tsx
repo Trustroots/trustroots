@@ -8,7 +8,7 @@ export default function AdminHeader() {
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {
-    const input = document.querySelector(
+    const input = document.querySelector<HTMLInputElement>(
       '.container input:not([type="hidden"]):not([disabled])',
     );
 
@@ -44,7 +44,7 @@ export default function AdminHeader() {
     },
   ];
 
-  const renderTab = ({ path, label }) => (
+  const renderTab = ({ path, label }: { path: string; label: string }) => (
     <li
       key={path}
       className={classnames({

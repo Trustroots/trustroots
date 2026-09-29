@@ -138,10 +138,7 @@ function addClusteredMarkers({
     const [longitude, latitude] = point.geometry.coordinates;
     const clusterId = point.properties.cluster_id;
 
-    if (
-      point.properties.cluster &&
-      typeof clusterId === 'number'
-    ) {
+    if (point.properties.cluster && typeof clusterId === 'number') {
       const marker = L.marker([latitude, longitude], {
         bubblingMouseEvents: false,
         icon: clusterIcon(point.properties.point_count_abbreviated, colour),
@@ -153,10 +150,7 @@ function addClusteredMarkers({
         stopMapClick(event);
         map.setView(
           [latitude, longitude],
-          Math.min(
-            index.getClusterExpansionZoom(clusterId),
-            CLUSTER_MAX_ZOOM,
-          ),
+          Math.min(index.getClusterExpansionZoom(clusterId), CLUSTER_MAX_ZOOM),
         );
       });
       group.addLayer(marker);
@@ -338,7 +332,8 @@ export default function LeafletSearchMap({
       onPointClick: point =>
         callbacksRef.current.onOfferClick(point.properties.id),
       pointColour: point =>
-        (point.properties.offer && offerColours[point.properties.offer]) || '#ccc',
+        (point.properties.offer && offerColours[point.properties.offer]) ||
+        '#ccc',
       viewport,
     });
 

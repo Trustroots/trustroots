@@ -14,7 +14,10 @@ interface PlaceSuggestion {
 
 interface SearchPlaceInputProps {
   id?: string;
-  onPlaceSearch: (data: MapBounds | MapPoint, type: 'bounds' | 'center') => void;
+  onPlaceSearch: (
+    data: MapBounds | MapPoint,
+    type: 'bounds' | 'center',
+  ) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
@@ -26,7 +29,9 @@ export default function SearchPlaceInput({
   setSearchQuery,
 }: SearchPlaceInputProps) {
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
-  const [locationNotFound, setLocationNotFound] = useState<string | false>(false);
+  const [locationNotFound, setLocationNotFound] = useState<string | false>(
+    false,
+  );
   const [isOpen, setIsOpen] = useState(false);
   const skipSuggestionsRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);

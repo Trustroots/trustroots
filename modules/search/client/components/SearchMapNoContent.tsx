@@ -21,7 +21,13 @@ const Container = styled(NoContent)`
 
 export default function SearchMapNoContent() {
   const { t } = useTranslation('search');
-  return <Container icon="users" message={t('Zoom closer to find members.')} />;
+  return (
+    <Container
+      className=""
+      icon="users"
+      message={String(t('Zoom closer to find members.'))}
+    />
+  );
 }
 
 SearchMapNoContent.propTypes = {};

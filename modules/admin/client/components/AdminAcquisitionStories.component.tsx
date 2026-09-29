@@ -65,7 +65,8 @@ interface AccessibleTooltipProps {
   tooltip: string;
 }
 
-const AccessibleTooltip = HoverTooltip as unknown as React.ComponentType<AccessibleTooltipProps>;
+const AccessibleTooltip =
+  HoverTooltip as unknown as React.ComponentType<AccessibleTooltipProps>;
 
 function formatDate(value?: string | number | null) {
   if (!value) {
@@ -91,7 +92,10 @@ function formatCoordinates(value?: number[] | null) {
     .join(', ');
 }
 
-const storySortValues: Record<StorySortColumn, (story: AcquisitionStory) => string | number> = {
+const storySortValues: Record<
+  StorySortColumn,
+  (story: AcquisitionStory) => string | number
+> = {
   acquisitionStory: story => String(story.acquisitionStory || '').toLowerCase(),
   circleCount: story => Number(story.circleCount) || 0,
   created: story => {
@@ -102,7 +106,13 @@ const storySortValues: Record<StorySortColumn, (story: AcquisitionStory) => stri
   public: story => (story.public === true ? 1 : 0),
 };
 
-function SortableHeader({ column, label, onSort, sort, tooltip }: StorySortableHeaderProps) {
+function SortableHeader({
+  column,
+  label,
+  onSort,
+  sort,
+  tooltip,
+}: StorySortableHeaderProps) {
   const isActive = sort.column === column;
   const direction = isActive ? sort.direction : 'none';
 

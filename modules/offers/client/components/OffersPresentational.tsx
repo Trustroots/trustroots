@@ -25,7 +25,6 @@ export class OffersPresentational extends Component<
   OffersPresentationalProps,
   OffersPresentationalState
 > {
-  declare props: Readonly<OffersPresentationalProps>;
   constructor(props: OffersPresentationalProps) {
     super(props);
     this.renderOffer = this.renderOffer.bind(this);
@@ -35,7 +34,8 @@ export class OffersPresentational extends Component<
       isMobile:
         window.navigator.userAgent.toLowerCase().indexOf('mobile') >= 0 ||
         ((window as Window & { isNativeMobileApp?: boolean })
-          .isNativeMobileApp ?? false),
+          .isNativeMobileApp ??
+          false),
     };
   }
 

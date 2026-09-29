@@ -2,4 +2,5 @@
 export const ensureValidLat = (lat: number) => Math.min(Math.max(lat, -90), 90);
 
 // Longitudes must be between -180 and 180
-export const ensureValidLng = (lng: number) => Math.min(Math.max(lng, -180), 180);
+export const ensureValidLng = (lng: number) =>
+  Math.min(Math.max(lng, -180), 180);

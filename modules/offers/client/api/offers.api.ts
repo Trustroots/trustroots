@@ -20,13 +20,16 @@ export type OfferQuery = Record<string, string | number | boolean | undefined>;
  * @param {int} userId - id of user
  * @returns Promise<Offer[]> - array of the found offers
  */
-export async function getOffers(userId: string, types: string): Promise<Offer[]> {
+export async function getOffers(
+  userId: string,
+  types: string,
+): Promise<Offer[]> {
   try {
     const { data } = await axios.get(`api/offers-by/${userId}`, {
       params: { types },
     });
     return data;
-  } catch (e) {
+  } catch (e: unknown) {
     /*
      * @TODO i'd expect the api to work as follows:
      * GET /api/users/userId/offers?types=host
@@ -34,7 +37,12 @@ export async function getOffers(userId: string, types: string): Promise<Offer[]>
      * and return 404 when user not found
      * but [] when user exists but has no host offers
      */
-    if (e?.response?.status === 404) {
+    if (
+      typeof e === 'object' &&
+      e !== null &&
+      'response' in e &&
+      (e.response as { status?: number } | undefined)?.status === 404
+    ) {
       return [];
     } else {
       throw e;
@@ -58,7 +66,11 @@ export async function getOffer(offerId: string): Promise<Offer> {
  * @returns Promise<Offer[]> - array of the found offers with limited info, mainly offer id and type.
  */
 export async function queryOffers(query: OfferQuery = {}): Promise<Offer[]> {
-  const { data } = await axios.get(`/api/offers?${new URLSearchParams(query)}`);
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined) params.set(key, String(value));
+  });
+  const { data } = await axios.get(`/api/offers?${params}`);
   return data;
 }
 

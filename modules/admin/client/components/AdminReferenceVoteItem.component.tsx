@@ -13,12 +13,13 @@ interface ReferenceUserSummary {
 }
 
 interface ReferenceVote {
-  reference: string;
-  userFrom: ReferenceUserSummary;
-  userTo: ReferenceUserSummary;
+  _id?: string;
+  reference?: string;
+  userFrom?: string | (ReferenceUserSummary & { _id: string });
+  userTo?: string | (ReferenceUserSummary & { _id: string });
 }
 
-function getReferenceLabel(reference: string) {
+function getReferenceLabel(reference = '') {
   if (reference === 'yes') {
     return {
       labelClassName: 'label label-success',
@@ -53,9 +54,21 @@ export default function AdminReferenceVoteItem({
     return (
       <li>
         <span className={labelClassName}>{text}</span>{' '}
-        <UserLink user={referenceThread.userFrom} />
+        <UserLink
+          user={
+            typeof referenceThread.userFrom === 'object'
+              ? referenceThread.userFrom
+              : undefined
+          }
+        />
         {' voted for '}
-        <UserLink user={referenceThread.userTo} />
+        <UserLink
+          user={
+            typeof referenceThread.userTo === 'object'
+              ? referenceThread.userTo
+              : undefined
+          }
+        />
         {showMessagesLink && (
           <>
             {' · '}
@@ -72,11 +85,23 @@ export default function AdminReferenceVoteItem({
 
   return (
     <li>
-      <UserLink user={referenceThread.userFrom} />
+      <UserLink
+        user={
+          typeof referenceThread.userFrom === 'object'
+            ? referenceThread.userFrom
+            : undefined
+        }
+      />
       {' voted '}
       <span className={textClassName}>{text}</span>
       {' for '}
-      <UserLink user={referenceThread.userTo} />
+      <UserLink
+        user={
+          typeof referenceThread.userTo === 'object'
+            ? referenceThread.userTo
+            : undefined
+        }
+      />
     </li>
   );
 }

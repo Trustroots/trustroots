@@ -42,7 +42,6 @@ import usePersistentMapLocation from '../hooks/use-persistent-map-location';
 import {
   getNostrEventAuthorPubkey,
   nostrService,
-  type CommunityNote,
 } from '../services/nostr.client.service';
 import {
   SOURCE_COMMUNITY_NOTES,
@@ -74,7 +73,10 @@ interface SearchMapProps {
   locationBounds?: Partial<MapBounds> | null;
   onOfferClose: () => void;
   onOfferOpen: (offer: SearchResultOffer) => void;
-  onCommunityNoteOpen: (note: { notes: NostrEvent[]; plusCode: string | null }) => void;
+  onCommunityNoteOpen: (note: {
+    notes: NostrEvent[];
+    plusCode: string | null;
+  }) => void;
 }
 
 interface MapViewport {
@@ -186,7 +188,9 @@ function getPlusCodeFromRawEvent(event: NostrEvent): string | null {
   return tag ? tag[1] : null;
 }
 
-function getPlusCodeFromEvent(properties: OfferFeatureProperties): string | null {
+function getPlusCodeFromEvent(
+  properties: OfferFeatureProperties,
+): string | null {
   const tags: string[][] =
     typeof properties.tags === 'string'
       ? JSON.parse(properties.tags)
@@ -210,32 +214,38 @@ function reconstructEvent(
     sig: properties.sig,
     tags:
       typeof properties.tags === 'string'
-      ? JSON.parse(properties.tags)
+        ? JSON.parse(properties.tags)
         : properties.tags,
   };
 }
 
-function nostrEventsToGeoJSON(events: CommunityNoteFeature[]): FeatureCollection {
+function nostrEventsToGeoJSON(
+  events: CommunityNoteFeature[],
+): FeatureCollection {
   const features: GeoJSONPointFeature[] = events.flatMap(event => {
-      const plusCodeTag = event.tags.find(
-        t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
-      );
-      if (!plusCodeTag) {
-        return [];
-      }
-      const code = plusCodeTag[1];
-      let area;
-      try {
-        area = olc.decode(code);
-      } catch (e) {
-        return [];
-      }
-      return [{
+    const plusCodeTag = event.tags.find(
+      t => t[0] === 'l' && t.length >= 3 && t[2] === 'open-location-code',
+    );
+    if (!plusCodeTag) {
+      return [];
+    }
+    const code = plusCodeTag[1];
+    let area;
+    try {
+      area = olc.decode(code);
+    } catch {
+      return [];
+    }
+    return [
+      {
         type: 'Feature' as const,
         id: event.id,
         geometry: {
           type: 'Point' as const,
-          coordinates: [area.longitudeCenter, area.latitudeCenter] as [number, number],
+          coordinates: [area.longitudeCenter, area.latitudeCenter] as [
+            number,
+            number,
+          ],
         },
         properties: {
           id: event.id,
@@ -247,8 +257,9 @@ function nostrEventsToGeoJSON(events: CommunityNoteFeature[]): FeatureCollection
           sig: event.sig,
           tags: JSON.stringify(event.tags),
         },
-      }];
-    });
+      },
+    ];
+  });
   return { type: 'FeatureCollection', features };
 }
 
@@ -299,12 +310,18 @@ export default function SearchMap({
     type: 'FeatureCollection',
     features: [],
   });
-  const [leafletMapState, setLeafletMapState] = useState<MapState | undefined>();
-  const communityNotesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [leafletMapState, setLeafletMapState] = useState<
+    MapState | undefined
+  >();
+  const communityNotesTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const communityNotesEventsRef = useRef<CommunityNoteFeature[]>([]);
   const hasInitialisedFiltersRef = useRef(false);
 
-  const parsedFilters: Partial<SearchFilters> = filters ? JSON.parse(filters) : {};
+  const parsedFilters: Partial<SearchFilters> = filters
+    ? JSON.parse(filters)
+    : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
   const MAPBOX_TOKEN = getMapBoxToken();
   // A Mapbox style can be persisted in localStorage from a session that had a
@@ -582,18 +599,21 @@ export default function SearchMap({
       return;
     }
 
-    source.getClusterExpansionZoom(clusterId, (err: Error | null, zoom?: number) => {
-      if (err || zoom === undefined) {
-        return;
-      }
+    source.getClusterExpansionZoom(
+      clusterId,
+      (err: Error | null, zoom?: number) => {
+        if (err || zoom === undefined) {
+          return;
+        }
 
-      // Transition map to show offers in the cluster
-      setViewport({
-        ...viewport,
-        ...newLocation,
-        zoom: Math.min(zoom + 1, CLUSTER_MAX_ZOOM),
-      });
-    });
+        // Transition map to show offers in the cluster
+        setViewport({
+          ...viewport,
+          ...newLocation,
+          zoom: Math.min(zoom + 1, CLUSTER_MAX_ZOOM),
+        });
+      },
+    );
   };
 
   /**
@@ -763,9 +783,10 @@ export default function SearchMap({
       setOffers(data as unknown as FeatureCollection);
     } catch {
       // @TODO Error handling
-        process.env.NODE_ENV === 'development' &&
+      if (process.env.NODE_ENV === 'development') {
         // eslint-disable-next-line no-console
         console.error('Could not load offers.');
+      }
     }
   }
 
@@ -905,7 +926,9 @@ export default function SearchMap({
   if (!webGLSupported) {
     return (
       <LeafletSearchMap
-        bounds={bounds?.northEast && bounds?.southWest ? (bounds as MapBounds) : null}
+        bounds={
+          bounds?.northEast && bounds?.southWest ? (bounds as MapBounds) : null
+        }
         communityNotes={communityNotes}
         offers={offers}
         onCommunityNoteClick={openCommunityNote}

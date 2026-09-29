@@ -7,7 +7,7 @@ export default function OfferActivateProfile() {
       className="row"
       role="alertdialog"
     >
-      <div className="col-xs-12 text-center" role="document" tabIndex="0">
+      <div className="col-xs-12 text-center" role="document" tabIndex={0}>
         <h2>Do not panic!</h2>
         <p className="lead" id="activate-profile-message">
           <em>

@@ -61,7 +61,10 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
   direction: 'ascending',
 };
 
-export class AdminSearchUsersContent extends Component<SearchUsersProps, SearchUsersState> {
+export class AdminSearchUsersContent extends Component<
+  SearchUsersProps,
+  SearchUsersState
+> {
   static propTypes = {
     showHeading: PropTypes.bool,
   };

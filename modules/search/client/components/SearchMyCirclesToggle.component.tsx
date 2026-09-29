@@ -25,7 +25,9 @@ export default function SearchMyCirclesToggle({
         }
 
         const tribeIds = (memberships || [])
-          .map((membership: { tribe?: { _id?: string } }) => membership.tribe?._id)
+          .map(
+            (membership: { tribe?: { _id?: string } }) => membership.tribe?._id,
+          )
           .filter((id: unknown): id is string => Boolean(id));
         setUserTribeIds(tribeIds);
       })

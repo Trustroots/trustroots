@@ -2,7 +2,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-export default function UserEmailConfirmLink({ user }) {
+export default function UserEmailConfirmLink({
+  user,
+}: {
+  user: {
+    email?: string;
+    emailToken?: string;
+    emailTemporary?: string;
+  };
+}) {
   if (!user || !user.emailToken || !user.emailTemporary) {
     return null;
   }
@@ -24,7 +32,7 @@ export default function UserEmailConfirmLink({ user }) {
       <input
         className="form-control"
         id="user-email-reset-link"
-        readOnly="readonly"
+        readOnly
         type="text"
         value={`https://www.trustroots.org/confirm-email/${user.emailToken}${
           isSignup ? '?signup=true' : ''

@@ -11,7 +11,18 @@ import PropTypes from 'prop-types';
  * - If user is removing themself
  * - If user is changing password
  */
-export default function UserState({ user }) {
+interface UserStateUser {
+  email?: string;
+  emailTemporary?: string;
+  removeProfileExpires?: string;
+  removeProfileToken?: string;
+  resetPasswordExpires?: string;
+  resetPasswordToken?: string;
+  roles?: string[];
+  public?: boolean;
+}
+
+export default function UserState({ user }: { user: UserStateUser }) {
   const {
     email,
     emailTemporary,

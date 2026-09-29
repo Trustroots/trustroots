@@ -3,7 +3,13 @@ import React from 'react';
 
 import OfferActivateProfile from './OfferActivateProfile.component';
 
-export default function OfferShell({ children, user }) {
+export default function OfferShell({
+  children,
+  user,
+}: {
+  children?: React.ReactNode;
+  user?: { public?: boolean } | null;
+}) {
   return (
     <section className="container container-spacer offer">
       {!user?.public && <OfferActivateProfile />}

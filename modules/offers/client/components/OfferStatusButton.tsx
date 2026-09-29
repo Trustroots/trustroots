@@ -20,7 +20,8 @@ interface TooltipProps {
   tooltip: string;
 }
 
-const AccessibleTooltip = Tooltip as unknown as React.ComponentType<TooltipProps>;
+const AccessibleTooltip =
+  Tooltip as unknown as React.ComponentType<TooltipProps>;
 
 export default function OfferStatusButton({
   isOwnOffer,

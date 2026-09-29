@@ -4,7 +4,10 @@ import Map from '@/modules/core/client/components/Map/index';
 import OfferLocationOverlay from './OfferLocationOverlay';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import { getOfferHexColor } from '../utils/markers';
-import type { MapBounds, MapPoint } from '@/modules/search/client/utils/location';
+import type {
+  MapBounds,
+  MapPoint,
+} from '@/modules/search/client/utils/location';
 
 interface OfferLocationEditorProps {
   location: [number, number];
@@ -37,10 +40,18 @@ export default function OfferLocationEditor({
 }: OfferLocationEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  function handlePlaceSearch(data: MapBounds | MapPoint, type: 'center' | 'bounds') {
+  function handlePlaceSearch(
+    data: MapBounds | MapPoint,
+    type: 'center' | 'bounds',
+  ) {
     if (type === 'center' && 'lat' in data && data.lat && data.lng) {
       onLocationChange([data.lat, data.lng]);
-    } else if (type === 'bounds' && 'northEast' in data && data.northEast && data.southWest) {
+    } else if (
+      type === 'bounds' &&
+      'northEast' in data &&
+      data.northEast &&
+      data.southWest
+    ) {
       const lat = (data.northEast.lat + data.southWest.lat) / 2;
       const lng = (data.northEast.lng + data.southWest.lng) / 2;
       onLocationChange([lat, lng]);

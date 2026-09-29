@@ -13,9 +13,11 @@ export default function NoMeets() {
       <Icon icon="users" size="3x" />
       <br />
       <p className="lead text-center">
-        {t('Travelling? Organising an event?')}
+        {String(t('Travelling? Organising an event?'))}
         <br />
-        {t('Just making a dinner and would like to invite people over?')}
+        {String(
+          t('Just making a dinner and would like to invite people over?'),
+        )}
         <br />
         <br />
       </p>
@@ -26,13 +28,13 @@ export default function NoMeets() {
           target="_blank"
           rel="noreferrer"
         >
-          {t('Add it to map!')}
+          {String(t('Add it to map!'))}
         </a>
         <br />
         <br />
       </p>
       <p className="lead text-center">
-        {t('Meetups stay visible on map at most one month.')}
+        {String(t('Meetups stay visible on map at most one month.'))}
       </p>
     </div>
   );

@@ -45,11 +45,7 @@ export async function getUser(id: string) {
   return data;
 }
 
-export async function setUserRole(
-  id: string,
-  role: string,
-  action?: string,
-) {
+export async function setUserRole(id: string, role: string, action?: string) {
   const { data } = await axios.post('/api/admin/user/change-role', {
     id,
     role,

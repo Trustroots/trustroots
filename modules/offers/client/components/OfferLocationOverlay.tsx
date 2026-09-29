@@ -25,7 +25,8 @@ interface SVGOverlayProps {
   }) => React.ReactElement;
 }
 
-const TypedSVGOverlay = SVGOverlay as unknown as React.ComponentType<SVGOverlayProps>;
+const TypedSVGOverlay =
+  SVGOverlay as unknown as React.ComponentType<SVGOverlayProps>;
 
 class OfferLocationOverlay extends BaseControl<
   OfferLocationOverlayProps,

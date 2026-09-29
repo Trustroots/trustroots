@@ -1,30 +1,34 @@
 // External dependencies
-import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
 import * as api from '../api/admin-reference-threads.api';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from './UserLink.component';
 import AdminHeader from './AdminHeader.component';
+import type {
+  ReferenceThread,
+  ReferenceUserOrId,
+  TopNegativeRecipient,
+} from '../api/admin-reference-threads.api';
 
-function ReferenceUser({ user }) {
-  if (user && user._id) {
+function ReferenceUser({ user }: { user?: ReferenceUserOrId }) {
+  if (user && typeof user !== 'string') {
     return <UserLink user={user} />;
   }
   return <em>Unknown member</em>;
 }
-
-ReferenceUser.propTypes = {
-  user: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
-};
 
 /**
  * Lists threads that received negative references
  */
 export default function AdminReferenceThreads() {
   const [isFetching, setIsFetching] = useState(false);
-  const [referenceThreads, setReferenceThreads] = useState([]);
-  const [topNegativeRecipients, setTopNegativeRecipients] = useState([]);
+  const [referenceThreads, setReferenceThreads] = useState<ReferenceThread[]>(
+    [],
+  );
+  const [topNegativeRecipients, setTopNegativeRecipients] = useState<
+    TopNegativeRecipient[]
+  >([]);
 
   async function fetchReferenceThreads() {
     setIsFetching(true);
@@ -57,7 +61,7 @@ export default function AdminReferenceThreads() {
               <h4>Top score from the last year</h4>
               <ol className="list-inline">
                 {topNegativeRecipients.map(({ count, user }) => {
-                  const userId = user?._id ?? user;
+                  const userId = typeof user === 'string' ? user : user._id;
                   return (
                     <li key={userId}>
                       <span className="label label-danger">{count}</span>{' '}
@@ -82,8 +86,10 @@ export default function AdminReferenceThreads() {
             </thead>
             <tbody>
               {referenceThreads.map(({ _id, userFrom, userTo, created }) => {
-                const userToId = userTo?._id ?? userTo;
-                const userFromId = userFrom?._id ?? userFrom;
+                const userToId =
+                  typeof userTo === 'string' ? userTo : userTo?._id;
+                const userFromId =
+                  typeof userFrom === 'string' ? userFrom : userFrom?._id;
 
                 return (
                   <tr key={_id}>
@@ -113,5 +119,3 @@ export default function AdminReferenceThreads() {
     </>
   );
 }
-
-AdminReferenceThreads.propTypes = {};

@@ -15,7 +15,7 @@ const USER_SORT_COLUMNS = [
   'lastIpAddress',
   'username',
 ];
-type UserSortColumn = (typeof USER_SORT_COLUMNS)[number];
+type UserSortColumn = typeof USER_SORT_COLUMNS[number];
 
 interface UserSort {
   column: UserSortColumn;
@@ -58,7 +58,12 @@ interface AdminUserResultsTableProps {
   userResults: UserResult[];
 }
 
-function SortableHeader({ column, label, onSortChange, sort }: SortableHeaderProps) {
+function SortableHeader({
+  column,
+  label,
+  onSortChange,
+  sort,
+}: SortableHeaderProps) {
   const isActive = sort.column === column;
   const direction = isActive ? sort.direction : 'none';
   const nextDirection =

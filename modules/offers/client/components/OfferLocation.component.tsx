@@ -7,7 +7,7 @@ import OfferLocationOverlay from './OfferLocationOverlay';
 import { getOfferHexColor } from '../utils/markers.js';
 
 interface OfferLocationProps {
-  location: [number, number];
+  location: number[];
   offerStatus?: string;
   offerType?: string;
 }
@@ -36,7 +36,7 @@ export default function OfferLocation({
       zoom={11}
     >
       <OfferLocationOverlay
-        location={location}
+        location={location as [number, number]}
         offerType={offerType}
         offerStatus={offerStatus}
       />

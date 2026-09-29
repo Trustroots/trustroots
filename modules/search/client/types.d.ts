@@ -1,5 +1,5 @@
 declare module 'nostr-tools/relay' {
-  export { Relay, Subscription } from 'nostr-tools';
+  export { Relay } from 'nostr-tools';
 }
 
 declare module 'open-location-code' {
@@ -9,4 +9,9 @@ declare module 'open-location-code' {
       longitudeCenter: number;
     };
   }
+}
+
+declare module '*.svg' {
+  const source: string;
+  export default source;
 }

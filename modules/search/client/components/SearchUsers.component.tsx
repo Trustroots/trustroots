@@ -16,7 +16,7 @@ export default function SearchUsers() {
   const [hasSearched, setHasSearched] = useState(false);
   const [users, setUsers] = useState([]);
 
-  async function fetchUsers(query) {
+  async function fetchUsers(query: string) {
     setIsSearching(true);
     setHasSearched(true);
     setUsers([]);
@@ -32,7 +32,9 @@ export default function SearchUsers() {
   }
 
   useEffect(() => {
-    const urlSearchQuery = new URL(window.location).searchParams.get('search');
+    const urlSearchQuery = new URL(window.location.href).searchParams.get(
+      'search',
+    );
 
     if (urlSearchQuery) {
       setHasSearched(true);
@@ -62,7 +64,7 @@ export default function SearchUsers() {
             setUsers([]);
           }}
           placeholder={t('Type name, username…')}
-          tabIndex="0"
+          tabIndex={0}
           type="text"
           value={searchQuery}
         />
@@ -90,7 +92,7 @@ export default function SearchUsers() {
               type="submit"
             >
               <i className="icon-search"></i>
-              <span className="hidden-xs">{t('Search')}</span>
+              <span className="hidden-xs">{String(t('Search'))}</span>
             </button>
           </span>
         </span>

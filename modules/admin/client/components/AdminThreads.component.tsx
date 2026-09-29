@@ -22,7 +22,9 @@ export default function AdminThreads() {
 
   const [queried, setQueried] = useState(false);
   const [query, setQuery] = useState(initialQuery);
-  const [threads, setThreads] = useState<Awaited<ReturnType<typeof getThreads>>>([]);
+  const [threads, setThreads] = useState<
+    Awaited<ReturnType<typeof getThreads>>
+  >([]);
 
   const runQuery = useCallback(async (queryValue: string) => {
     const trimmedQuery = normalizeAdminQuery(queryValue);

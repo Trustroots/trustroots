@@ -13,13 +13,15 @@ export default function MeetsExplanation() {
       <Icon icon="users" size="3x" className="text-muted hidden-xs" />
       <p className="lead">
         <strong>
-          {t(
-            'Travelling? Organising an event? Just making a dinner and would like to invite people over?',
+          {String(
+            t(
+              'Travelling? Organising an event? Just making a dinner and would like to invite people over?',
+            ),
           )}
         </strong>
         <br />
         <br />
-        {t('Meetups stay visible on map at most one month.')}
+        {String(t('Meetups stay visible on map at most one month.'))}
       </p>
     </>
   );

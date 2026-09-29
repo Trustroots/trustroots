@@ -45,10 +45,6 @@ interface SearchCommunityNote {
   plusCode: string | null;
 }
 
-type LocationResult =
-  | { data: SearchMapLocation; type: 'center' }
-  | { data: SearchMapBounds; type: 'bounds' };
-
 function parseLocationQuery(locationParam?: string): string {
   if (!locationParam) {
     return '';
@@ -84,9 +80,12 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   const [bounds, setBounds] = useState<Partial<SearchMapBounds>>({});
   const [location, setLocation] = useState<Partial<SearchMapLocation>>({});
   const [offer, setOffer] = useState<SearchResultOffer | null>(null);
-  const [communityNote, setCommunityNote] = useState<SearchCommunityNote | null>(null);
+  const [communityNote, setCommunityNote] =
+    useState<SearchCommunityNote | null>(null);
   const [isLoadingOffer, setIsLoadingOffer] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<'filters' | 'results'>('filters');
+  const [sidebarTab, setSidebarTab] = useState<'filters' | 'results'>(
+    'filters',
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(
     Boolean(routeParams.offer) || (isUserPublic && window.innerWidth >= 768),
   );
@@ -123,7 +122,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     }
   }, []);
 
-  const closeSidebar = useCallback((_tab?: 'filters' | 'results') => {
+  const closeSidebar = useCallback(() => {
     setIsSidebarOpen(false);
     setOffer(null);
     setCommunityNote(null);
@@ -134,7 +133,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   const toggleSidebar = useCallback(
     (tab?: 'filters' | 'results') => {
       if (isSidebarOpen) {
-        closeSidebar(tab);
+        closeSidebar();
       } else {
         openSidebar(tab);
       }
@@ -188,18 +187,21 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     setOfferQueryParam('');
   }, []);
 
-  const onPlaceSearch = useCallback((data: SearchMapLocation | SearchMapBounds, type: 'center' | 'bounds') => {
-    setIsPlaceSearchVisible(false);
+  const onPlaceSearch = useCallback(
+    (data: SearchMapLocation | SearchMapBounds, type: 'center' | 'bounds') => {
+      setIsPlaceSearchVisible(false);
 
-    /* istanbul ignore else -- callers only emit centre or bounds results. */
-    if (data && type === 'center') {
-      setBounds({});
-      setLocation(data as SearchMapLocation);
-    } else if (data && type === 'bounds') {
-      setLocation({});
-      setBounds(data as SearchMapBounds);
-    }
-  }, []);
+      /* istanbul ignore else -- callers only emit centre or bounds results. */
+      if (data && type === 'center') {
+        setBounds({});
+        setLocation(data as SearchMapLocation);
+      } else if (data && type === 'bounds') {
+        setLocation({});
+        setBounds(data as SearchMapBounds);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     let isMounted = true;

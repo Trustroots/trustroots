@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { getAdminDashboard, type AdminDashboard, type AdminUserSummary } from '../api/admin-dashboard.api.js';
+import {
+  getAdminDashboard,
+  type AdminDashboard,
+  type AdminUserSummary,
+} from '../api/admin-dashboard.api.js';
 import AdminHeader from './AdminHeader.component.js';
 import { AdminSearchUsersContent } from './AdminSearchUsers.component.js';
 import UserLink from './UserLink.component.js';
@@ -52,7 +56,7 @@ export default function Admin() {
           });
           setDashboardError(null);
         }
-      } catch (error) {
+      } catch {
         if (isMounted) {
           setDashboardError('Could not load dashboard activity.');
         }

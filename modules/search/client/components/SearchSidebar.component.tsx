@@ -4,9 +4,10 @@ import * as ReactBootstrap from 'react-bootstrap';
 
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebarFilters from './SearchSidebarFilters.component';
-import SearchSidebarResults from './SearchSidebarResults.component';
+import SearchSidebarResults, {
+  type SearchResultOffer,
+} from './SearchSidebarResults.component';
 import type { SearchFilters } from '../utils/search-filters';
-import type { SearchResultOffer } from './SearchSidebarResults.component';
 
 interface SearchCommunityNoteSummary {
   notes: import('nostr-tools').Event[];
@@ -24,7 +25,9 @@ interface SearchSidebarProps {
   onCommunityNotesToggle: () => void;
   onFiltersChange: (filters: Partial<SearchFilters>) => void;
   onPlaceSearch: (
-    data: import('../utils/location').MapBounds | import('../utils/location').MapPoint,
+    data:
+      | import('../utils/location').MapBounds
+      | import('../utils/location').MapPoint,
     type: 'center' | 'bounds',
   ) => void;
   onTabSelect: (tab: string | null) => void;

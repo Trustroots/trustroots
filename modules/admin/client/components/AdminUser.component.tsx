@@ -230,7 +230,10 @@ InfoTable.propTypes = {
   rows: PropTypes.arrayOf(PropTypes.array).isRequired,
 };
 
-export default class AdminUser extends Component<Record<string, never>, AdminUserState> {
+export default class AdminUser extends Component<
+  Record<string, never>,
+  AdminUserState
+> {
   constructor(props: Record<string, never>) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
@@ -344,7 +347,7 @@ export default class AdminUser extends Component<Record<string, never>, AdminUse
               }));
               const user = await getUser(id);
               this.setState({ user });
-            } catch (error) {
+            } catch {
               this.setState({ roleChangeError: true });
             } finally {
               this.setState({ isSettingUserRole: false });
@@ -420,10 +423,13 @@ export default class AdminUser extends Component<Record<string, never>, AdminUse
     this.setState(
       { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
       async () => {
-        const memberList: MemberList = await listUsersByLastIpAddress(ipAddress, {
-          page: options.page || 1,
-          sort: requestedSort,
-        });
+        const memberList: MemberList = await listUsersByLastIpAddress(
+          ipAddress,
+          {
+            page: options.page || 1,
+            sort: requestedSort,
+          },
+        );
         this.setState({
           isSearching: false,
           matchingUsers: memberList.users,
@@ -454,8 +460,8 @@ export default class AdminUser extends Component<Record<string, never>, AdminUse
     } = this.state;
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
-    const isRestricted = get(user, ['profile', 'roles'], []).some((role: string) =>
-      ['shadowban', 'suspended'].includes(role),
+    const isRestricted = get(user, ['profile', 'roles'], []).some(
+      (role: string) => ['shadowban', 'suspended'].includes(role),
     );
     const potentialMatches = user ? user.potentialMatches || [] : [];
     const visibleMatchingUsers = hideObviousSpamUsers
@@ -470,7 +476,7 @@ export default class AdminUser extends Component<Record<string, never>, AdminUse
       ? user.profile.displayName || user.profile.username || 'Unknown member'
       : '';
     const profileRows: InfoTableProps['rows'] = isProfile
-      ? [
+      ? ([
           ['Display name', user.profile.displayName],
           [
             'Username',
@@ -518,7 +524,7 @@ export default class AdminUser extends Component<Record<string, never>, AdminUse
                 .filter(Boolean)
                 .join(', '),
           ],
-        ].filter(([, value]) => value) as InfoTableProps['rows']
+        ].filter(([, value]) => value) as InfoTableProps['rows'])
       : [];
     const threadReferences =
       user && user.threadReferences ? user.threadReferences : [];
@@ -734,7 +740,7 @@ export default class AdminUser extends Component<Record<string, never>, AdminUse
               </h4>
               <div className="panel panel-default admin-user">
                 <div className="panel-body">
-                <UserState user={user.profile} />
+                  <UserState user={user.profile} />
                   <ul className="list-inline">
                     <li>
                       <strong>Messages</strong>

@@ -89,7 +89,10 @@ export default function OfferMeetEditPage() {
             ...data,
             type: 'meet',
             description: data.description || '',
-            location: data.location || [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng],
+            location: data.location || [
+              DEFAULT_LOCATION.lat,
+              DEFAULT_LOCATION.lng,
+            ],
             validUntil: data.validUntil || defaultValidUntil(),
           });
         }
@@ -119,6 +122,9 @@ export default function OfferMeetEditPage() {
   const hasValidExpiry = Boolean(
     offer && Number.isFinite(new Date(offer.validUntil).getTime()),
   );
+  const expiryInputValue = hasValidExpiry
+    ? new Date(offer!.validUntil).toISOString().slice(0, 10)
+    : '';
 
   const loadedOffer = offer;
   if (isLoading || !loadedOffer) {
@@ -223,7 +229,9 @@ export default function OfferMeetEditPage() {
                       className="form-control offer-description"
                       onChange={({ target: { value } }) =>
                         setOffer(current =>
-                          current ? { ...current, description: value } : current,
+                          current
+                            ? { ...current, description: value }
+                            : current,
                         )
                       }
                       placeholder="Write here..."
@@ -251,7 +259,7 @@ export default function OfferMeetEditPage() {
                         )
                       }
                       type="date"
-                      value={new Date(loadedOffer.validUntil).toISOString().slice(0, 10)}
+                      value={expiryInputValue}
                     />
                     {!hasValidExpiry && (
                       <p role="alert">Please choose a valid expiry date.</p>

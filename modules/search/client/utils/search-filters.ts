@@ -57,7 +57,10 @@ function readCachedFilters(userId?: string | null): SearchFilters {
   }
 }
 
-function writeCachedFilters(userId: string | null | undefined, filters: SearchFilters): void {
+function writeCachedFilters(
+  userId: string | null | undefined,
+  filters: SearchFilters,
+): void {
   if (typeof window === 'undefined' || !window.localStorage) {
     return;
   }

@@ -276,12 +276,16 @@ export default class NostrService {
 
         const linkedPubkeys = new Set(
           payload.linkedPubkeys
-            .filter((pubkey: unknown): pubkey is string => typeof pubkey === 'string')
+            .filter(
+              (pubkey: unknown): pubkey is string => typeof pubkey === 'string',
+            )
             .map((pubkey: string) => pubkey.toLowerCase()),
         );
         const visiblePubkeys = new Set(
           payload.pubkeys
-            .filter((pubkey: unknown): pubkey is string => typeof pubkey === 'string')
+            .filter(
+              (pubkey: unknown): pubkey is string => typeof pubkey === 'string',
+            )
             .map((pubkey: string) => pubkey.toLowerCase()),
         );
         const expiresAt = Date.now() + AUTHOR_VISIBILITY_CACHE_TTL_MS;
