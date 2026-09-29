@@ -48,6 +48,8 @@ module.exports.initLocalVariables = function (app) {
   app.locals.appSettings.profileMinimumLength = config.profileMinimumLength;
   app.locals.appSettings.referencesEnabled = config.featureFlags.reference;
   app.locals.appSettings.limits = {
+    maximumExperienceFeedbackPublicLength:
+      config.limits.maximumExperienceFeedbackPublicLength,
     maxOfferValidFromNow: config.limits.maxOfferValidFromNow,
   };
   app.locals.siteAnnouncement = config.siteAnnouncement || { enabled: false };
