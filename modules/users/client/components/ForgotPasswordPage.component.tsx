@@ -102,13 +102,9 @@ export default function ForgotPasswordPage() {
                 <div className="text-center alert alert-success" role="alert">
                   <p>
                     <strong>
-                      We sent you an email with further instructions.
+                      If an account matches that username or email, we will send
+                      recovery instructions.
                     </strong>
-                  </p>
-                  <p>
-                    If you don&apos;t see this email in your inbox within 15
-                    minutes, look for it in your junk mail folder. If you find
-                    it there, please mark it as &quot;Not Junk&quot;.
                   </p>
                 </div>
               )}

@@ -324,6 +324,10 @@ const UserSchema = new Schema({
   passwordUpdated: {
     type: Date,
   },
+  authVersion: {
+    type: Number,
+    default: 0,
+  },
   /* For email confirmations */
   emailToken: {
     type: String,
