@@ -1,8 +1,4 @@
-import {
-  Outlet,
-  useRouteContext,
-  useRouter,
-} from '@tanstack/react-router';
+import { Outlet, useRouteContext, useRouter } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 
 import AppHeader from '@/modules/core/client/components/AppHeader.component';
