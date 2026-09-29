@@ -110,6 +110,8 @@ describe('Avatar controller unit tests', () => {
       const [viewer, target] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
+      target.blocked = [viewer._id];
+      await target.save();
       const res = deferredResponse();
       let nextCalled = false;
       const req = { user: viewer };
@@ -126,6 +128,9 @@ describe('Avatar controller unit tests', () => {
       });
       nextCalled.should.be.true();
       req.profile._id.toString().should.equal(target._id.toString());
+      req.profile.blocked
+        .map(id => id.toString())
+        .should.containEql(viewer._id.toString());
     });
   });
 
@@ -213,6 +218,65 @@ describe('Avatar controller unit tests', () => {
       targetDoc.roles = ['user', 'shadowban'];
       targetDoc.avatarUploaded = true;
       targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
+    it('returns the default avatar when the profile has blocked the viewer', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      targetDoc.blocked = [viewer._id];
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
+    });
+
+    it('keeps avatar access for the member who initiated the block', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      viewer.blocked = [target._id];
+      await viewer.save();
+      const targetDoc = await User.findById(target._id);
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/uploads-profile/');
+    });
+
+    it('lets admins view an avatar when the profile has blocked them', async () => {
+      const [viewer, target] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      viewer.roles = ['user', 'admin'];
+      const targetDoc = await User.findById(target._id);
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      targetDoc.blocked = [viewer._id];
       await targetDoc.save();
 
       const res = deferredResponse();
