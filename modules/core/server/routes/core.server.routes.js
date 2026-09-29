@@ -107,9 +107,7 @@ module.exports = function (app) {
   });
 
   // Return a 404 for all undefined api, module or lib routes
-  app
-    .route(/^\/(?:api|modules|lib|developers)\/.*$/i)
-    .get(core.renderNotFound);
+  app.route(/^\/(?:api|modules|lib|developers)\/.*$/i).get(core.renderNotFound);
 
   // Protect direct page loads before the client-side route guard is ready.
   // Signed-in members continue to the generic circle route below.
@@ -185,7 +183,7 @@ module.exports = function (app) {
   });
 
   // Define application route
-  app.route('/*').get(core.renderIndex);
+  app.route(/^\/.*$/).get(core.renderIndex);
 
   // Finish by binding the tribes middleware
   app.param('tribe', tribes.tribeBySlug);
