@@ -1,0 +1,108 @@
+name: Windows map wheel
+
+on:
+  pull_request:
+    branches: [main, 'codex/**']
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-map-wheel-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wheel:
+    # Add the windows-ci label for PRs that need Windows browser coverage.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'windows-ci')
+    runs-on: windows-2025
+    timeout-minutes: 25
+    env:
+      NODE_ENV: test
+      DB_1_PORT_27017_TCP_ADDR: 127.0.0.1
+      TRUSTROOTS_E2E_HOST: 127.0.0.1
+      TRUSTROOTS_E2E_MONGO_URI: mongodb://127.0.0.1:27017/trustroots-test
+      TRUSTROOTS_SKIP_LOCAL_CONFIG: 'true'
+      TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK: 'true'
+      TRUSTROOTS_FILE_MAGIC_FALLBACK: 'true'
+      TRUSTROOTS_E2E_SKIP_JS_COVERAGE: 'true'
+      TRUSTROOTS_E2E_USE_EXTRACTED_CSS: 'true'
+      TRUSTROOTS_E2E_WHEEL_DIAGNOSTICS: 'true'
+      TRUSTROOTS_WEBPACK_SKIP_ESLINT: 'true'
+      BROWSERSLIST_IGNORE_OLD_DATA: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24.21.0'
+          cache: npm
+      - name: Install dependencies
+        run: |
+          npm install --global npm@11.17.0
+          # These map tests do not use native image processing or upload modules.
+          npm ci --ignore-scripts
+          # Use current Firefox and branded-browser protocol support in this job.
+          npm install --no-save --package-lock=false --ignore-scripts @playwright/test@1.63.0
+      - name: Install Firefox and Brave
+        run: |
+          npx playwright install firefox ffmpeg
+          $version = '1.96.59'
+          $archive = Join-Path $env:RUNNER_TEMP 'brave.zip'
+          Invoke-WebRequest "https://github.com/brave/brave-browser/releases/download/v$version/brave-v$version-win32-x64.zip" -OutFile $archive
+          $expected = 'f2d439484d89e634792d8ce93a6a8e920ab01e70889f455d5511b78af831ed09'
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLower() -ne $expected) {
+            throw 'Brave archive checksum did not match.'
+          }
+          $destination = Join-Path $env:RUNNER_TEMP 'brave'
+          Expand-Archive $archive -DestinationPath $destination
+          $brave = Get-ChildItem $destination -Filter brave.exe -Recurse | Select-Object -First 1
+          if (!$brave) { throw 'Brave executable was not found.' }
+          "BRAVE_EXECUTABLE_PATH=$($brave.FullName)" | Out-File $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Start MongoDB
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'mongodb.zip'
+          Invoke-WebRequest 'https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-4.4.29.zip' -OutFile $archive
+          $destination = Join-Path $env:RUNNER_TEMP 'mongodb'
+          Expand-Archive $archive -DestinationPath $destination
+          $mongod = Get-ChildItem $destination -Filter mongod.exe -Recurse | Select-Object -First 1
+          $data = Join-Path $env:RUNNER_TEMP 'mongodb-data'
+          New-Item $data -ItemType Directory | Out-Null
+          $log = Join-Path $env:RUNNER_TEMP 'mongodb.log'
+          Start-Process $mongod.FullName -ArgumentList "--dbpath `"$data`" --bind_ip 127.0.0.1 --port 27017 --logpath `"$log`""
+          $ready = $false
+          for ($attempt = 0; $attempt -lt 30; $attempt++) {
+            try {
+              $socket = [System.Net.Sockets.TcpClient]::new('127.0.0.1', 27017)
+              $socket.Dispose()
+              $ready = $true
+              break
+            } catch { Start-Sleep -Seconds 1 }
+          }
+          if (!$ready) {
+            Get-Content $log -ErrorAction SilentlyContinue
+            throw 'MongoDB did not start.'
+          }
+      - name: Build the production client
+        env:
+          NODE_ENV: production
+        run: node node_modules/webpack/bin/webpack.js --config config/webpack/webpack.config.js
+      - name: Seed the test database
+        run: node scripts/e2e/seed.js
+      - name: Run Windows wheel scenarios
+        run: |
+          node -p "JSON.stringify({ platform: process.platform, release: require('os').release(), node: process.version, playwright: require('@playwright/test/package.json').version })"
+          npx playwright test --config playwright.windows-wheel.config.js
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: windows-map-wheel
+          path: |
+            playwright-report/windows-wheel
+            test-results
+            ${{ runner.temp }}/mongodb.log
+          if-no-files-found: ignore
