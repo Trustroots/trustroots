@@ -3,4 +3,4 @@
 - [x] Implement the guardrails and document rollout requirements.
 - [x] Add anonymous regression cases and extend the existing avatar-upload end-to-end case.
 - [x] Run focused checks and preserve full client/server coverage. Focused server/profile tests passed (117 tests), the avatar-upload browser flow passed, full server coverage passed at 100% for statements, branches, functions and lines, and full client coverage passed at 100%.
-- [x] Validate the native GraphicsMagick backend in the project container, then archive the proposal. GraphicsMagick 1.3.42 exposed the configured capabilities and generated all seven thumbnails in a smoke test; ImageMagick was unavailable locally, and production workload sizing remains a deployment validation item.
+- [x] Validate both available native backends, then archive the proposal. GraphicsMagick 1.3.42 in the project container and ImageMagick 7.1.2-24 on the host exposed the configured capabilities and generated all seven thumbnails in smoke tests; production workload sizing remains a deployment validation item.

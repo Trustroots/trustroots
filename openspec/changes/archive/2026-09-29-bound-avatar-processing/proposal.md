@@ -23,4 +23,4 @@ Uploads already enforce a 10 MiB default byte cap and inspect file signatures. A
 
 ## Status
 
-Implementation and automated validation are complete. The GraphicsMagick 1.3.42 build in the project container exposed the configured resource capabilities and generated all seven thumbnails in a native smoke test. The test fallback validates publication and rollback logic only. ImageMagick was unavailable locally, and production workload sizing still requires validation against the deployed processor build and worker count.
+Implementation and automated validation are complete. GraphicsMagick 1.3.42 in the project container and ImageMagick 7.1.2-24 on the host exposed the configured resource capabilities and generated all seven thumbnails in native smoke tests. The test fallback validates publication and rollback logic only. Production workload sizing still requires validation against the deployed processor build and worker count.
