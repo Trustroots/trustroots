@@ -1,5 +1,4 @@
 import memoryPolicy from '../../../core/server/services/memory-policy.server.service.js';
-import errorService from '../../../core/server/services/error.server.service.js';
 import { createRouteAuthorisation } from '../../../core/server/services/route-authorisation.server.service.mjs';
 
 const service = {};
