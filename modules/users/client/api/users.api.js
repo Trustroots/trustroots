@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 
 export async function update(data) {
   const { data: user } = await axios.put('/api/users', data);
@@ -15,11 +15,14 @@ export async function fetchMini(userId) {
   return user;
 }
 
-export async function uploadAvatar(file) {
+export async function uploadAvatar(file, requestOptions = {}) {
   const formData = new FormData();
   formData.append('avatar', file);
   await axios.post('/api/users-avatar', formData, {
+    ...requestOptions,
+    timeout: requestOptions.timeout ?? 120000,
     headers: {
+      ...requestOptions.headers,
       'Content-Type': file.type || 'application/octet-stream',
       'X-Trustroots-Request': '1',
     },

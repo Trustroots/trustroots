@@ -11,7 +11,9 @@ import {
   uploadAvatar,
 } from '@/modules/users/client/api/users.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -53,6 +55,7 @@ describe('users api', () => {
       '/api/users-avatar',
       expect.any(FormData),
       {
+        timeout: 120000,
         headers: {
           'Content-Type': 'image/png',
           'X-Trustroots-Request': '1',
@@ -71,6 +74,7 @@ describe('users api', () => {
       '/api/users-avatar',
       expect.any(FormData),
       {
+        timeout: 120000,
         headers: {
           'Content-Type': 'application/octet-stream',
           'X-Trustroots-Request': '1',
