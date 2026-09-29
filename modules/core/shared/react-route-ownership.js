@@ -324,6 +324,12 @@ const REACT_ROUTE_POLICIES = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/blocked-by-me',
+    requiresRole: ['admin', 'welcome-team'],
+    title: 'Admin - Members who blocked you',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/acquisition-stories/analysis',
     requiresRole: ['admin', 'welcome-team'],
     title: 'Admin - Acquisition stories analysis',

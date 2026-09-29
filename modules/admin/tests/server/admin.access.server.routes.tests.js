@@ -27,6 +27,10 @@ describe('Admin access route tests', () => {
 
   const adminRequests = () => [
     {
+      method: 'get',
+      path: '/api/admin/blocked-by-me',
+    },
+    {
       method: 'post',
       path: '/api/admin/acquisition-stories',
     },
@@ -128,7 +132,7 @@ describe('Admin access route tests', () => {
     for (const endpoint of adminRequests()) {
       const expected = endpoint.path.startsWith(
         '/api/admin/acquisition-stories',
-      )
+      ) || endpoint.path === '/api/admin/blocked-by-me'
         ? 200
         : 403;
       await agent[endpoint.method](endpoint.path)

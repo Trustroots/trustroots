@@ -11,7 +11,8 @@ member activity, and access operational information.
 
 The system SHALL restrict administration tools and administration APIs to
 authorised administrators, except that members with the `welcome-team` role
-SHALL also have access to acquisition stories and analysis and their APIs.
+SHALL also have access to acquisition stories and analysis and their APIs, as
+well as the staff support view for members who have blocked their account.
 
 #### Scenario: Administrator opens the dashboard
 
@@ -21,6 +22,22 @@ SHALL also have access to acquisition stories and analysis and their APIs.
 #### Scenario: Regular member requests an administration API
 
 - **WHEN** a regular member without an applicable administrative role requests an administration API
+- **THEN** the system denies access
+
+### Requirement: Staff can identify members who blocked their account
+
+The system SHALL allow administrators and Welcome team members to view members
+who have blocked their signed-in account. The view SHALL expose each member's
+public identifier, username, and display name only.
+
+#### Scenario: Staff views members who blocked them
+
+- **WHEN** an administrator or Welcome team member opens the blocked-member support view
+- **THEN** the system lists members whose block list contains the staff member
+
+#### Scenario: Regular member requests the staff support list
+
+- **WHEN** a regular member requests the blocked-member support list
 - **THEN** the system denies access
 
 ### Requirement: Administration dashboard overview

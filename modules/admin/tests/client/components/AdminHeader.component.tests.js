@@ -28,7 +28,9 @@ describe('<AdminHeader />', () => {
       expect(
         screen.getByRole('link', { name: 'Welcome team' }),
       ).toHaveAttribute('href', '/admin/acquisition-stories');
-      expect(screen.getAllByRole('link')).toHaveLength(3);
+      expect(screen.getAllByRole('link')).toHaveLength(
+        user?.roles?.includes('welcome-team') ? 4 : 3,
+      );
       expect(
         screen.queryByRole('link', { name: 'Audit log' }),
       ).not.toBeInTheDocument();
@@ -42,6 +44,15 @@ describe('<AdminHeader />', () => {
       );
     },
   );
+
+  it('shows the blocked-member support page to Welcome team members', () => {
+    window.user = { roles: ['welcome-team'] };
+    render(<AdminHeader />);
+
+    expect(
+      screen.getByRole('link', { name: 'Members who blocked you' }),
+    ).toHaveAttribute('href', '/admin/blocked-by-me');
+  });
 
   it('marks the current admin page as active', () => {
     window.history.pushState({}, '', '/admin/messages');

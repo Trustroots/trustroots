@@ -490,6 +490,21 @@ exports.getUser = async (req, res) => {
   }
 };
 
+/** Return members who have blocked the signed-in staff member. */
+exports.listMembersWhoBlockedCurrentUser = async (req, res) => {
+  try {
+    const members = await User.find({ blocked: req.user._id })
+      .select('username displayName')
+      .sort({ username: 1 })
+      .lean();
+
+    res.send(members);
+  } catch (err) {
+    log('error', 'Failed to load members who blocked staff.', { error: err });
+    handleAdminApiError(res, err);
+  }
+};
+
 exports.findPotentialMatches = findPotentialMatches;
 
 /**

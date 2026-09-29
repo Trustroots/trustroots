@@ -16,6 +16,7 @@ import {
   toTanStackPath,
 } from '@/modules/core/shared/react-route-ownership';
 import Admin from '@/modules/admin/client/components/Admin.component';
+import AdminBlockedByMe from '@/modules/admin/client/components/AdminBlockedByMe.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import AdminAcquisitionStoriesAnalysis from '@/modules/admin/client/components/AdminAcquisitionStoriesAnalysis.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
@@ -185,6 +186,7 @@ const renderByPath = {
   '/about': renderWithUser(HomeRoute),
   '/admin': () => <Admin />,
   '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
+  '/admin/blocked-by-me': () => <AdminBlockedByMe />,
   '/admin/acquisition-stories/analysis': () => (
     <AdminAcquisitionStoriesAnalysis />
   ),

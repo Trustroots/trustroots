@@ -1,0 +1,4 @@
+- [x] 1. Add role-protected API for members who blocked the signed-in staff account.
+- [x] 2. Add an admin and Welcome team page to display the member list.
+- [x] 3. Add server, client, route-access, and end-to-end coverage.
+- [x] 4. Archive the proposal and update living specifications.

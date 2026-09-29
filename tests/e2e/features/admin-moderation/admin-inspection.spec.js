@@ -16,6 +16,27 @@ test.describe('admin moderation inspection flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('admin can see members who have blocked their account', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.support', [
+      'Admins can see which members have blocked their staff account.',
+    ]);
+    const member = await findUserByUsername(SEEDED_MEMBERS[0].username);
+    const admin = await findUserByUsername(SEEDED_ADMIN.username);
+    await withE2eDb(db =>
+      db.collection('users').updateOne(
+        { _id: member._id },
+        { $addToSet: { blocked: admin._id } },
+      ),
+    );
+
+    await page.goto('/admin/blocked-by-me');
+    await expect(
+      page.getByText(SEEDED_MEMBERS[0].username, { exact: false }),
+    ).toBeVisible();
+  });
+
   test('admin messages tool shows shadow-hidden messages between members', async ({
     page,
   }, testInfo) => {
