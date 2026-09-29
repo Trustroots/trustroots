@@ -35,6 +35,7 @@ const sensitiveKeyPatterns = [
   /secret/,
   /authorization/,
   /cookie/,
+  /stack|traceback/,
   /sessionid|sessionkey|apikey|privatekey|otp|onetimecode|verificationcode/,
 ];
 
@@ -52,6 +53,7 @@ const sensitivePayloadKeys = new Set([
   'privatemessagecontent',
   'privatemessagepayload',
   'privatepayload',
+  'report',
 ]);
 
 function isSensitiveKey(key) {

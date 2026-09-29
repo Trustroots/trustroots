@@ -50,7 +50,7 @@ export function errorResponse(err, req, res, next) {
   if (!err) return next();
 
   // Log errors
-  log('error', 'API error response', err.stack);
+  log('error', 'API error response', err);
 
   // Construct error response
   const errorResponse = {

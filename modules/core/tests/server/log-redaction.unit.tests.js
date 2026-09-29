@@ -17,6 +17,8 @@ describe('diagnostic log redaction', () => {
         authorization: 'Bearer private-secret',
       },
       message: 'private conversation',
+      stack: 'Error: recovery token private-token',
+      report: '{"blocked-uri":"https://example.test/?token=private-token"}',
     };
 
     const redacted = redactMetadata(metadata);
@@ -31,6 +33,8 @@ describe('diagnostic log redaction', () => {
         authorization: '[REDACTED]',
       },
       message: '[REDACTED]',
+      stack: '[REDACTED]',
+      report: '[REDACTED]',
     });
     assert.strictEqual(metadata.credentials.password, 'private-password');
     assert.strictEqual(metadata.message, 'private conversation');

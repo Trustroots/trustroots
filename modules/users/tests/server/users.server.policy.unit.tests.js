@@ -38,6 +38,9 @@ describe('Users policy unit tests', () => {
     const policies = mockAcl.allow.firstCall.args[0];
     policies[0].roles.should.deepEqual(['admin']);
     policies[1].roles.should.deepEqual(['user']);
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.not.containEql('/api/users/export');
     policies[1].allows
       .map(allow => allow.resources)
       .should.containEql('/api/users/push/registrations/:token');

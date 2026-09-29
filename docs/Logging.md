@@ -8,10 +8,10 @@ log('error', 'Stable event description.', { reason: 'provider unavailable' });
 
 The event level and string description pass through unchanged. Object metadata is
 copied before it reaches a transport. Fields whose keys identify credentials,
-recovery tokens, cookies, authorization values, or message/body/content payloads
-are replaced with `[REDACTED]`. Circular references, excessive nesting, and
-metadata with more than 1,000 visited entries receive bounded placeholder
-values. Accessors are not evaluated. Error objects keep recognised standard
+recovery tokens, cookies, authorization values, message/body/content payloads,
+or security reports are replaced with `[REDACTED]`. Circular references,
+excessive nesting, and metadata with more than 1,000 visited entries receive
+bounded placeholder values. Accessors are not evaluated. Error objects keep recognised standard
 error names, short machine-style codes and numeric status classifications; their
 message and stack are omitted because they may contain request or database
 values.

@@ -116,7 +116,7 @@ path as an adapter until all consumers have migrated.
 ### Requirement: Redact sensitive diagnostic metadata
 
 The application logger SHALL redact credential, recovery-token, and private
-message fields from structured metadata before sending it to configured
+message and security-report fields from structured metadata before sending it to configured
 transports. Redaction SHALL preserve stable event descriptions and
 non-sensitive classifications, avoid mutating caller objects, and bound
 traversal of cyclic or unusually large metadata. Error messages and stacks SHALL

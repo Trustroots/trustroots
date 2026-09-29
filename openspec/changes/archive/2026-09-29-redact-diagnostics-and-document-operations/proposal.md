@@ -6,7 +6,7 @@ The general logger currently exports winston.log directly, so each caller is res
 
 ## What Changes
 
-- Redact credential and private-payload fields from structured diagnostic metadata before transport.
+- Redact credential, security-report and private-payload fields from structured diagnostic metadata before transport.
 - Keep stable event descriptions, non-sensitive event names, counts and safe error classifications useful; bound traversal and avoid mutating caller data.
 - Omit arbitrary Error messages and stacks, which can contain request or database values.
 - Replace raw analytics URL and UTM values in validation-failure logs with presence flags.

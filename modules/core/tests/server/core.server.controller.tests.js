@@ -1,4 +1,5 @@
 const proxyquire = require('proxyquire').noCallThru();
+const winston = require('winston');
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
 const deprecatedLanguages = require('../../../../config/languages/deprecated');
@@ -163,6 +164,34 @@ describe('Controller: core', function () {
       res.statusCode.should.equal(204);
     });
 
+    it('redacts report URLs before logging security reports', function () {
+      const originalLog = winston.log;
+      const calls = [];
+      winston.log = function () {
+        calls.push(Array.from(arguments));
+      };
+
+      try {
+        const res = mockResponse();
+        coreController.receiveCSPViolationReport(
+          {
+            body: {
+              'blocked-uri': 'https://example.test/?token=private-token',
+            },
+          },
+          res,
+        );
+
+        const report = calls.find(
+          ([level, event]) =>
+            level === 'warn' && event === 'CSP violation report #ljeanw',
+        );
+        report[2].should.deepEqual({ report: '[REDACTED]' });
+      } finally {
+        winston.log = originalLog;
+      }
+    });
+
     it('responds with status 204 when no report body is present', function () {
       const res = mockResponse();
       coreController.receiveCSPViolationReport({ body: null }, res);
@@ -197,6 +226,34 @@ describe('Controller: core', function () {
         res,
       );
       res.statusCode.should.equal(204);
+    });
+
+    it('redacts report URLs before logging security reports', function () {
+      const originalLog = winston.log;
+      const calls = [];
+      winston.log = function () {
+        calls.push(Array.from(arguments));
+      };
+
+      try {
+        const res = mockResponse();
+        coreController.receiveExpectCTViolationReport(
+          {
+            body: {
+              'blocked-uri': 'https://example.test/?token=private-token',
+            },
+          },
+          res,
+        );
+
+        const report = calls.find(
+          ([level, event]) =>
+            level === 'warn' && event === 'Expect-CT violation report #3hg8ha',
+        );
+        report[2].should.deepEqual({ report: '[REDACTED]' });
+      } finally {
+        winston.log = originalLog;
+      }
     });
 
     it('responds with status 204 when no report body is present', function () {

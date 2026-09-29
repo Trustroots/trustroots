@@ -2,7 +2,7 @@
 
 ### Requirement: Redact sensitive diagnostic metadata
 
-The system SHALL redact credentials, recovery tokens and private message payloads from structured diagnostic metadata before sending it to configured logging transports. Redaction SHALL preserve stable event descriptions and non-sensitive event metadata, avoid mutating caller objects and remain bounded for cyclic or oversized metadata. Error messages and stacks SHALL be omitted from structured error metadata.
+The system SHALL redact credentials, recovery tokens, private message payloads and security-report payloads from structured diagnostic metadata before sending it to configured logging transports. Redaction SHALL preserve stable event descriptions and non-sensitive event metadata, avoid mutating caller objects and remain bounded for cyclic or oversized metadata. Error messages and stacks SHALL be omitted from structured error metadata.
 
 #### Scenario: Diagnostic metadata contains credentials
 
