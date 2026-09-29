@@ -285,10 +285,17 @@ const getAvatar = (req, res) => {
   const isBannedProfile =
     req.profile.roles.includes('suspended') ||
     req.profile.roles.includes('shadowban');
+  const isBlockedByProfile = (req.profile.blocked || []).some(
+    blockedUserId => blockedUserId.toString() === req.user._id.toString(),
+  );
   const isPublicProfile = req.profile.public;
   const isAdmin = req.user.roles.includes('admin');
 
-  if (!isAdmin && !isOwnProfile && (!isPublicProfile || isBannedProfile)) {
+  if (
+    !isAdmin &&
+    !isOwnProfile &&
+    (!isPublicProfile || isBannedProfile || isBlockedByProfile)
+  ) {
     return serveAvatarUrl(res, defaultAvatarUrl);
   }
 

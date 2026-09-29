@@ -50,6 +50,21 @@ function deferredResponse() {
 }
 
 describe('Avatar controller unit tests', () => {
+  it('exposes the bounded upload pipeline through the ESM adapter', async () => {
+    const esmController = await import(
+      '../../server/controllers/users.avatar.server.controller.mjs'
+    );
+
+    esmController.avatarUpload.should.equal(avatarController.avatarUpload);
+    esmController.avatarUploadField.should.equal(
+      avatarController.avatarUploadField,
+    );
+    esmController.getAvatar.should.equal(avatarController.getAvatar);
+    esmController.userForAvatarByUserId.should.equal(
+      avatarController.userForAvatarByUserId,
+    );
+  });
+
   afterEach(() => {
     return mongoose.connection.readyState ? utils.clearDatabase() : undefined;
   });
@@ -181,6 +196,26 @@ describe('Avatar controller unit tests', () => {
       );
       await res.waitForResponse();
       res.redirectUrl.should.containEql('/img/avatar-');
+    });
+
+    it('redirects to the default avatar when the profile blocked the viewer', async () => {
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const targetDoc = await User.findById(target._id);
+      targetDoc.blocked = [viewer._id];
+      targetDoc.avatarUploaded = true;
+      targetDoc.avatarSource = 'local';
+      await targetDoc.save();
+
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        { user: viewer, profile: targetDoc, query: { size: '128' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.redirectUrl.should.containEql('/img/avatar-128.png');
     });
 
     it('lets admins view a shadowbanned profile avatar', async () => {
