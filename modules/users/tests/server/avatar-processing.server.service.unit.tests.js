@@ -10,6 +10,15 @@ require('should');
 
 describe('Avatar processing service', () => {
   describe('resource limits', () => {
+    it('applies native limits when no cancellation emitter is provided', () => {
+      const args = avatarProcessing
+        .createLimitedCommand('/private/upload-without-cancellation')
+        .args();
+
+      args.should.containEql('/private/upload-without-cancellation');
+      args.should.containEql('-limit');
+    });
+
     it('places GraphicsMagick limits before the untrusted input path', () => {
       const inputPath = '/private/upload-123';
       const args = avatarProcessing

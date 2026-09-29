@@ -494,6 +494,221 @@ describe('Avatar controller unit tests', () => {
   }
 
   describe('avatarUpload', () => {
+    it('logs temporary upload cleanup failures after processor errors', async () => {
+      const logged = [];
+      let job;
+      const controller = loadAvatarWithStubs({
+        fs: {
+          promises: {
+            unlink: async () => {
+              throw new Error('temporary cleanup failed');
+            },
+          },
+        },
+        '../../../../config/lib/logger': (...args) => logged.push(args),
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: value => {
+            job = value;
+            return true;
+          },
+        },
+      });
+      const res = deferredResponse();
+
+      controller.avatarUpload(
+        {
+          user: { _id: new mongoose.Types.ObjectId() },
+          file: { path: '/private/avatar-upload.jpg' },
+        },
+        res,
+      );
+      job.callback(new Error('image processor failed'));
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(422);
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to clean out temporary image.',
+        );
+    });
+
+    it('logs version cleanup failures and uses the fallback save error message', async () => {
+      const logged = [];
+      let job;
+      const sourcePath = path.join(
+        os.tmpdir(),
+        `avatar-save-${Date.now()}.jpg`,
+      );
+      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const controller = loadAvatarWithStubs({
+        '../../../../config/lib/logger': (...args) => logged.push(args),
+        '../../../core/server/services/error.server.service': {
+          getErrorMessage: () => '',
+        },
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: value => {
+            job = value;
+            return true;
+          },
+          removeAvatarVersion: async () => {
+            throw new Error('version cleanup failed');
+          },
+        },
+      });
+      const user = {
+        _id: new mongoose.Types.ObjectId(),
+        avatarVersion: 'a'.repeat(32),
+        save: callback => callback(new Error('database unavailable')),
+      };
+      const res = deferredResponse();
+
+      controller.avatarUpload({ user, file: { path: sourcePath } }, res);
+      job.callback(null, {
+        version: 'b'.repeat(32),
+        avatarDirectory: '/private/avatar-dir',
+      });
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal('Failed to save the new avatar version.');
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to clean up unpublished avatar version.',
+        );
+      fs.existsSync(sourcePath).should.equal(false);
+    });
+
+    it('logs avatar pointer verification errors without failing the upload', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      const originalFindById = User.findById;
+      const logged = [];
+      const controller = loadAvatarWithStubs({
+        '../../../../config/lib/logger': (...args) => logged.push(args),
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: job => {
+            process.nextTick(() =>
+              job.callback(null, {
+                version: 'c'.repeat(32),
+                avatarDirectory: '/private/avatar-dir',
+              }),
+            );
+            return true;
+          },
+          removeAvatarVersion: async () => {},
+        },
+      });
+      const res = deferredResponse();
+      User.findById = () => ({
+        exec: callback => callback(new Error('avatar lookup failed')),
+      });
+
+      try {
+        controller.avatarUpload(
+          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
+          res,
+        );
+        await res.waitForResponse();
+      } finally {
+        User.findById = originalFindById;
+      }
+
+      res.statusCode.should.equal(200);
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to verify current avatar version.',
+        );
+    });
+
+    it('keeps the previous version when another upload has replaced its pointer', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      const originalFindById = User.findById;
+      let job;
+      const removed = [];
+      const controller = loadAvatarWithProcessor({
+        enqueueAvatarProcessing: value => {
+          job = value;
+          return true;
+        },
+        removeAvatarVersion: async (_directory, version) =>
+          removed.push(version),
+      });
+      const res = deferredResponse();
+      User.findById = () => ({
+        exec: callback => callback(null, { avatarVersion: 'd'.repeat(32) }),
+      });
+
+      try {
+        controller.avatarUpload(
+          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
+          res,
+        );
+        job.callback(null, {
+          version: 'e'.repeat(32),
+          avatarDirectory: '/private/avatar-dir',
+        });
+        await res.waitForResponse();
+      } finally {
+        User.findById = originalFindById;
+      }
+
+      res.statusCode.should.equal(200);
+      removed.should.be.empty();
+    });
+
+    it('reports old version cleanup errors after successfully publishing', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await User.findById(user._id);
+      userDoc.avatarVersion = 'f'.repeat(32);
+      await userDoc.save();
+      const originalFindById = User.findById;
+      const logged = [];
+      const controller = loadAvatarWithStubs({
+        '../../../../config/lib/logger': (...args) => logged.push(args),
+        '../services/avatar-processing.server.service': {
+          enqueueAvatarProcessing: job => {
+            process.nextTick(() =>
+              job.callback(null, {
+                version: '1'.repeat(32),
+                avatarDirectory: '/private/avatar-dir',
+              }),
+            );
+            return true;
+          },
+          removeAvatarVersion: async (_directory, version) => {
+            if (version === 'f'.repeat(32)) {
+              throw new Error('old version cleanup failed');
+            }
+          },
+        },
+      });
+      const res = deferredResponse();
+      User.findById = () => ({
+        exec: callback => callback(null, { avatarVersion: '1'.repeat(32) }),
+      });
+
+      try {
+        controller.avatarUpload(
+          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
+          res,
+        );
+        await res.waitForResponse();
+      } finally {
+        User.findById = originalFindById;
+      }
+
+      res.statusCode.should.equal(200);
+      logged
+        .map(args => args[1])
+        .should.containEql(
+          'User profile avatar upload: failed to remove the previous avatar version.',
+        );
+    });
+
     it('publishes a complete avatar version and removes the old version', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(user._id);

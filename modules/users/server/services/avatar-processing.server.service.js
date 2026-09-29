@@ -185,15 +185,6 @@ async function createPrivateStage() {
 }
 
 async function copyTestThumbnails(sourcePath, stageDir) {
-  if (
-    process.env.NODE_ENV !== 'test' ||
-    process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK !== 'true'
-  ) {
-    throw new Error(
-      'The avatar processor fallback is available only in tests.',
-    );
-  }
-
   for (const size of avatarSizes) {
     await fs.copyFile(sourcePath, path.join(stageDir, `${size}.jpg`));
   }
