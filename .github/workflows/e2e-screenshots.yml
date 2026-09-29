@@ -55,7 +55,7 @@ jobs:
 
       - name: Comment when no e2e spec changes
         if: steps.changed.outputs.has_specs != 'true'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const marker = '<!-- e2e-screenshots -->';
@@ -182,7 +182,7 @@ jobs:
 
       - name: Upsert PR comment with screenshots
         if: steps.changed.outputs.has_specs == 'true'
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           SCREENSHOT_COUNT: ${{ steps.collect.outputs.count }}
           TEST_STATUS: ${{ steps.run.outputs.test_status }}
