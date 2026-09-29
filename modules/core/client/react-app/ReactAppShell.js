@@ -30,6 +30,7 @@ export default function ReactAppShell() {
   const location = new URL(locationHref, window.location.origin);
   const currentPath = `${location.pathname}${location.search}`;
   const route = getReactRoutePolicy(currentPath);
+  const shouldScrollToTop = Boolean(route && !route.noScrollingTop);
   const accessRedirect = getReactRouteAccessRedirect(route, user, currentPath);
   const redirect =
     route?.redirectTo || accessRedirect || (!route && '/not-found');
@@ -54,10 +55,10 @@ export default function ReactAppShell() {
       document.title = title;
     }
 
-    if (route && !route.noScrollingTop) {
+    if (shouldScrollToTop) {
       window.scrollTo(0, 0);
     }
-  }, [route, title]);
+  }, [route, shouldScrollToTop, title]);
 
   useEffect(() => {
     if (redirect) {
