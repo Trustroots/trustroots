@@ -1,41 +1,28 @@
 /**
  * Unit tests for uncovered local passport strategy branches.
  */
-const proxyquire = require('proxyquire').noCallThru();
+const mongoose = require('mongoose');
+const passport = require('passport');
 const sinon = require('sinon');
 
 const should = require('should');
+require('../../../server/models/user.server.model');
+const User = mongoose.model('User');
+const configureStrategy = require('../../../server/config/strategies/local');
 
 describe('Local passport strategy unit tests', () => {
-  let User;
   let verify;
   let strategyOptions;
 
   beforeEach(() => {
-    User = {
-      findOne: sinon.stub(),
-    };
-
-    function FakeLocalStrategy(options, strategyVerify) {
-      strategyOptions = options;
-      verify = strategyVerify;
-    }
-
-    const passportUse = sinon.spy();
-    const configureStrategy = proxyquire(
-      '../../../server/config/strategies/local',
-      {
-        mongoose: {
-          model: () => User,
-        },
-        passport: {
-          use: passportUse,
-        },
-        'passport-local': {
-          Strategy: FakeLocalStrategy,
-        },
-      },
-    );
+    sinon.stub(User, 'findOne');
+    const passportUse = sinon.stub(passport, 'use').callsFake(strategy => {
+      strategyOptions = {
+        usernameField: strategy._usernameField,
+        passwordField: strategy._passwordField,
+      };
+      verify = strategy._verify;
+    });
 
     configureStrategy();
 
