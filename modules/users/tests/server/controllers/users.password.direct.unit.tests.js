@@ -1,5 +1,19 @@
-const proxyquire = require('proxyquire').noCallThru();
+const sinon = require('sinon');
 require('should');
+
+const path = require('path');
+const mongoose = require('mongoose');
+const config = require('../../../../../config/config');
+config.files.server.models.forEach(modelPath =>
+  require(path.resolve(modelPath)),
+);
+const analyticsHandler = require('../../../../core/server/controllers/analytics.server.controller');
+const emailService = require('../../../../core/server/services/email.server.service');
+require('../../../server/models/user.server.model');
+const User = mongoose.model('User');
+const profileHandler = require('../../../server/controllers/users.profile.server.controller');
+const statService = require('../../../../stats/server/services/stats.server.service');
+const controller = require('../../../server/controllers/users.password.server.controller');
 
 function deferredResponse() {
   let resolveResponse;
@@ -26,37 +40,22 @@ function deferredResponse() {
 }
 
 function loadController({ user, confirmEmailError } = {}) {
-  const User = {
-    findOne(query, cb) {
-      cb(null, user || null);
-    },
-    findById(id, cb) {
-      cb(null, user || null);
-    },
-  };
-
-  return proxyquire(
-    '../../../server/controllers/users.password.server.controller',
-    {
-      mongoose: {
-        model: () => User,
-      },
-      './users.profile.server.controller': {
-        sanitizeProfile: profile => profile,
-      },
-      '../../../core/server/controllers/analytics.server.controller': {
-        appendUTMParams: url => url,
-      },
-      '../../../core/server/services/email.server.service': {
-        sendResetPassword: (profile, cb) => cb(),
-        sendResetPasswordConfirm: (profile, cb) => cb(confirmEmailError),
-      },
-      '../../../stats/server/services/stats.server.service': {
-        stat: (payload, cb) => cb(),
-      },
-      '../../../../config/lib/logger': () => {},
-    },
-  );
+  sinon.stub(User, 'findOne').callsFake((query, callback) => {
+    callback(null, user || null);
+  });
+  sinon.stub(User, 'findById').callsFake((id, callback) => {
+    callback(null, user || null);
+  });
+  sinon.stub(profileHandler, 'sanitizeProfile').callsFake(profile => profile);
+  sinon.stub(analyticsHandler, 'appendUTMParams').callsFake(url => url);
+  sinon
+    .stub(emailService, 'sendResetPassword')
+    .callsFake((profile, cb) => cb());
+  sinon
+    .stub(emailService, 'sendResetPasswordConfirm')
+    .callsFake((profile, cb) => cb(confirmEmailError));
+  sinon.stub(statService, 'stat').callsFake((payload, cb) => cb());
+  return controller;
 }
 
 function fakeUser(overrides = {}) {
@@ -77,6 +76,8 @@ function fakeUser(overrides = {}) {
 }
 
 describe('Password controller direct unit tests', () => {
+  afterEach(() => sinon.restore());
+
   describe('reset', () => {
     it('returns the reset failure response when login fails after save', async () => {
       const controller = loadController({ user: fakeUser() });
