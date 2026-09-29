@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 
 export async function searchUsers(search, options = {}) {
   const { data } = await axios.post('/api/admin/users', {

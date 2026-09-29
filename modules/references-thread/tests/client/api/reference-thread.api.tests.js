@@ -5,7 +5,9 @@ import {
   send,
 } from '@/modules/references-thread/client/api/reference-thread.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
