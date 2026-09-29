@@ -54,7 +54,9 @@ test.describe('admin role and audit feature coverage', () => {
       await signInViaApi(memberPage, memberContext.request, member);
       expect(
         (
-          await memberContext.request.post('/api/admin/acquisition-stories')
+          await memberContext.request.post('/api/admin/acquisition-stories', {
+            headers: { 'X-Trustroots-Request': '1' },
+          })
         ).status(),
       ).toBe(403);
       expect(
@@ -87,7 +89,9 @@ test.describe('admin role and audit feature coverage', () => {
       await expect(memberPage.locator('a[href^="/admin/user"]')).toHaveCount(0);
       expect(
         (
-          await memberContext.request.post('/api/admin/acquisition-stories')
+          await memberContext.request.post('/api/admin/acquisition-stories', {
+            headers: { 'X-Trustroots-Request': '1' },
+          })
         ).status(),
       ).toBe(200);
       await memberPage
@@ -101,6 +105,7 @@ test.describe('admin role and audit feature coverage', () => {
         (
           await memberContext.request.post(
             '/api/admin/acquisition-stories/analysis',
+            { headers: { 'X-Trustroots-Request': '1' } },
           )
         ).status(),
       ).toBe(200);
@@ -117,13 +122,16 @@ test.describe('admin role and audit feature coverage', () => {
       ).toBeVisible();
       expect(
         (
-          await memberContext.request.post('/api/admin/acquisition-stories')
+          await memberContext.request.post('/api/admin/acquisition-stories', {
+            headers: { 'X-Trustroots-Request': '1' },
+          })
         ).status(),
       ).toBe(403);
       expect(
         (
           await memberContext.request.post(
             '/api/admin/acquisition-stories/analysis',
+            { headers: { 'X-Trustroots-Request': '1' } },
           )
         ).status(),
       ).toBe(403);

@@ -293,13 +293,17 @@ async function signIn(page, user, identifier = user.username) {
  * homepage.
  */
 async function signOut(page) {
-  await page.evaluate(() => {
-    const form = document.createElement('form');
-    form.method = 'post';
-    form.action = '/api/auth/signout';
-    document.body.appendChild(form);
-    form.submit();
-  });
+  await page.goto('/');
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'domcontentloaded' }),
+    page.evaluate(() => {
+      const form = document.createElement('form');
+      form.method = 'post';
+      form.action = '/api/auth/signout';
+      document.body.appendChild(form);
+      form.submit();
+    }),
+  ]);
   await expect(page).toHaveURL(/\/$/);
 }
 

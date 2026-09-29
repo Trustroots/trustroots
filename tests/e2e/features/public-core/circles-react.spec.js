@@ -58,7 +58,9 @@ test('circle membership retains account roles and legacy member links', async ({
     id => window.user.memberIds.includes(id),
     circle._id,
   );
-  await page.request.delete(`/api/users/memberships/${circle._id}`);
+  await page.request.delete(`/api/users/memberships/${circle._id}`, {
+    headers: { 'X-Trustroots-Request': '1' },
+  });
   try {
     await page.goto('/circles/hitchhikers');
     const roles = await page.evaluate(() => window.user.roles);
@@ -87,7 +89,12 @@ test('circle membership retains account roles and legacy member links', async ({
     await expect(page.locator('#tr-main > [data-ui-view]')).toHaveCount(0);
   } finally {
     if (wasMember)
-      await page.request.post(`/api/users/memberships/${circle._id}`);
-    else await page.request.delete(`/api/users/memberships/${circle._id}`);
+      await page.request.post(`/api/users/memberships/${circle._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
+    else
+      await page.request.delete(`/api/users/memberships/${circle._id}`, {
+        headers: { 'X-Trustroots-Request': '1' },
+      });
   }
 });

@@ -225,10 +225,14 @@ test.describe.serial('account settings feature coverage', () => {
     await registerViaApi(request, user);
     await signInViaApi(page, request, user);
 
-    const invalid = await page.request.delete('/api/users/remove/bad-token');
+    const invalid = await page.request.delete('/api/users/remove/bad-token', {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(invalid.status()).toBe(400);
 
-    const requestRemoval = await page.request.delete('/api/users');
+    const requestRemoval = await page.request.delete('/api/users', {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
     expect(requestRemoval.ok()).toBeTruthy();
 
     const storedUser = await findUserByUsername(user.username);
@@ -343,7 +347,13 @@ test.describe.serial('account settings feature coverage', () => {
       expect(removedRoute.status()).toBe(404);
     }
 
-    expect((await page.request.put('/api/auth/facebook')).status()).toBe(404);
+    expect(
+      (
+        await page.request.put('/api/auth/facebook', {
+          headers: { 'X-Trustroots-Request': '1' },
+        })
+      ).status(),
+    ).toBe(404);
     for (const provider of ['facebook', 'github']) {
       const removedCallback = await page.request.get(
         `/api/auth/${provider}/callback`,
@@ -353,6 +363,7 @@ test.describe.serial('account settings feature coverage', () => {
 
     const invalidProvider = await page.request.delete(
       '/api/users/accounts/not-a-provider',
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(invalidProvider.status()).toBe(400);
 
@@ -413,6 +424,7 @@ test.describe.serial('account settings feature coverage', () => {
 
     const remove = await page.request.delete(
       `/api/users/push/registrations/${token}`,
+      { headers: { 'X-Trustroots-Request': '1' } },
     );
     expect(remove.ok()).toBeTruthy();
 
