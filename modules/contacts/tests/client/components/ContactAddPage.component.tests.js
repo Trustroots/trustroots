@@ -105,6 +105,11 @@ describe('ContactAddPage', () => {
     expect((await screen.findAllByText('Bob Example')).length).toBeGreaterThan(
       0,
     );
+    expect(
+      screen.getByText(
+        /you don't need to add someone as a contact to message them/i,
+      ),
+    ).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: 'Add contact' }));
 

@@ -1,34 +1,26 @@
-const proxyquire = require('proxyquire').noCallThru();
 const should = require('should');
 const sinon = require('sinon');
+const mongoose = require('mongoose');
+const passport = require('passport');
+const config = require('../../../../config/config');
 
 const controllerPath = '../../server/config/users.config.server';
+require('../../server/models/user.server.model');
+const User = mongoose.model('User');
 
-function installSessionHandlers(User) {
+function installSessionHandlers() {
   let serialize;
   let deserialize;
-  const passport = {
-    serializeUser(handler) {
-      serialize = handler;
-    },
-    deserializeUser(handler) {
-      deserialize = handler;
-    },
-    initialize: () => () => {},
-    session: () => () => {},
-  };
+  sinon
+    .stub(passport, 'serializeUser')
+    .callsFake(handler => (serialize = handler));
+  sinon
+    .stub(passport, 'deserializeUser')
+    .callsFake(handler => (deserialize = handler));
+  sinon.stub(config.utils, 'getGlobbedPaths').returns([]);
   const app = { use: sinon.stub() };
 
-  proxyquire(controllerPath, {
-    passport,
-    mongoose: { model: () => User },
-    '../../../../config/config': {
-      utils: { getGlobbedPaths: () => [] },
-    },
-    '../controllers/users.suspended.server.controller': {
-      invalidateSuspendedSessions: () => {},
-    },
-  })(app);
+  require(controllerPath)(app);
 
   return { serialize, deserialize };
 }
@@ -39,7 +31,8 @@ describe('Users Passport session configuration', () => {
   it('serializes the authentication version and rejects legacy ID-only sessions', done => {
     const user = { id: 'member-id', authVersion: 3 };
     const findOne = sinon.stub();
-    const handlers = installSessionHandlers({ findOne });
+    sinon.stub(User, 'findOne').callsFake(findOne);
+    const handlers = installSessionHandlers();
 
     handlers.serialize(user, (serializeErr, session) => {
       should.not.exist(serializeErr);
@@ -61,7 +54,8 @@ describe('Users Passport session configuration', () => {
       }
       return callback(null, currentUser);
     });
-    const handlers = installSessionHandlers({ findOne });
+    sinon.stub(User, 'findOne').callsFake(findOne);
+    const handlers = installSessionHandlers();
 
     handlers.deserialize(
       { id: 'member-id', authVersion: 3 },
