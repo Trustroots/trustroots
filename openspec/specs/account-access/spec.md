@@ -75,6 +75,90 @@ access through valid password-reset details.
 - **THEN** the system updates their password
 - **AND** the account holder can sign in with the new password
 
+### Requirement: Private password recovery
+
+The system SHALL immediately return the same successful status and generic
+acknowledgement for valid recovery identifiers, whether or not an account
+exists. Account lookup, token creation, persistence, email rendering, and email
+queueing SHALL happen after the acknowledgement and SHALL NOT change its
+status or body. Recovery work is best-effort until it reaches the existing
+durable email queue.
+
+#### Scenario: Recovery is requested for a known account
+
+- **WHEN** a visitor submits a valid username or email address belonging to an
+  account
+- **THEN** the system immediately returns the generic recovery acknowledgement
+- **AND** it attempts to enqueue a password-reset email
+
+#### Scenario: Recovery is requested for an unknown account
+
+- **WHEN** a visitor submits a valid username or email address belonging to no
+  account
+- **THEN** the system immediately returns the same status and acknowledgement
+
+#### Scenario: Recovery email delivery is stalled or fails
+
+- **WHEN** recovery email delivery is stalled or fails after a known account is
+  submitted
+- **THEN** the generic acknowledgement is returned without waiting for delivery
+- **AND** delivery failure does not change the response
+
+### Requirement: Single-use password reset
+
+The system SHALL update a password and consume its reset token in one
+conditional database operation that only matches a valid, unexpired token.
+
+#### Scenario: Account holder resets a password
+
+- **WHEN** an account holder submits matching new passwords with a valid,
+  unexpired reset token
+- **THEN** the password, password-updated timestamp, and authentication version
+  are updated atomically with token consumption
+- **AND** the browser completing the reset is signed in with a new session
+- **AND** sessions created before the reset require sign-in again
+
+#### Scenario: Reset token is reused or submitted concurrently
+
+- **WHEN** a reset token has already been consumed by another request
+- **THEN** the system rejects the reset without changing the password
+
+### Requirement: Account-wide session revocation after credential changes
+
+The system SHALL validate the authentication version stored in each Passport
+session against the account's current version. Password reset, authenticated
+password change, and an actual administrative role change SHALL increment the
+version atomically with the corresponding account update. A role request that
+does not change roles SHALL NOT increment the version. Sessions using the
+legacy account-ID-only format SHALL require sign-in again after deployment.
+
+#### Scenario: Account holder changes their password
+
+- **WHEN** an authenticated account holder changes their password after
+  providing the current password
+- **THEN** the password, password-updated timestamp, and authentication version
+  are updated consistently
+- **AND** the current browser receives a newly established session
+- **AND** sessions in other browsers require sign-in again
+
+#### Scenario: Administrator changes account roles
+
+- **WHEN** an administrator changes an account's roles
+- **THEN** the account's authentication version increments with the role update
+- **AND** sessions created before the change require sign-in again
+
+#### Scenario: Administrator repeats a role request with no effect
+
+- **WHEN** an administrator submits a role request that leaves roles unchanged
+- **THEN** the authentication version is unchanged
+- **AND** existing sessions remain valid
+
+#### Scenario: Legacy session or deleted account is presented
+
+- **WHEN** a session contains only the legacy account ID, or its account no
+  longer exists
+- **THEN** Passport rejects the session and member-only routes require sign-in
+
 ### Requirement: Welcome-sequence delivery
 
 The system SHALL not send welcome-sequence emails to suspended or shadowbanned
