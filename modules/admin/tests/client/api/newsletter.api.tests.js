@@ -8,7 +8,9 @@ import {
   splitNewsletterSubscribers,
 } from '@/modules/admin/client/api/newsletter.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -112,8 +114,10 @@ describe('admin newsletter api', () => {
       '/api/admin/newsletter-subscribers/split',
       expect.any(FormData),
       {
+        timeout: 120000,
         headers: {
           'Content-Type': 'multipart/form-data',
+          'X-Trustroots-Request': '1',
         },
       },
     );

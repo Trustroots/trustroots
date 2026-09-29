@@ -265,6 +265,23 @@ module.exports = defineConfig({
       },
     },
     {
+      // Firefox CI has no usable Mapbox GL/WebGL canvas, so cover wheel zoom via
+      // the Leaflet raster path. Chromium search-map-rendered covers Mapbox.
+      name: 'search-map-wheel-firefox',
+      testMatch:
+        /features\/search-offers-circles\/search-map-rendered\.spec\.js/,
+      grep: /raster fallback map/,
+      dependencies: serializedDependencies(
+        ['setup-authenticated'],
+        ['search-map-rendered'],
+      ),
+      fullyParallel: false,
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: seededMemberStorageState,
+      },
+    },
+    {
       name: 'messages-firefox-layout',
       testMatch: /features\/messages\/messages-layout\.spec\.js/,
       dependencies: serializedDependencies(['setup-authenticated'], ['admin']),
