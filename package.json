@@ -136,10 +136,10 @@
     "mongoose-integer": "0.1.1",
     "mongoose-paginate": "5.0.3",
     "mongoose-url-slugs": "1.0.2",
-    "morgan": "1.12.0",
-    "multer": "2.3.0",
+    "morgan": "1.12.1",
+    "multer": "2.4.0",
     "natural": "5.2.3",
-    "nodemailer": "9.1.1",
+    "nodemailer": "10.0.12",
     "nostr-tools": "2.7.2",
     "nunjucks": "3.2.4",
     "open-location-code": "1.0.3",
@@ -268,7 +268,7 @@
     "serialize-javascript": "7.0.5",
     "browserslist": "4.28.7",
     "baseline-browser-mapping": "2.11.0",
-    "fast-uri": "3.1.6",
+    "fast-uri": "3.1.8",
     "decode-uri-component": "0.5.0",
     "js-yaml": "4.3.2",
     "brace-expansion@1": "1.1.21",
@@ -284,7 +284,7 @@
       "mongodb": "$mongodb"
     },
     "socks": {
-      "ip-address": "10.3.1"
+      "ip-address": "10.5.1"
     },
     "mocha": {
       "js-yaml": "4.3.2",

@@ -1,4 +1,7 @@
-import axios from 'axios';
+import axios, {
+  getErrorResponse,
+} from '../../../core/client/api/http-client.js';
+import type { AxiosRequestConfig } from 'axios';
 
 export interface Offer {
   _id?: string;
@@ -14,6 +17,9 @@ export interface Offer {
 }
 
 export type OfferQuery = Record<string, string | number | boolean | undefined>;
+type OfferRequestOptions = AxiosRequestConfig & {
+  params?: Record<string, unknown>;
+};
 
 /**
  * API request: read user's offers
@@ -23,10 +29,12 @@ export type OfferQuery = Record<string, string | number | boolean | undefined>;
 export async function getOffers(
   userId: string,
   types: string,
+  requestOptions: OfferRequestOptions = {},
 ): Promise<Offer[]> {
   try {
-    const { data } = await axios.get(`api/offers-by/${userId}`, {
-      params: { types },
+    const { data } = await axios.get(`/api/offers-by/${userId}`, {
+      ...requestOptions,
+      params: { ...requestOptions.params, types },
     });
     return data;
   } catch (e: unknown) {
@@ -37,12 +45,11 @@ export async function getOffers(
      * and return 404 when user not found
      * but [] when user exists but has no host offers
      */
-    if (
-      typeof e === 'object' &&
-      e !== null &&
-      'response' in e &&
-      (e.response as { status?: number } | undefined)?.status === 404
-    ) {
+export async function getOffers(
+  userId: string,
+  types: string,
+  requestOptions: OfferRequestOptions = {},
+): Promise<Offer[]>
       return [];
     } else {
       throw e;

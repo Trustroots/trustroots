@@ -78,7 +78,8 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 };
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
-  'welcome-team': 'Can view acquisition stories and analysis.',
+  'welcome-team':
+    'Can view acquisition stories, analysis, and members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
   moderator: 'Legacy moderation role retained for historical accounts.',
   shadowban:
@@ -703,7 +704,7 @@ export default class AdminUser extends Component<
                 <div className="panel-body">
                   <p className="text-muted">
                     Welcome team members can view acquisition stories and
-                    analysis.
+                    analysis, and see members who blocked their account.
                   </p>
                   {this.state.roleChangeError && (
                     <p role="alert">

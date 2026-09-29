@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
+import type { AxiosRequestConfig } from 'axios';
 
 export interface NewsletterAudienceCriteria {
   circleIds: string[];
@@ -53,7 +54,10 @@ export async function getNewsletterAudienceCsv(
   return data;
 }
 
-export async function splitNewsletterSubscribers(newsletterCsvFile: File) {
+export async function splitNewsletterSubscribers(
+  newsletterCsvFile: File,
+  requestOptions: AxiosRequestConfig = {},
+) {
   const formData = new FormData();
   formData.append('newsletterCsv', newsletterCsvFile);
 
@@ -61,8 +65,12 @@ export async function splitNewsletterSubscribers(newsletterCsvFile: File) {
     '/api/admin/newsletter-subscribers/split',
     formData,
     {
+      ...requestOptions,
+      timeout: requestOptions.timeout ?? 120000,
       headers: {
+        ...requestOptions.headers,
         'Content-Type': 'multipart/form-data',
+        'X-Trustroots-Request': '1',
       },
     },
   );
