@@ -508,18 +508,27 @@ describe('Admin users controller unit tests', () => {
     it('limits Welcome team members to blockers of their own account', async () => {
       const users = utils.generateUsers(3);
       users[0].roles = ['user', 'welcome-team'];
+      users[1].roles = ['user', 'admin'];
       const saved = await utils.saveUsers(users);
-      saved[2].blocked = [saved[0]._id];
+      saved[2].blocked = [saved[0]._id, saved[1]._id];
       await saved[2].save();
 
       const res = mockResponse();
       await adminUsers.listStaffBlockers(
-        { user: { _id: saved[0]._id, roles: ['welcome-team'] } },
+        {
+          user: { _id: saved[0]._id, roles: ['welcome-team'] },
+          query: { userId: saved[1]._id.toString() },
+        },
         res,
       );
 
       res.body.length.should.equal(1);
       res.body[0].blockedBy[0].username.should.equal(saved[2].username);
+      Object.keys(res.body[0].blockedBy[0]).should.deepEqual([
+        '_id',
+        'username',
+        'displayName',
+      ]);
     });
 
     it('returns an empty list when there are no staff records', async () => {

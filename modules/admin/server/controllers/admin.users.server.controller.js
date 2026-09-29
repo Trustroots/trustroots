@@ -490,7 +490,7 @@ exports.getUser = async (req, res) => {
   }
 };
 
-/** Return members who have blocked the signed-in staff member. */
+/** Admins inspect blockers of all staff; Welcome team members inspect their own. */
 exports.listStaffBlockers = async (req, res) => {
   try {
     const staffMembers = req.user.roles.includes('admin')
@@ -515,9 +515,7 @@ exports.listStaffBlockers = async (req, res) => {
         username: staff.username,
         displayName: staff.displayName,
         blockedBy: blockers
-          .filter(blocker =>
-            (blocker.blocked || []).some(id => id.equals(staff._id)),
-          )
+          .filter(blocker => blocker.blocked.some(id => id.equals(staff._id)))
           .map(({ _id, username, displayName }) => ({
             _id,
             username,

@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { getStaffBlockers } from '@/modules/admin/client/api/blocked-by-me.api';
+import { getStaffBlockers } from '@/modules/admin/client/api/staff-blockers.api';
 
 jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
 );
 
-it('gets members who blocked the signed-in staff account', async () => {
+it('gets the staff blocker list allowed for the current user', async () => {
   const data = [{ _id: 'staff-1', username: 'staff', blockedBy: [] }];
   axios.get.mockResolvedValueOnce({ data });
 

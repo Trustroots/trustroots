@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import AdminHeader from './AdminHeader.component';
-import { getStaffBlockers } from '../api/blocked-by-me.api';
+import { getStaffBlockers } from '../api/staff-blockers.api';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 
-export default function AdminBlockedByMe() {
+export default function AdminStaffBlockers() {
   const [staff, setStaff] = useState(null);
   const [hasError, setHasError] = useState(false);
   const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
@@ -62,4 +62,4 @@ export default function AdminBlockedByMe() {
   );
 }
 
-AdminBlockedByMe.propTypes = {};
+AdminStaffBlockers.propTypes = {};

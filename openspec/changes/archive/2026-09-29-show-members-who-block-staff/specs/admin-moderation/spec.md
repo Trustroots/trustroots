@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: Staff can see members who blocked staff accounts
+### Requirement: Staff can identify members who blocked staff accounts
 
 The system SHALL allow administrators to view members who blocked any administrator or Welcome team member, and Welcome team members to view those who blocked their own account. The view SHALL expose only public identifiers, usernames, and display names.
 
