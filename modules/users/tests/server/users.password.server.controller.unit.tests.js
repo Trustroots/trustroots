@@ -525,7 +525,7 @@ describe('Password controller unit tests', () => {
       res.body.message.should.equal('login failed');
     });
 
-    it('returns 400 when the password change confirmation email fails', async () => {
+    it('still succeeds when the password change confirmation email fails', async () => {
       const controller = proxyquire(controllerPath, {
         [emailServicePath]: {
           sendResetPassword: (user, cb) => cb(),
