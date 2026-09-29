@@ -54,7 +54,7 @@ export default function ReactAppShell() {
       document.title = title;
     }
 
-    if (!route?.noScrollingTop) {
+    if (route && !route.noScrollingTop) {
       window.scrollTo(0, 0);
     }
   }, [route, title]);
