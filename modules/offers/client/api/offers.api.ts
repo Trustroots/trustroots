@@ -45,11 +45,7 @@ export async function getOffers(
      * and return 404 when user not found
      * but [] when user exists but has no host offers
      */
-export async function getOffers(
-  userId: string,
-  types: string,
-  requestOptions: OfferRequestOptions = {},
-): Promise<Offer[]>
+    if (getErrorResponse(e)?.status === 404) {
       return [];
     } else {
       throw e;
