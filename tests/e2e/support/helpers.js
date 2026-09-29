@@ -291,17 +291,9 @@ async function signIn(page, user, identifier = user.username) {
  * homepage.
  */
 async function signOut(page) {
-  await Promise.all([
-    page.waitForURL(/\/$/),
-    page.locator('body').evaluate(body => {
-      const form = body.ownerDocument.createElement('form');
-      form.method = 'post';
-      form.action = '/api/auth/signout';
-      form.target = '_top';
-      body.appendChild(form);
-      form.submit();
-    }),
-  ]);
+  const response = await page.request.post('/api/auth/signout');
+  expect(response.ok()).toBeTruthy();
+  await page.goto('/');
   await expect(page).toHaveURL(/\/$/);
 }
 
