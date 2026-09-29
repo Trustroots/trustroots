@@ -32,7 +32,7 @@ describe('<ReactFooter />', () => {
     expect(container.querySelector('#tr-footer')).toHaveClass('container');
     expect(screen.getByRole('link', { name: 'Volunteering' })).toHaveAttribute(
       'href',
-      'https://team.trustroots.org/',
+      '/support?category=volunteering',
     );
   });
 });
