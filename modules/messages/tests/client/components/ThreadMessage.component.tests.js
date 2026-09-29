@@ -54,6 +54,39 @@ describe('<ThreadMessage />', function () {
     expect(profileLink).toHaveAttribute('href', '/profile/travel');
   });
 
+  it('shows external message links as text while preserving internal links', () => {
+    const { container } = render(
+      <ThreadMessage
+        user={me}
+        message={{
+          _id: 'msg-links',
+          created: '2026-06-05T12:00:00.000Z',
+          content:
+            '<p>Here is my scam link <a href="https://scammetyscammetyscam.example.com/">scammetyscammetyscam.example.com</a> ' +
+            '<a href="//scammetyscammetyscam.example.com/">another one</a> ' +
+            '<a href="mailto:member@example.org">email</a> ' +
+            '<a href="javascript:alert(1)">unsafe scheme</a> ' +
+            '<a href="http://[">invalid address</a> ' +
+            '<a>missing address</a> ' +
+            '<a href="/safety">safety guidance</a></p>',
+          userFrom: me,
+        }}
+      />,
+    );
+
+    const body = container.querySelector('.panel-body');
+    expect(body).toHaveTextContent('scammetyscammetyscam.example.com');
+    expect(body).toHaveTextContent('another one');
+    expect(body).toHaveTextContent('email');
+    expect(body).toHaveTextContent('unsafe scheme');
+    expect(body).toHaveTextContent('invalid address');
+    expect(body).toHaveTextContent('missing address');
+    expect(body.querySelectorAll('a')).toHaveLength(1);
+    expect(
+      screen.getByRole('link', { name: 'safety guidance' }),
+    ).toHaveAttribute('href', '/safety');
+  });
+
   it('shows a placeholder for deleted members', () => {
     render(
       <ThreadMessage

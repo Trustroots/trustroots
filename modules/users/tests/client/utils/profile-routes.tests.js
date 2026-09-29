@@ -43,7 +43,7 @@ describe('profile-routes', () => {
   });
 
   describe('getProfileViewTabStateName', () => {
-    it('maps profile tabs to Angular-compatible state names', () => {
+    it('maps profile tabs to dotted state names', () => {
       expect(
         getProfileViewTabStateName('/profile/alice/contacts', 'alice'),
       ).toBe('profile.contacts');

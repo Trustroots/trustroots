@@ -14,6 +14,30 @@ const {
 } = require('../../support/db');
 
 test.describe.serial('account settings feature coverage', () => {
+  test('members can download their data from account settings', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.data-export', [
+      'Account settings exposes a download link for the combined export.',
+      'The combined export downloads with the documented filename.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+
+    await page.goto('/profile/edit/account');
+    const downloadLink = page.getByRole('link', { name: 'Download your data' });
+    await expect(downloadLink).toBeVisible();
+    await expect(downloadLink).toHaveAttribute('href', '/api/users/export');
+
+    const downloadPromise = page.waitForEvent('download');
+    await downloadLink.click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('trustroots-data.json');
+  });
+
   test('members can change their password with validation', async ({
     page,
     request,

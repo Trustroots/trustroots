@@ -10,6 +10,7 @@ import MapNavigationControl from './MapNavigationControl';
 import MapScaleControl from './MapScaleControl';
 import MapStyleControl from './MapStyleControl';
 import LeafletMap from './LeafletMap';
+import WheelMapController from './WheelMapController';
 import { getMapBoxToken, isWebGLSupported } from '../../utils/map';
 
 export default function Map(props) {
@@ -23,6 +24,7 @@ export default function Map(props) {
   } = props;
 
   const [mapStyle, setMapstyle] = useState(MAP_STYLE_DEFAULT);
+  const [mapController] = useState(() => new WheelMapController());
   const [viewport, setViewport] = useState({
     latitude: location[0],
     longitude: location[1],
@@ -72,6 +74,7 @@ export default function Map(props) {
   return (
     <ReactMapGL
       reuseMaps
+      controller={mapController}
       dragRotate={false}
       height={320}
       mapboxApiAccessToken={MAPBOX_TOKEN}

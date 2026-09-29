@@ -1,22 +1,26 @@
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 require('should');
+const statsService = require('../../server/services/stats.server.service');
+const influxService = require('../../server/services/influx.server.service');
 
 function loadStatsService() {
-  const influxService = {
-    stat: sinon.stub().callsArg(1),
-  };
-  const statsService = proxyquire(
-    '../../server/services/stats.server.service',
-    {
-      './influx.server.service.js': influxService,
-    },
-  );
-
+  sinon.stub(influxService, 'stat').callsArg(1);
   return { influxService, statsService };
 }
 
 describe('Stats service unit tests', () => {
+  afterEach(() => sinon.restore());
+
+  it('keeps the CommonJS adapter identical to the ESM default and named exports', async () => {
+    const esmService = await import(
+      '../../server/services/stats.server.service.mjs'
+    );
+
+    esmService.default.should.equal(statsService);
+    ['count', 'value', 'stat', '_validateStat'].forEach(name => {
+      esmService.default[name].should.equal(esmService[name]);
+    });
+  });
   it('records a count stat', done => {
     const { influxService, statsService } = loadStatsService();
 
@@ -219,15 +223,7 @@ describe('Stats service unit tests', () => {
 
   it('passes influx errors through to the callback', done => {
     const influxError = new Error('influx failed');
-    const influxService = {
-      stat: sinon.stub().callsArgWith(1, influxError),
-    };
-    const statsService = proxyquire(
-      '../../server/services/stats.server.service',
-      {
-        './influx.server.service.js': influxService,
-      },
-    );
+    sinon.stub(influxService, 'stat').callsArgWith(1, influxError);
 
     statsService.count('unitCount', err => {
       err.should.equal(influxError);

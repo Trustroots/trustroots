@@ -50,6 +50,15 @@ describe('<AdminHeader />', () => {
     },
   );
 
+  it('shows the blocked-member support page to Welcome team members', () => {
+    window.user = { roles: ['welcome-team'] };
+    render(<AdminHeader />);
+
+    expect(
+      screen.getByRole('link', { name: 'Staff blockers' }),
+    ).toHaveAttribute('href', '/admin/staff-blockers');
+  });
+
   it('marks the current admin page as active', () => {
     window.history.pushState({}, '', '/admin/messages');
 

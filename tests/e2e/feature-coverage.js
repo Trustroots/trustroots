@@ -26,7 +26,8 @@ const ROLE_DEFINITIONS = {
   'shadowbanned-member':
     'Authenticated user with the shadowban role, used to verify hidden member-facing behavior.',
   admin: 'Authenticated user with the admin role.',
-  'welcome-team': 'Authenticated user with limited acquisition viewing access.',
+  'welcome-team':
+    'Authenticated user with acquisition and own-account blocker viewing access.',
   browser:
     'Browser/platform-originated request, such as security reporting telemetry.',
   'external-client':
@@ -411,17 +412,30 @@ const features = [
     id: 'public.volunteering',
     area: AREA.publicCore,
     status: STATUS.active,
-    description: 'Volunteering page is available to visitors.',
-    roles: ['visitor'],
+    description:
+      'Volunteering page offers a short support enquiry for prospective volunteers.',
+    roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
         clientRoute('volunteering', '/volunteering', source.pagesClient),
       ],
       apiRoutes: [],
     },
-    requiredScenarios: ['Volunteering page loads.'],
+    requiredScenarios: [
+      'Volunteering page loads.',
+      'Visitors can submit a volunteer enquiry from the volunteering page.',
+      'Members can submit a volunteer enquiry from the volunteering page.',
+    ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /volunteering loads'),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a volunteer enquiry from the volunteering page',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'member can send a volunteer enquiry from the volunteering page',
+      ),
     ],
   },
   {
@@ -521,6 +535,7 @@ const features = [
     requiredScenarios: [
       'Support page loads for visitors.',
       'Support page accepts the report query parameter.',
+      'Profile report links prefill the reported member without replacing the reporter.',
       'Support contact form is visible.',
     ],
     relatedSpecs: [
@@ -543,8 +558,20 @@ const features = [
     requiredScenarios: [
       'Support request submission succeeds with valid data.',
       'Support request validation errors are shown without sending email.',
+      'Account help requests retain their category in storage and email.',
+      'Other requests retain their category in storage and email.',
+      'Profile reports retain the reported member and reporter in storage and email.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the account category',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the other category',
+      ),
+    ],
   },
   {
     id: 'public.statistics',
@@ -934,6 +961,7 @@ const features = [
       'Forgot password page renders.',
       'Valid reset request sends a deterministic reset email/stub.',
       'Invalid or unknown account request does not leak account existence.',
+      'Recovery transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [
       spec(
@@ -967,6 +995,7 @@ const features = [
       'Password reset succeeds with matching valid passwords.',
       'Success page is shown after reset.',
       'Member can sign in with the new password.',
+      'Reset transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [],
   },
@@ -1569,6 +1598,14 @@ const features = [
       'Circle filter query resolves the selected circle.',
       'Search map renders with deterministic offline style.',
       'Route fixture offers populate the rendered map source.',
+      'Mouse-wheel input zooms the rendered map in and out.',
+      'Mouse-wheel input zooms the raster fallback map in and out.',
+      'Mouse-wheel input works after returning to Search.',
+      'Mouse-wheel input works at low zoom.',
+      'Page-based wheel events visibly zoom the rendered map.',
+      'Page-based wheel events visibly zoom the raster fallback map.',
+      'Line-based wheel events zoom the rendered map.',
+      'Line-based wheel events zoom the raster fallback map.',
       'Later camera commands recenter the raster map after a place search.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
@@ -1579,6 +1616,14 @@ const features = [
       spec(
         'search-map-rendered.spec.js',
         'search map renders with offline style and fixture offers',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'mouse wheel zooms the rendered search map in and out',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'mouse wheel zooms the raster fallback map in and out',
       ),
       spec(
         'search-map-rendered.spec.js',
@@ -2659,6 +2704,41 @@ const features = [
       'Welcome team sends a personalised message and the candidate leaves the queue.',
     ],
     relatedSpecs: [],
+  },
+  {
+    id: 'admin.staff-blockers',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Admins can inspect blockers of all staff, while Welcome team members can inspect their own blockers.',
+    roles: ['admin', 'welcome-team'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-staff-blockers',
+          '/admin/staff-blockers',
+          source.adminClient,
+          {
+            requiresAuth: true,
+            requiresRole: ['admin', 'welcome-team'],
+          },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/staff-blockers', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admins can inspect blockers of any administrator or Welcome team member.',
+      'Welcome team members can inspect only blockers of their own account.',
+      'Regular members cannot access staff blocker information.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-inspection.spec.js',
+        'staff blockers are grouped for admins and limited for Welcome team members',
+      ),
+    ],
   },
   {
     id: 'admin.messages',

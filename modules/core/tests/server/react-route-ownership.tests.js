@@ -169,7 +169,7 @@ describe('React route ownership', function () {
     });
   });
 
-  it('does not claim legacy Angular profile-edit paths', function () {
+  it('does not claim legacy profile-edit paths', function () {
     isReactOwnedPath('/profile-edit/about').should.be.false();
   });
   it('allows either acquisition role while keeping other admin routes restricted', () => {
@@ -179,9 +179,10 @@ describe('React route ownership', function () {
       const acquisition =
         route.path.startsWith('/admin/acquisition-stories') ||
         route.path === '/admin/location-corrections';
+      const staffSupport = route.path === '/admin/staff-blockers';
       should(
         getReactRouteAccessRedirect(route, { roles: ['welcome-team'] }),
-      ).equal(acquisition ? null : '/volunteering');
+      ).equal(acquisition || staffSupport ? null : '/volunteering');
       should(
         getReactRouteAccessRedirect(route, { roles: ['admin'] }),
       ).be.null();

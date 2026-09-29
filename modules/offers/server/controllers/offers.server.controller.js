@@ -12,6 +12,7 @@ const log = require('../../../../config/lib/logger');
 const sanitizeHtml = require('sanitize-html');
 const moment = require('moment');
 const mongoose = require('mongoose');
+const normaliseOfferExpiry = require('../services/offer-expiry.server.service');
 const Offer = mongoose.model('Offer');
 const User = mongoose.model('User');
 const DEFAULT_MAP_LOCATION = [48.6908333333, 9.14055555556];
@@ -174,41 +175,6 @@ function isValidOfferType(type) {
 }
 
 /**
- * Validate date range for `validUntil`. Date has to be between now and 31 days from now.
- *
- * https://momentjs.com/docs/#/parsing/
- *
- * @param {Date|String} validUntil - Date object or ISO 8601 date string accepted by Moment.js parsing
- * @return {Boolean} True on valid, False on invalid
- */
-function isValidUntil(validUntil) {
-  // Input date
-  validUntil = moment(validUntil);
-
-  // Validate input date
-  if (!validUntil.isValid()) {
-    return false;
-  }
-
-  // Set input time to midnight
-  validUntil = validUntil.endOf('day');
-
-  // Maximum valid date
-  const maxDate = moment()
-    .add(config.limits.maxOfferValidFromNow || { days: 30 })
-    // Add one extra day just to accommodate oddities from timezones
-    .endOf('day');
-
-  // Minimum valid date
-  const minDate = moment().startOf('day');
-
-  // Validate range
-  return (
-    validUntil.isSameOrAfter(minDate) && validUntil.isSameOrBefore(maxDate)
-  );
-}
-
-/**
  * Create offer
  */
 exports.create = function (req, res) {
@@ -237,21 +203,16 @@ exports.create = function (req, res) {
     });
   }
 
-  // Host offers don't expire
-  if (req.body.type === 'host') {
+  const validUntil = normaliseOfferExpiry(
+    req.body.type,
+    req.body.validUntil,
+    config.limits.maxOfferValidFromNow,
+    moment(),
+  );
+  if (validUntil === undefined) {
     delete req.body.validUntil;
-  }
-
-  // Meet offers can expire at most within a month
-  if (!req.body.type || req.body.type !== 'host') {
-    if (req.body.validUntil && isValidUntil(req.body.validUntil)) {
-      req.body.validUntil = moment(req.body.validUntil).toDate();
-    } else {
-      // Defaults to one month from now
-      req.body.validUntil = moment()
-        .add(config.limits.maxOfferValidFromNow)
-        .toDate();
-    }
+  } else {
+    req.body.validUntil = validUntil;
   }
 
   // Create new offer by filtering out what users can modify
@@ -317,21 +278,16 @@ exports.update = function (req, res) {
 
       // Create offer object and modify it
       function (done) {
-        // Host offers don't expire
-        if (req.offer.type === 'host') {
+        const validUntil = normaliseOfferExpiry(
+          req.offer.type,
+          req.body.validUntil,
+          config.limits.maxOfferValidFromNow,
+          moment(),
+        );
+        if (validUntil === undefined) {
           delete req.body.validUntil;
-        }
-
-        // Meet offers can expire at most within a month
-        if (req.offer.type !== 'host') {
-          if (req.body.validUntil && isValidUntil(req.body.validUntil)) {
-            req.body.validUntil = moment(req.body.validUntil).toDate();
-          } else {
-            // Defaults to one month from now
-            req.body.validUntil = moment()
-              .add(config.limits.maxOfferValidFromNow)
-              .toDate();
-          }
+        } else {
+          req.body.validUntil = validUntil;
         }
 
         // Pick only fields user is allowed to modify

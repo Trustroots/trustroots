@@ -37,6 +37,10 @@ export default function AdminHeader() {
       label: 'Acquisition stories',
     },
     {
+      path: 'staff-blockers',
+      label: 'Staff blockers',
+    },
+    {
       path: 'acquisition-stories/analysis',
       label: 'Analysis',
     },
@@ -77,6 +81,7 @@ export default function AdminHeader() {
             .filter(
               page =>
                 isAdmin ||
+                (page.path === 'staff-blockers' && isWelcomeTeam) ||
                 page.path === 'acquisition-stories' ||
                 page.path === 'acquisition-stories/analysis' ||
                 (isWelcomeTeam && page.path === 'location-corrections'),

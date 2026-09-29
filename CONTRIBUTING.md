@@ -2,6 +2,8 @@
 
 See https://team.trustroots.org/
 
+For CI workflow ownership, dependency updates, and secret handling, see [CI security](docs/ci-security.md).
+
 ## Tests and coverage
 
 Run `npm run test:client` for the Jest client suite and `npm run test:server` for the Mocha/Supertest server suite. Jest runs with Watchman disabled so test discovery is consistent on developer machines and CI.

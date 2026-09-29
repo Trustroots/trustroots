@@ -1,4 +1,9 @@
-const proxyquire = require('proxyquire').noCallThru();
+const mongoose = require('mongoose');
+const emailService = require('../../../core/server/services/email.server.service');
+const statsService = require('../../../stats/server/services/stats.server.service');
+const config = require('../../../../config/config');
+const winston = require('winston');
+require('../../server/models/support.server.model');
 const sinon = require('sinon');
 
 require('should');
@@ -27,51 +32,42 @@ function mockResponse() {
   return res;
 }
 
-function loadController(options = {}) {
+async function loadController(options = {}) {
   const savedSupportRequests = [];
-
-  function FakeSupportRequest(data) {
-    this.data = data;
-  }
-
-  FakeSupportRequest.prototype.save = function (callback) {
-    savedSupportRequests.push(this.data);
+  const SupportRequest = mongoose.model('SupportRequest');
+  sinon.stub(SupportRequest.prototype, 'save').callsFake(function (callback) {
+    savedSupportRequests.push(
+      Object.fromEntries(
+        Object.entries({
+          category: this.category,
+          email: this.email,
+          message: this.message,
+          reportMember: this.reportMember,
+          user: this.user,
+          userAgent: this.userAgent,
+          username: this.username,
+        }).filter(([, value]) => value !== undefined),
+      ),
+    );
     callback(options.saveError || null);
-  };
-
+  });
   const sendSupportRequest = sinon
-    .stub()
+    .stub(emailService, 'sendSupportRequest')
     .callsFake((replyTo, data, callback) =>
       callback(options.emailError || null),
     );
-  const stat = sinon.stub().callsFake((statsObject, callback) => callback());
-  const log = sinon.spy();
-  const plainText = sinon.stub().callsFake(value => value);
-
-  const controller = proxyquire(
-    '../../server/controllers/support.server.controller',
-    {
-      '../../../../config/config': {
-        supportEmail: 'support@example.test',
-      },
-      '../../../../config/lib/logger': log,
-      '../../../core/server/services/email.server.service': {
-        sendSupportRequest,
-      },
-      '../../../core/server/services/text.server.service': {
-        plainText,
-      },
-      '../../../stats/server/services/stats.server.service': { stat },
-      mongoose: {
-        model: () => FakeSupportRequest,
-      },
-    },
+  const stat = sinon
+    .stub(statsService, 'stat')
+    .callsFake((statsObject, callback) => callback());
+  const log = sinon.stub(winston.Logger.prototype, 'log');
+  sinon.stub(config, 'supportEmail').value('support@example.test');
+  const controller = await import(
+    '../../server/controllers/support.server.controller.mjs'
   );
 
   return {
     controller,
     log,
-    plainText,
     savedSupportRequests,
     sendSupportRequest,
     stat,
@@ -79,6 +75,7 @@ function loadController(options = {}) {
 }
 
 describe('Support controller unit tests', () => {
+  afterEach(() => sinon.restore());
   const build = {
     committedAt: '2026-06-21 18:06',
     commitUrl:
@@ -87,13 +84,13 @@ describe('Support controller unit tests', () => {
   };
 
   it('sends a guest support request and records normal guest stats', async () => {
-    const harness = loadController();
+    const harness = await loadController();
     const res = mockResponse();
 
     harness.controller.supportRequest(
       {
         body: {
-          message: '<p>Need help</p>',
+          message: 'Need help',
           email: 'guest@example.com',
           username: 'guest',
         },
@@ -114,7 +111,7 @@ describe('Support controller unit tests', () => {
       displayName: '-',
       email: 'guest@example.com',
       emailTemp: false,
-      message: '<p>Need help</p>',
+      message: 'Need help',
       profilePublic: 'no',
       reportMember: false,
       signupDate: '-',
@@ -123,19 +120,21 @@ describe('Support controller unit tests', () => {
       username: 'guest',
     });
     harness.savedSupportRequests[0].should.deepEqual({
+      category: 'other',
       email: 'guest@example.com',
-      message: '<p>Need help</p>',
+      message: 'Need help',
       userAgent: 'TestAgent',
       username: 'guest',
     });
     harness.stat.firstCall.args[0].tags.should.deepEqual({
       authenticated: 'no',
+      category: 'other',
       type: 'normal',
     });
   });
 
   it('adds build metadata to the support email data', async () => {
-    const harness = loadController();
+    const harness = await loadController();
     const res = mockResponse();
 
     harness.controller.supportRequest(
@@ -164,7 +163,7 @@ describe('Support controller unit tests', () => {
   });
 
   it('falls back to support email for invalid guest reply-to addresses', async () => {
-    const harness = loadController();
+    const harness = await loadController();
     const res = mockResponse();
 
     harness.controller.supportRequest(
@@ -188,12 +187,10 @@ describe('Support controller unit tests', () => {
   });
 
   it('uses signed-in user data for reply-to, storage, and stats', async () => {
-    const harness = loadController();
+    const harness = await loadController();
     const res = mockResponse();
     const created = new Date('2026-01-02T03:04:05.000Z');
-    const userId = {
-      toString: () => 'user-id',
-    };
+    const userId = new mongoose.Types.ObjectId();
 
     harness.controller.supportRequest(
       {
@@ -233,21 +230,23 @@ describe('Support controller unit tests', () => {
       profilePublic: 'yes',
       reportMember: 'reported-user',
       signupDate: created.toString(),
-      userId: 'user-id',
+      userId: userId.toString(),
       username: 'username',
     });
     harness.savedSupportRequests[0].should.containEql({
+      category: 'reportMember',
       reportMember: 'reported-user',
       user: userId,
     });
     harness.stat.firstCall.args[0].tags.should.deepEqual({
       authenticated: 'yes',
+      category: 'reportMember',
       type: 'reportMember',
     });
   });
 
   it('continues and sends email when DB save fails', async () => {
-    const harness = loadController({ saveError: new Error('db down') });
+    const harness = await loadController({ saveError: new Error('db down') });
     const res = mockResponse();
 
     harness.controller.supportRequest(
@@ -271,8 +270,74 @@ describe('Support controller unit tests', () => {
       .should.be.true();
   });
 
+  for (const category of ['account', 'reportMember', 'volunteering', 'other']) {
+    it(`stores and emails the ${category} category`, async () => {
+      const harness = await loadController();
+      const res = mockResponse();
+      harness.controller.supportRequest(
+        {
+          body: {
+            category,
+            message: 'Support enquiry.',
+            email: 'visitor@example.test',
+            reportMember: 'example-member',
+          },
+          headers: {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      harness.savedSupportRequests[0].category.should.equal(category);
+      const data = harness.sendSupportRequest.firstCall.args[1];
+      data.category.should.equal(category);
+      harness.stat.firstCall.args[0].tags.should.containEql({
+        category,
+        type: category === 'reportMember' ? 'reportMember' : 'normal',
+      });
+      if (category === 'reportMember') {
+        data.reportMember.should.equal('example-member');
+        harness.savedSupportRequests[0].reportMember.should.equal(
+          'example-member',
+        );
+      } else {
+        data.reportMember.should.equal(false);
+        require('should').not.exist(
+          harness.savedSupportRequests[0].reportMember,
+        );
+      }
+    });
+  }
+
+  for (const category of [
+    'unknown',
+    'toString',
+    '__proto__',
+    '',
+    null,
+    ['other'],
+    {},
+  ]) {
+    it(`rejects invalid category ${JSON.stringify(
+      category,
+    )} before storage or delivery`, async () => {
+      const harness = await loadController();
+      const res = mockResponse();
+      harness.controller.supportRequest(
+        { body: { category, message: 'Support enquiry.' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      harness.savedSupportRequests.length.should.equal(0);
+      harness.sendSupportRequest.called.should.equal(false);
+      harness.stat.called.should.equal(false);
+    });
+  }
+
   it('returns 400 and does not record stats when email send fails', async () => {
-    const harness = loadController({ emailError: new Error('smtp failed') });
+    const harness = await loadController({
+      emailError: new Error('smtp failed'),
+    });
     const res = mockResponse();
 
     harness.controller.supportRequest(

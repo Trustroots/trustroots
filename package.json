@@ -78,7 +78,6 @@
     "test:e2e": "./scripts/e2e/test-e2e.sh",
     "test:e2e:headed": "./scripts/e2e/test-e2e.sh --headed",
     "test:e2e:ui": "./scripts/e2e/test-e2e.sh --ui",
-    "test:selenium": "python ./scripts/selenium/test.py",
     "test:server:codex": "TRUSTROOTS_SKIP_LOCAL_CONFIG=true ./scripts/codex/test-server.sh",
     "test:server:files": "node ./scripts/test-server-files.js",
     "test:server:watch": "npm run check-environment && NODE_ENV=test nodemon --watch modules --watch config --watch migrations --watch server.js --ext js,mjs --ignore 'modules/*/client/**' --ignore 'modules/*/tests/client/**' --exec 'node ./scripts/test-server.js'",
@@ -92,8 +91,7 @@
   },
   "dependencies": {
     "@tanstack/react-router": "1.120.5",
-    "acl": "0.4.11",
-    "agenda": "1.0.3",
+    "agenda": "4.4.0",
     "akismet-api": "5.3.0",
     "async": "2.6.4",
     "autolinker": "3.16.2",
@@ -122,11 +120,9 @@
     "i18next": "20.6.1",
     "i18next-browser-languagedetector": "6.1.5",
     "i18next-http-backend": "4.0.0",
-    "imagesloaded": "4.1.4",
     "influx": "5.9.3",
     "juice": "8.1.0",
     "leaflet": "1.7.1",
-    "leaflet-active-area": "git+https://github.com/Mappy/Leaflet-active-area.git#f09574a3eb7fdce3a6778e4822955c6416415e43",
     "lodash": "4.18.1",
     "mapbox-gl": "1.13.2",
     "match-sorter": "6.3.1",
@@ -135,16 +131,15 @@
     "migrate": "1.7.0",
     "mkdir-recursive": "0.4.0",
     "moment": "2.29.4",
-    "mongodb": "3.6.11",
-    "mongoose": "5.13.23",
-    "mongoose-beautiful-unique-validation": "7.1.1",
+    "mongodb": "4.17.2",
+    "mongoose": "6.13.11",
     "mongoose-integer": "0.1.1",
     "mongoose-paginate": "5.0.3",
     "mongoose-url-slugs": "1.0.2",
-    "morgan": "1.12.0",
-    "multer": "2.3.0",
+    "morgan": "1.12.1",
+    "multer": "2.4.0",
     "natural": "5.2.3",
-    "nodemailer": "9.1.1",
+    "nodemailer": "10.0.12",
     "nostr-tools": "2.7.2",
     "nunjucks": "3.2.4",
     "open-location-code": "1.0.3",
@@ -197,7 +192,7 @@
     "@playwright/test": "1.32.3",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.17",
     "@sinonjs/fake-timers": "8.1.0",
-    "@testing-library/jest-dom": "5.13.0",
+    "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "13.4.0",
     "@types/jest": "30.0.0",
     "@types/node": "24.10.13",
@@ -268,16 +263,23 @@
     "serialize-javascript": "7.0.5",
     "browserslist": "4.28.7",
     "baseline-browser-mapping": "2.11.0",
-    "fast-uri": "3.1.6",
+    "fast-uri": "3.1.8",
     "decode-uri-component": "0.5.0",
     "js-yaml": "4.3.2",
     "brace-expansion@1": "1.1.21",
     "brace-expansion@2": "2.1.7",
+    "acl": {
+      "mongodb": "$mongodb",
+      "redis": "3.1.1"
+    },
+    "mongodb-core": {
+      "bson": "1.1.6"
+    },
     "connect-mongo": {
       "mongodb": "$mongodb"
     },
     "socks": {
-      "ip-address": "10.3.1"
+      "ip-address": "10.5.1"
     },
     "mocha": {
       "js-yaml": "4.3.2",

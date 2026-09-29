@@ -1,10 +1,11 @@
 {
+  "Team Guide": "Team Guide",
   "<0>Become a volunteer</0> and make a difference!": "<0>Become a volunteer</0> and make a difference!",
   "Contact us": "Contact us",
   "Email": "Email",
   "Frequently Asked Questions": "Frequently Asked Questions",
   "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.": "If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.",
-  "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!": "I’m just a small website robot but I’ve sent your message to our support people. Expect them to get back to you very soon!",
+  "Your message has been sent to the Trustroots team. We’re a small team of volunteers, so a reply may take a little time. We appreciate your patience.": "Your message has been sent to the Trustroots team. We’re a small team of volunteers, so a reply may take a little time. We appreciate your patience.",
   "Message": "Message",
   "Name": "Name",
   "Our support team speaks several languages. Write in whichever language you prefer — English is helpful when you can.": "Our support team speaks several languages. Write in whichever language you prefer — English is helpful when you can.",
@@ -17,11 +18,17 @@
   "See also": "See also",
   "Send": "Send",
   "Something went wrong sending your message.": "Something went wrong sending your message.",
-  "Thank you!": "Thank you!",
+  "Thanks for getting in touch!": "Thanks for getting in touch!",
   "This message goes to Trustroots support, not to the member.": "This message goes to Trustroots support, not to the member.",
   "Trustroots Support": "Trustroots Support",
-  "Trustroots Support Robot": "Trustroots Support Robot",
   "Username": "Username",
   "Wait…": "Wait…",
-  "You could continue to <1>home</1> or see <4>frequently asked questions</4>.": "You could continue to <1>home</1> or see <4>frequently asked questions</4>."
+  "Return to <1>home</1> or browse our <4>frequently asked questions</4>.": "Return to <1>home</1> or browse our <4>frequently asked questions</4>.",
+  "What can we help with?": "What can we help with?",
+  "Account help": "Account help",
+  "Report a member": "Report a member",
+  "Volunteering": "Volunteering",
+  "Other": "Other",
+  "Please include the member’s username in your message.": "Please include the member’s username in your message.",
+  "Briefly tell us about your interests, skills, and availability.": "Briefly tell us about your interests, skills, and availability."
 }
