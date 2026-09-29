@@ -490,7 +490,7 @@ export default function Statistics({
 
             <p className="lead">
               {t('Wanna help understand Trustroots more in depth?')}{' '}
-              <a href="https://team.trustroots.org/">
+              <a href="/support?category=volunteering">
                 {t('Consider volunteering!')}
               </a>
             </p>

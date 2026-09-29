@@ -29,6 +29,9 @@ for (const [category, label] of Object.entries(SUPPORT_CATEGORIES)) {
     await expect(page.getByRole('button', { name: /^send$/i })).toBeDisabled();
     if (category === 'volunteering') {
       await expect(
+        page.getByRole('link', { name: 'Team Guide', exact: true }),
+      ).toHaveAttribute('href', 'https://team.trustroots.org/');
+      await expect(
         page.getByText(
           'Briefly tell us about your interests, skills, and availability.',
         ),
@@ -42,6 +45,11 @@ for (const [category, label] of Object.entries(SUPPORT_CATEGORIES)) {
           'This message goes to Trustroots support, not to the member.',
         ),
       ).toBeVisible();
+    }
+    if (category !== 'volunteering') {
+      await expect(
+        page.getByRole('link', { name: 'Team Guide', exact: true }),
+      ).toHaveCount(0);
     }
   });
 }
@@ -106,6 +114,33 @@ for (const category of ['account', 'other']) {
     );
     expect(stored.email).toBe('visitor@example.test');
     expect(stored.reportMember).toBeUndefined();
+  });
+}
+
+for (const [path, name, selector] of [
+  ['/', 'Volunteering', '.home-footer-pages'],
+  ['/faq', 'Volunteering', '#tr-footer'],
+  ['/foundation', 'Volunteering', 'section'],
+  ['/team', 'Get active!'],
+  ['/faq', 'things to do here'],
+  ['/support', 'Become a volunteer'],
+  ['/statistics', 'Consider volunteering!'],
+]) {
+  test(`volunteer link ${name} on ${path} opens the selected support category`, async ({
+    page,
+  }) => {
+    await page.goto(path);
+    const scope = selector ? page.locator(selector) : page;
+    const link = scope.getByRole('link', { name, exact: true });
+    await expect(link).toHaveAttribute(
+      'href',
+      '/support?category=volunteering',
+    );
+    await link.click();
+    await expect(page).toHaveURL(/\/support\?category=volunteering$/);
+    await expect(page.getByLabel('What can we help with?')).toHaveValue(
+      'volunteering',
+    );
   });
 }
 
