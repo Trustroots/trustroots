@@ -81,6 +81,7 @@ describe('Count Message Statistics of User', function () {
   }
 
   beforeEach(function (done) {
+    this.timeout(60000);
     users.length = 0;
 
     utils
@@ -101,7 +102,10 @@ describe('Count Message Statistics of User', function () {
           );
         }
 
-        async.each(
+        // Each local user needs one expensive adaptive password hash. Seed
+        // these fixtures in series so the bounded production KDF queue does
+        // not reject this deliberately large setup burst.
+        async.eachSeries(
           users,
           (user, callback) => {
             user.save(callback);
