@@ -26,7 +26,8 @@ const ROLE_DEFINITIONS = {
   'shadowbanned-member':
     'Authenticated user with the shadowban role, used to verify hidden member-facing behavior.',
   admin: 'Authenticated user with the admin role.',
-  'welcome-team': 'Authenticated user with limited acquisition viewing access.',
+  'welcome-team':
+    'Authenticated user with acquisition and own-account blocker viewing access.',
   browser:
     'Browser/platform-originated request, such as security reporting telemetry.',
   'external-client':
@@ -960,6 +961,7 @@ const features = [
       'Forgot password page renders.',
       'Valid reset request sends a deterministic reset email/stub.',
       'Invalid or unknown account request does not leak account existence.',
+      'Recovery transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [
       spec(
@@ -993,6 +995,7 @@ const features = [
       'Password reset succeeds with matching valid passwords.',
       'Success page is shown after reset.',
       'Member can sign in with the new password.',
+      'Reset transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [],
   },
@@ -2655,6 +2658,41 @@ const features = [
       'Analysis API returns deterministic analysis.',
     ],
     relatedSpecs: [],
+  },
+  {
+    id: 'admin.staff-blockers',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Admins can inspect blockers of all staff, while Welcome team members can inspect their own blockers.',
+    roles: ['admin', 'welcome-team'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-staff-blockers',
+          '/admin/staff-blockers',
+          source.adminClient,
+          {
+            requiresAuth: true,
+            requiresRole: ['admin', 'welcome-team'],
+          },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/staff-blockers', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admins can inspect blockers of any administrator or Welcome team member.',
+      'Welcome team members can inspect only blockers of their own account.',
+      'Regular members cannot access staff blocker information.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-inspection.spec.js',
+        'staff blockers are grouped for admins and limited for Welcome team members',
+      ),
+    ],
   },
   {
     id: 'admin.messages',
