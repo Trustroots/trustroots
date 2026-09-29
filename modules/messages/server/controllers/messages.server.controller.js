@@ -571,32 +571,33 @@ exports.send = async function (req, res) {
 
       // We'll need some info about related users, populate some fields
       function (message, done) {
-        message
-          .populate({
-            path: 'userFrom',
-            select: userProfile.userMiniProfileFields,
-          })
-          .populate(
+        message.populate(
+          [
+            {
+              path: 'userFrom',
+              select: userProfile.userMiniProfileFields,
+            },
             {
               path: 'userTo',
               select: userProfile.userMiniProfileFields,
             },
-            function (err, message) {
-              if (err) {
-                return done(err);
-              }
+          ],
+          function (err, message) {
+            if (err) {
+              return done(err);
+            }
 
-              // Turn to object to be able to delete fields
-              message = message.toObject();
+            // Turn to object to be able to delete fields
+            message = message.toObject();
 
-              // Don't return these fields
-              delete message.notified;
-              delete message.spam;
+            // Don't return these fields
+            delete message.notified;
+            delete message.spam;
 
-              // Finally return saved message
-              return res.json(message);
-            },
-          );
+            // Finally return saved message
+            return res.json(message);
+          },
+        );
       },
     ],
     function (err) {

@@ -2,7 +2,9 @@ import axios from 'axios';
 
 import * as authApi from '@/modules/users/client/api/auth.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 describe('auth.api', () => {
   beforeEach(() => {

@@ -1,8 +1,10 @@
 import axios from 'axios';
 
-import { send } from '@/modules/support/client/api/support.api';
+import { reportMember, send } from '@/modules/support/client/api/support.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -16,5 +18,15 @@ describe('support api', () => {
 
     await expect(send(request)).resolves.toBe(response);
     expect(axios.post).toHaveBeenCalledWith('/api/support', request);
+  });
+
+  it('reports a member through support', async () => {
+    axios.post.mockResolvedValueOnce({});
+
+    await reportMember({ username: 'samplemember' }, 'A report');
+    expect(axios.post).toHaveBeenCalledWith('/api/support', {
+      message: 'A report',
+      reportMember: 'samplemember',
+    });
   });
 });

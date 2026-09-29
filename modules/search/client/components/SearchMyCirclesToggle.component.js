@@ -1,11 +1,7 @@
-import axios from 'axios';
 import PropTypes from 'prop-types';
 import React, { useEffect, useState } from 'react';
 
-async function fetchMemberships() {
-  const { data } = await axios.get('/api/users/memberships');
-  return data;
-}
+import { listMemberships } from '@/modules/tribes/client/api/tribes.api';
 
 export default function SearchMyCirclesToggle({ selectedTribeIds, onChange }) {
   const [userTribeIds, setUserTribeIds] = useState([]);
@@ -15,7 +11,7 @@ export default function SearchMyCirclesToggle({ selectedTribeIds, onChange }) {
   useEffect(() => {
     let isMounted = true;
 
-    fetchMemberships()
+    listMemberships()
       .then(memberships => {
         if (!isMounted) {
           return;

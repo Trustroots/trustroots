@@ -56,7 +56,7 @@ exports.blockUser = async function (req, res) {
     );
 
     // No documents were updated
-    if (!loggedUser.n) {
+    if (!loggedUser.matchedCount) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });
@@ -100,7 +100,7 @@ exports.unblockUser = async function (req, res) {
     );
 
     // No documents were updated
-    if (!result.n || !result.nModified) {
+    if (!result.matchedCount || !result.modifiedCount) {
       return res.status(404).send({
         message: errorService.getErrorMessageByKey('not-found'),
       });

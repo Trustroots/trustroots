@@ -41,6 +41,11 @@ describe('<Privacy />', () => {
     expect(
       screen.getByRole('link', { name: 'Nostroots privacy policy' }),
     ).toHaveAttribute('href', 'https://nos.trustroots.org/privacy/');
+    for (const link of screen.getAllByRole('link', {
+      name: 'Account settings',
+    })) {
+      expect(link).toHaveAttribute('href', '/profile/edit/account');
+    }
     expect(
       screen.getByRole('link', { name: 'Zendesk privacy policy' }),
     ).toHaveAttribute(

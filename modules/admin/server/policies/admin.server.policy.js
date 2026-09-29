@@ -1,12 +1,11 @@
 /**
  * Module dependencies.
  */
-const acl = require('acl');
+const createMemoryPolicy = require('../../../core/server/services/memory-policy.server.service');
 const _ = require('lodash');
 const errorService = require('../../../core/server/services/error.server.service');
 
-// Using the memory backend
-const aclInstance = new acl(new acl.memoryBackend());
+const aclInstance = createMemoryPolicy();
 
 /**
  * Invoke Users Permissions
@@ -21,6 +20,7 @@ exports.invokeRolesPolicies = () => {
           resources: '/api/admin/acquisition-stories/analysis',
           permissions: ['post'],
         },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ],
     },
     {
@@ -31,6 +31,7 @@ exports.invokeRolesPolicies = () => {
           resources: '/api/admin/acquisition-stories/analysis',
           permissions: ['post'],
         },
+        { resources: '/api/admin/staff-blockers', permissions: ['get'] },
         { resources: '/api/admin/audit-log', permissions: ['get'] },
         { resources: '/api/admin/dashboard', permissions: ['get'] },
         { resources: '/api/admin/messages', permissions: ['post'] },

@@ -7,12 +7,10 @@ function loadPolicy() {
     allow: sinon.stub(),
     areAnyRolesAllowed: sinon.stub(),
   };
-  const AclConstructor = function () {
-    return mockAcl;
-  };
-  AclConstructor.memoryBackend = sinon.stub();
+  const createMemoryPolicy = () => mockAcl;
   const policy = proxyquire('../../server/policies/admin.server.policy', {
-    acl: AclConstructor,
+    '../../../core/server/services/memory-policy.server.service':
+      createMemoryPolicy,
   });
   return { policy, mockAcl };
 }
@@ -51,11 +49,15 @@ describe('Admin policy unit tests', () => {
         resources: '/api/admin/acquisition-stories/analysis',
         permissions: ['post'],
       },
+      { resources: '/api/admin/staff-blockers', permissions: ['get'] },
     ]);
     policies[0].roles.should.deepEqual(['admin']);
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/acquisition-stories');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/staff-blockers');
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/dashboard');
