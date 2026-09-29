@@ -17,9 +17,26 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import Recommend from './create-experience/Recommend';
 import StepNavigation from '@/modules/core/client/components/StepNavigation';
 import SubmittedInfo from './create-experience/SubmittedInfo';
+import { draftKey, readDraft, saveDraft, removeDraft } from '../utils/draft';
 
 export default function CreateExperience({ userFrom, userTo }) {
+  return (
+    <ExperienceForm
+      key={`${userFrom._id}:${userTo._id}`}
+      userFrom={userFrom}
+      userTo={userTo}
+    />
+  );
+}
+
+function ExperienceForm({ userFrom, userTo }) {
   const { t } = useTranslation('experiences');
+  const key = draftKey(userFrom._id, userTo._id);
+  const [stored] = useState(() => readDraft(key));
+  const [pendingDraft, setPendingDraft] = useState(stored.draft);
+  const [storageAvailable, setStorageAvailable] = useState(stored.available);
+  const maximumLength =
+    window.settings?.limits?.maximumExperienceFeedbackPublicLength ?? 2000;
 
   const [met, setMet] = useState(false);
   const [host, setHostedThem] = useState(false);
@@ -40,6 +57,50 @@ export default function CreateExperience({ userFrom, userTo }) {
   const [submitError, setSubmitError] = useState('');
   const [reportError, setReportError] = useState(false);
   const [isReported, setIsReported] = useState(false);
+  const [isReporting, setIsReporting] = useState(false);
+
+  useEffect(() => {
+    if (
+      pendingDraft ||
+      isLoading ||
+      loadError ||
+      isDuplicate ||
+      isSubmitted ||
+      userFrom._id === userTo._id
+    )
+      return;
+    const hasDraft =
+      met || host || guest || feedbackPublic || (sharedOnTime && recommend);
+    setStorageAvailable(
+      hasDraft
+        ? saveDraft(key, { met, host, guest, recommend, feedbackPublic })
+        : removeDraft(key),
+    );
+  }, [
+    key,
+    met,
+    host,
+    guest,
+    recommend,
+    feedbackPublic,
+    pendingDraft,
+    isLoading,
+    loadError,
+    isDuplicate,
+    isSubmitted,
+    userFrom._id,
+    userTo._id,
+    sharedOnTime,
+  ]);
+
+  const restoreDraft = () => {
+    setMet(pendingDraft.met);
+    setHostedThem(pendingDraft.host);
+    setHostedMe(pendingDraft.guest);
+    if (sharedOnTime) setRecommend(pendingDraft.recommend);
+    setFeedbackPublic(pendingDraft.feedbackPublic);
+    setPendingDraft(null);
+  };
 
   useEffect(() => {
     (async () => {
@@ -51,6 +112,7 @@ export default function CreateExperience({ userFrom, userTo }) {
         });
         if (experience) {
           if (experience.userFrom === userFrom._id || !!experience.response) {
+            removeDraft(key);
             setIsDuplicate(true);
           } else {
             setIsDuplicate(false);
@@ -64,7 +126,7 @@ export default function CreateExperience({ userFrom, userTo }) {
         setIsLoading(false);
       }
     })();
-  }, [userFrom, userTo, loadAttempt]);
+  }, [userFrom, userTo, loadAttempt, key]);
 
   const handleChangeInteraction = interactionType => {
     switch (interactionType) {
@@ -81,19 +143,20 @@ export default function CreateExperience({ userFrom, userTo }) {
   };
 
   const submitReport = async () => {
+    setIsReporting(true);
     setReportError(false);
     try {
       await supportApi.reportMember(userTo, reportMessage);
       setIsReported(true);
     } catch {
       setReportError(true);
+    } finally {
+      setIsReporting(false);
     }
   };
 
   const handleRetryReport = async () => {
-    setIsSubmitting(true);
     await submitReport();
-    setIsSubmitting(false);
   };
 
   const handleSubmit = async () => {
@@ -114,7 +177,8 @@ export default function CreateExperience({ userFrom, userTo }) {
           userTo: userTo._id,
         });
       } catch (error) {
-        if (error?.response?.status !== 409) {
+        const status = error?.response?.status;
+        if (status && status !== 409 && status < 500) {
           throw error;
         }
         // A previous save may have succeeded even if its response was lost.
@@ -126,10 +190,11 @@ export default function CreateExperience({ userFrom, userTo }) {
         }
       }
       setIsPublic(savedExperience.public);
-      if (recommend === 'no' && report) {
-        await submitReport();
-      }
+      removeDraft(key);
       setIsSubmitted(true);
+      if (recommend === 'no' && report) {
+        void submitReport();
+      }
     } catch (error) {
       setSubmitError(
         error?.response?.data?.details?.feedbackPublic === 'toolong'
@@ -172,7 +237,11 @@ export default function CreateExperience({ userFrom, userTo }) {
       feedback={feedbackPublic}
       recommend={recommend}
       report={report}
-      onChangeFeedback={setFeedbackPublic}
+      onChangeFeedback={feedback => {
+        setFeedbackPublic(feedback);
+        setSubmitError('');
+      }}
+      maximumLength={maximumLength}
     />
   );
 
@@ -214,7 +283,10 @@ export default function CreateExperience({ userFrom, userTo }) {
   const navigationErrors = [errorDict.interaction, errorDict.recommend];
   const currentStepErrors = navigationErrors.slice(0, step + 1).flat();
   // can we continue?
-  const isNextStepDisabled = isSubmitting || currentStepErrors.length > 0;
+  const isNextStepDisabled =
+    isSubmitting ||
+    currentStepErrors.length > 0 ||
+    (step === tabs.length - 1 && feedbackPublic.length > maximumLength);
   // if not, why?
   const nextStepError = isSubmitting
     ? ''
@@ -256,6 +328,10 @@ export default function CreateExperience({ userFrom, userTo }) {
           name={userTo.displayName}
           username={userTo.username}
         />
+        <p role="status">{t('Your experience has been saved.')}</p>
+        {isReporting && (
+          <p role="status">{t('Sending your private report…')}</p>
+        )}
         {reportError && (
           <div className="alert alert-warning" role="alert">
             <p>
@@ -266,7 +342,7 @@ export default function CreateExperience({ userFrom, userTo }) {
             <button
               type="button"
               className="btn btn-primary"
-              disabled={isSubmitting}
+              disabled={isReporting}
               onClick={handleRetryReport}
             >
               {t('Retry private report')}
@@ -277,36 +353,78 @@ export default function CreateExperience({ userFrom, userTo }) {
     );
   }
 
+  if (pendingDraft) {
+    return (
+      <div className="alert alert-info">
+        <p>
+          {t(
+            'You have an unfinished experience saved on this device. Restore it or start again.',
+          )}
+        </p>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={restoreDraft}
+        >
+          {t('Restore draft')}
+        </button>{' '}
+        <button
+          type="button"
+          className="btn btn-default"
+          onClick={() => {
+            setStorageAvailable(removeDraft(key));
+            setPendingDraft(null);
+          }}
+        >
+          {t('Discard draft')}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <Tabs
-        activeKey={step}
-        bsStyle="pills"
-        id="create-experience-tabs"
-        className="create-experience-tabs"
-      >
-        {tabs.map(({ id, component, title }, i) => {
-          return (
-            <Tab disabled eventKey={i} key={id} title={title}>
-              {component}
-            </Tab>
-          );
-        })}
-      </Tabs>
-      {submitError && (
-        <div className="alert alert-danger" role="alert">
-          {submitError}
-        </div>
-      )}
-      <StepNavigation
-        currentStep={step}
-        numberOfSteps={tabs.length}
-        disabled={isNextStepDisabled}
-        disabledReason={nextStepError}
-        onBack={() => setStep(step => step - 1)}
-        onNext={() => setStep(step => step + 1)}
-        onSubmit={handleSubmit}
-      />
+      <p role="status">
+        {storageAvailable
+          ? t(
+              'Unfinished experiences are saved on this device for 7 days. Private reports are not saved on this device.',
+            )
+          : t(
+              'Your browser could not save a draft on this device. Keep this page open until your experience is saved.',
+            )}
+      </p>
+      {isSubmitting && <p role="status">{t('Saving your experience…')}</p>}
+      <fieldset disabled={isSubmitting}>
+        <Tabs
+          activeKey={step}
+          bsStyle="pills"
+          id="create-experience-tabs"
+          className="create-experience-tabs"
+        >
+          {tabs.map(({ id, component, title }, i) => {
+            return (
+              <Tab disabled eventKey={i} key={id} title={title}>
+                {component}
+              </Tab>
+            );
+          })}
+        </Tabs>
+        {submitError && (
+          <div className="alert alert-danger" role="alert">
+            {submitError}
+          </div>
+        )}
+        <StepNavigation
+          currentStep={step}
+          numberOfSteps={tabs.length}
+          disabled={isNextStepDisabled}
+          disabledReason={nextStepError}
+          onBack={() => setStep(step => step - 1)}
+          onNext={() => setStep(step => step + 1)}
+          onSubmit={handleSubmit}
+          submitLabel={isSubmitting ? t('Saving…') : t('Save experience')}
+        />
+      </fieldset>
     </div>
   );
 }
@@ -315,3 +433,4 @@ CreateExperience.propTypes = {
   userFrom: PropTypes.object.isRequired,
   userTo: PropTypes.object.isRequired,
 };
+ExperienceForm.propTypes = CreateExperience.propTypes;

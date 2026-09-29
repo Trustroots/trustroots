@@ -1,3 +1,4 @@
+/* global window */
 const { expect, test } = require('../../support/test');
 const {
   createUser,
@@ -10,6 +11,112 @@ const {
   removeExperiencesBetweenUsernames,
   updateUserByUsername,
 } = require('../../support/db');
+
+for (const viewport of [
+  { width: 1280, height: 800 },
+  { width: 390, height: 844 },
+]) {
+  test(`member restores an experience draft after reopening on a ${viewport.width}px screen`, async ({
+    page,
+    request,
+  }) => {
+    const sender = await publicMember(request);
+    const recipient = await publicMember(request);
+    const anotherRecipient = await publicMember(request);
+    try {
+      await page.setViewportSize(viewport);
+      await signInViaApi(page, request, sender);
+      const path = `/profile/${recipient.username}/experiences/new`;
+      await page.goto(path);
+      await page.getByLabel('Met in person', { exact: true }).check();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page.locator('label').filter({ hasText: /^Yes$/ }).click();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page
+        .locator('#feedback-message')
+        .fill('An unfinished fictional experience.');
+      await page.reload();
+      await expect(
+        page.getByRole('button', { name: 'Restore draft' }),
+      ).toBeVisible();
+      await page.goto(`/profile/${anotherRecipient.username}/experiences/new`);
+      await expect(
+        page.getByLabel('Met in person', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Restore draft' }),
+      ).toHaveCount(0);
+      await page.goto(path);
+      await page.getByRole('button', { name: 'Restore draft' }).click();
+      await expect(
+        page.getByLabel('Met in person', { exact: true }),
+      ).toBeChecked();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await expect(
+        page.locator('input[name="recommend"][value="yes"]'),
+      ).toBeChecked();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await expect(page.locator('#feedback-message')).toHaveValue(
+        'An unfinished fictional experience.',
+      );
+      await page.route(
+        '**/api/experiences',
+        route =>
+          route.fulfill({
+            status: 503,
+            json: { message: 'Temporary failure' },
+          }),
+        { times: 1 },
+      );
+      await page
+        .getByRole('button', { name: 'Save experience', exact: true })
+        .click();
+      await expect(page.getByRole('alert')).toContainText(
+        'We could not save your experience.',
+      );
+      await page.reload();
+      await page.getByRole('button', { name: 'Restore draft' }).click();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page
+        .getByRole('button', { name: 'Save experience', exact: true })
+        .click();
+      await expect(
+        page.getByText('Your experience has been saved.'),
+      ).toBeVisible();
+      const remaining = await page.evaluate(() =>
+        Object.keys(window.localStorage).filter(key =>
+          key.startsWith('trustroots:experience-draft:v1:'),
+        ),
+      );
+      expect(remaining).toEqual([]);
+      await page.reload();
+      await expect(
+        page.getByText('You already shared your experience with them'),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Restore draft' }),
+      ).toHaveCount(0);
+    } finally {
+      await removeExperiencesBetweenUsernames(
+        sender.username,
+        recipient.username,
+      );
+    }
+  });
+}
 
 async function publicMember(request) {
   const user = createUser();
@@ -112,7 +219,7 @@ test('member shares an experience through React and returns to their profile his
       .locator('#feedback-message')
       .fill('We enjoyed a friendly conversation.');
     await page
-      .getByRole('button', { name: 'Finish editing and save', exact: true })
+      .getByRole('button', { name: 'Save experience', exact: true })
       .click();
     await expect(
       page.getByText('Thank you for sharing your experience!'),
@@ -170,13 +277,9 @@ test('member recovers when an experience saves but its response is lost', async 
       { times: 1 },
     );
     const finish = page.getByRole('button', {
-      name: 'Finish editing and save',
+      name: 'Save experience',
       exact: true,
     });
-    await finish.click();
-    await expect(page.getByRole('alert')).toHaveText(
-      'We could not save your experience. Your text is still here. Please try again.',
-    );
     await finish.click();
     await expect(
       page.getByText('Thank you for sharing your experience!'),
@@ -224,7 +327,7 @@ test('member retries failed experience requests without losing their feedback', 
       .click();
     const feedback = page.locator('#feedback-message');
     const finish = page.getByRole('button', {
-      name: 'Finish editing and save',
+      name: 'Save experience',
       exact: true,
     });
     await feedback.fill('A fictional experience to preserve while retrying.');
@@ -244,7 +347,7 @@ test('member retries failed experience requests without losing their feedback', 
     await expect(finish).toBeEnabled();
 
     await feedback.fill('x'.repeat(2001));
-    await finish.click();
+    await expect(finish).toBeDisabled();
     await expect(page.getByRole('alert')).toHaveText(
       'Your feedback is too long. Please shorten it and try again.',
     );
