@@ -57,6 +57,7 @@ service.userProfileFields = [
   'passwordUpdated',
   'avatarSource',
   'avatarUploaded',
+  'avatarVersion',
   'member',
   'replyRate',
   'replyTime',
@@ -79,6 +80,7 @@ service.userMiniProfileFields = [
   'username',
   'avatarSource',
   'avatarUploaded',
+  'avatarVersion',
   'emailHash',
   'additionalProvidersData.facebook.id', // For FB avatars
 ].join(' ');
