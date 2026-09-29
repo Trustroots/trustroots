@@ -15,3 +15,9 @@ The project SHALL implement administration, offers and search client modules in 
 - **WHEN** the client test suite and coverage run
 - **THEN** the migrated modules remain exercised by their existing tests
 - **AND** the established client coverage thresholds remain satisfied
+
+#### Scenario: JavaScript callers use explicit `.js` imports for migrated modules
+
+- **WHEN** an existing JavaScript client module imports an administration, offer or search module with an explicit `.js` suffix
+- **THEN** Jest and Webpack resolve the corresponding TypeScript or TSX source
+- **AND** no JavaScript compatibility shim is required

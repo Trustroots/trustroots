@@ -208,15 +208,12 @@ export default function AdminNewsletter() {
     }
 
     setIsAudienceCountLoading(true);
-    audiencePreviewTimer.current = setTimeout(() => {
+    const timer = setTimeout(() => {
       refreshAudienceCount(audienceCriteria);
     }, AUDIENCE_COUNT_DEBOUNCE_MS);
+    audiencePreviewTimer.current = timer;
 
-    return () => {
-      if (audiencePreviewTimer.current !== null) {
-        clearTimeout(audiencePreviewTimer.current);
-      }
-    };
+    return () => clearTimeout(timer);
   }, [audienceCriteria, refreshAudienceCount]);
 
   function updateAudienceCriteria(update: Partial<NewsletterAudienceCriteria>) {

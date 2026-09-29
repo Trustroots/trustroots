@@ -92,6 +92,28 @@ jest.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: { en: 'English', fi: 'Finnish' } }),
 }));
 
+jest.mock('@/modules/search/client/components/SearchSidebar.component', () => {
+  const React = require('react');
+  const ActualSearchSidebar = jest.requireActual(
+    '@/modules/search/client/components/SearchSidebar.component',
+  ).default;
+
+  return {
+    __esModule: true,
+    default: props => (
+      <>
+        <button
+          onClick={() => props.onTabSelect('unexpected')}
+          type="button"
+        >
+          Select unexpected tab
+        </button>
+        <ActualSearchSidebar {...props} />
+      </>
+    ),
+  };
+});
+
 jest.mock('@/modules/users/client/components/Avatar.component', () => ({
   __esModule: true,
   default: () => <span data-testid="avatar" />,
@@ -227,6 +249,16 @@ describe('<SearchPage />', () => {
     );
 
     expect(document.querySelector('.search.is-sidebar-open')).toBeTruthy();
+  });
+
+  it('ignores unknown sidebar tab keys', () => {
+    renderSearchPage();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select unexpected tab' }),
+    );
+
+    expect(screen.getByTestId('search-map')).toBeInTheDocument();
   });
 
   it('opens the filters tab from the mobile toolbar', () => {

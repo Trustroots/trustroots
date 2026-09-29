@@ -182,8 +182,8 @@ function formatLocationForSearch(location?: string[] | null) {
   return `${location[1]},${location[0]}`;
 }
 
-function getUserId(user: MemberRecord | string | null | undefined) {
-  return get(user, ['_id']) || user;
+function getUserId(user: MemberContact['userFrom']): string | undefined {
+  return typeof user === 'string' ? user : user?._id;
 }
 
 function getContactOtherMember(contact: MemberContact, currentUserId: string) {

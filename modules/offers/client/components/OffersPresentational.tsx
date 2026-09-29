@@ -46,6 +46,7 @@ export class OffersPresentational extends Component<
 
   renderHostingYesMaybe() {
     const { offer, isOwnOffer, t } = this.props;
+    const maxGuests = offer.maxGuests ?? 0;
     return (
       <>
         {/* Edit button */}
@@ -64,8 +65,8 @@ export class OffersPresentational extends Component<
         />
         {/* Number of guests */}
         <p className="offer-restrictions">
-          {(offer.maxGuests ?? 0) > 0
-            ? t('At most {{count}} guests.', { count: offer.maxGuests ?? 0 })
+          {maxGuests > 0
+            ? t('At most {{count}} guests.', { count: maxGuests })
             : t('No guests.')}
         </p>
       </>

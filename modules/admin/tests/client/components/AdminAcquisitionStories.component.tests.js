@@ -186,7 +186,6 @@ describe('<AdminAcquisitionStories />', () => {
       },
       {
         _id: '222222222222222222222222',
-        acquisitionStory: 'A friend recommended it',
         circleCount: 0,
         created: '2026-02-01T00:00:00.000Z',
         displayName: 'Bob Example',

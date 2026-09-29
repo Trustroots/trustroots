@@ -5,6 +5,22 @@ import '@testing-library/jest-dom';
 import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditPage.component';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 
+jest.mock('react-bootstrap', () => {
+  const ReactBootstrap = jest.requireActual('react-bootstrap');
+
+  return {
+    ...ReactBootstrap,
+    Tabs: props => (
+      <>
+        <ReactBootstrap.Tabs {...props} />
+        <button onClick={() => props.onSelect(null)} type="button">
+          Clear selected tab
+        </button>
+      </>
+    ),
+  };
+});
+
 jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   trackEvent: jest.fn(),
@@ -77,6 +93,18 @@ describe('OfferMeetEditPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('keeps the active tab when selection is cleared', async () => {
+    render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
+
+    expect(await screen.findByText('What is this about?')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selected tab' }));
+
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
   it('creates a new meet offer after filling details', async () => {
     offersApi.createOffer.mockResolvedValue({});
     render(<OfferMeetEditPage user={{ _id: 'user-1' }} />);
@@ -106,7 +134,6 @@ describe('OfferMeetEditPage', () => {
     } = require('@/modules/core/client/services/client-runtime');
     getCurrentRouteParams.mockReturnValue({ offerId: 'offer-1' });
     offersApi.getOffer.mockResolvedValue({
-      _id: 'offer-1',
       description: 'Existing meet.',
       location: [51.5, -0.12],
       validUntil: new Date(Date.now() + 86400000).toISOString(),

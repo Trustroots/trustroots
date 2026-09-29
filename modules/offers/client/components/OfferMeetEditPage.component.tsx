@@ -164,8 +164,7 @@ export default function OfferMeetEditPage() {
           label: 'Added meet offer',
         });
       } else {
-        const existingOfferId = loadedOffer._id || offerId;
-        if (!existingOfferId) throw new Error('Offer ID is required to edit.');
+        const existingOfferId = loadedOffer._id || offerId!;
         await updateOffer(existingOfferId, payload);
         trackEvent('offer-modified', {
           category: 'offer.meet.edit',
@@ -228,11 +227,7 @@ export default function OfferMeetEditPage() {
                       aria-required="true"
                       className="form-control offer-description"
                       onChange={({ target: { value } }) =>
-                        setOffer(current =>
-                          current
-                            ? { ...current, description: value }
-                            : current,
-                        )
+                        setOffer({ ...offer, description: value })
                       }
                       placeholder="Write here..."
                       rows={8}
@@ -254,9 +249,7 @@ export default function OfferMeetEditPage() {
                       max={defaultValidUntil().slice(0, 10)}
                       min={new Date().toISOString().slice(0, 10)}
                       onChange={({ target: { value } }) =>
-                        setOffer(current =>
-                          current ? { ...current, validUntil: value } : current,
-                        )
+                        setOffer({ ...offer, validUntil: value })
                       }
                       type="date"
                       value={expiryInputValue}
@@ -292,11 +285,7 @@ export default function OfferMeetEditPage() {
             <OfferLocationEditor
               location={loadedOffer.location}
               offerType="meet"
-              onLocationChange={location =>
-                setOffer(current =>
-                  current ? { ...current, location } : current,
-                )
-              }
+              onLocationChange={location => setOffer({ ...offer, location })}
             />
           </Tab>
         </Tabs>

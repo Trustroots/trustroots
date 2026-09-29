@@ -153,13 +153,15 @@ export default function AdminMessages() {
     }
   }
 
-  async function sendWarning(event: FormEvent<HTMLFormElement>) {
+  async function sendWarning(
+    event: FormEvent<HTMLFormElement>,
+    recipients: ScammerRecipients,
+  ) {
     event.preventDefault();
-    if (!scammerRecipients) return;
     setScammerError('');
     setWarningSent(null);
     setIsSendingWarning(true);
-    const username = scammerRecipients.scammer.username;
+    const username = recipients.scammer.username;
     if (
       !warningAttempt.current ||
       warningAttempt.current.username !== username ||
@@ -175,10 +177,9 @@ export default function AdminMessages() {
       };
     }
     const attempt = warningAttempt.current;
-    if (!attempt) return;
     try {
       const result = await sendScammerWarning(
-        scammerRecipients.scammer.username,
+        recipients.scammer.username,
         warningContent,
         attempt.requestId,
       );
@@ -232,7 +233,7 @@ export default function AdminMessages() {
               </button>
             </form>
             {scammerRecipients && (
-              <form onSubmit={sendWarning}>
+              <form onSubmit={event => sendWarning(event, scammerRecipients)}>
                 <p>
                   <strong>{scammerRecipients.recipients.length}</strong>{' '}
                   recipient(s) found for @{scammerRecipients.scammer.username}.

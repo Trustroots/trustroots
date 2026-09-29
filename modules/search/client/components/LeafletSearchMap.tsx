@@ -206,8 +206,7 @@ export default function LeafletSearchMap({
   }, [onCommunityNoteClick, onMapChange, onMapClick, onOfferClick]);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return undefined;
+    const container = containerRef.current!;
 
     const map = L.map(container, {
       zoomControl: true,
@@ -287,8 +286,7 @@ export default function LeafletSearchMap({
       );
     };
 
-    const container = containerRef.current;
-    if (!container) return undefined;
+    const container = containerRef.current!;
 
     // Fit immediately, then again after the mobile place sidebar is hidden
     // panel and the map container has completed its layout transition.
