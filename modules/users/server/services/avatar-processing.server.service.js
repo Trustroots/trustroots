@@ -22,6 +22,7 @@ const imageProcessor =
   config.imageProcessor === 'imagemagic'
     ? gm.subClass({ imageMagick: true })
     : gm;
+let nativeCapabilitiesPromise;
 
 function getNativeResourceLimits() {
   if (config.imageProcessor === 'imagemagic') {
@@ -45,10 +46,8 @@ function getNativeResourceLimits() {
     ['pixels', '40MP'],
     ['width', String(maxWidth)],
     ['height', String(maxHeight)],
-    ['file', '16'],
     ['threads', '1'],
     ['read', '40M'],
-    ['write', '8M'],
   ];
 }
 
@@ -68,6 +67,62 @@ function createLimitedCommand(sourcePath, cancellationEmitter) {
   });
 
   return command;
+}
+
+function validateResourceList(output) {
+  const available = new Set(
+    output
+      .toString()
+      .split(/\r?\n/)
+      .map(line => line.match(/^\s*([a-z]+)\s*:/i))
+      .filter(Boolean)
+      .map(match => match[1].toLowerCase()),
+  );
+  const aliases = {
+    file: ['file', 'files'],
+    files: ['file', 'files'],
+    threads: ['thread', 'threads'],
+    thread: ['thread', 'threads'],
+  };
+  const missing = getNativeResourceLimits()
+    .map(([name]) => name.toLowerCase())
+    .filter(
+      name =>
+        !(aliases[name] || [name]).some(resource => available.has(resource)),
+    );
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Image processor does not support required resource limits: ${missing.join(
+        ', ',
+      )}.`,
+    );
+  }
+}
+
+function validateNativeResourceLimits(cancellationEmitter) {
+  if (!nativeCapabilitiesPromise) {
+    nativeCapabilitiesPromise = new Promise((resolve, reject) => {
+      const command = createLimitedCommand(null, cancellationEmitter)
+        .command('convert')
+        .in('-list', 'resource');
+      command.toBuffer((error, output) => {
+        if (error) {
+          nativeCapabilitiesPromise = undefined;
+          return reject(error);
+        }
+        try {
+          validateResourceList(output);
+          resolve();
+        } catch (validationError) {
+          nativeCapabilitiesPromise = undefined;
+          reject(validationError);
+        }
+      });
+    });
+  }
+
+  return nativeCapabilitiesPromise;
 }
 
 function identify(command) {
@@ -149,6 +204,9 @@ async function createNativeThumbnails(
   stageDir,
   cancellationEmitter,
 ) {
+  // Fail closed if the installed native build does not expose every resource
+  // limit used below. This command has no untrusted input to decode.
+  await validateNativeResourceLimits(cancellationEmitter);
   validateDimensions(
     await identify(createLimitedCommand(sourcePath, cancellationEmitter)),
   );
@@ -225,6 +283,11 @@ async function processAvatar({ sourcePath, userId }) {
   const avatarDirectory = path.join(uploadRoot, userIdString, 'avatar');
   const stageDir = await createPrivateStage();
   const cancellationEmitter = new EventEmitter();
+  // The gm wrapper does not detach disposer callbacks after each command.
+  // This generation runs one probe, one input identify, and up to three
+  // commands per thumbnail (orientation, resize, and output identify), so
+  // bound listeners to that known sequential command count.
+  cancellationEmitter.setMaxListeners(avatarSizes.length * 3 + 2);
   let publicStage;
   let versionDirectory;
   let timedOut = false;
@@ -343,5 +406,7 @@ module.exports = {
   processAvatar,
   removeAvatarVersion,
   validateDimensions,
+  validateResourceList,
+  validateNativeResourceLimits,
   validateVersion,
 };

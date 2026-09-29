@@ -154,9 +154,11 @@ describe('Read experiences by userTo Id', () => {
         .get(`/api/experiences?userTo=${users[1]._id}`)
         .expect(200);
 
-      body
-        .find(ref => ref.userFrom._id === users[0]._id.toString())
-        .userFrom.avatarVersion.should.equal(version);
+      const experience = body.find(
+        ref => String(ref.userFrom._id) === String(users[0]._id),
+      );
+      should(experience).not.be.undefined();
+      should(experience.userFrom.avatarVersion).eql(version);
     });
 
     it('[param userTo] userTo is self, respond with all public and pending experiences to userTo', async () => {

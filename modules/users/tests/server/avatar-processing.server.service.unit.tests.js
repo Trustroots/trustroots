@@ -97,6 +97,13 @@ describe('Avatar processing service', () => {
         /dimensions/,
       );
     });
+
+    it('fails closed when the selected backend omits a resource limit', () => {
+      assert.throws(
+        () => avatarProcessing.validateResourceList('Memory: 192M\nMap: 256M'),
+        /does not support required resource limits/,
+      );
+    });
   });
 
   describe('private staging and publication', () => {
@@ -234,6 +241,31 @@ describe('Avatar processing service', () => {
           },
           addDisposer() {
             return this;
+          },
+          command() {
+            return this;
+          },
+          toBuffer(callback) {
+            callback(
+              null,
+              Buffer.from(
+                [
+                  'Memory: 192M',
+                  'Map: 256M',
+                  'Disk: 128M',
+                  'Pixels: 40MP',
+                  'Width: 10000',
+                  'Height: 10000',
+                  'File: 16',
+                  'Threads: 1',
+                  'Read: 40M',
+                  'Write: 8M',
+                  'Area: 40MP',
+                  'Thread: 1',
+                  'Time: 15',
+                ].join('\n'),
+              ),
+            );
           },
           autoOrient() {
             return this;
