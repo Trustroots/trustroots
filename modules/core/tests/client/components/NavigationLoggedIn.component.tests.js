@@ -125,8 +125,11 @@ describe('<NavigationLoggedIn />', () => {
     const volunteeringLink = screen.getByRole('link', {
       name: 'Volunteering',
     });
-    expect(volunteeringLink).toHaveAttribute('target', '_blank');
-    expect(volunteeringLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(volunteeringLink).toHaveAttribute(
+      'href',
+      '/support?category=volunteering',
+    );
+    expect(volunteeringLink).not.toHaveAttribute('target');
     expect(
       screen.queryByRole('link', { name: 'Contribute' }),
     ).not.toBeInTheDocument();
