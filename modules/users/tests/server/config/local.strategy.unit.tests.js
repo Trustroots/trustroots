@@ -41,7 +41,7 @@ describe('Local passport strategy unit tests', () => {
         'passport-local': {
           Strategy: FakeLocalStrategy,
         },
-        '../services/password-hashing.server.service': passwordHashing,
+        '../../services/password-hashing.server.service': passwordHashing,
       },
     );
 

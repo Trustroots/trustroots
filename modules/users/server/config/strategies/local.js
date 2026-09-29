@@ -4,7 +4,7 @@
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const User = require('mongoose').model('User');
-const passwordHashing = require('../services/password-hashing.server.service');
+const passwordHashing = require('../../services/password-hashing.server.service');
 
 module.exports = function () {
   // Use local strategy
