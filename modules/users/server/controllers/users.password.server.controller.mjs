@@ -277,7 +277,10 @@ service.changePassword = function (req, res) {
       function (user) {
         emailService.sendResetPasswordConfirm(user, function (err) {
           if (err) {
-            log('error', 'Password change confirmation email delivery failed.');
+            log(
+              'error',
+              'Password change confirmation email delivery failed.',
+            );
           }
           return res.send({
             user: profileHandler.sanitizeOwnProfile(user),
