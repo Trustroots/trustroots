@@ -16,6 +16,7 @@ jest.mock('react-map-gl', () => {
   const React = require('react');
   return {
     __esModule: true,
+    MapController: jest.requireActual('react-map-gl').MapController,
     default: function MockMapGL(props) {
       mockMapGL(props);
       return <div data-testid="react-map">{props.children}</div>;
