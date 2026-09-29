@@ -22,7 +22,6 @@ export default function ZendeskInboxSearch({ className, q }) {
         height="16"
         alt=""
         aria-hidden="true"
-        focusable="false"
       />
     </a>
   );
