@@ -31,6 +31,14 @@ describe('<Avatar />', () => {
     );
   });
 
+  it('uses the username when the display name is unavailable', () => {
+    render(<Avatar user={{ ...user, displayName: '' }} />);
+
+    expect(
+      screen.getByRole('link', { name: 'Open user profile for alice' }),
+    ).toBeInTheDocument();
+  });
+
   it('uses the next generated local avatar size with a cache buster', () => {
     render(<Avatar user={user} source="local" size={36} link={false} />);
 

@@ -109,6 +109,19 @@ describe('ResetPasswordPage', () => {
     expect(await screen.findByText('Reset token expired.')).toBeInTheDocument();
   });
 
+  it('keeps the form usable when the rejected value has no API message', async () => {
+    authApi.resetPassword.mockRejectedValue('request failed');
+
+    renderPage();
+    await fillPasswords('new-password', 'new-password');
+    await submitForm();
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Update Password' }),
+      ).toBeEnabled(),
+    );
+  });
   it.each(['ECONNABORTED', 'ETIMEDOUT', 'ERR_NETWORK'])(
     'shows reset guidance for %s without claiming success or retrying',
     async code => {
