@@ -372,6 +372,15 @@ describe('NostrService', () => {
   });
 
   describe('resolveNpubToUsername()', () => {
+    it('returns a cached null without reconnecting', async () => {
+      service.usernameCache.set('cached-empty-key', null);
+
+      await expect(
+        service.resolveNpubToUsername('cached-empty-key'),
+      ).resolves.toBeNull();
+      expect(Relay._lastInstance?.subscribe).not.toHaveBeenCalled();
+    });
+
     it('resolves username from kind 10390 event tags', async () => {
       await service.connect();
       const relay = Relay._lastInstance;
@@ -407,6 +416,21 @@ describe('NostrService', () => {
 
       const username = await service.resolveNpubToUsername('pubkey123');
       expect(username).toBeNull();
+    });
+
+    it('handles a username tag without a value', async () => {
+      await service.connect();
+      Relay._lastInstance.subscribe.mockImplementation((filters, callbacks) => {
+        callbacks.onevent({
+          tags: [['l', undefined, 'org.trustroots:username']],
+        });
+        callbacks.oneose();
+        return { close: jest.fn() };
+      });
+
+      await expect(
+        service.resolveNpubToUsername('pubkey-with-empty-username'),
+      ).resolves.toBeNull();
     });
 
     it('returns null when no events received', async () => {

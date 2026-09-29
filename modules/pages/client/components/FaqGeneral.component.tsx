@@ -162,8 +162,8 @@ export default function FaqGeneral() {
         <Trans t={rawT} ns="pages">
           Trustroots is a community of travellers for sharing, hosting and
           getting people together. If you want to help grow this network you can
-          find some <a href="https://team.trustroots.org/">things to do here</a>
-          .
+          find some{' '}
+          <a href="/support?category=volunteering">things to do here</a>.
         </Trans>
       </div>
 

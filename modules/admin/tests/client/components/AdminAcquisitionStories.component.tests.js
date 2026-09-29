@@ -157,6 +157,22 @@ describe('<AdminAcquisitionStories />', () => {
     expect(screen.getAllByText('', { selector: 'time' })).toHaveLength(2);
   });
 
+  it('renders an empty acquisition story when the field is absent', async () => {
+    acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: '333333333333333333333333',
+        username: 'casey',
+      },
+    ]);
+
+    render(<AdminAcquisitionStories />);
+
+    expect(
+      await screen.findByRole('link', { name: 'casey' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('table')).toHaveTextContent('casey');
+  });
+
   it('sorts stories by every table column', async () => {
     acquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
@@ -170,7 +186,6 @@ describe('<AdminAcquisitionStories />', () => {
       },
       {
         _id: '222222222222222222222222',
-        acquisitionStory: 'A friend recommended it',
         circleCount: 0,
         created: '2026-02-01T00:00:00.000Z',
         displayName: 'Bob Example',
