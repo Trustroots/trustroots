@@ -37,7 +37,11 @@ describe('Direct contact moderation visibility', () => {
 
         await agent.get(`/api/contact-by/${users[1].id}`).expect(404);
         await agent.get(`/api/contact/${contact.id}`).expect(404);
-        await agent.put(`/api/contact/${contact.id}`).expect(404);
+        await agent
+          .put(`/api/contact/${contact.id}`)
+          .set('Content-Type', 'application/json')
+          .send({})
+          .expect(404);
         should((await Contact.findById(contact.id)).confirmed).be.false();
 
         users[1].roles = ['user'];
@@ -45,7 +49,11 @@ describe('Direct contact moderation visibility', () => {
         await agent.get(`/api/contact-by/${users[1].id}`).expect(200);
         await agent.get(`/api/contact/${contact.id}`).expect(200);
         if (restrictedIsSender) {
-          await agent.put(`/api/contact/${contact.id}`).expect(200);
+          await agent
+            .put(`/api/contact/${contact.id}`)
+            .set('Content-Type', 'application/json')
+            .send({})
+            .expect(200);
           should((await Contact.findById(contact.id)).confirmed).be.true();
         }
       });

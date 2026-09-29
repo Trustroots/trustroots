@@ -479,6 +479,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
       await signInViaApi(page, context.request, blocker);
       const block = await page.request.put(
         `/api/blocked-users/${blocked.username}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
       );
       expect(block.ok()).toBeTruthy();
 
