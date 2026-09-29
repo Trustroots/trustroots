@@ -712,6 +712,27 @@ describe('Admin users controller unit tests', () => {
       updated.roles.should.containEql('welcome-team');
     });
 
+    it('updates a legacy account whose roles field is absent', async () => {
+      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      await User.collection.updateOne(
+        { _id: target._id },
+        { $unset: { roles: '' } },
+      );
+
+      const res = mockResponse();
+      await adminUsers.changeRole(
+        {
+          body: { id: String(target._id), role: 'welcome-team' },
+          user: admin,
+        },
+        res,
+      );
+
+      res.body.message.should.equal('Role changed.');
+      const updated = await User.findById(target._id).exec();
+      updated.roles.should.deepEqual(['welcome-team']);
+    });
+
     it('returns 404 when the target user does not exist', async () => {
       const users = await utils.saveUsers(utils.generateUsers(1));
       const res = mockResponse();
