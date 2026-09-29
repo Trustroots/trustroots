@@ -153,6 +153,14 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
             )}
 
             {!isConnected && friend?._id && (
+              <div className="alert alert-info" role="note">
+                {t(
+                  "You don't need to add someone as a contact to message them. Only add someone as a contact if you have met them or plan to meet them.",
+                )}
+              </div>
+            )}
+
+            {!isConnected && friend?._id && (
               <div className="panel panel-default">
                 <div className="panel-heading">
                   <h4>
