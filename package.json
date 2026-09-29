@@ -192,7 +192,7 @@
     "@babel/preset-react": "7.16.7",
     "@babel/preset-typescript": "7.29.7",
     "@playwright/test": "1.63.0",
-    "@pmmmwh/react-refresh-webpack-plugin": "0.6.3",
+    "@pmmmwh/react-refresh-webpack-plugin": "0.5.17",
     "@sinonjs/fake-timers": "8.1.0",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "13.4.0",
