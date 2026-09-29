@@ -90,4 +90,10 @@ describe('<RemoveContact />', () => {
       screen.getByRole('button', { name: 'Wait a moment…' }),
     ).toBeDisabled();
   });
+
+  it('renders removal copy when the contact has no creation timestamp', () => {
+    renderRemoveContact({ contact: { created: undefined } });
+
+    expect(screen.getByText('Remove contact?')).toBeInTheDocument();
+  });
 });
