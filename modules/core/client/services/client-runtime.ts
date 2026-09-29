@@ -133,7 +133,7 @@ export function onClientEvent(
 
 export function trackEvent(
   action: string,
-  options: { category?: string; label?: string } = {},
+  options: { category?: string; label?: string; value?: string | number } = {},
 ): undefined {
   if (typeof window.ga === 'function') {
     window.ga(

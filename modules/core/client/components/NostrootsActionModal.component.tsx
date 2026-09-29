@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
  * Nostroots (e.g. replying to a community note). Prompts the user to open the
  * Nostroots web app or dismiss.
  */
-type Props = { isOpen: boolean; onClose: () => void; plusCode?: string };
+type Props = { isOpen: boolean; onClose: () => void; plusCode?: string | null };
 export default function NostrootsActionModal({
   isOpen,
   onClose,
