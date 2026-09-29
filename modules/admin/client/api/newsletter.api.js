@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 
 export async function getNewsletterSubscribersCsv() {
   const { data } = await axios.get('/api/admin/newsletter-subscribers', {
@@ -40,7 +40,10 @@ export async function getNewsletterAudienceCsv(criteria) {
   return data;
 }
 
-export async function splitNewsletterSubscribers(newsletterCsvFile) {
+export async function splitNewsletterSubscribers(
+  newsletterCsvFile,
+  requestOptions = {},
+) {
   const formData = new FormData();
   formData.append('newsletterCsv', newsletterCsvFile);
 
@@ -48,8 +51,12 @@ export async function splitNewsletterSubscribers(newsletterCsvFile) {
     '/api/admin/newsletter-subscribers/split',
     formData,
     {
+      ...requestOptions,
+      timeout: requestOptions.timeout ?? 120000,
       headers: {
+        ...requestOptions.headers,
         'Content-Type': 'multipart/form-data',
+        'X-Trustroots-Request': '1',
       },
     },
   );

@@ -1,14 +1,17 @@
-import axios from 'axios';
+import axios, {
+  getErrorResponse,
+} from '../../../core/client/api/http-client.js';
 
 /**
  * API request: read user's offers
  * @param {int} userId - id of user
  * @returns Promise<Offer[]> - array of the found offers
  */
-export async function getOffers(userId, types) {
+export async function getOffers(userId, types, requestOptions = {}) {
   try {
-    const { data } = await axios.get(`api/offers-by/${userId}`, {
-      params: { types },
+    const { data } = await axios.get(`/api/offers-by/${userId}`, {
+      ...requestOptions,
+      params: { ...requestOptions.params, types },
     });
     return data;
   } catch (e) {
@@ -19,7 +22,7 @@ export async function getOffers(userId, types) {
      * and return 404 when user not found
      * but [] when user exists but has no host offers
      */
-    if (e?.response?.status === 404) {
+    if (getErrorResponse(e)?.status === 404) {
       return [];
     } else {
       throw e;
