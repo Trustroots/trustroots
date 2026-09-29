@@ -35,6 +35,9 @@ describe('<SupportPage />', () => {
     expect(screen.getByText('Trustroots Support')).toBeInTheDocument();
     expect(screen.getByText('support:anonymous')).toBeInTheDocument();
     expect(
+      screen.getByRole('link', { name: 'Become a volunteer' }),
+    ).toHaveAttribute('href', '/support?category=volunteering');
+    expect(
       screen.queryByRole('link', { name: 'Removing your account' }),
     ).not.toBeInTheDocument();
   });
