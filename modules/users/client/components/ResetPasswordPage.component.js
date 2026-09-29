@@ -36,7 +36,10 @@ export default function ResetPasswordPage() {
       applyAuthenticatedUser(user, setUser);
       navigate('reset-success');
     } catch (requestError) {
-      setError(requestError?.response?.data?.message);
+      setError(
+        requestError?.response?.data?.message ||
+          'We could not confirm whether your password was changed. Try signing in with your new password before requesting another reset.',
+      );
       setIsLoading(false);
     }
   }
