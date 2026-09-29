@@ -27,6 +27,14 @@ import type {
   ExperienceUser,
 } from '../experiences.prop-types';
 
+declare global {
+  interface Window {
+    settings?: {
+      limits?: { maximumExperienceFeedbackPublicLength?: number };
+    };
+  }
+}
+
 export default function CreateExperience({
   userFrom,
   userTo,
@@ -207,7 +215,8 @@ function ExperienceForm({
           userTo: userTo._id,
         });
       } catch (error) {
-        if (readApiError(error).status !== 409) {
+        const status = readApiError(error).status;
+        if (status && status !== 409 && status < 500) {
           throw error;
         }
         // A previous save may have succeeded even if its response was lost.
