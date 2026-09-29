@@ -5,7 +5,7 @@ import { onClientEvent } from '@/modules/core/client/services/client-runtime';
 import omit from 'lodash/omit';
 import type { Photo } from '../services/photos.service';
 
-type PhotoCredit = Photo & { imageUrl?: string };
+export type PhotoCredit = Photo & { imageUrl?: string };
 type BoardCreditsProps = { photoCredits?: Record<string, PhotoCredit> };
 type PhotoCreditEvent = Record<string, PhotoCredit>;
 

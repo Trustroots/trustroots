@@ -2,9 +2,9 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import classnames from 'classnames';
 
-import BoardCredits from './BoardCredits';
+import BoardCredits, { type PhotoCredit } from './BoardCredits';
 
-type Build = {
+export type Build = {
   branch?: string;
   committedAt?: string;
   commitUrl?: string;
@@ -12,7 +12,7 @@ type Build = {
 };
 type Props = {
   build?: Build | null;
-  photoCredits?: Record<string, never>;
+  photoCredits?: Record<string, PhotoCredit>;
   variant?: string;
 };
 

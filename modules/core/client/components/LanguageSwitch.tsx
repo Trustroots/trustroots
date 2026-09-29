@@ -106,7 +106,9 @@ export default function LanguageSwitch({
               type="search"
               className="form-control"
               value={search}
-              onChange={event => setSearch(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                setSearch(event.target.value)
+              }
               placeholder={t<string>('Search languages…')}
             />
           )}
