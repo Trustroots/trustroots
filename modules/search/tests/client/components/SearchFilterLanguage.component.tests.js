@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SearchFilterLanguage from '@/modules/search/client/components/SearchFilterLanguage.component';
@@ -12,6 +12,7 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
         aria-labelledby={props['aria-labelledby']}
         data-placeholder={props.placeholder}
         data-selected={props.preSelectedLanguages.join(',')}
+        data-exclude-deprecated={Boolean(props.excludeDeprecated)}
         onClick={() => props.onChangeLanguages(['es', 'de'])}
         type="button"
       >
@@ -22,6 +23,7 @@ jest.mock('@/modules/core/client/components/LanguageSelect', () => {
 
   MockLanguageSelect.propTypes = {
     'aria-labelledby': () => null,
+    excludeDeprecated: () => null,
     onChangeLanguages: () => null,
     placeholder: () => null,
     preSelectedLanguages: () => null,
@@ -47,6 +49,7 @@ describe('<SearchFilterLanguage />', () => {
 
     const filter = screen.getByRole('button', { name: 'Spoken languages' });
     expect(filter).toHaveAttribute('data-selected', 'en,fr');
+    expect(filter).toHaveAttribute('data-exclude-deprecated', 'false');
     expect(filter).toHaveAttribute(
       'data-placeholder',
       expect.stringContaining('Select languages'),

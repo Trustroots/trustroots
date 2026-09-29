@@ -29,7 +29,7 @@ function TribesInCommon({ user, otherUser }) {
 
   return (
     <div className="monkeybox-section">
-      <div className="tribes-common">
+      <div className="profile-tribes-common">
         <h4>{t('Circles in common')}</h4>
         <ul className="list-inline">
           {tribesInCommon.map(tribe => (

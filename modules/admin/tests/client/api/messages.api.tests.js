@@ -1,8 +1,14 @@
 import axios from 'axios';
 
-import { getMessages } from '@/modules/admin/client/api/messages.api';
+import {
+  getMessages,
+  getScammerRecipients,
+  sendScammerWarning,
+} from '@/modules/admin/client/api/messages.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -18,5 +24,33 @@ describe('admin messages api', () => {
       user1: 'user-1',
       user2: 'user-2',
     });
+  });
+
+  it('fetches scammer recipients', async () => {
+    const data = { recipients: [] };
+    axios.post.mockResolvedValueOnce({ data });
+
+    await expect(getScammerRecipients('scammer')).resolves.toBe(data);
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/admin/messages/scammer-recipients',
+      { username: 'scammer' },
+    );
+  });
+
+  it('sends a scammer warning', async () => {
+    const data = { sent: 2 };
+    axios.post.mockResolvedValueOnce({ data });
+
+    await expect(
+      sendScammerWarning('scammer', 'Please ignore this', 'request-1'),
+    ).resolves.toBe(data);
+    expect(axios.post).toHaveBeenCalledWith(
+      '/api/admin/messages/scammer-warning',
+      {
+        username: 'scammer',
+        content: 'Please ignore this',
+        requestId: 'request-1',
+      },
+    );
   });
 });

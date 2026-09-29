@@ -24,17 +24,16 @@ test.describe('public footer', () => {
     await footer.scrollIntoViewIfNeeded();
 
     for (const [name, href] of [
-      ['Volunteering', 'https://team.trustroots.org/'],
+      ['Volunteering', '/support?category=volunteering'],
       ['Rules', '/rules'],
       ['Safety', '/safety'],
       ['FAQ', '/faq'],
       ['Privacy', '/privacy'],
       ['Contact', '/contact'],
     ]) {
-      await expect(footer.getByRole('link', { name })).toHaveAttribute(
-        'href',
-        href,
-      );
+      await expect(
+        footer.getByRole('link', { name, exact: true }),
+      ).toHaveAttribute('href', href);
     }
 
     await expect(footer.getByRole('link', { name: 'Contribute' })).toHaveCount(

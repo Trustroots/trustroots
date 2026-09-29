@@ -42,6 +42,19 @@ function mockResponse(acceptType) {
 }
 
 describe('Service: error', function () {
+  it('exposes callable named ESM exports', async function () {
+    const esmService = await import(
+      '../../../server/services/error.server.service.mjs'
+    );
+    for (const name of [
+      'getErrorMessageByKey',
+      'getErrorMessage',
+      'errorResponse',
+    ]) {
+      esmService[name].should.equal(errorService[name]);
+    }
+  });
+
   describe('getErrorMessageByKey', function () {
     it('returns the message for a known key', function () {
       errorService.getErrorMessageByKey('not-found').should.equal('Not found.');
@@ -60,24 +73,6 @@ describe('Service: error', function () {
     it('returns the default message when no key is given', function () {
       const message = errorService.getErrorMessageByKey();
       message.should.startWith('Snap! Something went wrong.');
-    });
-  });
-
-  describe('getNewError', function () {
-    it('returns an Error with the matching message', function () {
-      const err = errorService.getNewError('not-found');
-      err.should.be.an.instanceof(Error);
-      err.message.should.equal('Not found.');
-    });
-
-    it('sets the status code when provided', function () {
-      const err = errorService.getNewError('forbidden', 403);
-      err.status.should.equal(403);
-    });
-
-    it('does not set a status code when omitted', function () {
-      const err = errorService.getNewError('forbidden');
-      (err.status === undefined).should.be.true();
     });
   });
 

@@ -229,7 +229,7 @@ export default function LeafletSearchMap({
 
     const container = containerRef.current;
 
-    // Fit immediately, then again after Angular has hidden the mobile place
+    // Fit immediately, then again after the mobile place sidebar is hidden
     // panel and the map container has completed its layout transition.
     fitSelectedBounds();
     const nextLayoutFit = window.setTimeout(fitSelectedBounds);

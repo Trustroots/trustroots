@@ -7,7 +7,7 @@ const languages = require('../../../../config/languages/languages.json');
 const authenticationService = require('../services/authentication.server.service');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
-const uniqueValidation = require('mongoose-beautiful-unique-validation');
+const uniqueValidation = require('../../../../config/lib/mongoose-unique-validation');
 const validator = require('validator');
 const Schema = mongoose.Schema;
 
@@ -78,13 +78,17 @@ const UserMemberSchema = new Schema(
 );
 
 /**
- * SubSchema for `User` schema's `pushRegistration` array
+ * SubSchema for `User` schema's `pushRegistration` array.
+ *
+ * Push delivery is retired. Keep historical values valid so existing profiles
+ * load and tokens can still be removed. New registrations are rejected in the
+ * profile controller; restore a sender before accepting writes again.
  */
 const UserPushRegistrationSchema = new Schema(
   {
     platform: {
       type: String,
-      // android, ios, web → Firebase; expo → Exponent
+      // Historical platforms: android/ios/web (FCM) and expo (Exponent).
       enum: ['android', 'ios', 'web', 'expo'],
       required: true,
     },
@@ -145,7 +149,10 @@ const UserSchema = new Schema({
     trim: true,
     lowercase: true,
     default: '',
-    match: [/.+@.+\..+/, 'Please enter a valid email address.'],
+    validate: [
+      email => !email || validator.isEmail(email),
+      'Please enter a valid email address.',
+    ],
   },
   tagline: {
     type: String,
@@ -419,8 +426,7 @@ UserSchema.methods.authenticate = function (password) {
 };
 
 /**
- * Make sure unique fields yeld verbal errors
- * @link https://www.npmjs.com/package/mongoose-beautiful-unique-validation
+ * Convert duplicate unique values into field validation errors.
  */
 UserSchema.plugin(uniqueValidation);
 

@@ -22,6 +22,10 @@ function fixName(name) {
     return 'Ancient Greek';
   }
 
+  if (name === 'Limburgan') {
+    return 'Limburgish';
+  }
+
   // Follow Wikipedia's naming convention
   // @link https://en.wikipedia.org/wiki/Punjabi_language
   // if (name === 'Panjabi') {

@@ -26,7 +26,8 @@ const ROLE_DEFINITIONS = {
   'shadowbanned-member':
     'Authenticated user with the shadowban role, used to verify hidden member-facing behavior.',
   admin: 'Authenticated user with the admin role.',
-  'welcome-team': 'Authenticated user with limited acquisition viewing access.',
+  'welcome-team':
+    'Authenticated user with acquisition and own-account blocker viewing access.',
   browser:
     'Browser/platform-originated request, such as security reporting telemetry.',
   'external-client':
@@ -411,17 +412,30 @@ const features = [
     id: 'public.volunteering',
     area: AREA.publicCore,
     status: STATUS.active,
-    description: 'Volunteering page is available to visitors.',
-    roles: ['visitor'],
+    description:
+      'Volunteering page offers a short support enquiry for prospective volunteers.',
+    roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
         clientRoute('volunteering', '/volunteering', source.pagesClient),
       ],
       apiRoutes: [],
     },
-    requiredScenarios: ['Volunteering page loads.'],
+    requiredScenarios: [
+      'Volunteering page loads.',
+      'Visitors can submit a volunteer enquiry from the volunteering page.',
+      'Members can submit a volunteer enquiry from the volunteering page.',
+    ],
     relatedSpecs: [
       spec('public-pages.spec.js', 'public marketing page /volunteering loads'),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a volunteer enquiry from the volunteering page',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'member can send a volunteer enquiry from the volunteering page',
+      ),
     ],
   },
   {
@@ -521,6 +535,7 @@ const features = [
     requiredScenarios: [
       'Support page loads for visitors.',
       'Support page accepts the report query parameter.',
+      'Profile report links prefill the reported member without replacing the reporter.',
       'Support contact form is visible.',
     ],
     relatedSpecs: [
@@ -543,8 +558,20 @@ const features = [
     requiredScenarios: [
       'Support request submission succeeds with valid data.',
       'Support request validation errors are shown without sending email.',
+      'Account help requests retain their category in storage and email.',
+      'Other requests retain their category in storage and email.',
+      'Profile reports retain the reported member and reporter in storage and email.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the account category',
+      ),
+      spec(
+        'support-categories.spec.js',
+        'visitor can send a support request in the other category',
+      ),
+    ],
   },
   {
     id: 'public.statistics',
@@ -633,22 +660,6 @@ const features = [
         'does not expose npubs for non-public (unconfirmed) members',
       ),
     ],
-  },
-  {
-    id: 'public.service-worker-config',
-    area: AREA.publicCore,
-    status: STATUS.active,
-    description:
-      'Service worker config endpoint renders app config for push UX.',
-    roles: ['visitor', 'member'],
-    references: {
-      clientRoutes: [],
-      apiRoutes: [apiRoute('GET', '/config/sw.js', source.coreServer)],
-    },
-    requiredScenarios: [
-      'Endpoint returns JavaScript config without requiring authentication.',
-    ],
-    relatedSpecs: [],
   },
   {
     id: 'public.legacy-invite-redirect',
@@ -950,6 +961,7 @@ const features = [
       'Forgot password page renders.',
       'Valid reset request sends a deterministic reset email/stub.',
       'Invalid or unknown account request does not leak account existence.',
+      'Recovery transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [
       spec(
@@ -983,6 +995,7 @@ const features = [
       'Password reset succeeds with matching valid passwords.',
       'Success page is shown after reset.',
       'Member can sign in with the new password.',
+      'Reset transport failures show guidance without automatic retries.',
     ],
     relatedSpecs: [],
   },
@@ -1157,7 +1170,8 @@ const features = [
     id: 'account.push-registrations',
     area: AREA.authAccount,
     status: STATUS.active,
-    description: 'Members can register and remove web push tokens.',
+    description:
+      'Push registration is retired; historical tokens can still be removed.',
     roles: ['member'],
     references: {
       clientRoutes: [],
@@ -1171,8 +1185,8 @@ const features = [
       ],
     },
     requiredScenarios: [
-      'Push registration can be added with deterministic local permissions.',
-      'Push registration can be removed.',
+      'New push registrations are rejected.',
+      'Historical push registrations can still be removed.',
     ],
     relatedSpecs: [],
   },
@@ -1260,9 +1274,14 @@ const features = [
       'About edit form is reachable.',
       'Valid profile changes persist and are visible on profile view.',
       'Validation errors are visible for invalid content.',
+      'Deprecated languages cannot be added to a profile.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit "about" form is reachable'),
+      spec(
+        'authenticated.spec.js',
+        'deprecated languages cannot be added to a profile',
+      ),
     ],
   },
   {
@@ -1316,6 +1335,9 @@ const features = [
     requiredScenarios: [
       'Photo edit page is reachable.',
       'Valid upload succeeds through deterministic file processing.',
+      'Photo upload controls show keyboard focus.',
+      'Visible photo control opens the file chooser.',
+      'Valid images upload when the browser omits their MIME type.',
       'Invalid upload shows an error.',
       'Avatar endpoint returns uploaded or fallback image.',
     ],
@@ -1576,6 +1598,14 @@ const features = [
       'Circle filter query resolves the selected circle.',
       'Search map renders with deterministic offline style.',
       'Route fixture offers populate the rendered map source.',
+      'Mouse-wheel input zooms the rendered map in and out.',
+      'Mouse-wheel input zooms the raster fallback map in and out.',
+      'Mouse-wheel input works after returning to Search.',
+      'Mouse-wheel input works at low zoom.',
+      'Page-based wheel events visibly zoom the rendered map.',
+      'Page-based wheel events visibly zoom the raster fallback map.',
+      'Line-based wheel events zoom the rendered map.',
+      'Line-based wheel events zoom the raster fallback map.',
       'Later camera commands recenter the raster map after a place search.',
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
@@ -1586,6 +1616,14 @@ const features = [
       spec(
         'search-map-rendered.spec.js',
         'search map renders with offline style and fixture offers',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'mouse wheel zooms the rendered search map in and out',
+      ),
+      spec(
+        'search-map-rendered.spec.js',
+        'mouse wheel zooms the raster fallback map in and out',
       ),
       spec(
         'search-map-rendered.spec.js',
@@ -2637,6 +2675,41 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'admin.staff-blockers',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Admins can inspect blockers of all staff, while Welcome team members can inspect their own blockers.',
+    roles: ['admin', 'welcome-team'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-staff-blockers',
+          '/admin/staff-blockers',
+          source.adminClient,
+          {
+            requiresAuth: true,
+            requiresRole: ['admin', 'welcome-team'],
+          },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/staff-blockers', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admins can inspect blockers of any administrator or Welcome team member.',
+      'Welcome team members can inspect only blockers of their own account.',
+      'Regular members cannot access staff blocker information.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-inspection.spec.js',
+        'staff blockers are grouped for admins and limited for Welcome team members',
+      ),
+    ],
+  },
+  {
     id: 'admin.messages',
     area: AREA.adminModeration,
     status: STATUS.active,
@@ -2649,17 +2722,34 @@ const features = [
           requiresRole: 'admin',
         }),
       ],
-      apiRoutes: [apiRoute('POST', '/api/admin/messages', source.adminServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/messages', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-recipients',
+          source.adminServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/admin/messages/scammer-warning',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Admin messages page loads.',
       'Admin can query messages between two users.',
+      'Admin can preview recipients contacted by a reported member.',
       'Shadow-hidden messages are visible to admin.',
     ],
     relatedSpecs: [
       spec(
         'admin-inspection.spec.js',
         'admin messages tool shows shadow-hidden messages between members',
+      ),
+      spec(
+        'admin-inspection.spec.js',
+        'admin can preview recipients contacted by a reported member',
       ),
     ],
   },

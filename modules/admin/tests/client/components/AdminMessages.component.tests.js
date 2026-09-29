@@ -1,6 +1,6 @@
 import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import * as messagesApi from '@/modules/admin/client/api/messages.api';
@@ -22,8 +22,23 @@ jest.mock('@/modules/core/client/components/TimeAgo', () => {
   return MockTimeAgo;
 });
 
+const cryptoDescriptor = Object.getOwnPropertyDescriptor(window, 'crypto');
+beforeAll(() => {
+  Object.defineProperty(window, 'crypto', {
+    configurable: true,
+    value: {
+      getRandomValues: bytes => require('crypto').randomFillSync(bytes),
+    },
+  });
+});
+afterAll(() => {
+  if (cryptoDescriptor)
+    Object.defineProperty(window, 'crypto', cryptoDescriptor);
+  else delete window.crypto;
+});
+
 afterEach(() => {
-  jest.clearAllMocks();
+  jest.resetAllMocks();
   window.history.pushState({}, '', '/');
 });
 
@@ -43,6 +58,182 @@ const bob = {
 };
 
 describe('<AdminMessages />', () => {
+  it('reuses the warning request ID after a failed send', async () => {
+    messagesApi.getScammerRecipients.mockResolvedValue({
+      scammer: { username: 'samplemember' },
+      recipients: [
+        {
+          _id: 'recipient-1',
+          username: 'recipient',
+          displayName: 'Sample Member',
+        },
+      ],
+    });
+    messagesApi.sendScammerWarning
+      .mockRejectedValueOnce(new Error('Connection lost'))
+      .mockResolvedValueOnce({ sent: 1 });
+    render(<AdminMessages />);
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'samplemember' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Send warning to all' }),
+    );
+    await screen.findByText('Could not send the warning.');
+    const firstCall = messagesApi.sendScammerWarning.mock.calls[0];
+    expect(firstCall[2]).toMatch(/^[0-9a-f]{32}$/);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Send warning to all' }),
+    );
+    await screen.findByText('Sent 1 warning message(s).');
+    expect(messagesApi.sendScammerWarning.mock.calls[1]).toEqual(firstCall);
+  });
+
+  it('previews scammer recipients and sends the warning', async () => {
+    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+      scammer: { username: 'reported-member' },
+      recipients: [alice, bob],
+    });
+    messagesApi.sendScammerWarning.mockResolvedValueOnce({ sent: 2 });
+
+    render(<AdminMessages />);
+
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'reported-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+
+    const warningMessage = await screen.findByLabelText('Warning message');
+    expect(warningMessage.closest('form')).toHaveTextContent(
+      '2 recipient(s) found for @reported-member.',
+    );
+    expect(screen.getByText('alice (Alice Example)')).toBeInTheDocument();
+    expect(screen.getByText('bob (Bob Example)')).toBeInTheDocument();
+    fireEvent.change(warningMessage, {
+      target: { value: 'Please ignore the earlier message.' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Send warning to all' }),
+    );
+
+    await waitFor(() =>
+      expect(messagesApi.sendScammerWarning).toHaveBeenCalledWith(
+        'reported-member',
+        'Please ignore the earlier message.',
+        expect.any(String),
+      ),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByText(
+          (_, element) =>
+            element.tagName === 'P' &&
+            element.textContent === 'Sent 2 warning message(s).',
+        ),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it('shows an empty recipient preview without a send form', async () => {
+    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+      scammer: { username: 'quiet-member' },
+      recipients: [],
+    });
+
+    render(<AdminMessages />);
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'quiet-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+
+    await waitFor(() =>
+      expect(messagesApi.getScammerRecipients).toHaveBeenCalledWith(
+        'quiet-member',
+      ),
+    );
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element.tagName === 'P' &&
+          element.textContent === '0 recipient(s) found for @quiet-member.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Warning message')).not.toBeInTheDocument();
+  });
+
+  it('requires a fresh preview after the username changes', async () => {
+    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+      scammer: { username: 'reported-member' },
+      recipients: [alice],
+    });
+
+    render(<AdminMessages />);
+    const username = screen.getByLabelText('Scammer username');
+    fireEvent.change(username, { target: { value: 'reported-member' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+    await screen.findByLabelText('Warning message');
+
+    fireEvent.change(username, { target: { value: 'different-member' } });
+
+    expect(screen.queryByLabelText('Warning message')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Send warning to all' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows recipient lookup errors from the API', async () => {
+    messagesApi.getScammerRecipients.mockRejectedValueOnce({
+      response: { data: { message: 'Member does not exist.' } },
+    });
+
+    render(<AdminMessages />);
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'missing-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+
+    expect(
+      await screen.findByText('Member does not exist.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the fallback error when recipient lookup fails unexpectedly', async () => {
+    messagesApi.getScammerRecipients.mockRejectedValueOnce(new Error('failed'));
+
+    render(<AdminMessages />);
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'reported-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+
+    expect(
+      await screen.findByText('Could not find that member.'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the fallback error when warning delivery fails', async () => {
+    messagesApi.getScammerRecipients.mockResolvedValueOnce({
+      scammer: { username: 'reported-member' },
+      recipients: [alice],
+    });
+    messagesApi.sendScammerWarning.mockRejectedValueOnce(new Error('failed'));
+
+    render(<AdminMessages />);
+    fireEvent.change(screen.getByLabelText('Scammer username'), {
+      target: { value: 'reported-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Show recipients' }));
+    await screen.findByLabelText('Warning message');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Send warning to all' }),
+    );
+
+    expect(
+      await screen.findByText('Could not send the warning.'),
+    ).toBeInTheDocument();
+  });
+
   it('keeps the read action disabled until both members are present', () => {
     render(<AdminMessages />);
 

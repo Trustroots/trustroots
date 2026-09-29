@@ -1,11 +1,13 @@
 const nunjucks = require('nunjucks');
+const jsonForScript = require('../../modules/core/server/services/json-for-script.server.service');
 
 // Configure nunjucks
 // https://mozilla.github.io/nunjucks/
-nunjucks.configure('./modules/core/server/views', {
+const templates = nunjucks.configure('./modules/core/server/views', {
   watch: false,
   noCache: true,
 });
+templates.addFilter('jsonForScript', jsonForScript);
 
 /**
  * Template rendering function

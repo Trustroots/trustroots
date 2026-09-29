@@ -228,11 +228,11 @@
 
     <script nonce="{{ nonce }}">
       var title = "{{title}}",
-          settings = {{ appSettings | dump | safe }},
+          settings = {{ appSettings | jsonForScript | safe }},
           {% if googleAnalytics.enabled %}gaId = "{{googleAnalytics.code}}",{% endif %}
           env = "{{ env }}",
           isNativeMobileApp = {{ isNativeMobileApp }},
-          user = {{ user | dump | safe }};
+          user = {{ user | jsonForScript | safe }};
     </script>
 
     {% if env === 'production' %} {% for jsFile in reactJsFiles %}

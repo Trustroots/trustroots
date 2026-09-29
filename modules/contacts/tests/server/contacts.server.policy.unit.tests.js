@@ -7,12 +7,10 @@ function loadPolicy() {
     allow: sinon.stub(),
     areAnyRolesAllowed: sinon.stub(),
   };
-  const AclConstructor = function () {
-    return mockAcl;
-  };
-  AclConstructor.memoryBackend = sinon.stub();
+  const createMemoryPolicy = () => mockAcl;
   const policy = proxyquire('../../server/policies/contacts.server.policy', {
-    acl: AclConstructor,
+    '../../../core/server/services/memory-policy.server.service':
+      createMemoryPolicy,
   });
   return { policy, mockAcl };
 }

@@ -5,7 +5,6 @@ CONTAINER_NAME="${TRUSTROOTS_CODEX_MONGO_CONTAINER:-trustroots-codex-mongo}"
 MONGO_IMAGE="${TRUSTROOTS_CODEX_MONGO_IMAGE:-mongo:4.4}"
 MONGO_HOST="${DB_1_PORT_27017_TCP_ADDR:-127.0.0.1}"
 MONGO_URI="${TRUSTROOTS_CODEX_MONGO_URI:-mongodb://${MONGO_HOST}:27017/trustroots-test}"
-GULP_BIN="${TRUSTROOTS_GULP_BIN:-./node_modules/.bin/gulp}"
 STARTED_CONTAINER=0
 TEST_FILE_LIST=""
 MONGO_PING_ERROR=""
@@ -148,17 +147,13 @@ if ! can_ping_mongo; then
   exit 1
 fi
 
-if [ ! -x "$GULP_BIN" ]; then
-  GULP_BIN="gulp"
-fi
-
 run_server_tests() {
   NODE_ENV=test \
     DB_1_PORT_27017_TCP_ADDR="$MONGO_HOST" \
     SERVER_TEST_FILES="$1" \
     TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK=true \
     TRUSTROOTS_FILE_MAGIC_FALLBACK=true \
-    "$GULP_BIN" test:server
+    node ./scripts/test-server.js
 }
 
 run_server_tests_with_retry() {
@@ -179,7 +174,6 @@ else
 
   find modules -path '*/tests/server/*.js' \
     ! -path 'modules/core/tests/server/worker.tests.js' \
-    ! -path 'modules/core/tests/server/jobs/send-push-message.server.job.tests.js' \
     -print | sort >"$TEST_FILE_LIST"
 
   TEST_COUNT="$(wc -l <"$TEST_FILE_LIST" | tr -d ' ')"

@@ -309,8 +309,8 @@ function buildMarkdown(lanes, options = {}) {
   details.push(
     '',
     runUrl
-      ? `Full HTML overview: download the \`coverage-report\` artifact from [this workflow run](${runUrl}).`
-      : 'Full HTML overview: download the `coverage-report` workflow artifact.',
+      ? `Full HTML overview: download the \`coverage-pr-summary\` artifact from [this workflow run](${runUrl}).`
+      : 'Full HTML overview: download the `coverage-pr-summary` workflow artifact.',
   );
 
   return `${details.join('\n')}\n`;

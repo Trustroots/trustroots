@@ -229,9 +229,6 @@ function sendUnreadMessageReminders(reminder, callback) {
               'displayName',
               'username',
               'roles',
-              // Used for web/mobile push notifications:
-              'pushRegistration.token',
-              'pushRegistration.platform',
             ].join(' '),
           ).exec(function (err, users) {
             // Re-organise users into more handy array (`collectedUsers`)
@@ -306,31 +303,12 @@ function sendUnreadMessageReminders(reminder, callback) {
             return notificationCallback();
           }
 
-          // Process first emails, then FB notifications
-          // After both are done, calls `notificationCallback(err, res)`
-          async.series(
-            {
-              email(callback) {
-                emailService.sendMessagesUnread(
-                  userFrom,
-                  userTo,
-                  notification,
-                  callback,
-                );
-              },
-              /* Disable push notifications - Callum 6/Apr/2026
-              // We're having problems with emails not sending properly, so
-              // we're disabling push notifications as they are also failing
-              push(callback) {
-                pushService.notifyMessagesUnread(
-                  userFrom,
-                  userTo,
-                  notification,
-                  callback,
-                );
-              },
-              */
-            },
+          // Future push: notify userTo about unread messages here
+          // (previously pushService.notifyMessagesUnread).
+          emailService.sendMessagesUnread(
+            userFrom,
+            userTo,
+            notification,
             notificationCallback,
           );
         },

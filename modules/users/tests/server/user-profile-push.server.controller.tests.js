@@ -1,12 +1,11 @@
 /**
  * Unit tests for the push-registration and tribe-membership handlers of the
  * profile controller. These are exercised directly with mock req/res objects
- * against the test database; the push notification service is stubbed via
- * proxyquire so no notifications are actually sent.
+ * against the test database.
  */
-const proxyquire = require('proxyquire').noCallThru();
 const mongoose = require('mongoose');
 const sinon = require('sinon');
+const proxyquire = require('proxyquire').noCallThru();
 
 require('../../server/models/user.server.model');
 require('../../../contacts/server/models/contacts.server.model');
@@ -24,24 +23,13 @@ const User = mongoose.model('User');
 
 const controllerPath =
   '../../server/controllers/users.profile.server.controller';
-const pushServicePath = '../../../core/server/services/push.server.service';
 const errorServicePath = '../../../core/server/services/error.server.service';
-
-/**
- * Load the profile controller with the push notification service stubbed.
- *
- * @param {Function} notifyPushDeviceAdded - stub for the notify call
- */
-function loadControllerWithPush(notifyPushDeviceAdded) {
-  return proxyquire(controllerPath, {
-    [pushServicePath]: { notifyPushDeviceAdded },
-  });
-}
 
 function loadControllerWithEmptyErrorMessage() {
   return proxyquire(controllerPath, {
     [errorServicePath]: {
       getErrorMessage: () => false,
+      getErrorMessageByKey: require(errorServicePath).getErrorMessageByKey,
     },
   });
 }
@@ -156,7 +144,7 @@ describe('Profile controller push/membership unit tests', () => {
       );
     });
 
-    it('removes a registration by token', async () => {
+    it('removes a historical registration by token', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
       userDoc.pushRegistration = [{ platform: 'web', token: 'token-1' }];
@@ -185,222 +173,24 @@ describe('Profile controller push/membership unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('responds with 400 when the token is missing', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const res = deferredResponse();
-      profileController.addPushRegistration(
-        { user: { _id: saved._id }, body: { platform: 'web' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('Token is invalid or missing.');
-    });
-
-    it('responds with 400 when the platform is invalid', async () => {
+    it('rejects new registrations because push is retired', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
       profileController.addPushRegistration(
         {
           user: { _id: saved._id },
-          body: { token: 'token-1', platform: 'nokia' },
+          body: { token: 'token-1', platform: 'web' },
         },
         res,
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
-      res.body.message.should.equal('Platform is invalid or missing.');
-    });
-
-    it('responds with 400 when push registration platforms are not configured', async () => {
-      const platformPath = User.schema
-        .path('pushRegistration')
-        .schema.path('platform');
-      const previousEnumValues = platformPath.enumValues;
-      platformPath.enumValues = undefined;
-
-      try {
-        const [saved] = await utils.saveUsers(utils.generateUsers(1));
-        const res = deferredResponse();
-        profileController.addPushRegistration(
-          {
-            user: { _id: saved._id },
-            body: { token: 'token-1', platform: 'web' },
-          },
-          res,
-        );
-        await res.waitForResponse();
-        res.statusCode.should.equal(400);
-        res.body.message.should.equal('Platform is invalid or missing.');
-      } finally {
-        platformPath.enumValues = previousEnumValues;
-      }
-    });
-
-    it('saves a registration without notifying when doNotNotify is set', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const res = deferredResponse();
-      profileController.addPushRegistration(
-        {
-          user: { _id: saved._id },
-          body: { token: 'token-1', platform: 'web', doNotNotify: true },
-        },
-        res,
+      res.body.message.should.equal(
+        'Push notifications are no longer available.',
       );
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(200);
-      res.body.message.should.equal('Saved registration.');
 
       const reloaded = await User.findById(saved._id);
-      reloaded.pushRegistration.length.should.equal(1);
-      reloaded.pushRegistration[0].token.should.equal('token-1');
-    });
-
-    it('saves a registration and notifies the user', async () => {
-      let notified = false;
-      const controller = loadControllerWithPush((user, platform, cb) => {
-        notified = true;
-        cb();
-      });
-
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const res = deferredResponse();
-      controller.addPushRegistration(
-        {
-          user: { _id: saved._id },
-          body: { token: 'token-2', platform: 'web' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(200);
-      res.body.message.should.equal('Saved registration.');
-      notified.should.be.true();
-    });
-
-    it('returns 400 when saving the registration fails', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      sinon
-        .stub(User, 'findByIdAndUpdate')
-        .onFirstCall()
-        .returns({ exec: cb => cb() })
-        .onSecondCall()
-        .returns({
-          exec: cb => cb(new Error('save failed')),
-        });
-
-      const res = deferredResponse();
-      profileController.addPushRegistration(
-        {
-          user: { _id: saved._id },
-          body: { token: 'token-fail', platform: 'web' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
-
-    it('uses the default message when saving a registration fails without details', async () => {
-      const controller = loadControllerWithEmptyErrorMessage();
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      sinon
-        .stub(User, 'findByIdAndUpdate')
-        .onFirstCall()
-        .returns({ exec: cb => cb() })
-        .onSecondCall()
-        .returns({
-          exec: cb => cb({}),
-        });
-
-      const res = deferredResponse();
-      controller.addPushRegistration(
-        {
-          user: { _id: saved._id },
-          body: { token: 'token-fallback', platform: 'web' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('Failed, please try again.');
-    });
-
-    it('returns 400 when fetching the saved registration user fails', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      sinon
-        .stub(User, 'findByIdAndUpdate')
-        .onFirstCall()
-        .returns({ exec: cb => cb() })
-        .onSecondCall()
-        .returns({
-          exec: cb => cb(null, { _id: saved._id }),
-        });
-      sinon.stub(User, 'findById').returns({
-        exec: cb => cb(new Error('fetch failed')),
-      });
-
-      const res = deferredResponse();
-      profileController.addPushRegistration(
-        {
-          user: { _id: saved._id },
-          body: { token: 'token-fetch-fail', platform: 'web' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.startWith('Snap! Something went wrong.');
-    });
-
-    it('uses the default message when fetching a saved registration fails without details', async () => {
-      const controller = loadControllerWithEmptyErrorMessage();
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      sinon
-        .stub(User, 'findByIdAndUpdate')
-        .onFirstCall()
-        .returns({ exec: cb => cb() })
-        .onSecondCall()
-        .returns({
-          exec: cb => cb(null, { _id: saved._id }),
-        });
-      sinon.stub(User, 'findById').returns({
-        exec: cb => cb({}),
-      });
-
-      const res = deferredResponse();
-      controller.addPushRegistration(
-        {
-          user: { _id: saved._id },
-          body: { token: 'token-fetch-fallback', platform: 'web' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      res.body.message.should.equal('Failed to fetch user, please try again.');
-    });
-
-    it('still succeeds when the notification fails', async () => {
-      const controller = loadControllerWithPush((user, platform, cb) =>
-        cb(new Error('push failed')),
-      );
-
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const res = deferredResponse();
-      controller.addPushRegistration(
-        {
-          user: { _id: saved._id },
-          body: { token: 'token-3', platform: 'android', deviceId: 'device-1' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(200);
-      res.body.message.should.equal('Saved registration.');
+      reloaded.pushRegistration.length.should.equal(0);
     });
   });
 });

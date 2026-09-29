@@ -55,11 +55,6 @@ export class AdminSearchUsersContent extends Component {
   onSearchChange(event) {
     const search = event.target.value;
     this.setState({ search });
-
-    // Update URL
-    const url = new URL(document.location);
-    url.searchParams.set('search', search);
-    window.history.pushState({ search }, window.document.title, url.toString());
   }
 
   onHideObviousSpamUsersChange(event) {

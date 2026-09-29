@@ -22,7 +22,7 @@ describe('Create an experience', () => {
   // after this time the only accepted answers are yes/ignore.
   // after the given time or after both left experience, both experiences become public
 
-  // we'll catch email and push notifications
+  // we'll catch email notifications (push delivery is retired)
   const jobs = testutils.catchJobs();
 
   let user1;
@@ -295,7 +295,7 @@ describe('Create an experience', () => {
           );
         });
 
-        it('push notification', async () => {
+        it('does not enqueue a push notification', async () => {
           await agent
             .post('/api/experiences')
             .send({
@@ -309,19 +309,9 @@ describe('Create an experience', () => {
             })
             .expect(201);
 
+          // Future push: assert delivery job again when experience pushes return
           const pushJobs = jobs.filter(job => job.type === 'send push message');
-          should(pushJobs.length).equal(1);
-
-          const [job] = pushJobs;
-          should(job.data.userId).equal(user2._id.toString());
-          should(job.data.notification.title).equal('Trustroots');
-          should(job.data.notification.body).equal(
-            `${user1.displayName} shared their experience with you. Share your experience, too.`,
-          );
-
-          should(job.data.notification.click_action).containEql(
-            `/profile/${user1.username}/experiences/new`,
-          );
+          should(pushJobs.length).equal(0);
         });
       });
 
@@ -461,7 +451,7 @@ describe('Create an experience', () => {
           );
         });
 
-        it('push notification', async () => {
+        it('does not enqueue a push notification', async () => {
           should(jobs.length).equal(0);
 
           // First, create an experience in the opposite direction
@@ -476,7 +466,7 @@ describe('Create an experience', () => {
           await experience.save();
 
           // Then respond to that experience
-          const { body: experienceResponse } = await agent
+          await agent
             .post('/api/experiences')
             .send({
               userTo: user2._id,
@@ -489,19 +479,9 @@ describe('Create an experience', () => {
             })
             .expect(201);
 
+          // Future push: assert delivery job again when experience pushes return
           const pushJobs = jobs.filter(job => job.type === 'send push message');
-          should(pushJobs.length).equal(1);
-
-          const [job] = pushJobs;
-          should(job.data.userId).equal(user2._id.toString());
-          should(job.data.notification.title).equal('Trustroots');
-          should(job.data.notification.body).equal(
-            `${user1.displayName} shared their experience with you. Both experiences are now published.`,
-          );
-
-          should(job.data.notification.click_action).containEql(
-            `/profile/${user2.username}/experiences?utm_source=push-notification&utm_medium=fcm&utm_campaign=new-experience&utm_content=read#${experienceResponse._id}`,
-          );
+          should(pushJobs.length).equal(0);
         });
       });
     });

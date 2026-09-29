@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 import i18n from '@/config/client/i18n';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 import * as users from '@/modules/users/client/api/users.api';

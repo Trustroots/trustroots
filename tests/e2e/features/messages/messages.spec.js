@@ -14,6 +14,26 @@ test.describe('seeded message flows', () => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
   });
 
+  test('inbox and conversation load through the React shell', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.inbox', [
+      'Inbox lists seeded conversation.',
+    ]);
+    annotateFeature(testInfo, 'messages.thread-open', [
+      'Thread view shows seeded replies.',
+    ]);
+
+    await page.goto('/messages');
+    await expect(page.locator('#tr-react-root')).toBeVisible();
+
+    await page.goto(`/messages/${SEEDED_MEMBERS[1].username}`);
+    await expect(page.locator('#tr-react-root')).toBeVisible();
+    await expect(
+      page.getByText(SEEDED_CONVERSATIONS.berlinPortland.latestReply),
+    ).toBeVisible();
+  });
+
   test('inbox lists the seeded conversation with Portland Host', async ({
     page,
   }, testInfo) => {

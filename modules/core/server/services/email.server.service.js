@@ -7,6 +7,7 @@ const async = require('async');
 const juice = require('juice');
 const moment = require('moment');
 const autolinker = require('autolinker');
+const he = require('he');
 const analyticsHandler = require('../controllers/analytics.server.controller');
 const textService = require('./text.server.service');
 const render = require('../../../../config/lib/render');
@@ -14,6 +15,7 @@ const agenda = require('../../../../config/lib/agenda');
 const config = require('../../../../config/config');
 const log = require('../../../../config/lib/logger');
 const userRolesService = require('../../../users/server/services/user-roles.server.service');
+const { SUPPORT_CATEGORIES } = require('../../../support/shared/categories');
 const url = (config.https ? 'https' : 'http') + '://' + config.domain;
 
 /**
@@ -26,11 +28,24 @@ function getSupportVolunteerName() {
   return _.sample(config.supportVolunteerNames);
 }
 
+function defangUrl(value) {
+  return value.replace(/:/g, '[:]').replace(/\./g, '[.]');
+}
+
 function removeLinksFromMessagePreview(content) {
-  return _.toString(content).replace(
-    /<a\b[^>]*>[\s\S]*?<\/a>/gi,
-    '[link removed]',
+  const withoutAnchors = _.toString(content).replace(
+    /<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1[^>]*>[\s\S]*?<\/a>/gi,
+    (_anchor, _quote, href) => _.escape(defangUrl(he.decode(href))),
   );
+
+  return autolinker.link(withoutAnchors, {
+    urls: true,
+    email: false,
+    phone: false,
+    mention: false,
+    hashtag: false,
+    replaceFn: match => _.escape(defangUrl(match.getMatchedText())),
+  });
 }
 
 exports.sendMessagesUnread = function (
@@ -62,6 +77,13 @@ exports.sendMessagesUnread = function (
 
   // Variables passed to email text/html templates
   const params = exports.addEmailBaseTemplateParams({
+    // Messages sent by administrators (including scam warnings) are
+    // delivered as official Trustroots support mail rather than from an
+    // individual administrator account.
+    from:
+      userFrom.roles && userFrom.roles.includes('admin')
+        ? 'Trustroots Support <' + config.supportEmail + '>'
+        : undefined,
     subject: mailSubject,
     name: userTo.displayName,
     email: userTo.email,
@@ -282,6 +304,8 @@ exports.sendFlaggedSignupAlert = function (user, matchedKeywords, callback) {
 
 exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
   let subject = 'Support request';
+  const categoryLabel = SUPPORT_CATEGORIES[supportRequest.category] || 'Other';
+  subject += ' [' + categoryLabel + ']';
 
   // I miss CoffeeSscript
   if (_.has(supportRequest, 'username') && supportRequest.username) {
@@ -297,7 +321,7 @@ exports.sendSupportRequest = function (replyTo, supportRequest, callback) {
     email: config.supportEmail, // `To:`
     replyTo,
     subject,
-    request: supportRequest,
+    request: { ...supportRequest, categoryLabel },
     skipHtmlTemplate: true, // Don't render html template for this email
     sparkpostCampaign: 'support-request',
   };
@@ -689,6 +713,11 @@ exports.renderEmail = function (templateName, params, callback) {
 exports.renderEmailAndSend = function (templateName, params, callback) {
   exports.renderEmail(templateName, params, function (err, email) {
     if (err) return callback(err);
-    agenda.now('send email', email, callback);
+    agenda
+      .now('send email', email)
+      .then(function (job) {
+        callback(null, job);
+      })
+      .catch(callback);
   });
 };

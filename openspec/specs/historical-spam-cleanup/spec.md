@@ -1,8 +1,11 @@
 # historical-spam-cleanup Specification
 
 ## Purpose
+
 TBD - created by archiving change purge-historical-spam-accounts. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Historical spam campaign cleanup
 
 The system SHALL identify an account for removal only when it was created in a
@@ -50,4 +53,3 @@ explicitly enables deletion.
 - **WHEN** an operator runs the cleanup command with the deletion switch
 - **THEN** the system deletes eligible accounts in bounded batches and reports
   the number deleted
-

@@ -1,19 +1,11 @@
-const proxyquire = require('proxyquire').noCallThru();
 const sinon = require('sinon');
 require('should');
 
-function loadPolicy() {
-  const mockAcl = {
-    allow: sinon.stub(),
-    areAnyRolesAllowed: sinon.stub(),
-  };
-  const AclConstructor = function () {
-    return mockAcl;
-  };
-  AclConstructor.memoryBackend = sinon.stub();
-  const policy = proxyquire('../../server/policies/admin.server.policy', {
-    acl: AclConstructor,
-  });
+async function loadPolicy() {
+  const policy = await import('../../server/policies/admin.server.policy.mjs');
+  const mockAcl = policy._acl;
+  sinon.stub(mockAcl, 'allow');
+  sinon.stub(mockAcl, 'areAnyRolesAllowed');
   return { policy, mockAcl };
 }
 
@@ -35,8 +27,9 @@ function mockResponse() {
 }
 
 describe('Admin policy unit tests', () => {
-  it('registers admin-only role policies', () => {
-    const { policy, mockAcl } = loadPolicy();
+  afterEach(() => sinon.restore());
+  it('registers admin-only role policies', async () => {
+    const { policy, mockAcl } = await loadPolicy();
 
     policy.invokeRolesPolicies();
 
@@ -51,11 +44,15 @@ describe('Admin policy unit tests', () => {
         resources: '/api/admin/acquisition-stories/analysis',
         permissions: ['post'],
       },
+      { resources: '/api/admin/staff-blockers', permissions: ['get'] },
     ]);
     policies[0].roles.should.deepEqual(['admin']);
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/acquisition-stories');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql('/api/admin/staff-blockers');
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/dashboard');
@@ -76,8 +73,8 @@ describe('Admin policy unit tests', () => {
       .should.containEql('/api/admin/newsletter-subscribers/split');
   });
 
-  it('calls next when ACL allows the admin request', () => {
-    const { policy, mockAcl } = loadPolicy();
+  it('calls next when ACL allows the admin request', async () => {
+    const { policy, mockAcl } = await loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, true);
     const next = sinon.stub();
 
@@ -97,8 +94,8 @@ describe('Admin policy unit tests', () => {
     next.calledOnce.should.be.true();
   });
 
-  it('checks guest permissions when no user roles are present', () => {
-    const { policy, mockAcl } = loadPolicy();
+  it('checks guest permissions when no user roles are present', async () => {
+    const { policy, mockAcl } = await loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, false);
 
     policy.isAllowed(
@@ -113,8 +110,8 @@ describe('Admin policy unit tests', () => {
     mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
   });
 
-  it('returns 500 when authorization fails unexpectedly', done => {
-    const { policy, mockAcl } = loadPolicy();
+  it('returns 500 when authorization fails unexpectedly', async () => {
+    const { policy, mockAcl } = await loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
     const res = mockResponse();
 
@@ -130,11 +127,10 @@ describe('Admin policy unit tests', () => {
 
     res.statusCode.should.equal(500);
     res.body.message.should.equal('Unexpected authorization error');
-    done();
   });
 
-  it('returns 403 JSON when the user is not allowed', done => {
-    const { policy, mockAcl } = loadPolicy();
+  it('returns 403 JSON when the user is not allowed', async () => {
+    const { policy, mockAcl } = await loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, false);
     const res = mockResponse();
 
@@ -150,6 +146,5 @@ describe('Admin policy unit tests', () => {
 
     res.statusCode.should.equal(403);
     res.body.message.should.equal('Forbidden.');
-    done();
   });
 });

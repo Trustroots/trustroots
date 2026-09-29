@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { $on } from '@/modules/core/client/services/angular-compat';
+import { onClientEvent } from '@/modules/core/client/services/client-runtime';
 import omit from 'lodash/omit';
 
 /**
@@ -15,18 +15,20 @@ export default function BoardCredits({ photoCredits: initialPhotoCredits }) {
 
   const [photoCredits, setPhotoCredits] = useState(initialPhotoCredits);
 
+  useEffect(() => setPhotoCredits(initialPhotoCredits), [initialPhotoCredits]);
+
   useEffect(
     () =>
-      $on('photoCreditsUpdated', (scope, photo) =>
-        setPhotoCredits({ ...photoCredits, ...photo }),
+      onClientEvent('photoCreditsUpdated', (scope, photo) =>
+        setPhotoCredits(current => ({ ...current, ...photo })),
       ),
     [],
   );
 
   useEffect(
     () =>
-      $on('photoCreditsRemoved', (scope, photo) =>
-        setPhotoCredits(omit(photoCredits, Object.keys(photo))),
+      onClientEvent('photoCreditsRemoved', (scope, photo) =>
+        setPhotoCredits(current => omit(current, Object.keys(photo))),
       ),
     [],
   );

@@ -1,6 +1,7 @@
 const proxyquire = require('proxyquire').noCallThru();
 const languagesObject = require('../../../../config/languages/languages.json');
 const languagesArray = require('../../../../config/languages/languages-array.json');
+const deprecatedLanguages = require('../../../../config/languages/deprecated');
 
 require('should');
 
@@ -59,6 +60,10 @@ function mockResponse(acceptType) {
     res.headers[key] = value;
     return res;
   };
+  res.redirect = function (url) {
+    res.redirected = url;
+    return res;
+  };
 
   return res;
 }
@@ -68,7 +73,7 @@ describe('Controller: core', function () {
     it('marks the signup page as an invite', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/signup' }, res);
-      res.rendered.should.equal('index.server.view.html');
+      res.rendered.should.equal('react-index.server.view.html');
       res.renderVars.invite.should.be.true();
     });
 
@@ -84,10 +89,19 @@ describe('Controller: core', function () {
       res.rendered.should.equal('react-index.server.view.html');
     });
 
-    it('renders the Angular index for Angular-owned paths', function () {
+    it('redirects legacy React routes to their replacement', function () {
       const res = mockResponse();
-      coreController.renderIndex({ path: '/profile/alice' }, res);
-      res.rendered.should.equal('index.server.view.html');
+      coreController.renderIndex({ path: '/about' }, res);
+      res.redirected.should.equal('/');
+    });
+
+    it('renders the React index for unknown paths', function () {
+      const res = mockResponse();
+      res.redirect = function () {
+        throw new Error('should not redirect unknown paths');
+      };
+      coreController.renderIndex({ path: '/definitely-not-a-route' }, res);
+      res.rendered.should.equal('react-index.server.view.html');
     });
 
     it('exposes a sanitized user profile when signed in', function () {
@@ -203,26 +217,40 @@ describe('Controller: core', function () {
     });
   });
 
-  describe('renderServiceWorkerConfig', function () {
-    it('returns javascript exposing the FCM sender id', function () {
-      const res = mockResponse();
-      coreController.renderServiceWorkerConfig({}, res);
-      res.headers['Content-Type'].should.equal('text/javascript');
-      res.body.should.startWith('var FCM_SENDER_ID = ');
-    });
-  });
-
   describe('getLanguages', function () {
     it('returns the languages array when format=array', function () {
       const res = mockResponse();
       coreController.getLanguages({ query: { format: 'array' } }, res);
-      res.body.should.deepEqual(languagesArray);
+      res.body.should.deepEqual(
+        languagesArray.map(language => ({
+          ...language,
+          deprecated: deprecatedLanguages.has(language.value),
+        })),
+      );
+      res.body.filter(language => language.deprecated).length.should.equal(20);
+      res.body
+        .find(language => language.value === 'enm')
+        .deprecated.should.be.true();
+      res.body
+        .find(language => language.value === 'iso_639_3-lfn')
+        .deprecated.should.be.true();
+      res.body
+        .find(language => language.value === 'grc')
+        .deprecated.should.be.false();
+      res.body
+        .find(language => language.value === 'lat')
+        .deprecated.should.be.false();
+      res.body
+        .find(language => language.value === 'lim')
+        .label.should.equal('Limburgish');
     });
 
     it('returns the languages object by default', function () {
       const res = mockResponse();
       coreController.getLanguages({ query: {} }, res);
       res.body.should.deepEqual(languagesObject);
+      res.body.lim.should.equal('Limburgish');
+      res.body.enm.should.equal('Middle English (1100-1500)');
     });
   });
 });

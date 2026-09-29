@@ -1,12 +1,17 @@
 import axios from 'axios';
 
 import {
+  createOffer,
+  deleteOffer,
   getOffers,
   getOffer,
   queryOffers,
+  updateOffer,
 } from '@/modules/offers/client/api/offers.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock.js'),
+);
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -18,8 +23,24 @@ describe('offers api', () => {
     axios.get.mockResolvedValueOnce({ data: offers });
 
     await expect(getOffers('user-1', ['host'])).resolves.toBe(offers);
-    expect(axios.get).toHaveBeenCalledWith('api/offers-by/user-1', {
+    expect(axios.get).toHaveBeenCalledWith('/api/offers-by/user-1', {
       params: { types: ['host'] },
+    });
+  });
+
+  it('passes request options through to the shared client', async () => {
+    const controller = new AbortController();
+    axios.get.mockResolvedValueOnce({ data: [] });
+
+    await getOffers('user-1', ['host'], {
+      signal: controller.signal,
+      timeout: 45000,
+    });
+
+    expect(axios.get).toHaveBeenCalledWith('/api/offers-by/user-1', {
+      params: { types: ['host'] },
+      signal: controller.signal,
+      timeout: 45000,
     });
   });
 
@@ -61,5 +82,32 @@ describe('offers api', () => {
 
     await expect(queryOffers()).resolves.toEqual([]);
     expect(axios.get).toHaveBeenCalledWith('/api/offers?');
+  });
+
+  it('creates an offer', async () => {
+    const offer = { _id: 'offer-1', type: 'meet' };
+    axios.post.mockResolvedValueOnce({ data: offer });
+
+    await expect(createOffer({ type: 'meet' })).resolves.toBe(offer);
+    expect(axios.post).toHaveBeenCalledWith('/api/offers', { type: 'meet' });
+  });
+
+  it('updates an offer', async () => {
+    const offer = { _id: 'offer-1', type: 'host' };
+    axios.put.mockResolvedValueOnce({ data: offer });
+
+    await expect(updateOffer('offer-1', { status: 'yes' })).resolves.toBe(
+      offer,
+    );
+    expect(axios.put).toHaveBeenCalledWith('/api/offers/offer-1', {
+      status: 'yes',
+    });
+  });
+
+  it('deletes an offer', async () => {
+    axios.delete.mockResolvedValueOnce({ data: { ok: true } });
+
+    await expect(deleteOffer('offer-1')).resolves.toEqual({ ok: true });
+    expect(axios.delete).toHaveBeenCalledWith('/api/offers/offer-1');
   });
 });

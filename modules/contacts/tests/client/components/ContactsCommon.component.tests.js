@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import { getContactsCommon } from '@/modules/contacts/client/api/contacts.api';

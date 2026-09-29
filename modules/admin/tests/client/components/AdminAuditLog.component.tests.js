@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
 import * as auditLogApi from '@/modules/admin/client/api/audit-log.api';

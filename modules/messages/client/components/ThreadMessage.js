@@ -25,6 +25,30 @@ function getHostingData(content) {
   };
 }
 
+function disableExternalLinks(content) {
+  const template = document.createElement('template');
+  template.innerHTML = content;
+
+  for (const link of template.content.querySelectorAll('a')) {
+    let internal = false;
+    try {
+      const href = link.getAttribute('href');
+      if (href) {
+        const url = new URL(href, window.location.href);
+        internal =
+          ['http:', 'https:'].includes(url.protocol) &&
+          url.origin === window.location.origin;
+      }
+    } catch {
+      // An invalid destination cannot be an internal link.
+    }
+
+    if (!internal) link.replaceWith(...link.childNodes);
+  }
+
+  return template.innerHTML;
+}
+
 const MessageContainer = styled.div.attrs(({ message }) => ({
   className: 'message',
   ...getHostingData(message.content),
@@ -92,7 +116,9 @@ export default function ThreadMessage({ message, user }) {
           <Avatar user={message.userFrom} size={24} link={!deletedUser} />
           <div
             className="panel-body"
-            dangerouslySetInnerHTML={{ __html: message.content }}
+            dangerouslySetInnerHTML={{
+              __html: disableExternalLinks(message.content),
+            }}
           />
         </div>
       </div>

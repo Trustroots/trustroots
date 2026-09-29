@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import '@testing-library/jest-dom/extend-expect';
+import '@testing-library/jest-dom';
 
 import NavigationMenuItem from '@/modules/core/client/components/NavigationMenuItem';
 import NavigationSubMenuList from '@/modules/core/client/components/NavigationSubMenuList';

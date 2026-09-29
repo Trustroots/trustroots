@@ -79,14 +79,6 @@ describe('Statistics controller unit tests', () => {
       });
     });
 
-    it('getPushRegistrationCount propagates database errors', done => {
-      sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
-      statistics.getPushRegistrationCount(err => {
-        err.should.be.Error();
-        done();
-      });
-    });
-
     it('getLastSeenStatistic propagates database errors', done => {
       sinon.stub(User, 'countDocuments').callsFake((query, cb) => cb(dbError));
       statistics.getLastSeenStatistic({ days: 7 }, err => {
@@ -344,22 +336,6 @@ describe('Statistics controller unit tests', () => {
 
       await new Promise((resolve, reject) => {
         statistics.getMeetOffersCount((err, count) => {
-          if (err) return reject(err);
-          count.should.equal(1);
-          resolve();
-        });
-      });
-    });
-
-    it('counts push registrations', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await User.findById(saved._id);
-      userDoc.public = true;
-      userDoc.pushRegistration = [{ platform: 'android', token: 'abc' }];
-      await userDoc.save();
-
-      await new Promise((resolve, reject) => {
-        statistics.getPushRegistrationCount((err, count) => {
           if (err) return reject(err);
           count.should.equal(1);
           resolve();

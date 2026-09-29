@@ -143,7 +143,7 @@ describe('Coverage PR summary unit tests', () => {
       markdown.should.containEql('## Coverage overview');
       markdown.should.containEql('Status: **Passing**');
       markdown.should.containEql('[this workflow run]');
-      markdown.should.containEql('coverage-report');
+      markdown.should.containEql('coverage-pr-summary');
     });
 
     it('marks blocked lanes as needing attention', () => {
