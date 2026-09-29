@@ -1,5 +1,9 @@
 const should = require('should');
-const proxyquire = require('proxyquire').noCallThru();
+const config = require('../../../../../config/config');
+const mongoose = require('mongoose');
+const winston = require('winston');
+const emailService = require('../../../../core/server/services/email.server.service');
+const job = require('../../../server/jobs/user-finish-signup.server.job');
 const sinon = require('sinon');
 
 describe('Job: user finish signup direct unit tests', function () {
@@ -7,7 +11,7 @@ describe('Job: user finish signup direct unit tests', function () {
     sinon.restore();
   });
 
-  function loadJob(config) {
+  function loadJob(overrides) {
     const query = {
       and: sinon.stub(),
       limit: sinon.stub(),
@@ -16,29 +20,12 @@ describe('Job: user finish signup direct unit tests', function () {
     query.and.returns(query);
     query.limit.returns(query);
 
-    const User = {
-      find: sinon.stub().returns(query),
-      findByIdAndUpdate: sinon.stub(),
-    };
-    const emailService = {
-      sendSignupEmailReminder: sinon.stub(),
-    };
-    const log = sinon.spy();
-
-    const job = proxyquire(
-      '../../../server/jobs/user-finish-signup.server.job',
-      {
-        '../../../../config/config': config,
-        '../../../../config/lib/logger': log,
-        '../../../core/server/services/email.server.service': emailService,
-        mongoose: {
-          model: name => {
-            name.should.equal('User');
-            return User;
-          },
-        },
-      },
-    );
+    const User = mongoose.model('User');
+    sinon.stub(User, 'find').returns(query);
+    sinon.stub(User, 'findByIdAndUpdate');
+    sinon.stub(emailService, 'sendSignupEmailReminder');
+    sinon.stub(config, 'limits').value(overrides.limits);
+    const log = sinon.stub(winston.Logger.prototype, 'log');
 
     return { emailService, job, log, query, User };
   }
