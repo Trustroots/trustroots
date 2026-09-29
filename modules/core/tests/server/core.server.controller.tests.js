@@ -175,7 +175,11 @@ describe('Controller: core', function () {
       try {
         const res = mockResponse();
         coreController.receiveCSPViolationReport(
-          { body: { 'blocked-uri': 'https://example.test/?token=private-token' } },
+          {
+            body: {
+              'blocked-uri': 'https://example.test/?token=private-token',
+            },
+          },
           res,
         );
 
@@ -235,7 +239,11 @@ describe('Controller: core', function () {
       try {
         const res = mockResponse();
         coreController.receiveExpectCTViolationReport(
-          { body: { 'blocked-uri': 'https://example.test/?token=private-token' } },
+          {
+            body: {
+              'blocked-uri': 'https://example.test/?token=private-token',
+            },
+          },
           res,
         );
 
