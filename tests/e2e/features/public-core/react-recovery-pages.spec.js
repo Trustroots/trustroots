@@ -1,4 +1,4 @@
-const { expect, test } = require('../../support/test');
+const { annotateFeature, expect, test } = require('../../support/test');
 const { SEEDED_MEMBERS } = require('../../support/helpers');
 
 test('recovery prefill submits through the existing API', async ({ page }) => {
@@ -16,6 +16,9 @@ test('recovery prefill submits through the existing API', async ({ page }) => {
 });
 
 test('outcome pages retain their onward links', async ({ page }) => {
+  annotateFeature(test.info(), 'auth.password-reset', [
+    'Success page is shown after reset.',
+  ]);
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto('/password/reset/invalid');
