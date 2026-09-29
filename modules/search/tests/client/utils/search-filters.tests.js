@@ -66,6 +66,7 @@ describe('search-filters utils', () => {
 
   it('normalises empty and meet-only type values', () => {
     expect(normalizeTypes()).toEqual(['meet']);
+    expect(normalizeTypes(null)).toEqual(['meet']);
     expect(normalizeTypes([{ id: 'meet' }])).toEqual(['meet']);
   });
 
