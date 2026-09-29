@@ -8,7 +8,6 @@ const async = require('async');
 const utils = require('../../../../testutils/server/data.server.testutil');
 const testutils = require('../../../../testutils/server/server.testutil');
 const errorService = require('../../../core/server/services/error.server.service');
-const proxyquire = require('proxyquire').noCallThru();
 const emailService = require('../../../core/server/services/email.server.service');
 require('should');
 
@@ -17,7 +16,6 @@ const User = mongoose.model('User');
 
 const controllerPath =
   '../../server/controllers/users.password.server.controller';
-const emailServicePath = '../../../core/server/services/email.server.service';
 
 function deferredResponse() {
   let resolveResponse;
@@ -92,9 +90,14 @@ describe('Password controller unit tests', () => {
     });
 
     it('returns the same acknowledgement when sending the reset email fails', async () => {
-      const controller = proxyquire(controllerPath, {
-        [emailServicePath]: {
-          sendResetPassword: (user, cb) => cb(new Error('smtp down')),
+      let finishEmailAttempt;
+      const emailAttempted = new Promise(resolve => {
+        finishEmailAttempt = resolve;
+      });
+      const controller = loadPasswordController({
+        sendResetPassword: (user, cb) => {
+          cb(new Error('smtp down'));
+          finishEmailAttempt();
         },
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -106,6 +109,7 @@ describe('Password controller unit tests', () => {
         () => {},
       );
       await res.waitForResponse();
+      await emailAttempted;
       res.statusCode.should.equal(200);
       res.body.message.should.equal(
         'If an account matches that username or email, we will send recovery instructions.',
@@ -117,12 +121,8 @@ describe('Password controller unit tests', () => {
       const deliveryStarted = new Promise(resolve => {
         startDelivery = resolve;
       });
-      const controller = proxyquire(controllerPath, {
-        [emailServicePath]: {
-          sendResetPassword: () => {
-            startDelivery();
-          },
-        },
+      const controller = loadPasswordController({
+        sendResetPassword: () => startDelivery(),
       });
       const fakeUser = {
         save: callback => callback(),
@@ -554,12 +554,9 @@ describe('Password controller unit tests', () => {
     });
 
     it('still succeeds when the password change confirmation email fails', async () => {
-      const controller = proxyquire(controllerPath, {
-        [emailServicePath]: {
-          sendResetPassword: (user, cb) => cb(),
-          sendResetPasswordConfirm: (user, cb) =>
-            cb(new Error('confirm email failed')),
-        },
+      const controller = loadPasswordController({
+        sendResetPasswordConfirm: (user, cb) =>
+          cb(new Error('confirm email failed')),
       });
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await User.findById(saved._id);
